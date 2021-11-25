@@ -1,0 +1,10 @@
+file(GLOB EXAMPLES *.cxx)
+
+foreach(example ${EXAMPLES})
+  file(RELATIVE_PATH filename ${CMAKE_CURRENT_SOURCE_DIR} ${example})
+  string(REPLACE ".cxx" "" app ${filename})
+  add_executable(${app} ${filename})
+  target_link_libraries(${app} PUBLIC "${TORCH_LIBRARIES}")
+  target_link_libraries(${app} PUBLIC Matplot++::matplot)
+  set_property(TARGET ${app} PROPERTY CXX_STANDARD 17)
+endforeach()
