@@ -138,15 +138,14 @@ namespace iganet {
       for (short_t i=0; i<dim_; ++i)
         {
           geo_.coeffs(i) = input__.index({torch::indexing::Slice(count,
-                                                                 count+=geo_.ncoeffs(i),
+                                                                 count+=geo_.ncoeffs(),
                                                                  1)});
         }
       
       // Right-hand side
       rhs_.coeffs(0) = input__.index({torch::indexing::Slice(count,
-                                                             count+=rhs_.ncoeffs(0),
+                                                             count+=rhs_.ncoeffs(),
                                                              1)});
-      count += rhs_.ncoeffs(0);
       
       // Input tensor
       input_ = input__.index({torch::indexing::Slice(count,
@@ -159,43 +158,61 @@ namespace iganet {
     }
 
     // Returns a constant reference to the B-spline representation of the geometry
-    const BSpline<real_t, dim_, Degrees...>& geo() const
+    inline const BSpline<real_t, dim_, Degrees...>& geo() const
+    {
+      return geo_;
+    }
+
+    // Returns a non-constant reference to the B-spline representation of the geometry
+    inline BSpline<real_t, dim_, Degrees...>& geo()
     {
       return geo_;
     }
 
     // Returns a constant reference to the B-spline representation of the right-hand side
-    const BSpline<real_t, 1, Degrees...>& rhs() const
+    inline const BSpline<real_t, 1, Degrees...>& rhs() const
+    {
+      return rhs_;
+    }
+    
+    // Returns a non-constant reference to the B-spline representation of the right-hand side
+    inline BSpline<real_t, 1, Degrees...>& rhs()
     {
       return rhs_;
     }
 
     // Returns a constant reference to the B-spline representation of the solution
-    const BSpline<real_t, 1, Degrees...>& sol() const
+    inline const BSpline<real_t, 1, Degrees...>& sol() const
+    {
+      return sol_;
+    }
+
+    // Returns a non-constant reference to the B-spline representation of the solution
+    inline BSpline<real_t, 1, Degrees...>& sol()
     {
       return sol_;
     }
 
     // Returns a constant reference to the input tensor
-    const torch::Tensor* input() const
+    inline const torch::Tensor* input() const
     {
       return input_;
     }
 
     // Returns a non-constant reference to the input tensor
-    torch::Tensor* input()
+    inline torch::Tensor* input()
     {
       return input_;
     }
 
     // Returns the dimension
-    short_t dim() const
+    inline short_t dim() const
     {
       return dim_;
     }
     
     // Returns a string representation of the IgANet object
-    void pretty_print(std::ostream& os = std::cout) const
+    inline void pretty_print(std::ostream& os = std::cout) const
     {
       os << "=== IgANet ===\n"
          << "net = " << net_ << "\n"
@@ -205,63 +222,64 @@ namespace iganet {
     }
 
     // Plots the B-Spline solution
-    void plot() const
+    inline void plot(short_t nref=0) const
     {
-      switch (dim_) {
-        
-      case (1): {
+      if constexpr(dim_==1) {
         assert(geo_.ncoeffs(0) == sol_.ncoeffs(0));
         
         auto x = geo_.template coeffs<false>(0);
-        auto u = sol_.template coeffs<false>(0);
+        auto c = sol_.template coeffs<false>(0);
         
         matplot::vector_1d X(geo_.ncoeffs(0), 0.0);
-        matplot::vector_1d U(geo_.ncoeffs(0), 0.0);
+        matplot::vector_1d C(geo_.ncoeffs(0), 0.0);
         
         for (int64_t i=0; i<geo_.ncoeffs(0); ++i) {
           X[i] = x[i].template item<real_t>();
-          U[i] = u[i].template item<real_t>();
+          C[i] = c[i].template item<real_t>();
         }
 
-        matplot::plot(X, U);
+        matplot::plot(X, C);
         matplot::show();
-        break;
+
       }
-        
-      case (2): {
+
+      else if constexpr(dim_==2) {
         assert((geo_.ncoeffs(0) == sol_.ncoeffs(0)) && (geo_.ncoeffs(1) == sol_.ncoeffs(1)));
-        
-        auto x = geo_.template coeffs<true>(0);
 
-        std::cout << x << std::endl;
-        //auto y = geo_.template coeffs<false>(1);
-        //auto u = sol_.template coeffs<false>(0);
+        auto x = geo_.template coeffs<false>(0);
+        auto y = geo_.template coeffs<false>(1);
+        auto c = sol_.template coeffs<false>(0);
 
-        //std::cout << x << std::endl;
+        matplot::vector_2d X(geo_.ncoeffs(1), matplot::vector_1d(geo_.ncoeffs(0), 0.0));
+        matplot::vector_2d Y(geo_.ncoeffs(1), matplot::vector_1d(geo_.ncoeffs(0), 0.0));
+        matplot::vector_2d C(geo_.ncoeffs(1), matplot::vector_1d(geo_.ncoeffs(0), 0.0));
+        matplot::vector_2d U(geo_.ncoeffs(1), matplot::vector_1d(geo_.ncoeffs(0), 0.0));
+
+        // Convert into Matplot++ format
+        for (int64_t i=0; i<geo_.ncoeffs(0); ++i)
+         for (int64_t j=0; j<geo_.ncoeffs(1); ++j) {
+           X[j][i] = x[i][j].template item<real_t>();
+           Y[j][i] = y[i][j].template item<real_t>();
+           C[j][i] = c[i][j].template item<real_t>();
+
+           //std::cout << sol_.eval( torch::Tensor{x[i][j], y[i][j]} ) << std::endl;
+         }
         
-        //matplot::vector_2d X(geo_.ncoeffs(1), matplot::vector_1d(geo_.ncoeffs(0), 0.0));
-        //matplot::vector_2d Y(geo_.ncoeffs(1), matplot::vector_1d(geo_.ncoeffs(0), 0.0));
-        //matplot::vector_2d U(geo_.ncoeffs(1), matplot::vector_1d(geo_.ncoeffs(0), 0.0));
+        // Plot control net
+        matplot::mesh(X, Y, C)->palette_map_at_surface(true).face_alpha(0);
+        matplot::hold(matplot::on);
+
+        // Plot solution
+        matplot::hold(matplot::off);
         
-        //for (int64_t i=0; i<geo_.ncoeffs(0); ++i)
-        //  for (int64_t j=0; j<geo_.ncoeffs(1); ++j) {
-        //    X[j][i] = x[i][j].template item<real_t>();
-        //    Y[j][i] = y[i][j].template item<real_t>();
-        //    U[j][i] = u[i][j].template item<real_t>();
-        //  }
-        
-        //matplot::mesh(X, Y, U)->palette_map_at_surface(true).face_alpha(0);
-        //matplot::show();
-        break;
+        matplot::show();
       }
-        
-      case (3): {
-        break;
+
+      else if constexpr (dim_==3){        
       }
-        
-      default:
+
+      else
         throw std::runtime_error("Unsupported dimension");
-      }          
     }
   };
 
