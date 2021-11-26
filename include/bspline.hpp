@@ -21,7 +21,7 @@ namespace iganet {
 
   template<typename real_t,
            short_t GeoDim, short_t... Degrees>
-  class BSpline
+  class BSpline : public core<real_t>
   {
   private:
     // Dimension of the parametric space
@@ -48,18 +48,15 @@ namespace iganet {
     // String storing the full qualified name of the object
     mutable at::optional<std::string> name_;
 
-    // Tensor option
-    const torch::TensorOptions options_;
-
     // LibTorch constants
     const torch::Tensor one_, zero_;
 
   public:
     // Constructor: number of knots
     BSpline(std::array<int64_t,parDim_> nknots, BSplineInit init = BSplineInit::zeros)
-      : options_(torch::TensorOptions().dtype(dtype<real_t>())),
-        one_(torch::ones(1, options_)),
-        zero_(torch::zeros(1, options_))
+      : core<real_t>(),
+        one_(torch::ones(1, core<real_t>::options_)),
+        zero_(torch::zeros(1, core<real_t>::options_))
     {
       // Create open uniform knot vector
       for (short_t i=0; i<parDim_; ++i)
@@ -76,7 +73,7 @@ namespace iganet {
             kv.push_back(static_cast<real_t>(1));
 
           knots_[i] = torch::from_blob(static_cast<real_t*>(kv.data()),
-                                       kv.size(), options_).clone();
+                                       kv.size(), core<real_t>::options_).clone();
 
           // Store the dimension of the knot vector
           nknots_[i] = knots_[i].size(0);
@@ -97,7 +94,7 @@ namespace iganet {
           for (short_t j=0; j<parDim_; ++j)
             size *= ncoeffs_[j];
 
-          coeffs_[i] = torch::zeros(size, options_);
+          coeffs_[i] = torch::zeros(size, core<real_t>::options_);
         }
         break;
       }
@@ -111,7 +108,7 @@ namespace iganet {
           for (short_t j=0; j<parDim_; ++j)
             size *= ncoeffs_[j];
 
-          coeffs_[i] = torch::ones(size, options_);
+          coeffs_[i] = torch::ones(size, core<real_t>::options_);
         }
         break;
       }
@@ -121,16 +118,18 @@ namespace iganet {
         // Fill coefficients with linearly increasing values in a single direction
         for (short_t i=0; i<geoDim_; ++i)
           {
-            coeffs_[i] = torch::ones(1, options_);
+            coeffs_[i] = torch::ones(1, core<real_t>::options_);
 
             for (short_t j=0; j<parDim_; ++j)
               {
                 if (i==j)
                   coeffs_[i] = coeffs_[i].kron(torch::linspace(static_cast<real_t>(0),
                                                                static_cast<real_t>(1),
-                                                               ncoeffs_[j], options_));
+                                                               ncoeffs_[j],
+                                                               core<real_t>::options_));
                 else
-                  coeffs_[i] = coeffs_[i].kron(torch::ones(ncoeffs_[j], options_));
+                  coeffs_[i] = coeffs_[i].kron(torch::ones(ncoeffs_[j],
+                                                           core<real_t>::options_));
               }
           }
         break;
@@ -145,7 +144,7 @@ namespace iganet {
           for (short_t j=0; j<parDim_; ++j)
             size *= ncoeffs_[j];
 
-          coeffs_[i] = torch::rand(size, options_);
+          coeffs_[i] = torch::rand(size, core<real_t>::options_);
         }
         break;
       }
@@ -358,7 +357,7 @@ namespace iganet {
         for (int64_t i=0; i<ncoeffs_[0]; ++i) {
           auto c = transformation( std::array<real_t,1>{i/real_t(ncoeffs_[0]-1)} );
           for (short_t d=0; d<geoDim_; ++d)
-            coeffs_[d][i] = c[d];
+            coeffs_[d].detach()[i] = c[d];
         }
       }
 
@@ -367,7 +366,7 @@ namespace iganet {
           for (int64_t j=0; j<ncoeffs_[1]; ++j) {
             auto c = transformation( std::array<real_t,2>{i/real_t(ncoeffs_[0]-1), j/real_t(ncoeffs_[1]-1)} );
             for (short_t d=0; d<geoDim_; ++d)
-              coeffs_[d][i*ncoeffs_[1]+j] = c[d];
+              coeffs_[d].detach()[i*ncoeffs_[1]+j] = c[d];
           }
         }
       }
@@ -378,7 +377,7 @@ namespace iganet {
             for (int64_t k=0; k<ncoeffs_[2]; ++k) {
               auto c = transformation( std::array<real_t,3>{i/real_t(ncoeffs_[0]-1), j/real_t(ncoeffs_[1]-1), k/real_t(ncoeffs_[2]-1)} );
               for (short_t d=0; d<geoDim_; ++d)
-                coeffs_[d][i*ncoeffs_[1]*ncoeffs_[2]+j*ncoeffs_[2]+k] = c[d];
+                coeffs_[d].detach()[i*ncoeffs_[1]*ncoeffs_[2]+j*ncoeffs_[2]+k] = c[d];
             }
           }
         }
@@ -391,7 +390,7 @@ namespace iganet {
               for (int64_t l=0; l<ncoeffs_[3]; ++l) {
                 auto c = transformation( std::array<real_t,4>{i/real_t(ncoeffs_[0]-1), j/real_t(ncoeffs_[1]-1), k/real_t(ncoeffs_[2]-1), l/real_t(ncoeffs_[3]-1)} );
                 for (short_t d=0; d<geoDim_; ++d)
-                  coeffs_[d][i*ncoeffs_[1]*ncoeffs_[2]*ncoeffs_[3]+j*ncoeffs_[2]*ncoeffs_[3]+k*ncoeffs_[3]+l] = c[d];
+                  coeffs_[d].detach()[i*ncoeffs_[1]*ncoeffs_[2]*ncoeffs_[3]+j*ncoeffs_[2]*ncoeffs_[3]+k*ncoeffs_[3]+l] = c[d];
               }
             }
           }
@@ -629,7 +628,6 @@ namespace iganet {
       
       else {
         throw std::runtime_error("Degrees higher than 5 are not implemented");
-        return torch::eye(1);
       }
       
     }

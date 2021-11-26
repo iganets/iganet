@@ -51,5 +51,19 @@ namespace iganet {
     
     return result;
   }
+
+  template<typename real_t>
+  class core {
+  public:
+    core()
+      : options_(torch::TensorOptions()
+                 .dtype(dtype<real_t>())
+                 .device(torch::cuda::is_available() ? torch::kCUDA : torch::kCPU)
+                 .requires_grad(true))
+    {}
+
+    // Tensor options
+    const torch::TensorOptions options_;
+  };
   
 } // namespace iganet

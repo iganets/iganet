@@ -62,7 +62,7 @@ namespace iganet {
   };
   
   template<typename real_t, short_t... Degrees>
-  class IgANet
+  class IgANet : public core<real_t>
   {
   private:
     // Dimension of the differential equation
@@ -86,9 +86,6 @@ namespace iganet {
     // IgANet generator
     IgANetGenerator<real_t> net_;
 
-    // Torch device
-    torch::Device device_;
-    
   public:
     // Constructor: layers + bspline (same for all)
     IgANet(const std::vector<int64_t>& layers,
@@ -102,32 +99,31 @@ namespace iganet {
            const std::array<int64_t,dim_>& geo_bspline,
            const std::array<int64_t,dim_>& rhs_bspline,
            const std::array<int64_t,dim_>& sol_bspline)
-      :
-      device_(torch::cuda::is_available() ? torch::kCUDA : torch::kCPU),
-      
-      /* Construct the different BSpline objects individually */
-      geo_(geo_bspline, BSplineInit::linear),
-      rhs_(rhs_bspline, BSplineInit::ones),
-      sol_(sol_bspline, BSplineInit::random),
-
-      /* Construct one large tensor comprising all BSpline object's
-         coefficient vectors - we need this complicated construction
-         to first concatenate the multiple std::array<torch::Tensor,*>
-         objects into a single std::array<torch::Tensor,*> object and
-         then initialize a new large torch::Tensor with its data */
-      input__(torch::concat(
-                            concat(geo_.coeffs(),
-                                   rhs_.coeffs(),
-                                   std::array<torch::Tensor,1>({torch::ones({dim_})}))
-                            )
-              ),
-      
-      /* Construct the deep neural network with the large tensor as
-         input and the coefficient vector of the solution's BSpline
-         object as output */
-      net_(concat(std::vector<int64_t>{static_cast<int64_t>(input__.size(0))},
-                  layers,
-                  std::vector<int64_t>{sol_.ncoeffs()}))
+      : core<real_t>(),
+        
+        /* Construct the different BSpline objects individually */
+        geo_(geo_bspline, BSplineInit::linear),
+        rhs_(rhs_bspline, BSplineInit::ones),
+        sol_(sol_bspline, BSplineInit::random),
+        
+        /* Construct one large tensor comprising all BSpline object's
+           coefficient vectors - we need this complicated construction
+           to first concatenate the multiple std::array<torch::Tensor,*>
+           objects into a single std::array<torch::Tensor,*> object and
+           then initialize a new large torch::Tensor with its data */
+        input__(torch::concat(
+                              concat(geo_.coeffs(),
+                                     rhs_.coeffs(),
+                                     std::array<torch::Tensor,1>({torch::ones({dim_}, core<real_t>::options_)}))
+                              )
+                ),
+        
+        /* Construct the deep neural network with the large tensor as
+           input and the coefficient vector of the solution's BSpline
+           object as output */
+        net_(concat(std::vector<int64_t>{static_cast<int64_t>(input__.size(0))},
+                    layers,
+                    std::vector<int64_t>{sol_.ncoeffs()}))
     {
       // Now that everything is in placed we swap the coefficient
       // vectors of the BSpline objects with views on parts of the one
@@ -151,10 +147,6 @@ namespace iganet {
       input_ = input__.index({torch::indexing::Slice(count,
                                                      count+=dim_,
                                                      1)});
-
-      // Finally, we move the data and the network model onto the GPU (if available)
-      input__.to(device_);
-      net_->to(device_);
     }
 
     // Returns a constant reference to the B-spline representation of the geometry
@@ -261,8 +253,6 @@ namespace iganet {
            X[j][i] = x[i][j].template item<real_t>();
            Y[j][i] = y[i][j].template item<real_t>();
            C[j][i] = c[i][j].template item<real_t>();
-
-           //std::cout << sol_.eval( torch::Tensor{x[i][j], y[i][j]} ) << std::endl;
          }
         
         // Plot control net
