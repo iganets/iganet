@@ -53,8 +53,9 @@ namespace iganet {
 
   public:
     // Constructor: number of knots
-    BSpline(std::array<int64_t,parDim_> nknots, BSplineInit init = BSplineInit::zeros)
+    BSpline(std::array<int64_t,parDim_> ncoeffs, BSplineInit init = BSplineInit::zeros)
       : core<real_t>(),
+        ncoeffs_(ncoeffs),
         one_(torch::ones(1, core<real_t>::options_)),
         zero_(torch::zeros(1, core<real_t>::options_))
     {
@@ -66,9 +67,9 @@ namespace iganet {
           for (int64_t j=0; j<degrees_[i]; ++j)
             kv.push_back(static_cast<real_t>(0));
 
-          for (int64_t j=0; j<nknots[i]; ++j)
-            kv.push_back(static_cast<real_t>(j/real_t(nknots[i]-1)));
-
+          for (int64_t j=0; j<ncoeffs[i]-degrees_[i]+1; ++j)
+            kv.push_back(static_cast<real_t>(j/real_t(ncoeffs[i]-degrees_[i])));
+          
           for (int64_t j=0; j<degrees_[i]; ++j)
             kv.push_back(static_cast<real_t>(1));
 
@@ -76,10 +77,7 @@ namespace iganet {
                                        kv.size(), core<real_t>::options_).clone();
 
           // Store the dimension of the knot vector
-          nknots_[i] = knots_[i].size(0);
-
-          // Store the dimension of the coefficient vector
-          ncoeffs_[i] = nknots_[i]-degrees_[i];
+          nknots_[i] = knots_[i].size(0);                   
         }
 
       // Create coefficies of the control net
@@ -268,7 +266,18 @@ namespace iganet {
       return geoDim_;
     }
 
-    // Returns all B-spline basis functions that are not zero in xi
+    // Returns the value if the B-spline object in xi.
+    //
+    // To this end, the function first determines the interval
+    // \f$[knot[i], knot[i+1])\f$ and evaluates the basis functions
+    // \f$[(B_{i-d,d},\dots,B_{i,d}]\f$, where \f$d\f$ is the degree
+    // of the B-spline and then multiplies this row vector by the
+    // column vector of control points \f$(c_{i-d},\dots,c_{i})\f$.
+    //
+    // This functions applies the above procedure to the tensor
+    // product of B-splines in all spatial dimension. For a detailed
+    // descriptions of this approach see the following document
+    // https://www.uio.no/studier/emner/matnat/ifi/nedlagte-emner/INF-MAT5340/v05/undervisningsmateriale/kap2-new.pdf
     inline torch::Tensor eval(const torch::Tensor& xi) const
     {
       if constexpr (parDim_==1) {
@@ -279,7 +288,11 @@ namespace iganet {
                                                {
                                                  torch::indexing::Slice(i-degrees_[0], i+1, 1)
                                                }
-                                               ).flatten().view({degrees_[0]+1,1}));
+                                               ).flatten().view(
+                                                                {
+                                                                  ((xi[0]< one_[0]).template item<bool>() ? degrees_[0]+1 : degrees_[0])
+                                                                }
+                                                                ));
       }
 
       else if constexpr (parDim_==2) {
@@ -295,13 +308,19 @@ namespace iganet {
                                                  torch::indexing::Slice(i-degrees_[0], i+1, 1),
                                                  torch::indexing::Slice(j-degrees_[1], j+1, 1)
                                                }
-                                               ).flatten().view({(degrees_[0]+1)*(degrees_[1]+1),1}));
+                                               ).flatten().view(
+                                                                {
+                                                                  ((xi[0]< one_[0]).template item<bool>() ? degrees_[0]+1 : degrees_[0])
+                                                                  *
+                                                                  ((xi[1]< one_[0]).template item<bool>() ? degrees_[1]+1 : degrees_[1])
+                                                                }
+                                                                ));
       }
 
       else if constexpr (parDim_==3) {
         int64_t i = int64_t(xi[0].item<real_t>()*(nknots_[0]-2*degrees_[0]-1)+degrees_[0]);
         int64_t j = int64_t(xi[1].item<real_t>()*(nknots_[1]-2*degrees_[1]-1)+degrees_[1]);
-        int64_t k = int64_t(xi[2].item<real_t>()*(nknots_[2]-2*degrees_[2]-2)+degrees_[2]);
+        int64_t k = int64_t(xi[2].item<real_t>()*(nknots_[2]-2*degrees_[2]-1)+degrees_[2]);
         return
           torch::matmul(torch::kron(
                                     torch::kron(
@@ -316,7 +335,15 @@ namespace iganet {
                                                  torch::indexing::Slice(j-degrees_[1], j+1, 1),
                                                  torch::indexing::Slice(k-degrees_[2], k+1, 1)
                                                }
-                                               ).flatten().view({(degrees_[0]+1)*(degrees_[1]+1)*(degrees_[2]+1),1}));
+                                               ).flatten().view(
+                                                                {
+                                                                  ((xi[0]< one_[0]).template item<bool>() ? degrees_[0]+1 : degrees_[0])
+                                                                  *
+                                                                  ((xi[1]< one_[0]).template item<bool>() ? degrees_[1]+1 : degrees_[1])
+                                                                  *
+                                                                  ((xi[2]< one_[0]).template item<bool>() ? degrees_[2]+1 : degrees_[2])
+                                                                }
+                                                                ));
       }
 
       else if constexpr (parDim_==4) {
@@ -342,7 +369,17 @@ namespace iganet {
                                                  torch::indexing::Slice(k-degrees_[2], k+1, 1),
                                                  torch::indexing::Slice(l-degrees_[3], l+1, 1)
                                                }
-                                               ).flatten().view({(degrees_[0]+1)*(degrees_[1]+1)*(degrees_[2]+1)*(degrees_[3]+1),1}));
+                                               ).flatten().view(
+                                                                {
+                                                                  ((xi[0]< one_[0]).template item<bool>() ? degrees_[0]+1 : degrees_[0])
+                                                                  *
+                                                                  ((xi[1]< one_[0]).template item<bool>() ? degrees_[1]+1 : degrees_[1])
+                                                                  *
+                                                                  ((xi[2]< one_[0]).template item<bool>() ? degrees_[2]+1 : degrees_[2])
+                                                                  *
+                                                                  ((xi[3]< one_[0]).template item<bool>() ? degrees_[3]+1 : degrees_[3])
+                                                                }
+                                                                ));
       }
 
       else {
@@ -407,7 +444,7 @@ namespace iganet {
     inline void pretty_print(std::ostream& os = std::cout) const
     {
       os << name()
-         << "(\nparDim=" << parDim_
+         << "(\n  parDim=" << parDim_
          << ", geoDim=" << geoDim_
 
          << ", degrees=";
@@ -470,9 +507,9 @@ namespace iganet {
           :
           torch::stack(
                        {
-                         zero_[0], one_[0]
+                         one_[0]
                        }
-                       ).view({1,2})
+                       )
           ;
       }
 
@@ -495,9 +532,9 @@ namespace iganet {
           :
           torch::stack(
                        {
-                         zero_[0], zero_[0], one_[0]
+                         zero_[0], one_[0]
                        }
-                       ).view({1,3})
+                       ).view({1,2})
           ;
       }
 
@@ -527,9 +564,9 @@ namespace iganet {
           :
           torch::stack(
                        {
-                         zero_[0], zero_[0], zero_[0], one_[0]
+                         zero_[0], zero_[0], one_[0]
                        }
-                       ).view({1,4})
+                       ).view({1,3})
           ;
       }
 
@@ -568,9 +605,9 @@ namespace iganet {
           :
           torch::stack(
                        {
-                         zero_[0], zero_[0], zero_[0], zero_[0], one_[0]
+                         zero_[0], zero_[0], zero_[0], one_[0]
                        }
-                       ).view({1,5})
+                       ).view({1,4})
           ;
       }
 
@@ -620,9 +657,9 @@ namespace iganet {
           :
           torch::stack(
                        {
-                         zero_[0], zero_[0], zero_[0], zero_[0], zero_[0], one_[0]
+                         zero_[0], zero_[0], zero_[0], zero_[0], one_[0]
                        }
-                       ).view({1,6})
+                       ).view({1,5})
           ;
       } 
       
