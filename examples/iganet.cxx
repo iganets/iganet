@@ -7,7 +7,7 @@ int main()
   iganet::core<double> core;
   
   iganet::IgANet<double,5,5,5,5> net( {50,30,70}, // Number of neurons per layers
-                                      {6,6,6,6}       // Number of B-spline coefficients
+                                      {6,6,6,6}   // Number of B-spline coefficients
                                   );
 
   std::cout << net << std::endl;

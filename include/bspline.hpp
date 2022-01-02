@@ -13,14 +13,13 @@ namespace iganet {
 
   enum class BSplineInit
     {
-      zeros,
-      ones,
-      linear,
-      random
+      zeros  = 0,
+      ones   = 1,
+      linear = 2,
+      random = 3
     };
 
-  template<typename real_t,
-           short_t GeoDim, short_t... Degrees>
+  template<typename real_t, short_t GeoDim, short_t... Degrees>
   class BSpline : public core<real_t>
   {
   private:
@@ -31,19 +30,19 @@ namespace iganet {
     static constexpr const short_t geoDim_ = GeoDim;
 
     // Array storing the degrees per dimension
-    static constexpr const std::array<short_t,parDim_> degrees_ = { Degrees... };
+    static constexpr const std::array<short_t, parDim_> degrees_ = { Degrees... };
 
     // Array storing the knot vectors
-    std::array<torch::Tensor,parDim_> knots_;
+    std::array<torch::Tensor, parDim_> knots_;
 
     // Array storing the dimensions of the knot vectors
-    std::array<int64_t,parDim_> nknots_;
+    std::array<int64_t, parDim_> nknots_;
 
     // Array storing the coefficients of the control net
-    std::array<torch::Tensor,geoDim_> coeffs_;
+    std::array<torch::Tensor, geoDim_> coeffs_;
 
     // Array storing the dimensions of the coefficients of the control net
-    std::array<int64_t,parDim_> ncoeffs_;
+    std::array<int64_t, parDim_> ncoeffs_;
 
     // String storing the full qualified name of the object
     mutable at::optional<std::string> name_;
@@ -53,7 +52,7 @@ namespace iganet {
 
   public:
     // Constructor: number of knots
-    BSpline(std::array<int64_t,parDim_> ncoeffs, BSplineInit init = BSplineInit::zeros)
+    BSpline(std::array<int64_t, parDim_> ncoeffs, BSplineInit init = BSplineInit::zeros)
       : core<real_t>(),
         ncoeffs_(ncoeffs),
         one_(torch::ones(1, core<real_t>::options_)),
@@ -153,7 +152,7 @@ namespace iganet {
     }
 
     // Returns a constant reference to the array of degrees
-    inline static constexpr const std::array<short_t,parDim_>& degrees()
+    inline static constexpr const std::array<short_t, parDim_>& degrees()
     {
       return degrees_;
     }
@@ -166,7 +165,7 @@ namespace iganet {
     }
 
     // Returns a constant reference to the array of knot vectors
-    inline const std::array<torch::Tensor,parDim_>& knots() const
+    inline const std::array<torch::Tensor, parDim_>& knots() const
     {
       return knots_;
     }
@@ -179,7 +178,7 @@ namespace iganet {
     }
 
     // Returns a non-constant reference to the array of knot vectors
-    inline std::array<torch::Tensor,parDim_>& knots()
+    inline std::array<torch::Tensor, parDim_>& knots()
     {
       return knots_;
     }
@@ -192,7 +191,7 @@ namespace iganet {
     }
 
     // Returns a constant reference to the array of knot vector dimensions
-    inline const std::array<int64_t,parDim_>& nknots() const
+    inline const std::array<int64_t, parDim_>& nknots() const
     {
       return nknots_;
     }
@@ -205,7 +204,7 @@ namespace iganet {
     }
 
     // Returns a constant reference to the array of coefficients
-    inline const std::array<torch::Tensor,geoDim_>& coeffs() const
+    inline const std::array<torch::Tensor, geoDim_>& coeffs() const
     {
       return coeffs_;
     }
@@ -226,7 +225,7 @@ namespace iganet {
     }
 
     // Returns a non-constant reference to the array of coefficients
-    inline std::array<torch::Tensor,geoDim_>& coeffs()
+    inline std::array<torch::Tensor, geoDim_>& coeffs()
     {
       return coeffs_;
     }
@@ -266,24 +265,40 @@ namespace iganet {
       return geoDim_;
     }
 
-    // Returns the value if the B-spline object in xi.
+    // Returns the value of the B-spline object in the points \f$ \xi \f$.
     //
     // To this end, the function first determines the interval
-    // \f$[knot[i], knot[i+1])\f$ and evaluates the basis functions
-    // \f$[(B_{i-d,d},\dots,B_{i,d}]\f$, where \f$d\f$ is the degree
-    // of the B-spline and then multiplies this row vector by the
-    // column vector of control points \f$(c_{i-d},\dots,c_{i})\f$.
+    // \f$
+    //   [knot[i], knot[i+1])
+    // \f$    
+    // that contains the point \f$ \xi \f$ and evaluates the vector of
+    // basis functions (or their derivatives)
+    // \f$
+    //   \left[ D^r B_{i-d,d}, \dots, D^r B_{i,d} \right]
+    // \f$,
+    // where
+    // \f$
+    //   d
+    // \f$    
+    // is the degree of the B-spline and
+    // \f$
+    //   r
+    // \f$    
+    // denotes the requested derivative. Next, the function multiplies
+    // the above row vector by the column vector of control points    
+    // \f$
+    //   \left[ c_{i-d}, \dots, c_{i} \right]^\top
+    // \f$.
     //
     // This functions applies the above procedure to the tensor
-    // product of B-splines in all spatial dimension. For a detailed
-    // descriptions of this approach see the following document
-    // https://www.uio.no/studier/emner/matnat/ifi/nedlagte-emner/INF-MAT5340/v05/undervisningsmateriale/kap2-new.pdf
+    // product of B-splines in all spatial dimensions.
     inline torch::Tensor eval(const torch::Tensor& xi) const
     {
-      if constexpr (parDim_==1) {
+      // 1D
+      if constexpr (parDim_ == 1) {
         int64_t i = int64_t(xi[0].item<real_t>()*(nknots_[0]-2*degrees_[0]-1)+degrees_[0]);
         return
-          torch::matmul(eval_<degrees_[0],0>(i, xi[0]),
+          torch::matmul(eval_impl<degrees_[0],0>(i, xi[0]),
                         coeffs<false>(0).index(
                                                {
                                                  torch::indexing::Slice(i-degrees_[0], i+1, 1)
@@ -295,13 +310,14 @@ namespace iganet {
                                                                 ));
       }
 
-      else if constexpr (parDim_==2) {
+      // 2D
+      else if constexpr (parDim_ == 2) {
         int64_t i = int64_t(xi[0].item<real_t>()*(nknots_[0]-2*degrees_[0]-1)+degrees_[0]);
         int64_t j = int64_t(xi[1].item<real_t>()*(nknots_[1]-2*degrees_[1]-1)+degrees_[1]);
         return
           torch::matmul(torch::kron(
-                                    eval_<degrees_[0],0>(i, xi[0]),
-                                    eval_<degrees_[1],1>(j, xi[1])
+                                    eval_impl<degrees_[0],0>(i, xi[0]),
+                                    eval_impl<degrees_[1],1>(j, xi[1])
                                     ),
                         coeffs<false>(0).index(
                                                {
@@ -317,17 +333,18 @@ namespace iganet {
                                                                 ));
       }
 
-      else if constexpr (parDim_==3) {
+      // 3D
+      else if constexpr (parDim_ == 3) {
         int64_t i = int64_t(xi[0].item<real_t>()*(nknots_[0]-2*degrees_[0]-1)+degrees_[0]);
         int64_t j = int64_t(xi[1].item<real_t>()*(nknots_[1]-2*degrees_[1]-1)+degrees_[1]);
         int64_t k = int64_t(xi[2].item<real_t>()*(nknots_[2]-2*degrees_[2]-1)+degrees_[2]);
         return
           torch::matmul(torch::kron(
                                     torch::kron(
-                                                eval_<degrees_[0],0>(i, xi[0]),
-                                                eval_<degrees_[1],1>(j, xi[1])
+                                                eval_impl<degrees_[0],0>(i, xi[0]),
+                                                eval_impl<degrees_[1],1>(j, xi[1])
                                                 ),
-                                    eval_<degrees_[2],2>(k, xi[2])
+                                    eval_impl<degrees_[2],2>(k, xi[2])
                                     ),
                         coeffs<false>(0).index(
                                                {
@@ -346,7 +363,8 @@ namespace iganet {
                                                                 ));
       }
 
-      else if constexpr (parDim_==4) {
+      // 4D
+      else if constexpr (parDim_ == 4) {
         int64_t i = int64_t(xi[0].item<real_t>()*(nknots_[0]-2*degrees_[0]-1)+degrees_[0]);
         int64_t j = int64_t(xi[1].item<real_t>()*(nknots_[1]-2*degrees_[1]-1)+degrees_[1]);
         int64_t k = int64_t(xi[2].item<real_t>()*(nknots_[2]-2*degrees_[2]-1)+degrees_[2]);
@@ -354,12 +372,12 @@ namespace iganet {
         return
           torch::matmul(torch::kron(
                                     torch::kron(
-                                                eval_<degrees_[0],0>(i, xi[0]),
-                                                eval_<degrees_[1],1>(j, xi[1])
+                                                eval_impl<degrees_[0],0>(i, xi[0]),
+                                                eval_impl<degrees_[1],1>(j, xi[1])
                                                 ),
                                     torch::kron(
-                                                eval_<degrees_[2],2>(k, xi[2]),
-                                                eval_<degrees_[3],3>(l, xi[3])
+                                                eval_impl<degrees_[2],2>(k, xi[2]),
+                                                eval_impl<degrees_[3],3>(l, xi[3])
                                                 )
                                     ),
                         coeffs<false>(0).index(
@@ -388,9 +406,10 @@ namespace iganet {
     }
 
     // Transforms the coefficients based on the given mapping
-    inline BSpline& transform(const std::function< std::array<real_t,geoDim_> (const std::array<real_t,parDim_>& )> transformation)
+    inline BSpline& transform(const std::function<std::array<real_t, geoDim_> (const std::array<real_t, parDim_>& )> transformation)
     {
-      if constexpr (parDim_==1) {
+      // 1D
+      if constexpr (parDim_ == 1) {
         for (int64_t i=0; i<ncoeffs_[0]; ++i) {
           auto c = transformation( std::array<real_t,1>{i/real_t(ncoeffs_[0]-1)} );
           for (short_t d=0; d<geoDim_; ++d)
@@ -398,7 +417,8 @@ namespace iganet {
         }
       }
 
-      else if constexpr (parDim_==2) {
+      // 2D
+      else if constexpr (parDim_ == 2) {
         for (int64_t i=0; i<ncoeffs_[0]; ++i) {
           for (int64_t j=0; j<ncoeffs_[1]; ++j) {
             auto c = transformation( std::array<real_t,2>{i/real_t(ncoeffs_[0]-1), j/real_t(ncoeffs_[1]-1)} );
@@ -407,8 +427,9 @@ namespace iganet {
           }
         }
       }
-
-      else if constexpr (parDim_==3) {
+      
+      // 3D
+      else if constexpr (parDim_ == 3) {
         for (int64_t i=0; i<ncoeffs_[0]; ++i) {
           for (int64_t j=0; j<ncoeffs_[1]; ++j) {
             for (int64_t k=0; k<ncoeffs_[2]; ++k) {
@@ -420,7 +441,8 @@ namespace iganet {
         }
       }
 
-      else if constexpr (parDim_==4) {
+      // 4D
+      else if constexpr (parDim_ == 4) {
         for (int64_t i=0; i<ncoeffs_[0]; ++i) {
           for (int64_t j=0; j<ncoeffs_[1]; ++j) {
             for (int64_t k=0; k<ncoeffs_[2]; ++k) {
@@ -491,10 +513,29 @@ namespace iganet {
 
   private:
 
+    // Returns the values of the vector of B-spline basis function (or
+    // their derivatives) evaluated in the point \f$ \xi \f$    
+    // \f$
+    //   \left[ D^r B_{i-d,d}, \dots, D^r B_{i,d} \right]
+    // \f$,
+    // where
+    // \f$
+    //   d
+    // \f$    
+    // is the degree of the B-spline and
+    // \f$
+    //   r
+    // \f$    
+    // denotes the requested derivative.
+    //
+    // For a detailed descriptions see Section 2.3 in
+    // https://www.uio.no/studier/emner/matnat/ifi/nedlagte-emner/INF-MAT5340/v05/undervisningsmateriale/kap2-new.pdf
+    // and Section 3.2 in
+    // https://www.uio.no/studier/emner/matnat/ifi/nedlagte-emner/INF-MAT5340/v05/undervisningsmateriale/kap3-new.pdf
     template<short_t degree, short_t dim>
-    inline torch::Tensor eval_(int64_t i, const torch::Tensor& xi) const
+    inline torch::Tensor eval_impl(int64_t i, const torch::Tensor& xi) const
     {
-      if constexpr (degree==1) {
+      if constexpr (degree == 1) {
         return
           (xi < one_[0]).template item<bool>()
           ?
@@ -513,11 +554,11 @@ namespace iganet {
           ;
       }
 
-      else if constexpr (degree==2) {
+      else if constexpr (degree == 2) {
         return
           (xi < one_[0]).template item<bool>()
           ?
-          torch::matmul(eval_<1,dim>(i,xi),
+          torch::matmul(eval_impl<1,dim>(i,xi),
                         torch::stack(
                                      {
                                        ( knots_[dim][i+1]-xi               ) / ( knots_[dim][i+1]-knots_[dim][i-1] ),
@@ -538,11 +579,11 @@ namespace iganet {
           ;
       }
 
-      else if constexpr (degree==3) {
+      else if constexpr (degree == 3) {
         return
           (xi < one_[0]).template item<bool>()
           ?
-          torch::matmul(eval_<2,dim>(i,xi),
+          torch::matmul(eval_impl<2,dim>(i,xi),
                         torch::stack(
                                      {
                                        ( knots_[dim][i+1]-xi               ) / ( knots_[dim][i+1]-knots_[dim][i-2] ),
@@ -570,11 +611,11 @@ namespace iganet {
           ;
       }
 
-      else if constexpr (degree==4) {
+      else if constexpr (degree == 4) {
         return
           (xi < one_[0]).template item<bool>()
           ?
-          torch::matmul(eval_<3,dim>(i,xi),
+          torch::matmul(eval_impl<3,dim>(i,xi),
                         torch::stack(
                                      {
                                        ( knots_[dim][i+1]-xi               ) / ( knots_[dim][i+1]-knots_[dim][i-3] ),
@@ -611,11 +652,11 @@ namespace iganet {
           ;
       }
 
-      else if constexpr (degree==5) {
+      else if constexpr (degree == 5) {
         return
           (xi < one_[0]).template item<bool>()
           ?
-          torch::matmul(eval_<4,dim>(i,xi),
+          torch::matmul(eval_impl<4,dim>(i,xi),
                         torch::stack(
                                      {
                                        ( knots_[dim][i+1]-xi               ) / ( knots_[dim][i+1]-knots_[dim][i-4] ),
