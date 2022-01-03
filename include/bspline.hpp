@@ -11,7 +11,7 @@
 
 namespace iganet {
 
-  enum class BSplineInit
+  enum class BSplineInit : short_t
     {
       zeros  = 0,
       ones   = 1,
@@ -19,6 +19,27 @@ namespace iganet {
       random = 3
     };
 
+  enum class BSplineDeriv : short_t
+    {
+      func   =    0,
+      dx     =    1,
+      dx2    =    2,
+      dx3    =    3,
+      dx4    =    4,
+      dy     =   10,
+      dy2    =   20,
+      dy3    =   30,
+      dy4    =   40,
+      dz     =  100,
+      dz2    =  200,
+      dz3    =  300,
+      dz4    =  400,
+      dt     = 1000,
+      dt2    = 2000,
+      dt3    = 3000,
+      dt4    = 4000
+    };
+  
   template<typename real_t, short_t GeoDim, short_t... Degrees>
   class BSpline : public core<real_t>
   {
@@ -292,13 +313,14 @@ namespace iganet {
     //
     // This functions applies the above procedure to the tensor
     // product of B-splines in all spatial dimensions.
+    template<BSplineDeriv deriv = BSplineDeriv::func>
     inline torch::Tensor eval(const torch::Tensor& xi) const
     {
       // 1D
       if constexpr (parDim_ == 1) {
         int64_t i = int64_t(xi[0].item<real_t>()*(nknots_[0]-2*degrees_[0]-1)+degrees_[0]);
         return
-          torch::matmul(eval_impl<degrees_[0],0>(i, xi[0]),
+          torch::matmul(eval_impl<degrees_[0],0,(short_t)deriv%10>(i, xi[0]),
                         coeffs<false>(0).index(
                                                {
                                                  torch::indexing::Slice(i-degrees_[0], i+1, 1)
@@ -316,8 +338,8 @@ namespace iganet {
         int64_t j = int64_t(xi[1].item<real_t>()*(nknots_[1]-2*degrees_[1]-1)+degrees_[1]);
         return
           torch::matmul(torch::kron(
-                                    eval_impl<degrees_[0],0>(i, xi[0]),
-                                    eval_impl<degrees_[1],1>(j, xi[1])
+                                    eval_impl<degrees_[0],0, (short_t)deriv    %10>(i, xi[0]),
+                                    eval_impl<degrees_[1],1,((short_t)deriv/10)%10>(j, xi[1])
                                     ),
                         coeffs<false>(0).index(
                                                {
@@ -341,10 +363,10 @@ namespace iganet {
         return
           torch::matmul(torch::kron(
                                     torch::kron(
-                                                eval_impl<degrees_[0],0>(i, xi[0]),
-                                                eval_impl<degrees_[1],1>(j, xi[1])
+                                                eval_impl<degrees_[0],0, (short_t)deriv    %10>(i, xi[0]),
+                                                eval_impl<degrees_[1],1,((short_t)deriv/10)%10>(j, xi[1])
                                                 ),
-                                    eval_impl<degrees_[2],2>(k, xi[2])
+                                    eval_impl<degrees_[2],2,((short_t)deriv/100)%10>(k, xi[2])
                                     ),
                         coeffs<false>(0).index(
                                                {
@@ -372,12 +394,12 @@ namespace iganet {
         return
           torch::matmul(torch::kron(
                                     torch::kron(
-                                                eval_impl<degrees_[0],0>(i, xi[0]),
-                                                eval_impl<degrees_[1],1>(j, xi[1])
+                                                eval_impl<degrees_[0],0, (short_t)deriv      %10>(i, xi[0]),
+                                                eval_impl<degrees_[1],1,((short_t)deriv/  10)%10>(j, xi[1])
                                                 ),
                                     torch::kron(
-                                                eval_impl<degrees_[2],2>(k, xi[2]),
-                                                eval_impl<degrees_[3],3>(l, xi[3])
+                                                eval_impl<degrees_[2],2,((short_t)deriv/ 100)%10>(k, xi[2]),
+                                                eval_impl<degrees_[3],3,((short_t)deriv/1000)%10>(l, xi[3])
                                                 )
                                     ),
                         coeffs<false>(0).index(
@@ -532,178 +554,387 @@ namespace iganet {
     // https://www.uio.no/studier/emner/matnat/ifi/nedlagte-emner/INF-MAT5340/v05/undervisningsmateriale/kap2-new.pdf
     // and Section 3.2 in
     // https://www.uio.no/studier/emner/matnat/ifi/nedlagte-emner/INF-MAT5340/v05/undervisningsmateriale/kap3-new.pdf
-    template<short_t degree, short_t dim>
+    template<short_t degree, short_t dim, short_t deriv>
     inline torch::Tensor eval_impl(int64_t i, const torch::Tensor& xi) const
     {
+      // linear B-Splines
       if constexpr (degree == 1) {
-        return
-          (xi < one_[0]).template item<bool>()
-          ?
-          torch::stack(
-                       {
-                         ( knots_[dim][i+1]-xi             ) / ( knots_[dim][i+1]-knots_[dim][i] ),
-                         ( xi              -knots_[dim][i] ) / ( knots_[dim][i+1]-knots_[dim][i] )
-                       }
-                       ).view({1,2})
-          :
-          torch::stack(
-                       {
-                         one_[0]
-                       }
-                       )
-          ;
+
+        // zero-th derivative
+        if constexpr (deriv == 0) {
+          return
+            (xi < one_[0]).template item<bool>()
+            ?
+            torch::stack(
+                         {
+                           ( knots_[dim][i+1]-xi             ) / ( knots_[dim][i+1]-knots_[dim][i] ),
+                           ( xi              -knots_[dim][i] ) / ( knots_[dim][i+1]-knots_[dim][i] )
+                         }
+                         ).view({1,2})
+            :
+            torch::stack(
+                         {
+                           one_[0]
+                         }
+                         )
+            ;
+        }
+        
+        // first derivative
+        else if constexpr (deriv == 1) {
+          return
+            (xi < one_[0]).template item<bool>()
+            ?
+            torch::stack(
+                         {
+                           -one_[0] / ( knots_[dim][i+1]-knots_[dim][i] ),
+                            one_[0] / ( knots_[dim][i+1]-knots_[dim][i] )
+                         }
+                         ).view({1,2})
+            :
+            torch::stack(
+                         {
+                           one_[0]
+                         }
+                         )
+            ;
+        }
+        
+        // second or higher-order derivatives
+        else {
+          return torch::stack(
+                              {
+                                zero_[0],
+                                zero_[0]
+                              }
+                              ).view({1,2});
+        }
       }
-
-      else if constexpr (degree == 2) {
-        return
-          (xi < one_[0]).template item<bool>()
-          ?
-          torch::matmul(eval_impl<1,dim>(i,xi),
-                        torch::stack(
-                                     {
-                                       ( knots_[dim][i+1]-xi               ) / ( knots_[dim][i+1]-knots_[dim][i-1] ),
-                                       ( xi              -knots_[dim][i-1] ) / ( knots_[dim][i+1]-knots_[dim][i-1] ),
-                                       zero_[0],
-
-                                       zero_[0],
-                                       ( knots_[dim][i+2]-xi             ) / ( knots_[dim][i+2]-knots_[dim][i] ),
-                                       ( xi              -knots_[dim][i] ) / ( knots_[dim][i+2]-knots_[dim][i] )
-                                     }
-                                     ).view({2,3}))
-          :
-          torch::stack(
-                       {
-                         zero_[0], one_[0]
-                       }
-                       ).view({1,2})
-          ;
-      }
-
-      else if constexpr (degree == 3) {
-        return
-          (xi < one_[0]).template item<bool>()
-          ?
-          torch::matmul(eval_impl<2,dim>(i,xi),
-                        torch::stack(
-                                     {
-                                       ( knots_[dim][i+1]-xi               ) / ( knots_[dim][i+1]-knots_[dim][i-2] ),
-                                       ( xi              -knots_[dim][i-2] ) / ( knots_[dim][i+1]-knots_[dim][i-2] ),
-                                       zero_[0],
-                                       zero_[0],
-
-                                       zero_[0],
-                                       ( knots_[dim][i+2]-xi               ) / ( knots_[dim][i+2]-knots_[dim][i-1] ),
-                                       ( xi              -knots_[dim][i-1] ) / ( knots_[dim][i+2]-knots_[dim][i-1] ),
-                                       zero_[0],
-
-                                       zero_[0],
-                                       zero_[0],
-                                       ( knots_[dim][i+3]-xi             ) / ( knots_[dim][i+3]-knots_[dim][i] ),
-                                       ( xi              -knots_[dim][i] ) / ( knots_[dim][i+3]-knots_[dim][i] )
-                                     }
-                                     ).view({3,4}))
-          :
-          torch::stack(
-                       {
-                         zero_[0], zero_[0], one_[0]
-                       }
-                       ).view({1,3})
-          ;
-      }
-
-      else if constexpr (degree == 4) {
-        return
-          (xi < one_[0]).template item<bool>()
-          ?
-          torch::matmul(eval_impl<3,dim>(i,xi),
-                        torch::stack(
-                                     {
-                                       ( knots_[dim][i+1]-xi               ) / ( knots_[dim][i+1]-knots_[dim][i-3] ),
-                                       ( xi              -knots_[dim][i-3] ) / ( knots_[dim][i+1]-knots_[dim][i-3] ),
-                                       zero_[0],
-                                       zero_[0],
-                                       zero_[0],
-                                       
-                                       zero_[0],
-                                       ( knots_[dim][i+2]-xi               ) / ( knots_[dim][i+2]-knots_[dim][i-2] ),
-                                       ( xi              -knots_[dim][i-2] ) / ( knots_[dim][i+2]-knots_[dim][i-2] ),
-                                       zero_[0],
-                                       zero_[0],
-                                       
-                                       zero_[0],
-                                       zero_[0],
-                                       ( knots_[dim][i+3]-xi               ) / ( knots_[dim][i+3]-knots_[dim][i-1] ),
-                                       ( xi              -knots_[dim][i-1] ) / ( knots_[dim][i+3]-knots_[dim][i-1] ),
-                                       zero_[0],
-                                       
-                                       zero_[0],
-                                       zero_[0],
-                                       zero_[0],
-                                       ( knots_[dim][i+4]-xi             ) / ( knots_[dim][i+4]-knots_[dim][i] ),
-                                       ( xi              -knots_[dim][i] ) / ( knots_[dim][i+4]-knots_[dim][i] )
-                                     }
-                                     ).view({4,5}))
-          :
-          torch::stack(
-                       {
-                         zero_[0], zero_[0], zero_[0], one_[0]
-                       }
-                       ).view({1,4})
-          ;
-      }
-
-      else if constexpr (degree == 5) {
-        return
-          (xi < one_[0]).template item<bool>()
-          ?
-          torch::matmul(eval_impl<4,dim>(i,xi),
-                        torch::stack(
-                                     {
-                                       ( knots_[dim][i+1]-xi               ) / ( knots_[dim][i+1]-knots_[dim][i-4] ),
-                                       ( xi              -knots_[dim][i-4] ) / ( knots_[dim][i+1]-knots_[dim][i-4] ),
-                                       zero_[0],
-                                       zero_[0],
-                                       zero_[0],
-                                       zero_[0],
-                                       
-                                       zero_[0],
-                                       ( knots_[dim][i+2]-xi               ) / ( knots_[dim][i+2]-knots_[dim][i-3] ),
-                                       ( xi              -knots_[dim][i-3] ) / ( knots_[dim][i+2]-knots_[dim][i-3] ),
-                                       zero_[0],
-                                       zero_[0],
-                                       zero_[0],
-                                       
-                                       zero_[0],
-                                       zero_[0],
-                                       ( knots_[dim][i+3]-xi               ) / ( knots_[dim][i+3]-knots_[dim][i-2] ),
-                                       ( xi              -knots_[dim][i-2] ) / ( knots_[dim][i+3]-knots_[dim][i-2] ),
-                                       zero_[0],
-                                       zero_[0],
-                                       
-                                       zero_[0],
-                                       zero_[0],
-                                       zero_[0],
-                                       ( knots_[dim][i+4]-xi               ) / ( knots_[dim][i+4]-knots_[dim][i-1] ),
-                                       ( xi              -knots_[dim][i-1] ) / ( knots_[dim][i+4]-knots_[dim][i-1] ),
-                                       zero_[0],
-
-                                       zero_[0],
-                                       zero_[0],
-                                       zero_[0],
-                                       zero_[0],
-                                       ( knots_[dim][i+5]-xi             ) / ( knots_[dim][i+5]-knots_[dim][i] ),
-                                       ( xi              -knots_[dim][i] ) / ( knots_[dim][i+5]-knots_[dim][i] )
-                                     }
-                                     ).view({5,6}))
-          :
-          torch::stack(
-                       {
-                         zero_[0], zero_[0], zero_[0], zero_[0], one_[0]
-                       }
-                       ).view({1,5})
-          ;
-      } 
       
+      // quadratic B-splines
+      else if constexpr (degree == 2) {
+
+        // zero-th derivative
+        if constexpr (deriv == 0) {
+          return
+            (xi < one_[0]).template item<bool>()
+            ?
+            torch::matmul(eval_impl<1,dim,0>(i,xi),
+                          torch::stack(
+                                       {
+                                         ( knots_[dim][i+1]-xi               ) / ( knots_[dim][i+1]-knots_[dim][i-1] ),
+                                         ( xi              -knots_[dim][i-1] ) / ( knots_[dim][i+1]-knots_[dim][i-1] ),
+                                         zero_[0],
+                                         
+                                         zero_[0],
+                                         ( knots_[dim][i+2]-xi             ) / ( knots_[dim][i+2]-knots_[dim][i] ),
+                                         ( xi              -knots_[dim][i] ) / ( knots_[dim][i+2]-knots_[dim][i] )
+                                       }
+                                       ).view({2,3}))
+            :
+            torch::stack(
+                         {
+                           zero_[0], one_[0]
+                         }
+                         ).view({1,2})
+            ;
+        }
+
+        // first or higher-order derivatives
+        else {
+          return
+            (xi < one_[0]).template item<bool>()
+            ?
+            torch::matmul(eval_impl<1,dim,deriv-1>(i,xi),
+                          torch::stack(
+                                       {
+                                         -one_[0] / ( knots_[dim][i+1]-knots_[dim][i-1] ),
+                                          one_[0] / ( knots_[dim][i+1]-knots_[dim][i-1] ),
+                                         zero_[0],
+                                         
+                                         zero_[0],
+                                         -one_[0] / ( knots_[dim][i+2]-knots_[dim][i] ),
+                                          one_[0] / ( knots_[dim][i+2]-knots_[dim][i] )
+                                       }
+                                       ).view({2,3}))
+            :
+            torch::stack(
+                         {
+                           zero_[0], one_[0]
+                         }
+                         ).view({1,2})
+            ;
+        }        
+      }
+
+      // cubic B-splines
+      else if constexpr (degree == 3) {
+
+        // zero-th derivative
+        if constexpr (deriv == 0) {
+          return
+            (xi < one_[0]).template item<bool>()
+            ?
+            torch::matmul(eval_impl<2,dim,0>(i,xi),
+                          torch::stack(
+                                       {
+                                         ( knots_[dim][i+1]-xi               ) / ( knots_[dim][i+1]-knots_[dim][i-2] ),
+                                         ( xi              -knots_[dim][i-2] ) / ( knots_[dim][i+1]-knots_[dim][i-2] ),
+                                         zero_[0],
+                                         zero_[0],
+                                         
+                                         zero_[0],
+                                         ( knots_[dim][i+2]-xi               ) / ( knots_[dim][i+2]-knots_[dim][i-1] ),
+                                         ( xi              -knots_[dim][i-1] ) / ( knots_[dim][i+2]-knots_[dim][i-1] ),
+                                         zero_[0],
+                                         
+                                         zero_[0],
+                                         zero_[0],
+                                         ( knots_[dim][i+3]-xi             ) / ( knots_[dim][i+3]-knots_[dim][i] ),
+                                         ( xi              -knots_[dim][i] ) / ( knots_[dim][i+3]-knots_[dim][i] )
+                                       }
+                                       ).view({3,4}))
+            :
+            torch::stack(
+                         {
+                           zero_[0], zero_[0], one_[0]
+                         }
+                         ).view({1,3})
+            ;
+        }
+
+        // first or higher-order derivatives
+        else {
+          return
+            (xi < one_[0]).template item<bool>()
+            ?
+            torch::matmul(eval_impl<2,dim,deriv-1>(i,xi),
+                          torch::stack(
+                                       {
+                                         -one_[0] / ( knots_[dim][i+1]-knots_[dim][i-2] ),
+                                          one_[0] / ( knots_[dim][i+1]-knots_[dim][i-2] ),
+                                         zero_[0],
+                                         zero_[0],
+                                         
+                                         zero_[0],
+                                         -one_[0] / ( knots_[dim][i+2]-knots_[dim][i-1] ),
+                                          one_[0] / ( knots_[dim][i+2]-knots_[dim][i-1] ),
+                                         zero_[0],
+                                         
+                                         zero_[0],
+                                         zero_[0],
+                                         -one_[0] / ( knots_[dim][i+3]-knots_[dim][i] ),
+                                          one_[0] / ( knots_[dim][i+3]-knots_[dim][i] )
+                                       }
+                                       ).view({3,4}))
+            :
+            torch::stack(
+                         {
+                           zero_[0], zero_[0], one_[0]
+                         }
+                         ).view({1,3})
+            ;
+        }
+      }
+
+      // quartic B-splines
+      else if constexpr (degree == 4) {
+
+        // zero-th derivative
+        if constexpr (deriv == 0) {
+          return
+            (xi < one_[0]).template item<bool>()
+            ?
+            torch::matmul(eval_impl<3,dim,0>(i,xi),
+                          torch::stack(
+                                       {
+                                         ( knots_[dim][i+1]-xi               ) / ( knots_[dim][i+1]-knots_[dim][i-3] ),
+                                         ( xi              -knots_[dim][i-3] ) / ( knots_[dim][i+1]-knots_[dim][i-3] ),
+                                         zero_[0],
+                                         zero_[0],
+                                         zero_[0],
+                                         
+                                         zero_[0],
+                                         ( knots_[dim][i+2]-xi               ) / ( knots_[dim][i+2]-knots_[dim][i-2] ),
+                                         ( xi              -knots_[dim][i-2] ) / ( knots_[dim][i+2]-knots_[dim][i-2] ),
+                                         zero_[0],
+                                         zero_[0],
+                                         
+                                         zero_[0],
+                                         zero_[0],
+                                         ( knots_[dim][i+3]-xi               ) / ( knots_[dim][i+3]-knots_[dim][i-1] ),
+                                         ( xi              -knots_[dim][i-1] ) / ( knots_[dim][i+3]-knots_[dim][i-1] ),
+                                         zero_[0],
+                                         
+                                         zero_[0],
+                                         zero_[0],
+                                         zero_[0],
+                                         ( knots_[dim][i+4]-xi             ) / ( knots_[dim][i+4]-knots_[dim][i] ),
+                                         ( xi              -knots_[dim][i] ) / ( knots_[dim][i+4]-knots_[dim][i] )
+                                       }
+                                       ).view({4,5}))
+            :
+            torch::stack(
+                         {
+                           zero_[0], zero_[0], zero_[0], one_[0]
+                         }
+                         ).view({1,4})
+            ;
+        }
+
+        // first or higher-order derivatives
+        else {
+          return
+            (xi < one_[0]).template item<bool>()
+            ?
+            torch::matmul(eval_impl<3,dim,deriv-1>(i,xi),
+                          torch::stack(
+                                       {
+                                         -one_[0] / ( knots_[dim][i+1]-knots_[dim][i-3] ),
+                                          one_[0] / ( knots_[dim][i+1]-knots_[dim][i-3] ),
+                                         zero_[0],
+                                         zero_[0],
+                                         zero_[0],
+                                         
+                                         zero_[0],
+                                         -one_[0] / ( knots_[dim][i+2]-knots_[dim][i-2] ),
+                                          one_[0] / ( knots_[dim][i+2]-knots_[dim][i-2] ),
+                                         zero_[0],
+                                         zero_[0],
+                                         
+                                         zero_[0],
+                                         zero_[0],
+                                         -one_[0] / ( knots_[dim][i+3]-knots_[dim][i-1] ),
+                                          one_[0] / ( knots_[dim][i+3]-knots_[dim][i-1] ),
+                                         zero_[0],
+                                         
+                                         zero_[0],
+                                         zero_[0],
+                                         zero_[0],
+                                         -one_[0] / ( knots_[dim][i+4]-knots_[dim][i] ),
+                                          one_[0] / ( knots_[dim][i+4]-knots_[dim][i] )
+                                       }
+                                       ).view({4,5}))
+            :
+            torch::stack(
+                         {
+                           zero_[0], zero_[0], zero_[0], one_[0]
+                         }
+                         ).view({1,4})
+            ;
+        }
+      }
+
+      // quintic B-splines
+      else if constexpr (degree == 5) {
+
+        // zero-th derivative
+        if constexpr (deriv == 0) {
+          return
+            (xi < one_[0]).template item<bool>()
+            ?
+            torch::matmul(eval_impl<4,dim,0>(i,xi),
+                          torch::stack(
+                                       {
+                                         ( knots_[dim][i+1]-xi               ) / ( knots_[dim][i+1]-knots_[dim][i-4] ),
+                                         ( xi              -knots_[dim][i-4] ) / ( knots_[dim][i+1]-knots_[dim][i-4] ),
+                                         zero_[0],
+                                         zero_[0],
+                                         zero_[0],
+                                         zero_[0],
+                                         
+                                         zero_[0],
+                                         ( knots_[dim][i+2]-xi               ) / ( knots_[dim][i+2]-knots_[dim][i-3] ),
+                                         ( xi              -knots_[dim][i-3] ) / ( knots_[dim][i+2]-knots_[dim][i-3] ),
+                                         zero_[0],
+                                         zero_[0],
+                                         zero_[0],
+                                         
+                                         zero_[0],
+                                         zero_[0],
+                                         ( knots_[dim][i+3]-xi               ) / ( knots_[dim][i+3]-knots_[dim][i-2] ),
+                                         ( xi              -knots_[dim][i-2] ) / ( knots_[dim][i+3]-knots_[dim][i-2] ),
+                                         zero_[0],
+                                         zero_[0],
+                                         
+                                         zero_[0],
+                                         zero_[0],
+                                         zero_[0],
+                                         ( knots_[dim][i+4]-xi               ) / ( knots_[dim][i+4]-knots_[dim][i-1] ),
+                                         ( xi              -knots_[dim][i-1] ) / ( knots_[dim][i+4]-knots_[dim][i-1] ),
+                                         zero_[0],
+                                         
+                                         zero_[0],
+                                         zero_[0],
+                                         zero_[0],
+                                         zero_[0],
+                                         ( knots_[dim][i+5]-xi             ) / ( knots_[dim][i+5]-knots_[dim][i] ),
+                                         ( xi              -knots_[dim][i] ) / ( knots_[dim][i+5]-knots_[dim][i] )
+                                       }
+                                       ).view({5,6}))
+            :
+            torch::stack(
+                         {
+                           zero_[0], zero_[0], zero_[0], zero_[0], one_[0]
+                         }
+                         ).view({1,5})
+            ;
+        }
+
+        // first or higher-order derivatives
+        else {
+          return
+            (xi < one_[0]).template item<bool>()
+            ?
+            torch::matmul(eval_impl<4,dim,deriv-1>(i,xi),
+                          torch::stack(
+                                       {
+                                         -one_[0] / ( knots_[dim][i+1]-knots_[dim][i-4] ),
+                                          one_[0] / ( knots_[dim][i+1]-knots_[dim][i-4] ),
+                                         zero_[0],
+                                         zero_[0],
+                                         zero_[0],
+                                         zero_[0],
+                                         
+                                         zero_[0],
+                                         -one_[0] / ( knots_[dim][i+2]-knots_[dim][i-3] ),
+                                          one_[0] / ( knots_[dim][i+2]-knots_[dim][i-3] ),
+                                         zero_[0],
+                                         zero_[0],
+                                         zero_[0],
+                                         
+                                         zero_[0],
+                                         zero_[0],
+                                         -one_[0] / ( knots_[dim][i+3]-knots_[dim][i-2] ),
+                                          one_[0] / ( knots_[dim][i+3]-knots_[dim][i-2] ),
+                                         zero_[0],
+                                         zero_[0],
+                                         
+                                         zero_[0],
+                                         zero_[0],
+                                         zero_[0],
+                                         -one_[0] / ( knots_[dim][i+4]-knots_[dim][i-1] ),
+                                          one_[0] / ( knots_[dim][i+4]-knots_[dim][i-1] ),
+                                         zero_[0],
+                                         
+                                         zero_[0],
+                                         zero_[0],
+                                         zero_[0],
+                                         zero_[0],
+                                         -one_[0] / ( knots_[dim][i+5]-knots_[dim][i] ),
+                                          one_[0] / ( knots_[dim][i+5]-knots_[dim][i] )
+                                       }
+                                       ).view({5,6}))
+            :
+            torch::stack(
+                         {
+                           zero_[0], zero_[0], zero_[0], zero_[0], one_[0]
+                         }
+                         ).view({1,5})
+            ;
+        }
+      }
+        
       else {
         throw std::runtime_error("Degrees higher than 5 are not implemented");
       }
