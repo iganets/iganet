@@ -115,7 +115,7 @@ namespace iganet {
       : core<real_t>(),
         
         // Construct the different BSpline objects individually
-        geo_(geo_bspline_ncoeffs, BSplineInit::linear),
+        geo_(geo_bspline_ncoeffs, BSplineInit::greville),
         rhs_(rhs_bspline_ncoeffs, BSplineInit::ones),
         sol_(sol_bspline_ncoeffs, BSplineInit::random),
         
@@ -178,7 +178,7 @@ namespace iganet {
       : core<real_t>(),
         
         // Construct the different BSpline objects individually
-        geo_(geo_bspline_kv, BSplineInit::linear),
+        geo_(geo_bspline_kv, BSplineInit::greville),
         rhs_(rhs_bspline_kv, BSplineInit::ones),
         sol_(sol_bspline_kv, BSplineInit::random),
         
@@ -290,8 +290,72 @@ namespace iganet {
          << "sol = " << sol_;
     }
 
+    // Plots the B-Spline geometry
+    inline void plot_geo(int64_t xres=50, int64_t yres=50, int64_t zres=50, int64_t tres=50) const
+    {
+      if constexpr(dim_==1) {
+        auto x = geo_.template coeffs<false>(0);
+
+        matplot::vector_1d X(geo_.ncoeffs(0), 0.0);
+        matplot::vector_1d Y(geo_.ncoeffs(0), 0.0);
+
+        // Convert into Matplot++ format
+        for (int64_t i=0; i<geo_.ncoeffs(0); ++i) {
+          X[i] = x[i].template item<real_t>();
+          Y[i] = 0;
+        }
+
+        matplot::plot(X, Y);
+        matplot::show();
+      }
+
+      else if constexpr(dim_==2) {
+        auto x = geo_.template coeffs<false>(0);
+        auto y = geo_.template coeffs<false>(1);
+
+        matplot::vector_2d X(geo_.ncoeffs(1), matplot::vector_1d(geo_.ncoeffs(0), 0.0));
+        matplot::vector_2d Y(geo_.ncoeffs(1), matplot::vector_1d(geo_.ncoeffs(0), 0.0));
+        matplot::vector_2d Z(geo_.ncoeffs(1), matplot::vector_1d(geo_.ncoeffs(0), 0.0));
+        
+        // Convert into Matplot++ format
+        for (int64_t i=0; i<geo_.ncoeffs(0); ++i)
+          for (int64_t j=0; j<geo_.ncoeffs(1); ++j) {
+            X[j][i] = x[i][j].template item<real_t>();
+            Y[j][i] = y[i][j].template item<real_t>();
+            Z[j][i] = 0;
+          }
+        
+        matplot::vector_2d Xfine(yres, matplot::vector_1d(xres, 0.0));
+        matplot::vector_2d Yfine(yres, matplot::vector_1d(xres, 0.0));
+        matplot::vector_2d Zfine(yres, matplot::vector_1d(xres, 0.0));
+        
+        for (int64_t i=0; i<xres; ++i)
+          for (int64_t j=0; j<yres; ++j) {
+            torch::Tensor coords = geo_.eval(torch::stack(
+                                                 {
+                                                   torch::full({1}, i/real_t(xres-1)),
+                                                   torch::full({1}, j/real_t(yres-1))
+                                                 }
+                                                 ).view({2})
+                                             );
+
+            std::cout << coords << std::endl;
+            
+            Xfine[j][i] = coords[0].template item<real_t>();
+            Yfine[j][i] = coords[0].template item<real_t>();
+            Zfine[j][i] = 0;
+          }
+
+        std::cout << Xfine << std::endl;
+        
+        matplot::mesh(Xfine, Yfine, Zfine);
+        matplot::show();        
+      }
+    }
+    
+    // Plots the B-Spline right-hand side
     // Plots the B-Spline solution
-    inline void plot(short_t nref=0) const
+    inline void plot() const
     {
       if constexpr(dim_==1) {
         assert(geo_.ncoeffs(0) == sol_.ncoeffs(0));
@@ -309,7 +373,6 @@ namespace iganet {
 
         matplot::plot(X, C);
         matplot::show();
-
       }
 
       else if constexpr(dim_==2) {
