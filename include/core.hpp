@@ -1,6 +1,8 @@
 #include <array>
 #include <tuple>
+#include <vector>
 
+#include <matplot/matplot.h>
 #include <torch/torch.h>
 #include <torch/csrc/api/include/torch/types.h>
 
@@ -9,7 +11,8 @@
 namespace iganet {
   
   #define short_t unsigned short int
-  
+
+  // Determine the Torch dtype from template parameter
   template<typename T>
   constexpr auto dtype() { return torch::kByte; }
 
@@ -30,19 +33,21 @@ namespace iganet {
 
   template<>
   constexpr auto dtype<char>() { return torch::kChar; };
-  
-  template <typename Type, std::size_t... sizes>
-  auto concat(const std::array<Type, sizes>&... arrays)
+
+  // Concatenate multiple std::array objects
+  template<typename T, std::size_t... N>
+  auto concat(const std::array<T, N>&... arrays)
   {
-    std::array<Type, (sizes + ...)> result;
+    std::array<T, (N + ...)> result;
     std::size_t index{};
     
-    ((std::copy_n(arrays.begin(), sizes, result.begin() + index), index += sizes), ...);
+    ((std::copy_n(arrays.begin(), N, result.begin() + index), index += N), ...);
     
     return result;
   }
 
-  template <typename... Ts>
+  // Concatenate multiple std::vector objects
+  template<typename... Ts>
   auto concat(const std::vector<Ts>&... vectors)
   {
     std::vector<typename std::tuple_element<0, std::tuple<Ts...> >::type> result;
@@ -51,7 +56,7 @@ namespace iganet {
     
     return result;
   }
-
+  
   template<typename real_t>
   class core {
   public:
@@ -64,6 +69,5 @@ namespace iganet {
 
     // Tensor options
     const torch::TensorOptions options_;
-  };
-  
+  };  
 } // namespace iganet
