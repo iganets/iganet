@@ -1,10 +1,3 @@
-#include <array>
-#include <vector>
-
-#include <torch/torch.h>
-#include <matplot/matplot.h>
-
-#include <core.hpp>
 #include <bspline.hpp>
 
 #pragma once
