@@ -156,11 +156,12 @@ namespace iganet {
       assert(i>=0 && i<parDim_);
       return nknots_[i];
     }
-
+    
     // Returns a constant reference to the array of coefficients. If
     // flatten=false, this function returns an std::array of
     // torch::Tensor objects with coefficients reshaped according to
-    // the dimensions of the knot vectors
+    // the dimensions of the knot vectors (return by value in this
+    // case)
     template<bool flatten=true>
     inline auto coeffs() const
       -> typename std::conditional<flatten,
@@ -180,7 +181,8 @@ namespace iganet {
     // Returns a constant reference to the coefficients in the i-th
     // dimension. If flatten=false, this function returns a
     // torch::Tensor with coefficients in the i-th dimension reshaped
-    // according to the dimensions of the knot vectors
+    // according to the dimensions of the knot vectors (return by
+    // value in this case)
     template<bool flatten=true>
     inline auto coeffs(short_t i) const
       -> typename std::conditional<flatten,
