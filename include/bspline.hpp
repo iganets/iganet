@@ -98,7 +98,7 @@ namespace iganet {
           kv.push_back(static_cast<real_t>(1));
 
         knots_[i] = torch::from_blob(static_cast<real_t*>(kv.data()),
-                                        kv.size(), core<real_t>::options_).clone();
+                                     kv.size(), core<real_t>::options_).clone();
 
         // Store the size of the knot vector
         nknots_[i] = knots_[i].size(0);
@@ -176,7 +176,7 @@ namespace iganet {
     {
       assert(i>=0 && i<geoDim_);
       if constexpr (flatten)
-        return coeffs_[i];
+                     return coeffs_[i];
       else
         return coeffs_[i].view(ncoeffs_);
     }
