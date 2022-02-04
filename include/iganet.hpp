@@ -68,8 +68,13 @@ namespace iganet {
     using torch::nn::ModuleHolder<IgANetGeneratorImpl<real_t>>::ModuleHolder;
     using Impl = IgANetGeneratorImpl<real_t>;
   };
-  
-  template<typename real_t, short_t... Degrees>
+
+  /**
+   * IgaNet
+   */
+  template<typename real_t,
+           template<typename, short_t, short_t...> class BSpline,
+           short_t... Degrees>
   class IgANet : public core<real_t>
   {
   private:
@@ -97,28 +102,29 @@ namespace iganet {
   public:
     // Constructor: layers + bspline (same for all)
     IgANet(const std::vector<int64_t>& layers,
-           const std::array<int64_t,dim_>& bspline)
-      : IgANet(layers, bspline, bspline, bspline)
+           const std::array<int64_t,dim_>& bspline_ncoeffs)
+      : IgANet(layers, bspline_ncoeffs, bspline_ncoeffs, bspline_ncoeffs)
     {    
     }
 
-    // Constructor: layers + geo_bspline + rhs_bspline
+    // Constructor: layers + geo-bspline + rhs-bspline + sol-bspline
     IgANet(const std::vector<int64_t>& layers,
-           const std::array<int64_t,dim_>& geo_bspline,
-           const std::array<int64_t,dim_>& rhs_bspline,
-           const std::array<int64_t,dim_>& sol_bspline)
+           const std::array<int64_t,dim_>& geo_bspline_ncoeffs,
+           const std::array<int64_t,dim_>& rhs_bspline_ncoeffs,
+           const std::array<int64_t,dim_>& sol_bspline_ncoeffs)
       : core<real_t>(),
         
-        /* Construct the different BSpline objects individually */
-        geo_(geo_bspline, BSplineInit::linear),
-        rhs_(rhs_bspline, BSplineInit::ones),
-        sol_(sol_bspline, BSplineInit::random),
+        // Construct the different BSpline objects individually
+        geo_(geo_bspline_ncoeffs, BSplineInit::linear),
+        rhs_(rhs_bspline_ncoeffs, BSplineInit::ones),
+        sol_(sol_bspline_ncoeffs, BSplineInit::random),
         
-        /* Construct one large tensor comprising all BSpline object's
-           coefficient vectors - we need this complicated construction
-           to first concatenate the multiple std::array<torch::Tensor,*>
-           objects into a single std::array<torch::Tensor,*> object and
-           then initialize a new large torch::Tensor with its data */
+        // Construct one large tensor comprising all BSpline object's
+        // coefficient vectors - we need this complicated construction
+        // to first concatenate the multiple
+        // std::array<torch::Tensor,*> objects into a single
+        // std::array<torch::Tensor,*> object and then initialize a
+        // new large torch::Tensor with its data
         input__(torch::concat(
                               concat(geo_.coeffs(),
                                      rhs_.coeffs(),
@@ -126,9 +132,9 @@ namespace iganet {
                               )
                 ),
         
-        /* Construct the deep neural network with the large tensor as
-           input and the coefficient vector of the solution's BSpline
-           object as output */
+        // Construct the deep neural network with the large tensor as
+        // input and the coefficient vector of the solution's BSpline
+        // object as output
         net_(concat(std::vector<int64_t>{static_cast<int64_t>(input__.size(0))},
                     layers,
                     std::vector<int64_t>{sol_.ncoeffs()}))
@@ -157,38 +163,101 @@ namespace iganet {
                                                      1)});
     }
 
+    // Constructor: layers + bspline (same for all)
+    IgANet(const std::vector<int64_t>& layers,
+           const std::array<std::vector<real_t>,dim_>& bspline_kv)
+      : IgANet(layers, bspline_kv, bspline_kv, bspline_kv)
+    {    
+    }
+
+        // Constructor: layers + geo-bspline + rhs-bspline + sol-bspline
+    IgANet(const std::vector<int64_t>& layers,
+           const std::array<std::vector<real_t>,dim_>& geo_bspline_kv,
+           const std::array<std::vector<real_t>,dim_>& rhs_bspline_kv,
+           const std::array<std::vector<real_t>,dim_>& sol_bspline_kv)
+      : core<real_t>(),
+        
+        // Construct the different BSpline objects individually
+        geo_(geo_bspline_kv, BSplineInit::linear),
+        rhs_(rhs_bspline_kv, BSplineInit::ones),
+        sol_(sol_bspline_kv, BSplineInit::random),
+        
+        // Construct one large tensor comprising all BSpline object's
+        // coefficient vectors - we need this complicated construction
+        // to first concatenate the multiple
+        // std::array<torch::Tensor,*> objects into a single
+        // std::array<torch::Tensor,*> object and then initialize a
+        // new large torch::Tensor with its data
+        input__(torch::concat(
+                              concat(geo_.coeffs(),
+                                     rhs_.coeffs(),
+                                     std::array<torch::Tensor,1>({torch::ones({dim_}, core<real_t>::options_)}))
+                              )
+                ),
+        
+        // Construct the deep neural network with the large tensor as
+        // input and the coefficient vector of the solution's BSpline
+        // object as output
+        net_(concat(std::vector<int64_t>{static_cast<int64_t>(input__.size(0))},
+                    layers,
+                    std::vector<int64_t>{sol_.ncoeffs()}))
+    {
+      // Now that everything is in placed we swap the coefficient
+      // vectors of the BSpline objects with views on parts of the one
+      // large tensor
+      int64_t count = 0;
+      
+      // Geometry
+      for (short_t i=0; i<dim_; ++i)
+        {
+          geo_.coeffs(i) = input__.index({torch::indexing::Slice(count,
+                                                                 count+=geo_.ncoeffs(),
+                                                                 1)});
+        }
+      
+      // Right-hand side
+      rhs_.coeffs(0) = input__.index({torch::indexing::Slice(count,
+                                                             count+=rhs_.ncoeffs(),
+                                                             1)});
+      
+      // Input tensor
+      input_ = input__.index({torch::indexing::Slice(count,
+                                                     count+=dim_,
+                                                     1)});
+    }
+    
     // Returns a constant reference to the B-spline representation of the geometry
-    inline const BSpline<real_t, dim_, Degrees...>& geo() const
+    inline const UniformBSpline<real_t, dim_, Degrees...>& geo() const
     {
       return geo_;
     }
 
     // Returns a non-constant reference to the B-spline representation of the geometry
-    inline BSpline<real_t, dim_, Degrees...>& geo()
+    inline UniformBSpline<real_t, dim_, Degrees...>& geo()
     {
       return geo_;
     }
 
     // Returns a constant reference to the B-spline representation of the right-hand side
-    inline const BSpline<real_t, 1, Degrees...>& rhs() const
+    inline const UniformBSpline<real_t, 1, Degrees...>& rhs() const
     {
       return rhs_;
     }
     
     // Returns a non-constant reference to the B-spline representation of the right-hand side
-    inline BSpline<real_t, 1, Degrees...>& rhs()
+    inline UniformBSpline<real_t, 1, Degrees...>& rhs()
     {
       return rhs_;
     }
 
     // Returns a constant reference to the B-spline representation of the solution
-    inline const BSpline<real_t, 1, Degrees...>& sol() const
+    inline const UniformBSpline<real_t, 1, Degrees...>& sol() const
     {
       return sol_;
     }
 
     // Returns a non-constant reference to the B-spline representation of the solution
-    inline BSpline<real_t, 1, Degrees...>& sol()
+    inline UniformBSpline<real_t, 1, Degrees...>& sol()
     {
       return sol_;
     }
@@ -290,9 +359,11 @@ namespace iganet {
   };
 
   /// Print (as string) a IgANet object
-  template<typename real_t, short_t... Degrees>
+  template<typename real_t,
+           template<typename, short_t, short_t...> class BSpline,
+           short_t... Degrees>
   inline std::ostream& operator<<(std::ostream& os,
-                                  const IgANet<real_t, Degrees...>& obj)
+                                  const IgANet<real_t, BSpline, Degrees...>& obj)
   {
     obj.pretty_print(os);
     return os;

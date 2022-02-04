@@ -11,6 +11,7 @@
 
 namespace iganet {
 
+  /// Enumerator for specifying the initialization of B-Spline coefficients
   enum class BSplineInit : short_t
     {
       zeros  = 0,
@@ -19,6 +20,7 @@ namespace iganet {
       random = 3
     };
 
+  /// Enumerator for specifying the derivative of B-Spline evaluation
   enum class BSplineDeriv : short_t
     {
       func   =    0,
@@ -39,11 +41,12 @@ namespace iganet {
       dt3    = 3000,
       dt4    = 4000
     };
-  
+
+  /// Tensor-product uniform B-Spline
   template<typename real_t, short_t GeoDim, short_t... Degrees>
-  class BSpline : public core<real_t>
+  class UniformBSpline : public core<real_t>
   {
-  private:
+  protected:
     // Dimension of the parametric space
     static constexpr const short_t parDim_ = sizeof...(Degrees);
 
@@ -56,13 +59,13 @@ namespace iganet {
     // Array storing the knot vectors
     std::array<torch::Tensor, parDim_> knots_;
 
-    // Array storing the dimensions of the knot vectors
+    // Array storing the sizes of the knot vectors
     std::array<int64_t, parDim_> nknots_;
 
     // Array storing the coefficients of the control net
     std::array<torch::Tensor, geoDim_> coeffs_;
 
-    // Array storing the dimensions of the coefficients of the control net
+    // Array storing the sizes of the coefficients of the control net
     std::array<int64_t, parDim_> ncoeffs_;
 
     // String storing the full qualified name of the object
@@ -72,104 +75,37 @@ namespace iganet {
     const torch::Tensor one_, zero_;
 
   public:
-    // Constructor: number of knots
-    BSpline(std::array<int64_t, parDim_> ncoeffs, BSplineInit init = BSplineInit::zeros)
+    // Constructor: equidistant knot vectors
+    UniformBSpline(std::array<int64_t, parDim_> ncoeffs,
+                   BSplineInit init = BSplineInit::zeros)
       : core<real_t>(),
         ncoeffs_(ncoeffs),
         one_(torch::ones(1, core<real_t>::options_)),
         zero_(torch::zeros(1, core<real_t>::options_))
     {
-      // Create open uniform knot vector
-      for (short_t i=0; i<parDim_; ++i)
-        {
-          std::vector<real_t> kv;
+      for (short_t i=0; i<parDim_; ++i) {
 
-          for (int64_t j=0; j<degrees_[i]; ++j)
-            kv.push_back(static_cast<real_t>(0));
+        // Create open uniform knot vectors
+        std::vector<real_t> kv;
 
-          for (int64_t j=0; j<ncoeffs[i]-degrees_[i]+1; ++j)
-            kv.push_back(static_cast<real_t>(j/real_t(ncoeffs[i]-degrees_[i])));
-          
-          for (int64_t j=0; j<degrees_[i]; ++j)
-            kv.push_back(static_cast<real_t>(1));
+        for (int64_t j=0; j<degrees_[i]; ++j)
+          kv.push_back(static_cast<real_t>(0));
 
-          knots_[i] = torch::from_blob(static_cast<real_t*>(kv.data()),
-                                       kv.size(), core<real_t>::options_).clone();
+        for (int64_t j=0; j<ncoeffs[i]-degrees_[i]+1; ++j)
+          kv.push_back(static_cast<real_t>(j/real_t(ncoeffs[i]-degrees_[i])));
 
-          // Store the dimension of the knot vector
-          nknots_[i] = knots_[i].size(0);                   
-        }
+        for (int64_t j=0; j<degrees_[i]; ++j)
+          kv.push_back(static_cast<real_t>(1));
 
-      // Create coefficies of the control net
-      switch (init) {
+        knots_[i] = torch::from_blob(static_cast<real_t*>(kv.data()),
+                                        kv.size(), core<real_t>::options_).clone();
 
-      case (BSplineInit::zeros): {
-
-        // Fill coefficients with zeros
-        for (short_t i=0; i<geoDim_; ++i) {
-
-          int64_t size = 1;
-          for (short_t j=0; j<parDim_; ++j)
-            size *= ncoeffs_[j];
-
-          coeffs_[i] = torch::zeros(size, core<real_t>::options_);
-        }
-        break;
+        // Store the size of the knot vector
+        nknots_[i] = knots_[i].size(0);
       }
 
-      case (BSplineInit::ones): {
-
-        // Fill coefficients with ones
-        for (short_t i=0; i<geoDim_; ++i) {
-
-          int64_t size = 1;
-          for (short_t j=0; j<parDim_; ++j)
-            size *= ncoeffs_[j];
-
-          coeffs_[i] = torch::ones(size, core<real_t>::options_);
-        }
-        break;
-      }
-
-      case (BSplineInit::linear): {
-
-        // Fill coefficients with linearly increasing values in a single direction
-        for (short_t i=0; i<geoDim_; ++i)
-          {
-            coeffs_[i] = torch::ones(1, core<real_t>::options_);
-
-            for (short_t j=0; j<parDim_; ++j)
-              {
-                if (i==j)
-                  coeffs_[i] = coeffs_[i].kron(torch::linspace(static_cast<real_t>(0),
-                                                               static_cast<real_t>(1),
-                                                               ncoeffs_[j],
-                                                               core<real_t>::options_));
-                else
-                  coeffs_[i] = coeffs_[i].kron(torch::ones(ncoeffs_[j],
-                                                           core<real_t>::options_));
-              }
-          }
-        break;
-      }
-
-      case (BSplineInit::random): {
-
-        // Fill coefficients with random values
-        for (short_t i=0; i<geoDim_; ++i) {
-
-          int64_t size = 1;
-          for (short_t j=0; j<parDim_; ++j)
-            size *= ncoeffs_[j];
-
-          coeffs_[i] = torch::rand(size, core<real_t>::options_);
-        }
-        break;
-      }
-
-      default:
-        throw std::runtime_error("Unsupported BSplineInit option");
-      }
+      // Initialize coefficients
+      init_coeffs(init);
     }
 
     // Returns a constant reference to the array of degrees
@@ -291,7 +227,7 @@ namespace iganet {
     // To this end, the function first determines the interval
     // \f$
     //   [knot[i], knot[i+1])
-    // \f$    
+    // \f$
     // that contains the point \f$ \xi \f$ and evaluates the vector of
     // basis functions (or their derivatives)
     // \f$
@@ -300,13 +236,13 @@ namespace iganet {
     // where
     // \f$
     //   d
-    // \f$    
+    // \f$
     // is the degree of the B-spline and
     // \f$
     //   r
-    // \f$    
+    // \f$
     // denotes the requested derivative. Next, the function multiplies
-    // the above row vector by the column vector of control points    
+    // the above row vector by the column vector of control points
     // \f$
     //   \left[ c_{i-d}, \dots, c_{i} \right]^\top
     // \f$.
@@ -319,40 +255,14 @@ namespace iganet {
       // 1D
       if constexpr (parDim_ == 1) {
         int64_t i = int64_t(xi[0].item<real_t>()*(nknots_[0]-2*degrees_[0]-1)+degrees_[0]);
-        return
-          torch::matmul(eval_impl<degrees_[0],0,(short_t)deriv%10>(i, xi[0]),
-                        coeffs<false>(0).index(
-                                               {
-                                                 torch::indexing::Slice(i-degrees_[0], i+1, 1)
-                                               }
-                                               ).flatten().view(
-                                                                {
-                                                                  ((xi[0]< one_[0]).template item<bool>() ? degrees_[0]+1 : degrees_[0])
-                                                                }
-                                                                ));
+        return eval_1d(xi, i);
       }
 
       // 2D
       else if constexpr (parDim_ == 2) {
         int64_t i = int64_t(xi[0].item<real_t>()*(nknots_[0]-2*degrees_[0]-1)+degrees_[0]);
         int64_t j = int64_t(xi[1].item<real_t>()*(nknots_[1]-2*degrees_[1]-1)+degrees_[1]);
-        return
-          torch::matmul(torch::kron(
-                                    eval_impl<degrees_[0],0, (short_t)deriv    %10>(i, xi[0]),
-                                    eval_impl<degrees_[1],1,((short_t)deriv/10)%10>(j, xi[1])
-                                    ),
-                        coeffs<false>(0).index(
-                                               {
-                                                 torch::indexing::Slice(i-degrees_[0], i+1, 1),
-                                                 torch::indexing::Slice(j-degrees_[1], j+1, 1)
-                                               }
-                                               ).flatten().view(
-                                                                {
-                                                                  ((xi[0]< one_[0]).template item<bool>() ? degrees_[0]+1 : degrees_[0])
-                                                                  *
-                                                                  ((xi[1]< one_[0]).template item<bool>() ? degrees_[1]+1 : degrees_[1])
-                                                                }
-                                                                ));
+        return eval_2d(xi, i, j);
       }
 
       // 3D
@@ -360,29 +270,7 @@ namespace iganet {
         int64_t i = int64_t(xi[0].item<real_t>()*(nknots_[0]-2*degrees_[0]-1)+degrees_[0]);
         int64_t j = int64_t(xi[1].item<real_t>()*(nknots_[1]-2*degrees_[1]-1)+degrees_[1]);
         int64_t k = int64_t(xi[2].item<real_t>()*(nknots_[2]-2*degrees_[2]-1)+degrees_[2]);
-        return
-          torch::matmul(torch::kron(
-                                    torch::kron(
-                                                eval_impl<degrees_[0],0, (short_t)deriv    %10>(i, xi[0]),
-                                                eval_impl<degrees_[1],1,((short_t)deriv/10)%10>(j, xi[1])
-                                                ),
-                                    eval_impl<degrees_[2],2,((short_t)deriv/100)%10>(k, xi[2])
-                                    ),
-                        coeffs<false>(0).index(
-                                               {
-                                                 torch::indexing::Slice(i-degrees_[0], i+1, 1),
-                                                 torch::indexing::Slice(j-degrees_[1], j+1, 1),
-                                                 torch::indexing::Slice(k-degrees_[2], k+1, 1)
-                                               }
-                                               ).flatten().view(
-                                                                {
-                                                                  ((xi[0]< one_[0]).template item<bool>() ? degrees_[0]+1 : degrees_[0])
-                                                                  *
-                                                                  ((xi[1]< one_[0]).template item<bool>() ? degrees_[1]+1 : degrees_[1])
-                                                                  *
-                                                                  ((xi[2]< one_[0]).template item<bool>() ? degrees_[2]+1 : degrees_[2])
-                                                                }
-                                                                ));
+        return eval_3d(xi, i, j, k);
       }
 
       // 4D
@@ -391,35 +279,7 @@ namespace iganet {
         int64_t j = int64_t(xi[1].item<real_t>()*(nknots_[1]-2*degrees_[1]-1)+degrees_[1]);
         int64_t k = int64_t(xi[2].item<real_t>()*(nknots_[2]-2*degrees_[2]-1)+degrees_[2]);
         int64_t l = int64_t(xi[3].item<real_t>()*(nknots_[3]-2*degrees_[3]-1)+degrees_[3]);
-        return
-          torch::matmul(torch::kron(
-                                    torch::kron(
-                                                eval_impl<degrees_[0],0, (short_t)deriv      %10>(i, xi[0]),
-                                                eval_impl<degrees_[1],1,((short_t)deriv/  10)%10>(j, xi[1])
-                                                ),
-                                    torch::kron(
-                                                eval_impl<degrees_[2],2,((short_t)deriv/ 100)%10>(k, xi[2]),
-                                                eval_impl<degrees_[3],3,((short_t)deriv/1000)%10>(l, xi[3])
-                                                )
-                                    ),
-                        coeffs<false>(0).index(
-                                               {
-                                                 torch::indexing::Slice(i-degrees_[0], i+1, 1),
-                                                 torch::indexing::Slice(j-degrees_[1], j+1, 1),
-                                                 torch::indexing::Slice(k-degrees_[2], k+1, 1),
-                                                 torch::indexing::Slice(l-degrees_[3], l+1, 1)
-                                               }
-                                               ).flatten().view(
-                                                                {
-                                                                  ((xi[0]< one_[0]).template item<bool>() ? degrees_[0]+1 : degrees_[0])
-                                                                  *
-                                                                  ((xi[1]< one_[0]).template item<bool>() ? degrees_[1]+1 : degrees_[1])
-                                                                  *
-                                                                  ((xi[2]< one_[0]).template item<bool>() ? degrees_[2]+1 : degrees_[2])
-                                                                  *
-                                                                  ((xi[3]< one_[0]).template item<bool>() ? degrees_[3]+1 : degrees_[3])
-                                                                }
-                                                                ));
+        return eval_4d(xi, i, j, k, l);
       }
 
       else {
@@ -428,7 +288,7 @@ namespace iganet {
     }
 
     // Transforms the coefficients based on the given mapping
-    inline BSpline& transform(const std::function<std::array<real_t, geoDim_> (const std::array<real_t, parDim_>& )> transformation)
+    inline UniformBSpline& transform(const std::function<std::array<real_t, geoDim_>(const std::array<real_t, parDim_>&)> transformation)
     {
       // 1D
       if constexpr (parDim_ == 1) {
@@ -449,7 +309,7 @@ namespace iganet {
           }
         }
       }
-      
+
       // 3D
       else if constexpr (parDim_ == 3) {
         for (int64_t i=0; i<ncoeffs_[0]; ++i) {
@@ -484,7 +344,7 @@ namespace iganet {
       return *this;
     }
 
-    // Returns a string representation of the BSpline object
+    // Returns a string representation of the UniformBSpline object
     inline void pretty_print(std::ostream& os = std::cout) const
     {
       os << name()
@@ -533,21 +393,194 @@ namespace iganet {
       return *name_;
     }
 
-  private:
+  protected:
+    // Initialize coefficients
+    inline void init_coeffs(BSplineInit init)
+    {
+      switch (init) {
+
+      case (BSplineInit::zeros): {
+
+        // Fill coefficients with zeros
+        for (short_t i=0; i<geoDim_; ++i) {
+
+          int64_t size = 1;
+          for (short_t j=0; j<parDim_; ++j)
+            size *= ncoeffs_[j];
+
+          coeffs_[i] = torch::zeros(size, core<real_t>::options_);
+        }
+        break;
+      }
+
+      case (BSplineInit::ones): {
+
+        // Fill coefficients with ones
+        for (short_t i=0; i<geoDim_; ++i) {
+
+          int64_t size = 1;
+          for (short_t j=0; j<parDim_; ++j)
+            size *= ncoeffs_[j];
+
+          coeffs_[i] = torch::ones(size, core<real_t>::options_);
+        }
+        break;
+      }
+
+      case (BSplineInit::linear): {
+
+        // Fill coefficients with linearly increasing values in a single direction
+        for (short_t i=0; i<geoDim_; ++i)
+          {
+            coeffs_[i] = torch::ones(1, core<real_t>::options_);
+
+            for (short_t j=0; j<parDim_; ++j)
+              {
+                if (i==j)
+                  coeffs_[i] = coeffs_[i].kron(torch::linspace(static_cast<real_t>(0),
+                                                               static_cast<real_t>(1),
+                                                               ncoeffs_[j],
+                                                               core<real_t>::options_));
+                else
+                  coeffs_[i] = coeffs_[i].kron(torch::ones(ncoeffs_[j],
+                                                           core<real_t>::options_));
+              }
+          }
+        break;
+      }
+
+      case (BSplineInit::random): {
+
+        // Fill coefficients with random values
+        for (short_t i=0; i<geoDim_; ++i) {
+
+          int64_t size = 1;
+          for (short_t j=0; j<parDim_; ++j)
+            size *= ncoeffs_[j];
+
+          coeffs_[i] = torch::rand(size, core<real_t>::options_);
+        }
+        break;
+      }
+
+      default:
+        throw std::runtime_error("Unsupported BSplineInit option");
+      }
+    }
+    
+    template<BSplineDeriv deriv = BSplineDeriv::func>
+    inline torch::Tensor eval_1d(const torch::Tensor& xi, int64_t i) const
+    {
+      return
+        torch::matmul(eval_impl<degrees_[0],0,(short_t)deriv%10>(i, xi[0]),
+                      coeffs<false>(0).index(
+                                             {
+                                               torch::indexing::Slice(i-degrees_[0], i+1, 1)
+                                             }
+                                             ).flatten().view(
+                                                              {
+                                                                ((xi[0]< one_[0]).template item<bool>() ? degrees_[0]+1 : degrees_[0])
+                                                                  }
+                                                              ));
+    }
+
+    template<BSplineDeriv deriv = BSplineDeriv::func>
+    inline torch::Tensor eval_2d(const torch::Tensor& xi, int64_t i, int64_t j) const
+    {
+      return
+        torch::matmul(torch::kron(
+                                  eval_impl<degrees_[0],0, (short_t)deriv    %10>(i, xi[0]),
+                                  eval_impl<degrees_[1],1,((short_t)deriv/10)%10>(j, xi[1])
+                                  ),
+                      coeffs<false>(0).index(
+                                             {
+                                               torch::indexing::Slice(i-degrees_[0], i+1, 1),
+                                               torch::indexing::Slice(j-degrees_[1], j+1, 1)
+                                             }
+                                             ).flatten().view(
+                                                              {
+                                                                ((xi[0]< one_[0]).template item<bool>() ? degrees_[0]+1 : degrees_[0])
+                                                                  *
+                                                                  ((xi[1]< one_[0]).template item<bool>() ? degrees_[1]+1 : degrees_[1])
+                                                                  }
+                                                              ));
+    }
+
+    template<BSplineDeriv deriv = BSplineDeriv::func>
+    inline torch::Tensor eval_3d(const torch::Tensor& xi, int64_t i, int64_t j, int64_t k) const
+    {
+      return
+        torch::matmul(torch::kron(
+                                  torch::kron(
+                                              eval_impl<degrees_[0],0, (short_t)deriv    %10>(i, xi[0]),
+                                              eval_impl<degrees_[1],1,((short_t)deriv/10)%10>(j, xi[1])
+                                              ),
+                                  eval_impl<degrees_[2],2,((short_t)deriv/100)%10>(k, xi[2])
+                                  ),
+                      coeffs<false>(0).index(
+                                             {
+                                               torch::indexing::Slice(i-degrees_[0], i+1, 1),
+                                               torch::indexing::Slice(j-degrees_[1], j+1, 1),
+                                               torch::indexing::Slice(k-degrees_[2], k+1, 1)
+                                             }
+                                             ).flatten().view(
+                                                              {
+                                                                ((xi[0]< one_[0]).template item<bool>() ? degrees_[0]+1 : degrees_[0])
+                                                                  *
+                                                                  ((xi[1]< one_[0]).template item<bool>() ? degrees_[1]+1 : degrees_[1])
+                                                                  *
+                                                                  ((xi[2]< one_[0]).template item<bool>() ? degrees_[2]+1 : degrees_[2])
+                                                                  }
+                                                              ));
+    }
+
+    template<BSplineDeriv deriv = BSplineDeriv::func>
+    inline torch::Tensor eval_4d(const torch::Tensor& xi, int64_t i, int64_t j, int64_t k, int64_t l) const
+    {
+      return
+        torch::matmul(torch::kron(
+                                  torch::kron(
+                                              eval_impl<degrees_[0],0, (short_t)deriv      %10>(i, xi[0]),
+                                              eval_impl<degrees_[1],1,((short_t)deriv/  10)%10>(j, xi[1])
+                                              ),
+                                  torch::kron(
+                                              eval_impl<degrees_[2],2,((short_t)deriv/ 100)%10>(k, xi[2]),
+                                              eval_impl<degrees_[3],3,((short_t)deriv/1000)%10>(l, xi[3])
+                                              )
+                                  ),
+                      coeffs<false>(0).index(
+                                             {
+                                               torch::indexing::Slice(i-degrees_[0], i+1, 1),
+                                               torch::indexing::Slice(j-degrees_[1], j+1, 1),
+                                               torch::indexing::Slice(k-degrees_[2], k+1, 1),
+                                               torch::indexing::Slice(l-degrees_[3], l+1, 1)
+                                             }
+                                             ).flatten().view(
+                                                              {
+                                                                ((xi[0]< one_[0]).template item<bool>() ? degrees_[0]+1 : degrees_[0])
+                                                                  *
+                                                                  ((xi[1]< one_[0]).template item<bool>() ? degrees_[1]+1 : degrees_[1])
+                                                                  *
+                                                                  ((xi[2]< one_[0]).template item<bool>() ? degrees_[2]+1 : degrees_[2])
+                                                                  *
+                                                                  ((xi[3]< one_[0]).template item<bool>() ? degrees_[3]+1 : degrees_[3])
+                                                                  }
+                                                              ));
+    }
 
     // Returns the values of the vector of B-spline basis function (or
-    // their derivatives) evaluated in the point \f$ \xi \f$    
+    // their derivatives) evaluated in the point \f$ \xi \f$
     // \f$
     //   \left[ D^r B_{i-d,d}, \dots, D^r B_{i,d} \right]
     // \f$,
     // where
     // \f$
     //   d
-    // \f$    
+    // \f$
     // is the degree of the B-spline and
     // \f$
     //   r
-    // \f$    
+    // \f$
     // denotes the requested derivative.
     //
     // For a detailed descriptions see Section 2.3 in
@@ -579,7 +612,7 @@ namespace iganet {
                          )
             ;
         }
-        
+
         // first derivative
         else if constexpr (deriv == 1) {
           return
@@ -599,7 +632,7 @@ namespace iganet {
                          )
             ;
         }
-        
+
         // second or higher-order derivatives
         else {
           return torch::stack(
@@ -610,7 +643,7 @@ namespace iganet {
                               ).view({1,2});
         }
       }
-      
+
       // quadratic B-splines
       else if constexpr (degree == 2) {
 
@@ -625,7 +658,7 @@ namespace iganet {
                                          ( knots_[dim][i+1]-xi               ) / ( knots_[dim][i+1]-knots_[dim][i-1] ),
                                          ( xi              -knots_[dim][i-1] ) / ( knots_[dim][i+1]-knots_[dim][i-1] ),
                                          zero_[0],
-                                         
+
                                          zero_[0],
                                          ( knots_[dim][i+2]-xi             ) / ( knots_[dim][i+2]-knots_[dim][i] ),
                                          ( xi              -knots_[dim][i] ) / ( knots_[dim][i+2]-knots_[dim][i] )
@@ -651,7 +684,7 @@ namespace iganet {
                                          -one_[0] / ( knots_[dim][i+1]-knots_[dim][i-1] ),
                                           one_[0] / ( knots_[dim][i+1]-knots_[dim][i-1] ),
                                          zero_[0],
-                                         
+
                                          zero_[0],
                                          -one_[0] / ( knots_[dim][i+2]-knots_[dim][i] ),
                                           one_[0] / ( knots_[dim][i+2]-knots_[dim][i] )
@@ -664,7 +697,7 @@ namespace iganet {
                          }
                          ).view({1,2})
             ;
-        }        
+        }
       }
 
       // cubic B-splines
@@ -682,12 +715,12 @@ namespace iganet {
                                          ( xi              -knots_[dim][i-2] ) / ( knots_[dim][i+1]-knots_[dim][i-2] ),
                                          zero_[0],
                                          zero_[0],
-                                         
+
                                          zero_[0],
                                          ( knots_[dim][i+2]-xi               ) / ( knots_[dim][i+2]-knots_[dim][i-1] ),
                                          ( xi              -knots_[dim][i-1] ) / ( knots_[dim][i+2]-knots_[dim][i-1] ),
                                          zero_[0],
-                                         
+
                                          zero_[0],
                                          zero_[0],
                                          ( knots_[dim][i+3]-xi             ) / ( knots_[dim][i+3]-knots_[dim][i] ),
@@ -715,12 +748,12 @@ namespace iganet {
                                           one_[0] / ( knots_[dim][i+1]-knots_[dim][i-2] ),
                                          zero_[0],
                                          zero_[0],
-                                         
+
                                          zero_[0],
                                          -one_[0] / ( knots_[dim][i+2]-knots_[dim][i-1] ),
                                           one_[0] / ( knots_[dim][i+2]-knots_[dim][i-1] ),
                                          zero_[0],
-                                         
+
                                          zero_[0],
                                          zero_[0],
                                          -one_[0] / ( knots_[dim][i+3]-knots_[dim][i] ),
@@ -753,19 +786,19 @@ namespace iganet {
                                          zero_[0],
                                          zero_[0],
                                          zero_[0],
-                                         
+
                                          zero_[0],
                                          ( knots_[dim][i+2]-xi               ) / ( knots_[dim][i+2]-knots_[dim][i-2] ),
                                          ( xi              -knots_[dim][i-2] ) / ( knots_[dim][i+2]-knots_[dim][i-2] ),
                                          zero_[0],
                                          zero_[0],
-                                         
+
                                          zero_[0],
                                          zero_[0],
                                          ( knots_[dim][i+3]-xi               ) / ( knots_[dim][i+3]-knots_[dim][i-1] ),
                                          ( xi              -knots_[dim][i-1] ) / ( knots_[dim][i+3]-knots_[dim][i-1] ),
                                          zero_[0],
-                                         
+
                                          zero_[0],
                                          zero_[0],
                                          zero_[0],
@@ -795,19 +828,19 @@ namespace iganet {
                                          zero_[0],
                                          zero_[0],
                                          zero_[0],
-                                         
+
                                          zero_[0],
                                          -one_[0] / ( knots_[dim][i+2]-knots_[dim][i-2] ),
                                           one_[0] / ( knots_[dim][i+2]-knots_[dim][i-2] ),
                                          zero_[0],
                                          zero_[0],
-                                         
+
                                          zero_[0],
                                          zero_[0],
                                          -one_[0] / ( knots_[dim][i+3]-knots_[dim][i-1] ),
                                           one_[0] / ( knots_[dim][i+3]-knots_[dim][i-1] ),
                                          zero_[0],
-                                         
+
                                          zero_[0],
                                          zero_[0],
                                          zero_[0],
@@ -842,28 +875,28 @@ namespace iganet {
                                          zero_[0],
                                          zero_[0],
                                          zero_[0],
-                                         
+
                                          zero_[0],
                                          ( knots_[dim][i+2]-xi               ) / ( knots_[dim][i+2]-knots_[dim][i-3] ),
                                          ( xi              -knots_[dim][i-3] ) / ( knots_[dim][i+2]-knots_[dim][i-3] ),
                                          zero_[0],
                                          zero_[0],
                                          zero_[0],
-                                         
+
                                          zero_[0],
                                          zero_[0],
                                          ( knots_[dim][i+3]-xi               ) / ( knots_[dim][i+3]-knots_[dim][i-2] ),
                                          ( xi              -knots_[dim][i-2] ) / ( knots_[dim][i+3]-knots_[dim][i-2] ),
                                          zero_[0],
                                          zero_[0],
-                                         
+
                                          zero_[0],
                                          zero_[0],
                                          zero_[0],
                                          ( knots_[dim][i+4]-xi               ) / ( knots_[dim][i+4]-knots_[dim][i-1] ),
                                          ( xi              -knots_[dim][i-1] ) / ( knots_[dim][i+4]-knots_[dim][i-1] ),
                                          zero_[0],
-                                         
+
                                          zero_[0],
                                          zero_[0],
                                          zero_[0],
@@ -895,28 +928,28 @@ namespace iganet {
                                          zero_[0],
                                          zero_[0],
                                          zero_[0],
-                                         
+
                                          zero_[0],
                                          -one_[0] / ( knots_[dim][i+2]-knots_[dim][i-3] ),
                                           one_[0] / ( knots_[dim][i+2]-knots_[dim][i-3] ),
                                          zero_[0],
                                          zero_[0],
                                          zero_[0],
-                                         
+
                                          zero_[0],
                                          zero_[0],
                                          -one_[0] / ( knots_[dim][i+3]-knots_[dim][i-2] ),
                                           one_[0] / ( knots_[dim][i+3]-knots_[dim][i-2] ),
                                          zero_[0],
                                          zero_[0],
-                                         
+
                                          zero_[0],
                                          zero_[0],
                                          zero_[0],
                                          -one_[0] / ( knots_[dim][i+4]-knots_[dim][i-1] ),
                                           one_[0] / ( knots_[dim][i+4]-knots_[dim][i-1] ),
                                          zero_[0],
-                                         
+
                                          zero_[0],
                                          zero_[0],
                                          zero_[0],
@@ -934,18 +967,147 @@ namespace iganet {
             ;
         }
       }
-        
+
       else {
         throw std::runtime_error("Degrees higher than 5 are not implemented");
       }
-      
+
     }
   };
 
-  /// Print (as string) a BSpline object
+  /// Print (as string) a UniformBSpline object
   template<typename real_t, short_t geoDim, short_t... Degrees>
   inline std::ostream& operator<<(std::ostream& os,
-                                  const BSpline<real_t, geoDim, Degrees...>& obj)
+                                  const UniformBSpline<real_t, geoDim, Degrees...>& obj)
+  {
+    obj.pretty_print(os);
+    return os;
+  }
+
+  /// Tensor-product non-uniform B-Spline
+  template<typename real_t, short_t GeoDim, short_t... Degrees>
+  class NonUniformBSpline : public UniformBSpline<real_t, GeoDim, Degrees...>
+  {
+  private:
+    using Base = UniformBSpline<real_t, GeoDim, Degrees...>;
+
+  public:
+    // Constructor: equidistant knot vectors
+    using UniformBSpline<real_t, GeoDim, Degrees...>::UniformBSpline;
+
+    // Constructor: non-equidistant knot vectors
+    NonUniformBSpline(std::array<std::vector<real_t>, Base::parDim_> kv,
+                      BSplineInit init = BSplineInit::zeros)
+      : Base(std::array<int64_t, Base::parDim_>{0}, init)
+    {
+      for (short_t i=0; i<Base::parDim_; ++i) {
+        Base::knots_[i] = torch::from_blob(static_cast<real_t*>(kv[i].data()),
+                                           kv[i].size(), core<real_t>::options_).clone();
+
+        // Store the size of the knot vector
+        Base::nknots_[i] = Base::knots_[i].size(0);
+
+        // Store the size of the coefficient vector
+        Base::ncoeffs_[i] = Base::nknots_[i]-Base::degrees_[i]-1;
+      }
+
+      // Initialize coefficients
+      Base::init_coeffs(init);
+    }
+
+    template<BSplineDeriv deriv = BSplineDeriv::func>
+    inline torch::Tensor eval(const torch::Tensor& xi) const
+    {
+      // 1D
+      if constexpr (Base::parDim_ == 1) {
+        int64_t i;
+        auto knots = Base::knots_[0].template accessor<real_t,1>();
+        for (i=Base::degrees_[0]; i<Base::nknots_[0]-Base::degrees_[0]-1; ++i)
+          if (knots[i+1] > xi[0].item<real_t>())
+            break;
+
+        return Base::eval_1d(xi, i);
+      }
+
+      // 2D
+      else if constexpr (Base::parDim_ == 2) {
+        int64_t i;
+        auto knots = Base::knots_[0].template accessor<real_t,1>();
+        for (i=Base::degrees_[0]; i<Base::nknots_[0]-Base::degrees_[0]-1; ++i)
+          if (knots[i+1] > xi[0].item<real_t>())
+            break;
+
+        int64_t j;
+        knots = Base::knots_[1].template accessor<real_t,1>();
+        for (j=Base::degrees_[1]; j<Base::nknots_[1]-Base::degrees_[1]-1; ++j)
+          if (knots[j+1] > xi[1].item<real_t>())
+            break;
+
+        return Base::eval_2d(xi, i, j);
+      }
+
+      // 3D
+      else if constexpr (Base::parDim_ == 3) {
+        int64_t i;
+        auto knots = Base::knots_[0].template accessor<real_t,1>();
+        for (i=Base::degrees_[0]; i<Base::nknots_[0]-Base::degrees_[0]-1; ++i)
+          if (knots[i+1] > xi[0].item<real_t>())
+            break;
+
+        int64_t j;
+        knots = Base::knots_[1].template accessor<real_t,1>();
+        for (j=Base::degrees_[1]; j<Base::nknots_[1]-Base::degrees_[1]-1; ++j)
+          if (knots[j+1] > xi[1].item<real_t>())
+            break;
+
+        int64_t k;
+        knots = Base::knots_[2].template accessor<real_t,1>();
+        for (k=Base::degrees_[2]; k<Base::nknots_[2]-Base::degrees_[2]-1; ++k)
+          if (knots[k+1] > xi[2].item<real_t>())
+            break;
+
+        return Base::eval_3d(xi, i, j, k);
+      }
+
+      // 4D
+      else if constexpr (Base::parDim_ == 4) {
+        int64_t i;
+        auto knots = Base::knots_[0].template accessor<real_t,1>();
+        for (i=Base::degrees_[0]; i<Base::nknots_[0]-Base::degrees_[0]-1; ++i)
+          if (knots[i+1] > xi[0].item<real_t>())
+            break;
+
+        int64_t j;
+        knots = Base::knots_[1].template accessor<real_t,1>();
+        for (j=Base::degrees_[1]; j<Base::nknots_[1]-Base::degrees_[1]-1; ++j)
+          if (knots[j+1] > xi[1].item<real_t>())
+            break;
+
+        int64_t k;
+        knots = Base::knots_[2].template accessor<real_t,1>();
+        for (k=Base::degrees_[2]; k<Base::nknots_[2]-Base::degrees_[2]-1; ++k)
+          if (knots[k+1] > xi[2].item<real_t>())
+            break;
+
+        int64_t l;
+        knots = Base::knots_[3].template accessor<real_t,1>();
+        for (l=Base::degrees_[3]; l<Base::nknots_[3]-Base::degrees_[3]-1; ++l)
+          if (knots[l+1] > xi[3].item<real_t>())
+            break;
+
+        return Base::eval_4d(xi, i, j, k, l);
+      }
+
+      else {
+        throw std::runtime_error("Unsupported parametric dimension");
+      }
+    }
+  };
+
+  /// Print (as string) a UniformBSpline object
+  template<typename real_t, short_t geoDim, short_t... Degrees>
+  inline std::ostream& operator<<(std::ostream& os,
+                                  const NonUniformBSpline<real_t, geoDim, Degrees...>& obj)
   {
     obj.pretty_print(os);
     return os;
