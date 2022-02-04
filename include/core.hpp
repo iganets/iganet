@@ -9,10 +9,10 @@
 #pragma once
 
 namespace iganet {
-  
-  #define short_t unsigned short int
 
-  // Determine the Torch dtype from template parameter
+#define short_t unsigned short int
+
+  // Determines the LibTorch dtype from template parameter
   template<typename T>
   constexpr auto dtype() { return torch::kByte; }
 
@@ -34,29 +34,8 @@ namespace iganet {
   template<>
   constexpr auto dtype<char>() { return torch::kChar; };
 
-  // Concatenate multiple std::array objects
-  template<typename T, std::size_t... N>
-  auto concat(const std::array<T, N>&... arrays)
-  {
-    std::array<T, (N + ...)> result;
-    std::size_t index{};
-    
-    ((std::copy_n(arrays.begin(), N, result.begin() + index), index += N), ...);
-    
-    return result;
-  }
-
-  // Concatenate multiple std::vector objects
-  template<typename... Ts>
-  auto concat(const std::vector<Ts>&... vectors)
-  {
-    std::vector<typename std::tuple_element<0, std::tuple<Ts...> >::type> result;
-
-    (result.insert(result.end(), vectors.begin(), vectors.end()), ...);
-    
-    return result;
-  }
-  
+  // LibTorch core object handles the automated determination of dtype
+  // from the template argument and the selection of the device
   template<typename real_t>
   class core {
   public:
@@ -69,5 +48,29 @@ namespace iganet {
 
     // Tensor options
     const torch::TensorOptions options_;
-  };  
+  };
+  
+  // Concatenates multiple std::vector objects
+  template<typename... Ts>
+  auto concat(const std::vector<Ts>&... vectors)
+  {
+    std::vector<typename std::tuple_element<0, std::tuple<Ts...> >::type> result;
+
+    (result.insert(result.end(), vectors.begin(), vectors.end()), ...);
+
+    return result;
+  }
+  
+  // Concatenates multiple std::array objects
+  template<typename T, std::size_t... N>
+  auto concat(const std::array<T, N>&... arrays)
+  {
+    std::array<T, (N + ...)> result;
+    std::size_t index{};
+    
+    ((std::copy_n(arrays.begin(), N, result.begin() + index), index += N), ...);
+    
+    return result;
+  }
+  
 } // namespace iganet
