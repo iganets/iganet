@@ -1,4 +1,3 @@
-#include <array>
 #include <exception>
 #include <functional>
 #include <vector>
@@ -14,10 +13,11 @@ namespace iganet {
   /// Enumerator for specifying the initialization of B-Spline coefficients
   enum class BSplineInit : short_t
     {
-      zeros  = 0,
-      ones   = 1,
-      linear = 2,
-      random = 3
+      zeros    = 0,
+      ones     = 1,
+      linear   = 2,
+      random   = 3,
+      greville = 4
     };
 
   /// Enumerator for specifying the derivative of B-Spline evaluation
@@ -429,28 +429,28 @@ namespace iganet {
 
       case (BSplineInit::linear): {
 
-        // Fill coefficients with linearly increasing values in a single direction
-        for (short_t i=0; i<geoDim_; ++i)
-          {
-            coeffs_[i] = torch::ones(1, core<real_t>::options_);
-
-            for (short_t j=0; j<parDim_; ++j)
-              {
-                if (i==j)
-                  coeffs_[i] = coeffs_[i].kron(torch::linspace(static_cast<real_t>(0),
-                                                               static_cast<real_t>(1),
-                                                               ncoeffs_[j],
-                                                               core<real_t>::options_));
-                else
-                  coeffs_[i] = coeffs_[i].kron(torch::ones(ncoeffs_[j],
-                                                           core<real_t>::options_));
-              }
-          }
+        // Fill coefficients with the tensor-product of linearly
+        // increasing values between 0 and 1 per univariate dimension
+        for (short_t i=0; i<geoDim_; ++i) {
+          coeffs_[i] = torch::ones(1, core<real_t>::options_);
+          
+          for (short_t j=0; j<parDim_; ++j)
+            {
+              if (i==j)
+                coeffs_[i] = coeffs_[i].kron(torch::linspace(static_cast<real_t>(0),
+                                                             static_cast<real_t>(1),
+                                                             ncoeffs_[j],
+                                                             core<real_t>::options_));
+              else
+                coeffs_[i] = coeffs_[i].kron(torch::ones(ncoeffs_[j],
+                                                         core<real_t>::options_));
+            }
+        }
         break;
       }
 
       case (BSplineInit::random): {
-
+        
         // Fill coefficients with random values
         for (short_t i=0; i<geoDim_; ++i) {
 
@@ -459,6 +459,33 @@ namespace iganet {
             size *= ncoeffs_[j];
 
           coeffs_[i] = torch::rand(size, core<real_t>::options_);
+        }
+        break;
+      }
+
+      case (BSplineInit::greville): {
+
+        // Fill coefficients with the tensor-product of Greville
+        // abscissae values per univariate dimension
+        for (short_t i=0; i<geoDim_; ++i) {
+          coeffs_[i] = torch::ones(1, core<real_t>::options_);
+          
+          for (short_t j=0; j<parDim_; ++j)
+            {
+              if (i==j) {
+                auto greville_ = torch::zeros(ncoeffs_[j], core<real_t>::options_);
+                auto greville = greville_.template accessor<real_t,1>();
+                auto knots = knots_[j].template accessor<real_t,1>();
+                for (int64_t k=0; k<ncoeffs_[j]; ++k) {
+                  for (short_t l=1; l<=degrees_[j]; ++l)
+                    greville[k] += knots[k+l];
+                  greville[k] /= degrees_[j];
+                }                
+                coeffs_[i] = coeffs_[i].kron(greville_);
+              } else
+                coeffs_[i] = coeffs_[i].kron(torch::ones(ncoeffs_[j],
+                                                         core<real_t>::options_));
+            }          
         }
         break;
       }
@@ -477,11 +504,7 @@ namespace iganet {
                                              {
                                                torch::indexing::Slice(i-degrees_[0], i+1, 1)
                                              }
-                                             ).flatten().view(
-                                                              {
-                                                                ((xi[0]< one_[0]).template item<bool>() ? degrees_[0]+1 : degrees_[0])
-                                                                  }
-                                                              ));
+                                             ).flatten());
     }
 
     template<BSplineDeriv deriv = BSplineDeriv::func>
@@ -497,13 +520,7 @@ namespace iganet {
                                                torch::indexing::Slice(i-degrees_[0], i+1, 1),
                                                torch::indexing::Slice(j-degrees_[1], j+1, 1)
                                              }
-                                             ).flatten().view(
-                                                              {
-                                                                ((xi[0]< one_[0]).template item<bool>() ? degrees_[0]+1 : degrees_[0])
-                                                                  *
-                                                                  ((xi[1]< one_[0]).template item<bool>() ? degrees_[1]+1 : degrees_[1])
-                                                                  }
-                                                              ));
+                                             ).flatten());
     }
 
     template<BSplineDeriv deriv = BSplineDeriv::func>
@@ -523,15 +540,7 @@ namespace iganet {
                                                torch::indexing::Slice(j-degrees_[1], j+1, 1),
                                                torch::indexing::Slice(k-degrees_[2], k+1, 1)
                                              }
-                                             ).flatten().view(
-                                                              {
-                                                                ((xi[0]< one_[0]).template item<bool>() ? degrees_[0]+1 : degrees_[0])
-                                                                  *
-                                                                  ((xi[1]< one_[0]).template item<bool>() ? degrees_[1]+1 : degrees_[1])
-                                                                  *
-                                                                  ((xi[2]< one_[0]).template item<bool>() ? degrees_[2]+1 : degrees_[2])
-                                                                  }
-                                                              ));
+                                             ).flatten());
     }
 
     template<BSplineDeriv deriv = BSplineDeriv::func>
@@ -555,17 +564,7 @@ namespace iganet {
                                                torch::indexing::Slice(k-degrees_[2], k+1, 1),
                                                torch::indexing::Slice(l-degrees_[3], l+1, 1)
                                              }
-                                             ).flatten().view(
-                                                              {
-                                                                ((xi[0]< one_[0]).template item<bool>() ? degrees_[0]+1 : degrees_[0])
-                                                                  *
-                                                                  ((xi[1]< one_[0]).template item<bool>() ? degrees_[1]+1 : degrees_[1])
-                                                                  *
-                                                                  ((xi[2]< one_[0]).template item<bool>() ? degrees_[2]+1 : degrees_[2])
-                                                                  *
-                                                                  ((xi[3]< one_[0]).template item<bool>() ? degrees_[3]+1 : degrees_[3])
-                                                                  }
-                                                              ));
+                                             ).flatten());
     }
 
     // Returns the values of the vector of B-spline basis function (or
