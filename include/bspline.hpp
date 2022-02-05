@@ -156,7 +156,7 @@ namespace iganet {
       assert(i>=0 && i<parDim_);
       return nknots_[i];
     }
-    
+
     // Returns a constant reference to the array of coefficients. If
     // flatten=false, this function returns an std::array of
     // torch::Tensor objects with coefficients reshaped according to
@@ -265,8 +265,10 @@ namespace iganet {
     // This functions applies the above procedure to the tensor
     // product of B-splines in all spatial dimensions.
     template<BSplineDeriv deriv = BSplineDeriv::func>
-    inline torch::Tensor eval(const torch::Tensor& xi) const
+    inline auto eval(const torch::Tensor& xi) const
     {
+      static_assert(parDim_ <= 4, "Unsupported parametric dimension");
+
       // 1D
       if constexpr (parDim_ == 1) {
         int64_t i = int64_t(xi[0].item<real_t>()*(nknots_[0]-2*degrees_[0]-1)+degrees_[0]);
@@ -296,17 +298,16 @@ namespace iganet {
         int64_t l = int64_t(xi[3].item<real_t>()*(nknots_[3]-2*degrees_[3]-1)+degrees_[3]);
         return eval_4d(xi, i, j, k, l);
       }
-
-      else {
-        throw std::runtime_error("Unsupported parametric dimension");
-      }
     }
 
     // Transforms the coefficients based on the given mapping
     inline UniformBSpline& transform(const std::function<std::array<real_t, geoDim_>(const std::array<real_t, parDim_>&)> transformation)
     {
+      static_assert(parDim_ <= 4, "Unsupported parametric dimension");
+
       // 1D
       if constexpr (parDim_ == 1) {
+#pragma omp parallel for simd
         for (int64_t i=0; i<ncoeffs_[0]; ++i) {
           auto c = transformation( std::array<real_t,1>{i/real_t(ncoeffs_[0]-1)} );
           for (short_t d=0; d<geoDim_; ++d)
@@ -316,6 +317,7 @@ namespace iganet {
 
       // 2D
       else if constexpr (parDim_ == 2) {
+#pragma omp parallel for simd collapse(2)
         for (int64_t i=0; i<ncoeffs_[0]; ++i) {
           for (int64_t j=0; j<ncoeffs_[1]; ++j) {
             auto c = transformation( std::array<real_t,2>{i/real_t(ncoeffs_[0]-1), j/real_t(ncoeffs_[1]-1)} );
@@ -327,6 +329,7 @@ namespace iganet {
 
       // 3D
       else if constexpr (parDim_ == 3) {
+#pragma omp parallel for simd collapse(3)
         for (int64_t i=0; i<ncoeffs_[0]; ++i) {
           for (int64_t j=0; j<ncoeffs_[1]; ++j) {
             for (int64_t k=0; k<ncoeffs_[2]; ++k) {
@@ -340,6 +343,7 @@ namespace iganet {
 
       // 4D
       else if constexpr (parDim_ == 4) {
+#pragma omp parallel for simd collapse(4)
         for (int64_t i=0; i<ncoeffs_[0]; ++i) {
           for (int64_t j=0; j<ncoeffs_[1]; ++j) {
             for (int64_t k=0; k<ncoeffs_[2]; ++k) {
@@ -352,9 +356,6 @@ namespace iganet {
           }
         }
       }
-
-      else
-        throw std::runtime_error("Unsupported parametric dimension");
 
       return *this;
     }
@@ -408,6 +409,234 @@ namespace iganet {
       return *name_;
     }
 
+    // Plots the B-Spline object using matplotlibcpp
+    inline auto plot(int64_t xres=10, int64_t yres=10, int64_t zres=10) const
+    {
+      if constexpr(parDim_==1 && geoDim_==1) {
+        // mapping: [0,1] -> R^1
+
+        matplot::vector_1d X(ncoeffs(0), 0.0);
+        matplot::vector_1d Y(ncoeffs(0), 0.0);
+
+        auto x = coeffs<false>(0);
+
+#pragma omp parallel for simd
+        for (int64_t i=0; i<ncoeffs(0); ++i) {
+          X[i] = x[i].template item<real_t>();
+        }
+
+        matplot::vector_1d Xfine(xres, 0.0);
+        matplot::vector_1d Yfine(xres, 0.0);
+
+#pragma omp parallel for simd
+        for (int64_t i=0; i<xres; ++i) {
+          auto coords = eval(torch::stack(
+                                          {
+                                            torch::full({1}, i/real_t(xres-1))
+                                          }
+                                          ).view({1})
+                             );
+          Xfine[i] = coords.template item<real_t>();
+        }
+
+        // 2d plot
+        matplot::hold(matplot::on);
+        matplot::plot(Xfine, Yfine, "b-")->line_width(2);
+        matplot::plot(X, Y, ".k-")->line_width(1);
+        matplot::title("Geometry: [0,1] -> R");
+        matplot::xlabel("x");
+        matplot::ylabel("y");
+        return matplot::show();
+      }
+
+      else if constexpr(parDim_==1 && geoDim_==2) {
+        // mapping: [0,1] -> R^2
+
+        matplot::vector_1d X(ncoeffs(0), 0.0);
+        matplot::vector_1d Y(ncoeffs(0), 0.0);
+
+        auto x = coeffs<false>(0);
+        auto y = coeffs<false>(1);
+
+#pragma omp parallel for simd
+        for (int64_t i=0; i<ncoeffs(0); ++i) {
+          X[i] = x[i].template item<real_t>();
+          Y[i] = y[i].template item<real_t>();
+        }
+
+        matplot::vector_1d Xfine(xres, 0.0);
+        matplot::vector_1d Yfine(xres, 0.0);
+
+#pragma omp parallel for simd
+        for (int64_t i=0; i<xres; ++i) {
+          auto coords = eval(torch::stack(
+                                          {
+                                            torch::full({1}, i/real_t(xres-1))
+                                          }
+                                          ).view({1})
+                             );
+          Xfine[i] = coords[0].template item<real_t>();
+          Yfine[i] = coords[1].template item<real_t>();
+        }
+
+        // 2d plot
+        matplot::hold(matplot::on);
+        matplot::plot(Xfine, Yfine, "b-")->line_width(2);
+        matplot::plot(X, Y, ".k-")->line_width(1);
+        matplot::title("Geometry: [0,1] -> R^2");
+        matplot::xlabel("x");
+        matplot::ylabel("y");
+        return matplot::show();
+      }
+
+      else if constexpr(parDim_==1 && geoDim_==3) {
+        // mapping: [0,1] -> R^3
+
+        matplot::vector_1d X(ncoeffs(0), 0.0);
+        matplot::vector_1d Y(ncoeffs(0), 0.0);
+        matplot::vector_1d Z(ncoeffs(0), 0.0);
+
+        auto x = coeffs<false>(0);
+        auto y = coeffs<false>(1);
+        auto z = coeffs<false>(2);
+
+#pragma omp parallel for simd
+        for (int64_t i=0; i<ncoeffs(0); ++i) {
+          X[i] = x[i].template item<real_t>();
+          Y[i] = y[i].template item<real_t>();
+          Z[i] = z[i].template item<real_t>();
+        }
+
+        matplot::vector_1d Xfine(xres, 0.0);
+        matplot::vector_1d Yfine(xres, 0.0);
+        matplot::vector_1d Zfine(xres, 0.0);
+
+#pragma omp parallel for simd
+        for (int64_t i=0; i<xres; ++i) {
+          auto coords = eval(torch::stack(
+                                          {
+                                            torch::full({1}, i/real_t(xres-1))
+                                          }
+                                          ).view({1})
+                             );
+          Xfine[i] = coords[0].template item<real_t>();
+          Yfine[i] = coords[1].template item<real_t>();
+          Zfine[i] = coords[2].template item<real_t>();
+        }
+
+        // 3d plot
+        matplot::hold(matplot::on);
+        matplot::plot3(Xfine, Yfine, Zfine, "b-")->line_width(2);
+        matplot::plot3(X, Y, Z, ".k-")->line_width(1);
+        matplot::title("Geometry: [0,1] -> R^3");
+        matplot::xlabel("x");
+        matplot::ylabel("y");
+        matplot::zlabel("z");
+        return matplot::show();
+      }
+
+      else if constexpr(parDim_==2 && geoDim_==2) {
+        // mapping: [0,1]^2 -> R^2
+
+        matplot::vector_2d X(ncoeffs(1), matplot::vector_1d(ncoeffs(0), 0.0));
+        matplot::vector_2d Y(ncoeffs(1), matplot::vector_1d(ncoeffs(0), 0.0));
+        matplot::vector_2d Z(ncoeffs(1), matplot::vector_1d(ncoeffs(0), 0.0));
+
+        auto x = coeffs<false>(0);
+        auto y = coeffs<false>(1);
+
+#pragma omp parallel for simd collapse(2)
+        for (int64_t i=0; i<ncoeffs(0); ++i)
+          for (int64_t j=0; j<ncoeffs(1); ++j) {
+            X[j][i] = x[i][j].template item<real_t>();
+            Y[j][i] = y[i][j].template item<real_t>();
+          }
+
+        matplot::vector_2d Xfine(yres, matplot::vector_1d(xres, 0.0));
+        matplot::vector_2d Yfine(yres, matplot::vector_1d(xres, 0.0));
+        matplot::vector_2d Zfine(yres, matplot::vector_1d(xres, 0.0));
+
+#pragma omp parallel for simd collapse(2)
+        for (int64_t i=0; i<xres; ++i)
+          for (int64_t j=0; j<yres; ++j) {
+            auto coords = eval(torch::stack(
+                                            {
+                                              torch::full({1}, i/real_t(xres-1)),
+                                              torch::full({1}, j/real_t(yres-1))
+                                            }
+                                            ).view({2})
+                               );
+            Xfine[j][i] = coords[0].template item<real_t>();
+            Yfine[j][i] = coords[1].template item<real_t>();
+          }
+
+        // quasi-2d plot
+        matplot::view(2);
+        matplot::colormap(matplot::palette::winter());
+        matplot::mesh(Xfine, Yfine, Zfine);
+        matplot::hold(matplot::on);
+        matplot::surf(X, Y, Z)->palette_map_at_surface(true).face_alpha(0);
+        matplot::title("Geometry: [0,1]^2 -> R^2");
+        matplot::xlabel("x");
+        matplot::ylabel("y");
+        matplot::zlabel("z");
+        return matplot::show();
+      }
+
+      else if constexpr(parDim_==2 && geoDim_==3) {
+        // mapping: [0,1]^2 -> R^3
+
+        matplot::vector_2d X(ncoeffs(1), matplot::vector_1d(ncoeffs(0), 0.0));
+        matplot::vector_2d Y(ncoeffs(1), matplot::vector_1d(ncoeffs(0), 0.0));
+        matplot::vector_2d Z(ncoeffs(1), matplot::vector_1d(ncoeffs(0), 0.0));
+
+        auto x = coeffs<false>(0);
+        auto y = coeffs<false>(1);
+        auto z = coeffs<false>(2);
+
+#pragma omp parallel for simd collapse(2)
+        for (int64_t i=0; i<ncoeffs(0); ++i)
+          for (int64_t j=0; j<ncoeffs(1); ++j) {
+            X[j][i] = x[i][j].template item<real_t>();
+            Y[j][i] = y[i][j].template item<real_t>();
+            Z[j][i] = z[i][j].template item<real_t>();
+          }
+
+        matplot::vector_2d Xfine(yres, matplot::vector_1d(xres, 0.0));
+        matplot::vector_2d Yfine(yres, matplot::vector_1d(xres, 0.0));
+        matplot::vector_2d Zfine(yres, matplot::vector_1d(xres, 0.0));
+
+#pragma omp parallel for simd collapse(2)
+        for (int64_t i=0; i<xres; ++i)
+          for (int64_t j=0; j<yres; ++j) {
+            auto coords = eval(torch::stack(
+                                            {
+                                              torch::full({1}, i/real_t(xres-1)),
+                                              torch::full({1}, j/real_t(yres-1))
+                                            }
+                                            ).view({2})
+                               );
+            Xfine[j][i] = coords[0].template item<real_t>();
+            Yfine[j][i] = coords[1].template item<real_t>();
+            Zfine[j][i] = coords[2].template item<real_t>();
+          }
+
+        // 3d plot
+        matplot::colormap(matplot::palette::winter());
+        matplot::hold(matplot::on);
+        matplot::mesh(Xfine, Yfine, Zfine);
+        matplot::surf(X, Y, Z)->palette_map_at_surface(true).face_alpha(0);
+        matplot::title("Geometry: [0,1]^2 -> R^3");
+        matplot::xlabel("x");
+        matplot::ylabel("y");
+        matplot::zlabel("z");
+        return matplot::show();
+      }
+
+      else
+        throw std::runtime_error("Unsupported combination of parametric/geometric dimensions");
+    }
+
   protected:
     // Initialize coefficients
     inline void init_coeffs(BSplineInit init)
@@ -448,7 +677,7 @@ namespace iganet {
         // increasing values between 0 and 1 per univariate dimension
         for (short_t i=0; i<geoDim_; ++i) {
           coeffs_[i] = torch::ones(1, core<real_t>::options_);
-          
+
           for (short_t j=0; j<parDim_; ++j)
             {
               if (i==j)
@@ -465,7 +694,7 @@ namespace iganet {
       }
 
       case (BSplineInit::random): {
-        
+
         // Fill coefficients with random values
         for (short_t i=0; i<geoDim_; ++i) {
 
@@ -484,7 +713,7 @@ namespace iganet {
         // abscissae values per univariate dimension
         for (short_t i=0; i<geoDim_; ++i) {
           coeffs_[i] = torch::ones(1, core<real_t>::options_);
-          
+
           for (short_t j=0; j<parDim_; ++j)
             {
               if (i==j) {
@@ -495,12 +724,12 @@ namespace iganet {
                   for (short_t l=1; l<=degrees_[j]; ++l)
                     greville[k] += knots[k+l];
                   greville[k] /= degrees_[j];
-                }                
+                }
                 coeffs_[i] = coeffs_[i].kron(greville_);
               } else
                 coeffs_[i] = coeffs_[i].kron(torch::ones(ncoeffs_[j],
                                                          core<real_t>::options_));
-            }          
+            }
         }
         break;
       }
@@ -509,77 +738,149 @@ namespace iganet {
         throw std::runtime_error("Unsupported BSplineInit option");
       }
     }
-    
+
     template<BSplineDeriv deriv = BSplineDeriv::func>
-    inline torch::Tensor eval_1d(const torch::Tensor& xi, int64_t i) const
+    inline auto eval_1d(const torch::Tensor& xi, int64_t i) const
     {
-      return
-        torch::matmul(eval_impl<degrees_[0],0,(short_t)deriv%10>(i, xi[0]),
-                      coeffs<false>(0).index(
-                                             {
-                                               torch::indexing::Slice(i-degrees_[0], i+1, 1)
-                                             }
-                                             ).flatten());
+      if constexpr (geoDim_ > 1) {
+        auto basfunc = eval_impl<degrees_[0],0,(short_t)deriv%10>(i, xi[0]);
+        std::array<torch::Tensor, geoDim_> result;
+        for (std::size_t k=0; k<geoDim_; ++k)
+          result[k] = torch::matmul(basfunc,
+                                    coeffs<false>(k).index(
+                                                           {
+                                                             torch::indexing::Slice(i-degrees_[0], i+1, 1)
+                                                           }
+                                                           ).flatten());
+        return result;
+      } else
+        return
+          torch::matmul(eval_impl<degrees_[0],0,(short_t)deriv%10>(i, xi[0]),
+                        coeffs<false>(0).index(
+                                               {
+                                                 torch::indexing::Slice(i-degrees_[0], i+1, 1)
+                                               }
+                                               ).flatten());
     }
 
     template<BSplineDeriv deriv = BSplineDeriv::func>
-    inline torch::Tensor eval_2d(const torch::Tensor& xi, int64_t i, int64_t j) const
+    inline auto eval_2d(const torch::Tensor& xi, int64_t i, int64_t j) const
     {
-      return
-        torch::matmul(torch::kron(
-                                  eval_impl<degrees_[0],0, (short_t)deriv    %10>(i, xi[0]),
-                                  eval_impl<degrees_[1],1,((short_t)deriv/10)%10>(j, xi[1])
-                                  ),
-                      coeffs<false>(0).index(
-                                             {
-                                               torch::indexing::Slice(i-degrees_[0], i+1, 1),
-                                               torch::indexing::Slice(j-degrees_[1], j+1, 1)
-                                             }
-                                             ).flatten());
+      if constexpr (geoDim_ > 1) {
+        auto basfunc = torch::kron(
+                                   eval_impl<degrees_[0],0, (short_t)deriv    %10>(i, xi[0]),
+                                   eval_impl<degrees_[1],1,((short_t)deriv/10)%10>(j, xi[1])
+                                   );
+        std::array<torch::Tensor, geoDim_> result;
+        for (std::size_t k=0; k<geoDim_; ++k)
+          result[k] = torch::matmul(basfunc,
+                                    coeffs<false>(k).index(
+                                                           {
+                                                             torch::indexing::Slice(i-degrees_[0], i+1, 1),
+                                                             torch::indexing::Slice(j-degrees_[1], j+1, 1)
+                                                           }
+                                                           ).flatten());
+        return result;
+      } else
+        return
+          torch::matmul(torch::kron(
+                                    eval_impl<degrees_[0],0, (short_t)deriv    %10>(i, xi[0]),
+                                    eval_impl<degrees_[1],1,((short_t)deriv/10)%10>(j, xi[1])
+                                    ),
+                        coeffs<false>(0).index(
+                                               {
+                                                 torch::indexing::Slice(i-degrees_[0], i+1, 1),
+                                                 torch::indexing::Slice(j-degrees_[1], j+1, 1)
+                                               }
+                                               ).flatten());
     }
 
     template<BSplineDeriv deriv = BSplineDeriv::func>
-    inline torch::Tensor eval_3d(const torch::Tensor& xi, int64_t i, int64_t j, int64_t k) const
+    inline auto eval_3d(const torch::Tensor& xi, int64_t i, int64_t j, int64_t k) const
     {
-      return
-        torch::matmul(torch::kron(
-                                  torch::kron(
-                                              eval_impl<degrees_[0],0, (short_t)deriv    %10>(i, xi[0]),
-                                              eval_impl<degrees_[1],1,((short_t)deriv/10)%10>(j, xi[1])
-                                              ),
-                                  eval_impl<degrees_[2],2,((short_t)deriv/100)%10>(k, xi[2])
-                                  ),
-                      coeffs<false>(0).index(
-                                             {
-                                               torch::indexing::Slice(i-degrees_[0], i+1, 1),
-                                               torch::indexing::Slice(j-degrees_[1], j+1, 1),
-                                               torch::indexing::Slice(k-degrees_[2], k+1, 1)
-                                             }
-                                             ).flatten());
+      if constexpr (geoDim_ > 1) {
+        auto basfunc = torch::kron(
+                                   torch::kron(
+                                               eval_impl<degrees_[0],0, (short_t)deriv    %10>(i, xi[0]),
+                                               eval_impl<degrees_[1],1,((short_t)deriv/10)%10>(j, xi[1])
+                                               ),
+                                   eval_impl<degrees_[2],2,((short_t)deriv/100)%10>(k, xi[2])
+                                   );
+        std::array<torch::Tensor, geoDim_> result;
+        for (std::size_t k=0; k<geoDim_; ++k)
+          result[k] = torch::matmul(basfunc,
+                                    coeffs<false>(k).index(
+                                                           {
+                                                             torch::indexing::Slice(i-degrees_[0], i+1, 1),
+                                                             torch::indexing::Slice(j-degrees_[1], j+1, 1),
+                                                             torch::indexing::Slice(k-degrees_[2], k+1, 1)
+                                                           }
+                                                           ).flatten());
+        return result;
+      } else
+        return
+          torch::matmul(torch::kron(
+                                    torch::kron(
+                                                eval_impl<degrees_[0],0, (short_t)deriv    %10>(i, xi[0]),
+                                                eval_impl<degrees_[1],1,((short_t)deriv/10)%10>(j, xi[1])
+                                                ),
+                                    eval_impl<degrees_[2],2,((short_t)deriv/100)%10>(k, xi[2])
+                                    ),
+                        coeffs<false>(0).index(
+                                               {
+                                                 torch::indexing::Slice(i-degrees_[0], i+1, 1),
+                                                 torch::indexing::Slice(j-degrees_[1], j+1, 1),
+                                                 torch::indexing::Slice(k-degrees_[2], k+1, 1)
+                                               }
+                                               ).flatten());
     }
 
     template<BSplineDeriv deriv = BSplineDeriv::func>
-    inline torch::Tensor eval_4d(const torch::Tensor& xi, int64_t i, int64_t j, int64_t k, int64_t l) const
+    inline auto eval_4d(const torch::Tensor& xi, int64_t i, int64_t j, int64_t k, int64_t l) const
     {
-      return
-        torch::matmul(torch::kron(
-                                  torch::kron(
-                                              eval_impl<degrees_[0],0, (short_t)deriv      %10>(i, xi[0]),
-                                              eval_impl<degrees_[1],1,((short_t)deriv/  10)%10>(j, xi[1])
-                                              ),
-                                  torch::kron(
-                                              eval_impl<degrees_[2],2,((short_t)deriv/ 100)%10>(k, xi[2]),
-                                              eval_impl<degrees_[3],3,((short_t)deriv/1000)%10>(l, xi[3])
-                                              )
-                                  ),
-                      coeffs<false>(0).index(
-                                             {
-                                               torch::indexing::Slice(i-degrees_[0], i+1, 1),
-                                               torch::indexing::Slice(j-degrees_[1], j+1, 1),
-                                               torch::indexing::Slice(k-degrees_[2], k+1, 1),
-                                               torch::indexing::Slice(l-degrees_[3], l+1, 1)
-                                             }
-                                             ).flatten());
+      if constexpr (geoDim_ > 1) {
+        auto basfunc = torch::kron(
+                                   torch::kron(
+                                               eval_impl<degrees_[0],0, (short_t)deriv      %10>(i, xi[0]),
+                                               eval_impl<degrees_[1],1,((short_t)deriv/  10)%10>(j, xi[1])
+                                               ),
+                                   torch::kron(
+                                               eval_impl<degrees_[2],2,((short_t)deriv/ 100)%10>(k, xi[2]),
+                                               eval_impl<degrees_[3],3,((short_t)deriv/1000)%10>(l, xi[3])
+                                               )
+                                   );
+        std::array<torch::Tensor, geoDim_> result;
+        for (std::size_t k=0; k<geoDim_; ++k)
+          result[k] = torch::matmul(basfunc,
+                                    coeffs<false>(k).index(
+                                                           {
+                                                             torch::indexing::Slice(i-degrees_[0], i+1, 1),
+                                                             torch::indexing::Slice(j-degrees_[1], j+1, 1),
+                                                             torch::indexing::Slice(k-degrees_[2], k+1, 1),
+                                                             torch::indexing::Slice(l-degrees_[3], l+1, 1)
+                                                           }
+                                                           ).flatten());
+        return result;
+      } else
+        return
+          torch::matmul(torch::kron(
+                                    torch::kron(
+                                                eval_impl<degrees_[0],0, (short_t)deriv      %10>(i, xi[0]),
+                                                eval_impl<degrees_[1],1,((short_t)deriv/  10)%10>(j, xi[1])
+                                                ),
+                                    torch::kron(
+                                                eval_impl<degrees_[2],2,((short_t)deriv/ 100)%10>(k, xi[2]),
+                                                eval_impl<degrees_[3],3,((short_t)deriv/1000)%10>(l, xi[3])
+                                                )
+                                    ),
+                        coeffs<false>(0).index(
+                                               {
+                                                 torch::indexing::Slice(i-degrees_[0], i+1, 1),
+                                                 torch::indexing::Slice(j-degrees_[1], j+1, 1),
+                                                 torch::indexing::Slice(k-degrees_[2], k+1, 1),
+                                                 torch::indexing::Slice(l-degrees_[3], l+1, 1)
+                                               }
+                                               ).flatten());
     }
 
     // Returns the values of the vector of B-spline basis function (or
@@ -602,8 +903,10 @@ namespace iganet {
     // and Section 3.2 in
     // https://www.uio.no/studier/emner/matnat/ifi/nedlagte-emner/INF-MAT5340/v05/undervisningsmateriale/kap3-new.pdf
     template<short_t degree, short_t dim, short_t deriv>
-    inline torch::Tensor eval_impl(int64_t i, const torch::Tensor& xi) const
+    inline auto eval_impl(int64_t i, const torch::Tensor& xi) const
     {
+      static_assert(degree <= 5, "Degrees higher than 5 are not implemented");
+
       // linear B-Splines
       if constexpr (degree == 1) {
 
@@ -981,11 +1284,6 @@ namespace iganet {
             ;
         }
       }
-
-      else {
-        throw std::runtime_error("Degrees higher than 5 are not implemented");
-      }
-
     }
   };
 
@@ -1030,8 +1328,10 @@ namespace iganet {
     }
 
     template<BSplineDeriv deriv = BSplineDeriv::func>
-    inline torch::Tensor eval(const torch::Tensor& xi) const
+    inline auto eval(const torch::Tensor& xi) const
     {
+      static_assert(Base::parDim_ <= 4, "Unsupported parametric dimension");
+
       // 1D
       if constexpr (Base::parDim_ == 1) {
         int64_t i;
@@ -1111,10 +1411,234 @@ namespace iganet {
 
         return Base::eval_4d(xi, i, j, k, l);
       }
+    }
 
-      else {
-        throw std::runtime_error("Unsupported parametric dimension");
+    // Plots the B-Spline object using matplotlibcpp
+    inline void plot(int64_t xres=10, int64_t yres=10, int64_t zres=10) const
+    {
+      if constexpr(Base::parDim_==1 && Base::geoDim_==1) {
+        // mapping: [0,1] -> R^1
+
+        matplot::vector_1d X(Base::ncoeffs(0), 0.0);
+        matplot::vector_1d Y(Base::ncoeffs(0), 0.0);
+
+        auto x = Base::coeffs<false>(0);
+
+#pragma omp parallel for simd
+        for (int64_t i=0; i<Base::ncoeffs(0); ++i) {
+          X[i] = x[i].template item<real_t>();
+        }
+
+        matplot::vector_1d Xfine(xres, 0.0);
+        matplot::vector_1d Yfine(xres, 0.0);
+
+#pragma omp parallel for simd
+        for (int64_t i=0; i<xres; ++i) {
+          auto coords = eval(torch::stack(
+                                          {
+                                            torch::full({1}, i/real_t(xres-1))
+                                          }
+                                          ).view({1})
+                             );
+          Xfine[i] = coords.template item<real_t>();
+        }
+
+        // 2d plot
+        matplot::hold(matplot::on);
+        matplot::plot(Xfine, Yfine, "b-")->line_width(2);
+        matplot::plot(X, Y, ".k-")->line_width(1);
+        matplot::title("Geometry: [0,1] -> R");
+        matplot::xlabel("x");
+        matplot::ylabel("y");
+        return matplot::show();
       }
+
+      else if constexpr(Base::parDim_==1 && Base::geoDim_==2) {
+        // mapping: [0,1] -> R^2
+
+        matplot::vector_1d X(Base::ncoeffs(0), 0.0);
+        matplot::vector_1d Y(Base::ncoeffs(0), 0.0);
+
+        auto x = Base::coeffs<false>(0);
+        auto y = Base::coeffs<false>(1);
+
+#pragma omp parallel for simd
+        for (int64_t i=0; i<Base::ncoeffs(0); ++i) {
+          X[i] = x[i].template item<real_t>();
+          Y[i] = y[i].template item<real_t>();
+        }
+
+        matplot::vector_1d Xfine(xres, 0.0);
+        matplot::vector_1d Yfine(xres, 0.0);
+
+#pragma omp parallel for simd
+        for (int64_t i=0; i<xres; ++i) {
+          auto coords = eval(torch::stack(
+                                          {
+                                            torch::full({1}, i/real_t(xres-1))
+                                          }
+                                          ).view({1})
+                             );
+          Xfine[i] = coords[0].template item<real_t>();
+          Yfine[i] = coords[1].template item<real_t>();
+        }
+
+        // 2d plot
+        matplot::hold(matplot::on);
+        matplot::plot(Xfine, Yfine, "b-")->line_width(2);
+        matplot::plot(X, Y, ".k-")->line_width(1);
+        matplot::title("Geometry: [0,1] -> R^2");
+        matplot::xlabel("x");
+        matplot::ylabel("y");
+        return matplot::show();
+      }
+
+      else if constexpr(Base::parDim_==1 && Base::geoDim_==3) {
+        // mapping: [0,1] -> R^3
+
+        matplot::vector_1d X(Base::ncoeffs(0), 0.0);
+        matplot::vector_1d Y(Base::ncoeffs(0), 0.0);
+        matplot::vector_1d Z(Base::ncoeffs(0), 0.0);
+
+        auto x = Base::coeffs<false>(0);
+        auto y = Base::coeffs<false>(1);
+        auto z = Base::coeffs<false>(2);
+
+#pragma omp parallel for simd
+        for (int64_t i=0; i<Base::ncoeffs(0); ++i) {
+          X[i] = x[i].template item<real_t>();
+          Y[i] = y[i].template item<real_t>();
+          Z[i] = z[i].template item<real_t>();
+        }
+
+        matplot::vector_1d Xfine(xres, 0.0);
+        matplot::vector_1d Yfine(xres, 0.0);
+        matplot::vector_1d Zfine(xres, 0.0);
+
+#pragma omp parallel for simd
+        for (int64_t i=0; i<xres; ++i) {
+          auto coords = eval(torch::stack(
+                                          {
+                                            torch::full({1}, i/real_t(xres-1))
+                                          }
+                                          ).view({1})
+                             );
+          Xfine[i] = coords[0].template item<real_t>();
+          Yfine[i] = coords[1].template item<real_t>();
+          Zfine[i] = coords[2].template item<real_t>();
+        }
+
+        // 3d plot
+        matplot::hold(matplot::on);
+        matplot::plot3(Xfine, Yfine, Zfine, "b-")->line_width(2);
+        matplot::plot3(X, Y, Z, ".k-")->line_width(1);
+        matplot::title("Geometry: [0,1] -> R^3");
+        matplot::xlabel("x");
+        matplot::ylabel("y");
+        matplot::zlabel("z");
+        return matplot::show();
+      }
+
+      else if constexpr(Base::parDim_==2 && Base::geoDim_==2) {
+        // mapping: [0,1]^2 -> R^2
+
+        matplot::vector_2d X(Base::ncoeffs(1), matplot::vector_1d(Base::ncoeffs(0), 0.0));
+        matplot::vector_2d Y(Base::ncoeffs(1), matplot::vector_1d(Base::ncoeffs(0), 0.0));
+        matplot::vector_2d Z(Base::ncoeffs(1), matplot::vector_1d(Base::ncoeffs(0), 0.0));
+
+        auto x = Base::coeffs<false>(0);
+        auto y = Base::coeffs<false>(1);
+
+#pragma omp parallel for simd collapse(2)
+        for (int64_t i=0; i<Base::ncoeffs(0); ++i)
+          for (int64_t j=0; j<Base::ncoeffs(1); ++j) {
+            X[j][i] = x[i][j].template item<real_t>();
+            Y[j][i] = y[i][j].template item<real_t>();
+          }
+
+        matplot::vector_2d Xfine(yres, matplot::vector_1d(xres, 0.0));
+        matplot::vector_2d Yfine(yres, matplot::vector_1d(xres, 0.0));
+        matplot::vector_2d Zfine(yres, matplot::vector_1d(xres, 0.0));
+
+#pragma omp parallel for simd collapse(2)
+        for (int64_t i=0; i<xres; ++i)
+          for (int64_t j=0; j<yres; ++j) {
+            auto coords = eval(torch::stack(
+                                            {
+                                              torch::full({1}, i/real_t(xres-1)),
+                                              torch::full({1}, j/real_t(yres-1))
+                                            }
+                                            ).view({2})
+                               );
+            Xfine[j][i] = coords[0].template item<real_t>();
+            Yfine[j][i] = coords[1].template item<real_t>();
+          }
+
+        // quasi-2d plot
+        matplot::view(2);
+        matplot::colormap(matplot::palette::winter());
+        matplot::mesh(Xfine, Yfine, Zfine);
+        matplot::hold(matplot::on);
+        matplot::surf(X, Y, Z)->palette_map_at_surface(true).face_alpha(0);
+        matplot::title("Geometry: [0,1]^2 -> R^2");
+        matplot::xlabel("x");
+        matplot::ylabel("y");
+        matplot::zlabel("z");
+        return matplot::show();
+      }
+
+      else if constexpr(Base::parDim_==2 && Base::geoDim_==3) {
+        // mapping: [0,1]^2 -> R^3
+
+        matplot::vector_2d X(Base::ncoeffs(1), matplot::vector_1d(Base::ncoeffs(0), 0.0));
+        matplot::vector_2d Y(Base::ncoeffs(1), matplot::vector_1d(Base::ncoeffs(0), 0.0));
+        matplot::vector_2d Z(Base::ncoeffs(1), matplot::vector_1d(Base::ncoeffs(0), 0.0));
+
+        auto x = Base::coeffs<false>(0);
+        auto y = Base::coeffs<false>(1);
+        auto z = Base::coeffs<false>(2);
+
+#pragma omp parallel for simd collapse(2)
+        for (int64_t i=0; i<Base::ncoeffs(0); ++i)
+          for (int64_t j=0; j<Base::ncoeffs(1); ++j) {
+            X[j][i] = x[i][j].template item<real_t>();
+            Y[j][i] = y[i][j].template item<real_t>();
+            Z[j][i] = z[i][j].template item<real_t>();
+          }
+
+        matplot::vector_2d Xfine(yres, matplot::vector_1d(xres, 0.0));
+        matplot::vector_2d Yfine(yres, matplot::vector_1d(xres, 0.0));
+        matplot::vector_2d Zfine(yres, matplot::vector_1d(xres, 0.0));
+
+#pragma omp parallel for simd collapse(2)
+        for (int64_t i=0; i<xres; ++i)
+          for (int64_t j=0; j<yres; ++j) {
+            auto coords = eval(torch::stack(
+                                            {
+                                              torch::full({1}, i/real_t(xres-1)),
+                                              torch::full({1}, j/real_t(yres-1))
+                                            }
+                                            ).view({2})
+                               );
+            Xfine[j][i] = coords[0].template item<real_t>();
+            Yfine[j][i] = coords[1].template item<real_t>();
+            Zfine[j][i] = coords[2].template item<real_t>();
+          }
+
+        // 3d plot
+        matplot::colormap(matplot::palette::winter());
+        matplot::hold(matplot::on);
+        matplot::mesh(Xfine, Yfine, Zfine);
+        matplot::surf(X, Y, Z)->palette_map_at_surface(true).face_alpha(0);
+        matplot::title("Geometry: [0,1]^2 -> R^3");
+        matplot::xlabel("x");
+        matplot::ylabel("y");
+        matplot::zlabel("z");
+        return matplot::show();
+      }
+
+      else
+        throw std::runtime_error("Unsupported combination of parametric/geometric dimensions");
     }
   };
 
