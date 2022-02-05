@@ -49,7 +49,7 @@ namespace iganet {
     // Tensor options
     const torch::TensorOptions options_;
   };
-  
+
   // Concatenates multiple std::vector objects
   template<typename... Ts>
   auto concat(const std::vector<Ts>&... vectors)
@@ -60,17 +60,17 @@ namespace iganet {
 
     return result;
   }
-  
+
   // Concatenates multiple std::array objects
   template<typename T, std::size_t... N>
   auto concat(const std::array<T, N>&... arrays)
   {
     std::array<T, (N + ...)> result;
     std::size_t index{};
-    
+
     ((std::copy_n(arrays.begin(), N, result.begin() + index), index += N), ...);
-    
+
     return result;
   }
-  
+
 } // namespace iganet
