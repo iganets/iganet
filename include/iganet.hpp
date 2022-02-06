@@ -10,7 +10,7 @@ namespace iganet {
    * @note Following the discussion of module overship here
    *
    * https://pytorch.org/tutorials/advanced/cpp_frontend.html#module-ownership
-   * 
+   *
    * we implement a generator implementation class following
    *
    * https://pytorch.org/tutorials/advanced/cpp_frontend.html#the-generator-module
@@ -40,7 +40,7 @@ namespace iganet {
       x = fc.end()->forward(x);
       return x;
     }
-    
+
   private:
     // Vector of linear layers
     std::vector<torch::nn::Linear> fc;
@@ -66,29 +66,29 @@ namespace iganet {
    * IgaNet
    */
   template<typename real_t,
-           template<typename, short_t, short_t...> class BSpline,
+           template<typename, short_t, short_t...> class BSpline_t,
            short_t... Degrees>
   class IgANet : public core<real_t>
   {
   private:
     // Dimension of the differential equation
     static constexpr const short_t dim_ = sizeof...(Degrees);
-    
+
     // B-spline representation of the geometry
-    BSpline<real_t, dim_, Degrees...> geo_;
+    BSpline_t<real_t, dim_, Degrees...> geo_;
 
     // B-spline representation of the right-hand side
-    BSpline<real_t, 1, Degrees...> rhs_;
+    BSpline_t<real_t, 1, Degrees...> rhs_;
 
     // B-spline representation of the solution
-    BSpline<real_t, 1, Degrees...> sol_;
+    BSpline_t<real_t, 1, Degrees...> sol_;
 
     // Input tensor
     torch::Tensor input_;
-    
+
     // Tensor servering as global input
     torch::Tensor input__;
-    
+
     // IgANet generator
     IgANetGenerator<real_t> net_;
 
@@ -97,7 +97,7 @@ namespace iganet {
     IgANet(const std::vector<int64_t>& layers,
            const std::array<int64_t,dim_>& bspline_ncoeffs)
       : IgANet(layers, bspline_ncoeffs, bspline_ncoeffs, bspline_ncoeffs)
-    {    
+    {
     }
 
     // Constructor: layers + geo-bspline + rhs-bspline + sol-bspline
@@ -106,13 +106,13 @@ namespace iganet {
            const std::array<int64_t,dim_>& rhs_bspline_ncoeffs,
            const std::array<int64_t,dim_>& sol_bspline_ncoeffs)
       : core<real_t>(),
-        
-        // Construct the different BSpline objects individually
+
+        // Construct the different B-Spline objects individually
         geo_(geo_bspline_ncoeffs, BSplineInit::greville),
         rhs_(rhs_bspline_ncoeffs, BSplineInit::ones),
         sol_(sol_bspline_ncoeffs, BSplineInit::random),
-        
-        // Construct one large tensor comprising all BSpline object's
+
+        // Construct one large tensor comprising all B-Spline object's
         // coefficient vectors - we need this complicated construction
         // to first concatenate the multiple
         // std::array<torch::Tensor,*> objects into a single
@@ -124,7 +124,7 @@ namespace iganet {
                                      std::array<torch::Tensor,1>({torch::ones({dim_}, core<real_t>::options_)}))
                               )
                 ),
-        
+
         // Construct the deep neural network with the large tensor as
         // input and the coefficient vector of the solution's BSpline
         // object as output
@@ -133,10 +133,10 @@ namespace iganet {
                     std::vector<int64_t>{sol_.ncoeffs()}))
     {
       // Now that everything is in placed we swap the coefficient
-      // vectors of the BSpline objects with views on parts of the one
-      // large tensor
+      // vectors of the B-Spline objects with views on parts of the
+      // one large tensor
       int64_t count = 0;
-      
+
       // Geometry
       for (short_t i=0; i<dim_; ++i)
         {
@@ -144,12 +144,12 @@ namespace iganet {
                                                                  count+=geo_.ncoeffs(),
                                                                  1)});
         }
-      
+
       // Right-hand side
       rhs_.coeffs(0) = input__.index({torch::indexing::Slice(count,
                                                              count+=rhs_.ncoeffs(),
                                                              1)});
-      
+
       // Input tensor
       input_ = input__.index({torch::indexing::Slice(count,
                                                      count+=dim_,
@@ -160,7 +160,7 @@ namespace iganet {
     IgANet(const std::vector<int64_t>& layers,
            const std::array<std::vector<real_t>,dim_>& bspline_kv)
       : IgANet(layers, bspline_kv, bspline_kv, bspline_kv)
-    {    
+    {
     }
 
         // Constructor: layers + geo-bspline + rhs-bspline + sol-bspline
@@ -169,13 +169,13 @@ namespace iganet {
            const std::array<std::vector<real_t>,dim_>& rhs_bspline_kv,
            const std::array<std::vector<real_t>,dim_>& sol_bspline_kv)
       : core<real_t>(),
-        
-        // Construct the different BSpline objects individually
+
+        // Construct the different B-Spline objects individually
         geo_(geo_bspline_kv, BSplineInit::greville),
         rhs_(rhs_bspline_kv, BSplineInit::ones),
         sol_(sol_bspline_kv, BSplineInit::random),
-        
-        // Construct one large tensor comprising all BSpline object's
+
+        // Construct one large tensor comprising all B-Spline object's
         // coefficient vectors - we need this complicated construction
         // to first concatenate the multiple
         // std::array<torch::Tensor,*> objects into a single
@@ -187,7 +187,7 @@ namespace iganet {
                                      std::array<torch::Tensor,1>({torch::ones({dim_}, core<real_t>::options_)}))
                               )
                 ),
-        
+
         // Construct the deep neural network with the large tensor as
         // input and the coefficient vector of the solution's BSpline
         // object as output
@@ -196,10 +196,10 @@ namespace iganet {
                     std::vector<int64_t>{sol_.ncoeffs()}))
     {
       // Now that everything is in placed we swap the coefficient
-      // vectors of the BSpline objects with views on parts of the one
-      // large tensor
+      // vectors of the B-Spline objects with views on parts of the
+      // one large tensor
       int64_t count = 0;
-      
+
       // Geometry
       for (short_t i=0; i<dim_; ++i)
         {
@@ -207,50 +207,50 @@ namespace iganet {
                                                                  count+=geo_.ncoeffs(),
                                                                  1)});
         }
-      
+
       // Right-hand side
       rhs_.coeffs(0) = input__.index({torch::indexing::Slice(count,
                                                              count+=rhs_.ncoeffs(),
                                                              1)});
-      
+
       // Input tensor
       input_ = input__.index({torch::indexing::Slice(count,
                                                      count+=dim_,
                                                      1)});
     }
-    
+
     // Returns a constant reference to the B-spline representation of the geometry
-    inline const UniformBSpline<real_t, dim_, Degrees...>& geo() const
+    inline const BSpline_t<real_t, dim_, Degrees...>& geo() const
     {
       return geo_;
     }
 
     // Returns a non-constant reference to the B-spline representation of the geometry
-    inline UniformBSpline<real_t, dim_, Degrees...>& geo()
+    inline BSpline_t<real_t, dim_, Degrees...>& geo()
     {
       return geo_;
     }
 
     // Returns a constant reference to the B-spline representation of the right-hand side
-    inline const UniformBSpline<real_t, 1, Degrees...>& rhs() const
+    inline const BSpline_t<real_t, 1, Degrees...>& rhs() const
     {
       return rhs_;
     }
-    
+
     // Returns a non-constant reference to the B-spline representation of the right-hand side
-    inline UniformBSpline<real_t, 1, Degrees...>& rhs()
+    inline BSpline_t<real_t, 1, Degrees...>& rhs()
     {
       return rhs_;
     }
 
     // Returns a constant reference to the B-spline representation of the solution
-    inline const UniformBSpline<real_t, 1, Degrees...>& sol() const
+    inline const BSpline_t<real_t, 1, Degrees...>& sol() const
     {
       return sol_;
     }
 
     // Returns a non-constant reference to the B-spline representation of the solution
-    inline UniformBSpline<real_t, 1, Degrees...>& sol()
+    inline BSpline_t<real_t, 1, Degrees...>& sol()
     {
       return sol_;
     }
@@ -272,7 +272,7 @@ namespace iganet {
     {
       return dim_;
     }
-    
+
     // Returns a string representation of the IgANet object
     inline void pretty_print(std::ostream& os = std::cout) const
     {
@@ -284,145 +284,33 @@ namespace iganet {
     }
 
     // Plots the B-Spline geometry
-    inline void plot_geo(int64_t xres=50, int64_t yres=50, int64_t zres=50, int64_t tres=50) const
+    inline auto plot_geo(int64_t xres=10, int64_t yres=10, int64_t zres=10) const
     {
-      if constexpr(dim_==1) {
-        auto x = geo_.template coeffs<false>(0);
+      return geo_.plot(xres, yres, zres);
+    }
 
-        matplot::vector_1d X(geo_.ncoeffs(0), 0.0);
-        matplot::vector_1d Y(geo_.ncoeffs(0), 0.0);
-
-        // Convert into Matplot++ format
-        for (int64_t i=0; i<geo_.ncoeffs(0); ++i) {
-          X[i] = x[i].template item<real_t>();
-          Y[i] = 0;
-        }
-
-        matplot::plot(X, Y);
-        matplot::show();
-      }
-
-      else if constexpr(dim_==2) {
-        auto x = geo_.template coeffs<false>(0);
-        auto y = geo_.template coeffs<false>(1);
-
-        matplot::vector_2d X(geo_.ncoeffs(1), matplot::vector_1d(geo_.ncoeffs(0), 0.0));
-        matplot::vector_2d Y(geo_.ncoeffs(1), matplot::vector_1d(geo_.ncoeffs(0), 0.0));
-        matplot::vector_2d Z(geo_.ncoeffs(1), matplot::vector_1d(geo_.ncoeffs(0), 0.0));
-        
-        // Convert into Matplot++ format
-        for (int64_t i=0; i<geo_.ncoeffs(0); ++i)
-          for (int64_t j=0; j<geo_.ncoeffs(1); ++j) {
-            X[j][i] = x[i][j].template item<real_t>();
-            Y[j][i] = y[i][j].template item<real_t>();
-            Z[j][i] = 0;
-          }
-        
-        matplot::vector_2d Xfine(yres, matplot::vector_1d(xres, 0.0));
-        matplot::vector_2d Yfine(yres, matplot::vector_1d(xres, 0.0));
-        matplot::vector_2d Zfine(yres, matplot::vector_1d(xres, 0.0));
-        
-        for (int64_t i=0; i<xres; ++i)
-          for (int64_t j=0; j<yres; ++j) {
-            torch::Tensor coords = geo_.eval(torch::stack(
-                                                 {
-                                                   torch::full({1}, i/real_t(xres-1)),
-                                                   torch::full({1}, j/real_t(yres-1))
-                                                 }
-                                                 ).view({2})
-                                             );
-
-            std::cout << coords << std::endl;
-            
-            Xfine[j][i] = coords[0].template item<real_t>();
-            Yfine[j][i] = coords[0].template item<real_t>();
-            Zfine[j][i] = 0;
-          }
-
-        std::cout << Xfine << std::endl;
-        
-        matplot::mesh(Xfine, Yfine, Zfine);
-        matplot::show();        
-      }
+    // Plots the B-Spline right-hand side
+    inline auto plot_rhs(int64_t xres=10, int64_t yres=10, int64_t zres=10) const
+    {
+      return rhs_.plot(rhs_, xres, yres, zres);
     }
     
-    // Plots the B-Spline right-hand side
     // Plots the B-Spline solution
-    inline void plot() const
+    inline void plot_sol(int64_t xres=10, int64_t yres=10, int64_t zres=10) const
     {
-      if constexpr(dim_==1) {
-        assert(geo_.ncoeffs(0) == sol_.ncoeffs(0));
-        
-        auto x = geo_.template coeffs<false>(0);
-        auto c = sol_.template coeffs<false>(0);
-        
-        matplot::vector_1d X(geo_.ncoeffs(0), 0.0);
-        matplot::vector_1d C(geo_.ncoeffs(0), 0.0);
-        
-        for (int64_t i=0; i<geo_.ncoeffs(0); ++i) {
-          X[i] = x[i].template item<real_t>();
-          C[i] = c[i].template item<real_t>();
-        }
-
-        matplot::plot(X, C);
-        matplot::show();
-      }
-
-      else if constexpr(dim_==2) {
-        assert((geo_.ncoeffs(0) == sol_.ncoeffs(0)) && (geo_.ncoeffs(1) == sol_.ncoeffs(1)));
-
-        auto x = geo_.template coeffs<false>(0);
-        auto y = geo_.template coeffs<false>(1);
-        auto c = sol_.template coeffs<false>(0);
-
-        matplot::vector_2d X(geo_.ncoeffs(1), matplot::vector_1d(geo_.ncoeffs(0), 0.0));
-        matplot::vector_2d Y(geo_.ncoeffs(1), matplot::vector_1d(geo_.ncoeffs(0), 0.0));
-        matplot::vector_2d C(geo_.ncoeffs(1), matplot::vector_1d(geo_.ncoeffs(0), 0.0));
-        matplot::vector_2d U(geo_.ncoeffs(1), matplot::vector_1d(geo_.ncoeffs(0), 0.0));
-
-        // Convert into Matplot++ format
-        for (int64_t i=0; i<geo_.ncoeffs(0); ++i)
-         for (int64_t j=0; j<geo_.ncoeffs(1); ++j) {
-           X[j][i] = x[i][j].template item<real_t>();
-           Y[j][i] = y[i][j].template item<real_t>();
-           C[j][i] = c[i][j].template item<real_t>();
-           U[j][i] = sol_.eval(torch::stack(
-                                            {
-                                              torch::full({1}, X[j][i]),
-                                              torch::full({1}, Y[j][i])
-                                            }
-                                            ).view({2})
-                               ).template item<real_t>();
-         }
-        
-        // Plot control net
-        //matplot::mesh(X, Y, C)->palette_map_at_surface(true).face_alpha(0);
-        //matplot::hold(matplot::on);
-
-        // Plot solution
-        matplot::surf(X, Y, U);
-        //matplot::hold(matplot::off);
-        
-        matplot::show();
-      }
-
-      else if constexpr (dim_==3){        
-      }
-
-      else
-        throw std::runtime_error("Unsupported dimension");
+      return rhs_.plot(sol_, xres, yres, zres);
     }
   };
 
   /// Print (as string) a IgANet object
   template<typename real_t,
-           template<typename, short_t, short_t...> class BSpline,
+           template<typename, short_t, short_t...> class BSpline_t,
            short_t... Degrees>
   inline std::ostream& operator<<(std::ostream& os,
-                                  const IgANet<real_t, BSpline, Degrees...>& obj)
+                                  const IgANet<real_t, BSpline_t, Degrees...>& obj)
   {
     obj.pretty_print(os);
     return os;
   }
-  
+
 } // namespace iganet
