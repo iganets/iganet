@@ -49,7 +49,7 @@ namespace iganet {
 
     // Dimension of the geometric space
     static constexpr const short_t geoDim_ = GeoDim;
-
+    
     // Array storing the degrees per dimension
     static constexpr const std::array<short_t, parDim_> degrees_ = { Degrees... };
 
@@ -409,126 +409,230 @@ namespace iganet {
       return *name_;
     }
 
-    // Plots the B-Spline object using matplotlibcpp
     inline auto plot(int64_t xres=10, int64_t yres=10, int64_t zres=10) const
     {
+      return plot(*this, xres, yres, zres);
+    }
+    
+    // Plots the B-Spline object using matplotlibcpp
+    template<short_t dim>
+    inline auto plot(const UniformBSpline<real_t, dim, Degrees...>& color,
+                     int64_t xres=10, int64_t yres=10, int64_t zres=10) const
+    {
+      static_assert(parDim_ == sizeof...(Degrees),
+                    "Parametric dimensions must match");
+
+      if ((void*)this != (void*)&color && dim>1)
+        throw std::runtime_error("BSpline for coloring must have geoDim=1");
+      
       if constexpr(parDim_==1 && geoDim_==1) {
+        
+        //
         // mapping: [0,1] -> R^1
-
-        matplot::vector_1d X(ncoeffs(0), 0.0);
-        matplot::vector_1d Y(ncoeffs(0), 0.0);
-
-        auto x = coeffs<false>(0);
-
-#pragma omp parallel for simd
-        for (int64_t i=0; i<ncoeffs(0); ++i) {
-          X[i] = x[i].template item<real_t>();
-        }
+        //
 
         matplot::vector_1d Xfine(xres, 0.0);
         matplot::vector_1d Yfine(xres, 0.0);
 
 #pragma omp parallel for simd
-        for (int64_t i=0; i<xres; ++i) {
-          auto coords = eval(torch::stack(
-                                          {
-                                            torch::full({1}, i/real_t(xres-1))
-                                          }
-                                          ).view({1})
-                             );
-          Xfine[i] = coords.template item<real_t>();
+        for (int64_t i=0; i<xres; ++i)
+          Xfine[i] = eval(torch::stack(
+                                       {
+                                         torch::full({1}, i/real_t(xres-1))
+                                       }
+                                       ).view({1})
+                          ).template item<real_t>();
+        
+        if ((void*)this != (void*)&color) {
+          if constexpr (dim==1) {
+#pragma omp parallel for simd
+            for (int64_t i=0; i<xres; ++i)
+              Yfine[i] = color.eval(torch::stack(
+                                                 {
+                                                   torch::full({1}, i/real_t(xres-1)),
+                                                 }
+                                                 ).view({1})
+                                    ).template item<real_t>();
+          }
         }
 
-        // 2d plot
-        matplot::hold(matplot::on);
-        matplot::plot(Xfine, Yfine, "b-")->line_width(2);
-        matplot::plot(X, Y, ".k-")->line_width(1);
-        matplot::title("Geometry: [0,1] -> R");
+        // Plotting ...
+        if ((void*)this != (void*)&color) {
+          if constexpr (dim==1) {
+            matplot::plot(Xfine, Yfine, "b-")->line_width(2);          
+          }
+        } else {
+          matplot::vector_1d X(ncoeffs(0), 0.0);
+          matplot::vector_1d Y(ncoeffs(0), 0.0);
+          
+          auto x = coeffs<false>(0);
+          
+#pragma omp parallel for simd
+          for (int64_t i=0; i<ncoeffs(0); ++i) {
+            X[i] = x[i].template item<real_t>();
+          }
+          
+          matplot::plot(Xfine, Yfine, "b-")->line_width(2);
+          matplot::hold(matplot::on);
+          matplot::plot(X, Y, ".k-")->line_width(1);
+          matplot::hold(matplot::off);
+        }
+        
+        matplot::title("uniform BSpline: [0,1] -> R");
         matplot::xlabel("x");
         matplot::ylabel("y");
         return matplot::show();
       }
 
       else if constexpr(parDim_==1 && geoDim_==2) {
+
+        //
         // mapping: [0,1] -> R^2
+        //
 
-        matplot::vector_1d X(ncoeffs(0), 0.0);
-        matplot::vector_1d Y(ncoeffs(0), 0.0);
-
-        auto x = coeffs<false>(0);
-        auto y = coeffs<false>(1);
-
+        // Plotting...
+        if ((void*)this != (void*)&color) {
+          if constexpr (dim==1) {
+            matplot::vector_2d Xfine(1, matplot::vector_1d(xres, 0.0));
+            matplot::vector_2d Yfine(1, matplot::vector_1d(xres, 0.0));
+            matplot::vector_2d Zfine(1, matplot::vector_1d(xres, 0.0));
+            
 #pragma omp parallel for simd
-        for (int64_t i=0; i<ncoeffs(0); ++i) {
-          X[i] = x[i].template item<real_t>();
-          Y[i] = y[i].template item<real_t>();
-        }
-
-        matplot::vector_1d Xfine(xres, 0.0);
-        matplot::vector_1d Yfine(xres, 0.0);
-
+            for (int64_t i=0; i<xres; ++i) {
+              auto coords = eval(torch::stack(
+                                              {
+                                                torch::full({1}, i/real_t(xres-1))
+                                              }
+                                              ).view({1})
+                                 );
+              Xfine[0][i] = coords[0].template item<real_t>();
+              Yfine[0][i] = coords[1].template item<real_t>();              
+              Zfine[0][i] = color.eval(torch::stack(
+                                                    {
+                                                      torch::full({1}, i/real_t(xres-1))
+                                                    }
+                                                    ).view({1})
+                                       ).template item<real_t>();
+            }
+            matplot::view(2);
+            matplot::mesh(Xfine, Yfine, Zfine);  
+          }
+        } else {
+          matplot::vector_1d Xfine(xres, 0.0);
+          matplot::vector_1d Yfine(xres, 0.0);
+          
 #pragma omp parallel for simd
-        for (int64_t i=0; i<xres; ++i) {
-          auto coords = eval(torch::stack(
-                                          {
-                                            torch::full({1}, i/real_t(xres-1))
-                                          }
-                                          ).view({1})
-                             );
-          Xfine[i] = coords[0].template item<real_t>();
-          Yfine[i] = coords[1].template item<real_t>();
+          for (int64_t i=0; i<xres; ++i) {
+            auto coords = eval(torch::stack(
+                                            {
+                                              torch::full({1}, i/real_t(xres-1))
+                                            }
+                                            ).view({1})
+                               );
+            Xfine[i] = coords[0].template item<real_t>();
+            Yfine[i] = coords[1].template item<real_t>();
+          }
+          
+          matplot::vector_1d X(ncoeffs(0), 0.0);
+          matplot::vector_1d Y(ncoeffs(0), 0.0);
+          
+          auto x = coeffs<false>(0);
+          auto y = coeffs<false>(1);
+          
+#pragma omp parallel for simd
+          for (int64_t i=0; i<ncoeffs(0); ++i) {
+            X[i] = x[i].template item<real_t>();
+            Y[i] = y[i].template item<real_t>();
+          }
+        
+          matplot::plot(Xfine, Yfine, "b-")->line_width(2);
+          matplot::hold(matplot::on);
+          matplot::plot(X, Y, ".k-")->line_width(1);
+          matplot::hold(matplot::off);
         }
-
-        // 2d plot
-        matplot::hold(matplot::on);
-        matplot::plot(Xfine, Yfine, "b-")->line_width(2);
-        matplot::plot(X, Y, ".k-")->line_width(1);
-        matplot::title("Geometry: [0,1] -> R^2");
+        
+        matplot::title("uniform BSpline: [0,1] -> R^2");
         matplot::xlabel("x");
         matplot::ylabel("y");
         return matplot::show();
       }
 
       else if constexpr(parDim_==1 && geoDim_==3) {
+
+        //
         // mapping: [0,1] -> R^3
-
-        matplot::vector_1d X(ncoeffs(0), 0.0);
-        matplot::vector_1d Y(ncoeffs(0), 0.0);
-        matplot::vector_1d Z(ncoeffs(0), 0.0);
-
-        auto x = coeffs<false>(0);
-        auto y = coeffs<false>(1);
-        auto z = coeffs<false>(2);
-
+        //
+       
+        // Plotting...
+        if ((void*)this != (void*)&color) {
+          if constexpr (dim==1) {            
+            matplot::vector_2d Xfine(1, matplot::vector_1d(xres, 0.0));
+            matplot::vector_2d Yfine(1, matplot::vector_1d(xres, 0.0));
+            matplot::vector_2d Zfine(1, matplot::vector_1d(xres, 0.0));
+            matplot::vector_2d Cfine(1, matplot::vector_1d(xres, 0.0));
+            
 #pragma omp parallel for simd
-        for (int64_t i=0; i<ncoeffs(0); ++i) {
-          X[i] = x[i].template item<real_t>();
-          Y[i] = y[i].template item<real_t>();
-          Z[i] = z[i].template item<real_t>();
-        }
+            for (int64_t i=0; i<xres; ++i) {
+              auto coords = eval(torch::stack(
+                                              {
+                                                torch::full({1}, i/real_t(xres-1))
+                                              }
+                                              ).view({1})
+                                 );
+              Xfine[0][i] = coords[0].template item<real_t>();
+              Yfine[0][i] = coords[1].template item<real_t>();
+              Zfine[0][i] = coords[2].template item<real_t>();
 
-        matplot::vector_1d Xfine(xres, 0.0);
-        matplot::vector_1d Yfine(xres, 0.0);
-        matplot::vector_1d Zfine(xres, 0.0);
-
+              Cfine[0][i] = color.eval(torch::stack(
+                                                    {
+                                                      torch::full({1}, i/real_t(xres-1))
+                                                    }
+                                                    ).view({1})
+                                       ).template item<real_t>();
+            }
+            
+            matplot::mesh(Xfine, Yfine, Zfine, Cfine);  
+          }
+        } else {
+          matplot::vector_1d Xfine(xres, 0.0);
+          matplot::vector_1d Yfine(xres, 0.0);
+          matplot::vector_1d Zfine(xres, 0.0);
+          
 #pragma omp parallel for simd
-        for (int64_t i=0; i<xres; ++i) {
-          auto coords = eval(torch::stack(
-                                          {
-                                            torch::full({1}, i/real_t(xres-1))
-                                          }
-                                          ).view({1})
-                             );
-          Xfine[i] = coords[0].template item<real_t>();
-          Yfine[i] = coords[1].template item<real_t>();
-          Zfine[i] = coords[2].template item<real_t>();
+          for (int64_t i=0; i<xres; ++i) {
+            auto coords = eval(torch::stack(
+                                            {
+                                              torch::full({1}, i/real_t(xres-1))
+                                            }
+                                            ).view({1})
+                               );
+            Xfine[i] = coords[0].template item<real_t>();
+            Yfine[i] = coords[1].template item<real_t>();
+            Zfine[i] = coords[2].template item<real_t>();
+          }
+          
+          matplot::vector_1d X(ncoeffs(0), 0.0);
+          matplot::vector_1d Y(ncoeffs(0), 0.0);
+          matplot::vector_1d Z(ncoeffs(0), 0.0);
+          
+          auto x = coeffs<false>(0);
+          auto y = coeffs<false>(1);
+          auto z = coeffs<false>(2);
+          
+#pragma omp parallel for simd
+          for (int64_t i=0; i<ncoeffs(0); ++i) {
+            X[i] = x[i].template item<real_t>();
+            Y[i] = y[i].template item<real_t>();
+            Z[i] = z[i].template item<real_t>();
+          }
+          
+          matplot::plot3(Xfine, Yfine, Zfine, "b-")->line_width(2);
+          matplot::hold(matplot::on);
+          matplot::plot3(X, Y, Z, ".k-")->line_width(1);
+          matplot::hold(matplot::off);
         }
-
-        // 3d plot
-        matplot::hold(matplot::on);
-        matplot::plot3(Xfine, Yfine, Zfine, "b-")->line_width(2);
-        matplot::plot3(X, Y, Z, ".k-")->line_width(1);
-        matplot::title("Geometry: [0,1] -> R^3");
+        
+        matplot::title("uniform BSpline: [0,1] -> R^3");
         matplot::xlabel("x");
         matplot::ylabel("y");
         matplot::zlabel("z");
@@ -536,21 +640,10 @@ namespace iganet {
       }
 
       else if constexpr(parDim_==2 && geoDim_==2) {
+
+        //
         // mapping: [0,1]^2 -> R^2
-
-        matplot::vector_2d X(ncoeffs(1), matplot::vector_1d(ncoeffs(0), 0.0));
-        matplot::vector_2d Y(ncoeffs(1), matplot::vector_1d(ncoeffs(0), 0.0));
-        matplot::vector_2d Z(ncoeffs(1), matplot::vector_1d(ncoeffs(0), 0.0));
-
-        auto x = coeffs<false>(0);
-        auto y = coeffs<false>(1);
-
-#pragma omp parallel for simd collapse(2)
-        for (int64_t i=0; i<ncoeffs(0); ++i)
-          for (int64_t j=0; j<ncoeffs(1); ++j) {
-            X[j][i] = x[i][j].template item<real_t>();
-            Y[j][i] = y[i][j].template item<real_t>();
-          }
+        //
 
         matplot::vector_2d Xfine(yres, matplot::vector_1d(xres, 0.0));
         matplot::vector_2d Yfine(yres, matplot::vector_1d(xres, 0.0));
@@ -570,13 +663,50 @@ namespace iganet {
             Yfine[j][i] = coords[1].template item<real_t>();
           }
 
-        // quasi-2d plot
-        matplot::view(2);
-        matplot::colormap(matplot::palette::winter());
-        matplot::mesh(Xfine, Yfine, Zfine);
-        matplot::hold(matplot::on);
-        matplot::surf(X, Y, Z)->palette_map_at_surface(true).face_alpha(0);
-        matplot::title("Geometry: [0,1]^2 -> R^2");
+        if ((void*)this != (void*)&color) {
+          if constexpr (dim==1) {
+#pragma omp parallel for simd collapse(2)
+            for (int64_t i=0; i<xres; ++i)
+              for (int64_t j=0; j<yres; ++j) {
+                Zfine[j][i] = color.eval(torch::stack(
+                                                      {
+                                                        torch::full({1}, i/real_t(xres-1)),
+                                                        torch::full({1}, j/real_t(yres-1))
+                                                      }
+                                                      ).view({2})
+                                         ).template item<real_t>();
+              }
+          }           
+        }        
+        
+        // Plotting...
+        if ((void*)this != (void*)&color && dim==1) {
+          matplot::view(2);
+          matplot::colormap(matplot::palette::hsv());
+          matplot::mesh(Xfine, Yfine, Zfine)->palette_map_at_surface(true).face_alpha(0.7);
+        } else {
+          matplot::view(2);
+          matplot::vector_2d X(ncoeffs(1), matplot::vector_1d(ncoeffs(0), 0.0));
+          matplot::vector_2d Y(ncoeffs(1), matplot::vector_1d(ncoeffs(0), 0.0));
+          matplot::vector_2d Z(ncoeffs(1), matplot::vector_1d(ncoeffs(0), 0.0));
+          
+          auto x = coeffs<false>(0);
+          auto y = coeffs<false>(1);
+          
+#pragma omp parallel for simd collapse(2)
+          for (int64_t i=0; i<ncoeffs(0); ++i)
+            for (int64_t j=0; j<ncoeffs(1); ++j) {
+              X[j][i] = x[i][j].template item<real_t>();
+              Y[j][i] = y[i][j].template item<real_t>();
+            }
+          
+          matplot::colormap(matplot::palette::winter());
+          matplot::mesh(Xfine, Yfine, Zfine);
+          matplot::hold(matplot::on);
+          matplot::surf(X, Y, Z)->palette_map_at_surface(true).face_alpha(0);
+          matplot::hold(matplot::off);
+        }        
+        matplot::title("uniform BSpline: [0,1]^2 -> R^2");
         matplot::xlabel("x");
         matplot::ylabel("y");
         matplot::zlabel("z");
@@ -584,23 +714,10 @@ namespace iganet {
       }
 
       else if constexpr(parDim_==2 && geoDim_==3) {
+
+        ///
         // mapping: [0,1]^2 -> R^3
-
-        matplot::vector_2d X(ncoeffs(1), matplot::vector_1d(ncoeffs(0), 0.0));
-        matplot::vector_2d Y(ncoeffs(1), matplot::vector_1d(ncoeffs(0), 0.0));
-        matplot::vector_2d Z(ncoeffs(1), matplot::vector_1d(ncoeffs(0), 0.0));
-
-        auto x = coeffs<false>(0);
-        auto y = coeffs<false>(1);
-        auto z = coeffs<false>(2);
-
-#pragma omp parallel for simd collapse(2)
-        for (int64_t i=0; i<ncoeffs(0); ++i)
-          for (int64_t j=0; j<ncoeffs(1); ++j) {
-            X[j][i] = x[i][j].template item<real_t>();
-            Y[j][i] = y[i][j].template item<real_t>();
-            Z[j][i] = z[i][j].template item<real_t>();
-          }
+        ///
 
         matplot::vector_2d Xfine(yres, matplot::vector_1d(xres, 0.0));
         matplot::vector_2d Yfine(yres, matplot::vector_1d(xres, 0.0));
@@ -621,12 +738,52 @@ namespace iganet {
             Zfine[j][i] = coords[2].template item<real_t>();
           }
 
-        // 3d plot
-        matplot::colormap(matplot::palette::winter());
-        matplot::hold(matplot::on);
-        matplot::mesh(Xfine, Yfine, Zfine);
-        matplot::surf(X, Y, Z)->palette_map_at_surface(true).face_alpha(0);
-        matplot::title("Geometry: [0,1]^2 -> R^3");
+        // Plotting...
+        if ((void*)this != (void*)&color) {
+          if constexpr (dim==1) {
+            matplot::vector_2d Cfine(yres, matplot::vector_1d(xres, 0.0));
+            
+#pragma omp parallel for simd collapse(2)
+            for (int64_t i=0; i<xres; ++i)
+              for (int64_t j=0; j<yres; ++j) {
+                Cfine[j][i] = color.eval(torch::stack(
+                                                      {
+                                                        torch::full({1}, i/real_t(xres-1)),
+                                                        torch::full({1}, j/real_t(yres-1))
+                                                      }
+                                                      ).view({2})
+                                         ).template item<real_t>();
+              }
+            matplot::colormap(matplot::palette::hsv());
+            matplot::mesh(Xfine, Yfine, Zfine, Cfine);  
+          }
+        }
+        else {
+          matplot::vector_2d X(ncoeffs(1), matplot::vector_1d(ncoeffs(0), 0.0));
+          matplot::vector_2d Y(ncoeffs(1), matplot::vector_1d(ncoeffs(0), 0.0));
+          matplot::vector_2d Z(ncoeffs(1), matplot::vector_1d(ncoeffs(0), 0.0));
+          
+          auto x = coeffs<false>(0);
+          auto y = coeffs<false>(1);
+          auto z = coeffs<false>(2);
+          
+#pragma omp parallel for simd collapse(2)
+          for (int64_t i=0; i<ncoeffs(0); ++i)
+            for (int64_t j=0; j<ncoeffs(1); ++j) {
+              X[j][i] = x[i][j].template item<real_t>();
+              Y[j][i] = y[i][j].template item<real_t>();
+              Z[j][i] = z[i][j].template item<real_t>();
+            }
+          
+          matplot::colormap(matplot::palette::winter());
+          matplot::mesh(Xfine, Yfine, Zfine);
+
+          matplot::hold(matplot::on);
+          matplot::surf(X, Y, Z)->palette_map_at_surface(true).face_alpha(0);
+          matplot::hold(matplot::off);
+        }
+        
+        matplot::title("uniform BSpline: [0,1]^2 -> R^3");
         matplot::xlabel("x");
         matplot::ylabel("y");
         matplot::zlabel("z");
@@ -1447,7 +1604,7 @@ namespace iganet {
         matplot::hold(matplot::on);
         matplot::plot(Xfine, Yfine, "b-")->line_width(2);
         matplot::plot(X, Y, ".k-")->line_width(1);
-        matplot::title("Geometry: [0,1] -> R");
+        matplot::title("non-uniform BSpline: [0,1] -> R");
         matplot::xlabel("x");
         matplot::ylabel("y");
         return matplot::show();
@@ -1487,7 +1644,7 @@ namespace iganet {
         matplot::hold(matplot::on);
         matplot::plot(Xfine, Yfine, "b-")->line_width(2);
         matplot::plot(X, Y, ".k-")->line_width(1);
-        matplot::title("Geometry: [0,1] -> R^2");
+        matplot::title("non-uniform BSpline: [0,1] -> R^2");
         matplot::xlabel("x");
         matplot::ylabel("y");
         return matplot::show();
@@ -1532,7 +1689,7 @@ namespace iganet {
         matplot::hold(matplot::on);
         matplot::plot3(Xfine, Yfine, Zfine, "b-")->line_width(2);
         matplot::plot3(X, Y, Z, ".k-")->line_width(1);
-        matplot::title("Geometry: [0,1] -> R^3");
+        matplot::title("non-uniform BSpline: [0,1] -> R^3");
         matplot::xlabel("x");
         matplot::ylabel("y");
         matplot::zlabel("z");
@@ -1580,7 +1737,7 @@ namespace iganet {
         matplot::mesh(Xfine, Yfine, Zfine);
         matplot::hold(matplot::on);
         matplot::surf(X, Y, Z)->palette_map_at_surface(true).face_alpha(0);
-        matplot::title("Geometry: [0,1]^2 -> R^2");
+        matplot::title("non-uniform BSpline: [0,1]^2 -> R^2");
         matplot::xlabel("x");
         matplot::ylabel("y");
         matplot::zlabel("z");
@@ -1630,7 +1787,7 @@ namespace iganet {
         matplot::hold(matplot::on);
         matplot::mesh(Xfine, Yfine, Zfine);
         matplot::surf(X, Y, Z)->palette_map_at_surface(true).face_alpha(0);
-        matplot::title("Geometry: [0,1]^2 -> R^3");
+        matplot::title("non-uniform BSpline: [0,1]^2 -> R^3");
         matplot::xlabel("x");
         matplot::ylabel("y");
         matplot::zlabel("z");
