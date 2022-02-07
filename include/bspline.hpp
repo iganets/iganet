@@ -1,3 +1,17 @@
+/**
+   @file include/bspline.hpp
+
+   @brief Multivariate B-splines
+   
+   @author Matthias Moller
+      
+   @copyright This file is part of the IgaNet project
+   
+   This Source Code Form is subject to the terms of the Mozilla Public
+   License, v. 2.0. If a copy of the MPL was not distributed with this
+   file, You can obtain one at http://mozilla.org/MPL/2.0/.
+*/
+
 #include <exception>
 #include <functional>
 
@@ -46,7 +60,7 @@ namespace iganet {
   template<typename real_t, short_t GeoDim, short_t... Degrees>
   class UniformBSplineCore : public core<real_t>
   {
-  public:
+  protected:
     // Dimension of the parametric space
     static constexpr const short_t parDim_ = sizeof...(Degrees);
 
@@ -56,7 +70,6 @@ namespace iganet {
     // Array storing the degrees per dimension
     static constexpr const std::array<short_t, parDim_> degrees_ = { Degrees... };
 
-  protected:
     // Array storing the knot vectors
     std::array<torch::Tensor, parDim_> knots_;
 
@@ -86,7 +99,11 @@ namespace iganet {
     {
       for (short_t i=0; i<parDim_; ++i) {
 
-        // Create open uniform knot vectors
+        // Check that open knot vector can be created
+        if (degrees_[i]>ncoeffs_[i]+1)
+          throw std::runtime_error("Not enough coefficients to create open knot vector");
+        
+        // Create open uniform knot vector
         std::vector<real_t> kv;
 
         for (int64_t j=0; j<degrees_[i]; ++j)
@@ -109,6 +126,18 @@ namespace iganet {
       init_coeffs(init);
     }
 
+    // Returns the parametric dimension
+    inline static constexpr short_t parDim()
+    {
+      return parDim_;
+    }
+
+    // Returns the geometric dimension
+    inline static constexpr short_t geoDim()
+    {
+      return geoDim_;
+    }
+    
     // Returns a constant reference to the array of degrees
     inline static constexpr const std::array<short_t, parDim_>& degrees()
     {
@@ -227,18 +256,6 @@ namespace iganet {
     {
       assert(i>=0 && i<parDim_);
       return ncoeffs_[i];
-    }
-
-    // Returns the parametric dimension
-    inline short_t parDim() const
-    {
-      return parDim_;
-    }
-
-    // Returns the geometric dimension
-    inline short_t geoDim() const
-    {
-      return geoDim_;
     }
 
     // Returns the value of the B-spline object in the points \f$ \xi \f$.
@@ -1083,9 +1100,14 @@ namespace iganet {
     // Constructor: non-equidistant knot vectors
     NonUniformBSplineCore(std::array<std::vector<real_t>, Base::parDim_> kv,
                           BSplineInit init = BSplineInit::zeros)
-      : Base(std::array<int64_t, Base::parDim_>{0}, init)
+      : Base(std::array<int64_t, Base::parDim_>{Degrees...}, init)
     {
       for (short_t i=0; i<Base::parDim_; ++i) {
+
+        // Check that knot vector has enough (n+p+1) entries
+        if (2*Base::degrees_[i]>kv[i].size()-2)
+          throw std::runtime_error("Knot vector is too short for an open knot vector (n+p+1 > 2*(p+1))");
+        
         Base::knots_[i] = torch::from_blob(static_cast<real_t*>(kv[i].data()),
                                            kv[i].size(), core<real_t>::options_).clone();
 
@@ -1234,13 +1256,13 @@ namespace iganet {
 
 #pragma omp parallel for simd
         for (int64_t i=0; i<xres; ++i)
-          Xfine[i] = eval(torch::stack(
-                                       {
-                                         torch::full({1}, i/real_t(xres-1))
-                                       }
-                                       ).view({1})
-                          ).template item<real_t>();
-
+          Xfine[i] = BSplineCore::eval(torch::stack(
+                                                    {
+                                                      torch::full({1}, i/real_t(xres-1))
+                                                    }
+                                                    ).view({1})
+                                       ).template item<real_t>();
+        
         if ((void*)this != (void*)&color) {
           if constexpr (BSplineCore_t::geoDim_==1) {
 #pragma omp parallel for simd
@@ -1263,7 +1285,7 @@ namespace iganet {
           matplot::vector_1d X(BSplineCore::ncoeffs(0), 0.0);
           matplot::vector_1d Y(BSplineCore::ncoeffs(0), 0.0);
 
-          auto x = BSplineCore::coeffs<false>(0);
+          auto x = BSplineCore::template coeffs<false>(0);
 
 #pragma omp parallel for simd
           for (int64_t i=0; i<BSplineCore::ncoeffs(0); ++i) {
@@ -1297,12 +1319,12 @@ namespace iganet {
 
 #pragma omp parallel for simd
             for (int64_t i=0; i<xres; ++i) {
-              auto coords = eval(torch::stack(
-                                              {
-                                                torch::full({1}, i/real_t(xres-1))
-                                              }
-                                              ).view({1})
-                                 );
+              auto coords = BSplineCore::eval(torch::stack(
+                                                           {
+                                                             torch::full({1}, i/real_t(xres-1))
+                                                           }
+                                                           ).view({1})
+                                              );
               Xfine[0][i] = coords[0].template item<real_t>();
               Yfine[0][i] = coords[1].template item<real_t>();
               Zfine[0][i] = color.eval(torch::stack(
@@ -1321,12 +1343,12 @@ namespace iganet {
 
 #pragma omp parallel for simd
           for (int64_t i=0; i<xres; ++i) {
-            auto coords = eval(torch::stack(
-                                            {
-                                              torch::full({1}, i/real_t(xres-1))
-                                            }
-                                            ).view({1})
-                               );
+            auto coords = BSplineCore::eval(torch::stack(
+                                                         {
+                                                           torch::full({1}, i/real_t(xres-1))
+                                                         }
+                                                         ).view({1})
+                                            );
             Xfine[i] = coords[0].template item<real_t>();
             Yfine[i] = coords[1].template item<real_t>();
           }
@@ -1334,8 +1356,8 @@ namespace iganet {
           matplot::vector_1d X(BSplineCore::ncoeffs(0), 0.0);
           matplot::vector_1d Y(BSplineCore::ncoeffs(0), 0.0);
 
-          auto x = BSplineCore::coeffs<false>(0);
-          auto y = BSplineCore::coeffs<false>(1);
+          auto x = BSplineCore::template coeffs<false>(0);
+          auto y = BSplineCore::template coeffs<false>(1);
 
 #pragma omp parallel for simd
           for (int64_t i=0; i<BSplineCore::ncoeffs(0); ++i) {
@@ -1371,12 +1393,12 @@ namespace iganet {
 
 #pragma omp parallel for simd
             for (int64_t i=0; i<xres; ++i) {
-              auto coords = eval(torch::stack(
-                                              {
-                                                torch::full({1}, i/real_t(xres-1))
-                                              }
-                                              ).view({1})
-                                 );
+              auto coords = BSplineCore::eval(torch::stack(
+                                                           {
+                                                             torch::full({1}, i/real_t(xres-1))
+                                                           }
+                                                           ).view({1})
+                                              );
               Xfine[0][i] = coords[0].template item<real_t>();
               Yfine[0][i] = coords[1].template item<real_t>();
               Zfine[0][i] = coords[2].template item<real_t>();
@@ -1398,12 +1420,12 @@ namespace iganet {
 
 #pragma omp parallel for simd
           for (int64_t i=0; i<xres; ++i) {
-            auto coords = eval(torch::stack(
-                                            {
-                                              torch::full({1}, i/real_t(xres-1))
-                                            }
-                                            ).view({1})
-                               );
+            auto coords = BSplineCore::eval(torch::stack(
+                                                         {
+                                                           torch::full({1}, i/real_t(xres-1))
+                                                         }
+                                                         ).view({1})
+                                            );
             Xfine[i] = coords[0].template item<real_t>();
             Yfine[i] = coords[1].template item<real_t>();
             Zfine[i] = coords[2].template item<real_t>();
@@ -1413,9 +1435,9 @@ namespace iganet {
           matplot::vector_1d Y(BSplineCore::ncoeffs(0), 0.0);
           matplot::vector_1d Z(BSplineCore::ncoeffs(0), 0.0);
 
-          auto x = BSplineCore::coeffs<false>(0);
-          auto y = BSplineCore::coeffs<false>(1);
-          auto z = BSplineCore::coeffs<false>(2);
+          auto x = BSplineCore::template coeffs<false>(0);
+          auto y = BSplineCore::template coeffs<false>(1);
+          auto z = BSplineCore::template coeffs<false>(2);
 
 #pragma omp parallel for simd
           for (int64_t i=0; i<BSplineCore::ncoeffs(0); ++i) {
@@ -1561,9 +1583,9 @@ namespace iganet {
           matplot::vector_2d Y(BSplineCore::ncoeffs(1), matplot::vector_1d(BSplineCore::ncoeffs(0), 0.0));
           matplot::vector_2d Z(BSplineCore::ncoeffs(1), matplot::vector_1d(BSplineCore::ncoeffs(0), 0.0));
 
-          auto x = BSplineCore::coeffs<false>(0);
-          auto y = BSplineCore::coeffs<false>(1);
-          auto z = BSplineCore::coeffs<false>(2);
+          auto x = BSplineCore::template coeffs<false>(0);
+          auto y = BSplineCore::template coeffs<false>(1);
+          auto z = BSplineCore::template coeffs<false>(2);
 
 #pragma omp parallel for simd collapse(2)
           for (int64_t i=0; i<BSplineCore::ncoeffs(0); ++i)

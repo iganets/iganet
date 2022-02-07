@@ -12,13 +12,28 @@
 #
 ########################################################################
 
-file(GLOB EXAMPLES *.cxx)
+# Define remote repository
+include(FetchContent)
+FetchContent_Declare(
+  googletest  
+  URL https://github.com/google/googletest/archive/refs/heads/main.zip
+  )
 
-foreach(example ${EXAMPLES})
-  file(RELATIVE_PATH filename ${CMAKE_CURRENT_SOURCE_DIR} ${example})
+# For Windows: Prevent overriding the parent project's compiler/linker settings
+set(gtest_force_shared_crt ON CACHE BOOL "" FORCE)
+FetchContent_MakeAvailable(googletest)
+
+file(GLOB UNITTESTS *.cxx)
+
+foreach(unittest ${UNITTESTS})
+  file(RELATIVE_PATH filename ${CMAKE_CURRENT_SOURCE_DIR} ${unittest})
   string(REPLACE ".cxx" "" app ${filename})
   add_executable(${app} ${filename})
   target_link_libraries(${app} PUBLIC "${TORCH_LIBRARIES}")
   target_link_libraries(${app} PUBLIC Matplot++::matplot)
+  target_link_libraries(${app} PUBLIC gtest_main)
+  target_compile_definitions(${app} PUBLIC UNITTEST_DISABLE_SHORT_MACROS)
   set_property(TARGET ${app} PROPERTY CXX_STANDARD 17)
+  add_test(${app} ${app})
 endforeach()
+

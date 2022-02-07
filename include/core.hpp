@@ -1,4 +1,19 @@
+/**
+   @file include/core.hpp
+
+   @brief Core components
+   
+   @author Matthias Moller
+      
+   @copyright This file is part of the IgaNet project
+   
+   This Source Code Form is subject to the terms of the Mozilla Public
+   License, v. 2.0. If a copy of the MPL was not distributed with this
+   file, You can obtain one at http://mozilla.org/MPL/2.0/.
+*/
+
 #include <array>
+#include <initializer_list>
 #include <tuple>
 #include <vector>
 
@@ -14,25 +29,25 @@ namespace iganet {
 
   // Determines the LibTorch dtype from template parameter
   template<typename T>
-  constexpr auto dtype() { return torch::kByte; }
+  inline constexpr auto dtype() { return torch::kByte; }
 
   template<>
-  constexpr auto dtype<double>() { return torch::kFloat64; }
+  inline constexpr auto dtype<double>() { return torch::kFloat64; }
 
   template<>
-  constexpr auto dtype<float>() { return torch::kFloat32; }
+  inline constexpr auto dtype<float>() { return torch::kFloat32; }
 
   template<>
-  constexpr auto dtype<long int>() { return torch::kLong; }
+  inline constexpr auto dtype<long int>() { return torch::kLong; }
 
   template<>
-  constexpr auto dtype<int>() { return torch::kInt; };
+  inline constexpr auto dtype<int>() { return torch::kInt; };
 
   template<>
-  constexpr auto  dtype<short>() { return torch::kShort; }
+  inline constexpr auto  dtype<short>() { return torch::kShort; }
 
   template<>
-  constexpr auto dtype<char>() { return torch::kChar; };
+  inline constexpr auto dtype<char>() { return torch::kChar; };
 
   // LibTorch core object handles the automated determination of dtype
   // from the template argument and the selection of the device
@@ -52,7 +67,7 @@ namespace iganet {
 
   // Concatenates multiple std::vector objects
   template<typename... Ts>
-  auto concat(const std::vector<Ts>&... vectors)
+  inline auto concat(const std::vector<Ts>&... vectors)
   {
     std::vector<typename std::tuple_element<0, std::tuple<Ts...> >::type> result;
 
@@ -63,7 +78,7 @@ namespace iganet {
 
   // Concatenates multiple std::array objects
   template<typename T, std::size_t... N>
-  auto concat(const std::array<T, N>&... arrays)
+  inline auto concat(const std::array<T, N>&... arrays)
   {
     std::array<T, (N + ...)> result;
     std::size_t index{};
@@ -73,4 +88,46 @@ namespace iganet {
     return result;
   }
 
+  template<typename T>
+  inline auto to_tensor(std::initializer_list<T> list)
+  {
+    auto it = list.begin();
+    switch (list.size()) {
+    case 1:
+      return torch::stack({
+          torch::full({1}, *it++)
+        }).flatten();
+    case 2:
+      return torch::stack({
+          torch::full({1}, *it++),
+          torch::full({1}, *it++)
+        }).flatten();
+    case 3:
+      return torch::stack({
+          torch::full({1}, *it++),
+          torch::full({1}, *it++),
+          torch::full({1}, *it++)
+        }).flatten();
+    case 4:
+      return torch::stack({
+          torch::full({1}, *it++),
+          torch::full({1}, *it++),
+          torch::full({1}, *it++),
+          torch::full({1}, *it++)
+        }).flatten();
+    default:
+      throw std::runtime_error("Invalid size");
+    }
+  }
+
 } // namespace iganet
+
+/// Print (as string) an array of torch::Tensor objects
+template<std::size_t N>
+inline std::ostream& operator<<(std::ostream& os,
+                                const std::array<torch::Tensor, N>& obj)
+{
+  for (auto i : obj)
+    os << i << std::endl;
+  return os;
+}
