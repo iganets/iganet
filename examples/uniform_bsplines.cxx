@@ -37,8 +37,10 @@ int main()
 
     // Plot B-spline
     bspline.plot(50);
-  }
 
+    // Export B-spline to XML
+    std::cout << bspline.to_xml() << std::endl;
+  }
 
   {
     // Univariate uniform B-spline of degree 2 with 6 control points in R^2
@@ -58,6 +60,9 @@ int main()
 
     // Plot B-spline
     bspline.plot(50);
+
+    // Export B-spline to XML
+    std::cout << bspline.to_xml() << std::endl;
   }
 
   {
@@ -79,6 +84,9 @@ int main()
 
     // Plot B-spline
     bspline.plot(50);
+
+    // Export B-spline to XML
+    std::cout << bspline.to_xml() << std::endl;
   }
 
   {
@@ -87,6 +95,7 @@ int main()
     iganet::UniformBSpline<double,2,3,4> bspline({5,6});
 
     // Print information
+    std::cout << bspline << std::endl;
     std::cout << bspline.knots(0) << std::endl;
     std::cout << bspline.knots(1) << std::endl;
 
@@ -101,6 +110,9 @@ int main()
 
     // Plot B-spline
     bspline.plot(50,50);
+
+    // Export B-spline to XML
+    std::cout << bspline.to_xml() << std::endl;
   }
 
   {
@@ -123,5 +135,8 @@ int main()
 
     // Plot B-spline
     bspline.plot(50,50);
+
+    // Export B-spline to XML
+    std::cout << bspline.to_xml() << std::endl;
   }
 }

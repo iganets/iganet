@@ -2,11 +2,11 @@
    @file unittests/unittest_bspline.cxx
 
    @brief B-Spline unittests
-   
+
    @author Matthias Moller
-      
+
    @copyright This file is part of the IgaNet project
-   
+
    This Source Code Form is subject to the terms of the Mozilla Public
    License, v. 2.0. If a copy of the MPL was not distributed with this
    file, You can obtain one at http://mozilla.org/MPL/2.0/.
@@ -124,7 +124,8 @@ TEST(BSpline, UniformBSpline_parDim2_geoDim3_degrees34)
 
 TEST(BSpline, NonUniformBSpline_parDim1_geoDim1_degrees1)
 {
-  iganet::NonUniformBSpline<double, 1, 1> bspline( { {{0.0, 0.0, 0.5, 1.0, 1.0}} } );
+  EXPECT_THROW( (iganet::NonUniformBSpline<double, 1, 1>( {{{0.0, 0.0, 1.0}}} )), std::runtime_error);
+  iganet::NonUniformBSpline<double, 1, 1> bspline( {{{0.0, 0.0, 0.5, 1.0, 1.0}}} );
   EXPECT_EQ(bspline.parDim(), 1);
   EXPECT_EQ(bspline.geoDim(), 1);
   EXPECT_EQ(bspline.degree(0), 1);
@@ -134,8 +135,8 @@ TEST(BSpline, NonUniformBSpline_parDim1_geoDim1_degrees1)
 
 TEST(BSpline, NonUniformBSpline_parDim2_geoDim2_degrees12)
 {
-  iganet::NonUniformBSpline<double, 2, 1, 2> bspline( { {{0.0, 0.0, 0.5, 1.0, 1.0},
-                                                         {0.0, 0.0, 0.0, 1.0, 1.0, 1.0}} } );
+  iganet::NonUniformBSpline<double, 2, 1, 2> bspline( {{{0.0, 0.0, 0.5, 1.0, 1.0},
+                                                        {0.0, 0.0, 0.0, 1.0, 1.0, 1.0}}} );
   EXPECT_EQ(bspline.parDim(), 2);
   EXPECT_EQ(bspline.geoDim(), 2);
   EXPECT_EQ(bspline.degree(0), 1);
@@ -148,9 +149,9 @@ TEST(BSpline, NonUniformBSpline_parDim2_geoDim2_degrees12)
 
 TEST(BSpline, NonUniformBSpline_parDim3_geoDim3_degrees123)
 {
-  iganet::NonUniformBSpline<double, 3, 1, 2, 3> bspline( { {{0.0, 0.0, 0.5, 1.0, 1.0},
-                                                            {0.0, 0.0, 0.0, 1.0, 1.0, 1.0},
-                                                            {0.0, 0.0, 0.0, 0.0, 0.5, 1.0, 1.0, 1.0, 1.0}} } );
+  iganet::NonUniformBSpline<double, 3, 1, 2, 3> bspline( {{{0.0, 0.0, 0.5, 1.0, 1.0},
+                                                           {0.0, 0.0, 0.0, 1.0, 1.0, 1.0},
+                                                           {0.0, 0.0, 0.0, 0.0, 0.5, 1.0, 1.0, 1.0, 1.0}}} );
   EXPECT_EQ(bspline.parDim(), 3);
   EXPECT_EQ(bspline.geoDim(), 3);
   EXPECT_EQ(bspline.degree(0), 1);

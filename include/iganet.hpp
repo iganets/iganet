@@ -2,11 +2,11 @@
    @file include/iganet.hpp
 
    @brief Isogeometric analysis network
-   
+
    @author Matthias Moller
-      
+
    @copyright This file is part of the IgaNet project
-   
+
    This Source Code Form is subject to the terms of the Mozilla Public
    License, v. 2.0. If a copy of the MPL was not distributed with this
    file, You can obtain one at http://mozilla.org/MPL/2.0/.
@@ -308,7 +308,7 @@ namespace iganet {
     {
       return rhs_.plot(rhs_, xres, yres, zres);
     }
-    
+
     // Plots the B-Spline solution
     inline void plot_sol(int64_t xres=10, int64_t yres=10, int64_t zres=10) const
     {

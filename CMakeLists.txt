@@ -13,6 +13,7 @@
 # CMakeLists.txt accepts the following command line parameters
 #
 # IGANET_BUILD_EXAMPLES
+# IGANET_BUILD_PYBIND11
 # IGANET_BUILD_UNITTESTS
 #
 ########################################################################
@@ -21,6 +22,10 @@
 # Force CMake version 3.14 or above
 ########################################################################
 cmake_minimum_required (VERSION 3.14)
+
+set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+set(CMAKE_CXX_EXTENSIONS OFF)
 
 ########################################################################
 # Set RPATH on MacOSX
@@ -68,6 +73,7 @@ project(IgaNet)
 # Option list
 ########################################################################
 option(IGANET_BUILD_EXAMPLES    "Build examples"            ON )
+option(IGANET_BUILD_PYBIND11    "Build Python bindings"     OFF)
 option(IGANET_BUILD_UNITTESTS   "Build unittests"           OFF)
 option(IGANET_WITH_OPENMP       "With OpenMP"               ON )
 
@@ -162,6 +168,13 @@ include_directories(${PROJECT_SOURCE_DIR}/include)
 ########################################################################
 if (IGANET_BUILD_EXAMPLES)
   add_subdirectory(${PROJECT_SOURCE_DIR}/examples)
+endif()
+
+########################################################################
+# Add Python bindings (if enabled)
+########################################################################
+if (IGANET_BUILD_PYBIND11)
+  add_subdirectory(${PROJECT_SOURCE_DIR}/pybind11)
 endif()
 
 ########################################################################

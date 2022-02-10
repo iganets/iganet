@@ -2,11 +2,11 @@
    @file include/bspline.hpp
 
    @brief Multivariate B-splines
-   
+
    @author Matthias Moller
-      
+
    @copyright This file is part of the IgaNet project
-   
+
    This Source Code Form is subject to the terms of the Mozilla Public
    License, v. 2.0. If a copy of the MPL was not distributed with this
    file, You can obtain one at http://mozilla.org/MPL/2.0/.
@@ -82,9 +82,6 @@ namespace iganet {
     // Array storing the sizes of the coefficients of the control net
     std::array<int64_t, parDim_> ncoeffs_;
 
-    // String storing the full qualified name of the object
-    mutable at::optional<std::string> name_;
-
     // LibTorch constants
     const torch::Tensor one_, zero_;
 
@@ -102,7 +99,7 @@ namespace iganet {
         // Check that open knot vector can be created
         if (degrees_[i]>ncoeffs_[i]+1)
           throw std::runtime_error("Not enough coefficients to create open knot vector");
-        
+
         // Create open uniform knot vector
         std::vector<real_t> kv;
 
@@ -137,7 +134,7 @@ namespace iganet {
     {
       return geoDim_;
     }
-    
+
     // Returns a constant reference to the array of degrees
     inline static constexpr const std::array<short_t, parDim_>& degrees()
     {
@@ -381,55 +378,145 @@ namespace iganet {
       return *this;
     }
 
-    // Returns a string representation of the UniformBSpline object
-    inline void pretty_print(std::ostream& os = std::cout) const
-    {
-      os << name()
-         << "(\n  parDim=" << parDim_
-         << ", geoDim=" << geoDim_
+    // Returns the B-spline object as XML string
+    std::string to_xml() const {
+      std::stringstream ss;
 
-         << ", degrees=";
-      for (short_t i=0; i<parDim_-1; ++i)
-        os << degree(i) << "x";
-      os << degree(parDim_-1)
+      // Write preamble and knot vectors
+      ss << "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n"
+         << "<xml>\n";
 
-         << ", knots=";
-      for (short_t i=0; i<parDim_-1; ++i)
-        os << nknots(i) << "x";
-      os << nknots(parDim_-1)
-
-         << ", coeffs=";
-      for (short_t i=0; i<parDim_-1; ++i)
-        os << ncoeffs(i) << "x";
-      os << ncoeffs(parDim_-1)
-         << "\n)";
-    }
-
-    inline const std::string& name() const noexcept {
-      // If the name optional is empty at this point, we grab the name of the
-      // dynamic type via RTTI. Note that we cannot do this in the constructor,
-      // because in the constructor of a base class `this` always refers to the base
-      // type. Inheritance effectively does not work in constructors. Also this note
-      // from http://en.cppreference.com/w/cpp/language/typeid:
-      // If typeid is used on an object under construction or destruction (in a
-      // destructor or in a constructor, including constructor's initializer list
-      // or default member initializers), then the std::type_info object referred
-      // to by this typeid represents the class that is being constructed or
-      // destroyed even if it is not the most-derived class.
-      if (!name_.has_value()) {
-        name_ = c10::demangle(typeid(*this).name());
-#if defined(_WIN32)
-        // Windows adds "struct" or "class" as a prefix.
-        if (name_->find("struct ") == 0) {
-          name_->erase(name_->begin(), name_->begin() + 7);
-        } else if (name_->find("class ") == 0) {
-          name_->erase(name_->begin(), name_->begin() + 6);
-        }
-#endif // defined(_WIN32)
+      // 1D parametric dimension
+      if constexpr (parDim_ == 1) {
+        ss << " <Geometry type=\"BSpline\">\n"
+           << "  <Basis type=\"BSplineBasis\">\n"
+           << "   <KnotVector degree=\"" << degrees_[0] << "\">";
+        auto knots = knots_[0].template accessor<real_t,1>();
+        for (int64_t i=0; i<nknots_[0]; ++i)
+          ss << knots[i] << " ";
+        ss << "</KnotVector>\n"
+           << "  </Basis>\n";
       }
-      return *name_;
-    }
 
+      // >1D parametric dimension
+      else {
+        ss << " <Geometry type=\"TensorBSpline" << parDim_ << "\" id=\"0\">\n"
+           << "  <Basis type=\"TensorBSplineBasis" << parDim_ << "\">\n";
+        for (short_t i=0; i<parDim_; ++i) {
+          ss << "   <Basis type=\"BSplineBasis\" index=\"" << i << "\">\n"
+             << "    <KnotVector degree=\"" << degrees_[i] << "\">";
+          auto knots = knots_[i].template accessor<real_t,1>();
+          for (int64_t j=0; j<nknots_[i]; ++j)
+            ss << knots[j] << " ";
+          ss << "</KnotVector>\n"
+             << "   </Basis>\n";
+        }
+        ss << "  </Basis>\n";
+      }
+
+      // Write coefficients
+      ss << "  <coefs geoDim=\"" << geoDim_ << "\">\n";
+
+      // 1D geometric dimension
+      if constexpr (geoDim_ == 1) {
+        auto coeffs0 = coeffs_[0].template accessor<real_t,1>();
+        for (int64_t i=0; i<ncoeffs(); ++i)
+          ss << "   " << coeffs() << "\n";
+      }
+
+      // 2D geometric dimension
+      else if constexpr (geoDim_ == 2) {
+        auto coeffs0 = coeffs_[0].template accessor<real_t,1>();
+        auto coeffs1 = coeffs_[1].template accessor<real_t,1>();
+        if constexpr (parDim_ == 1) {
+          for (int64_t i=0; i<ncoeffs(); ++i)
+            ss << "   " << coeffs() << "\n";
+        }
+        else if constexpr (parDim_ == 2) {
+          for (int64_t j=0; j<ncoeffs_[1]; ++j)
+            for (int64_t i=0; i<ncoeffs_[0]; ++i)
+              ss << "   " << coeffs0[i*ncoeffs_[1]+j]
+                 << " "   << coeffs1[i*ncoeffs_[1]+j] << "\n";
+        }
+        else if constexpr (parDim_ == 3) {
+          for (int64_t k=0; k<ncoeffs_[2]; ++k)
+            for (int64_t j=0; j<ncoeffs_[1]; ++j)
+              for (int64_t i=0; i<ncoeffs_[0]; ++i)
+                ss << "   " << coeffs0[i*ncoeffs_[1]*ncoeffs_[2]+j*ncoeffs_[1]+k]
+                   << " "   << coeffs1[i*ncoeffs_[1]*ncoeffs_[2]+j*ncoeffs_[1]+k] << "\n";
+        }
+      }
+
+      // 3D geometric dimension
+      else if constexpr (geoDim_ == 3) {
+        auto coeffs0 = coeffs_[0].template accessor<real_t,1>();
+        auto coeffs1 = coeffs_[1].template accessor<real_t,1>();
+        auto coeffs2 = coeffs_[2].template accessor<real_t,1>();
+        if constexpr (parDim_ == 1) {
+          for (int64_t i=0; i<ncoeffs(); ++i)
+            ss << "   " << coeffs() << "\n";
+        }
+        else if constexpr (parDim_ == 2) {
+          for (int64_t j=0; j<ncoeffs_[1]; ++j)
+            for (int64_t i=0; i<ncoeffs_[0]; ++i)
+              ss << "   " << coeffs0[i*ncoeffs_[1]+j]
+                 << " "   << coeffs1[i*ncoeffs_[1]+j]
+                 << " "   << coeffs2[i*ncoeffs_[1]+j] << "\n";
+        }
+        else if constexpr (parDim_ == 3) {
+          for (int64_t k=0; k<ncoeffs_[2]; ++k)
+            for (int64_t j=0; j<ncoeffs_[1]; ++j)
+              for (int64_t i=0; i<ncoeffs_[0]; ++i)
+                ss << "   " << coeffs0[i*ncoeffs_[1]*ncoeffs_[2]+j*ncoeffs_[1]+k]
+                   << " "   << coeffs1[i*ncoeffs_[1]*ncoeffs_[2]+j*ncoeffs_[1]+k]
+                   << " "   << coeffs2[i*ncoeffs_[1]*ncoeffs_[2]+j*ncoeffs_[1]+k] << "\n";
+        }
+      }
+
+      // 4D geometric dimension
+      else if constexpr (geoDim_ == 4) {
+        auto coeffs0 = coeffs_[0].template accessor<real_t,1>();
+        auto coeffs1 = coeffs_[1].template accessor<real_t,1>();
+        auto coeffs2 = coeffs_[2].template accessor<real_t,1>();
+        auto coeffs3 = coeffs_[3].template accessor<real_t,1>();
+        if constexpr (parDim_ == 1) {
+          for (int64_t i=0; i<ncoeffs(); ++i)
+            ss << "   " << coeffs() << "\n";
+        }
+        else if constexpr (parDim_ == 2) {
+          for (int64_t j=0; j<ncoeffs_[1]; ++j)
+            for (int64_t i=0; i<ncoeffs_[0]; ++i)
+              ss << "   " << coeffs0[i*ncoeffs_[1]+j]
+                 << " "   << coeffs1[i*ncoeffs_[1]+j]
+                 << " "   << coeffs2[i*ncoeffs_[1]+j]
+                 << " "   << coeffs3[i*ncoeffs_[1]+j] << "\n";
+        }
+        else if constexpr (parDim_ == 3) {
+          for (int64_t k=0; k<ncoeffs_[2]; ++k)
+            for (int64_t j=0; j<ncoeffs_[1]; ++j)
+              for (int64_t i=0; i<ncoeffs_[0]; ++i)
+                ss << "   " << coeffs0[i*ncoeffs_[1]*ncoeffs_[2]+j*ncoeffs_[1]+k]
+                   << " "   << coeffs1[i*ncoeffs_[1]*ncoeffs_[2]+j*ncoeffs_[1]+k]
+                   << " "   << coeffs2[i*ncoeffs_[1]*ncoeffs_[2]+j*ncoeffs_[1]+k]
+                   << " "   << coeffs3[i*ncoeffs_[1]*ncoeffs_[2]+j*ncoeffs_[1]+k] << "\n";
+        }
+        else if constexpr (parDim_ == 4) {
+          for (int64_t l=0; l<ncoeffs_[3]; ++l)
+            for (int64_t k=0; k<ncoeffs_[2]; ++k)
+              for (int64_t j=0; j<ncoeffs_[1]; ++j)
+                for (int64_t i=0; i<ncoeffs_[0]; ++i)
+                  ss << "   " << coeffs0[i*ncoeffs_[1]*ncoeffs_[2]*ncoeffs_[3]+j*ncoeffs_[1]*ncoeffs_[2]+k*ncoeffs_[1]+l]
+                     << " "   << coeffs1[i*ncoeffs_[1]*ncoeffs_[2]*ncoeffs_[3]+j*ncoeffs_[1]*ncoeffs_[2]+k*ncoeffs_[1]+l]
+                     << " "   << coeffs2[i*ncoeffs_[1]*ncoeffs_[2]*ncoeffs_[3]+j*ncoeffs_[1]*ncoeffs_[2]+k*ncoeffs_[1]+l]
+                     << " "   << coeffs3[i*ncoeffs_[1]*ncoeffs_[2]*ncoeffs_[3]+j*ncoeffs_[1]*ncoeffs_[2]+k*ncoeffs_[1]+l] << "\n";
+        }
+      }
+      ss << "  </coefs>\n"
+         << " </Geometry>\n"
+         << "</xml>\n";
+
+      return ss.str();
+    }
   protected:
     // Initialize coefficients
     inline void init_coeffs(BSplineInit init)
@@ -1107,7 +1194,7 @@ namespace iganet {
         // Check that knot vector has enough (n+p+1) entries
         if (2*Base::degrees_[i]>kv[i].size()-2)
           throw std::runtime_error("Knot vector is too short for an open knot vector (n+p+1 > 2*(p+1))");
-        
+
         Base::knots_[i] = torch::from_blob(static_cast<real_t*>(kv[i].data()),
                                            kv[i].size(), core<real_t>::options_).clone();
 
@@ -1122,6 +1209,7 @@ namespace iganet {
       Base::init_coeffs(init);
     }
 
+    // Evaluates the B-spline in xi
     template<BSplineDeriv deriv = BSplineDeriv::func>
     inline auto eval(const torch::Tensor& xi) const
     {
@@ -1142,16 +1230,17 @@ namespace iganet {
       else if constexpr (Base::parDim_ == 2) {
         int64_t i;
         auto knots = Base::knots_[0].template accessor<real_t,1>();
-        for (i=Base::degrees_[0]; i<Base::nknots_[0]-Base::degrees_[0]-1; ++i)
+        for (i=Base::degrees_[0]; i<Base::nknots_[0]-Base::degrees_[0]-1; ++i) {
           if (knots[i+1] > xi[0].item<real_t>())
             break;
+        }
 
         int64_t j;
         knots = Base::knots_[1].template accessor<real_t,1>();
-        for (j=Base::degrees_[1]; j<Base::nknots_[1]-Base::degrees_[1]-1; ++j)
+        for (j=Base::degrees_[1]; j<Base::nknots_[1]-Base::degrees_[1]-1; ++j) {
           if (knots[j+1] > xi[1].item<real_t>())
             break;
-
+        }
         return Base::eval_2d(xi, i, j);
       }
 
@@ -1262,7 +1351,7 @@ namespace iganet {
                                                     }
                                                     ).view({1})
                                        ).template item<real_t>();
-        
+
         if ((void*)this != (void*)&color) {
           if constexpr (BSplineCore_t::geoDim_==1) {
 #pragma omp parallel for simd
@@ -1613,6 +1702,30 @@ namespace iganet {
       else
         throw std::runtime_error("Unsupported combination of parametric/geometric dimensions");
     }
+
+    // Returns a string representation of the UniformBSpline object
+    inline void pretty_print(std::ostream& os = std::cout) const
+    {
+      os << BSplineCore::name()
+         << "(\n  parDim=" << BSplineCore::parDim_
+         << ", geoDim=" << BSplineCore::geoDim_
+
+         << ", degrees=";
+      for (short_t i=0; i<BSplineCore::parDim_-1; ++i)
+        os << BSplineCore::degree(i) << "x";
+      os << BSplineCore::degree(BSplineCore::parDim_-1)
+
+         << ", knots=";
+      for (short_t i=0; i<BSplineCore::parDim_-1; ++i)
+        os << BSplineCore::nknots(i) << "x";
+      os << BSplineCore::nknots(BSplineCore::parDim_-1)
+
+         << ", coeffs=";
+      for (short_t i=0; i<BSplineCore::parDim_-1; ++i)
+        os << BSplineCore::ncoeffs(i) << "x";
+      os << BSplineCore::ncoeffs(BSplineCore::parDim_-1)
+         << "\n)";
+    }
   };
 
   /// Tensor-product uniform B-spline
@@ -1631,7 +1744,7 @@ namespace iganet {
   /// Tensor-product non-uniform B-spline
   template<typename real_t, short_t geoDim, short_t... Degrees>
   using NonUniformBSpline = BSplineCommon<real_t, NonUniformBSplineCore<real_t, geoDim, Degrees...>>;
-  
+
   /// Print (as string) a UniformBSpline object
   template<typename real_t, short_t geoDim, short_t... Degrees>
   inline std::ostream& operator<<(std::ostream& os,

@@ -21,7 +21,7 @@ int main()
   torch::manual_seed(1);
 
   {
-    // Univariate uniform B-spline of degree 2 with 6 control points in R^1
+    // Univariate non-uniform B-spline of degree 2 with 6 control points in R^1
     iganet::NonUniformBSpline<double,1,2> bspline({{{0.0,0.0,0.0,0.25,0.5,0.75,1.0,1.0,1.0}}});
 
     // Print information
@@ -37,11 +37,14 @@ int main()
 
     // Plot B-spline
     bspline.plot(50);
+
+    // Export B-spline to XML
+    std::cout << bspline.to_xml() << std::endl;
   }
 
 
   {
-    // Univariate uniform B-spline of degree 2 with 6 control points in R^2
+    // Univariate non-uniform B-spline of degree 2 with 6 control points in R^2
     iganet::NonUniformBSpline<double,2,2> bspline({{{0.0,0.0,0.0,0.25,0.5,0.75,1.0,1.0,1.0}}});
 
     // Print information
@@ -58,10 +61,13 @@ int main()
 
     // Plot B-spline
     bspline.plot(50);
+
+    // Export B-spline to XML
+    std::cout << bspline.to_xml() << std::endl;
   }
 
   {
-    // Univariate uniform B-spline of degree 2 with 6 control points in R^3
+    // Univariate non-uniform B-spline of degree 2 with 6 control points in R^3
     iganet::NonUniformBSpline<double,3,2> bspline({{{0.0,0.0,0.0,0.25,0.5,0.75,1.0,1.0,1.0}}});
 
     // Print information
@@ -79,13 +85,16 @@ int main()
 
     // Plot B-spline
     bspline.plot(50);
+
+    // Export B-spline to XML
+    std::cout << bspline.to_xml() << std::endl;
   }
 
   {
-    // Bivariate uniform B-spline of degree 3 in xi-direction and 4
+    // Bivariate non-uniform B-spline of degree 3 in xi-direction and 4
     // in eta-direction with 5 x 6 control points in R^2
-    iganet::NonUniformBSpline<double,2,3,4> bspline({{{0.0,0.0,0.0,0.5,1.0,1.0,1.0,1.0},
-                                                      {0.0,0.0,0.0,0.0,0.5,1.0,1.0,1.0,1.0,1.0}}});
+    iganet::NonUniformBSpline<double,2,3,4> bspline({{{0.0,0.0,0.0,0.0,0.5,1.0,1.0,1.0,1.0},
+                                                      {0.0,0.0,0.0,0.0,0.0,0.5,1.0,1.0,1.0,1.0,1.0}}});
 
     // Print information
     std::cout << bspline << std::endl;
@@ -101,13 +110,16 @@ int main()
 
     // Plot B-spline
     bspline.plot(50,50);
+
+    // Export B-spline to XML
+    std::cout << bspline.to_xml() << std::endl;
   }
 
   {
-    // Bivariate uniform B-spline of degree 3 in xi-direction and 4
-    // in eta-direction with 6 x 5 control points in R^3
-    iganet::NonUniformBSpline<double,3,3,4> bspline({{{0.0,0.0,0.0,0.5,1.0,1.0,1.0,1.0},
-                                                      {0.0,0.0,0.0,0.0,0.5,1.0,1.0,1.0,1.0,1.0}}});
+    // Bivariate non-uniform B-spline of degree 3 in xi-direction and 4
+    // in eta-direction with 5 x 6 control points in R^3
+    iganet::NonUniformBSpline<double,3,3,4> bspline({{{0.0,0.0,0.0,0.0,0.5,1.0,1.0,1.0,1.0},
+                                                      {0.0,0.0,0.0,0.0,0.0,0.5,1.0,1.0,1.0,1.0,1.0}}});
 
     // Print information
     std::cout << bspline << std::endl;
@@ -124,5 +136,8 @@ int main()
 
     // Plot B-spline
     bspline.plot(50,50);
+
+    // Export B-spline to XML
+    std::cout << bspline.to_xml() << std::endl;
   }
 }
