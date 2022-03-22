@@ -13,6 +13,7 @@
 */
 
 #include <exception>
+#include <filesystem>
 #include <functional>
 
 #include <core.hpp>
@@ -61,33 +62,40 @@ namespace iganet {
   class UniformBSplineCore : public core<real_t>
   {
   protected:
-    // Dimension of the parametric space
+    /// Dimension of the parametric space
     static constexpr const short_t parDim_ = sizeof...(Degrees);
 
-    // Dimension of the geometric space
+    /// Dimension of the geometric space
     static constexpr const short_t geoDim_ = GeoDim;
 
-    // Array storing the degrees per dimension
+    /// Array storing the degrees per dimension
     static constexpr const std::array<short_t, parDim_> degrees_ = { Degrees... };
 
-    // Array storing the knot vectors
+    /// Array storing the knot vectors
     std::array<torch::Tensor, parDim_> knots_;
 
-    // Array storing the sizes of the knot vectors
+    /// Array storing the sizes of the knot vectors
     std::array<int64_t, parDim_> nknots_;
 
-    // Array storing the coefficients of the control net
+    /// Array storing the coefficients of the control net
     std::array<torch::Tensor, geoDim_> coeffs_;
 
-    // Array storing the sizes of the coefficients of the control net
+    /// Array storing the sizes of the coefficients of the control net
     std::array<int64_t, parDim_> ncoeffs_;
 
-    // LibTorch constants
+    /// LibTorch constants
     const torch::Tensor one_, zero_;
 
   public:
-    // Constructor: equidistant knot vectors
-    UniformBSplineCore(std::array<int64_t, parDim_> ncoeffs,
+    /// Default constructor
+    UniformBSplineCore()
+      : core<real_t>(),
+        one_(torch::ones(1, core<real_t>::options_)),
+        zero_(torch::zeros(1, core<real_t>::options_))
+    {}
+    
+    /// Constructor: equidistant knot vectors
+    UniformBSplineCore(const std::array<int64_t, parDim_>& ncoeffs,
                        BSplineInit init = BSplineInit::zeros)
       : core<real_t>(),
         ncoeffs_(ncoeffs),
@@ -122,76 +130,76 @@ namespace iganet {
       // Initialize coefficients
       init_coeffs(init);
     }
-
-    // Returns the parametric dimension
+    
+    /// Returns the parametric dimension
     inline static constexpr short_t parDim()
     {
       return parDim_;
     }
 
-    // Returns the geometric dimension
+    /// Returns the geometric dimension
     inline static constexpr short_t geoDim()
     {
       return geoDim_;
     }
 
-    // Returns a constant reference to the array of degrees
+    /// Returns a constant reference to the array of degrees
     inline static constexpr const std::array<short_t, parDim_>& degrees()
     {
       return degrees_;
     }
 
-    // Returns a constant reference to the degree in the i-th dimension
+    /// Returns a constant reference to the degree in the i-th dimension
     inline static constexpr const short_t& degree(short_t i)
     {
       assert(i>=0 && i<parDim_);
       return degrees_[i];
     }
 
-    // Returns a constant reference to the array of knot vectors
+    /// Returns a constant reference to the array of knot vectors
     inline const std::array<torch::Tensor, parDim_>& knots() const
     {
       return knots_;
     }
 
-    // Returns a constant reference to the knot vector in the i-th dimension
+    /// Returns a constant reference to the knot vector in the i-th dimension
     inline const torch::Tensor& knots(short_t i) const
     {
       assert(i>=0 && i<parDim_);
       return knots_[i];
     }
 
-    // Returns a non-constant reference to the array of knot vectors
+    /// Returns a non-constant reference to the array of knot vectors
     inline std::array<torch::Tensor, parDim_>& knots()
     {
       return knots_;
     }
 
-    // Returns a non-constant reference to the knot vector in the i-th dimension
+    /// Returns a non-constant reference to the knot vector in the i-th dimension
     inline torch::Tensor& knots(short_t i)
     {
       assert(i>=0 && i<parDim_);
       return knots_[i];
     }
 
-    // Returns a constant reference to the array of knot vector dimensions
+    /// Returns a constant reference to the array of knot vector dimensions
     inline const std::array<int64_t, parDim_>& nknots() const
     {
       return nknots_;
     }
 
-    // Returns the dimension of the knot vector in the i-th dimension
+    /// Returns the dimension of the knot vector in the i-th dimension
     inline int64_t nknots(short_t i) const
     {
       assert(i>=0 && i<parDim_);
       return nknots_[i];
     }
-
-    // Returns a constant reference to the array of coefficients. If
-    // flatten=false, this function returns an std::array of
-    // torch::Tensor objects with coefficients reshaped according to
-    // the dimensions of the knot vectors (return by value in this
-    // case)
+    
+    /// Returns a constant reference to the array of coefficients. If
+    /// flatten=false, this function returns an std::array of
+    /// torch::Tensor objects with coefficients reshaped according to
+    /// the dimensions of the knot vectors (return by value in this
+    /// case)
     template<bool flatten=true>
     inline auto coeffs() const
       -> typename std::conditional<flatten,
@@ -208,11 +216,11 @@ namespace iganet {
       }
     }
 
-    // Returns a constant reference to the coefficients in the i-th
-    // dimension. If flatten=false, this function returns a
-    // torch::Tensor with coefficients in the i-th dimension reshaped
-    // according to the dimensions of the knot vectors (return by
-    // value in this case)
+    /// Returns a constant reference to the coefficients in the i-th
+    /// dimension. If flatten=false, this function returns a
+    /// torch::Tensor with coefficients in the i-th dimension reshaped
+    /// according to the dimensions of the knot vectors (return by
+    /// value in this case)
     template<bool flatten=true>
     inline auto coeffs(short_t i) const
       -> typename std::conditional<flatten,
@@ -226,20 +234,20 @@ namespace iganet {
         return coeffs_[i].view(ncoeffs_);
     }
 
-    // Returns a non-constant reference to the array of coefficients
+    /// Returns a non-constant reference to the array of coefficients
     inline std::array<torch::Tensor, geoDim_>& coeffs()
     {
       return coeffs_;
     }
 
-    // Returns a non-constant reference to the coefficients in the i-th dimension
+    /// Returns a non-constant reference to the coefficients in the i-th dimension
     inline torch::Tensor& coeffs(short_t i)
     {
       assert(i>=0 && i<geoDim_);
       return coeffs_[i];
     }
 
-    // Returns the total number of coefficients
+    /// Returns the total number of coefficients
     inline int64_t ncoeffs() const
     {
       int64_t s=1;
@@ -248,40 +256,40 @@ namespace iganet {
       return s;
     }
 
-    // Returns the total number of coefficients in the i-th direction
+    /// Returns the total number of coefficients in the i-th direction
     inline int64_t ncoeffs(short_t i) const
     {
       assert(i>=0 && i<parDim_);
       return ncoeffs_[i];
     }
-
-    // Returns the value of the B-spline object in the points \f$ \xi \f$.
-    //
-    // To this end, the function first determines the interval
-    // \f$
-    //   [knot[i], knot[i+1])
-    // \f$
-    // that contains the point \f$ \xi \f$ and evaluates the vector of
-    // basis functions (or their derivatives)
-    // \f$
-    //   \left[ D^r B_{i-d,d}, \dots, D^r B_{i,d} \right]
-    // \f$,
-    // where
-    // \f$
-    //   d
-    // \f$
-    // is the degree of the B-spline and
-    // \f$
-    //   r
-    // \f$
-    // denotes the requested derivative. Next, the function multiplies
-    // the above row vector by the column vector of control points
-    // \f$
-    //   \left[ c_{i-d}, \dots, c_{i} \right]^\top
-    // \f$.
-    //
-    // This functions applies the above procedure to the tensor
-    // product of B-splines in all spatial dimensions.
+    
+    /// Returns the value of the B-spline object in the points \f$ \xi \f$.
+    ///
+    /// To this end, the function first determines the interval
+    /// \f$
+    ///   [knot[i], knot[i+1])
+    /// \f$
+    /// that contains the point \f$ \xi \f$ and evaluates the vector of
+    /// basis functions (or their derivatives)
+    /// \f$
+    ///   \left[ D^r B_{i-d,d}, \dots, D^r B_{i,d} \right]
+    /// \f$,
+    /// where
+    /// \f$
+    ///   d
+    /// \f$
+    /// is the degree of the B-spline and
+    /// \f$
+    ///   r
+    /// \f$
+    /// denotes the requested derivative. Next, the function multiplies
+    /// the above row vector by the column vector of control points
+    /// \f$
+    ///   \left[ c_{i-d}, \dots, c_{i} \right]^\top
+    /// \f$.
+    ///
+    /// This functions applies the above procedure to the tensor
+    /// product of B-splines in all spatial dimensions.
     template<BSplineDeriv deriv = BSplineDeriv::func>
     inline auto eval(const torch::Tensor& xi) const
     {
@@ -318,7 +326,7 @@ namespace iganet {
       }
     }
 
-    // Transforms the coefficients based on the given mapping
+    /// Transforms the coefficients based on the given mapping
     inline UniformBSplineCore& transform(const std::function<std::array<real_t, geoDim_>(const std::array<real_t, parDim_>&)> transformation)
     {
       static_assert(parDim_ <= 4, "Unsupported parametric dimension");
@@ -378,7 +386,7 @@ namespace iganet {
       return *this;
     }
 
-    // Returns the B-spline object as XML string
+    /// Returns the B-spline object as XML string
     std::string to_xml() const {
       std::stringstream ss;
 
@@ -517,8 +525,122 @@ namespace iganet {
 
       return ss.str();
     }
+
+    /// Saves the B-Spline to file
+    inline void save(const std::string& filename,
+                     const std::string& key="") const
+    {
+      torch::serialize::OutputArchive archive;
+      write(archive, key).save_to(filename);
+    }
+
+    /// Loads the B-Spline from file
+    inline void load(const std::string& filename,
+                     const std::string& key="")
+    {
+      torch::serialize::InputArchive archive;
+      archive.load_from(filename);
+      read(archive, key);
+    }
+
+    /// Writes the B-Spline into a torch::serialize::OutputArchive object
+    inline torch::serialize::OutputArchive& write(torch::serialize::OutputArchive& archive,
+                                                  const std::string& key="") const
+    {
+      archive.write(key+"parDim", torch::full({1}, parDim_));
+      archive.write(key+"geoDim", torch::full({1}, geoDim_));
+      
+      for (short_t i=0; i<parDim_; ++i) 
+        archive.write(key+"degree"+std::to_string(i), torch::full({1}, degrees_[i]));
+
+      for (short_t i=0; i<parDim_; ++i)
+        archive.write(key+"nknots"+std::to_string(i), torch::full({1}, nknots_[i]));
+      
+      for (short_t i=0; i<parDim_; ++i)
+        archive.write(key+"knots"+std::to_string(i), knots_[i]);
+      
+      for (short_t i=0; i< parDim_; ++i)
+        archive.write(key+"ncoeffs"+std::to_string(i), torch::full({1}, ncoeffs_[i]));        
+      
+      for (short_t i=0; i<geoDim_; ++i)
+        archive.write(key+"coeffs"+std::to_string(i), coeffs_[i]);
+      
+      return archive;
+    }
+
+    /// Reads the B-Spline from a torch::serialize::InputArchive object
+    inline torch::serialize::InputArchive& read(torch::serialize::InputArchive& archive,
+                                                const std::string& key="")
+    {
+      torch::Tensor tensor;
+      
+      archive.read(key+"parDim", tensor);
+      if (tensor.item<int64_t>() != parDim_)
+        throw std::runtime_error("parDim mismatch");
+      
+      archive.read(key+"geoDim", tensor);
+      if (tensor.item<int64_t>() != geoDim_)
+        throw std::runtime_error("geoDim mismatch");
+      
+      for (short_t i=0; i<parDim_; ++i) {
+        archive.read(key+"degree"+std::to_string(i), tensor);
+        if (tensor.item<int64_t>() != degrees_[i])
+          throw std::runtime_error("degrees mismatch");
+      }
+      
+      for (short_t i=0; i<parDim_; ++i) {
+        archive.read(key+"nknots"+std::to_string(i), tensor);
+        nknots_[i] = tensor.item<int64_t>();
+      }
+
+      for (short_t i=0; i<parDim_; ++i)
+        archive.read(key+"knots"+std::to_string(i), knots_[i]);
+            
+      for (short_t i=0; i< parDim_; ++i) {
+        archive.read(key+"ncoeffs"+std::to_string(i), tensor);
+        ncoeffs_[i] = tensor.item<int64_t>();
+      }
+      
+      for (short_t i=0; i<geoDim_; ++i)
+        archive.read(key+"coeffs"+std::to_string(i), coeffs_[i]);
+      
+      return archive;
+    }
+
+    /// Returns true of both B-Spline objects are the same
+    bool operator==(const UniformBSplineCore& other)
+    {
+      bool result(true);
+
+      result *= (parDim_ == other.parDim());
+      result *= (geoDim_ == other.geoDim());
+
+      for (short_t i=0; i<parDim_; ++i)
+        result *= (degree(i) == other.degree(i));
+
+      for (short_t i=0; i<parDim_; ++i)
+        result *= (nknots(i) == other.nknots(i));
+
+      for (short_t i=0; i<parDim_; ++i)
+        result *= (ncoeffs(i) == other.ncoeffs(i));
+
+      for (short_t i=0; i<parDim_; ++i)
+        result *= torch::all(knots(i)==other.knots(i)).template item<bool>();
+
+      for (short_t i=0; i<parDim_; ++i)
+        result *= torch::all(coeffs(i)==other.coeffs(i)).template item<bool>();
+      
+      return result;
+    }
+
+    /// Returns true of both B-Spline objects are different
+    bool operator!=(const UniformBSplineCore& other)
+    {
+      return !(*this==other);
+    }
+    
   protected:
-    // Initialize coefficients
+    /// Initialize coefficients
     inline void init_coeffs(BSplineInit init)
     {
       switch (init) {
@@ -763,25 +885,25 @@ namespace iganet {
                                                ).flatten());
     }
 
-    // Returns the values of the vector of B-spline basis function (or
-    // their derivatives) evaluated in the point \f$ \xi \f$
-    // \f$
-    //   \left[ D^r B_{i-d,d}, \dots, D^r B_{i,d} \right]
-    // \f$,
-    // where
-    // \f$
-    //   d
-    // \f$
-    // is the degree of the B-spline and
-    // \f$
-    //   r
-    // \f$
-    // denotes the requested derivative.
-    //
-    // For a detailed descriptions see Section 2.3 in
-    // https://www.uio.no/studier/emner/matnat/ifi/nedlagte-emner/INF-MAT5340/v05/undervisningsmateriale/kap2-new.pdf
-    // and Section 3.2 in
-    // https://www.uio.no/studier/emner/matnat/ifi/nedlagte-emner/INF-MAT5340/v05/undervisningsmateriale/kap3-new.pdf
+    /// Returns the values of the vector of B-spline basis function (or
+    /// their derivatives) evaluated in the point \f$ \xi \f$
+    /// \f$
+    ///   \left[ D^r B_{i-d,d}, \dots, D^r B_{i,d} \right]
+    /// \f$,
+    /// where
+    /// \f$
+    ///   d
+    /// \f$
+    /// is the degree of the B-spline and
+    /// \f$
+    ///   r
+    /// \f$
+    /// denotes the requested derivative.
+    ///
+    /// For a detailed descriptions see Section 2.3 in
+    /// https://www.uio.no/studier/emner/matnat/ifi/nedlagte-emner/INF-MAT5340/v05/undervisningsmateriale/kap2-new.pdf
+    /// and Section 3.2 in
+    /// https://www.uio.no/studier/emner/matnat/ifi/nedlagte-emner/INF-MAT5340/v05/undervisningsmateriale/kap3-new.pdf
     template<short_t degree, short_t dim, short_t deriv>
     inline auto eval_impl(int64_t i, const torch::Tensor& xi) const
     {
@@ -1167,7 +1289,21 @@ namespace iganet {
     }
   };
 
+  /// Serializes a B-Spline object
+  template<typename real_t, short_t GeoDim, short_t... Degrees>
+  inline torch::serialize::OutputArchive& operator<<(torch::serialize::OutputArchive& archive,
+                                                     const UniformBSplineCore<real_t, GeoDim, Degrees...>& obj)
+  {
+    return obj.write(archive);
+  }
 
+  /// De-serializes a B-Spline object
+  template<typename real_t, short_t GeoDim, short_t... Degrees>
+  inline torch::serialize::InputArchive& operator>>(torch::serialize::InputArchive& archive,
+                                                    UniformBSplineCore<real_t, GeoDim, Degrees...>& obj)
+  {
+    return obj.read(archive);
+  }
 
   /// Tensor-product non-uniform B-Spline (core functionality)
   ///
