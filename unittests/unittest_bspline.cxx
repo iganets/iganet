@@ -13,18 +13,19 @@
 */
 
 #include <iganet.hpp>
+#include <filesystem>
 #include <iostream>
 
 #include <gtest/gtest.h>
 
 TEST(BSpline, UniformBSpline_parDim1_geoDim1_degrees1)
 {
-  iganet::UniformBSpline<double, 1, 1> bspline({1});
+  iganet::UniformBSpline<double, 1, 1> bspline({0});
   EXPECT_EQ(bspline.parDim(), 1);
   EXPECT_EQ(bspline.geoDim(), 1);
   EXPECT_EQ(bspline.degree(0), 1);
-  EXPECT_EQ(bspline.nknots(0), 3);
-  EXPECT_EQ(bspline.ncoeffs(0), 1);
+  EXPECT_EQ(bspline.nknots(0), 2);
+  EXPECT_EQ(bspline.ncoeffs(0), 0);
 }
 
 TEST(BSpline, UniformBSpline_parDim1_geoDim1_degrees2)
@@ -40,6 +41,7 @@ TEST(BSpline, UniformBSpline_parDim1_geoDim1_degrees2)
 
 TEST(BSpline, UniformBSpline_parDim1_geoDim1_degrees3)
 {
+  EXPECT_THROW( (iganet::UniformBSpline<double, 1, 3>({0})), std::runtime_error);
   EXPECT_THROW( (iganet::UniformBSpline<double, 1, 3>({1})), std::runtime_error);
   iganet::UniformBSpline<double, 1, 3> bspline({2});
   EXPECT_EQ(bspline.parDim(), 1);
@@ -51,6 +53,7 @@ TEST(BSpline, UniformBSpline_parDim1_geoDim1_degrees3)
 
 TEST(BSpline, UniformBSpline_parDim1_geoDim2_degrees4)
 {
+  EXPECT_THROW( (iganet::UniformBSpline<double, 2, 4>({0})), std::runtime_error);
   EXPECT_THROW( (iganet::UniformBSpline<double, 2, 4>({1})), std::runtime_error);
   EXPECT_THROW( (iganet::UniformBSpline<double, 2, 4>({2})), std::runtime_error);
   iganet::UniformBSpline<double, 2, 4> bspline({3});
@@ -63,6 +66,7 @@ TEST(BSpline, UniformBSpline_parDim1_geoDim2_degrees4)
 
 TEST(BSpline, UniformBSpline_parDim1_geoDim3_degrees5)
 {
+  EXPECT_THROW( (iganet::UniformBSpline<double, 3, 5>({0})), std::runtime_error);
   EXPECT_THROW( (iganet::UniformBSpline<double, 3, 5>({1})), std::runtime_error);
   EXPECT_THROW( (iganet::UniformBSpline<double, 3, 5>({2})), std::runtime_error);
   EXPECT_THROW( (iganet::UniformBSpline<double, 3, 5>({3})), std::runtime_error);
@@ -76,6 +80,7 @@ TEST(BSpline, UniformBSpline_parDim1_geoDim3_degrees5)
 
 TEST(BSpline, UniformBSpline_parDim1_geoDim4_degrees6)
 {
+  EXPECT_THROW( (iganet::UniformBSpline<double, 4, 6>({0})), std::runtime_error);
   EXPECT_THROW( (iganet::UniformBSpline<double, 4, 6>({1})), std::runtime_error);
   EXPECT_THROW( (iganet::UniformBSpline<double, 4, 6>({2})), std::runtime_error);
   EXPECT_THROW( (iganet::UniformBSpline<double, 4, 6>({3})), std::runtime_error);
@@ -90,6 +95,9 @@ TEST(BSpline, UniformBSpline_parDim1_geoDim4_degrees6)
 
 TEST(BSpline, UniformBSpline_parDim2_geoDim2_degrees34)
 {
+  EXPECT_THROW( (iganet::UniformBSpline<double, 2, 3, 4>({0, 0})), std::runtime_error);
+  EXPECT_THROW( (iganet::UniformBSpline<double, 2, 3, 4>({1, 0})), std::runtime_error);
+  EXPECT_THROW( (iganet::UniformBSpline<double, 2, 3, 4>({0, 1})), std::runtime_error);
   EXPECT_THROW( (iganet::UniformBSpline<double, 2, 3, 4>({1, 1})), std::runtime_error);
   EXPECT_THROW( (iganet::UniformBSpline<double, 2, 3, 4>({2, 1})), std::runtime_error);
   EXPECT_THROW( (iganet::UniformBSpline<double, 2, 3, 4>({1, 2})), std::runtime_error);
@@ -107,6 +115,9 @@ TEST(BSpline, UniformBSpline_parDim2_geoDim2_degrees34)
 
 TEST(BSpline, UniformBSpline_parDim2_geoDim3_degrees34)
 {
+  EXPECT_THROW( (iganet::UniformBSpline<double, 3, 3, 4>({0, 0})), std::runtime_error);
+  EXPECT_THROW( (iganet::UniformBSpline<double, 3, 3, 4>({1, 0})), std::runtime_error);
+  EXPECT_THROW( (iganet::UniformBSpline<double, 3, 3, 4>({0, 1})), std::runtime_error);
   EXPECT_THROW( (iganet::UniformBSpline<double, 3, 3, 4>({1, 1})), std::runtime_error);
   EXPECT_THROW( (iganet::UniformBSpline<double, 3, 3, 4>({2, 1})), std::runtime_error);
   EXPECT_THROW( (iganet::UniformBSpline<double, 3, 3, 4>({1, 2})), std::runtime_error);
@@ -163,6 +174,34 @@ TEST(BSpline, NonUniformBSpline_parDim3_geoDim3_degrees123)
   EXPECT_EQ(bspline.ncoeffs(0), 3);
   EXPECT_EQ(bspline.ncoeffs(1), 3);
   EXPECT_EQ(bspline.ncoeffs(2), 5);
+}
+
+TEST(BSpline, UniformBSpline_read_write)
+{
+  std::filesystem::path filename = std::filesystem::temp_directory_path() / std::to_string(rand());
+  iganet::UniformBSpline<double, 3, 3, 4> bspline_out({2,3});
+  bspline_out.save(filename.c_str());
+  iganet::UniformBSpline<double, 3, 3, 4> bspline_in;
+  bspline_in.load(filename.c_str());
+  std::filesystem::remove(filename);
+  
+  EXPECT_EQ( (bspline_in == bspline_out), true);
+  EXPECT_EQ( (bspline_in != bspline_out), false);  
+}
+
+TEST(BSpline, NonUniformBSpline_read_write)
+{
+  std::filesystem::path filename = std::filesystem::temp_directory_path() / std::to_string(rand());
+  iganet::NonUniformBSpline<double, 3, 1, 2, 3> bspline_out( {{{0.0, 0.0, 0.5, 1.0, 1.0},
+                                                               {0.0, 0.0, 0.0, 1.0, 1.0, 1.0},
+                                                               {0.0, 0.0, 0.0, 0.0, 0.5, 1.0, 1.0, 1.0, 1.0}}} );
+  bspline_out.save(filename.c_str());
+  iganet::NonUniformBSpline<double, 3, 1, 2, 3> bspline_in;
+  bspline_in.load(filename.c_str());
+  std::filesystem::remove(filename);
+
+  EXPECT_EQ( (bspline_in == bspline_out), true);
+  EXPECT_EQ( (bspline_in != bspline_out), false);  
 }
 
 int main(int argc, char **argv) {
