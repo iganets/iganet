@@ -93,7 +93,7 @@ namespace iganet {
         one_(torch::ones(1, core<real_t>::options_)),
         zero_(torch::zeros(1, core<real_t>::options_))
     {}
-    
+
     /// Constructor: equidistant knot vectors
     UniformBSplineCore(const std::array<int64_t, parDim_>& ncoeffs,
                        BSplineInit init = BSplineInit::zeros)
@@ -130,7 +130,7 @@ namespace iganet {
       // Initialize coefficients
       init_coeffs(init);
     }
-    
+
     /// Returns the parametric dimension
     inline static constexpr short_t parDim()
     {
@@ -194,7 +194,7 @@ namespace iganet {
       assert(i>=0 && i<parDim_);
       return nknots_[i];
     }
-    
+
     /// Returns a constant reference to the array of coefficients. If
     /// flatten=false, this function returns an std::array of
     /// torch::Tensor objects with coefficients reshaped according to
@@ -262,7 +262,7 @@ namespace iganet {
       assert(i>=0 && i<parDim_);
       return ncoeffs_[i];
     }
-    
+
     /// Returns the value of the B-spline object in the points \f$ \xi \f$.
     ///
     /// To this end, the function first determines the interval
@@ -528,7 +528,7 @@ namespace iganet {
 
     /// Saves the B-Spline to file
     inline void save(const std::string& filename,
-                     const std::string& key="") const
+                     const std::string& key="bspline") const
     {
       torch::serialize::OutputArchive archive;
       write(archive, key).save_to(filename);
@@ -536,7 +536,7 @@ namespace iganet {
 
     /// Loads the B-Spline from file
     inline void load(const std::string& filename,
-                     const std::string& key="")
+                     const std::string& key="bspline")
     {
       torch::serialize::InputArchive archive;
       archive.load_from(filename);
@@ -545,70 +545,70 @@ namespace iganet {
 
     /// Writes the B-Spline into a torch::serialize::OutputArchive object
     inline torch::serialize::OutputArchive& write(torch::serialize::OutputArchive& archive,
-                                                  const std::string& key="") const
+                                                  const std::string& key="bspline") const
     {
-      archive.write(key+"parDim", torch::full({1}, parDim_));
-      archive.write(key+"geoDim", torch::full({1}, geoDim_));
-      
-      for (short_t i=0; i<parDim_; ++i) 
-        archive.write(key+"degree"+std::to_string(i), torch::full({1}, degrees_[i]));
+      archive.write(key+".parDim", torch::full({1}, parDim_));
+      archive.write(key+".geoDim", torch::full({1}, geoDim_));
 
       for (short_t i=0; i<parDim_; ++i)
-        archive.write(key+"nknots"+std::to_string(i), torch::full({1}, nknots_[i]));
-      
+        archive.write(key+".degree["+std::to_string(i)+"]", torch::full({1}, degrees_[i]));
+
       for (short_t i=0; i<parDim_; ++i)
-        archive.write(key+"knots"+std::to_string(i), knots_[i]);
-      
+        archive.write(key+".nknots["+std::to_string(i)+"]", torch::full({1}, nknots_[i]));
+
+      for (short_t i=0; i<parDim_; ++i)
+        archive.write(key+".knots["+std::to_string(i)+"]", knots_[i]);
+
       for (short_t i=0; i< parDim_; ++i)
-        archive.write(key+"ncoeffs"+std::to_string(i), torch::full({1}, ncoeffs_[i]));        
-      
+        archive.write(key+".ncoeffs["+std::to_string(i)+"]", torch::full({1}, ncoeffs_[i]));
+
       for (short_t i=0; i<geoDim_; ++i)
-        archive.write(key+"coeffs"+std::to_string(i), coeffs_[i]);
-      
+        archive.write(key+".coeffs["+std::to_string(i)+"]", coeffs_[i]);
+
       return archive;
     }
 
     /// Reads the B-Spline from a torch::serialize::InputArchive object
     inline torch::serialize::InputArchive& read(torch::serialize::InputArchive& archive,
-                                                const std::string& key="")
+                                                const std::string& key="bspline")
     {
       torch::Tensor tensor;
-      
-      archive.read(key+"parDim", tensor);
+
+      archive.read(key+".parDim", tensor);
       if (tensor.item<int64_t>() != parDim_)
         throw std::runtime_error("parDim mismatch");
-      
-      archive.read(key+"geoDim", tensor);
+
+      archive.read(key+".geoDim", tensor);
       if (tensor.item<int64_t>() != geoDim_)
         throw std::runtime_error("geoDim mismatch");
-      
+
       for (short_t i=0; i<parDim_; ++i) {
-        archive.read(key+"degree"+std::to_string(i), tensor);
+        archive.read(key+".degree["+std::to_string(i)+"]", tensor);
         if (tensor.item<int64_t>() != degrees_[i])
           throw std::runtime_error("degrees mismatch");
       }
-      
+
       for (short_t i=0; i<parDim_; ++i) {
-        archive.read(key+"nknots"+std::to_string(i), tensor);
+        archive.read(key+".nknots["+std::to_string(i)+"]", tensor);
         nknots_[i] = tensor.item<int64_t>();
       }
 
       for (short_t i=0; i<parDim_; ++i)
-        archive.read(key+"knots"+std::to_string(i), knots_[i]);
-            
+        archive.read(key+".knots["+std::to_string(i)+"]", knots_[i]);
+
       for (short_t i=0; i< parDim_; ++i) {
-        archive.read(key+"ncoeffs"+std::to_string(i), tensor);
+        archive.read(key+".ncoeffs["+std::to_string(i)+"]", tensor);
         ncoeffs_[i] = tensor.item<int64_t>();
       }
-      
+
       for (short_t i=0; i<geoDim_; ++i)
-        archive.read(key+"coeffs"+std::to_string(i), coeffs_[i]);
-      
+        archive.read(key+".coeffs["+std::to_string(i)+"]", coeffs_[i]);
+
       return archive;
     }
 
-    /// Returns true of both B-Spline objects are the same
-    bool operator==(const UniformBSplineCore& other)
+    /// Returns true if both B-Spline objects are the same
+    bool operator==(const UniformBSplineCore& other) const
     {
       bool result(true);
 
@@ -629,16 +629,16 @@ namespace iganet {
 
       for (short_t i=0; i<parDim_; ++i)
         result *= torch::all(coeffs(i)==other.coeffs(i)).template item<bool>();
-      
+
       return result;
     }
 
-    /// Returns true of both B-Spline objects are different
-    bool operator!=(const UniformBSplineCore& other)
+    /// Returns true if both B-Spline objects are different
+    bool operator!=(const UniformBSplineCore& other) const
     {
       return !(*this==other);
     }
-    
+
   protected:
     /// Initialize coefficients
     inline void init_coeffs(BSplineInit init)
