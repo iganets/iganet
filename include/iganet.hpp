@@ -34,30 +34,69 @@ namespace iganet {
     public torch::nn::Module
   {
   public:
-    // Constructor
+    /// Default constructor
+    IgANetGeneratorImpl() = default;
+
+    /// Constructor
     IgANetGeneratorImpl(const std::vector<int64_t>& layers)
     {
-      // Generate vector of linear layers and register them as fcX
+      // Generate vector of linear layers and register them as layer[i]
       for (auto i=0; i<layers.size()-1; ++i)
         {
-          fc.emplace_back(register_module("fc" + std::to_string(i),
-                                          torch::nn::Linear(layers[i], layers[i+1])));
+          layers_.emplace_back(register_module("layer["+std::to_string(i)+"]",
+                                               torch::nn::Linear(layers[i], layers[i+1])));
         }
     }
 
-    // Forward evaluation
+    /// Forward evaluation
     torch::Tensor forward(torch::Tensor x)
     {
       // Standard feed-forward neural network with ReLU activation functions
-      for (auto it=fc.begin(); it!=fc.end()-1; ++it)
+      for (auto it = layers_.begin(); it != layers_.end()-1; ++it)
         x = torch::relu(it->forward(x));
-      x = fc.end()->forward(x);
+      x = layers_.end()->forward(x);
       return x;
     }
 
+    /// Writes the IgANet into a torch::serialize::OutputArchive object
+    inline torch::serialize::OutputArchive& write(torch::serialize::OutputArchive& archive,
+                                                  const std::string& key="iganet") const
+    {
+      archive.write(key+".layers", torch::full({1}, (int64_t)layers_.size()));
+      for (std::size_t i=0; i<layers_.size(); ++i) {
+        archive.write(key+".layer["+std::to_string(i)+"].in_features",
+                      torch::full({1}, (int64_t)layers_[i]->options.in_features()));
+        archive.write(key+".layer["+std::to_string(i)+"].out_features",
+                      torch::full({1}, (int64_t)layers_[i]->options.out_features()));
+        archive.write(key+".layer["+std::to_string(i)+"].bias",
+                      torch::full({1}, (int64_t)layers_[i]->options.bias()));
+      }
+      return archive;
+    }
+
+    /// Reads the IgANet from a torch::serialize::InputArchive object
+    inline torch::serialize::InputArchive& read(torch::serialize::InputArchive& archive,
+                                                const std::string& key="iganet")
+    {
+      torch::Tensor layers, in_features, out_features, bias;
+      
+      archive.read(key+".layers", layers);
+      for (int64_t i=0; i<layers.item<int64_t>(); ++i) {
+        archive.read(key+".layer["+std::to_string(i)+"].in_features", in_features);
+        archive.read(key+".layer["+std::to_string(i)+"].out_features", out_features);
+        archive.read(key+".layer["+std::to_string(i)+"].bias", bias);
+        layers_.emplace_back(register_module("layer["+std::to_string(i)+"]",
+                                             torch::nn::Linear(
+                                                               torch::nn::LinearOptions(in_features.item<int64_t>(),
+                                                                                        out_features.item<int64_t>()
+                                                                                        ).bias(bias.item<bool>())
+                                                               )));
+      }
+      return archive;
+    }
   private:
-    // Vector of linear layers
-    std::vector<torch::nn::Linear> fc;
+    /// Vector of linear layers
+    std::vector<torch::nn::Linear> layers_;
   };
 
   /**
@@ -80,41 +119,55 @@ namespace iganet {
    * IgaNet
    */
   template<typename real_t,
-           template<typename, short_t, short_t...> class BSpline_t,
+           template<typename, short_t, short_t...> class bspline_t,
+           typename optimizer_t,
            short_t... Degrees>
   class IgANet : public core<real_t>
   {
   private:
-    // Dimension of the differential equation
+    /// Dimension of the differential equation
     static constexpr const short_t dim_ = sizeof...(Degrees);
 
-    // B-spline representation of the geometry
-    BSpline_t<real_t, dim_, Degrees...> geo_;
+    /// B-spline representation of the geometry
+    bspline_t<real_t, dim_, Degrees...> geo_;
 
-    // B-spline representation of the right-hand side
-    BSpline_t<real_t, 1, Degrees...> rhs_;
+    /// B-spline representation of the right-hand side
+    bspline_t<real_t, 1, Degrees...> rhs_;
 
-    // B-spline representation of the solution
-    BSpline_t<real_t, 1, Degrees...> sol_;
+    /// B-spline representation of the solution
+    bspline_t<real_t, 1, Degrees...> sol_;
 
-    // Input tensor
+    /// Input tensor
     torch::Tensor input_;
 
-    // Tensor servering as global input
+    /// Tensor servering as global input
     torch::Tensor input__;
 
-    // IgANet generator
+    /// IgANet generator
     IgANetGenerator<real_t> net_;
 
+    /// Optimizer
+    optimizer_t opt_;
+
   public:
-    // Constructor: layers + bspline (same for all)
+    /// Default constructor
+    IgANet()
+      : core<real_t>(),
+        geo_(),
+        rhs_(),
+        sol_(),
+        input__(),
+        opt_(net_->parameters())
+    {}
+
+    /// Constructor: layers + bspline (same for all)
     IgANet(const std::vector<int64_t>& layers,
            const std::array<int64_t,dim_>& bspline_ncoeffs)
       : IgANet(layers, bspline_ncoeffs, bspline_ncoeffs, bspline_ncoeffs)
     {
     }
 
-    // Constructor: layers + geo-bspline + rhs-bspline + sol-bspline
+    /// Constructor: layers + geo-bspline + rhs-bspline + sol-bspline
     IgANet(const std::vector<int64_t>& layers,
            const std::array<int64_t,dim_>& geo_bspline_ncoeffs,
            const std::array<int64_t,dim_>& rhs_bspline_ncoeffs,
@@ -144,7 +197,12 @@ namespace iganet {
         // object as output
         net_(concat(std::vector<int64_t>{static_cast<int64_t>(input__.size(0))},
                     layers,
-                    std::vector<int64_t>{sol_.ncoeffs()}))
+                    std::vector<int64_t>{sol_.ncoeffs()}
+                    )
+             ),
+
+        // Construct the optimizer
+        opt_(net_->parameters())
     {
       // Now that everything is in placed we swap the coefficient
       // vectors of the B-Spline objects with views on parts of the
@@ -170,14 +228,14 @@ namespace iganet {
                                                      1)});
     }
 
-    // Constructor: layers + bspline (same for all)
+    /// Constructor: layers + bspline (same for all)
     IgANet(const std::vector<int64_t>& layers,
            const std::array<std::vector<real_t>,dim_>& bspline_kv)
       : IgANet(layers, bspline_kv, bspline_kv, bspline_kv)
     {
     }
 
-        // Constructor: layers + geo-bspline + rhs-bspline + sol-bspline
+    /// Constructor: layers + geo-bspline + rhs-bspline + sol-bspline
     IgANet(const std::vector<int64_t>& layers,
            const std::array<std::vector<real_t>,dim_>& geo_bspline_kv,
            const std::array<std::vector<real_t>,dim_>& rhs_bspline_kv,
@@ -233,61 +291,85 @@ namespace iganet {
                                                      1)});
     }
 
-    // Returns a constant reference to the B-spline representation of the geometry
-    inline const BSpline_t<real_t, dim_, Degrees...>& geo() const
+    /// Returns a constant reference to the IgANet generator
+    inline const IgANetGenerator<real_t> & net() const
+    {
+      return net_;
+    }
+
+    /// Returns a non-constant reference to the IgANet generator
+    inline IgANetGenerator<real_t> & net()
+    {
+      return net_;
+    }
+
+    /// Returns a constant reference to the optimizer
+    inline const optimizer_t & opt() const
+    {
+      return net_;
+    }
+
+    /// Returns a non-constant reference to the optimizer
+    inline optimizer_t & opt()
+    {
+      return net_;
+    }
+    
+    /// Returns a constant reference to the B-spline representation of the geometry
+    inline const bspline_t<real_t, dim_, Degrees...>& geo() const
     {
       return geo_;
     }
 
-    // Returns a non-constant reference to the B-spline representation of the geometry
-    inline BSpline_t<real_t, dim_, Degrees...>& geo()
+    /// Returns a non-constant reference to the B-spline representation of the geometry
+    inline bspline_t<real_t, dim_, Degrees...>& geo()
     {
       return geo_;
     }
 
-    // Returns a constant reference to the B-spline representation of the right-hand side
-    inline const BSpline_t<real_t, 1, Degrees...>& rhs() const
+    /// Returns a constant reference to the B-spline representation of the right-hand side
+    inline const bspline_t<real_t, 1, Degrees...>& rhs() const
     {
       return rhs_;
     }
 
-    // Returns a non-constant reference to the B-spline representation of the right-hand side
-    inline BSpline_t<real_t, 1, Degrees...>& rhs()
+    /// Returns a non-constant reference to the B-spline representation of the right-hand side
+    inline bspline_t<real_t, 1, Degrees...>& rhs()
     {
       return rhs_;
     }
 
-    // Returns a constant reference to the B-spline representation of the solution
-    inline const BSpline_t<real_t, 1, Degrees...>& sol() const
+    /// Returns a constant reference to the B-spline representation of the solution
+    inline const bspline_t<real_t, 1, Degrees...>& sol() const
     {
       return sol_;
     }
 
-    // Returns a non-constant reference to the B-spline representation of the solution
-    inline BSpline_t<real_t, 1, Degrees...>& sol()
+    /// Returns a non-constant reference to the B-spline representation of the solution
+    inline bspline_t<real_t, 1, Degrees...>& sol()
     {
       return sol_;
     }
 
-    // Returns a constant reference to the input tensor
-    inline const torch::Tensor* input() const
+    /// Returns a constant reference to the input tensor
+    inline const torch::Tensor& input() const
     {
       return input_;
     }
 
-    // Returns a non-constant reference to the input tensor
-    inline torch::Tensor* input()
+    /// Returns a non-constant reference to the input tensor
+    inline torch::Tensor& input()
     {
       return input_;
     }
 
-    // Returns the dimension
+    /// Returns the dimension
     inline constexpr short_t dim() const
     {
       return dim_;
     }
 
-    // Returns a string representation of the IgANet object
+    /// Returns a string representation of the IgANet object
     inline void pretty_print(std::ostream& os = std::cout) const
     {
       os << "=== IgANet ===\n"
@@ -297,31 +379,119 @@ namespace iganet {
          << "sol = " << sol_;
     }
 
-    // Plots the B-Spline geometry
+    /// Plots the B-Spline geometry
     inline auto plot_geo(int64_t xres=10, int64_t yres=10, int64_t zres=10) const
     {
       return geo_.plot(xres, yres, zres);
     }
 
-    // Plots the B-Spline right-hand side
+    /// Plots the B-Spline right-hand side
     inline auto plot_rhs(int64_t xres=10, int64_t yres=10, int64_t zres=10) const
     {
       return rhs_.plot(rhs_, xres, yres, zres);
     }
 
-    // Plots the B-Spline solution
-    inline void plot_sol(int64_t xres=10, int64_t yres=10, int64_t zres=10) const
+    /// Plots the B-Spline solution
+    inline auto plot_sol(int64_t xres=10, int64_t yres=10, int64_t zres=10) const
     {
       return rhs_.plot(sol_, xres, yres, zres);
+    }
+
+    /// Saves the IgANet to file
+    inline void save(const std::string& filename,
+                     const std::string& key="iganet") const
+    {
+      torch::serialize::OutputArchive archive;
+      write(archive, key).save_to(filename);
+    }
+
+    /// Loads the IgANet from file
+    inline void load(const std::string& filename,
+                     const std::string& key="iganet")
+    {
+      torch::serialize::InputArchive archive;
+      archive.load_from(filename);      
+      read(archive, key);
+    }
+
+    /// Writes the IgANet into a torch::serialize::OutputArchive object
+    inline torch::serialize::OutputArchive& write(torch::serialize::OutputArchive& archive,
+                                                  const std::string& key="iganet") const
+    {
+      archive.write(key+".dim", torch::full({1}, dim_));
+
+      geo_.write(archive, key+".geo");
+      rhs_.write(archive, key+".rhs");
+      sol_.write(archive, key+".sol");
+      
+      net_->write(archive, key+".net");      
+      torch::serialize::OutputArchive archive_net;
+      net_->save(archive_net);
+      archive.write(key+".net.data", archive_net);
+
+      torch::serialize::OutputArchive archive_opt;
+      opt_.save(archive_opt);
+      archive.write(key+".opt", archive_opt);
+
+      return archive;
+    }
+
+    /// Loads the IgANet from a torch::serialize::InputArchive object
+    inline torch::serialize::InputArchive& read(torch::serialize::InputArchive& archive,
+                                                const std::string& key="iganet")
+    {
+      torch::Tensor tensor;
+
+      archive.read(key+".dim", tensor);
+      if (tensor.item<int64_t>() != dim_)
+        throw std::runtime_error("dim mismatch");
+
+      geo_.read(archive, key+".geo");
+      rhs_.read(archive, key+".rhs");
+      sol_.read(archive, key+".sol");
+
+      net_->read(archive, key+".net");      
+      torch::serialize::InputArchive archive_net;
+      archive.read(key+".net.data", archive_net);
+      net_->load(archive_net);
+      
+      torch::serialize::InputArchive archive_opt;
+      archive.read(key+".opt", archive_opt);            
+      opt_.load(archive_opt);
+
+      for (auto key : archive_opt.keys())
+        std::cout << key << std::endl;
+      
+      return archive;
+    }
+
+    /// Returns true if both IgANet objects are the same
+    bool operator==(const IgANet& other) const
+    {
+      bool result(true);
+
+      result *= (dim_ == other.dim());
+      result *= (geo_ == other.geo());
+      result *= (rhs_ == other.rhs());
+      result *= (sol_ == other.sol());
+
+      return result;
+    }
+
+    /// Returns true if both IgANet objects are different
+    bool operator!=(const IgANet& other) const
+    {
+      return !(*this==other);
     }
   };
 
   /// Print (as string) a IgANet object
   template<typename real_t,
-           template<typename, short_t, short_t...> class BSpline_t,
+           template<typename, short_t, short_t...> class bspline_t,
+           typename optimizer_t,
            short_t... Degrees>
   inline std::ostream& operator<<(std::ostream& os,
-                                  const IgANet<real_t, BSpline_t, Degrees...>& obj)
+                                  const IgANet<real_t, bspline_t, optimizer_t, Degrees...>& obj)
   {
     obj.pretty_print(os);
     return os;
