@@ -22,7 +22,8 @@ TEST(BSpline, IgaNet_UniformBSpline_1d)
   using real_t      = double;
   using optimizer_t = torch::optim::Adam;
 
-  iganet::IgANet<real_t, iganet::UniformBSpline, optimizer_t,
+  iganet::IgANet<real_t, optimizer_t,
+                 iganet::UniformBSpline, 
                  5> net({50,30,70}, // Number of neurons per layers
                         {6});       // Number of B-spline coefficients
 
@@ -48,9 +49,10 @@ TEST(BSpline, IgaNet_UniformBSpline_2d)
   using real_t      = double;
   using optimizer_t = torch::optim::Adam;
 
-  iganet::IgANet<real_t, iganet::UniformBSpline, optimizer_t,
-                 3,5> net({50,30,70}, // Number of neurons per layers
-                          {4,6});     // Number of B-spline coefficients
+  iganet::IgANet<real_t, optimizer_t,
+                 iganet::UniformBSpline, 
+                 3, 5> net({50,30,70}, // Number of neurons per layers
+                           {4,6});     // Number of B-spline coefficients
 
   EXPECT_EQ(net.geo().parDim(), 2);
   EXPECT_EQ(net.rhs().parDim(), 2);
@@ -82,9 +84,10 @@ TEST(BSpline, IgaNet_UniformBSpline_3d)
   using real_t      = double;
   using optimizer_t = torch::optim::Adam;
 
-  iganet::IgANet<real_t, iganet::UniformBSpline, optimizer_t,
-                 3,5,1> net({50,30,70}, // Number of neurons per layers
-                            {4,6,3});   // Number of B-spline coefficients
+  iganet::IgANet<real_t, optimizer_t,
+                 iganet::UniformBSpline,
+                 3, 5, 1> net({50,30,70}, // Number of neurons per layers
+                              {4,6,3});   // Number of B-spline coefficients
 
   EXPECT_EQ(net.geo().parDim(), 3);
   EXPECT_EQ(net.rhs().parDim(), 3);
