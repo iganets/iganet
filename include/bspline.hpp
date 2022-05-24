@@ -61,7 +61,7 @@ namespace iganet {
   template<typename real_t, short_t GeoDim, short_t... Degrees>
   class UniformBSplineCore : public core<real_t>
   {
-  protected:
+  protected:    
     /// Dimension of the parametric space
     static constexpr const short_t parDim_ = sizeof...(Degrees);
 
@@ -86,6 +86,9 @@ namespace iganet {
     /// LibTorch constants
     const torch::Tensor one_, zero_;
 
+  public:
+    using real = real_t;
+    
   public:
     /// Default constructor
     UniformBSplineCore()
@@ -324,6 +327,10 @@ namespace iganet {
         int64_t l = int64_t(xi[3].item<real_t>()*(nknots_[3]-2*degrees_[3]-1)+degrees_[3]);
         return eval_4d(xi, i, j, k, l);
       }
+
+      else {
+        throw std::runtime_error("Unsupported parametric dimension");
+      }
     }
 
     /// Transforms the coefficients based on the given mapping
@@ -383,9 +390,13 @@ namespace iganet {
         }
       }
 
+      else {
+        throw std::runtime_error("Unsupported parametric dimension");
+      }
+      
       return *this;
     }
-
+    
     /// Returns the B-spline object as XML string
     std::string to_xml() const {
       std::stringstream ss;
@@ -519,6 +530,11 @@ namespace iganet {
                      << " "   << coeffs3[i*ncoeffs_[1]*ncoeffs_[2]*ncoeffs_[3]+j*ncoeffs_[1]*ncoeffs_[2]+k*ncoeffs_[1]+l] << "\n";
         }
       }
+
+      else {
+        throw std::runtime_error("Unsupported parametric dimension");
+      }
+      
       ss << "  </coefs>\n"
          << " </Geometry>\n"
          << "</xml>\n";
@@ -1431,6 +1447,10 @@ namespace iganet {
 
         return Base::eval_4d(xi, i, j, k, l);
       }
+
+      else {
+        throw std::runtime_error("Unsupported parametric dimension");
+      }
     }
   };
 
@@ -1452,7 +1472,7 @@ namespace iganet {
   {
   public:
     using BSplineCore::BSplineCore;
-
+    
     // Plots the B-Spline object using matplotlibcpp
     inline auto plot(int64_t xres=10, int64_t yres=10, int64_t zres=10) const
     {
