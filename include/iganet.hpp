@@ -12,6 +12,7 @@
    file, You can obtain one at http://mozilla.org/MPL/2.0/.
 */
 
+#include <boundary.hpp>
 #include <bspline.hpp>
 
 #pragma once
@@ -119,8 +120,8 @@ namespace iganet {
    * IgaNet
    */
   template<typename real_t,
-           template<typename, short_t, short_t...> class bspline_t,
            typename optimizer_t,
+           template<typename, short_t, short_t...> class bspline_t,
            short_t... Degrees>
   class IgANet : public core<real_t>
   {
@@ -136,7 +137,10 @@ namespace iganet {
 
     /// B-spline representation of the solution
     bspline_t<real_t, 1, Degrees...> sol_;
-
+    
+    /// B-spline representation of the boundary conditions
+    Boundary<bspline_t, real_t, 1, Degrees...> bdr_;
+    
     /// Input tensor
     torch::Tensor input_;
 
@@ -372,11 +376,14 @@ namespace iganet {
     /// Returns a string representation of the IgANet object
     inline void pretty_print(std::ostream& os = std::cout) const
     {
-      os << "=== IgANet ===\n"
+      os << core<real_t>::name()
+         << "(\n"
          << "net = " << net_ << "\n"
          << "geo = " << geo_ << "\n"
          << "rhs = " << rhs_ << "\n"
-         << "sol = " << sol_;
+         << "sol = " << sol_ << "\n"
+         << "bdr = " << bdr_
+         << "\n)";
     }
 
     /// Plots the B-Spline geometry
@@ -487,11 +494,11 @@ namespace iganet {
 
   /// Print (as string) a IgANet object
   template<typename real_t,
-           template<typename, short_t, short_t...> class bspline_t,
            typename optimizer_t,
+           template<typename, short_t, short_t...> class bspline_t,
            short_t... Degrees>
   inline std::ostream& operator<<(std::ostream& os,
-                                  const IgANet<real_t, bspline_t, optimizer_t, Degrees...>& obj)
+                                  const IgANet<real_t, optimizer_t, bspline_t, Degrees...>& obj)
   {
     obj.pretty_print(os);
     return os;
