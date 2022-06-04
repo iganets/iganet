@@ -172,6 +172,10 @@ namespace iganet {
        << TORCH_VERSION_PATCH << std::endl;
     torch::manual_seed(1);
   }
+
+} // namespace iganet
+
+namespace std {
   
   /// Print (as string) an array of torch::Tensor objects
   template<std::size_t N>
@@ -196,6 +200,7 @@ namespace iganet {
     
     return os;
   }
+
+} // namespace std
   
-} // namespace iganet
 
