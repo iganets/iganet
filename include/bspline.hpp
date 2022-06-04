@@ -61,7 +61,7 @@ namespace iganet {
   template<typename real_t, short_t GeoDim, short_t... Degrees>
   class UniformBSplineCore : public core<real_t>
   {
-  protected:    
+  protected:
     /// Dimension of the parametric space
     static constexpr const short_t parDim_ = sizeof...(Degrees);
 
@@ -86,9 +86,6 @@ namespace iganet {
     /// LibTorch constants
     const torch::Tensor one_, zero_;
 
-  public:
-    using real = real_t;
-    
   public:
     /// Default constructor
     UniformBSplineCore()
@@ -209,7 +206,7 @@ namespace iganet {
                                    const std::array<torch::Tensor, geoDim_>&,
                                    std::array<torch::Tensor, geoDim_>>::type
     {
-      if constexpr (flatten)
+      if constexpr (flatten || parDim_ == 0)
                      return coeffs_;
       else {
         std::array<torch::Tensor, geoDim_> result;
@@ -231,7 +228,7 @@ namespace iganet {
                                    torch::Tensor>::type
     {
       assert(i>=0 && i<geoDim_);
-      if constexpr (flatten)
+      if constexpr (flatten || parDim_ == 0)
                      return coeffs_[i];
       else
         return coeffs_[i].view(ncoeffs_);
@@ -298,8 +295,13 @@ namespace iganet {
     {
       static_assert(parDim_ <= 4, "Unsupported parametric dimension");
 
+      // 0D (point value)
+      if constexpr (parDim_ == 0) {
+        return coeffs_[0];
+      }
+      
       // 1D
-      if constexpr (parDim_ == 1) {
+      else if constexpr (parDim_ == 1) {
         int64_t i = int64_t(xi[0].item<real_t>()*(nknots_[0]-2*degrees_[0]-1)+degrees_[0]);
         return eval_1d(xi, i);
       }
@@ -393,10 +395,10 @@ namespace iganet {
       else {
         throw std::runtime_error("Unsupported parametric dimension");
       }
-      
+
       return *this;
     }
-    
+
     /// Returns the B-spline object as XML string
     std::string to_xml() const {
       std::stringstream ss;
@@ -534,7 +536,7 @@ namespace iganet {
       else {
         throw std::runtime_error("Unsupported parametric dimension");
       }
-      
+
       ss << "  </coefs>\n"
          << " </Geometry>\n"
          << "</xml>\n";
@@ -1333,10 +1335,10 @@ namespace iganet {
     using Base = UniformBSplineCore<real_t, GeoDim, Degrees...>;
 
   public:
-    // Constructor: equidistant knot vectors
+    /// Constructor: equidistant knot vectors
     using UniformBSplineCore<real_t, GeoDim, Degrees...>::UniformBSplineCore;
 
-    // Constructor: non-equidistant knot vectors
+    /// Constructor: non-equidistant knot vectors
     NonUniformBSplineCore(std::array<std::vector<real_t>, Base::parDim_> kv,
                           BSplineInit init = BSplineInit::zeros)
       : Base(std::array<int64_t, Base::parDim_>{Degrees...}, init)
@@ -1361,14 +1363,19 @@ namespace iganet {
       Base::init_coeffs(init);
     }
 
-    // Evaluates the B-spline in xi
+    /// Evaluates the B-spline in xi
     template<BSplineDeriv deriv = BSplineDeriv::func>
     inline auto eval(const torch::Tensor& xi) const
     {
       static_assert(Base::parDim_ <= 4, "Unsupported parametric dimension");
 
+      // 0D (point value)
+      if constexpr (Base::parDim_ == 0) {
+        return Base::coeffs_[0];
+      }
+      
       // 1D
-      if constexpr (Base::parDim_ == 1) {
+      else if constexpr (Base::parDim_ == 1) {
         int64_t i;
         auto knots = Base::knots_[0].template accessor<real_t,1>();
         for (i=Base::degrees_[0]; i<Base::nknots_[0]-Base::degrees_[0]-1; ++i)
@@ -1472,14 +1479,14 @@ namespace iganet {
   {
   public:
     using BSplineCore::BSplineCore;
-    
-    // Plots the B-Spline object using matplotlibcpp
+
+    /// Plots the B-Spline object using matplotlibcpp
     inline auto plot(int64_t xres=10, int64_t yres=10, int64_t zres=10) const
     {
       return plot(*this, xres, yres, zres);
     }
 
-    // Plots the B-Spline object using matplotlibcpp
+    /// Plots the B-Spline object using matplotlibcpp
     template<typename BSplineCore_t>
     inline auto plot(const BSplineCommon<real_t, BSplineCore_t>& color,
                      int64_t xres=10, int64_t yres=10, int64_t zres=10) const
@@ -1487,7 +1494,7 @@ namespace iganet {
       static_assert(BSplineCore::parDim_ == BSplineCore_t::parDim_,
                     "Parametric dimensions must match");
 
-      if ((void*)this != (void*)&color && BSplineCore_t::geoDim_>1)
+      if ((void*)this != (void*)&color && BSplineCore_t::geoDim_ > 1)
         throw std::runtime_error("BSpline for coloring must have geoDim=1");
 
       if constexpr(BSplineCore::parDim_==1 && BSplineCore::geoDim_==1) {
@@ -1859,7 +1866,7 @@ namespace iganet {
         throw std::runtime_error("Unsupported combination of parametric/geometric dimensions");
     }
 
-    // Returns a string representation of the UniformBSpline object
+    /// Returns a string representation of the UniformBSpline object
     inline void pretty_print(std::ostream& os = std::cout) const
     {
       os << BSplineCore::name()
@@ -1869,18 +1876,38 @@ namespace iganet {
          << ", degrees=";
       for (short_t i=0; i<BSplineCore::parDim_-1; ++i)
         os << BSplineCore::degree(i) << "x";
-      os << BSplineCore::degree(BSplineCore::parDim_-1)
+      if (BSplineCore::parDim_ > 0)
+        os << BSplineCore::degree(BSplineCore::parDim_-1);
+      else
+        os << 0;
 
-         << ", knots=";
+      os << ", knots=";
       for (short_t i=0; i<BSplineCore::parDim_-1; ++i)
         os << BSplineCore::nknots(i) << "x";
-      os << BSplineCore::nknots(BSplineCore::parDim_-1)
-
-         << ", coeffs=";
+      if (BSplineCore::parDim_ > 0)
+        os << BSplineCore::nknots(BSplineCore::parDim_-1);
+      else
+        os << 0;
+          
+      os << ", coeffs=";
       for (short_t i=0; i<BSplineCore::parDim_-1; ++i)
         os << BSplineCore::ncoeffs(i) << "x";
-      os << BSplineCore::ncoeffs(BSplineCore::parDim_-1)
-         << "\n)";
+      if (BSplineCore::parDim_ > 0)
+        os << BSplineCore::ncoeffs(BSplineCore::parDim_-1);
+      else
+        os << 1;
+
+      if (is_verbose(os)) {
+        os << "\nknots = ";
+        if (BSplineCore::parDim_ > 0)
+          os << BSplineCore::knots();
+        else
+          os << "{}";
+        os << "\ncoeffs = "
+           << BSplineCore::template coeffs<false>();
+      }
+      
+      os << "\n)";
     }
   };
 
