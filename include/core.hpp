@@ -27,7 +27,8 @@ namespace iganet {
 
 #define short_t unsigned short int
 
-  // Determines the LibTorch dtype from template parameter
+  /// Determines the LibTorch dtype from template parameter
+  /// @{
   template<typename T>
   inline constexpr auto dtype() { return torch::kByte; }
 
@@ -48,6 +49,20 @@ namespace iganet {
 
   template<>
   inline constexpr auto dtype<char>() { return torch::kChar; };
+  /// @}
+
+  /// Stream manipulator
+  /// @{
+  inline int get_iomanip() { 
+    static int i = std::ios_base::xalloc();
+    return i;
+  }
+  
+  std::ostream& verbose(std::ostream& os) { os.iword(get_iomanip()) = 1; return os; } 
+  std::ostream& regular(std::ostream& os) { os.iword(get_iomanip()) = 0; return os; }
+  
+  bool is_verbose(std::ostream& os) { return os.iword(get_iomanip()) != 0; }
+  /// @}
 
   // LibTorch core object handles the automated determination of dtype
   // from the template argument and the selection of the device
@@ -149,14 +164,38 @@ namespace iganet {
     }
   }
 
+  inline void init(std::ostream& os = std::cout)
+  {
+    os << "LibTorch version: "
+       << TORCH_VERSION_MAJOR << "."
+       << TORCH_VERSION_MINOR << "."
+       << TORCH_VERSION_PATCH << std::endl;
+    torch::manual_seed(1);
+  }
+  
+  /// Print (as string) an array of torch::Tensor objects
+  template<std::size_t N>
+  inline std::ostream& operator<<(std::ostream& os,
+                                  const std::array<torch::Tensor, N>& obj)
+  {
+    at::optional<std::string> name_ = c10::demangle(typeid(obj).name());
+
+#if defined(_WIN32)
+    // Windows adds "struct" or "class" as a prefix.
+    if (name_->find("struct ") == 0) {
+      name_->erase(name_->begin(), name_->begin() + 7);
+    } else if (name_->find("class ") == 0) {
+      name_->erase(name_->begin(), name_->begin() + 6);
+    }
+#endif // defined(_WIN32)
+
+    os << *name_ << "(\n";
+    for (auto i : obj)
+      os << ((i.sizes().size() == 1) ? i.view({1,i.size(0)}) : i) << std::endl;
+    os << ")";
+    
+    return os;
+  }
+  
 } // namespace iganet
 
-/// Print (as string) an array of torch::Tensor objects
-template<std::size_t N>
-inline std::ostream& operator<<(std::ostream& os,
-                                const std::array<torch::Tensor, N>& obj)
-{
-  for (auto i : obj)
-    os << i << std::endl;
-  return os;
-}
