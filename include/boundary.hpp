@@ -18,151 +18,282 @@
 
 namespace iganet {
 
+  /// Identifiers for topological sides
+  enum side { west  = 1, east  = 2, south = 3, north = 4, front = 5, back = 6,
+              stime = 7, etime = 8,
+              left  = 1, right = 2, down  = 3, up    = 4, none  = 0 };
+
   /**
-   * Boundary
+   * BoundaryCore
+   */
+  template<template<typename, short_t, short_t...> class bspline_t,
+           typename real_t, short_t GeoDim, short_t ParDim, short_t... Degrees>
+  class BoundaryCore;
+  
+  /**
+   * BoundaryCore (1d specialization)
+   *
+   * This specialization has 2 sides
+   * - west (u=0)
+   * - east (u=1)
    */
   template<template<typename, short_t, short_t...> class bspline_t,
            typename real_t, short_t GeoDim, short_t... Degrees>
-  class Boundary : public core<real_t>
+  class BoundaryCore<bspline_t, real_t, GeoDim, 1, Degrees...>
+    : public core<real_t>
   {
-  private:
-    inline static constexpr auto make_bdr()
+  public:
+    /// Constructor
+    template<typename T>
+      BoundaryCore(const std::array<T, 1>& ncoeffs,
+                   BSplineInit init = BSplineInit::zeros)
+        : core<real_t>(),
+          bdr_(
+               {
+                 bspline_t<real_t, GeoDim>({}, init),
+                 bspline_t<real_t, GeoDim>({}, init),
+               }               
+               )
+    {}
+    
+    /// Returns the number of sides
+    inline constexpr short_t sides() const
     {
-      constexpr const std::array<short_t, sizeof...(Degrees)> degrees_ = { Degrees... };
-      
-      if constexpr (sizeof...(Degrees) == 1) {
-        std::tuple<bspline_t<real_t, GeoDim, std::get<0>(degrees_)>,
-                   bspline_t<real_t, GeoDim, std::get<0>(degrees_)>> bdr;
-        return bdr;
-      }
-
-      else if constexpr (sizeof...(Degrees) == 2) {
-        std::tuple<bspline_t<real_t, GeoDim, std::get<1>(degrees_)>,
-                   bspline_t<real_t, GeoDim, std::get<1>(degrees_)>,
-                   bspline_t<real_t, GeoDim, std::get<0>(degrees_)>,
-                   bspline_t<real_t, GeoDim, std::get<0>(degrees_)>> bdr;
-        return bdr;
-      }
-
-      else if constexpr (sizeof...(Degrees) == 3) {
-        std::tuple<bspline_t<real_t, GeoDim, std::get<1>(degrees_), std::get<2>(degrees_)>,
-                   bspline_t<real_t, GeoDim, std::get<1>(degrees_), std::get<2>(degrees_)>,
-                   bspline_t<real_t, GeoDim, std::get<0>(degrees_), std::get<1>(degrees_)>,
-                   bspline_t<real_t, GeoDim, std::get<0>(degrees_), std::get<1>(degrees_)>,
-                   bspline_t<real_t, GeoDim, std::get<0>(degrees_), std::get<2>(degrees_)>,
-                   bspline_t<real_t, GeoDim, std::get<0>(degrees_), std::get<2>(degrees_)>> bdr;
-        return bdr;
-      }
-
-      else if constexpr (sizeof...(Degrees) == 4) {
-        std::tuple<bspline_t<real_t, GeoDim, std::get<0>(degrees_)>,
-                   bspline_t<real_t, GeoDim, std::get<0>(degrees_)>,
-                   bspline_t<real_t, GeoDim, std::get<0>(degrees_)>,
-                   bspline_t<real_t, GeoDim, std::get<0>(degrees_)>,
-                   bspline_t<real_t, GeoDim, std::get<0>(degrees_)>,
-                   bspline_t<real_t, GeoDim, std::get<0>(degrees_)>,
-                   bspline_t<real_t, GeoDim, std::get<0>(degrees_)>,
-                   bspline_t<real_t, GeoDim, std::get<0>(degrees_)>> bdr;
-        return bdr;
-      }
-
-      else {
-        throw std::runtime_error("Unsupported dimension");
-      }
+      return side::east;
     }
     
-    /// Container holding the boundary conditions
-    decltype(make_bdr()) bdr_;
-    
-  public:
-    /// Identifiers for topological sides
-    enum side { west  = 1, east  = 2, south = 3, north = 4, front = 5, back = 6,
-                stime = 7, etime = 8,
-                left  = 1, right = 2, down  = 3, up    = 4, none  = 0 };
-    
-    // Determines the number of boundaries
-    inline constexpr short_t sides()
+    /// Returns a string representation of the Boundary object
+    inline void pretty_print(std::ostream& os = std::cout) const
     {
-      if constexpr (sizeof...(Degrees) == 1) {
-        return side::east;
-      }
+      os << core<real_t>::name()
+         << "(\n"
+         << "left  = " << std::get<west-1>(bdr_) << "\n"
+         << "right = " << std::get<east-1>(bdr_)
+         << "\n)";
+    }
+    
+  private:
+    static constexpr const std::array<short_t, sizeof...(Degrees)> degrees_ = { Degrees... };
 
-      else if constexpr (sizeof...(Degrees) == 2) {
-        return side::north;
-      }
+    /// Tuple of B-Splines
+    std::tuple<bspline_t<real_t, GeoDim>,
+               bspline_t<real_t, GeoDim>> bdr_;
+  };
 
-      else if constexpr (sizeof...(Degrees) == 3) {
-        return side::back;
-      }
-
-      else if constexpr (sizeof...(Degrees) == 4) {
-        return side::etime;
-      }
-
-      else {
-        throw std::runtime_error("Unsupported dimension");
-      }      
+  /**
+   * BoundaryCore (2d specialization)
+   *
+   * This specialization has 4 sides
+   * - west  (u=0, v  )
+   * - east  (u=1, v  )
+   * - south (u,   v=0)
+   * - north (u,   v=1)
+   */
+  template<template<typename, short_t, short_t...> class bspline_t,
+           typename real_t, short_t GeoDim, short_t... Degrees>
+  class BoundaryCore<bspline_t, real_t, GeoDim, 2, Degrees...>
+    : public core<real_t>
+  {
+  public:
+    /// Constructor
+    template<typename T>
+    BoundaryCore(const std::array<T, 2>& ncoeffs,
+                 BSplineInit init = BSplineInit::zeros)
+      : core<real_t>(),
+        bdr_(
+             {
+               bspline_t<real_t, GeoDim, std::get<1>(degrees_)>(std::array<int64_t,1>({ncoeffs[1]}), init),
+               bspline_t<real_t, GeoDim, std::get<1>(degrees_)>(std::array<int64_t,1>({ncoeffs[1]}), init),
+               bspline_t<real_t, GeoDim, std::get<0>(degrees_)>(std::array<int64_t,1>({ncoeffs[0]}), init),
+               bspline_t<real_t, GeoDim, std::get<0>(degrees_)>(std::array<int64_t,1>({ncoeffs[0]}), init)
+             }
+             )
+    {}
+    
+    /// Returns the number of sides
+    inline constexpr short_t sides() const
+    {
+      return side::north;
     }
 
     /// Returns a string representation of the Boundary object
     inline void pretty_print(std::ostream& os = std::cout) const
     {
-      if constexpr (sizeof...(Degrees) == 1) {
-        os << core<real_t>::name()
-           << "(\n"
-           << "left = " << 1 << "\n"
-           << "right = " << 1
-           << "\n)";
-      }
-
-      else if constexpr (sizeof...(Degrees) == 2) {
-        os << core<real_t>::name()
-           << "(\n"
-           << "west = " << std::get<west-1>(bdr_) << "\n"
-           << "east = " << std::get<east-1>(bdr_) << "\n"
-           << "south = " << std::get<south-1>(bdr_) << "\n"
-           << "north = " << std::get<north-1>(bdr_)
-           << "\n)";
-      }
-
-      else if constexpr (sizeof...(Degrees) == 3) {
-        os << core<real_t>::name()
-           << "(\n"
-           << "west = " << std::get<west-1>(bdr_) << "\n"
-           << "east = " << std::get<east-1>(bdr_) << "\n"
-           << "south = " << std::get<south-1>(bdr_) << "\n"
-           << "north = " << std::get<north-1>(bdr_) << "\n"
-           << "front = " << std::get<front-1>(bdr_) << "\n"
-           << "back = " << std::get<back-1>(bdr_)
-           << "\n)";
-      }
-
-      else if constexpr (sizeof...(Degrees) == 4) {
-        os << core<real_t>::name()
-           << "(\n"
-           << "west = " << std::get<west-1>(bdr_) << "\n"
-           << "east = " << std::get<east-1>(bdr_) << "\n"
-           << "south = " << std::get<south-1>(bdr_) << "\n"
-           << "north = " << std::get<north-1>(bdr_) << "\n"
-           << "front = " << std::get<front-1>(bdr_) << "\n"
-           << "back = " << std::get<back-1>(bdr_) << "\n"
-           << "stime = " << std::get<stime-1>(bdr_) << "\n"
-           << "etime = " << std::get<etime-1>(bdr_)
-           << "\n)";
-      }
-
-      else {
-        throw std::runtime_error("Unsupported dimension");
-      }      
+      os << core<real_t>::name()
+         << "(\n"
+         << "west = "  << std::get<west-1>(bdr_) << "\n"
+         << "east = "  << std::get<east-1>(bdr_) << "\n"
+         << "south = " << std::get<south-1>(bdr_) << "\n"
+         << "north = " << std::get<north-1>(bdr_)
+         << "\n)";
     }
     
+  private:
+    static constexpr const std::array<short_t, sizeof...(Degrees)> degrees_ = { Degrees... };
+    
+    /// Tuple of B-Splines
+    std::tuple<bspline_t<real_t, GeoDim, std::get<1>(degrees_)>,
+               bspline_t<real_t, GeoDim, std::get<1>(degrees_)>,
+               bspline_t<real_t, GeoDim, std::get<0>(degrees_)>,
+               bspline_t<real_t, GeoDim, std::get<0>(degrees_)>> bdr_;
   };
 
-  /// Print (as string) a Boundary object
+  /**
+   * BoundaryCore (3d specialization)
+   *
+   * This specialization has 6 sides
+   * - west  (u=0, v,   w)
+   * - east  (u=1, v,   w)
+   * - south (u,   v=0, w)
+   * - north (u,   v=1, w)
+   * - front (u,   v,   w=0)
+   * - back  (u,   v,   w=1)
+   */
   template<template<typename, short_t, short_t...> class bspline_t,
            typename real_t, short_t GeoDim, short_t... Degrees>
-  inline std::ostream& operator<<(std::ostream& os,
-                                  const Boundary<bspline_t, real_t, GeoDim, Degrees...>& obj)
+  class BoundaryCore<bspline_t, real_t, GeoDim, 3, Degrees...>
+    : public core<real_t>
+  {
+  public:
+    /// Constructor
+    template<typename T>
+    BoundaryCore(const std::array<T, 3>& ncoeffs,
+                 BSplineInit init = BSplineInit::zeros)
+      : core<real_t>(),
+        bdr_(
+             {
+               bspline_t<real_t, GeoDim, std::get<1>(degrees_),std::get<2>(degrees_)>(std::array<int64_t,2>({ncoeffs[1],ncoeffs[2]}), init),
+               bspline_t<real_t, GeoDim, std::get<1>(degrees_),std::get<2>(degrees_)>(std::array<int64_t,2>({ncoeffs[1],ncoeffs[2]}), init),
+               bspline_t<real_t, GeoDim, std::get<0>(degrees_),std::get<1>(degrees_)>(std::array<int64_t,2>({ncoeffs[0],ncoeffs[1]}), init),
+               bspline_t<real_t, GeoDim, std::get<0>(degrees_),std::get<1>(degrees_)>(std::array<int64_t,2>({ncoeffs[0],ncoeffs[1]}), init),
+               bspline_t<real_t, GeoDim, std::get<0>(degrees_),std::get<2>(degrees_)>(std::array<int64_t,2>({ncoeffs[0],ncoeffs[2]}), init),
+               bspline_t<real_t, GeoDim, std::get<0>(degrees_),std::get<2>(degrees_)>(std::array<int64_t,2>({ncoeffs[0],ncoeffs[2]}), init)
+             }
+             )
+    {}
+    
+    /// Returns the number of sides
+    inline constexpr short_t sides() const
+    {
+      return side::back;
+    }
+
+    /// Returns a string representation of the Boundary object
+    inline void pretty_print(std::ostream& os = std::cout) const
+    {
+      os << core<real_t>::name()
+         << "(\n"
+         << "west = "  << std::get<west-1>(bdr_) << "\n"
+         << "east = "  << std::get<east-1>(bdr_) << "\n"
+         << "south = " << std::get<south-1>(bdr_) << "\n"
+         << "north = " << std::get<north-1>(bdr_) << "\n"
+         << "front = " << std::get<front-1>(bdr_) << "\n"
+         << "back = "  << std::get<back-1>(bdr_)
+         << "\n)";
+    }
+    
+  private:
+    static constexpr const std::array<short_t, sizeof...(Degrees)> degrees_ = { Degrees... };
+
+    /// Tuple of B-Splines
+    std::tuple<bspline_t<real_t, GeoDim, std::get<1>(degrees_), std::get<2>(degrees_)>,
+               bspline_t<real_t, GeoDim, std::get<1>(degrees_), std::get<2>(degrees_)>,
+               bspline_t<real_t, GeoDim, std::get<0>(degrees_), std::get<1>(degrees_)>,
+               bspline_t<real_t, GeoDim, std::get<0>(degrees_), std::get<1>(degrees_)>,
+               bspline_t<real_t, GeoDim, std::get<0>(degrees_), std::get<2>(degrees_)>,
+               bspline_t<real_t, GeoDim, std::get<0>(degrees_), std::get<2>(degrees_)>> bdr_;
+  };
+
+  /**
+   * BoundaryCore (4d specialization)
+   *   
+   * This specialization has 8 sides
+   * - west  (u=0, v,   w,   t)
+   * - east  (u=1, v,   w,   t)
+   * - south (u,   v=0, w,   t)
+   * - north (u,   v=1, w,   t)
+   * - front (u,   v,   w=0, t)
+   * - back  (u,   v,   w=1, t)
+   * - stime (u,   v,   w,   t=0)
+   * - etime (u,   v,   w,   t=1)
+   */
+  template<template<typename, short_t, short_t...> class bspline_t,
+           typename real_t, short_t GeoDim, short_t... Degrees>
+  class BoundaryCore<bspline_t, real_t, GeoDim, 4, Degrees...>
+    : public core<real_t>
+  {
+  public:
+    /// Constructor
+    template<typename T>
+    BoundaryCore(const std::array<T, 4>& ncoeffs,
+                 BSplineInit init = BSplineInit::zeros)
+      : core<real_t>(),
+        bdr_(
+             {
+               bspline_t<real_t, GeoDim, std::get<1>(degrees_),std::get<2>(degrees_),std::get<3>(degrees_)>(std::array<int64_t,3>({ncoeffs[1],ncoeffs[2],ncoeffs[3]}), init),
+               bspline_t<real_t, GeoDim, std::get<1>(degrees_),std::get<2>(degrees_),std::get<3>(degrees_)>(std::array<int64_t,3>({ncoeffs[1],ncoeffs[2],ncoeffs[3]}), init),
+               bspline_t<real_t, GeoDim, std::get<0>(degrees_),std::get<2>(degrees_),std::get<3>(degrees_)>(std::array<int64_t,3>({ncoeffs[0],ncoeffs[2],ncoeffs[3]}), init),
+               bspline_t<real_t, GeoDim, std::get<0>(degrees_),std::get<2>(degrees_),std::get<3>(degrees_)>(std::array<int64_t,3>({ncoeffs[0],ncoeffs[2],ncoeffs[3]}), init),
+               bspline_t<real_t, GeoDim, std::get<0>(degrees_),std::get<1>(degrees_),std::get<3>(degrees_)>(std::array<int64_t,3>({ncoeffs[0],ncoeffs[1],ncoeffs[3]}), init),
+               bspline_t<real_t, GeoDim, std::get<0>(degrees_),std::get<1>(degrees_),std::get<3>(degrees_)>(std::array<int64_t,3>({ncoeffs[0],ncoeffs[1],ncoeffs[3]}), init),
+               bspline_t<real_t, GeoDim, std::get<0>(degrees_),std::get<1>(degrees_),std::get<2>(degrees_)>(std::array<int64_t,3>({ncoeffs[0],ncoeffs[1],ncoeffs[2]}), init),
+               bspline_t<real_t, GeoDim, std::get<0>(degrees_),std::get<1>(degrees_),std::get<2>(degrees_)>(std::array<int64_t,3>({ncoeffs[0],ncoeffs[1],ncoeffs[2]}), init)
+             }
+             )
+    {}
+    
+    /// Returns the number of sides
+    inline constexpr short_t sides() const
+    {
+      return side::etime;
+    }
+
+    /// Returns a string representation of the Boundary object
+    inline void pretty_print(std::ostream& os = std::cout) const
+    {
+      os << core<real_t>::name()
+         << "(\n"
+         << "west = "  << std::get<west-1>(bdr_) << "\n"
+         << "east = "  << std::get<east-1>(bdr_) << "\n"
+         << "south = " << std::get<south-1>(bdr_) << "\n"
+         << "north = " << std::get<north-1>(bdr_) << "\n"
+         << "front = " << std::get<front-1>(bdr_) << "\n"
+         << "back = "  << std::get<back-1>(bdr_) << "\n"
+         << "stime = " << std::get<stime-1>(bdr_) << "\n"
+         << "etime = " << std::get<etime-1>(bdr_)
+         << "\n)";
+    }
+    
+  private:
+    static constexpr const std::array<short_t, sizeof...(Degrees)> degrees_ = { Degrees... };
+    
+    /// Tuple of B-Splines
+    std::tuple<bspline_t<real_t, GeoDim, std::get<1>(degrees_), std::get<2>(degrees_), std::get<3>(degrees_)>,
+               bspline_t<real_t, GeoDim, std::get<1>(degrees_), std::get<2>(degrees_), std::get<3>(degrees_)>,
+               bspline_t<real_t, GeoDim, std::get<0>(degrees_), std::get<2>(degrees_), std::get<3>(degrees_)>,
+               bspline_t<real_t, GeoDim, std::get<0>(degrees_), std::get<2>(degrees_), std::get<3>(degrees_)>,
+               bspline_t<real_t, GeoDim, std::get<0>(degrees_), std::get<1>(degrees_), std::get<3>(degrees_)>,
+               bspline_t<real_t, GeoDim, std::get<0>(degrees_), std::get<1>(degrees_), std::get<3>(degrees_)>,
+               bspline_t<real_t, GeoDim, std::get<0>(degrees_), std::get<1>(degrees_), std::get<2>(degrees_)>,
+               bspline_t<real_t, GeoDim, std::get<0>(degrees_), std::get<1>(degrees_), std::get<2>(degrees_)>> bdr_;
+  };
+  
+  /**
+   * Boundary
+   */
+  template<template<typename, short_t, short_t...> class bspline_t,
+           typename real_t, short_t GeoDim, short_t... Degrees>
+  class Boundary : public BoundaryCore<bspline_t, real_t, GeoDim, sizeof...(Degrees), Degrees...>
+  {
+  public:
+    using BoundaryCore<bspline_t, real_t, GeoDim, sizeof...(Degrees), Degrees...>::BoundaryCore;
+  };
+  
+  /// Print (as string) a Boundary object
+template<template<typename, short_t, short_t...> class bspline_t,
+         typename real_t, short_t GeoDim, short_t... Degrees>
+inline std::ostream& operator<<(std::ostream& os,
+                                const Boundary<bspline_t, real_t, GeoDim, Degrees...>& obj)
   {
     obj.pretty_print(os);
     return os;
