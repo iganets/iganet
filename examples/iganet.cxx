@@ -20,7 +20,8 @@ int main()
   using real_t      = double;
   using optimizer_t = torch::optim::Adam;
   
-  torch::manual_seed(1);
+  iganet::init();
+  iganet::verbose(std::cout);
 
   {
     iganet::IgANet<real_t, optimizer_t,
@@ -34,21 +35,20 @@ int main()
 
     net.save("iganet1.pt");
 
-    iganet::IgANet<real_t, optimizer_t, iganet::UniformBSpline,
-                   5> net1;
+    // iganet::IgANet<real_t, optimizer_t, iganet::UniformBSpline,
+    //                5> net1;
 
-    net1.load("iganet1.pt");
-    std::cout << "Loaded IgaNet1\n";
-    std::cout << net1 << std::endl;
+    // net1.load("iganet1.pt");
+    // std::cout << "Loaded IgaNet1\n";
+    // std::cout << net1 << std::endl;
 
-    std::cout << (net == net1) << std::endl;
-    return 0;
+    // std::cout << (net == net1) << std::endl;
   }
 
   {
     iganet::IgANet<real_t, optimizer_t, iganet::UniformBSpline,
-                   5, 5> net({50,30,70}, // Number of neurons per layers
-                             {6,6});     // Number of B-spline coefficients
+                   2, 2> net({50,30,70}, // Number of neurons per layers
+                             {3,6});     // Number of B-spline coefficients
     std::cout << "Saved IgaNet2\n";
     std::cout << net << std::endl;
     net.sol().transform( [](const std::array<real_t,2> X){ return std::array<real_t,1>{ sin(M_PI*X[0])*sin(M_PI*X[1]) }; } );
@@ -79,20 +79,6 @@ int main()
     std::cout << net.sol().eval( torch::stack({torch::full({1}, 0.5), torch::full({1}, 0.5), torch::full({1}, 0.5), torch::full({1}, 0.5)}).flatten() ) << std::endl;
 
     net.save("iganet4.pt");
-  }
-
-  {
-    iganet::UniformBSpline<double, 2, 3, 4> bspline({2,3});
-    std::cout << "Saved BSpline\n";
-    std::cout << bspline << std::endl;
-    bspline.save("bspline.pl");
-    
-    iganet::UniformBSpline<double, 2, 3, 4> bspline1;
-    bspline1.load("bspline.pl");
-    std::cout << "Loaded BSpline\n";
-    std::cout << bspline1 << std::endl;
-    
-    std::cout << (bspline == bspline1) << std::endl;
   }
 
   return 0;
