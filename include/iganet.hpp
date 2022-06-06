@@ -139,7 +139,7 @@ namespace iganet {
     bspline_t<real_t, 1, Degrees...> sol_;
     
     /// B-spline representation of the boundary conditions
-    Boundary<bspline_t, real_t, 1, Degrees...> bdr_;
+    Boundary<bspline_t,real_t, 1, Degrees...> bdr_;
     
     /// Input tensor
     torch::Tensor input_;
@@ -160,6 +160,7 @@ namespace iganet {
         geo_(),
         rhs_(),
         sol_(),
+        bdr_(sol_),
         input__(),
         opt_(net_->parameters())
     {}
@@ -181,6 +182,7 @@ namespace iganet {
         // Construct the different B-Spline objects individually
         geo_(geo_bspline_ncoeffs, BSplineInit::greville),
         rhs_(rhs_bspline_ncoeffs, BSplineInit::ones),
+        bdr_(sol_bspline_ncoeffs, BSplineInit::zeros),
         sol_(sol_bspline_ncoeffs, BSplineInit::random),
 
         // Construct one large tensor comprising all B-Spline object's
@@ -192,6 +194,7 @@ namespace iganet {
         input__(torch::concat(
                               concat(geo_.coeffs(),
                                      rhs_.coeffs(),
+                                     bdr_.coeffs(),
                                      std::array<torch::Tensor,1>({torch::ones({dim_}, core<real_t>::options_)}))
                               )
                 ),
@@ -225,7 +228,81 @@ namespace iganet {
       rhs_.coeffs(0) = input__.index({torch::indexing::Slice(count,
                                                              count+=rhs_.ncoeffs(),
                                                              1)});
-
+      
+      // Boundary conditions
+      if constexpr (dim_ == 1)
+        {
+          bdr_.template side<west>().coeffs(0) = input__.index({torch::indexing::Slice(count,
+                                                                                       count+=bdr_.template side<west>().ncoeffs(),
+                                                                                       1)});
+          bdr_.template side<east>().coeffs(0) = input__.index({torch::indexing::Slice(count,
+                                                                                       count+=bdr_.template side<east>().ncoeffs(),
+                                                                                       1)});
+        }
+      else if constexpr (dim_ == 2)
+        {
+          bdr_.template side<west>().coeffs(0) = input__.index({torch::indexing::Slice(count,
+                                                                                       count+=bdr_.template side<west>().ncoeffs(),
+                                                                                       1)});
+          bdr_.template side<east>().coeffs(0) = input__.index({torch::indexing::Slice(count,
+                                                                                       count+=bdr_.template side<east>().ncoeffs(),
+                                                                                       1)});
+          bdr_.template side<south>().coeffs(0) = input__.index({torch::indexing::Slice(count,
+                                                                                        count+=bdr_.template side<south>().ncoeffs(),
+                                                                                        1)});
+          bdr_.template side<north>().coeffs(0) = input__.index({torch::indexing::Slice(count,
+                                                                                        count+=bdr_.template side<north>().ncoeffs(),
+                                                                                        1)});
+        }
+      else if constexpr (dim_ == 3)
+        {
+          bdr_.template side<west>().coeffs(0) = input__.index({torch::indexing::Slice(count,
+                                                                                       count+=bdr_.template side<west>().ncoeffs(),
+                                                                                       1)});
+          bdr_.template side<east>().coeffs(0) = input__.index({torch::indexing::Slice(count,
+                                                                                       count+=bdr_.template side<east>().ncoeffs(),
+                                                                                       1)});
+          bdr_.template side<south>().coeffs(0) = input__.index({torch::indexing::Slice(count,
+                                                                                        count+=bdr_.template side<south>().ncoeffs(),
+                                                                                        1)});
+          bdr_.template side<north>().coeffs(0) = input__.index({torch::indexing::Slice(count,
+                                                                                        count+=bdr_.template side<north>().ncoeffs(),
+                                                                                        1)});
+          bdr_.template side<front>().coeffs(0) = input__.index({torch::indexing::Slice(count,
+                                                                                        count+=bdr_.template side<front>().ncoeffs(),
+                                                                                        1)});
+          bdr_.template side<back>().coeffs(0) = input__.index({torch::indexing::Slice(count,
+                                                                                       count+=bdr_.template side<back>().ncoeffs(),
+                                                                                       1)});
+        }
+      else if constexpr (dim_ == 4)
+        {
+          bdr_.template side<west>().coeffs(0) = input__.index({torch::indexing::Slice(count,
+                                                                                       count+=bdr_.template side<west>().ncoeffs(),
+                                                                                       1)});
+          bdr_.template side<east>().coeffs(0) = input__.index({torch::indexing::Slice(count,
+                                                                                       count+=bdr_.template side<east>().ncoeffs(),
+                                                                                       1)});
+          bdr_.template side<south>().coeffs(0) = input__.index({torch::indexing::Slice(count,
+                                                                                        count+=bdr_.template side<south>().ncoeffs(),
+                                                                                        1)});
+          bdr_.template side<north>().coeffs(0) = input__.index({torch::indexing::Slice(count,
+                                                                                        count+=bdr_.template side<north>().ncoeffs(),
+                                                                                        1)});
+          bdr_.template side<front>().coeffs(0) = input__.index({torch::indexing::Slice(count,
+                                                                                        count+=bdr_.template side<front>().ncoeffs(),
+                                                                                        1)});
+          bdr_.template side<back>().coeffs(0) = input__.index({torch::indexing::Slice(count,
+                                                                                       count+=bdr_.template side<back>().ncoeffs(),
+                                                                                       1)});
+          bdr_.template side<stime>().coeffs(0) = input__.index({torch::indexing::Slice(count,
+                                                                                        count+=bdr_.template side<stime>().ncoeffs(),
+                                                                                        1)});
+          bdr_.template side<etime>().coeffs(0) = input__.index({torch::indexing::Slice(count,
+                                                                                        count+=bdr_.template side<etime>().ncoeffs(),
+                                                                                        1)});
+        }
+      
       // Input tensor
       input_ = input__.index({torch::indexing::Slice(count,
                                                      count+=dim_,
@@ -249,8 +326,9 @@ namespace iganet {
         // Construct the different B-Spline objects individually
         geo_(geo_bspline_kv, BSplineInit::greville),
         rhs_(rhs_bspline_kv, BSplineInit::ones),
+        bdr_(sol_bspline_kv, BSplineInit::zeros),
         sol_(sol_bspline_kv, BSplineInit::random),
-
+        
         // Construct one large tensor comprising all B-Spline object's
         // coefficient vectors - we need this complicated construction
         // to first concatenate the multiple
@@ -260,6 +338,7 @@ namespace iganet {
         input__(torch::concat(
                               concat(geo_.coeffs(),
                                      rhs_.coeffs(),
+                                     bdr_.coeffs(),
                                      std::array<torch::Tensor,1>({torch::ones({dim_}, core<real_t>::options_)}))
                               )
                 ),
@@ -289,6 +368,80 @@ namespace iganet {
                                                              count+=rhs_.ncoeffs(),
                                                              1)});
 
+      // Boundary conditions
+      if constexpr (dim_ == 1)
+        {
+          bdr_.template side<west>().coeffs(0) = input__.index({torch::indexing::Slice(count,
+                                                                                       count+=bdr_.template side<west>().ncoeffs(),
+                                                                                       1)});
+          bdr_.template side<east>().coeffs(0) = input__.index({torch::indexing::Slice(count,
+                                                                                       count+=bdr_.template side<east>().ncoeffs(),
+                                                                                       1)});
+        }
+      else if constexpr (dim_ == 2)
+        {
+          bdr_.template side<west>().coeffs(0) = input__.index({torch::indexing::Slice(count,
+                                                                                       count+=bdr_.template side<west>().ncoeffs(),
+                                                                                       1)});
+          bdr_.template side<east>().coeffs(0) = input__.index({torch::indexing::Slice(count,
+                                                                                       count+=bdr_.template side<east>().ncoeffs(),
+                                                                                       1)});
+          bdr_.template side<south>().coeffs(0) = input__.index({torch::indexing::Slice(count,
+                                                                                        count+=bdr_.template side<south>().ncoeffs(),
+                                                                                        1)});
+          bdr_.template side<north>().coeffs(0) = input__.index({torch::indexing::Slice(count,
+                                                                                        count+=bdr_.template side<north>().ncoeffs(),
+                                                                                        1)});
+        }
+      else if constexpr (dim_ == 3)
+        {
+          bdr_.template side<west>().coeffs(0) = input__.index({torch::indexing::Slice(count,
+                                                                                       count+=bdr_.template side<west>().ncoeffs(),
+                                                                                       1)});
+          bdr_.template side<east>().coeffs(0) = input__.index({torch::indexing::Slice(count,
+                                                                                       count+=bdr_.template side<east>().ncoeffs(),
+                                                                                       1)});
+          bdr_.template side<south>().coeffs(0) = input__.index({torch::indexing::Slice(count,
+                                                                                        count+=bdr_.template side<south>().ncoeffs(),
+                                                                                        1)});
+          bdr_.template side<north>().coeffs(0) = input__.index({torch::indexing::Slice(count,
+                                                                                        count+=bdr_.template side<north>().ncoeffs(),
+                                                                                        1)});
+          bdr_.template side<front>().coeffs(0) = input__.index({torch::indexing::Slice(count,
+                                                                                        count+=bdr_.template side<front>().ncoeffs(),
+                                                                                        1)});
+          bdr_.template side<back>().coeffs(0) = input__.index({torch::indexing::Slice(count,
+                                                                                       count+=bdr_.template side<back>().ncoeffs(),
+                                                                                       1)});
+        }
+      else if constexpr (dim_ == 4)
+        {
+          bdr_.template side<west>().coeffs(0) = input__.index({torch::indexing::Slice(count,
+                                                                                       count+=bdr_.template side<west>().ncoeffs(),
+                                                                                       1)});
+          bdr_.template side<east>().coeffs(0) = input__.index({torch::indexing::Slice(count,
+                                                                                       count+=bdr_.template side<east>().ncoeffs(),
+                                                                                       1)});
+          bdr_.template side<south>().coeffs(0) = input__.index({torch::indexing::Slice(count,
+                                                                                        count+=bdr_.template side<south>().ncoeffs(),
+                                                                                        1)});
+          bdr_.template side<north>().coeffs(0) = input__.index({torch::indexing::Slice(count,
+                                                                                        count+=bdr_.template side<north>().ncoeffs(),
+                                                                                        1)});
+          bdr_.template side<front>().coeffs(0) = input__.index({torch::indexing::Slice(count,
+                                                                                        count+=bdr_.template side<front>().ncoeffs(),
+                                                                                        1)});
+          bdr_.template side<back>().coeffs(0) = input__.index({torch::indexing::Slice(count,
+                                                                                       count+=bdr_.template side<back>().ncoeffs(),
+                                                                                       1)});
+          bdr_.template side<stime>().coeffs(0) = input__.index({torch::indexing::Slice(count,
+                                                                                        count+=bdr_.template side<stime>().ncoeffs(),
+                                                                                        1)});
+          bdr_.template side<etime>().coeffs(0) = input__.index({torch::indexing::Slice(count,
+                                                                                        count+=bdr_.template side<etime>().ncoeffs(),
+                                                                                        1)});
+        }
+      
       // Input tensor
       input_ = input__.index({torch::indexing::Slice(count,
                                                      count+=dim_,
@@ -355,6 +508,26 @@ namespace iganet {
       return sol_;
     }
 
+    /// Returns a constant reference to the B-spline representation of the boundary contitions
+    template<int side = none>
+    inline const auto& bdr() const
+    {
+      if constexpr (side == none)
+        return bdr_;
+      else
+        return std::get<side-1>(bdr_);
+    }
+
+    /// Returns a non-constant reference to the B-spline representation of the boundary conditions
+    template<int side = none>
+    inline auto& bdr()
+    {
+      if constexpr (side == none)
+        return bdr_;
+      else
+        return std::get<side-1>(bdr_);
+    }
+
     /// Returns a constant reference to the input tensor
     inline const torch::Tensor& input() const
     {
@@ -381,8 +554,8 @@ namespace iganet {
          << "net = " << net_ << "\n"
          << "geo = " << geo_ << "\n"
          << "rhs = " << rhs_ << "\n"
-         << "sol = " << sol_ << "\n"
-         << "bdr = " << bdr_
+         << "bdr = " << bdr_ << "\n"
+         << "sol = " << sol_
          << "\n)";
     }
 
@@ -464,7 +637,7 @@ namespace iganet {
       
       torch::serialize::InputArchive archive_opt;
       archive.read(key+".opt", archive_opt);            
-      opt_.load(archive_opt);
+      //opt_.load(archive_opt);
 
       for (auto key : archive_opt.keys())
         std::cout << key << std::endl;

@@ -57,9 +57,57 @@ namespace iganet {
     {}
     
     /// Returns the number of sides
-    inline constexpr short_t sides() const
+    inline static constexpr short_t sides()
     {
       return side::east;
+    }
+
+    /// Returns constant reference to side-th B-Spline
+    template<short_t s>
+    inline auto& side() const
+    {
+      static_assert(s>none && s<=sides());
+      return std::get<s-1>(bdr_);
+    }
+
+    /// Returns non-constant reference to side-th B-Spline
+    template<short_t s>
+    inline auto& side()
+    {
+      static_assert(s>none && s<=sides());
+      return std::get<s-1>(bdr_);
+    }
+
+    /// Returns a constant reference to the array of coefficients for
+    /// all boundary segments. If flatten=false, this function returns
+    /// an std::array of torch::Tensor objects with coefficients
+    /// reshaped according to the dimensions of the knot vectors
+    /// (return by value in this case)
+    template<bool flatten=true>
+    inline auto coeffs() const
+    {
+      std::array<torch::Tensor, GeoDim*sides()> coeffs_;
+      
+      for (short_t i=0; i<GeoDim; ++i) {
+        coeffs_[GeoDim*(west-1)+i] = std::get<west-1>(bdr_).template coeffs<flatten>();
+        coeffs_[GeoDim*(east-1)+i] = std::get<east-1>(bdr_).template coeffs<flatten>();
+      }
+
+      return coeffs_;
+    }
+    
+    /// Returns a non-constant reference to the array of coefficients
+    /// for all boundary segments.
+    inline auto coeffs()
+    {
+      std::array<torch::Tensor, GeoDim*sides()> coeffs_;
+
+      for (short_t i=0; i<GeoDim; ++i) {
+        coeffs_[GeoDim*(west-1)+i] = std::get<west-1>(bdr_).coeffs(i);
+        coeffs_[GeoDim*(east-1)+i] = std::get<east-1>(bdr_).coeffs(i);
+      }
+      
+      return coeffs_;
     }
     
     /// Returns a string representation of the Boundary object
@@ -111,11 +159,63 @@ namespace iganet {
     {}
     
     /// Returns the number of sides
-    inline constexpr short_t sides() const
+    inline static constexpr short_t sides()
     {
       return side::north;
     }
 
+    /// Returns constant reference to side-th B-Spline
+    template<short_t s>
+    inline auto& side() const
+    {
+      static_assert(s>none && s<=sides());
+      return std::get<s-1>(bdr_);
+    }
+
+    /// Returns non-constant reference to side-th B-Spline
+    template<short_t s>
+    inline auto& side()
+    {
+      static_assert(s>none && s<=sides());
+      return std::get<s-1>(bdr_);
+    }
+
+    /// Returns a constant reference to the array of coefficients for
+    /// all boundary segments. If flatten=false, this function returns
+    /// an std::array of torch::Tensor objects with coefficients
+    /// reshaped according to the dimensions of the knot vectors
+    /// (return by value in this case)
+    template<bool flatten=true>
+    inline auto coeffs() const
+    {
+      std::array<torch::Tensor, GeoDim*sides()> coeffs_;
+      
+      for (short_t i=0; i<GeoDim; ++i) {
+        coeffs_[GeoDim*(west-1)+i]  = std::get<west-1>(bdr_).template coeffs<flatten>();
+        coeffs_[GeoDim*(east-1)+i]  = std::get<east-1>(bdr_).template coeffs<flatten>();
+        coeffs_[GeoDim*(south-1)+i] = std::get<south-1>(bdr_).template coeffs<flatten>();
+        coeffs_[GeoDim*(north-1)+i] = std::get<north-1>(bdr_).template coeffs<flatten>();
+      }
+
+      return coeffs_;
+    }
+    
+    /// Returns a non-constant reference to the array of coefficients
+    /// for all boundary segments.
+    inline auto coeffs()
+    {
+      std::array<torch::Tensor, GeoDim*sides()> coeffs_;
+      
+      for (short_t i=0; i<GeoDim; ++i) {
+        coeffs_[GeoDim*(west-1)+i]  = std::get<west-1>(bdr_).coeffs(i);
+        coeffs_[GeoDim*(east-1)+i]  = std::get<east-1>(bdr_).coeffs(i);
+        coeffs_[GeoDim*(south-1)+i] = std::get<south-1>(bdr_).coeffs(i);
+        coeffs_[GeoDim*(north-1)+i] = std::get<north-1>(bdr_).coeffs(i);        
+      }
+      
+      return coeffs_;
+    }
+    
     /// Returns a string representation of the Boundary object
     inline void pretty_print(std::ostream& os = std::cout) const
     {
@@ -171,13 +271,69 @@ namespace iganet {
              }
              )
     {}
+
+    /// Returns constant reference to side-th B-Spline
+    template<short_t s>
+    inline auto& side() const
+    {
+      static_assert(s>none && s<=sides());
+      return std::get<s-1>(bdr_);
+    }
+
+    /// Returns non-constant reference to side-th B-Spline
+    template<short_t s>
+    inline auto& side()
+    {
+      static_assert(s>none && s<=sides());
+      return std::get<s-1>(bdr_);
+    }
     
     /// Returns the number of sides
-    inline constexpr short_t sides() const
+    inline static constexpr short_t sides()
     {
       return side::back;
     }
 
+    /// Returns a constant reference to the array of coefficients for
+    /// all boundary segments. If flatten=false, this function returns
+    /// an std::array of torch::Tensor objects with coefficients
+    /// reshaped according to the dimensions of the knot vectors
+    /// (return by value in this case)
+    template<bool flatten=true>
+    inline auto coeffs() const
+    {
+      std::array<torch::Tensor, GeoDim*sides()> coeffs_;
+      
+      for (short_t i=0; i<GeoDim; ++i) {
+        coeffs_[GeoDim*(west-1)+i]  = std::get<west-1>(bdr_).template coeffs<flatten>();
+        coeffs_[GeoDim*(east-1)+i]  = std::get<east-1>(bdr_).template coeffs<flatten>();
+        coeffs_[GeoDim*(south-1)+i] = std::get<south-1>(bdr_).template coeffs<flatten>();
+        coeffs_[GeoDim*(north-1)+i] = std::get<north-1>(bdr_).template coeffs<flatten>();
+        coeffs_[GeoDim*(front-1)+i] = std::get<front-1>(bdr_).template coeffs<flatten>();
+        coeffs_[GeoDim*(back-1)+i]  = std::get<back-1>(bdr_).template coeffs<flatten>();
+      }
+
+      return coeffs_;
+    }
+    
+    /// Returns a non-constant reference to the array of coefficients
+    /// for all boundary segments.
+    inline auto coeffs()
+    {
+      std::array<torch::Tensor, GeoDim*sides()> coeffs_;
+      
+      for (short_t i=0; i<GeoDim; ++i) {
+        coeffs_[GeoDim*(west-1)+i]  = std::get<west-1>(bdr_).coeffs(i);
+        coeffs_[GeoDim*(east-1)+i]  = std::get<east-1>(bdr_).coeffs(i);
+        coeffs_[GeoDim*(south-1)+i] = std::get<south-1>(bdr_).coeffs(i);
+        coeffs_[GeoDim*(north-1)+i] = std::get<north-1>(bdr_).coeffs(i);
+        coeffs_[GeoDim*(front-1)+i] = std::get<front-1>(bdr_).coeffs(i);
+        coeffs_[GeoDim*(back-1)+i]  = std::get<back-1>(bdr_).coeffs(i);                
+      }
+
+      return coeffs_;
+    }
+    
     /// Returns a string representation of the Boundary object
     inline void pretty_print(std::ostream& os = std::cout) const
     {
@@ -243,11 +399,71 @@ namespace iganet {
     {}
     
     /// Returns the number of sides
-    inline constexpr short_t sides() const
+    inline static constexpr short_t sides()
     {
       return side::etime;
     }
 
+    /// Returns constant reference to side-th B-Spline
+    template<short_t s>
+    inline auto& side() const
+    {
+      static_assert(s>none && s<=sides());
+      return std::get<s-1>(bdr_);
+    }
+
+    /// Returns non-constant reference to side-th B-Spline
+    template<short_t s>
+    inline auto& side()
+    {
+      static_assert(s>none && s<=sides());
+      return std::get<s-1>(bdr_);
+    }
+
+    /// Returns a constant reference to the array of coefficients for
+    /// all boundary segments. If flatten=false, this function returns
+    /// an std::array of torch::Tensor objects with coefficients
+    /// reshaped according to the dimensions of the knot vectors
+    /// (return by value in this case)
+    template<bool flatten=true>
+    inline auto coeffs() const
+    {
+      std::array<torch::Tensor, GeoDim*sides()> coeffs_;
+      
+      for (short_t i=0; i<GeoDim; ++i) {
+        coeffs_[GeoDim*(west-1)+i]  = std::get<west-1>(bdr_).template coeffs<flatten>();
+        coeffs_[GeoDim*(east-1)+i]  = std::get<east-1>(bdr_).template coeffs<flatten>();
+        coeffs_[GeoDim*(south-1)+i] = std::get<south-1>(bdr_).template coeffs<flatten>();
+        coeffs_[GeoDim*(north-1)+i] = std::get<north-1>(bdr_).template coeffs<flatten>();
+        coeffs_[GeoDim*(front-1)+i] = std::get<front-1>(bdr_).template coeffs<flatten>();
+        coeffs_[GeoDim*(back-1)+i]  = std::get<back-1>(bdr_).template coeffs<flatten>();
+        coeffs_[GeoDim*(stime-1)+i] = std::get<stime-1>(bdr_).template coeffs<flatten>();
+        coeffs_[GeoDim*(etime-1)+i] = std::get<etime-1>(bdr_).template coeffs<flatten>();       
+      }
+
+      return coeffs_;
+    }
+    
+    /// Returns a non-constant reference to the array of coefficients
+    /// for all boundary segments.
+    inline auto coeffs()
+    {
+      std::array<torch::Tensor, GeoDim*sides()> coeffs_;
+      
+      for (short_t i=0; i<GeoDim; ++i) {
+        coeffs_[GeoDim*(west-1)+i]  = std::get<west-1>(bdr_).coeffs(i);
+        coeffs_[GeoDim*(east-1)+i]  = std::get<east-1>(bdr_).coeffs(i);
+        coeffs_[GeoDim*(south-1)+i] = std::get<south-1>(bdr_).coeffs(i);
+        coeffs_[GeoDim*(north-1)+i] = std::get<north-1>(bdr_).coeffs(i);
+        coeffs_[GeoDim*(front-1)+i] = std::get<front-1>(bdr_).coeffs(i);
+        coeffs_[GeoDim*(back-1)+i]  = std::get<back-1>(bdr_).coeffs(i);
+        coeffs_[GeoDim*(stime-1)+i] = std::get<stime-1>(bdr_).coeffs(i);
+        coeffs_[GeoDim*(etime-1)+i] = std::get<etime-1>(bdr_).coeffs(i);                
+      }
+
+      return coeffs_;
+    }
+    
     /// Returns a string representation of the Boundary object
     inline void pretty_print(std::ostream& os = std::cout) const
     {
