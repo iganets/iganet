@@ -54,8 +54,8 @@ namespace iganet {
     {
       // Standard feed-forward neural network with ReLU activation functions
       for (auto it = layers_.begin(); it != layers_.end()-1; ++it)
-        x = torch::relu(it->forward(x));
-      x = layers_.end()->forward(x);
+        x = torch::relu((*it)->forward(x));
+      x = (*layers_.end())->forward(x);
       return x;
     }
 
