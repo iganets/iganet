@@ -70,6 +70,11 @@ endif()
 project(IgaNet)
 
 ########################################################################
+# Append path to additional modules
+########################################################################
+list(APPEND CMAKE_MODULE_PATH "${PROJECT_SOURCE_DIR}/cmake")
+
+########################################################################
 # Option list
 ########################################################################
 option(IGANET_BUILD_EXAMPLES    "Build examples"            ON )
@@ -80,10 +85,8 @@ option(IGANET_WITH_OPENMP       "With OpenMP"               ON )
 ########################################################################
 # Prerequisites
 ########################################################################
+include(Matplot++)
 find_package(Torch REQUIRED)
-
-list(APPEND CMAKE_PREFIX_PATH "${PROJECT_SOURCE_DIR}/external/matplotplusplus-1.1.0-${CMAKE_SYSTEM_NAME}/lib/cmake/")
-find_package(Matplot++ REQUIRED)
 
 ########################################################################
 # Enable OpenMP support
