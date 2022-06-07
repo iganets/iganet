@@ -81,6 +81,8 @@ option(IGANET_WITH_OPENMP       "With OpenMP"               ON )
 # Prerequisites
 ########################################################################
 find_package(Torch REQUIRED)
+
+list(APPEND CMAKE_PREFIX_PATH "${PROJECT_SOURCE_DIR}/external/matplotplusplus-1.1.0-${CMAKE_SYSTEM_NAME}/lib/cmake/")
 find_package(Matplot++ REQUIRED)
 
 ########################################################################
