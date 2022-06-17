@@ -263,6 +263,37 @@ namespace iganet {
       return ncoeffs_[i];
     }
 
+    /// Returns the Greville abscissae
+    inline std::array<torch::Tensor, geoDim_> greville() const
+    {
+      std::array<torch::Tensor, geoDim_> coeffs;
+
+      // Fill coefficients with the tensor-product of Greville
+      // abscissae values per univariate dimension
+      for (short_t i=0; i<geoDim_; ++i) {
+        coeffs[i] = torch::ones(1, core<real_t>::options_);
+        
+        for (short_t j=0; j<parDim_; ++j)
+          {
+            if (i==j) {
+              auto greville_ = torch::zeros(ncoeffs_[j], core<real_t>::options_);
+              auto greville = greville_.template accessor<real_t,1>();
+              auto knots = knots_[j].template accessor<real_t,1>();
+              for (int64_t k=0; k<ncoeffs_[j]; ++k) {
+                for (short_t l=1; l<=degrees_[j]; ++l)
+                  greville[k] += knots[k+l];
+                greville[k] /= degrees_[j];
+              }
+              coeffs[i] = coeffs[i].kron(greville_);
+            } else
+              coeffs[i] = coeffs[i].kron(torch::ones(ncoeffs_[j],
+                                                     core<real_t>::options_));
+          }
+      }
+      
+      return coeffs;
+    }
+
     /// Returns the value of the B-spline object in the points \f$ \xi \f$.
     ///
     /// To this end, the function first determines the interval
@@ -1468,7 +1499,7 @@ namespace iganet {
   /// functionality that is implemented differently for uniform and
   /// non-uniform B-spline. C++ suggests to use virtual methods for
   /// this purpose and implement the common functionality in a base
-  /// class. However, this is not performance for low-level
+  /// class. However, this is not performant for low-level
   /// functionality, e.g., point-wise function evaluation which is
   /// called repeatedly. Moreover, virtual methods do not work with
   /// templated functions, which is why we implement high-level common
@@ -1866,7 +1897,7 @@ namespace iganet {
         throw std::runtime_error("Unsupported combination of parametric/geometric dimensions");
     }
 
-    /// Returns a string representation of the UniformBSpline object
+    /// Returns a string representation of the BSplineCommon object
     inline void pretty_print(std::ostream& os = std::cout) const
     {
       os << BSplineCore::name()
