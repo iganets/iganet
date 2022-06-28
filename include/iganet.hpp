@@ -5,7 +5,7 @@
 
    @author Matthias Moller
 
-   @copyright This file is part of the IgaNet project
+   @copyright This file is part of the IgANet project
 
    This Source Code Form is subject to the terms of the Mozilla Public
    License, v. 2.0. If a copy of the MPL was not distributed with this
@@ -19,6 +19,12 @@
 
 namespace iganet {
 
+  struct IgANetOptions
+  {
+    TORCH_ARG(int64_t, max_epoch)  = 10;
+    TORCH_ARG(int64_t, batch_size) = 1000;
+  };
+  
   /**
    * IgANetGeneratorImpl
    *
@@ -95,6 +101,7 @@ namespace iganet {
       }
       return archive;
     }
+    
   private:
     /// Vector of linear layers
     std::vector<torch::nn::Linear> layers_;
@@ -117,7 +124,7 @@ namespace iganet {
   };
 
   /**
-   * IgaNet
+   * IgANet
    */
   template<typename real_t,
            typename optimizer_t,
@@ -153,22 +160,27 @@ namespace iganet {
     /// Optimizer
     optimizer_t opt_;
 
+    /// Options
+    IgANetOptions options_;
+    
   public:
     /// Default constructor
-    IgANet()
+    IgANet(IgANetOptions defaults = {})
       : core<real_t>(),
         geo_(),
         rhs_(),
         sol_(),
         bdr_(sol_),
         input__(),
-        opt_(net_->parameters())
+        opt_(net_->parameters()),
+        options_(defaults)
     {}
 
     /// Constructor: layers + bspline (same for all)
     IgANet(const std::vector<int64_t>& layers,
-           const std::array<int64_t,dim_>& bspline_ncoeffs)
-      : IgANet(layers, bspline_ncoeffs, bspline_ncoeffs, bspline_ncoeffs)
+           const std::array<int64_t,dim_>& bspline_ncoeffs,
+           IgANetOptions defaults = {})
+      : IgANet(layers, bspline_ncoeffs, bspline_ncoeffs, bspline_ncoeffs, defaults)
     {
     }
 
@@ -176,12 +188,13 @@ namespace iganet {
     IgANet(const std::vector<int64_t>& layers,
            const std::array<int64_t,dim_>& geo_bspline_ncoeffs,
            const std::array<int64_t,dim_>& rhs_bspline_ncoeffs,
-           const std::array<int64_t,dim_>& sol_bspline_ncoeffs)
+           const std::array<int64_t,dim_>& sol_bspline_ncoeffs,
+           IgANetOptions defaults = {})
       : core<real_t>(),
 
         // Construct the different B-Spline objects individually
         geo_(geo_bspline_ncoeffs, BSplineInit::greville),
-        rhs_(rhs_bspline_ncoeffs, BSplineInit::ones),
+        rhs_(rhs_bspline_ncoeffs, BSplineInit::zeros),
         bdr_(sol_bspline_ncoeffs, BSplineInit::zeros),
         sol_(sol_bspline_ncoeffs, BSplineInit::random),
 
@@ -209,7 +222,10 @@ namespace iganet {
              ),
 
         // Construct the optimizer
-        opt_(net_->parameters())
+        opt_(net_->parameters()),
+
+        // Set options
+        options_(defaults)
     {
       // Now that everything is in placed we swap the coefficient
       // vectors of the B-Spline objects with views on parts of the
@@ -311,8 +327,9 @@ namespace iganet {
 
     /// Constructor: layers + bspline (same for all)
     IgANet(const std::vector<int64_t>& layers,
-           const std::array<std::vector<real_t>,dim_>& bspline_kv)
-      : IgANet(layers, bspline_kv, bspline_kv, bspline_kv)
+           const std::array<std::vector<real_t>,dim_>& bspline_kv,
+           IgANetOptions defaults = {})
+      : IgANet(layers, bspline_kv, bspline_kv, bspline_kv, defaults)
     {
     }
 
@@ -320,12 +337,13 @@ namespace iganet {
     IgANet(const std::vector<int64_t>& layers,
            const std::array<std::vector<real_t>,dim_>& geo_bspline_kv,
            const std::array<std::vector<real_t>,dim_>& rhs_bspline_kv,
-           const std::array<std::vector<real_t>,dim_>& sol_bspline_kv)
+           const std::array<std::vector<real_t>,dim_>& sol_bspline_kv,
+           IgANetOptions defaults = {})
       : core<real_t>(),
 
         // Construct the different B-Spline objects individually
         geo_(geo_bspline_kv, BSplineInit::greville),
-        rhs_(rhs_bspline_kv, BSplineInit::ones),
+        rhs_(rhs_bspline_kv, BSplineInit::zeros),
         bdr_(sol_bspline_kv, BSplineInit::zeros),
         sol_(sol_bspline_kv, BSplineInit::random),
         
@@ -348,7 +366,13 @@ namespace iganet {
         // object as output
         net_(concat(std::vector<int64_t>{static_cast<int64_t>(input__.size(0))},
                     layers,
-                    std::vector<int64_t>{sol_.ncoeffs()}))
+                    std::vector<int64_t>{sol_.ncoeffs()})),
+
+        // Construct the optimizer
+        opt_(net_->parameters()),
+        
+        // Set options
+        options_(defaults)
     {
       // Now that everything is in placed we swap the coefficient
       // vectors of the B-Spline objects with views on parts of the
@@ -463,13 +487,13 @@ namespace iganet {
     /// Returns a constant reference to the optimizer
     inline const optimizer_t & opt() const
     {
-      return net_;
+      return opt_;
     }
 
     /// Returns a non-constant reference to the optimizer
     inline optimizer_t & opt()
     {
-      return net_;
+      return opt_;
     }
     
     /// Returns a constant reference to the B-spline representation of the geometry
@@ -546,6 +570,25 @@ namespace iganet {
       return dim_;
     }
 
+    /// Trains the IgANet
+    inline void train()
+    {
+      // Get Greville points
+      auto samples = sol_.greville();
+
+      std::cout << geo_.coeffs() << std::endl;
+      std::cout << rhs_.coeffs() << std::endl;
+      std::cout << bdr_.coeffs() << std::endl;
+
+      exit(0);
+      
+      for (int64_t epoch = 0; epoch != options_.max_epoch(); ++epoch)
+        {
+          std::cout << "Epoch " << std::to_string(epoch) << std::endl;
+          auto output = net_->forward(samples[0]);
+        }
+    }
+    
     /// Returns a string representation of the IgANet object
     inline void pretty_print(std::ostream& os = std::cout) const
     {
@@ -637,7 +680,7 @@ namespace iganet {
       
       torch::serialize::InputArchive archive_opt;
       archive.read(key+".opt", archive_opt);            
-      //opt_.load(archive_opt);
+      opt_.load(archive_opt);
 
       for (auto key : archive_opt.keys())
         std::cout << key << std::endl;
