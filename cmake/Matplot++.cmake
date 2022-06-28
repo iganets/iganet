@@ -55,3 +55,9 @@ include_directories("${MATPLOTPLUSPLUS_SOURCE_DIR}/source/matplot")
 # Add link directory
 link_directories("${MATPLOTPLUSPLUS_BINARY_DIR}/source/3rd_party")
 link_directories("${MATPLOTPLUSPLUS_BINARY_DIR}/source/matplot")
+
+# Fix error handling on MacOSX using Clang compiler
+if (CMAKE_CXX_COMPILER_ID STREQUAL "AppleClang" OR
+    CMAKE_CXX_COMPILER_ID STREQUAL "Clang" AND ${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
+  target_compile_options(matplot PRIVATE -Wno-unused-but-set-variable)
+endif()

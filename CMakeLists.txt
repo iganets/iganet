@@ -95,8 +95,10 @@ if (IGANET_WITH_OPENMP)
   # Apple explicitly disabled OpenMP support in their compilers that
   # are shipped with XCode but there is an easy workaround as
   # described at https://mac.r-project.org/openmp/
-  if (CMAKE_C_COMPILER_ID STREQUAL "AppleClang" OR CMAKE_C_COMPILER_ID STREQUAL "Clang" AND ${CMAKE_SYSTEM_NAME} MATCHES "Darwin" OR
-      CMAKE_CXX_COMPILER_ID STREQUAL "AppleClang" OR CMAKE_CXX_COMPILER_ID STREQUAL "Clang" AND ${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
+  if (CMAKE_C_COMPILER_ID STREQUAL "AppleClang" OR
+      CMAKE_C_COMPILER_ID STREQUAL "Clang" AND ${CMAKE_SYSTEM_NAME} MATCHES "Darwin" OR
+      CMAKE_CXX_COMPILER_ID STREQUAL "AppleClang" OR
+      CMAKE_CXX_COMPILER_ID STREQUAL "Clang" AND ${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
     find_path(OpenMP_C_INCLUDE_DIR
       NAMES "omp.h" PATHS /usr/local /opt /opt/local /opt/homebrew PATH_SUFFICES include)
     find_path(OpenMP_CXX_INCLUDE_DIR
