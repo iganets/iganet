@@ -618,17 +618,17 @@ namespace iganet {
   };
 
   /// Hard shrinkish activation function
-  class HardShrink : public ActivationFunction
+  class Hardshrink : public ActivationFunction
   {
   public:
-    explicit HardShrink(const torch::nn::functional::HardshrinkFuncOptions& options = {})
+    explicit Hardshrink(const torch::nn::functional::HardshrinkFuncOptions& options = {})
       : options_(options) {}
 
-    explicit HardShrink(double lambda)
+    explicit Hardshrink(double lambda)
       : options_(torch::nn::functional::HardshrinkFuncOptions()
                  .lambda(lambda)) {}
 
-    ~HardShrink() = default;
+    ~Hardshrink() = default;
 
     /// Applies the activation function to the given input
     inline virtual torch::Tensor apply(const torch::Tensor& input) const override
@@ -649,7 +649,7 @@ namespace iganet {
     /// Returns a string representation of the activation function
     inline void pretty_print(std::ostream& os = std::cout) const override
     {
-      os << "HardShrink"
+      os << "Hardshrink"
          << "(\n  lambda=" << options_.lambda()
          << "\n)";
     }
@@ -678,7 +678,7 @@ namespace iganet {
     torch::nn::functional::HardshrinkFuncOptions options_;
   };
 
-  /// HardSigmoid activation function
+  /// Hardsigmoid activation function
   ///
   /// \f[
   ///     \text{Hardsigmoid}(x) =
@@ -688,12 +688,12 @@ namespace iganet {
   ///         x/6 + 1/2 & \text{ otherwise }
   ///       \end{cases}
   /// \f]
-  class HardSigmoid : public ActivationFunction
+  class Hardsigmoid : public ActivationFunction
   {
   public:
-    explicit HardSigmoid() = default;
+    explicit Hardsigmoid() = default;
 
-    ~HardSigmoid() = default;
+    ~Hardsigmoid() = default;
 
     /// Applies the activation function to the given input
     inline virtual torch::Tensor apply(const torch::Tensor& input) const override
@@ -704,7 +704,7 @@ namespace iganet {
     /// Returns a string representation of the activation function
     inline void pretty_print(std::ostream& os = std::cout) const override
     {
-      os << "HardSigmoid";
+      os << "Hardsigmoid";
     }
 
     /// Writes the activation function into a torch::serialize::OutputArchive object
@@ -729,7 +729,7 @@ namespace iganet {
     }
   };
 
-  /// HardSwish activation function
+  /// Hardswish activation function
   ///
   /// \f[
   ///     \text{Hardswish}(x) =
@@ -739,12 +739,12 @@ namespace iganet {
   ///         x*(x+3)/6 & \text{ otherwise }
   ///       \end{cases}
   /// \f]
-  class HardSwish : public ActivationFunction
+  class Hardswish : public ActivationFunction
   {
   public:
-    explicit HardSwish() = default;
+    explicit Hardswish() = default;
 
-    ~HardSwish() = default;
+    ~Hardswish() = default;
 
     /// Applies the activation function to the given input
     inline virtual torch::Tensor apply(const torch::Tensor& input) const override
@@ -755,7 +755,7 @@ namespace iganet {
     /// Returns a string representation of the activation function
     inline void pretty_print(std::ostream& os = std::cout) const override
     {
-      os << "HardSwish";
+      os << "Hardswish";
     }
 
     /// Writes the activation function into a torch::serialize::OutputArchive object
@@ -780,29 +780,29 @@ namespace iganet {
     }
   };
   
-  /// HardTanh activation function
+  /// Hardtanh activation function
   ///
   /// \f[
-  ///     \text{HardTanh}(x) =
+  ///     \text{Hardtanh}(x) =
   ///       \begin{cases}
   ///         +1 & \text{ if } x > +1
   ///         -1 & \text{ if } x < -1
   ///          x & \text{ otherwise }
   ///       \end{cases}
   /// \f]
-  class HardTanh : public ActivationFunction
+  class Hardtanh : public ActivationFunction
   {
   public:
-    explicit HardTanh(const torch::nn::functional::HardtanhFuncOptions& options = {})
+    explicit Hardtanh(const torch::nn::functional::HardtanhFuncOptions& options = {})
       : options_(options) {}
 
-    explicit HardTanh(double min_val, double max_val, bool inplace=false)
+    explicit Hardtanh(double min_val, double max_val, bool inplace=false)
       : options_(torch::nn::functional::HardtanhFuncOptions()
                  .min_val(min_val)
                  .max_val(max_val)
                  .inplace(inplace)) {}
 
-    ~HardTanh() = default;
+    ~Hardtanh() = default;
 
     /// Applies the activation function to the given input
     inline virtual torch::Tensor apply(const torch::Tensor& input) const override
@@ -823,7 +823,7 @@ namespace iganet {
     /// Returns a string representation of the activation function
     inline void pretty_print(std::ostream& os = std::cout) const override
     {
-      os << "HardTanh"
+      os << "Hardtanh"
          << "(\n  min_val=" << options_.min_val()
          << ", max_val="  << options_.max_val()
          << ", inplace="  << options_.inplace()
@@ -832,7 +832,7 @@ namespace iganet {
 
 /// Writes the activation function into a torch::serialize::OutputArchive object
     inline virtual torch::serialize::OutputArchive& write(torch::serialize::OutputArchive& archive,
-                                                          const std::string& key="hardtang") const override
+                                                          const std::string& key="hardtanh") const override
     {
       archive.write(key+".activation", torch::full({1}, (int64_t) activation::hardtanh));
       return archive;
