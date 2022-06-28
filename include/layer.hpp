@@ -63,7 +63,9 @@ namespace iganet {
   {
   public:
     virtual torch::Tensor apply(const torch::Tensor&) const = 0;
+    
     virtual ~ActivationFunction() = default;
+    
     virtual void pretty_print(std::ostream& os = std::cout) const = 0;
   };
 
@@ -127,12 +129,12 @@ namespace iganet {
       return torch::nn::functional::batch_norm(input, running_mean(), running_var(), options_);
     }
     
-    const torch::nn::functional::BatchNormFuncOptions& options() const
+    inline const torch::nn::functional::BatchNormFuncOptions& options() const
     {
       return options_;
     }
 
-    torch::nn::functional::BatchNormFuncOptions& options()
+    inline torch::nn::functional::BatchNormFuncOptions& options()
     {
       return options_;
     }
@@ -182,12 +184,12 @@ namespace iganet {
       return torch::nn::functional::celu(input, options_);
     }
     
-    const torch::nn::functional::CELUFuncOptions& options() const
+    inline const torch::nn::functional::CELUFuncOptions& options() const
     {
       return options_;
     }
 
-    torch::nn::functional::CELUFuncOptions& options()
+    inline torch::nn::functional::CELUFuncOptions& options()
     {
       return options_;
     }
@@ -231,12 +233,12 @@ namespace iganet {
       return torch::nn::functional::elu(input, options_);
     }
     
-    const torch::nn::functional::ELUFuncOptions& options() const
+    inline const torch::nn::functional::ELUFuncOptions& options() const
     {
       return options_;
     }
 
-    torch::nn::functional::ELUFuncOptions& options()
+    inline torch::nn::functional::ELUFuncOptions& options()
     {
       return options_;
     }
@@ -306,12 +308,12 @@ namespace iganet {
       return torch::nn::functional::glu(input, options_);
     }
     
-    const torch::nn::functional::GLUFuncOptions& options() const
+    inline const torch::nn::functional::GLUFuncOptions& options() const
     {
       return options_;
     }
 
-    torch::nn::functional::GLUFuncOptions& options()
+    inline torch::nn::functional::GLUFuncOptions& options()
     {
       return options_;
     }
@@ -354,12 +356,12 @@ namespace iganet {
       return torch::nn::functional::group_norm(input, options_);
     }
     
-    const torch::nn::functional::GroupNormFuncOptions& options() const
+    inline const torch::nn::functional::GroupNormFuncOptions& options() const
     {
       return options_;
     }
 
-    torch::nn::functional::GroupNormFuncOptions& options()
+    inline torch::nn::functional::GroupNormFuncOptions& options()
     {
       return options_;
     }
@@ -401,12 +403,12 @@ namespace iganet {
       return torch::nn::functional::gumbel_softmax(input, options_);
     }
     
-    const torch::nn::functional::GumbelSoftmaxFuncOptions& options() const
+    inline const torch::nn::functional::GumbelSoftmaxFuncOptions& options() const
     {
       return options_;
     }
 
-    torch::nn::functional::GumbelSoftmaxFuncOptions& options()
+    inline torch::nn::functional::GumbelSoftmaxFuncOptions& options()
     {
       return options_;
     }
@@ -442,12 +444,12 @@ namespace iganet {
       return torch::nn::functional::hardshrink(input, options_);
     }
     
-    const torch::nn::functional::HardshrinkFuncOptions& options() const
+    inline const torch::nn::functional::HardshrinkFuncOptions& options() const
     {
       return options_;
     }
 
-    torch::nn::functional::HardshrinkFuncOptions& options()
+    inline torch::nn::functional::HardshrinkFuncOptions& options()
     {
       return options_;
     }
@@ -548,12 +550,12 @@ namespace iganet {
       return torch::nn::functional::hardtanh(input, options_);
     }
     
-    const torch::nn::functional::HardtanhFuncOptions& options() const
+    inline const torch::nn::functional::HardtanhFuncOptions& options() const
     {
       return options_;
     }
 
-    torch::nn::functional::HardtanhFuncOptions& options()
+    inline torch::nn::functional::HardtanhFuncOptions& options()
     {
       return options_;
     }
@@ -603,12 +605,12 @@ namespace iganet {
       return torch::nn::functional::instance_norm(input, options_);
     }
     
-    const torch::nn::functional::InstanceNormFuncOptions& options() const
+    inline const torch::nn::functional::InstanceNormFuncOptions& options() const
     {
       return options_;
     }
 
-    torch::nn::functional::InstanceNormFuncOptions& options()
+    inline torch::nn::functional::InstanceNormFuncOptions& options()
     {
       return options_;
     }
@@ -662,12 +664,12 @@ namespace iganet {
       return torch::nn::functional::layer_norm(input, options_);
     }
     
-    const torch::nn::functional::LayerNormFuncOptions& options() const
+    inline const torch::nn::functional::LayerNormFuncOptions& options() const
     {
       return options_;
     }
 
-    torch::nn::functional::LayerNormFuncOptions& options()
+    inline torch::nn::functional::LayerNormFuncOptions& options()
     {
       return options_;
     }
@@ -717,12 +719,12 @@ namespace iganet {
       return torch::nn::functional::leaky_relu(input, options_);
     }
     
-    const torch::nn::functional::LeakyReLUFuncOptions& options() const
+    inline const torch::nn::functional::LeakyReLUFuncOptions& options() const
     {
       return options_;
     }
 
-    torch::nn::functional::LeakyReLUFuncOptions& options()
+    inline torch::nn::functional::LeakyReLUFuncOptions& options()
     {
       return options_;
     }
@@ -763,12 +765,12 @@ namespace iganet {
       return torch::nn::functional::local_response_norm(input, options_);
     }
     
-    const torch::nn::functional::LocalResponseNormFuncOptions& options() const
+    inline const torch::nn::functional::LocalResponseNormFuncOptions& options() const
     {
       return options_;
     }
 
-    torch::nn::functional::LocalResponseNormFuncOptions& options()
+    inline torch::nn::functional::LocalResponseNormFuncOptions& options()
     {
       return options_;
     }
@@ -833,12 +835,12 @@ namespace iganet {
       return torch::nn::functional::log_softmax(input, options_);
     }
 
-    const torch::nn::functional::LogSoftmaxFuncOptions& options() const
+    inline const torch::nn::functional::LogSoftmaxFuncOptions& options() const
     {
       return options_;
     }
 
-    torch::nn::functional::LogSoftmaxFuncOptions& options()
+    inline torch::nn::functional::LogSoftmaxFuncOptions& options()
     {
       return options_;
     }
@@ -897,12 +899,12 @@ namespace iganet {
       return torch::nn::functional::normalize(input, options_);
     }
     
-    const torch::nn::functional::NormalizeFuncOptions& options() const
+    inline const torch::nn::functional::NormalizeFuncOptions& options() const
     {
       return options_;
     }
 
-    torch::nn::functional::NormalizeFuncOptions& options()
+    inline torch::nn::functional::NormalizeFuncOptions& options()
     {
       return options_;
     }
@@ -968,12 +970,12 @@ namespace iganet {
       return torch::nn::functional::relu(input, options_);
     }
     
-    const torch::nn::functional::ReLUFuncOptions& options() const
+    inline const torch::nn::functional::ReLUFuncOptions& options() const
     {
       return options_;
     }
 
-    torch::nn::functional::ReLUFuncOptions& options()
+    inline torch::nn::functional::ReLUFuncOptions& options()
     {
       return options_;
     }
@@ -1011,12 +1013,12 @@ namespace iganet {
       return torch::nn::functional::relu6(input, options_);
     }
     
-    const torch::nn::functional::ReLU6FuncOptions& options() const
+    inline const torch::nn::functional::ReLU6FuncOptions& options() const
     {
       return options_;
     }
 
-    torch::nn::functional::ReLU6FuncOptions& options()
+    inline torch::nn::functional::ReLU6FuncOptions& options()
     {
       return options_;
     }
@@ -1060,12 +1062,12 @@ namespace iganet {
       return torch::nn::functional::rrelu(input, options_);
     }
     
-    const torch::nn::functional::RReLUFuncOptions& options() const
+    inline const torch::nn::functional::RReLUFuncOptions& options() const
     {
       return options_;
     }
 
-    torch::nn::functional::RReLUFuncOptions& options()
+    inline torch::nn::functional::RReLUFuncOptions& options()
     {
       return options_;
     }
@@ -1108,12 +1110,12 @@ namespace iganet {
       return torch::nn::functional::selu(input, options_);
     }
     
-    const torch::nn::functional::SELUFuncOptions& options() const
+    inline const torch::nn::functional::SELUFuncOptions& options() const
     {
       return options_;
     }
 
-    torch::nn::functional::SELUFuncOptions& options()
+    inline torch::nn::functional::SELUFuncOptions& options()
     {
       return options_;
     }
@@ -1191,12 +1193,12 @@ namespace iganet {
       return torch::nn::functional::softmax(input, options_);
     }
     
-    const torch::nn::functional::SoftmaxFuncOptions& options() const
+    inline const torch::nn::functional::SoftmaxFuncOptions& options() const
     {
       return options_;
     }
 
-    torch::nn::functional::SoftmaxFuncOptions& options()
+    inline torch::nn::functional::SoftmaxFuncOptions& options()
     {
       return options_;
     }
@@ -1233,12 +1235,12 @@ namespace iganet {
       return torch::nn::functional::softmin(input, options_);
     }
     
-    const torch::nn::functional::SoftminFuncOptions& options() const
+    inline const torch::nn::functional::SoftminFuncOptions& options() const
     {
       return options_;
     }
 
-    torch::nn::functional::SoftminFuncOptions& options()
+    inline torch::nn::functional::SoftminFuncOptions& options()
     {
       return options_;
     }
@@ -1277,12 +1279,12 @@ namespace iganet {
       return torch::nn::functional::softplus(input, options_);
     }
     
-    const torch::nn::functional::SoftplusFuncOptions& options() const
+    inline const torch::nn::functional::SoftplusFuncOptions& options() const
     {
       return options_;
     }
 
-    torch::nn::functional::SoftplusFuncOptions& options()
+    inline torch::nn::functional::SoftplusFuncOptions& options()
     {
       return options_;
     }
@@ -1326,12 +1328,12 @@ namespace iganet {
       return torch::nn::functional::softshrink(input, options_);
     }
     
-    const torch::nn::functional::SoftshrinkFuncOptions& options() const
+    inline const torch::nn::functional::SoftshrinkFuncOptions& options() const
     {
       return options_;
     }
 
-    torch::nn::functional::SoftshrinkFuncOptions& options()
+    inline torch::nn::functional::SoftshrinkFuncOptions& options()
     {
       return options_;
     }
@@ -1430,12 +1432,12 @@ namespace iganet {
       return torch::nn::functional::threshold(input, options_);
     }
     
-    const torch::nn::functional::ThresholdFuncOptions& options() const
+    inline const torch::nn::functional::ThresholdFuncOptions& options() const
     {
       return options_;
     }
 
-    torch::nn::functional::ThresholdFuncOptions& options()
+    inline torch::nn::functional::ThresholdFuncOptions& options()
     {
       return options_;
     }
