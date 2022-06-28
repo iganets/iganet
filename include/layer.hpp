@@ -64,17 +64,30 @@ namespace iganet {
   public:
     virtual torch::Tensor apply(const torch::Tensor&) const = 0;
     virtual ~ActivationFunction() = default;
+    virtual void pretty_print(std::ostream& os = std::cout) const = 0;
   };
 
+  /// Print (as string) an ActivationFunction object
+  inline std::ostream& operator<<(std::ostream& os,
+                                  const ActivationFunction& obj)
+  {
+    obj.pretty_print(os);
+    return os;
+  }
+  
   /// No-op activation function
   class None : public ActivationFunction
   {
   public:
     inline virtual torch::Tensor apply(const torch::Tensor& input) const override
     {
-      std::cout << "apply: none\n";
       return input;
-    }   
+    }
+    
+    inline void pretty_print(std::ostream& os = std::cout) const override
+    {
+      os << "none";
+    }
   };
 
   /// Batch Normalization as described in the paper
@@ -111,7 +124,6 @@ namespace iganet {
     
     inline virtual torch::Tensor apply(const torch::Tensor& input) const override
     {
-      std::cout << "apply: batch_norm\n";
       return torch::nn::functional::batch_norm(input, running_mean(), running_var(), options_);
     }
     
@@ -123,6 +135,23 @@ namespace iganet {
     torch::nn::functional::BatchNormFuncOptions& options()
     {
       return options_;
+    }
+
+    inline void pretty_print(std::ostream& os = std::cout) const override
+    {
+      os << "BatchNorm"
+         << "(\n  eps=" << options_.eps()
+         << ", momentum=" << options_.momentum().value()
+         << ", training=" << options_.training();
+
+      if (is_verbose(os)) {
+        os << "\n  running_mean = " << running_mean()
+           << "\n  running_var = " << running_var()
+           << "\n  weight = " << options_.weight()
+           << "\n  bias = " << options_.bias();
+      }
+      
+      os << "\n)";
     }
     
   private:
@@ -150,7 +179,6 @@ namespace iganet {
     
     inline virtual torch::Tensor apply(const torch::Tensor& input) const override
     {
-      std::cout << "apply: celu\n";
       return torch::nn::functional::celu(input, options_);
     }
     
@@ -162,6 +190,14 @@ namespace iganet {
     torch::nn::functional::CELUFuncOptions& options()
     {
       return options_;
+    }
+
+    inline void pretty_print(std::ostream& os = std::cout) const override
+    {
+      os << "CELU"
+         << "(\n  alpha=" << options_.alpha()
+         << ", inplace=" << options_.inplace()
+         << "\n)";
     }
     
   private:
@@ -192,7 +228,6 @@ namespace iganet {
     
     inline virtual torch::Tensor apply(const torch::Tensor& input) const override
     {
-      std::cout << "apply: elu\n";
       return torch::nn::functional::elu(input, options_);
     }
     
@@ -206,6 +241,14 @@ namespace iganet {
       return options_;
     }
 
+    inline void pretty_print(std::ostream& os = std::cout) const override
+    {
+      os << "ELU"
+         << "(\n  alpha=" << options_.alpha()
+         << ", inplace=" << options_.inplace()
+         << "\n)";
+    }
+    
   private:
     torch::nn::functional::ELUFuncOptions options_;
   };
@@ -227,9 +270,13 @@ namespace iganet {
     
     inline virtual torch::Tensor apply(const torch::Tensor& input) const override
     {
-      std::cout << "apply: gelu\n";
       return torch::gelu(input);
-    }   
+    }
+
+    inline void pretty_print(std::ostream& os = std::cout) const override
+    {
+      os << "GELU";
+    }
   };
 
   /// Grated Linear Units activation function
@@ -256,7 +303,6 @@ namespace iganet {
     
     inline virtual torch::Tensor apply(const torch::Tensor& input) const override
     {
-      std::cout << "apply: glu\n";
       return torch::nn::functional::glu(input, options_);
     }
     
@@ -270,6 +316,13 @@ namespace iganet {
       return options_;
     }
 
+    inline void pretty_print(std::ostream& os = std::cout) const override
+    {
+      os << "GLU"
+         << "(\n  dim=" << options_.dim()
+         << "\n)";
+    }
+    
   private:
     torch::nn::functional::GLUFuncOptions options_;
   };
@@ -298,7 +351,6 @@ namespace iganet {
     
     inline virtual torch::Tensor apply(const torch::Tensor& input) const override
     {
-      std::cout << "apply: group_norm\n";
       return torch::nn::functional::group_norm(input, options_);
     }
     
@@ -310,6 +362,19 @@ namespace iganet {
     torch::nn::functional::GroupNormFuncOptions& options()
     {
       return options_;
+    }
+
+    inline void pretty_print(std::ostream& os = std::cout) const override
+    {
+      os << "GroupNorm"
+         << "(\n  eps=" << options_.eps();
+      
+      if (is_verbose(os)) {
+        os << "\n  weight = " << options_.weight()
+           << "\n  bias = " << options_.bias();
+      }
+      
+      os << "\n)";
     }
     
   private:
@@ -333,7 +398,6 @@ namespace iganet {
     
     inline virtual torch::Tensor apply(const torch::Tensor& input) const override
     {
-      std::cout << "apply: gumbel_softmax\n";
       return torch::nn::functional::gumbel_softmax(input, options_);
     }
     
@@ -345,6 +409,15 @@ namespace iganet {
     torch::nn::functional::GumbelSoftmaxFuncOptions& options()
     {
       return options_;
+    }
+
+    inline void pretty_print(std::ostream& os = std::cout) const override
+    {
+      os << "GumbelSoftmax"
+         << "(\n  tau=" << options_.tau()
+         << ", dim=" << options_.dim()
+         << ", hard=" << options_.hard()
+         << "\n)";
     }
     
   private:
@@ -366,7 +439,6 @@ namespace iganet {
     
     inline virtual torch::Tensor apply(const torch::Tensor& input) const override
     {
-      std::cout << "apply: hardshrink\n";
       return torch::nn::functional::hardshrink(input, options_);
     }
     
@@ -378,6 +450,13 @@ namespace iganet {
     torch::nn::functional::HardshrinkFuncOptions& options()
     {
       return options_;
+    }
+
+    inline void pretty_print(std::ostream& os = std::cout) const override
+    {
+      os << "HardShrink"
+         << "(\n  lambda=" << options_.lambda()
+         << "\n)";
     }
     
   private:
@@ -403,9 +482,13 @@ namespace iganet {
     
     inline virtual torch::Tensor apply(const torch::Tensor& input) const override
     {
-      std::cout << "apply: hardsigmoid\n";
       return torch::hardsigmoid(input);
-    }   
+    }
+
+    inline void pretty_print(std::ostream& os = std::cout) const override
+    {
+      os << "HardSigmoid";
+    }
   };
 
   /// HardSwish activation function
@@ -427,9 +510,13 @@ namespace iganet {
     
     inline virtual torch::Tensor apply(const torch::Tensor& input) const override
     {
-      std::cout << "apply: hardswish\n";
       return torch::hardswish(input);
-    }   
+    }
+
+    inline void pretty_print(std::ostream& os = std::cout) const override
+    {
+      os << "HardSwish";
+    }
   };
   
   /// HardTanh activation function
@@ -458,7 +545,6 @@ namespace iganet {
     
     inline virtual torch::Tensor apply(const torch::Tensor& input) const override
     {
-      std::cout << "apply: hardtanh\n";
       return torch::nn::functional::hardtanh(input, options_);
     }
     
@@ -470,6 +556,15 @@ namespace iganet {
     torch::nn::functional::HardtanhFuncOptions& options()
     {
       return options_;
+    }
+
+    inline void pretty_print(std::ostream& os = std::cout) const override
+    {
+      os << "HardTanh"
+         << "(\n  min_val=" << options_.min_val()
+         << ", max_val="  << options_.max_val()
+         << ", inplace="  << options_.inplace()
+         << "\n)";
     }
     
   private:
@@ -505,7 +600,6 @@ namespace iganet {
     
     inline virtual torch::Tensor apply(const torch::Tensor& input) const override
     {
-      std::cout << "apply: instance_norm\n";
       return torch::nn::functional::instance_norm(input, options_);
     }
     
@@ -517,6 +611,23 @@ namespace iganet {
     torch::nn::functional::InstanceNormFuncOptions& options()
     {
       return options_;
+    }
+
+    inline void pretty_print(std::ostream& os = std::cout) const override
+    {
+      os << "InstanceNorm"
+         << "(\n  eps=" << options_.eps()
+         << ", momentum=" << options_.momentum()
+         << ", use_input_stats=" << options_.use_input_stats();
+
+      if (is_verbose(os)) {
+        os << "\n  running_mean = " << options_.running_mean()
+           << "\n  running_var = " << options_.running_var()
+           << "\n  weight = " << options_.weight()
+           << "\n  bias = " << options_.bias();
+      }
+      
+      os << "\n)";
     }
     
   private:
@@ -548,7 +659,6 @@ namespace iganet {
     
     inline virtual torch::Tensor apply(const torch::Tensor& input) const override
     {
-      std::cout << "apply: layer_norm\n";
       return torch::nn::functional::layer_norm(input, options_);
     }
     
@@ -560,6 +670,20 @@ namespace iganet {
     torch::nn::functional::LayerNormFuncOptions& options()
     {
       return options_;
+    }
+
+    inline void pretty_print(std::ostream& os = std::cout) const override
+    {
+      os << "LayerNorm"
+         << "(\n  eps=" << options_.eps();
+
+      if (is_verbose(os)) {
+        os << "\n  normalized_shape = " << options_.normalized_shape()
+           << "\n  weight = " << options_.weight()
+           << "\n  bias = " << options_.bias();
+      }
+      
+      os << "\n)";
     }
     
   private:
@@ -590,7 +714,6 @@ namespace iganet {
     
     inline virtual torch::Tensor apply(const torch::Tensor& input) const override
     {
-      std::cout << "apply: leaky_relu\n";
       return torch::nn::functional::leaky_relu(input, options_);
     }
     
@@ -602,6 +725,14 @@ namespace iganet {
     torch::nn::functional::LeakyReLUFuncOptions& options()
     {
       return options_;
+    }
+
+    inline void pretty_print(std::ostream& os = std::cout) const override
+    {
+      os << "LeakyReLU"
+         << "(\n  negative_slope=" << options_.negative_slope()
+         << ", inplace="  << options_.inplace()
+         << "\n)";
     }
     
   private:
@@ -629,7 +760,6 @@ namespace iganet {
     
     inline virtual torch::Tensor apply(const torch::Tensor& input) const override
     {
-      std::cout << "apply: local_response_norm\n";
       return torch::nn::functional::local_response_norm(input, options_);
     }
     
@@ -641,6 +771,16 @@ namespace iganet {
     torch::nn::functional::LocalResponseNormFuncOptions& options()
     {
       return options_;
+    }
+
+    inline void pretty_print(std::ostream& os = std::cout) const override
+    {
+      os << "LocalResponseNorm"
+         << "(\n  size=" << options_.size()
+         << ", alpha="  << options_.alpha()
+         << ", beta="  << options_.beta()
+         << ", k="  << options_.k()
+         << "\n)";
     }
     
   private:
@@ -661,9 +801,13 @@ namespace iganet {
     
     inline virtual torch::Tensor apply(const torch::Tensor& input) const override
     {
-      std::cout << "apply: logsigmoid\n";
       return torch::log_sigmoid(input);
-    }   
+    }
+
+    inline void pretty_print(std::ostream& os = std::cout) const override
+    {
+      os << "LogSigmoid";
+    }
   };
 
   /// LogSoftmax activation function
@@ -686,7 +830,6 @@ namespace iganet {
     
     inline virtual torch::Tensor apply(const torch::Tensor& input) const override
     {
-      std::cout << "apply: log_softmax\n";
       return torch::nn::functional::log_softmax(input, options_);
     }
 
@@ -698,6 +841,13 @@ namespace iganet {
     torch::nn::functional::LogSoftmaxFuncOptions& options()
     {
       return options_;
+    }
+
+    inline void pretty_print(std::ostream& os = std::cout) const override
+    {
+      os << "LogSoftmax"
+         << "(\n  dim=" << options_.dim()
+         << "\n)";
     }
     
   private:
@@ -718,9 +868,13 @@ namespace iganet {
     
     inline virtual torch::Tensor apply(const torch::Tensor& input) const override
     {
-      std::cout << "apply: mish\n";
       return torch::mish(input);
-    }   
+    }
+
+    inline void pretty_print(std::ostream& os = std::cout) const override
+    {
+      os << "Mish";
+    }
   };
 
   /// \f$L_p\f$ Normalization
@@ -740,7 +894,6 @@ namespace iganet {
     
     inline virtual torch::Tensor apply(const torch::Tensor& input) const override
     {
-      std::cout << "apply: normalize\n";
       return torch::nn::functional::normalize(input, options_);
     }
     
@@ -752,6 +905,15 @@ namespace iganet {
     torch::nn::functional::NormalizeFuncOptions& options()
     {
       return options_;
+    }
+
+    inline void pretty_print(std::ostream& os = std::cout) const override
+    {
+      os << "Normalize"
+         << "(\n  eps=" << options_.eps()
+         << "(\n  p=" << options_.p()
+         << "(\n  dim=" << options_.dim()
+         << "\n)";
     }
     
   private:
@@ -769,10 +931,17 @@ namespace iganet {
     
     inline virtual torch::Tensor apply(const torch::Tensor& input) const override
     {
-      std::cout << "apply: prelu\n";
       return torch::nn::functional::prelu(input, weight());
     }
-        
+
+    inline void pretty_print(std::ostream& os = std::cout) const override
+    {
+      os << "PReLU";
+      
+      if (is_verbose(os))
+        os << "(\n  weight = " << weight() << "\n)";
+    }
+    
   private:
     std::function<torch::Tensor()> weight;
   };
@@ -796,7 +965,6 @@ namespace iganet {
     
     inline virtual torch::Tensor apply(const torch::Tensor& input) const override
     {
-      std::cout << "apply: relu\n";
       return torch::nn::functional::relu(input, options_);
     }
     
@@ -808,6 +976,13 @@ namespace iganet {
     torch::nn::functional::ReLUFuncOptions& options()
     {
       return options_;
+    }
+
+    inline void pretty_print(std::ostream& os = std::cout) const override
+    {
+      os << "ReLU"
+         << "(\n  inplace=" << options_.inplace()
+         << "\n)";
     }
     
   private:
@@ -833,7 +1008,6 @@ namespace iganet {
     
     inline virtual torch::Tensor apply(const torch::Tensor& input) const override
     {
-      std::cout << "apply: relu6\n";
       return torch::nn::functional::relu6(input, options_);
     }
     
@@ -845,6 +1019,13 @@ namespace iganet {
     torch::nn::functional::ReLU6FuncOptions& options()
     {
       return options_;
+    }
+
+    inline void pretty_print(std::ostream& os = std::cout) const override
+    {
+      os << "ReLU6"
+         << "(\n  inplace=" << options_.inplace()
+         << "\n)";
     }
     
   private:
@@ -876,7 +1057,6 @@ namespace iganet {
     
     inline virtual torch::Tensor apply(const torch::Tensor& input) const override
     {
-      std::cout << "apply: rrelu\n";
       return torch::nn::functional::rrelu(input, options_);
     }
     
@@ -888,6 +1068,15 @@ namespace iganet {
     torch::nn::functional::RReLUFuncOptions& options()
     {
       return options_;
+    }
+
+    inline void pretty_print(std::ostream& os = std::cout) const override
+    {
+      os << "PReLU"
+         << "(\n  lower=" << options_.lower()
+         << ",  upper=" << options_.upper()
+         << ",  inplace=" << options_.inplace()
+         << "\n)";
     }
     
   private:
@@ -916,7 +1105,6 @@ namespace iganet {
     
     inline virtual torch::Tensor apply(const torch::Tensor& input) const override
     {
-      std::cout << "apply: selu\n";
       return torch::nn::functional::selu(input, options_);
     }
     
@@ -928,6 +1116,13 @@ namespace iganet {
     torch::nn::functional::SELUFuncOptions& options()
     {
       return options_;
+    }
+
+    inline void pretty_print(std::ostream& os = std::cout) const override
+    {
+      os << "SELU"
+        << "(\n  inplace=" << options_.inplace()
+         << "\n)";
     }
     
   private:
@@ -944,9 +1139,14 @@ namespace iganet {
   public:    
     inline virtual torch::Tensor apply(const torch::Tensor& input) const override
     {
-      std::cout << "apply: sigmoid\n";
       return torch::sigmoid(input);
-    }        
+    }
+
+    inline void pretty_print(std::ostream& os = std::cout) const override
+    {
+      os << "Sigmoid";
+    }
+    
   };
 
   /// Sigmoid Linear Unit activation function
@@ -959,9 +1159,13 @@ namespace iganet {
   public:    
     inline virtual torch::Tensor apply(const torch::Tensor& input) const override
     {
-      std::cout << "apply: silu\n";
       return torch::silu(input);
-    }        
+    }
+
+    inline void pretty_print(std::ostream& os = std::cout) const override
+    {
+      os << "SiLU";
+    }
   };
 
   /// Softmax activation function
@@ -984,7 +1188,6 @@ namespace iganet {
     
     inline virtual torch::Tensor apply(const torch::Tensor& input) const override
     {
-      std::cout << "apply: softmax\n";
       return torch::nn::functional::softmax(input, options_);
     }
     
@@ -998,6 +1201,13 @@ namespace iganet {
       return options_;
     }
 
+    inline void pretty_print(std::ostream& os = std::cout) const override
+    {
+      os << "Softmax"
+         << "(\n  dim=" << options_.dim()
+         << "\n)";
+    }
+    
   private:
     torch::nn::functional::SoftmaxFuncOptions options_;
   };
@@ -1020,7 +1230,6 @@ namespace iganet {
     
     inline virtual torch::Tensor apply(const torch::Tensor& input) const override
     {
-      std::cout << "apply: softmin\n";
       return torch::nn::functional::softmin(input, options_);
     }
     
@@ -1034,6 +1243,13 @@ namespace iganet {
       return options_;
     }
 
+    inline void pretty_print(std::ostream& os = std::cout) const override
+    {
+      os << "Softmin"
+         << "(\n  dim=" << options_.dim()
+         << "\n)";
+    }
+    
   private:
     torch::nn::functional::SoftminFuncOptions options_;
   };
@@ -1058,7 +1274,6 @@ namespace iganet {
     
     inline virtual torch::Tensor apply(const torch::Tensor& input) const override
     {
-      std::cout << "apply: softplus";
       return torch::nn::functional::softplus(input, options_);
     }
     
@@ -1072,6 +1287,14 @@ namespace iganet {
       return options_;
     }
 
+    inline void pretty_print(std::ostream& os = std::cout) const override
+    {
+      os << "Softplus"
+         << "(\n  beta=" << options_.beta()
+         << ",  theshold=" << options_.threshold()
+         << "\n)";
+    }
+    
   private:
     torch::nn::functional::SoftplusFuncOptions options_;
   };
@@ -1100,7 +1323,6 @@ namespace iganet {
     
     inline virtual torch::Tensor apply(const torch::Tensor& input) const override
     {
-      std::cout << "apply: softshrink\n";
       return torch::nn::functional::softshrink(input, options_);
     }
     
@@ -1114,6 +1336,13 @@ namespace iganet {
       return options_;
     }
 
+    inline void pretty_print(std::ostream& os = std::cout) const override
+    {
+      os << "Softshrink"
+         << "(\n  lambda=" << options_.lambda()
+         << "\n)";
+    }
+    
   private:
     torch::nn::functional::SoftshrinkFuncOptions options_;
   };
@@ -1128,9 +1357,13 @@ namespace iganet {
   public:    
     inline virtual torch::Tensor apply(const torch::Tensor& input) const override
     {
-      std::cout << "apply: softsign\n";
       return torch::nn::functional::softsign(input);
-    }        
+    }
+
+    inline void pretty_print(std::ostream& os = std::cout) const override
+    {
+      os << "Softsign";
+    }    
   };
 
   /// Tanh activation function
@@ -1143,9 +1376,13 @@ namespace iganet {
   public:    
     inline virtual torch::Tensor apply(const torch::Tensor& input) const override
     {
-      std::cout << "apply: tanh\n";
       return torch::tanh(input);
-    }        
+    }
+
+    inline void pretty_print(std::ostream& os = std::cout) const override
+    {
+      os << "Tanh";
+    }
   };
 
   /// Tanhshrink activation function
@@ -1158,9 +1395,13 @@ namespace iganet {
   public:    
     inline virtual torch::Tensor apply(const torch::Tensor& input) const override
     {
-      std::cout << "apply: tanhshrink\n";
       return torch::nn::functional::tanhshrink(input);
-    }        
+    }
+
+    inline void pretty_print(std::ostream& os = std::cout) const override
+    {
+      os << "Tanhshrink";
+    }
   };
   
   /// Threshold activation function
@@ -1186,7 +1427,6 @@ namespace iganet {
     
     inline virtual torch::Tensor apply(const torch::Tensor& input) const override
     {
-      std::cout << "apply: threshold\n";
       return torch::nn::functional::threshold(input, options_);
     }
     
@@ -1200,6 +1440,15 @@ namespace iganet {
       return options_;
     }
 
+    inline void pretty_print(std::ostream& os = std::cout) const override
+    {
+      os << "Threshold"
+         << "(\n  threshold=" << options_.threshold()
+         << ",  value=" << options_.value()
+         << ",  inplace=" << options_.inplace()
+         << "\n)";
+    }
+    
   private:
     torch::nn::functional::ThresholdFuncOptions options_;
   };  
