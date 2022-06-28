@@ -86,28 +86,40 @@ namespace iganet {
     template<bool flatten=true>
     inline auto coeffs() const
     {
-      std::array<torch::Tensor, GeoDim*sides()> coeffs_;
-      
+      std::array<torch::Tensor, GeoDim*sides()> coeffs;
+
+#pragma omp parallel for
       for (short_t i=0; i<GeoDim; ++i) {
-        coeffs_[GeoDim*(west-1)+i] = std::get<west-1>(bdr_).template coeffs<flatten>();
-        coeffs_[GeoDim*(east-1)+i] = std::get<east-1>(bdr_).template coeffs<flatten>();
+        coeffs[GeoDim*(west-1)+i] = std::get<west-1>(bdr_).template coeffs<flatten>(i);
+        coeffs[GeoDim*(east-1)+i] = std::get<east-1>(bdr_).template coeffs<flatten>(i);
       }
 
-      return coeffs_;
+      return coeffs;
     }
     
     /// Returns a non-constant reference to the array of coefficients
     /// for all boundary segments.
     inline auto coeffs()
     {
-      std::array<torch::Tensor, GeoDim*sides()> coeffs_;
+      std::array<torch::Tensor, GeoDim*sides()> coeffs;
 
+#pragma omp parallel for
       for (short_t i=0; i<GeoDim; ++i) {
-        coeffs_[GeoDim*(west-1)+i] = std::get<west-1>(bdr_).coeffs(i);
-        coeffs_[GeoDim*(east-1)+i] = std::get<east-1>(bdr_).coeffs(i);
+        coeffs[GeoDim*(west-1)+i] = std::get<west-1>(bdr_).coeffs(i);
+        coeffs[GeoDim*(east-1)+i] = std::get<east-1>(bdr_).coeffs(i);
       }
       
-      return coeffs_;
+      return coeffs;
+    }
+
+    /// Returns the total number of coefficients
+    inline int64_t ncoeffs() const
+    {
+      int64_t s=0;
+      s += std::get<west-1>(bdr_).ncoeffs();
+      s += std::get<east-1>(bdr_).ncoeffs();    
+      
+      return s;
     }
     
     /// Returns a string representation of the Boundary object
@@ -188,32 +200,46 @@ namespace iganet {
     template<bool flatten=true>
     inline auto coeffs() const
     {
-      std::array<torch::Tensor, GeoDim*sides()> coeffs_;
-      
+      std::array<torch::Tensor, GeoDim*sides()> coeffs;
+
+#pragma omp parallel for
       for (short_t i=0; i<GeoDim; ++i) {
-        coeffs_[GeoDim*(west-1)+i]  = std::get<west-1>(bdr_).template coeffs<flatten>();
-        coeffs_[GeoDim*(east-1)+i]  = std::get<east-1>(bdr_).template coeffs<flatten>();
-        coeffs_[GeoDim*(south-1)+i] = std::get<south-1>(bdr_).template coeffs<flatten>();
-        coeffs_[GeoDim*(north-1)+i] = std::get<north-1>(bdr_).template coeffs<flatten>();
+        coeffs[GeoDim*(west-1)+i]  = std::get<west-1>(bdr_).template coeffs<flatten>(i);
+        coeffs[GeoDim*(east-1)+i]  = std::get<east-1>(bdr_).template coeffs<flatten>(i);
+        coeffs[GeoDim*(south-1)+i] = std::get<south-1>(bdr_).template coeffs<flatten>(i);
+        coeffs[GeoDim*(north-1)+i] = std::get<north-1>(bdr_).template coeffs<flatten>(i);
       }
 
-      return coeffs_;
+      return coeffs;
     }
     
     /// Returns a non-constant reference to the array of coefficients
     /// for all boundary segments.
     inline auto coeffs()
     {
-      std::array<torch::Tensor, GeoDim*sides()> coeffs_;
-      
+      std::array<torch::Tensor, GeoDim*sides()> coeffs;
+
+#pragma omp parallel for
       for (short_t i=0; i<GeoDim; ++i) {
-        coeffs_[GeoDim*(west-1)+i]  = std::get<west-1>(bdr_).coeffs(i);
-        coeffs_[GeoDim*(east-1)+i]  = std::get<east-1>(bdr_).coeffs(i);
-        coeffs_[GeoDim*(south-1)+i] = std::get<south-1>(bdr_).coeffs(i);
-        coeffs_[GeoDim*(north-1)+i] = std::get<north-1>(bdr_).coeffs(i);        
+        coeffs[GeoDim*(west-1)+i]  = std::get<west-1>(bdr_).coeffs(i);
+        coeffs[GeoDim*(east-1)+i]  = std::get<east-1>(bdr_).coeffs(i);
+        coeffs[GeoDim*(south-1)+i] = std::get<south-1>(bdr_).coeffs(i);
+        coeffs[GeoDim*(north-1)+i] = std::get<north-1>(bdr_).coeffs(i);        
       }
       
-      return coeffs_;
+      return coeffs;
+    }
+
+    /// Returns the total number of coefficients
+    inline int64_t ncoeffs() const
+    {
+      int64_t s=0;
+      s += std::get<west-1>(bdr_).ncoeffs();
+      s += std::get<east-1>(bdr_).ncoeffs();
+      s += std::get<south-1>(bdr_).ncoeffs();
+      s += std::get<north-1>(bdr_).ncoeffs();    
+      
+      return s;
     }
     
     /// Returns a string representation of the Boundary object
@@ -302,36 +328,52 @@ namespace iganet {
     template<bool flatten=true>
     inline auto coeffs() const
     {
-      std::array<torch::Tensor, GeoDim*sides()> coeffs_;
-      
+      std::array<torch::Tensor, GeoDim*sides()> coeffs;
+
+#pragma omp parallel for
       for (short_t i=0; i<GeoDim; ++i) {
-        coeffs_[GeoDim*(west-1)+i]  = std::get<west-1>(bdr_).template coeffs<flatten>();
-        coeffs_[GeoDim*(east-1)+i]  = std::get<east-1>(bdr_).template coeffs<flatten>();
-        coeffs_[GeoDim*(south-1)+i] = std::get<south-1>(bdr_).template coeffs<flatten>();
-        coeffs_[GeoDim*(north-1)+i] = std::get<north-1>(bdr_).template coeffs<flatten>();
-        coeffs_[GeoDim*(front-1)+i] = std::get<front-1>(bdr_).template coeffs<flatten>();
-        coeffs_[GeoDim*(back-1)+i]  = std::get<back-1>(bdr_).template coeffs<flatten>();
+        coeffs[GeoDim*(west-1)+i]  = std::get<west-1>(bdr_).template coeffs<flatten>(i);
+        coeffs[GeoDim*(east-1)+i]  = std::get<east-1>(bdr_).template coeffs<flatten>(i);
+        coeffs[GeoDim*(south-1)+i] = std::get<south-1>(bdr_).template coeffs<flatten>(i);
+        coeffs[GeoDim*(north-1)+i] = std::get<north-1>(bdr_).template coeffs<flatten>(i);
+        coeffs[GeoDim*(front-1)+i] = std::get<front-1>(bdr_).template coeffs<flatten>(i);
+        coeffs[GeoDim*(back-1)+i]  = std::get<back-1>(bdr_).template coeffs<flatten>(i);
       }
 
-      return coeffs_;
+      return coeffs;
     }
     
     /// Returns a non-constant reference to the array of coefficients
     /// for all boundary segments.
     inline auto coeffs()
     {
-      std::array<torch::Tensor, GeoDim*sides()> coeffs_;
-      
+      std::array<torch::Tensor, GeoDim*sides()> coeffs;
+
+#pragma omp parallel for
       for (short_t i=0; i<GeoDim; ++i) {
-        coeffs_[GeoDim*(west-1)+i]  = std::get<west-1>(bdr_).coeffs(i);
-        coeffs_[GeoDim*(east-1)+i]  = std::get<east-1>(bdr_).coeffs(i);
-        coeffs_[GeoDim*(south-1)+i] = std::get<south-1>(bdr_).coeffs(i);
-        coeffs_[GeoDim*(north-1)+i] = std::get<north-1>(bdr_).coeffs(i);
-        coeffs_[GeoDim*(front-1)+i] = std::get<front-1>(bdr_).coeffs(i);
-        coeffs_[GeoDim*(back-1)+i]  = std::get<back-1>(bdr_).coeffs(i);                
+        coeffs[GeoDim*(west-1)+i]  = std::get<west-1>(bdr_).coeffs(i);
+        coeffs[GeoDim*(east-1)+i]  = std::get<east-1>(bdr_).coeffs(i);
+        coeffs[GeoDim*(south-1)+i] = std::get<south-1>(bdr_).coeffs(i);
+        coeffs[GeoDim*(north-1)+i] = std::get<north-1>(bdr_).coeffs(i);
+        coeffs[GeoDim*(front-1)+i] = std::get<front-1>(bdr_).coeffs(i);
+        coeffs[GeoDim*(back-1)+i]  = std::get<back-1>(bdr_).coeffs(i);                
       }
 
-      return coeffs_;
+      return coeffs;
+    }
+
+    /// Returns the total number of coefficients
+    inline int64_t ncoeffs() const
+    {
+      int64_t s=0;
+      s += std::get<west-1>(bdr_).ncoeffs();
+      s += std::get<east-1>(bdr_).ncoeffs();
+      s += std::get<south-1>(bdr_).ncoeffs();
+      s += std::get<north-1>(bdr_).ncoeffs();
+      s += std::get<front-1>(bdr_).ncoeffs();
+      s += std::get<back-1>(bdr_).ncoeffs();
+      
+      return s;
     }
     
     /// Returns a string representation of the Boundary object
@@ -428,40 +470,58 @@ namespace iganet {
     template<bool flatten=true>
     inline auto coeffs() const
     {
-      std::array<torch::Tensor, GeoDim*sides()> coeffs_;
-      
+      std::array<torch::Tensor, GeoDim*sides()> coeffs;
+
+#pragma omp parallel for
       for (short_t i=0; i<GeoDim; ++i) {
-        coeffs_[GeoDim*(west-1)+i]  = std::get<west-1>(bdr_).template coeffs<flatten>();
-        coeffs_[GeoDim*(east-1)+i]  = std::get<east-1>(bdr_).template coeffs<flatten>();
-        coeffs_[GeoDim*(south-1)+i] = std::get<south-1>(bdr_).template coeffs<flatten>();
-        coeffs_[GeoDim*(north-1)+i] = std::get<north-1>(bdr_).template coeffs<flatten>();
-        coeffs_[GeoDim*(front-1)+i] = std::get<front-1>(bdr_).template coeffs<flatten>();
-        coeffs_[GeoDim*(back-1)+i]  = std::get<back-1>(bdr_).template coeffs<flatten>();
-        coeffs_[GeoDim*(stime-1)+i] = std::get<stime-1>(bdr_).template coeffs<flatten>();
-        coeffs_[GeoDim*(etime-1)+i] = std::get<etime-1>(bdr_).template coeffs<flatten>();       
+        coeffs[GeoDim*(west-1)+i]  = std::get<west-1>(bdr_).template coeffs<flatten>(i);
+        coeffs[GeoDim*(east-1)+i]  = std::get<east-1>(bdr_).template coeffs<flatten>(i);
+        coeffs[GeoDim*(south-1)+i] = std::get<south-1>(bdr_).template coeffs<flatten>(i);
+        coeffs[GeoDim*(north-1)+i] = std::get<north-1>(bdr_).template coeffs<flatten>(i);
+        coeffs[GeoDim*(front-1)+i] = std::get<front-1>(bdr_).template coeffs<flatten>(i);
+        coeffs[GeoDim*(back-1)+i]  = std::get<back-1>(bdr_).template coeffs<flatten>(i);
+        coeffs[GeoDim*(stime-1)+i] = std::get<stime-1>(bdr_).template coeffs<flatten>(i);
+        coeffs[GeoDim*(etime-1)+i] = std::get<etime-1>(bdr_).template coeffs<flatten>(i);       
       }
 
-      return coeffs_;
+      return coeffs;
     }
     
     /// Returns a non-constant reference to the array of coefficients
     /// for all boundary segments.
     inline auto coeffs()
     {
-      std::array<torch::Tensor, GeoDim*sides()> coeffs_;
-      
+      std::array<torch::Tensor, GeoDim*sides()> coeffs;
+
+#pragma omp parallel for
       for (short_t i=0; i<GeoDim; ++i) {
-        coeffs_[GeoDim*(west-1)+i]  = std::get<west-1>(bdr_).coeffs(i);
-        coeffs_[GeoDim*(east-1)+i]  = std::get<east-1>(bdr_).coeffs(i);
-        coeffs_[GeoDim*(south-1)+i] = std::get<south-1>(bdr_).coeffs(i);
-        coeffs_[GeoDim*(north-1)+i] = std::get<north-1>(bdr_).coeffs(i);
-        coeffs_[GeoDim*(front-1)+i] = std::get<front-1>(bdr_).coeffs(i);
-        coeffs_[GeoDim*(back-1)+i]  = std::get<back-1>(bdr_).coeffs(i);
-        coeffs_[GeoDim*(stime-1)+i] = std::get<stime-1>(bdr_).coeffs(i);
-        coeffs_[GeoDim*(etime-1)+i] = std::get<etime-1>(bdr_).coeffs(i);                
+        coeffs[GeoDim*(west-1)+i]  = std::get<west-1>(bdr_).coeffs(i);
+        coeffs[GeoDim*(east-1)+i]  = std::get<east-1>(bdr_).coeffs(i);
+        coeffs[GeoDim*(south-1)+i] = std::get<south-1>(bdr_).coeffs(i);
+        coeffs[GeoDim*(north-1)+i] = std::get<north-1>(bdr_).coeffs(i);
+        coeffs[GeoDim*(front-1)+i] = std::get<front-1>(bdr_).coeffs(i);
+        coeffs[GeoDim*(back-1)+i]  = std::get<back-1>(bdr_).coeffs(i);
+        coeffs[GeoDim*(stime-1)+i] = std::get<stime-1>(bdr_).coeffs(i);
+        coeffs[GeoDim*(etime-1)+i] = std::get<etime-1>(bdr_).coeffs(i);                
       }
 
-      return coeffs_;
+      return coeffs;
+    }
+
+    /// Returns the total number of coefficients
+    inline int64_t ncoeffs() const
+    {
+      int64_t s=0;
+      s += std::get<west-1>(bdr_).ncoeffs();
+      s += std::get<east-1>(bdr_).ncoeffs();
+      s += std::get<south-1>(bdr_).ncoeffs();
+      s += std::get<north-1>(bdr_).ncoeffs();
+      s += std::get<front-1>(bdr_).ncoeffs();
+      s += std::get<back-1>(bdr_).ncoeffs();
+      s += std::get<stime-1>(bdr_).ncoeffs();
+      s += std::get<etime-1>(bdr_).ncoeffs();
+      
+      return s;
     }
     
     /// Returns a string representation of the Boundary object
