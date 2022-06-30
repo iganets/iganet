@@ -15,6 +15,8 @@
 #include <boundary.hpp>
 #include <bspline.hpp>
 #include <layer.hpp>
+#include <zip.hpp>
+#include <any>
 
 #pragma once
 
@@ -47,23 +49,634 @@ namespace iganet {
     IgANetGeneratorImpl() = default;
 
     /// Constructor
-    explicit IgANetGeneratorImpl(const std::vector<int64_t>& layers)
+    explicit IgANetGeneratorImpl(const std::vector<int64_t>& layers,
+                                 const std::vector<std::vector<std::any>>& activations)
     {
+      assert(layers.size() == activations.size()+1);
+      
       // Generate vector of linear layers and register them as layer[i]
       for (auto i=0; i<layers.size()-1; ++i)
         {
           layers_.emplace_back(register_module("layer["+std::to_string(i)+"]",
                                                torch::nn::Linear(layers[i], layers[i+1])));
         }
-    }
 
+      // Generate vector of activation functions
+      for (const auto& a : activations)
+        switch (std::any_cast<activation>(a[0]))
+          {
+            // No activation function
+          case activation::none:
+            switch (a.size()) {
+            case 1:
+              activations_.emplace_back( new None{} );
+              break;
+            default:
+              throw std::runtime_error("Invalid number of parameters");
+            }
+            break;
+
+            // Batch Normalization
+          case activation::batch_norm:
+            switch (a.size()) {
+            case 8:
+              activations_.emplace_back( new BatchNorm{ std::any_cast<std::function<const torch::Tensor&()>>(a[1]),
+                                                        std::any_cast<std::function<const torch::Tensor&()>>(a[2]),
+                                                        std::any_cast<torch::Tensor>(a[3]),
+                                                        std::any_cast<torch::Tensor>(a[4]),
+                                                        std::any_cast<double>(a[5]),
+                                                        std::any_cast<double>(a[6]),
+                                                        std::any_cast<bool>(a[7]) } );
+              break;
+            case 7:
+              activations_.emplace_back( new BatchNorm{ std::any_cast<std::function<const torch::Tensor&()>>(a[1]),
+                                                        std::any_cast<std::function<const torch::Tensor&()>>(a[2]),
+                                                        std::any_cast<torch::Tensor>(a[3]),
+                                                        std::any_cast<torch::Tensor>(a[4]),
+                                                        std::any_cast<double>(a[5]),
+                                                        std::any_cast<double>(a[6]) } );
+              break;
+            case 4:
+              activations_.emplace_back( new BatchNorm{ std::any_cast<std::function<const torch::Tensor&()>>(a[1]),
+                                                        std::any_cast<std::function<const torch::Tensor&()>>(a[2]),
+                                                        std::any_cast<torch::nn::functional::BatchNormFuncOptions>(a[3]) } );
+              break;
+            case 3:
+              activations_.emplace_back( new BatchNorm{ std::any_cast<std::function<const torch::Tensor&()>>(a[1]),
+                                                        std::any_cast<std::function<const torch::Tensor&()>>(a[2]) } );
+              break;
+            default:
+              throw std::runtime_error("Invalid number of parameters");
+            }
+            break;
+
+            // CELU
+          case activation::celu:
+            switch (a.size()) {
+            case 3:
+              activations_.emplace_back( new CELU{ std::any_cast<double>(a[1]),
+                                                   std::any_cast<bool>(a[2])} );
+              break;
+            case 2:
+              try {
+                activations_.emplace_back( new CELU{ std::any_cast<torch::nn::functional::CELUFuncOptions>(a[1]) } );
+              } catch(...) {
+                activations_.emplace_back( new CELU{ std::any_cast<double>(a[1]) } );
+              }
+              break;
+            case 1:
+              activations_.emplace_back( new CELU{} );
+              break;
+            default:
+              throw std::runtime_error("Invalid number of parameters");
+            }
+            break;
+            
+            // ELU
+          case activation::elu:
+            switch (a.size()) {
+            case 3:
+              activations_.emplace_back( new ELU{ std::any_cast<double>(a[1]),
+                                                   std::any_cast<bool>(a[2])} );
+              break;
+            case 2:
+              try {
+                activations_.emplace_back( new ELU{ std::any_cast<torch::nn::functional::ELUFuncOptions>(a[1]) } );
+              } catch(...) {
+                activations_.emplace_back( new ELU{ std::any_cast<double>(a[1]) } );
+              }
+              break;
+            case 1:
+              activations_.emplace_back( new ELU{} );
+              break;
+            default:
+              throw std::runtime_error("Invalid number of parameters");
+            }
+            break;
+
+            // GELU
+          case activation::gelu:
+            switch (a.size()) {
+            case 1:
+              activations_.emplace_back( new GELU{} );
+              break;
+            default:
+              throw std::runtime_error("Invalid number of parameters");
+            }
+            break;
+
+            // GLU
+          case activation::glu:
+            switch (a.size()) {
+            case 2:
+              try {
+                activations_.emplace_back( new GLU{ std::any_cast<torch::nn::functional::GLUFuncOptions>(a[1]) } );
+              } catch(...) {
+                activations_.emplace_back( new GLU{ std::any_cast<int64_t>(a[1]) } );
+              }
+              break;
+            case 1:
+              activations_.emplace_back( new GLU{} );
+              break;
+            default:
+              throw std::runtime_error("Invalid number of parameters");
+            }
+            break;
+
+            // Group Normalization
+          case activation::group_norm:
+            switch (a.size()) {
+            case 5:
+              activations_.emplace_back( new GroupNorm{ std::any_cast<int64_t>(a[1]),
+                                                        std::any_cast<torch::Tensor>(a[2]),
+                                                        std::any_cast<torch::Tensor>(a[3]),
+                                                        std::any_cast<double>(a[4]) } );
+              break;
+            case 2:
+              try {
+                activations_.emplace_back( new GroupNorm{ std::any_cast<torch::nn::functional::GroupNormFuncOptions>(a[1]) } );
+              } catch(...) {
+                activations_.emplace_back( new GroupNorm{ std::any_cast<int64_t>(a[1]) } );
+              }
+              break;
+            default:
+              throw std::runtime_error("Invalid number of parameters");
+            }
+            break;
+
+            // Gumbel-Softmax
+          case activation::gumbel_softmax:
+            switch (a.size()) {
+            case 4:
+              activations_.emplace_back( new GumbelSoftmax{ std::any_cast<double>(a[1]),
+                                                            std::any_cast<int64_t>(a[2]),
+                                                            std::any_cast<bool>(a[3]) } );
+              break;
+            case 2:
+              activations_.emplace_back( new GumbelSoftmax{ std::any_cast<torch::nn::functional::GumbelSoftmaxFuncOptions>(a[1]) } );
+              break;
+            case 1:
+              activations_.emplace_back( new GumbelSoftmax{} );
+              break;
+            default:
+              throw std::runtime_error("Invalid number of parameters");
+            }
+            break;
+
+            // Hard shrinkish
+          case activation::hardshrink:
+            switch (a.size()) {
+            case 2:
+              try {
+                activations_.emplace_back( new Hardshrink{ std::any_cast<torch::nn::functional::HardshrinkFuncOptions>(a[1]) } );
+              } catch(...) {
+                activations_.emplace_back( new Hardshrink{ std::any_cast<double>(a[1]) } );
+              }
+              break;
+            case 1:
+              activations_.emplace_back( new Hardshrink{} );
+              break;
+            default:
+              throw std::runtime_error("Invalid number of parameters");
+            }
+            break;
+
+            // Hardsigmoid
+          case activation::hardsigmoid:
+            switch (a.size()) {
+            case 1:
+              activations_.emplace_back( new Hardsigmoid{} );
+              break;
+            default:
+              throw std::runtime_error("Invalid number of parameters");
+            }
+            break;
+            
+            // Hardswish
+          case activation::hardswish:
+            switch (a.size()) {
+            case 1:
+              activations_.emplace_back( new Hardswish{} );
+              break;
+            default:
+              throw std::runtime_error("Invalid number of parameters");
+            }
+            break;
+
+            // Hardtanh
+          case activation::hardtanh:
+            switch (a.size()) {
+            case 4:
+              activations_.emplace_back( new Hardtanh{ std::any_cast<double>(a[1]),
+                                                       std::any_cast<double>(a[2]),
+                                                       std::any_cast<bool>(a[3]) } );
+              break;
+            case 3:
+              activations_.emplace_back( new Hardtanh{ std::any_cast<double>(a[1]),
+                                                       std::any_cast<double>(a[2]) } );
+              break;
+            case 2:
+              activations_.emplace_back( new Hardtanh{ std::any_cast<torch::nn::functional::HardtanhFuncOptions>(a[1]) } );
+              break;
+            case 1:
+              activations_.emplace_back( new Hardtanh{} );
+              break;
+            default:
+              throw std::runtime_error("Invalid number of parameters");
+            }
+            break;
+
+            // Instance Normalization
+          case activation::instance_norm:
+            switch (a.size()) {
+            case 8:
+              activations_.emplace_back( new InstanceNorm{ std::any_cast<torch::Tensor>(a[1]),
+                                                           std::any_cast<torch::Tensor>(a[2]),
+                                                           std::any_cast<torch::Tensor>(a[3]),
+                                                           std::any_cast<torch::Tensor>(a[4]),
+                                                           std::any_cast<double>(a[5]),
+                                                           std::any_cast<double>(a[6]),
+                                                           std::any_cast<bool>(a[7]) } );
+              break;
+            case 7:
+              activations_.emplace_back( new InstanceNorm{ std::any_cast<torch::Tensor>(a[1]),
+                                                           std::any_cast<torch::Tensor>(a[2]),
+                                                           std::any_cast<torch::Tensor>(a[3]),
+                                                           std::any_cast<torch::Tensor>(a[4]),
+                                                           std::any_cast<double>(a[5]),
+                                                           std::any_cast<double>(a[6]) } );
+              break;
+            case 2:
+              activations_.emplace_back( new InstanceNorm{ std::any_cast<torch::nn::functional::InstanceNormFuncOptions>(a[1]) } );
+              break;
+            case 1:
+              activations_.emplace_back( new InstanceNorm{} );
+              break;
+            default:
+              throw std::runtime_error("Invalid number of parameters");
+            }
+            break;
+
+            // Layer Normalization
+          case activation::layer_norm:
+            switch (a.size()) {
+            case 5:
+              activations_.emplace_back( new LayerNorm{ std::any_cast<std::vector<int64_t>>(a[1]),
+                                                        std::any_cast<torch::Tensor>(a[2]),
+                                                        std::any_cast<torch::Tensor>(a[3]),
+                                                        std::any_cast<double>(a[4]) } );
+              break;
+            case 2:
+              try {
+                activations_.emplace_back( new LayerNorm{ std::any_cast<torch::nn::functional::LayerNormFuncOptions>(a[1]) } );
+              } catch(...) {
+                activations_.emplace_back( new LayerNorm{ std::any_cast<std::vector<int64_t>>(a[1]) } );
+              }
+              break;
+            default:
+              throw std::runtime_error("Invalid number of parameters");
+            }
+            break;
+
+            // Leaky ReLU
+          case activation::leaky_relu:
+            switch (a.size()) {
+            case 3:
+              activations_.emplace_back( new LeakyReLU{ std::any_cast<double>(a[1]),
+                                                        std::any_cast<bool>(a[2]) } );
+              break;
+            case 2:
+              try {
+                activations_.emplace_back( new LeakyReLU{ std::any_cast<torch::nn::functional::LeakyReLUFuncOptions>(a[1]) } );
+              } catch(...) {
+                activations_.emplace_back( new LeakyReLU{ std::any_cast<double>(a[1]) } );
+              }
+              break;
+            case 1:
+              activations_.emplace_back( new LeakyReLU{} );
+              break;
+            default:
+              throw std::runtime_error("Invalid number of parameters");
+            }
+            break;
+
+            // Local response Normalization
+          case activation::local_response_norm:
+            switch (a.size()) {
+            case 5:
+              activations_.emplace_back( new LocalResponseNorm{ std::any_cast<int64_t>(a[1]),
+                                                                std::any_cast<double>(a[2]),
+                                                                std::any_cast<double>(a[3]),
+                                                                std::any_cast<double>(a[4]) } );
+              break;
+            case 2:
+              try {
+                activations_.emplace_back( new LocalResponseNorm{ std::any_cast<torch::nn::functional::LocalResponseNormFuncOptions>(a[1]) } );
+              } catch(...) {
+                activations_.emplace_back( new LocalResponseNorm{ std::any_cast<int64_t>(a[1]) } );
+              }
+              break;
+            default:
+              throw std::runtime_error("Invalid number of parameters");
+            }
+            break;
+
+            // LogSigmoid
+          case activation::logsigmoid:
+            switch (a.size()) {
+            case 1:
+              activations_.emplace_back( new LogSigmoid{} );
+              break;
+            default:
+              throw std::runtime_error("Invalid number of parameters");
+            }
+            break;
+
+            // LogSoftmax
+          case activation::logsoftmax:
+            switch (a.size()) {
+            case 2:
+              try {
+                activations_.emplace_back( new LogSoftmax{ std::any_cast<torch::nn::functional::LogSoftmaxFuncOptions>(a[1]) } );
+              } catch(...) {
+                activations_.emplace_back( new LogSoftmax{ std::any_cast<int64_t>(a[1]) } );
+              }
+              break;
+            default:
+              throw std::runtime_error("Invalid number of parameters");
+            }
+            break;
+
+            // Mish
+          case activation::mish:
+            switch (a.size()) {
+            case 1:
+              activations_.emplace_back( new Mish{} );
+              break;
+            default:
+              throw std::runtime_error("Invalid number of parameters");
+            }
+            break;
+            
+            // Lp Normalization
+          case activation::normalize:
+            switch (a.size()) {
+            case 4:
+              activations_.emplace_back( new Normalize{ std::any_cast<double>(a[1]),
+                                                                std::any_cast<double>(a[2]),
+                                                                std::any_cast<int64_t>(a[3]) } );
+              break;
+            case 2:
+              activations_.emplace_back( new Normalize{ std::any_cast<torch::nn::functional::NormalizeFuncOptions>(a[1]) } );
+              break;
+            case 1:
+              activations_.emplace_back( new Normalize{} );
+              break;
+            default:
+              throw std::runtime_error("Invalid number of parameters");
+            }
+            break;
+
+            // PReLU
+          case activation::prelu:
+            switch (a.size()) {
+            case 2:
+              activations_.emplace_back( new PReLU{ std::any_cast<std::function<const torch::Tensor&()>>(a[1]) } );
+              break;
+            default:
+              throw std::runtime_error("Invalid number of parameters");
+            }
+            break;
+
+            // ReLU
+          case activation::relu:
+            switch (a.size()) {
+            case 2:
+              try {
+                activations_.emplace_back( new ReLU{ std::any_cast<torch::nn::functional::ReLUFuncOptions>(a[1]) } );
+              } catch(...) {
+                activations_.emplace_back( new ReLU{ std::any_cast<bool>(a[1]) } );
+              }
+              break;
+            case 1:
+              activations_.emplace_back( new ReLU{} );
+              break;
+            default:
+              throw std::runtime_error("Invalid number of parameters");
+            }
+            break;
+
+            // Relu6
+          case activation::relu6:
+            switch (a.size()) {
+            case 2:
+              try {
+                activations_.emplace_back( new ReLU6{ std::any_cast<torch::nn::functional::ReLU6FuncOptions>(a[1]) } );
+              } catch(...) {
+                activations_.emplace_back( new ReLU6{ std::any_cast<bool>(a[1]) } );
+              }
+              break;
+            case 1:
+              activations_.emplace_back( new ReLU6{} );
+              break;
+            default:
+              throw std::runtime_error("Invalid number of parameters");
+            }
+            break;
+
+            // Randomized ReLU
+          case activation::rrelu:
+            switch (a.size()) {
+            case 4:
+              activations_.emplace_back( new RReLU{ std::any_cast<double>(a[1]),
+                                                    std::any_cast<double>(a[2]),
+                                                    std::any_cast<bool>(a[3]) } );
+              break;
+            case 3:
+              activations_.emplace_back( new RReLU{ std::any_cast<double>(a[1]),
+                                                    std::any_cast<double>(a[2]) } );
+              break;
+            case 2:
+              activations_.emplace_back( new RReLU{ std::any_cast<torch::nn::functional::RReLUFuncOptions>(a[1]) } );
+              break;
+            case 1:
+              activations_.emplace_back( new RReLU{} );
+              break;
+            default:
+              throw std::runtime_error("Invalid number of parameters");
+            }
+            break;
+
+            // SELU
+          case activation::selu:
+            switch (a.size()) {
+            case 2:
+              try {
+                activations_.emplace_back( new SELU{ std::any_cast<torch::nn::functional::SELUFuncOptions>(a[1]) } );
+              } catch(...) {
+                activations_.emplace_back( new SELU{ std::any_cast<bool>(a[1]) } );
+              }
+              break;
+            case 1:
+              activations_.emplace_back( new SELU{} );
+              break;
+            default:
+              throw std::runtime_error("Invalid number of parameters");
+            }
+            break;
+
+            // Sigmoid
+          case activation::sigmoid:
+            switch (a.size()) {
+            case 1:
+              activations_.emplace_back( new Sigmoid{} );
+              break;
+            default:
+              throw std::runtime_error("Invalid number of parameters");
+            }
+            break;
+
+            // SiLU
+          case activation::silu:
+            switch (a.size()) {
+            case 1:
+              activations_.emplace_back( new SiLU{} );
+              break;
+            default:
+              throw std::runtime_error("Invalid number of parameters");
+            }
+            break;
+
+            // Softmax
+          case activation::softmax:
+            switch (a.size()) {
+            case 2:
+              try {
+                activations_.emplace_back( new Softmax{ std::any_cast<torch::nn::functional::SoftmaxFuncOptions>(a[1]) } );
+              } catch(...) {
+                activations_.emplace_back( new Softmax{ std::any_cast<bool>(a[1]) } );
+              }
+              break;
+            default:
+              throw std::runtime_error("Invalid number of parameters");
+            }
+            break;
+
+            // Softmin
+          case activation::softmin:
+            switch (a.size()) {
+            case 2:
+              try {
+                activations_.emplace_back( new Softmin{ std::any_cast<torch::nn::functional::SoftminFuncOptions>(a[1]) } );
+              } catch(...) {
+                activations_.emplace_back( new Softmin{ std::any_cast<bool>(a[1]) } );
+              }
+              break;
+            default:
+              throw std::runtime_error("Invalid number of parameters");
+            }
+            break;            
+
+            // Softplus
+          case activation::softplus:
+            switch (a.size()) {
+            case 3:
+              activations_.emplace_back( new Softplus{ std::any_cast<double>(a[1]),
+                                                       std::any_cast<double>(a[2]) } );
+              break;
+            case 2:
+              activations_.emplace_back( new Softplus{ std::any_cast<torch::nn::functional::SoftplusFuncOptions>(a[1]) } );
+              break;
+            case 1:
+              activations_.emplace_back( new Softplus{} );
+              break;
+            default:
+              throw std::runtime_error("Invalid number of parameters");
+            }
+            break;
+
+            // Softshrink
+          case activation::softshrink:
+            switch (a.size()) {
+            case 2:
+              try {
+                activations_.emplace_back( new Softshrink{ std::any_cast<torch::nn::functional::SoftshrinkFuncOptions>(a[1]) } );  
+              } catch(...) {
+                activations_.emplace_back( new Softshrink{ std::any_cast<double>(a[1]) } );
+              }
+              break;
+            case 1:
+              activations_.emplace_back( new Softshrink{} );
+              break;
+            default:
+              throw std::runtime_error("Invalid number of parameters");
+            }
+            break;
+
+            // Softsign
+          case activation::softsign:
+            switch (a.size()) {
+            case 1:
+              activations_.emplace_back( new Softsign{} );
+              break;
+            default:
+              throw std::runtime_error("Invalid number of parameters");
+            }
+            break;
+
+            // Tanh
+          case activation::tanh:
+            switch (a.size()) {
+            case 1:
+              activations_.emplace_back( new Tanh{} );
+              break;
+            default:
+              throw std::runtime_error("Invalid number of parameters");
+            }
+            break;
+
+            // Tanhshrink
+          case activation::tanhshrink:
+            switch (a.size()) {
+            case 1:
+              activations_.emplace_back( new Tanhshrink{} );
+              break;
+            default:
+              throw std::runtime_error("Invalid number of parameters");
+            }
+            break;
+
+            // Threshold
+          case activation::threshold:
+            switch (a.size()) {
+            case 4:
+              activations_.emplace_back( new Threshold{ std::any_cast<double>(a[1]),
+                                                        std::any_cast<double>(a[2]),
+                                                        std::any_cast<bool>(a[3]) } );
+              break;
+            case 3:
+              activations_.emplace_back( new Threshold{ std::any_cast<double>(a[1]),
+                                                        std::any_cast<double>(a[2]) } );
+              break;              
+            case 2:
+              activations_.emplace_back( new Threshold{ std::any_cast<torch::nn::functional::ThresholdFuncOptions>(a[1]) } );
+              break;
+            default:
+              throw std::runtime_error("Invalid number of parameters");
+            }
+            break;
+            
+          default:
+            throw std::runtime_error("Invalid activation function");
+          }
+    }
+    
     /// Forward evaluation
     torch::Tensor forward(torch::Tensor x)
     {            
-      // Standard feed-forward neural network with ReLU activation functions
-      for (auto it = layers_.begin(); it < layers_.end()-1; ++it)
-        x = torch::relu((*it)->forward(x));
-      x = (*(layers_.end()-1))->forward(x);
+      // Standard feed-forward neural network
+      for (auto l : zip(layers_, activations_))
+        x = std::get<1>(l)->apply(std::get<0>(l)->forward(x));
       return x;
     }
 
@@ -71,6 +684,8 @@ namespace iganet {
     inline torch::serialize::OutputArchive& write(torch::serialize::OutputArchive& archive,
                                                   const std::string& key="iganet") const
     {
+      assert(layers_.size() == activations_.size());
+      
       archive.write(key+".layers", torch::full({1}, (int64_t)layers_.size()));
       for (std::size_t i=0; i<layers_.size(); ++i) {
         archive.write(key+".layer["+std::to_string(i)+"].in_features",
@@ -79,7 +694,10 @@ namespace iganet {
                       torch::full({1}, (int64_t)layers_[i]->options.out_features()));
         archive.write(key+".layer["+std::to_string(i)+"].bias",
                       torch::full({1}, (int64_t)layers_[i]->options.bias()));
+        
+        activations_[i]->write(archive, key+".layer["+std::to_string(i)+"].activation");
       }
+      
       return archive;
     }
 
@@ -107,6 +725,9 @@ namespace iganet {
   private:
     /// Vector of linear layers
     std::vector<torch::nn::Linear> layers_;
+
+    /// Vector of activation functions
+    std::vector<std::unique_ptr<iganet::ActivationFunction>> activations_;
   };
 
   /**
@@ -173,14 +794,16 @@ namespace iganet {
 
     /// Constructor: layers + bspline (same for all)
     IgANet(const std::vector<int64_t>& layers,
+           const std::vector<std::vector<std::any>>& activations,
            const std::array<int64_t,dim_>& bspline_ncoeffs,
            IgANetOptions defaults = {})
-      : IgANet(layers, bspline_ncoeffs, bspline_ncoeffs, bspline_ncoeffs, defaults)
+      : IgANet(layers, activations, bspline_ncoeffs, bspline_ncoeffs, bspline_ncoeffs, defaults)
     {
     }
 
     /// Constructor: layers + geo-bspline + rhs-bspline + sol-bspline
     IgANet(const std::vector<int64_t>& layers,
+           const std::vector<std::vector<std::any>>& activations,
            const std::array<int64_t,dim_>& geo_bspline_ncoeffs,
            const std::array<int64_t,dim_>& rhs_bspline_ncoeffs,
            const std::array<int64_t,dim_>& sol_bspline_ncoeffs,
@@ -199,8 +822,8 @@ namespace iganet {
         net_(concat(std::vector<int64_t>{geo_.ncoeffs()+rhs_.ncoeffs()+bdr_.ncoeffs()+dim_},
                     layers,
                     std::vector<int64_t>{sol_.ncoeffs()}
-                    )
-             ),
+                    ),
+             activations),
 
         // Construct the optimizer
         opt_(net_->parameters()),
@@ -212,14 +835,16 @@ namespace iganet {
 
     /// Constructor: layers + bspline (same for all)
     IgANet(const std::vector<int64_t>& layers,
+           const std::vector<std::vector<std::any>>& activations,
            const std::array<std::vector<real_t>,dim_>& bspline_kv,
            IgANetOptions defaults = {})
-      : IgANet(layers, bspline_kv, bspline_kv, bspline_kv, defaults)
+      : IgANet(layers, activations, bspline_kv, bspline_kv, bspline_kv, defaults)
     {
     }
 
     /// Constructor: layers + geo-bspline + rhs-bspline + sol-bspline
     IgANet(const std::vector<int64_t>& layers,
+           const std::vector<std::vector<std::any>>& activations,
            const std::array<std::vector<real_t>,dim_>& geo_bspline_kv,
            const std::array<std::vector<real_t>,dim_>& rhs_bspline_kv,
            const std::array<std::vector<real_t>,dim_>& sol_bspline_kv,
@@ -237,8 +862,9 @@ namespace iganet {
         // object as output
         net_(concat(std::vector<int64_t>{geo_.ncoeffs()+rhs_.ncoeffs()+bdr_.ncoeffs()+dim_},
                     layers,
-                    std::vector<int64_t>{sol_.ncoeffs()})),
-
+                    std::vector<int64_t>{sol_.ncoeffs()}),
+             activations),
+        
         // Construct the optimizer
         opt_(net_->parameters()),
         
