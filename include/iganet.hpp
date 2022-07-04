@@ -80,8 +80,8 @@ namespace iganet {
           case activation::batch_norm:
             switch (a.size()) {
             case 8:
-              activations_.emplace_back( new BatchNorm{ std::any_cast<std::function<const torch::Tensor&()>>(a[1]),
-                                                        std::any_cast<std::function<const torch::Tensor&()>>(a[2]),
+              activations_.emplace_back( new BatchNorm{ std::any_cast<torch::Tensor>(a[1]),
+                                                        std::any_cast<torch::Tensor>(a[2]),
                                                         std::any_cast<torch::Tensor>(a[3]),
                                                         std::any_cast<torch::Tensor>(a[4]),
                                                         std::any_cast<double>(a[5]),
@@ -89,21 +89,21 @@ namespace iganet {
                                                         std::any_cast<bool>(a[7]) } );
               break;
             case 7:
-              activations_.emplace_back( new BatchNorm{ std::any_cast<std::function<const torch::Tensor&()>>(a[1]),
-                                                        std::any_cast<std::function<const torch::Tensor&()>>(a[2]),
+              activations_.emplace_back( new BatchNorm{ std::any_cast<torch::Tensor>(a[1]),
+                                                        std::any_cast<torch::Tensor>(a[2]),
                                                         std::any_cast<torch::Tensor>(a[3]),
                                                         std::any_cast<torch::Tensor>(a[4]),
                                                         std::any_cast<double>(a[5]),
                                                         std::any_cast<double>(a[6]) } );
               break;
             case 4:
-              activations_.emplace_back( new BatchNorm{ std::any_cast<std::function<const torch::Tensor&()>>(a[1]),
-                                                        std::any_cast<std::function<const torch::Tensor&()>>(a[2]),
+              activations_.emplace_back( new BatchNorm{ std::any_cast<torch::Tensor>(a[1]),
+                                                        std::any_cast<torch::Tensor>(a[2]),
                                                         std::any_cast<torch::nn::functional::BatchNormFuncOptions>(a[3]) } );
               break;
             case 3:
-              activations_.emplace_back( new BatchNorm{ std::any_cast<std::function<const torch::Tensor&()>>(a[1]),
-                                                        std::any_cast<std::function<const torch::Tensor&()>>(a[2]) } );
+              activations_.emplace_back( new BatchNorm{ std::any_cast<torch::Tensor>(a[1]),
+                                                        std::any_cast<torch::Tensor>(a[2]) } );
               break;
             default:
               throw std::runtime_error("Invalid number of parameters");
@@ -209,7 +209,7 @@ namespace iganet {
             switch (a.size()) {
             case 4:
               activations_.emplace_back( new GumbelSoftmax{ std::any_cast<double>(a[1]),
-                                                            std::any_cast<int64_t>(a[2]),
+                                                            std::any_cast<int>(a[2]),
                                                             std::any_cast<bool>(a[3]) } );
               break;
             case 2:
@@ -441,7 +441,7 @@ namespace iganet {
           case activation::prelu:
             switch (a.size()) {
             case 2:
-              activations_.emplace_back( new PReLU{ std::any_cast<std::function<const torch::Tensor&()>>(a[1]) } );
+              activations_.emplace_back( new PReLU{ std::any_cast<torch::Tensor>(a[1]) } );
               break;
             default:
               throw std::runtime_error("Invalid number of parameters");
@@ -675,8 +675,8 @@ namespace iganet {
     torch::Tensor forward(torch::Tensor x)
     {            
       // Standard feed-forward neural network
-      for (auto l : zip(layers_, activations_))
-        x = std::get<1>(l)->apply(std::get<0>(l)->forward(x));
+      for (auto layer : zip(layers_, activations_))
+        x = std::get<1>(layer)->apply(std::get<0>(layer)->forward(x));
       return x;
     }
 
@@ -705,7 +705,7 @@ namespace iganet {
     inline torch::serialize::InputArchive& read(torch::serialize::InputArchive& archive,
                                                 const std::string& key="iganet")
     {
-      torch::Tensor layers, in_features, out_features, bias;
+      torch::Tensor layers, in_features, out_features, bias, activation;
       
       archive.read(key+".layers", layers);
       for (int64_t i=0; i<layers.item<int64_t>(); ++i) {
@@ -718,6 +718,120 @@ namespace iganet {
                                                                                         out_features.item<int64_t>()
                                                                                         ).bias(bias.item<bool>())
                                                                )));
+        
+        archive.read(key+".layer["+std::to_string(i)+"].activation.type", activation);
+        switch (static_cast<enum activation>(activation.item<int64_t>())) {
+        case activation::none:
+          activations_.emplace_back( new None{} );
+          break;
+        case activation::batch_norm:
+          activations_.emplace_back( new BatchNorm{ torch::Tensor{}, torch::Tensor{} } );
+          break;
+        case activation::celu:
+          activations_.emplace_back( new CELU{} );
+          break;
+        case activation::elu:
+          activations_.emplace_back( new ELU{} );
+          break;
+        case activation::gelu:
+          activations_.emplace_back( new GELU{} );
+          break;
+        case activation::glu:
+          activations_.emplace_back( new GLU{} );
+          break;
+        case activation::group_norm:
+          activations_.emplace_back( new GroupNorm{ 0 } );
+          break;
+        case activation::gumbel_softmax:
+          activations_.emplace_back( new GumbelSoftmax{} );
+          break;
+        case activation::hardshrink:
+          activations_.emplace_back( new Hardshrink{} );
+          break;
+        case activation::hardsigmoid:
+          activations_.emplace_back( new Hardsigmoid{} );
+          break;
+        case activation::hardswish:
+          activations_.emplace_back( new Hardswish{} );
+          break;
+        case activation::hardtanh:
+          activations_.emplace_back( new Hardtanh{} );
+          break;
+        case activation::instance_norm:
+          activations_.emplace_back( new InstanceNorm{} );
+          break;
+        case activation::layer_norm:
+          activations_.emplace_back( new LayerNorm{ {} } );
+          break;
+        case activation::leaky_relu:
+          activations_.emplace_back( new LeakyReLU{} );
+          break;
+        case activation::local_response_norm:
+          activations_.emplace_back( new LocalResponseNorm{ 0 } );
+          break;
+        case activation::logsigmoid:
+          activations_.emplace_back( new LogSigmoid{} );
+          break;
+        case activation::logsoftmax:
+          activations_.emplace_back( new LogSoftmax{ 0 } );
+          break;
+        case activation::mish:
+          activations_.emplace_back( new Mish{} );
+          break;
+        case activation::normalize:
+          activations_.emplace_back( new Normalize{ 0, 0, 0 } );
+          break;
+        case activation::prelu:
+          activations_.emplace_back( new PReLU{ torch::Tensor{} } );
+          break;
+        case activation::relu:
+          activations_.emplace_back( new ReLU{} );
+          break;
+        case activation::relu6:
+          activations_.emplace_back( new ReLU6{} );
+          break;
+        case activation::rrelu:
+          activations_.emplace_back( new RReLU{} );
+          break;
+        case activation::selu:
+          activations_.emplace_back( new SELU{} );
+          break;
+        case activation::sigmoid:
+          activations_.emplace_back( new Sigmoid{} );
+          break;
+        case activation::silu:
+          activations_.emplace_back( new SiLU{} );
+          break;
+        case activation::softmax:
+          activations_.emplace_back( new Softmax{ 0 } );
+          break;
+        case activation::softmin:
+          activations_.emplace_back( new Softmin{ 0 } );
+          break;
+        case activation::softplus:
+          activations_.emplace_back( new Softplus{} );
+          break;
+        case activation::softshrink:
+          activations_.emplace_back( new Softshrink{} );
+          break;
+        case activation::softsign:
+          activations_.emplace_back( new Softsign{} );
+          break;
+        case activation::tanh:
+          activations_.emplace_back( new Tanh{} );
+          break;
+        case activation::tanhshrink:
+          activations_.emplace_back( new Tanhshrink{} );
+          break;
+        case activation::threshold:
+          activations_.emplace_back( new Threshold{ 0, 0 } );
+          break;
+        default:
+          throw std::runtime_error("Invalid activation function");
+        }
+
+        activations_.back()->read(archive, key+".layer["+std::to_string(i)+"].activation");
+        
       }
       return archive;
     }
@@ -729,7 +843,7 @@ namespace iganet {
     /// Vector of activation functions
     std::vector<std::unique_ptr<iganet::ActivationFunction>> activations_;
   };
-
+  
   /**
    * IgANetGenerator
    *
@@ -787,7 +901,7 @@ namespace iganet {
         geo_(),
         rhs_(),
         sol_(),
-        bdr_(sol_),
+        bdr_(),
         opt_(net_->parameters()),
         options_(defaults)
     {}

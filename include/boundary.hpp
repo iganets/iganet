@@ -43,9 +43,14 @@ namespace iganet {
     : public core<real_t>
   {
   public:
+    /// Default constructor
+    BoundaryCore()
+      : core<real_t>()
+    {}
+    
     /// Constructor
     template<typename T>
-      BoundaryCore(const std::array<T, 1>& ncoeffs,
+    BoundaryCore(const std::array<T, 1>& ncoeffs,
                    BSplineInit init = BSplineInit::zeros)
         : core<real_t>(),
           bdr_(

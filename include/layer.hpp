@@ -108,7 +108,8 @@ namespace iganet {
     inline torch::serialize::OutputArchive& write(torch::serialize::OutputArchive& archive,
                                                   const std::string& key="none") const override
     {
-      archive.write(key+".activation", torch::full({1}, (int64_t) activation::none));
+      archive.write(key+".type", torch::full({1}, (int64_t) activation::none));
+
       return archive;
     }
 
@@ -118,7 +119,7 @@ namespace iganet {
     {
       torch::Tensor tensor;
       
-      archive.read(key+".activation", tensor);
+      archive.read(key+".type", tensor);
       if (tensor.item<int64_t>() != (int64_t) activation::none)
         throw std::runtime_error("activation mismatch");
 
@@ -134,21 +135,21 @@ namespace iganet {
   class BatchNorm : public ActivationFunction
   {
   public:
-    explicit BatchNorm(std::function<const torch::Tensor&()> running_mean,
-                       std::function<const torch::Tensor&()> running_var,
+    explicit BatchNorm(const torch::Tensor& running_mean,
+                       const torch::Tensor& running_var,
                        torch::nn::functional::BatchNormFuncOptions options = {})
-      : running_mean(std::move(running_mean)),
-        running_var(std::move(running_var)),
+      : running_mean_(running_mean),
+        running_var_(running_var),
         options_(std::move(options)) {}
 
-    explicit BatchNorm(std::function<const torch::Tensor&()> running_mean,
-                       std::function<const torch::Tensor&()> running_var,
+    explicit BatchNorm(const torch::Tensor& running_mean,
+                       const torch::Tensor& running_var,
                        const torch::Tensor& weight,
                        const torch::Tensor& bias,
                        double eps, double momentum,
                        bool training=false)
-      : running_mean(std::move(running_mean)),
-        running_var(std::move(running_var)),
+      : running_mean_(running_mean),
+        running_var_(running_var),
         options_(torch::nn::functional::BatchNormFuncOptions()
                  .weight(weight)
                  .bias(bias)
@@ -159,16 +160,42 @@ namespace iganet {
     ~BatchNorm() override = default;
 
     /// Applies the activation function to the given input
-    [[nodiscard]] inline torch::Tensor apply(const torch::Tensor& input) const override
+    inline torch::Tensor apply(const torch::Tensor& input) const override
     {
-      return torch::nn::functional::batch_norm(input, running_mean(), running_var(), options_);
+      return torch::nn::functional::batch_norm(input, running_mean_, running_var_, options_);
     }
-    
+
+    /// Returns constant reference to running mean
+    inline const torch::Tensor& running_mean() const
+    {
+      return running_mean_;
+    }
+
+    /// Returns non-constant reference to running mean
+    inline torch::Tensor& running_mean()
+    {
+      return running_mean_;
+    }
+
+    /// Returns constant reference to running variance
+    inline const torch::Tensor& running_var() const
+    {
+      return running_var_;
+    }
+
+    /// Returns non-constant reference to running var
+    inline torch::Tensor& running_var()
+    {
+      return running_var_;
+    }
+
+    /// Returns constant reference to options
     inline const torch::nn::functional::BatchNormFuncOptions& options() const
     {
       return options_;
     }
 
+    /// Returns non-constant reference to options
     inline torch::nn::functional::BatchNormFuncOptions& options()
     {
       return options_;
@@ -196,7 +223,15 @@ namespace iganet {
     inline torch::serialize::OutputArchive& write(torch::serialize::OutputArchive& archive,
                                                   const std::string& key="batch_norm") const override
     {
-      archive.write(key+".activation", torch::full({1}, (int64_t) activation::batch_norm));
+      archive.write(key+".type", torch::full({1}, (int64_t) activation::batch_norm));
+      archive.write(key+".running_mean", this->running_mean());
+      archive.write(key+".running_var", this->running_var());
+      archive.write(key+".weight", this->options_.weight());
+      archive.write(key+".bias", this->options_.bias());
+      archive.write(key+".eps", this->options_.eps());
+      archive.write(key+".momentum", this->options_.momentum());
+      archive.write(key+".training", this->options_.training());
+
       return archive;
     }
 
@@ -206,16 +241,24 @@ namespace iganet {
     {
       torch::Tensor tensor;
       
-      archive.read(key+".activation", tensor);
+      archive.read(key+".type", tensor);
       if (tensor.item<int64_t>() != (int64_t) activation::batch_norm)
         throw std::runtime_error("activation mismatch");
+
+      archive.read(key+".running_mean", this->running_mean());
+      archive.read(key+".running_var", this->running_var());
+      archive.read(key+".weight", this->options_.weight());
+      archive.read(key+".bias", this->options_.bias());
+      archive.read(key+".eps", tensor); this->options_.eps(tensor.item<double>());
+      archive.read(key+".momentum", tensor); this->options_.momentum(tensor.item<double>());
+      archive.read(key+".training", tensor); this->options_.training(tensor.item<bool>());
 
       return archive;
     }
     
   private:
     torch::nn::functional::BatchNormFuncOptions options_;
-    std::function<torch::Tensor()> running_mean, running_var;
+    torch::Tensor running_mean_, running_var_;
   };
   
   /// Continuously Differentiable Exponential Linear Units activation function
@@ -227,7 +270,7 @@ namespace iganet {
   {
   public:
     explicit CELU(torch::nn::functional::CELUFuncOptions options = {})
-      : options_(std::move(options)) {}
+      : options_(options) {}
 
     explicit CELU(double alpha, bool inplace=false)
       : options_(torch::nn::functional::CELUFuncOptions()
@@ -241,12 +284,14 @@ namespace iganet {
     {
       return torch::nn::functional::celu(input, options_);
     }
-    
+
+    /// Returns constant reference to options
     inline const torch::nn::functional::CELUFuncOptions& options() const
     {
       return options_;
     }
 
+    /// Returns non-constant reference to options
     inline torch::nn::functional::CELUFuncOptions& options()
     {
       return options_;
@@ -265,7 +310,10 @@ namespace iganet {
     inline torch::serialize::OutputArchive& write(torch::serialize::OutputArchive& archive,
                                                           const std::string& key="celu") const override
     {
-      archive.write(key+".activation", torch::full({1}, (int64_t) activation::celu));
+      archive.write(key+".type", torch::full({1}, (int64_t) activation::celu));
+      archive.write(key+".alpha", this->options_.alpha());
+      archive.write(key+".inplace", this->options_.inplace());
+
       return archive;
     }
 
@@ -275,9 +323,12 @@ namespace iganet {
     {
       torch::Tensor tensor;
       
-      archive.read(key+".activation", tensor);
+      archive.read(key+".type", tensor);
       if (tensor.item<int64_t>() != (int64_t) activation::celu)
         throw std::runtime_error("activation mismatch");
+
+      archive.read(key+".alpha", tensor); this->options_.alpha(tensor.item<double>());
+      archive.read(key+".inplace", tensor); this->options_.inplace(tensor.item<bool>());
 
       return archive;
     }
@@ -298,7 +349,7 @@ namespace iganet {
   {
   public:
     explicit ELU(torch::nn::functional::ELUFuncOptions options = {})
-      : options_(std::move(options)) {}
+      : options_(options) {}
 
     explicit ELU(double alpha, bool inplace=false)
       : options_(torch::nn::functional::ELUFuncOptions()
@@ -312,12 +363,14 @@ namespace iganet {
     {
       return torch::nn::functional::elu(input, options_);
     }
-    
+
+    /// Returns constant reference to options
     inline const torch::nn::functional::ELUFuncOptions& options() const
     {
       return options_;
     }
 
+    /// Returns non-constant reference to options
     inline torch::nn::functional::ELUFuncOptions& options()
     {
       return options_;
@@ -336,7 +389,10 @@ namespace iganet {
     inline torch::serialize::OutputArchive& write(torch::serialize::OutputArchive& archive,
                                                           const std::string& key="elu") const override
     {
-      archive.write(key+".activation", torch::full({1}, (int64_t) activation::elu));
+      archive.write(key+".type", torch::full({1}, (int64_t) activation::elu));
+      archive.write(key+".alpha", this->options_.alpha());
+      archive.write(key+".inplace", this->options_.inplace());
+
       return archive;
     }
 
@@ -346,9 +402,12 @@ namespace iganet {
     {
       torch::Tensor tensor;
       
-      archive.read(key+".activation", tensor);
+      archive.read(key+".type", tensor);
       if (tensor.item<int64_t>() != (int64_t) activation::elu)
         throw std::runtime_error("activation mismatch");
+
+      archive.read(key+".alpha", tensor); this->options_.alpha(tensor.item<double>());
+      archive.read(key+".inplace", tensor); this->options_.inplace(tensor.item<bool>());
 
       return archive;
     }
@@ -388,7 +447,8 @@ namespace iganet {
     inline torch::serialize::OutputArchive& write(torch::serialize::OutputArchive& archive,
                                                           const std::string& key="gelu") const override
     {
-      archive.write(key+".activation", torch::full({1}, (int64_t) activation::gelu));
+      archive.write(key+".type", torch::full({1}, (int64_t) activation::gelu));
+
       return archive;
     }
 
@@ -398,7 +458,7 @@ namespace iganet {
     {
       torch::Tensor tensor;
       
-      archive.read(key+".activation", tensor);
+      archive.read(key+".type", tensor);
       if (tensor.item<int64_t>() != (int64_t) activation::gelu)
         throw std::runtime_error("activation mismatch");
 
@@ -420,7 +480,7 @@ namespace iganet {
   {
   public:
     explicit GLU(torch::nn::functional::GLUFuncOptions options = {})
-      : options_(std::move(options)) {}
+      : options_(options) {}
 
     explicit GLU(int64_t dim)
       : options_(torch::nn::functional::GLUFuncOptions()
@@ -433,12 +493,14 @@ namespace iganet {
     {
       return torch::nn::functional::glu(input, options_);
     }
-    
+
+    /// Returns constant reference to options
     inline const torch::nn::functional::GLUFuncOptions& options() const
     {
       return options_;
     }
 
+    /// Returns non-constant reference to options
     inline torch::nn::functional::GLUFuncOptions& options()
     {
       return options_;
@@ -456,7 +518,9 @@ namespace iganet {
     inline torch::serialize::OutputArchive& write(torch::serialize::OutputArchive& archive,
                                                           const std::string& key="glu") const override
     {
-      archive.write(key+".activation", torch::full({1}, (int64_t) activation::glu));
+      archive.write(key+".type", torch::full({1}, (int64_t) activation::glu));
+      archive.write(key+".dim", this->options_.dim());
+
       return archive;
     }
 
@@ -466,9 +530,11 @@ namespace iganet {
     {
       torch::Tensor tensor;
       
-      archive.read(key+".activation", tensor);
+      archive.read(key+".type", tensor);
       if (tensor.item<int64_t>() != (int64_t) activation::glu)
         throw std::runtime_error("activation mismatch");
+
+      archive.read(key+".dim", tensor); this->options_.dim(tensor.item<int>());
 
       return archive;
     }
@@ -504,12 +570,14 @@ namespace iganet {
     {
       return torch::nn::functional::group_norm(input, options_);
     }
-    
+
+    /// Returns constant reference to options
     inline const torch::nn::functional::GroupNormFuncOptions& options() const
     {
       return options_;
     }
 
+    /// Returns non-constant reference to options
     inline torch::nn::functional::GroupNormFuncOptions& options()
     {
       return options_;
@@ -533,7 +601,11 @@ namespace iganet {
     inline torch::serialize::OutputArchive& write(torch::serialize::OutputArchive& archive,
                                                           const std::string& key="group_norm") const override
     {
-      archive.write(key+".activation", torch::full({1}, (int64_t) activation::group_norm));
+      archive.write(key+".type", torch::full({1}, (int64_t) activation::group_norm));
+      archive.write(key+".weight", this->options_.weight());
+      archive.write(key+".bias", this->options_.bias());
+      archive.write(key+".eps", this->options_.eps());
+
       return archive;
     }
 
@@ -543,9 +615,13 @@ namespace iganet {
     {
       torch::Tensor tensor;
       
-      archive.read(key+".activation", tensor);
+      archive.read(key+".type", tensor);
       if (tensor.item<int64_t>() != (int64_t) activation::group_norm)
         throw std::runtime_error("activation mismatch");
+
+      archive.read(key+".weight", this->options_.weight());
+      archive.read(key+".bias", this->options_.bias());
+      archive.read(key+".eps", tensor); this->options_.eps(tensor.item<double>());
 
       return archive;
     }
@@ -558,9 +634,9 @@ namespace iganet {
   {
   public:
     explicit GumbelSoftmax(torch::nn::functional::GumbelSoftmaxFuncOptions options = {})
-      : options_(std::move(options)) {}
+      : options_(options) {}
 
-    explicit GumbelSoftmax(double tau, int64_t dim, bool hard)
+    explicit GumbelSoftmax(double tau, int dim, bool hard)
       : options_(torch::nn::functional::GumbelSoftmaxFuncOptions()
                  .tau(tau)
                  .dim(dim)
@@ -573,12 +649,14 @@ namespace iganet {
     {
       return torch::nn::functional::gumbel_softmax(input, options_);
     }
-    
+
+    /// Returns constant reference to options
     inline const torch::nn::functional::GumbelSoftmaxFuncOptions& options() const
     {
       return options_;
     }
 
+    /// Returns non-constant reference to options
     inline torch::nn::functional::GumbelSoftmaxFuncOptions& options()
     {
       return options_;
@@ -598,7 +676,11 @@ namespace iganet {
     inline torch::serialize::OutputArchive& write(torch::serialize::OutputArchive& archive,
                                                           const std::string& key="gumbel_softmax") const override
     {
-      archive.write(key+".activation", torch::full({1}, (int64_t) activation::gumbel_softmax));
+      archive.write(key+".type", torch::full({1}, (int64_t) activation::gumbel_softmax));
+      archive.write(key+".tau", this->options_.tau());
+      archive.write(key+".dim", this->options_.dim());
+      archive.write(key+".hard", this->options_.hard());
+
       return archive;
     }
 
@@ -608,9 +690,13 @@ namespace iganet {
     {
       torch::Tensor tensor;
       
-      archive.read(key+".activation", tensor);
+      archive.read(key+".type", tensor);
       if (tensor.item<int64_t>() != (int64_t) activation::gumbel_softmax)
         throw std::runtime_error("activation mismatch");
+
+      archive.read(key+".tau", tensor); this->options_.tau(tensor.item<double>());
+      archive.read(key+".dim", tensor); this->options_.dim(tensor.item<int>());
+      archive.read(key+".hard", tensor); this->options_.hard(tensor.item<bool>());
 
       return archive;
     }
@@ -623,7 +709,7 @@ namespace iganet {
   {
   public:
     explicit Hardshrink(torch::nn::functional::HardshrinkFuncOptions options = {})
-      : options_(std::move(options)) {}
+      : options_(options) {}
 
     explicit Hardshrink(double lambda)
       : options_(torch::nn::functional::HardshrinkFuncOptions()
@@ -636,12 +722,14 @@ namespace iganet {
     {
       return torch::nn::functional::hardshrink(input, options_);
     }
-    
+
+    /// Returns constant reference to options
     inline const torch::nn::functional::HardshrinkFuncOptions& options() const
     {
       return options_;
     }
 
+    /// Returns non-constant reference to options
     inline torch::nn::functional::HardshrinkFuncOptions& options()
     {
       return options_;
@@ -659,7 +747,9 @@ namespace iganet {
     inline torch::serialize::OutputArchive& write(torch::serialize::OutputArchive& archive,
                                                           const std::string& key="hardshrink") const override
     {
-      archive.write(key+".activation", torch::full({1}, (int64_t) activation::hardshrink));
+      archive.write(key+".type", torch::full({1}, (int64_t) activation::hardshrink));
+      archive.write(key+".lambda", this->options_.lambda());
+
       return archive;
     }
 
@@ -669,9 +759,11 @@ namespace iganet {
     {
       torch::Tensor tensor;
       
-      archive.read(key+".activation", tensor);
+      archive.read(key+".type", tensor);
       if (tensor.item<int64_t>() != (int64_t) activation::hardshrink)
         throw std::runtime_error("activation mismatch");
+
+      archive.read(key+".lambda", tensor); this->options_.lambda(tensor.item<double>());
 
       return archive;
     }
@@ -712,7 +804,8 @@ namespace iganet {
     inline torch::serialize::OutputArchive& write(torch::serialize::OutputArchive& archive,
                                                           const std::string& key="hardsigmoid") const override
     {
-      archive.write(key+".activation", torch::full({1}, (int64_t) activation::hardsigmoid));
+      archive.write(key+".type", torch::full({1}, (int64_t) activation::hardsigmoid));
+
       return archive;
     }
 
@@ -722,7 +815,7 @@ namespace iganet {
     {
       torch::Tensor tensor;
       
-      archive.read(key+".activation", tensor);
+      archive.read(key+".type", tensor);
       if (tensor.item<int64_t>() != (int64_t) activation::hardsigmoid)
         throw std::runtime_error("activation mismatch");
 
@@ -763,7 +856,8 @@ namespace iganet {
     inline torch::serialize::OutputArchive& write(torch::serialize::OutputArchive& archive,
                                                           const std::string& key="hardswish") const override
     {
-      archive.write(key+".activation", torch::full({1}, (int64_t) activation::hardswish));
+      archive.write(key+".type", torch::full({1}, (int64_t) activation::hardswish));
+
       return archive;
     }
 
@@ -773,7 +867,7 @@ namespace iganet {
     {
       torch::Tensor tensor;
       
-      archive.read(key+".activation", tensor);
+      archive.read(key+".type", tensor);
       if (tensor.item<int64_t>() != (int64_t) activation::hardswish)
         throw std::runtime_error("activation mismatch");
 
@@ -795,7 +889,7 @@ namespace iganet {
   {
   public:
     explicit Hardtanh(torch::nn::functional::HardtanhFuncOptions options = {})
-      : options_(std::move(options)) {}
+      : options_(options) {}
 
     explicit Hardtanh(double min_val, double max_val, bool inplace=false)
       : options_(torch::nn::functional::HardtanhFuncOptions()
@@ -810,12 +904,14 @@ namespace iganet {
     {
       return torch::nn::functional::hardtanh(input, options_);
     }
-    
+
+    /// Returns constant reference to options
     inline const torch::nn::functional::HardtanhFuncOptions& options() const
     {
       return options_;
     }
 
+    /// Returns non-constant reference to options
     inline torch::nn::functional::HardtanhFuncOptions& options()
     {
       return options_;
@@ -835,7 +931,11 @@ namespace iganet {
     inline torch::serialize::OutputArchive& write(torch::serialize::OutputArchive& archive,
                                                           const std::string& key="hardtanh") const override
     {
-      archive.write(key+".activation", torch::full({1}, (int64_t) activation::hardtanh));
+      archive.write(key+".type", torch::full({1}, (int64_t) activation::hardtanh));
+      archive.write(key+".min_val", this->options_.min_val());
+      archive.write(key+".max_val", this->options_.max_val());
+      archive.write(key+".inplace", this->options_.inplace());
+
       return archive;
     }
 
@@ -845,9 +945,13 @@ namespace iganet {
     {
       torch::Tensor tensor;
       
-      archive.read(key+".activation", tensor);
+      archive.read(key+".type", tensor);
       if (tensor.item<int64_t>() != (int64_t) activation::hardtanh)
         throw std::runtime_error("activation mismatch");
+
+      archive.read(key+".min_val", tensor); this->options_.min_val(tensor.item<double>());
+      archive.read(key+".max_val", tensor); this->options_.max_val(tensor.item<double>());
+      archive.read(key+".inplace", tensor); this->options_.inplace(tensor.item<bool>());
 
       return archive;
     }
@@ -888,12 +992,14 @@ namespace iganet {
     {
       return torch::nn::functional::instance_norm(input, options_);
     }
-    
+
+    /// Returns constant reference to options
     inline const torch::nn::functional::InstanceNormFuncOptions& options() const
     {
       return options_;
     }
 
+    /// Returns non-constant reference to options
     inline torch::nn::functional::InstanceNormFuncOptions& options()
     {
       return options_;
@@ -921,7 +1027,15 @@ namespace iganet {
     inline torch::serialize::OutputArchive& write(torch::serialize::OutputArchive& archive,
                                                           const std::string& key="instance_norm") const override
     {
-      archive.write(key+".activation", torch::full({1}, (int64_t) activation::instance_norm));
+      archive.write(key+".type", torch::full({1}, (int64_t) activation::instance_norm));
+      archive.write(key+".running_mean", this->options_.running_mean());
+      archive.write(key+".var", this->options_.running_var());
+      archive.write(key+".weight", this->options_.weight());
+      archive.write(key+".bias", this->options_.bias());
+      archive.write(key+".eps", this->options_.eps());
+      archive.write(key+".momentum", this->options_.momentum());
+      archive.write(key+".use_input_stats", this->options_.use_input_stats());
+
       return archive;
     }
 
@@ -931,9 +1045,17 @@ namespace iganet {
     {
       torch::Tensor tensor;
       
-      archive.read(key+".activation", tensor);
+      archive.read(key+".type", tensor);
       if (tensor.item<int64_t>() != (int64_t) activation::instance_norm)
         throw std::runtime_error("activation mismatch");
+
+      archive.read(key+".running_mean", this->options_.running_mean());
+      archive.read(key+".running_var", this->options_.running_var());
+      archive.read(key+".weight", this->options_.weight());
+      archive.read(key+".bias", this->options_.bias());
+      archive.read(key+".eps", tensor); this->options_.eps(tensor.item<double>());
+      archive.read(key+".momentum", tensor); this->options_.momentum(tensor.item<double>());
+      archive.read(key+".use_input_stats", tensor); this->options_.use_input_stats(tensor.item<bool>());
 
       return archive;
     }
@@ -970,12 +1092,14 @@ namespace iganet {
     {
       return torch::nn::functional::layer_norm(input, options_);
     }
-    
+
+    /// Returns constant reference to options
     inline const torch::nn::functional::LayerNormFuncOptions& options() const
     {
       return options_;
     }
 
+    /// Returns non-constant reference to options
     inline torch::nn::functional::LayerNormFuncOptions& options()
     {
       return options_;
@@ -1000,7 +1124,10 @@ namespace iganet {
     inline torch::serialize::OutputArchive& write(torch::serialize::OutputArchive& archive,
                                                           const std::string& key="layer_norm") const override
     {
-      archive.write(key+".activation", torch::full({1}, (int64_t) activation::layer_norm));
+      archive.write(key+".type", torch::full({1}, (int64_t) activation::layer_norm));
+      archive.write(key+".weight", this->options_.weight());
+      archive.write(key+".bias", this->options_.bias());
+
       return archive;
     }
 
@@ -1010,9 +1137,12 @@ namespace iganet {
     {
       torch::Tensor tensor;
       
-      archive.read(key+".activation", tensor);
+      archive.read(key+".type", tensor);
       if (tensor.item<int64_t>() != (int64_t) activation::layer_norm)
         throw std::runtime_error("activation mismatch");
+
+      archive.read(key+".weight", this->options_.weight());
+      archive.read(key+".bias", this->options_.bias());
 
       return archive;
     }
@@ -1034,7 +1164,7 @@ namespace iganet {
   {
   public:
     explicit LeakyReLU(torch::nn::functional::LeakyReLUFuncOptions options = {})
-      : options_(std::move(options)) {}
+      : options_(options) {}
 
     explicit LeakyReLU(double negative_slope, bool inplace=false)
       : options_(torch::nn::functional::LeakyReLUFuncOptions()
@@ -1048,12 +1178,14 @@ namespace iganet {
     {
       return torch::nn::functional::leaky_relu(input, options_);
     }
-    
+
+    /// Returns constant reference to options
     inline const torch::nn::functional::LeakyReLUFuncOptions& options() const
     {
       return options_;
     }
 
+    /// Returns non-constant reference to options
     inline torch::nn::functional::LeakyReLUFuncOptions& options()
     {
       return options_;
@@ -1072,7 +1204,11 @@ namespace iganet {
     inline torch::serialize::OutputArchive& write(torch::serialize::OutputArchive& archive,
                                                           const std::string& key="leaky_relu") const override
     {
-      archive.write(key+".activation", torch::full({1}, (int64_t) activation::leaky_relu));
+      archive.write(key+".type", torch::full({1}, (int64_t) activation::leaky_relu));
+
+      archive.write(key+".negative_slope", this->options_.negative_slope());
+      archive.write(key+".inplace", this->options_.inplace());
+
       return archive;
     }
 
@@ -1082,9 +1218,12 @@ namespace iganet {
     {
       torch::Tensor tensor;
       
-      archive.read(key+".activation", tensor);
+      archive.read(key+".type", tensor);
       if (tensor.item<int64_t>() != (int64_t) activation::leaky_relu)
         throw std::runtime_error("activation mismatch");
+
+      archive.read(key+".negative_slope", tensor); this->options_.negative_slope(tensor.item<double>());
+      archive.read(key+".inplace", tensor); this->options_.inplace(tensor.item<bool>());
 
       return archive;
     }
@@ -1117,12 +1256,14 @@ namespace iganet {
     {
       return torch::nn::functional::local_response_norm(input, options_);
     }
-    
+
+    /// Returns constant reference to options
     inline const torch::nn::functional::LocalResponseNormFuncOptions& options() const
     {
       return options_;
     }
 
+    /// Returns non-constant reference to options
     inline torch::nn::functional::LocalResponseNormFuncOptions& options()
     {
       return options_;
@@ -1143,7 +1284,13 @@ namespace iganet {
     inline torch::serialize::OutputArchive& write(torch::serialize::OutputArchive& archive,
                                                           const std::string& key="local_response_norm") const override
     {
-      archive.write(key+".activation", torch::full({1}, (int64_t) activation::local_response_norm));
+      archive.write(key+".type", torch::full({1}, (int64_t) activation::local_response_norm));
+
+      archive.write(key+".size", this->options_.size());
+      archive.write(key+".alpha", this->options_.alpha());
+      archive.write(key+".beta", this->options_.beta());
+      archive.write(key+".k", this->options_.k());
+
       return archive;
     }
 
@@ -1153,9 +1300,14 @@ namespace iganet {
     {
       torch::Tensor tensor;
       
-      archive.read(key+".activation", tensor);
+      archive.read(key+".type", tensor);
       if (tensor.item<int64_t>() != (int64_t) activation::local_response_norm)
         throw std::runtime_error("activation mismatch");
+
+      archive.read(key+".size", tensor); this->options_.size(tensor.item<int64_t>());
+      archive.read(key+".alpha", tensor); this->options_.alpha(tensor.item<double>());
+      archive.read(key+".beta", tensor); this->options_.beta(tensor.item<double>());
+      archive.read(key+".k", tensor); this->options_.k(tensor.item<double>());
 
       return archive;
     }
@@ -1192,7 +1344,8 @@ namespace iganet {
     inline torch::serialize::OutputArchive& write(torch::serialize::OutputArchive& archive,
                                                           const std::string& key="logsigmoid") const override
     {
-      archive.write(key+".activation", torch::full({1}, (int64_t) activation::logsigmoid));
+      archive.write(key+".type", torch::full({1}, (int64_t) activation::logsigmoid));
+
       return archive;
     }
 
@@ -1202,7 +1355,7 @@ namespace iganet {
     {
       torch::Tensor tensor;
       
-      archive.read(key+".activation", tensor);
+      archive.read(key+".type", tensor);
       if (tensor.item<int64_t>() != (int64_t) activation::logsigmoid)
         throw std::runtime_error("activation mismatch");
 
@@ -1234,11 +1387,13 @@ namespace iganet {
       return torch::nn::functional::log_softmax(input, options_);
     }
 
+    /// Returns constant reference to options
     inline const torch::nn::functional::LogSoftmaxFuncOptions& options() const
     {
       return options_;
     }
 
+    /// Returns non-constant reference to options
     inline torch::nn::functional::LogSoftmaxFuncOptions& options()
     {
       return options_;
@@ -1256,7 +1411,8 @@ namespace iganet {
     inline torch::serialize::OutputArchive& write(torch::serialize::OutputArchive& archive,
                                                           const std::string& key="logsoftmax") const override
     {
-      archive.write(key+".activation", torch::full({1}, (int64_t) activation::logsoftmax));
+      archive.write(key+".type", torch::full({1}, (int64_t) activation::logsoftmax));
+
       return archive;
     }
 
@@ -1266,7 +1422,7 @@ namespace iganet {
     {
       torch::Tensor tensor;
       
-      archive.read(key+".activation", tensor);
+      archive.read(key+".type", tensor);
       if (tensor.item<int64_t>() != (int64_t) activation::logsoftmax)
         throw std::runtime_error("activation mismatch");
 
@@ -1305,7 +1461,8 @@ namespace iganet {
     inline torch::serialize::OutputArchive& write(torch::serialize::OutputArchive& archive,
                                                           const std::string& key="mish") const override
     {
-      archive.write(key+".activation", torch::full({1}, (int64_t) activation::mish));
+      archive.write(key+".type", torch::full({1}, (int64_t) activation::mish));
+
       return archive;
     }
 
@@ -1315,7 +1472,7 @@ namespace iganet {
     {
       torch::Tensor tensor;
       
-      archive.read(key+".activation", tensor);
+      archive.read(key+".type", tensor);
       if (tensor.item<int64_t>() != (int64_t) activation::mish)
         throw std::runtime_error("activation mismatch");
 
@@ -1343,12 +1500,14 @@ namespace iganet {
     {
       return torch::nn::functional::normalize(input, options_);
     }
-    
+
+    /// Returns constant reference to options
     inline const torch::nn::functional::NormalizeFuncOptions& options() const
     {
       return options_;
     }
 
+    /// Returns non-constant reference to options
     inline torch::nn::functional::NormalizeFuncOptions& options()
     {
       return options_;
@@ -1368,7 +1527,11 @@ namespace iganet {
     inline torch::serialize::OutputArchive& write(torch::serialize::OutputArchive& archive,
                                                           const std::string& key="normalize") const override
     {
-      archive.write(key+".activation", torch::full({1}, (int64_t) activation::normalize));
+      archive.write(key+".type", torch::full({1}, (int64_t) activation::normalize));
+      archive.write(key+".p", this->options_.p());
+      archive.write(key+".eps", this->options_.eps());
+      archive.write(key+".dim", this->options_.dim());
+
       return archive;
     }
 
@@ -1378,9 +1541,13 @@ namespace iganet {
     {
       torch::Tensor tensor;
       
-      archive.read(key+".activation", tensor);
+      archive.read(key+".type", tensor);
       if (tensor.item<int64_t>() != (int64_t) activation::normalize)
         throw std::runtime_error("activation mismatch");
+
+      archive.read(key+".p", tensor); this->options_.p(tensor.item<double>());
+      archive.read(key+".eps", tensor); this->options_.eps(tensor.item<double>());
+      archive.read(key+".dim", tensor); this->options_.dim(tensor.item<int64_t>());
 
       return archive;
     }
@@ -1393,10 +1560,22 @@ namespace iganet {
   class PReLU : public ActivationFunction
   {
   public:
-    explicit PReLU(std::function<const torch::Tensor&()> weight)
-      : weight(std::move(weight)) {}
+    explicit PReLU(const torch::Tensor& weight)
+      : weight_(weight) {}
 
     ~PReLU() override = default;
+
+    /// Returns constant reference to weights
+    const torch::Tensor& weight() const
+    {
+      return weight_;
+    }
+
+    /// Returns non-constant reference to weights
+    torch::Tensor& weight()
+    {
+      return weight_;
+    }
 
     /// Applies the activation function to the given input
     inline torch::Tensor apply(const torch::Tensor& input) const override
@@ -1417,7 +1596,9 @@ namespace iganet {
     inline torch::serialize::OutputArchive& write(torch::serialize::OutputArchive& archive,
                                                           const std::string& key="prelu") const override
     {
-      archive.write(key+".activation", torch::full({1}, (int64_t) activation::prelu));
+      archive.write(key+".type", torch::full({1}, (int64_t) activation::prelu));
+      archive.write(key+".weight", this->weight());
+
       return archive;
     }
 
@@ -1427,14 +1608,16 @@ namespace iganet {
     {
       torch::Tensor tensor;
       
-      archive.read(key+".activation", tensor);
+      archive.read(key+".type", tensor);
       if (tensor.item<int64_t>() != (int64_t) activation::prelu)
         throw std::runtime_error("activation mismatch");
+
+      archive.read(key+".weight", this->weight());
 
       return archive;
     }
   private:
-    std::function<torch::Tensor()> weight;
+    torch::Tensor weight_;
   };
 
   /// ReLU activation function
@@ -1446,7 +1629,7 @@ namespace iganet {
   {
   public:
     explicit ReLU(torch::nn::functional::ReLUFuncOptions options = {})
-      : options_(std::move(options)) {}
+      : options_(options) {}
 
     explicit ReLU(bool inplace)
       : options_(torch::nn::functional::ReLUFuncOptions()
@@ -1459,12 +1642,14 @@ namespace iganet {
     {
       return torch::nn::functional::relu(input, options_);
     }
-    
+
+    /// Returns constant reference to options
     inline const torch::nn::functional::ReLUFuncOptions& options() const
     {
       return options_;
     }
 
+    /// Returns non-constant reference to options
     inline torch::nn::functional::ReLUFuncOptions& options()
     {
       return options_;
@@ -1482,7 +1667,9 @@ namespace iganet {
     inline torch::serialize::OutputArchive& write(torch::serialize::OutputArchive& archive,
                                                           const std::string& key="relu") const override
     {
-      archive.write(key+".activation", torch::full({1}, (int64_t) activation::relu));
+      archive.write(key+".type", torch::full({1}, (int64_t) activation::relu));
+      archive.write(key+".inplace", this->options_.inplace());
+
       return archive;
     }
 
@@ -1492,9 +1679,11 @@ namespace iganet {
     {
       torch::Tensor tensor;
       
-      archive.read(key+".activation", tensor);
+      archive.read(key+".type", tensor);
       if (tensor.item<int64_t>() != (int64_t) activation::relu)
         throw std::runtime_error("activation mismatch");
+
+      archive.read(key+".inplace", tensor); this->options_.inplace(tensor.item<bool>());
 
       return archive;
     }
@@ -1511,7 +1700,7 @@ namespace iganet {
   {
   public:
     explicit ReLU6(torch::nn::functional::ReLU6FuncOptions options = {})
-      : options_(std::move(options)) {}
+      : options_(options) {}
 
     explicit ReLU6(bool inplace)
       : options_(torch::nn::functional::ReLU6FuncOptions()
@@ -1524,12 +1713,14 @@ namespace iganet {
     {
       return torch::nn::functional::relu6(input, options_);
     }
-    
+
+    /// Returns constant reference to options
     inline const torch::nn::functional::ReLU6FuncOptions& options() const
     {
       return options_;
     }
 
+    /// Returns non-constant reference to options
     inline torch::nn::functional::ReLU6FuncOptions& options()
     {
       return options_;
@@ -1547,7 +1738,9 @@ namespace iganet {
     inline torch::serialize::OutputArchive& write(torch::serialize::OutputArchive& archive,
                                                           const std::string& key="relu6") const override
     {
-      archive.write(key+".activation", torch::full({1}, (int64_t) activation::relu6));
+      archive.write(key+".type", torch::full({1}, (int64_t) activation::relu6));
+      archive.write(key+".inplace", this->options_.inplace());
+
       return archive;
     }
 
@@ -1557,9 +1750,11 @@ namespace iganet {
     {
       torch::Tensor tensor;
       
-      archive.read(key+".activation", tensor);
+      archive.read(key+".type", tensor);
       if (tensor.item<int64_t>() != (int64_t) activation::relu6)
         throw std::runtime_error("activation mismatch");
+
+      archive.read(key+".inplace", tensor); this->options_.inplace(tensor.item<bool>());
 
       return archive;
     }
@@ -1580,7 +1775,7 @@ namespace iganet {
   {
   public:
     explicit RReLU(torch::nn::functional::RReLUFuncOptions options = {})
-      : options_(std::move(options)) {}
+      : options_(options) {}
 
     explicit RReLU(double lower, double upper, bool inplace=false)
       : options_(torch::nn::functional::RReLUFuncOptions()
@@ -1595,12 +1790,14 @@ namespace iganet {
     {
       return torch::nn::functional::rrelu(input, options_);
     }
-    
+
+    /// Returns constant reference to options
     inline const torch::nn::functional::RReLUFuncOptions& options() const
     {
       return options_;
     }
-
+    
+    /// Returns non-constant reference to options
     inline torch::nn::functional::RReLUFuncOptions& options()
     {
       return options_;
@@ -1620,7 +1817,11 @@ namespace iganet {
     inline torch::serialize::OutputArchive& write(torch::serialize::OutputArchive& archive,
                                                           const std::string& key="rrelu") const override
     {
-      archive.write(key+".activation", torch::full({1}, (int64_t) activation::rrelu));
+      archive.write(key+".type", torch::full({1}, (int64_t) activation::rrelu));
+      archive.write(key+".lower", this->options_.lower());
+      archive.write(key+".upper", this->options_.upper());
+      archive.write(key+".inplace", this->options_.inplace());
+
       return archive;
     }
 
@@ -1630,9 +1831,13 @@ namespace iganet {
     {
       torch::Tensor tensor;
       
-      archive.read(key+".activation", tensor);
+      archive.read(key+".type", tensor);
       if (tensor.item<int64_t>() != (int64_t) activation::rrelu)
         throw std::runtime_error("activation mismatch");
+
+      archive.read(key+".lower", tensor); this->options_.lower(tensor.item<double>());
+      archive.read(key+".upper", tensor); this->options_.upper(tensor.item<double>());
+      archive.read(key+".inplace", tensor); this->options_.inplace(tensor.item<bool>());
 
       return archive;
     }
@@ -1652,7 +1857,7 @@ namespace iganet {
   {
   public:
     explicit SELU(torch::nn::functional::SELUFuncOptions options = {})
-      : options_(std::move(options)) {}
+      : options_(options) {}
 
     explicit SELU(bool inplace)
       : options_(torch::nn::functional::SELUFuncOptions()
@@ -1665,12 +1870,14 @@ namespace iganet {
     {
       return torch::nn::functional::selu(input, options_);
     }
-    
+
+    /// Returns constant reference to options
     inline const torch::nn::functional::SELUFuncOptions& options() const
     {
       return options_;
     }
 
+    /// Returns non-constant reference to options
     inline torch::nn::functional::SELUFuncOptions& options()
     {
       return options_;
@@ -1688,7 +1895,9 @@ namespace iganet {
     inline torch::serialize::OutputArchive& write(torch::serialize::OutputArchive& archive,
                                                           const std::string& key="selu") const override
     {
-      archive.write(key+".activation", torch::full({1}, (int64_t) activation::selu));
+      archive.write(key+".type", torch::full({1}, (int64_t) activation::selu));
+      archive.write(key+".inplace", this->options_.inplace());
+
       return archive;
     }
 
@@ -1698,9 +1907,11 @@ namespace iganet {
     {
       torch::Tensor tensor;
       
-      archive.read(key+".activation", tensor);
+      archive.read(key+".type", tensor);
       if (tensor.item<int64_t>() != (int64_t) activation::selu)
         throw std::runtime_error("activation mismatch");
+
+      archive.read(key+".inplace", tensor); this->options_.inplace(tensor.item<bool>());
 
       return archive;
     }
@@ -1733,7 +1944,8 @@ namespace iganet {
     inline torch::serialize::OutputArchive& write(torch::serialize::OutputArchive& archive,
                                                           const std::string& key="sigmoid") const override
     {
-      archive.write(key+".activation", torch::full({1}, (int64_t) activation::sigmoid));
+      archive.write(key+".type", torch::full({1}, (int64_t) activation::sigmoid));
+
       return archive;
     }
 
@@ -1743,7 +1955,7 @@ namespace iganet {
     {
       torch::Tensor tensor;
       
-      archive.read(key+".activation", tensor);
+      archive.read(key+".type", tensor);
       if (tensor.item<int64_t>() != (int64_t) activation::sigmoid)
         throw std::runtime_error("activation mismatch");
 
@@ -1775,7 +1987,8 @@ namespace iganet {
     inline torch::serialize::OutputArchive& write(torch::serialize::OutputArchive& archive,
                                                           const std::string& key="silu") const override
     {
-      archive.write(key+".activation", torch::full({1}, (int64_t) activation::silu));
+      archive.write(key+".type", torch::full({1}, (int64_t) activation::silu));
+
       return archive;
     }
 
@@ -1785,7 +1998,7 @@ namespace iganet {
     {
       torch::Tensor tensor;
       
-      archive.read(key+".activation", tensor);
+      archive.read(key+".type", tensor);
       if (tensor.item<int64_t>() != (int64_t) activation::silu)
         throw std::runtime_error("activation mismatch");
 
@@ -1816,12 +2029,14 @@ namespace iganet {
     {
       return torch::nn::functional::softmax(input, options_);
     }
-    
+
+    /// Returns constant reference to options
     inline const torch::nn::functional::SoftmaxFuncOptions& options() const
     {
       return options_;
     }
 
+    /// Returns non-constant reference to options
     inline torch::nn::functional::SoftmaxFuncOptions& options()
     {
       return options_;
@@ -1839,7 +2054,9 @@ namespace iganet {
     inline torch::serialize::OutputArchive& write(torch::serialize::OutputArchive& archive,
                                                           const std::string& key="softmax") const override
     {
-      archive.write(key+".activation", torch::full({1}, (int64_t) activation::softmax));
+      archive.write(key+".type", torch::full({1}, (int64_t) activation::softmax));
+      archive.write(key+".dim", this->options_.dim());
+
       return archive;
     }
 
@@ -1849,9 +2066,11 @@ namespace iganet {
     {
       torch::Tensor tensor;
       
-      archive.read(key+".activation", tensor);
+      archive.read(key+".type", tensor);
       if (tensor.item<int64_t>() != (int64_t) activation::softmax)
         throw std::runtime_error("activation mismatch");
+
+      archive.read(key+".dim", tensor); this->options_.dim(tensor.item<int64_t>());
 
       return archive;
     }
@@ -1881,12 +2100,14 @@ namespace iganet {
     {
       return torch::nn::functional::softmin(input, options_);
     }
-    
+
+    /// Returns constant reference to options
     inline const torch::nn::functional::SoftminFuncOptions& options() const
     {
       return options_;
     }
 
+    /// Returns non-constant reference to options
     inline torch::nn::functional::SoftminFuncOptions& options()
     {
       return options_;
@@ -1904,7 +2125,9 @@ namespace iganet {
     inline torch::serialize::OutputArchive& write(torch::serialize::OutputArchive& archive,
                                                           const std::string& key="softmin") const override
     {
-      archive.write(key+".activation", torch::full({1}, (int64_t) activation::softmin));
+      archive.write(key+".type", torch::full({1}, (int64_t) activation::softmin));
+      archive.write(key+".dim", this->options_.dim());
+
       return archive;
     }
 
@@ -1914,9 +2137,11 @@ namespace iganet {
     {
       torch::Tensor tensor;
       
-      archive.read(key+".activation", tensor);
+      archive.read(key+".type", tensor);
       if (tensor.item<int64_t>() != (int64_t) activation::softmin)
         throw std::runtime_error("activation mismatch");
+
+      archive.read(key+".dim", tensor); this->options_.dim(tensor.item<int64_t>());
 
       return archive;
     }
@@ -1934,7 +2159,7 @@ namespace iganet {
   {
   public:    
     explicit Softplus(torch::nn::functional::SoftplusFuncOptions options = {})
-      : options_(std::move(options)) {}   
+      : options_(options) {}
     
     explicit Softplus(double beta, double threshold)
       : options_(torch::nn::functional::SoftplusFuncOptions()
@@ -1948,12 +2173,14 @@ namespace iganet {
     {
       return torch::nn::functional::softplus(input, options_);
     }
-    
+
+    /// Returns constant reference to options
     inline const torch::nn::functional::SoftplusFuncOptions& options() const
     {
       return options_;
     }
 
+    /// Returns non-constant reference to options
     inline torch::nn::functional::SoftplusFuncOptions& options()
     {
       return options_;
@@ -1972,7 +2199,10 @@ namespace iganet {
     inline torch::serialize::OutputArchive& write(torch::serialize::OutputArchive& archive,
                                                           const std::string& key="softplus") const override
     {
-      archive.write(key+".activation", torch::full({1}, (int64_t) activation::softplus));
+      archive.write(key+".type", torch::full({1}, (int64_t) activation::softplus));
+      archive.write(key+".beta", this->options_.beta());
+      archive.write(key+".threshold", this->options_.threshold());
+
       return archive;
     }
 
@@ -1982,9 +2212,12 @@ namespace iganet {
     {
       torch::Tensor tensor;
       
-      archive.read(key+".activation", tensor);
+      archive.read(key+".type", tensor);
       if (tensor.item<int64_t>() != (int64_t) activation::softplus)
         throw std::runtime_error("activation mismatch");
+
+      archive.read(key+".beta", tensor); this->options_.beta(tensor.item<double>());
+      archive.read(key+".threshold", tensor); this->options_.threshold(tensor.item<double>());
 
       return archive;
     }
@@ -2007,7 +2240,7 @@ namespace iganet {
   {
   public:    
     explicit Softshrink(torch::nn::functional::SoftshrinkFuncOptions options = {})
-      : options_(std::move(options)) {}   
+      : options_(options) {}
     
     explicit Softshrink(double lambda)
       : options_(torch::nn::functional::SoftshrinkFuncOptions()
@@ -2020,12 +2253,14 @@ namespace iganet {
     {
       return torch::nn::functional::softshrink(input, options_);
     }
-    
+
+    /// Returns constant reference to options
     inline const torch::nn::functional::SoftshrinkFuncOptions& options() const
     {
       return options_;
     }
 
+    /// Returns non-constant reference to options
     inline torch::nn::functional::SoftshrinkFuncOptions& options()
     {
       return options_;
@@ -2043,7 +2278,9 @@ namespace iganet {
     inline torch::serialize::OutputArchive& write(torch::serialize::OutputArchive& archive,
                                                           const std::string& key="softshrink") const override
     {
-      archive.write(key+".activation", torch::full({1}, (int64_t) activation::softshrink));
+      archive.write(key+".type", torch::full({1}, (int64_t) activation::softshrink));
+      archive.write(key+".lambda", this->options_.lambda());
+
       return archive;
     }
 
@@ -2053,9 +2290,11 @@ namespace iganet {
     {
       torch::Tensor tensor;
       
-      archive.read(key+".activation", tensor);
+      archive.read(key+".type", tensor);
       if (tensor.item<int64_t>() != (int64_t) activation::softshrink)
         throw std::runtime_error("activation mismatch");
+
+      archive.read(key+".lambda", tensor); this->options_.lambda(tensor.item<double>());
 
       return archive;
     }
@@ -2087,7 +2326,8 @@ namespace iganet {
     inline torch::serialize::OutputArchive& write(torch::serialize::OutputArchive& archive,
                                                           const std::string& key="softsign") const override
     {
-      archive.write(key+".activation", torch::full({1}, (int64_t) activation::softsign));
+      archive.write(key+".type", torch::full({1}, (int64_t) activation::softsign));
+
       return archive;
     }
 
@@ -2097,7 +2337,7 @@ namespace iganet {
     {
       torch::Tensor tensor;
       
-      archive.read(key+".activation", tensor);
+      archive.read(key+".type", tensor);
       if (tensor.item<int64_t>() != (int64_t) activation::softsign)
         throw std::runtime_error("activation mismatch");
 
@@ -2129,7 +2369,8 @@ namespace iganet {
     inline torch::serialize::OutputArchive& write(torch::serialize::OutputArchive& archive,
                                                           const std::string& key="tanh") const override
     {
-      archive.write(key+".activation", torch::full({1}, (int64_t) activation::tanh));
+      archive.write(key+".type", torch::full({1}, (int64_t) activation::tanh));
+
       return archive;
     }
 
@@ -2139,7 +2380,7 @@ namespace iganet {
     {
       torch::Tensor tensor;
       
-      archive.read(key+".activation", tensor);
+      archive.read(key+".type", tensor);
       if (tensor.item<int64_t>() != (int64_t) activation::tanh)
         throw std::runtime_error("activation mismatch");
 
@@ -2171,7 +2412,8 @@ namespace iganet {
     inline torch::serialize::OutputArchive& write(torch::serialize::OutputArchive& archive,
                                                           const std::string& key="tanhshrink") const override
     {
-      archive.write(key+".activation", torch::full({1}, (int64_t) activation::tanhshrink));
+      archive.write(key+".type", torch::full({1}, (int64_t) activation::tanhshrink));
+
       return archive;
     }
 
@@ -2181,7 +2423,7 @@ namespace iganet {
     {
       torch::Tensor tensor;
       
-      archive.read(key+".activation", tensor);
+      archive.read(key+".type", tensor);
       if (tensor.item<int64_t>() != (int64_t) activation::tanhshrink)
         throw std::runtime_error("activation mismatch");
 
@@ -2202,7 +2444,7 @@ namespace iganet {
   {
   public:    
     explicit Threshold(torch::nn::functional::ThresholdFuncOptions options)
-      : options_(std::move(options)) {}   
+      : options_(options) {}
     
     explicit Threshold(double threshold, double value, bool inplace=false)
       : options_(torch::nn::functional::ThresholdFuncOptions(threshold, value)
@@ -2215,12 +2457,14 @@ namespace iganet {
     {
       return torch::nn::functional::threshold(input, options_);
     }
-    
+
+    /// Returns constant reference to options
     inline const torch::nn::functional::ThresholdFuncOptions& options() const
     {
       return options_;
     }
 
+    /// Returns non-constant reference to options
     inline torch::nn::functional::ThresholdFuncOptions& options()
     {
       return options_;
@@ -2240,7 +2484,11 @@ namespace iganet {
     inline torch::serialize::OutputArchive& write(torch::serialize::OutputArchive& archive,
                                                           const std::string& key="threshold") const override
     {
-      archive.write(key+".activation", torch::full({1}, (int64_t) activation::threshold));
+      archive.write(key+".type", torch::full({1}, (int64_t) activation::threshold));
+      archive.write(key+".threshold", this->options_.threshold());
+      archive.write(key+".value", this->options_.value());
+      archive.write(key+".inplace", this->options_.inplace());
+
       return archive;
     }
 
@@ -2250,9 +2498,13 @@ namespace iganet {
     {
       torch::Tensor tensor;
       
-      archive.read(key+".activation", tensor);
+      archive.read(key+".type", tensor);
       if (tensor.item<int64_t>() != (int64_t) activation::threshold)
         throw std::runtime_error("activation mismatch");
+
+      archive.read(key+".threshold", tensor); this->options_.threshold(tensor.item<double>());
+      archive.read(key+".value", tensor); this->options_.value(tensor.item<double>());
+      archive.read(key+".inplace", tensor); this->options_.inplace(tensor.item<bool>());
 
       return archive;
     }
