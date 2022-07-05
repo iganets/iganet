@@ -295,10 +295,10 @@ namespace iganet {
              {
                bspline_t<real_t, GeoDim, std::get<1>(degrees_),std::get<2>(degrees_)>(std::array<int64_t,2>({ncoeffs[1],ncoeffs[2]}), init),
                bspline_t<real_t, GeoDim, std::get<1>(degrees_),std::get<2>(degrees_)>(std::array<int64_t,2>({ncoeffs[1],ncoeffs[2]}), init),
-               bspline_t<real_t, GeoDim, std::get<0>(degrees_),std::get<1>(degrees_)>(std::array<int64_t,2>({ncoeffs[0],ncoeffs[1]}), init),
-               bspline_t<real_t, GeoDim, std::get<0>(degrees_),std::get<1>(degrees_)>(std::array<int64_t,2>({ncoeffs[0],ncoeffs[1]}), init),
                bspline_t<real_t, GeoDim, std::get<0>(degrees_),std::get<2>(degrees_)>(std::array<int64_t,2>({ncoeffs[0],ncoeffs[2]}), init),
-               bspline_t<real_t, GeoDim, std::get<0>(degrees_),std::get<2>(degrees_)>(std::array<int64_t,2>({ncoeffs[0],ncoeffs[2]}), init)
+               bspline_t<real_t, GeoDim, std::get<0>(degrees_),std::get<2>(degrees_)>(std::array<int64_t,2>({ncoeffs[0],ncoeffs[2]}), init),
+               bspline_t<real_t, GeoDim, std::get<0>(degrees_),std::get<1>(degrees_)>(std::array<int64_t,2>({ncoeffs[0],ncoeffs[1]}), init),
+               bspline_t<real_t, GeoDim, std::get<0>(degrees_),std::get<1>(degrees_)>(std::array<int64_t,2>({ncoeffs[0],ncoeffs[1]}), init)
              }
              )
     {}
@@ -401,10 +401,10 @@ namespace iganet {
     /// Tuple of B-Splines
     std::tuple<bspline_t<real_t, GeoDim, std::get<1>(degrees_), std::get<2>(degrees_)>,
                bspline_t<real_t, GeoDim, std::get<1>(degrees_), std::get<2>(degrees_)>,
-               bspline_t<real_t, GeoDim, std::get<0>(degrees_), std::get<1>(degrees_)>,
-               bspline_t<real_t, GeoDim, std::get<0>(degrees_), std::get<1>(degrees_)>,
                bspline_t<real_t, GeoDim, std::get<0>(degrees_), std::get<2>(degrees_)>,
-               bspline_t<real_t, GeoDim, std::get<0>(degrees_), std::get<2>(degrees_)>> bdr_;
+               bspline_t<real_t, GeoDim, std::get<0>(degrees_), std::get<2>(degrees_)>,
+               bspline_t<real_t, GeoDim, std::get<0>(degrees_), std::get<1>(degrees_)>,
+               bspline_t<real_t, GeoDim, std::get<0>(degrees_), std::get<1>(degrees_)>> bdr_;
   };
 
   /**
