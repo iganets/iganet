@@ -12,9 +12,12 @@
 #
 # CMakeLists.txt accepts the following command line parameters
 #
+# IGANET_BUILD_DOCS
 # IGANET_BUILD_EXAMPLES
 # IGANET_BUILD_PYBIND11
 # IGANET_BUILD_UNITTESTS
+#
+# IGANET_WITH_OPENMP
 #
 ########################################################################
 
@@ -77,6 +80,7 @@ list(APPEND CMAKE_MODULE_PATH "${PROJECT_SOURCE_DIR}/cmake")
 ########################################################################
 # Option list
 ########################################################################
+option(IGANET_BUILD_DOCS        "Build documentation"       OFF)
 option(IGANET_BUILD_EXAMPLES    "Build examples"            ON )
 option(IGANET_BUILD_PYBIND11    "Build Python bindings"     OFF)
 option(IGANET_BUILD_UNITTESTS   "Build unittests"           OFF)
@@ -117,6 +121,61 @@ if (IGANET_WITH_OPENMP)
 endif()
 
 ########################################################################
+# Doxygen
+########################################################################
+if(IGANET_BUILD_DOCS)
+  find_package(Doxygen QUIET)
+  if(DOXYGEN_FOUND)
+    set(DOXYGEN_OUTPUT_DIR ${PROJECT_BINARY_DIR}/docs/doxygen)
+    set(DOXYGEN_TAGFILE ${PROJECT_BINARY_DIR}/docs/doxygen/iganet-doxygen.tag.xml)  
+    configure_file(${PROJECT_SOURCE_DIR}/docs/Doxyfile.in ${PROJECT_BINARY_DIR}/docs/doxygen/Doxyfile @ONLY)
+    add_custom_target(Doxygen
+      COMMAND
+      ${DOXYGEN_EXECUTABLE} ${PROJECT_BINARY_DIR}/docs/doxygen/Doxyfile
+      WORKING_DIRECTORY ${PROJECT_BINARY_DIR}
+      COMMENT "Generating documentation with Doxygen"
+      )
+    
+  else()
+    add_custom_target(Doxygen
+      ${CMAKE_COMMAND} -E cmake_echo_color --cyan "Please install doxygen, and run cmake . \\&\\& make Doxygen to generate the Doxygen documentation."
+      )
+  endif()
+endif()
+
+########################################################################
+# Sphinx
+########################################################################
+if(IGANET_BUILD_DOCS)
+  find_package(Sphinx QUIET)
+  if(SPHINX_FOUND)
+    set(SPHINX_SOURCE ${PROJECT_SOURCE_DIR}/docs)
+    set(SPHINX_BUILD ${PROJECT_BINARY_DIR}/docs/sphinx)
+    set(SPHINX_INDEX_FILE ${SPHINX_BUILD}/index.html)
+    add_custom_target(Sphinx
+      COMMAND
+      ${SPHINX_EXECUTABLE} -b html
+      -Dbreathe_projects.LibKet=${PROJECT_BINARY_DIR}/docs/doxygen/xml
+      ${SPHINX_SOURCE} ${SPHINX_BUILD}
+      WORKING_DIRECTORY ${PROJECT_BINARY_DIR}
+      COMMENT "Generating documentation with Sphinx"
+      )
+    add_dependencies(Sphinx Doxygen)
+  else()
+    add_custom_target(Sphinx
+      ${CMAKE_COMMAND} -E cmake_echo_color --cyan "Please install sphinx, and run cmake . \\&\\& make Sphinx to generate the Sphinx documentation."
+      )
+  endif()
+endif()
+
+########################################################################
+# Documentation
+########################################################################
+add_custom_target(docs
+  DEPENDS Doxygen
+  DEPENDS Sphinx)
+
+########################################################################
 # Summary
 ########################################################################
 message("Configuration:")
@@ -155,9 +214,25 @@ message("EXE linker flags (debug)...........: ${CMAKE_EXE_LINKER_FLAGS_DEBUG}")
 message("EXE linker flags (release).........: ${CMAKE_EXE_LINKER_FLAGS_RELEASE}")
 message("EXE linker flags (release+debug)...: ${CMAKE_EXE_LINKER_FLAGS_RELWITHDEBINFO}")
 
+if(DOXYGEN_FOUND)
+  message("")
+  message("Doxygen............................: ${DOXYGEN_EXECUTABLE}")
+
+  if(DOXYGEN_DOT_FOUND)
+    message("Dot................................: ${DOXYGEN_DOT_EXECUTABLE}")
+  endif()
+endif()
+
+if(SPHINX_FOUND)
+  message("")
+  message("Sphinx.............................: ${SPHINX_EXECUTABLE}")
+endif()
+
 message("")
 message("Options:")
+message("IGANET_BUILD_DOCS..................: ${IGANET_BUILD_DOCS}")
 message("IGANET_BUILD_EXAMPLES..............: ${IGANET_BUILD_EXAMPLES}")
+message("IGANET_BUILD_PYBIND11..............: ${IGANET_BUILD_PYBIND11}")
 message("IGANET_BUILD_UNITTESTS.............: ${IGANET_BUILD_UNITTESTS}")
 
 message("")
