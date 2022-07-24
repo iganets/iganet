@@ -422,7 +422,7 @@ namespace iganet {
   ///     \text{GELU}(x) = x * \Psi(x),
   /// \f]
   ///
-  /// where \f$\Psi(x)$\f is the Cumulative Distribution Function for
+  /// where \f$\Psi(x)\f$ is the Cumulative Distribution Function for
   /// Gaussian Distribution
   class GELU : public ActivationFunction
   {
@@ -472,8 +472,7 @@ namespace iganet {
   ///     \text{GLU}(a,b) = a \otimes \sigma(b),
   /// \f]
   ///
-  /// where input is split in half along dim to form \f$ a \f$ and \f$
-  /// b \f$,
+  /// where input is split in half along dim to form \f$ a \f$ and \f$ b \f$,
   /// \f$ \sigma \f$ is the sigmoid function and \f$ \otimes \f$
   /// is the element-wise product between matrices.
   class GLU : public ActivationFunction
