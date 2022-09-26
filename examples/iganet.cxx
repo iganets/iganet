@@ -26,21 +26,37 @@ int main()
   {
     iganet::IgANet<real_t, optimizer_t,
                    iganet::UniformBSpline,
-                   1> net({100,100}, // Number of neurons per layers
+                   2> net({100,100}, // Number of neurons per layers
                           {
                             {iganet::activation::relu},
                             {iganet::activation::relu},
                             {iganet::activation::none}
                           },         // Activation functions
-                          {11});     // Number of B-spline coefficients
+                          {5});      // Number of B-spline coefficients
 
     // Set rhs to x
     net.rhs().transform( [](const std::array<real_t,1> X){ return std::array<real_t,1>{ static_cast<real_t>( X[0] ) }; } );
+
+    std::cout << "Scalar routine\n";
+    std::cout << net.rhs().eval( torch::ones({1}) * 0.0 ) << std::endl;    
+    std::cout << net.rhs().eval( torch::ones({1}) * 0.2 ) << std::endl;
+    std::cout << net.rhs().eval( torch::ones({1}) * 0.5 ) << std::endl;
+    std::cout << net.rhs().eval( torch::ones({1}) * 1.0 ) << std::endl;
+
+    auto a = torch::ones({4}); a[0] = 0.0; a[1] = 0.2; a[2] = 0.5; a[3] = 1.0;
+
+    std::cout << "Vectorized routine\n";
+    std::cout << net.rhs().eval_( a ) << std::endl;
+
+    exit(0);
 
     // Set left boundary value to 0
     net.bdr().coeffs()[0].accessor<real_t ,1>()[0] = 0;
     net.bdr().coeffs()[1].accessor<real_t,1>()[0] = 1;
 
+    net.options().max_epoch(1000);
+    net.options().min_loss(1e-8);
+    
     net.train();
   }
 
@@ -60,7 +76,7 @@ int main()
     std::cout << "Saved IgaNet1\n";
     std::cout << net << std::endl;
     net.sol().transform( [](const std::array<real_t,1> X){ return std::array<real_t,1>{ static_cast<real_t>( X[0]*sin(M_PI*X[0]) ) }; } );
-    std::cout << net.sol().eval( torch::stack({torch::full({1}, 0.5)}).flatten() ) << std::endl;
+    std::cout << net.rhs().eval( torch::stack({torch::full({1}, 0.5)}).flatten() ) << std::endl;
 
     net.save("iganet1.pt");
 
