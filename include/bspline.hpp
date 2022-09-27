@@ -463,31 +463,41 @@ namespace iganet {
 
         // 1D
       else if constexpr (parDim_ == 1) {
-        int64_t i = int64_t(xi[0].item<real_t>() * (nknots_[0] - 2 * degrees_[0] - 1) + degrees_[0]);
+        int64_t i = std::min(ncoeffs_[0]-1,
+                             int64_t(xi[0].item<real_t>() * (ncoeffs_[0] - degrees_[0]) + degrees_[0]));
         return eval<deriv>(xi, i);
       }
 
         // 2D
       else if constexpr (parDim_ == 2) {
-        int64_t i = int64_t(xi[0].item<real_t>() * (nknots_[0] - 2 * degrees_[0] - 1) + degrees_[0]);
-        int64_t j = int64_t(xi[1].item<real_t>() * (nknots_[1] - 2 * degrees_[1] - 1) + degrees_[1]);
+        int64_t i = std::min(ncoeffs_[0]-1,
+                             int64_t(xi[0].item<real_t>() * (ncoeffs_[0] - degrees_[0]) + degrees_[0]));
+        int64_t j = std::min(ncoeffs_[1]-1,
+                             int64_t(xi[1].item<real_t>() * (ncoeffs_[1] - degrees_[1]) + degrees_[1]));
         return eval<deriv>(xi, i, j);
       }
 
         // 3D
       else if constexpr (parDim_ == 3) {
-        int64_t i = int64_t(xi[0].item<real_t>() * (nknots_[0] - 2 * degrees_[0] - 1) + degrees_[0]);
-        int64_t j = int64_t(xi[1].item<real_t>() * (nknots_[1] - 2 * degrees_[1] - 1) + degrees_[1]);
-        int64_t k = int64_t(xi[2].item<real_t>() * (nknots_[2] - 2 * degrees_[2] - 1) + degrees_[2]);
+        int64_t i = std::min(ncoeffs_[0]-1,
+                             int64_t(xi[0].item<real_t>() * (ncoeffs_[0] - degrees_[0]) + degrees_[0]));
+        int64_t j = std::min(ncoeffs_[1]-1,
+                             int64_t(xi[1].item<real_t>() * (ncoeffs_[1] - degrees_[1]) + degrees_[1]));
+        int64_t k = std::min(ncoeffs_[2]-1,
+                             int64_t(xi[2].item<real_t>() * (ncoeffs_[2] - degrees_[2]) + degrees_[2]));
         return eval<deriv>(xi, i, j, k);
       }
 
         // 4D
       else if constexpr (parDim_ == 4) {
-        int64_t i = int64_t(xi[0].item<real_t>() * (nknots_[0] - 2 * degrees_[0] - 1) + degrees_[0]);
-        int64_t j = int64_t(xi[1].item<real_t>() * (nknots_[1] - 2 * degrees_[1] - 1) + degrees_[1]);
-        int64_t k = int64_t(xi[2].item<real_t>() * (nknots_[2] - 2 * degrees_[2] - 1) + degrees_[2]);
-        int64_t l = int64_t(xi[3].item<real_t>() * (nknots_[3] - 2 * degrees_[3] - 1) + degrees_[3]);
+        int64_t i = std::min(ncoeffs_[0]-1,
+                             int64_t(xi[0].item<real_t>() * (ncoeffs_[0] - degrees_[0]) + degrees_[0]));
+        int64_t j = std::min(ncoeffs_[1]-1,
+                             int64_t(xi[1].item<real_t>() * (ncoeffs_[1] - degrees_[1]) + degrees_[1]));
+        int64_t k = std::min(ncoeffs_[2]-1,
+                             int64_t(xi[2].item<real_t>() * (ncoeffs_[2] - degrees_[2]) + degrees_[2]));
+        int64_t l = std::min(ncoeffs_[3]-1,
+                             int64_t(xi[3].item<real_t>() * (ncoeffs_[3] - degrees_[3]) + degrees_[3]));
         return eval<deriv>(xi, i, j, k, l);
       } else {
         throw std::runtime_error("Unsupported parametric dimension");
@@ -515,7 +525,7 @@ namespace iganet {
                                         }
                                     ).flatten());
         return result;
-      } else
+      } else        
         return
           eval_prefactor<degrees_[0], (short_t) deriv % 10>() *
           torch::matmul(eval_univariate<degrees_[0], 0, (short_t) deriv % 10>(xi[0], i),
@@ -523,8 +533,7 @@ namespace iganet {
                                                {
                                                  torch::indexing::Slice(i - degrees_[0], i + 1, 1)
                                                }
-                                               ).flatten());
-    }
+                                               ).flatten());}
 
     /// @brief Returns the value of the bivariate B-spline object in
     /// the point `xi`
@@ -1274,19 +1283,19 @@ namespace iganet {
     /// where (cf. Equation (2.20) in \cite Lyche:2011)
     ///
     /// \f[
-    ///   \mathbf{R}_k(\xi) =
+    ///   \mathbf{R}_k(\xi_d) =
     ///   \begin{pmatrix}
-    ///     \frac{t_{i_p+1} - \xi}{t_{i_p+1} - t_{i_p+1-k}} & \frac{\xi - t_{i_p+1-k}}{t_{i_p+1} - t_{i_p+1-k}} & 0 & \cdots & 0 \\
-    ///     0 & \frac{t_{i_p+2} - \xi}{t_{i_p+2} - t_{i_p+2-k}} & \frac{\xi - t_{i_p+2-k}}{t_{i_p+2} - t_{i_p+1-k}} & \cdots & 0 \\
+    ///     \frac{t_{i_p+1} - \xi_d}{t_{i_p+1} - t_{i_p+1-k}} & \frac{\xi_d - t_{i_p+1-k}}{t_{i_p+1} - t_{i_p+1-k}} & 0 & \cdots & 0 \\
+    ///     0 & \frac{t_{i_p+2} - \xi_d}{t_{i_p+2} - t_{i_p+2-k}} & \frac{\xi_d - t_{i_p+2-k}}{t_{i_p+2} - t_{i_p+1-k}} & \cdots & 0 \\
     ///     \vdots & \vdots & \ddots & \ddots & \vdots \\
-    ///     0 & 0 & \cdots & \frac{t_{i_p+k} - \xi}{t_{i_p+k} - t_{i_p}} & \frac{\xi - t_{i_p}}{t_{i_p+k} - t_{i_p}}
+    ///     0 & 0 & \cdots & \frac{t_{i_p+k} - \xi_d}{t_{i_p+k} - t_{i_p}} & \frac{\xi_d - t_{i_p}}{t_{i_p+k} - t_{i_p}}
     ///   \end{pmatrix}
     /// \f]
     ///
     /// and (cf. Equation (3.30) in \cite Lyche:2011)
     ///
     /// \f[
-    ///   D\mathbf{R}_k(\xi) =
+    ///   D\mathbf{R}_k(\xi_d) =
     ///   \begin{pmatrix}
     ///     \frac{-1}{t_{i_p+1} - t_{i_p+1-k}} & \frac{1}{t_{i_p+1} - t_{i_p+1-k}} & 0 & \cdots & 0 \\
     ///     0 & \frac{-1}{t_{i_p+2} - t_{i_p+2-k}} & \frac{1}{t_{i_p+2} - t_{i_p+1-k}} & \cdots & 0 \\
@@ -1296,407 +1305,105 @@ namespace iganet {
     /// \f]
     ///
     /// To improve computational efficiency, the prefactor
-    /// \f$p_d!/(p_d-r_d)!=p_d \ cdots (p_d-r_d+1)\f$ is computed as
-    /// compile-time expression by the eval_prefactor()
-    /// function. Moreover, the above expression is evaluated from
-    /// left to right,
-    /// i.e. \f$\left(\left(\mathbf{R_1}\cdot\mathbf{R_2}\right)\cdot\mathbf{R}_3\right)\cdots\f$,
-    /// as this ensures that each subexpression evaluates to a row
-    /// vector which is then multiplied with the following
-    /// \f$\mathbf{R}_k\f$ matrix from the right. This left-to-right
-    /// evaluation requires the smallest amount of arithmetic
-    /// operations and is thereby optimal for the AD engine.
+    ///
+    /// \f[
+    ///    \frac{p_d!}{(p_d-r_d)!}=p_d \cdots (p_d-r_d+1)
+    /// \f]
+    ///
+    /// is computed as
+    /// compile-time expression by the eval_prefactor() function.
+    ///
+    /// Moreover, the above expression for
+    /// \f$D^{r_d}\mathbf{B}_d(\xi_d)\f$ is evaluated as described in
+    /// Algorithm 2.22 (R-vector version) in \cite Lyche:2011) and its
+    /// generalization to derivatives, respectively.
+    ///
+    /// The algorithm goes as follows:
+    ///
+    /// 1. \f$\mathbf{b} = 1\f$
+    ///
+    /// 2. For \f$k = 1, \dots, p_d-r_d\f$
+    ///
+    ///    1. \f$\mathbf{t}_1 = \left(t_{i_d-k+1},\dots,t_{i_d}\right)\f$
+    ///
+    ///    2. \f$\mathbf{t}_2 = \left(t_{i_d+1},\dots,t_{i_d+k}\right)\f$
+    ///
+    ///    3. \f$\mathbf{w}   = \left(\xi_d-\mathbf{t}_1\right)\div\left(\mathbf{t}_2-\mathbf{t}_1\right)\f$
+    ///
+    ///    4. \f$\mathbf{b}   = \left[\left(1-\mathbf{w}\right)\odot\mathbf{b}, 0\right]
+    ///                       + \left[0, \mathbf{w}\odot\mathbf{b}\right]\f$
+    ///
+    /// 3. For \f$k = p_d-r_d+1, \dots, p_d\f$
+    ///
+    ///    1. \f$\mathbf{t}_1 = \left(t_{i_d-k+1},\dots,t_{i_d}\right)\f$
+    ///
+    ///    2. \f$\mathbf{t}_2 = \left(t_{i_d+1},\dots,t_{i_d+k}\right)\f$
+    ///
+    ///    3. \f$\mathbf{w}   = 1\div\left(\mathbf{t}_2-\mathbf{t}_1\right)\f$
+    ///
+    ///    4. \f$\mathbf{b}   = \left[\left(1-\mathbf{w}\right)\odot\mathbf{b}, 0\right]
+    ///                       + \left[0, \mathbf{w}\odot\mathbf{b}\right]\f$
+    ///
+    /// where \f$\div\f$ and \f$\odot\f$ denote the element-wise
+    /// division and multiplication of vectors, respectively.
     template<short_t degree, short_t dim, short_t deriv>
     inline auto eval_univariate(const torch::Tensor& xi, int64_t i) const
     {
-      static_assert(degree <= 5, "Degrees higher than 5 are not implemented");
-
-      // linear B-splines
-      if constexpr (degree == 1) {
-
-        // zero-th derivative
-        if constexpr (deriv == 0) {          
-          return
-            (xi < one_[0]).template item<bool>()
-            ?
-            torch::stack(
-                         {
-                           ( knots_[dim][i+1]-xi             ) / ( knots_[dim][i+1]-knots_[dim][i] ),
-                           ( xi              -knots_[dim][i] ) / ( knots_[dim][i+1]-knots_[dim][i] )
-                         }
-                         ).view({1,2})
-            :
-            torch::stack(
-                         {
-                           one_[0]
-                         }
-                         )
-            ;
-        }
-
-        // first derivative
-        else if constexpr (deriv == 1) {
-          return
-            (xi < one_[0]).template item<bool>()
-            ?
-            torch::stack(
-                         {
-                           -one_[0] / ( knots_[dim][i+1]-knots_[dim][i] ),
-                           one_[0] / ( knots_[dim][i+1]-knots_[dim][i] )
-                         }
-                         ).view({1,2})
-            :
-            torch::stack(
-                         {
-                           one_[0]
-                         }
-                         )
-            ;
-        }
-
-        // second or higher-order derivatives
-        else {
-          return
-            (xi < one_[0]).template item<bool>()
-            ?
-            torch::stack(
-                         {
-                           zero_[0],
-                           zero_[0]
-                         }
-                         ).view({1,2})
-            :
-            torch::stack(
-                         {
-                           zero_[0]
-                         }
-                         )
-            ;
-        }
+      if constexpr (deriv > degree+1) {
+        // It might be enough to return zero as a scalar
+        return torch::zeros({1, degree+1}, core<real_t>::options_);
       }
 
-      // quadratic B-splines
-      else if constexpr (degree == 2) {
+      else {
+        // Algorithm 2.22 from \cite Lyche:2011
+        torch::Tensor b = torch::ones({1}, core<real_t>::options_);        
 
-        // zero-th derivative
-        if constexpr (deriv == 0) {
-          return
-            (xi < one_[0]).template item<bool>()
-            ?
-            torch::matmul(eval_univariate<1,dim,0>(xi, i),
-                          torch::stack(
-                                       {
-                                         ( knots_[dim][i+1]-xi               ) / ( knots_[dim][i+1]-knots_[dim][i-1] ),
-                                         ( xi              -knots_[dim][i-1] ) / ( knots_[dim][i+1]-knots_[dim][i-1] ),
-                                         zero_[0],
+        // Calculate R_k, k = 1, ..., p_d-r_d
+        for (short_t k=1; k<= degree-deriv; ++k) {
 
-                                         zero_[0],
-                                         ( knots_[dim][i+2]-xi             ) / ( knots_[dim][i+2]-knots_[dim][i] ),
-                                         ( xi              -knots_[dim][i] ) / ( knots_[dim][i+2]-knots_[dim][i] )
-                                       }
-                                       ).view({2,3}))
-            :
-            torch::stack(
-                         {
-                           zero_[0], one_[0]
-                         }
-                         ).view({1,2})
-            ;
+          // Instead of calculating t1 and t2 we calculate t1 and t21=(t2-t1)
+          auto t1 = knots_[dim].index({torch::indexing::Slice(i-k+1, i+1, 1)});
+          auto t21 = knots_[dim].index({torch::indexing::Slice(i+1, i+k+1, 1)})-t1;
+
+          // We handle the special case 0/0:=0 by first creating a
+          // mask that is 1 if t2-t1 < eps and 0 otherwise. Note that
+          // we do not have to take the absolute value as t2 >= t1.
+          auto mask = (t21 < std::numeric_limits<real_t>::epsilon()).to(dtype<real_t>());
+
+          // Instead of computing (xi-t1)/(t2-t1) which is prone to
+          // yielding 0/0 we compute (xi-t1-mask)/(t2-t1-mask) which
+          // equals the original expression if the mask is 0, i.e.,
+          // t2-t1 >= eps and 1 otherwise since t1 <= xi < t2.          
+          auto w  = torch::div(xi-t1-mask, t21-mask);
+
+          // Calculate the vector of B-splines evaluated at xi
+          b = torch::cat({ torch::mul(torch::ones_like(w, core<real_t>::options_)-w, b), zero_ }, 0)
+            + torch::cat({ zero_, torch::mul(w, b) }, 0);
         }
 
-        // first or higher-order derivatives
-        else {
-          return
-            (xi < one_[0]).template item<bool>()
-            ?
-            torch::matmul(eval_univariate<1,dim,deriv-1>(xi, i),
-                          torch::stack(
-                                       {
-                                         -one_[0] / ( knots_[dim][i+1]-knots_[dim][i-1] ),
-                                         one_[0] / ( knots_[dim][i+1]-knots_[dim][i-1] ),
-                                         zero_[0],
+        // Calculate DR_k, k = p_d-r_d+1, ..., p_d
+        for (short_t k=degree-deriv+1; k<=degree; ++k) {
 
-                                         zero_[0],
-                                         -one_[0] / ( knots_[dim][i+2]-knots_[dim][i] ),
-                                         one_[0] / ( knots_[dim][i+2]-knots_[dim][i] )
-                                       }
-                                       ).view({2,3}))
-            :
-            torch::stack(
-                         {
-                           zero_[0], one_[0]
-                         }
-                         ).view({1,2})
-            ;
-        }
-      }
+          // Instead of calculating t1 and t2 we calculate t21=(t2-t1)
+          auto t21 = knots_[dim].index({torch::indexing::Slice(i+1, i+k+1, 1)})
+            -        knots_[dim].index({torch::indexing::Slice(i-k+1, i+1, 1)});
+          
+          // We handle the special case 0/0:=0 by first creating a
+          // mask that is 1 if t2-t1 < eps and 0 otherwise. Note that
+          // we do not have to take the absolute value as t2 >= t1.
+          auto mask = (t21 < std::numeric_limits<real_t>::epsilon()).to(dtype<real_t>());
 
-      // cubic B-splines
-      else if constexpr (degree == 3) {
+          // Instead of computing 1/(t2-t1) which is prone to yielding
+          // 0/0 we compute (1-mask)/(t2-t1-mask) which equals the
+          // original expression if the mask is 0, i.e., t2-t1 >= eps
+          // and 1 otherwise since t1 <= xi < t2.
+          auto w  = torch::div(torch::ones_like(t21, core<real_t>::options_)-mask, t21-mask);
 
-        // zero-th derivative
-        if constexpr (deriv == 0) {
-          return
-            (xi < one_[0]).template item<bool>()
-            ?
-            torch::matmul(eval_univariate<2,dim,0>(xi, i),
-                          torch::stack(
-                                       {
-                                         ( knots_[dim][i+1]-xi               ) / ( knots_[dim][i+1]-knots_[dim][i-2] ),
-                                         ( xi              -knots_[dim][i-2] ) / ( knots_[dim][i+1]-knots_[dim][i-2] ),
-                                         zero_[0],
-                                         zero_[0],
-
-                                         zero_[0],
-                                         ( knots_[dim][i+2]-xi               ) / ( knots_[dim][i+2]-knots_[dim][i-1] ),
-                                         ( xi              -knots_[dim][i-1] ) / ( knots_[dim][i+2]-knots_[dim][i-1] ),
-                                         zero_[0],
-
-                                         zero_[0],
-                                         zero_[0],
-                                         ( knots_[dim][i+3]-xi             ) / ( knots_[dim][i+3]-knots_[dim][i] ),
-                                         ( xi              -knots_[dim][i] ) / ( knots_[dim][i+3]-knots_[dim][i] )
-                                       }
-                                       ).view({3,4}))
-            :
-            torch::stack(
-                         {
-                           zero_[0], zero_[0], one_[0]
-                         }
-                         ).view({1,3})
-            ;
-        }
-
-        // first or higher-order derivatives
-        else {
-          return
-            (xi < one_[0]).template item<bool>()
-            ?
-            torch::matmul(eval_univariate<2,dim,deriv-1>(xi, i),
-                          torch::stack(
-                                       {
-                                         -one_[0] / ( knots_[dim][i+1]-knots_[dim][i-2] ),
-                                         one_[0] / ( knots_[dim][i+1]-knots_[dim][i-2] ),
-                                         zero_[0],
-                                         zero_[0],
-
-                                         zero_[0],
-                                         -one_[0] / ( knots_[dim][i+2]-knots_[dim][i-1] ),
-                                         one_[0] / ( knots_[dim][i+2]-knots_[dim][i-1] ),
-                                         zero_[0],
-
-                                         zero_[0],
-                                         zero_[0],
-                                         -one_[0] / ( knots_[dim][i+3]-knots_[dim][i] ),
-                                         one_[0] / ( knots_[dim][i+3]-knots_[dim][i] )
-                                       }
-                                       ).view({3,4}))
-            :
-            torch::stack(
-                         {
-                           zero_[0], zero_[0], one_[0]
-                         }
-                         ).view({1,3})
-            ;
-        }
-      }
-
-      // quartic B-splines
-      else if constexpr (degree == 4) {
-
-        // zero-th derivative
-        if constexpr (deriv == 0) {
-          return
-            (xi < one_[0]).template item<bool>()
-            ?
-            torch::matmul(eval_univariate<3,dim,0>(xi, i),
-                          torch::stack(
-                                       {
-                                         ( knots_[dim][i+1]-xi               ) / ( knots_[dim][i+1]-knots_[dim][i-3] ),
-                                         ( xi              -knots_[dim][i-3] ) / ( knots_[dim][i+1]-knots_[dim][i-3] ),
-                                         zero_[0],
-                                         zero_[0],
-                                         zero_[0],
-
-                                         zero_[0],
-                                         ( knots_[dim][i+2]-xi               ) / ( knots_[dim][i+2]-knots_[dim][i-2] ),
-                                         ( xi              -knots_[dim][i-2] ) / ( knots_[dim][i+2]-knots_[dim][i-2] ),
-                                         zero_[0],
-                                         zero_[0],
-
-                                         zero_[0],
-                                         zero_[0],
-                                         ( knots_[dim][i+3]-xi               ) / ( knots_[dim][i+3]-knots_[dim][i-1] ),
-                                         ( xi              -knots_[dim][i-1] ) / ( knots_[dim][i+3]-knots_[dim][i-1] ),
-                                         zero_[0],
-
-                                         zero_[0],
-                                         zero_[0],
-                                         zero_[0],
-                                         ( knots_[dim][i+4]-xi             ) / ( knots_[dim][i+4]-knots_[dim][i] ),
-                                         ( xi              -knots_[dim][i] ) / ( knots_[dim][i+4]-knots_[dim][i] )
-                                       }
-                                       ).view({4,5}))
-            :
-            torch::stack(
-                         {
-                           zero_[0], zero_[0], zero_[0], one_[0]
-                         }
-                         ).view({1,4})
-            ;
-        }
-
-        // first or higher-order derivatives
-        else {
-          return
-            (xi < one_[0]).template item<bool>()
-            ?
-            torch::matmul(eval_univariate<3,dim,deriv-1>(xi, i),
-                          torch::stack(
-                                       {
-                                         -one_[0] / ( knots_[dim][i+1]-knots_[dim][i-3] ),
-                                         one_[0] / ( knots_[dim][i+1]-knots_[dim][i-3] ),
-                                         zero_[0],
-                                         zero_[0],
-                                         zero_[0],
-
-                                         zero_[0],
-                                         -one_[0] / ( knots_[dim][i+2]-knots_[dim][i-2] ),
-                                         one_[0] / ( knots_[dim][i+2]-knots_[dim][i-2] ),
-                                         zero_[0],
-                                         zero_[0],
-
-                                         zero_[0],
-                                         zero_[0],
-                                         -one_[0] / ( knots_[dim][i+3]-knots_[dim][i-1] ),
-                                         one_[0] / ( knots_[dim][i+3]-knots_[dim][i-1] ),
-                                         zero_[0],
-
-                                         zero_[0],
-                                         zero_[0],
-                                         zero_[0],
-                                         -one_[0] / ( knots_[dim][i+4]-knots_[dim][i] ),
-                                         one_[0] / ( knots_[dim][i+4]-knots_[dim][i] )
-                                       }
-                                       ).view({4,5}))
-            :
-            torch::stack(
-                         {
-                           zero_[0], zero_[0], zero_[0], one_[0]
-                         }
-                         ).view({1,4})
-            ;
-        }
-      }
-
-      // quintic B-splines
-      else if constexpr (degree == 5) {
-
-        // zero-th derivative
-        if constexpr (deriv == 0) {
-          return
-            (xi < one_[0]).template item<bool>()
-            ?
-            torch::matmul(eval_univariate<4,dim,0>(xi, i),
-                          torch::stack(
-                                       {
-                                         ( knots_[dim][i+1]-xi               ) / ( knots_[dim][i+1]-knots_[dim][i-4] ),
-                                         ( xi              -knots_[dim][i-4] ) / ( knots_[dim][i+1]-knots_[dim][i-4] ),
-                                         zero_[0],
-                                         zero_[0],
-                                         zero_[0],
-                                         zero_[0],
-
-                                         zero_[0],
-                                         ( knots_[dim][i+2]-xi               ) / ( knots_[dim][i+2]-knots_[dim][i-3] ),
-                                         ( xi              -knots_[dim][i-3] ) / ( knots_[dim][i+2]-knots_[dim][i-3] ),
-                                         zero_[0],
-                                         zero_[0],
-                                         zero_[0],
-
-                                         zero_[0],
-                                         zero_[0],
-                                         ( knots_[dim][i+3]-xi               ) / ( knots_[dim][i+3]-knots_[dim][i-2] ),
-                                         ( xi              -knots_[dim][i-2] ) / ( knots_[dim][i+3]-knots_[dim][i-2] ),
-                                         zero_[0],
-                                         zero_[0],
-
-                                         zero_[0],
-                                         zero_[0],
-                                         zero_[0],
-                                         ( knots_[dim][i+4]-xi               ) / ( knots_[dim][i+4]-knots_[dim][i-1] ),
-                                         ( xi              -knots_[dim][i-1] ) / ( knots_[dim][i+4]-knots_[dim][i-1] ),
-                                         zero_[0],
-
-                                         zero_[0],
-                                         zero_[0],
-                                         zero_[0],
-                                         zero_[0],
-                                         ( knots_[dim][i+5]-xi             ) / ( knots_[dim][i+5]-knots_[dim][i] ),
-                                         ( xi              -knots_[dim][i] ) / ( knots_[dim][i+5]-knots_[dim][i] )
-                                       }
-                                       ).view({5,6}))
-            :
-            torch::stack(
-                         {
-                           zero_[0], zero_[0], zero_[0], zero_[0], one_[0]
-                         }
-                         ).view({1,5})
-            ;
-        }
-
-        // first or higher-order derivatives
-        else {
-          return
-            (xi < one_[0]).template item<bool>()
-            ?
-            torch::matmul(eval_univariate<4,dim,deriv-1>(xi, i),
-                          torch::stack(
-                                       {
-                                         -one_[0] / ( knots_[dim][i+1]-knots_[dim][i-4] ),
-                                         one_[0] / ( knots_[dim][i+1]-knots_[dim][i-4] ),
-                                         zero_[0],
-                                         zero_[0],
-                                         zero_[0],
-                                         zero_[0],
-
-                                         zero_[0],
-                                         -one_[0] / ( knots_[dim][i+2]-knots_[dim][i-3] ),
-                                         one_[0] / ( knots_[dim][i+2]-knots_[dim][i-3] ),
-                                         zero_[0],
-                                         zero_[0],
-                                         zero_[0],
-
-                                         zero_[0],
-                                         zero_[0],
-                                         -one_[0] / ( knots_[dim][i+3]-knots_[dim][i-2] ),
-                                         one_[0] / ( knots_[dim][i+3]-knots_[dim][i-2] ),
-                                         zero_[0],
-                                         zero_[0],
-
-                                         zero_[0],
-                                         zero_[0],
-                                         zero_[0],
-                                         -one_[0] / ( knots_[dim][i+4]-knots_[dim][i-1] ),
-                                         one_[0] / ( knots_[dim][i+4]-knots_[dim][i-1] ),
-                                         zero_[0],
-
-                                         zero_[0],
-                                         zero_[0],
-                                         zero_[0],
-                                         zero_[0],
-                                         -one_[0] / ( knots_[dim][i+5]-knots_[dim][i] ),
-                                         one_[0] / ( knots_[dim][i+5]-knots_[dim][i] )
-                                       }
-                                       ).view({5,6}))
-            :
-            torch::stack(
-                         {
-                           zero_[0], zero_[0], zero_[0], zero_[0], one_[0]
-                         }
-                         ).view({1,5})
-            ;
-        }
+          // Calculate the vector of B-splines evaluated at xi
+          b = torch::cat({ torch::mul(-w, b), zero_ }, 0)
+            + torch::cat({ zero_, torch::mul(w, b) }, 0);
+        }        
+        return b;
       }
     }
 
