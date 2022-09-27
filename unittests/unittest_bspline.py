@@ -69,7 +69,32 @@ def UniformBSpline_eval_degrees3(u, order):
                        [0.875, 0],
                        [1.000, 0]]
 
-    bspline.knotvector = [0.0, 0.0, 0.0, 0.0, 0.1666666666, 0.3333333333, 0.5, 0.6666666666, 0.8333333333, 1.0, 1.0, 1.0, 1.0]
+    bspline.knotvector = [0.0, 0.0, 0.0, 0.0, 1.0/6.0, 1.0/3.0, 0.5, 2.0/3.0, 5.0/6.0, 1.0, 1.0, 1.0, 1.0]
+    
+    # bspline.delta = 0.01
+    # bspline.vis = VisMPL.VisCurve2D()
+    # bspline.render()
+
+    return bspline.derivatives(u=u, order=order)
+
+# Define univariate B-spline of degree 4
+# u     : parameter value where the B-spline is evaluated
+# order : order of the derivative
+def UniformBSpline_eval_degrees4(u, order):
+
+    bspline = BSpline.Curve()
+    bspline.degree = 4
+    bspline.ctrlpts = [[0.000, 0],
+                       [0.125, 0],
+                       [0.250, 0],
+                       [0.375, 0],
+                       [0.500, 0],
+                       [0.625, 0],
+                       [0.750, 0],
+                       [0.875, 0],
+                       [1.000, 0]]
+
+    bspline.knotvector = [0.0, 0.0, 0.0, 0.0, 0.0, 0.2, 0.4, 0.6, 0.8, 1.0, 1.0, 1.0, 1.0, 1.0]
     
     # bspline.delta = 0.01
     # bspline.vis = VisMPL.VisCurve2D()
@@ -95,3 +120,7 @@ for order in [5]:
         print('Degree3, u=' + str(u) + ', order=' + str(order) + " : " + str(UniformBSpline_eval_degrees3(u,  order)))
 
     print('####################')
+
+    # UniformBSpline_eval_degrees
+    for u in [0.0, 0.1, 0.2, 0.5, 0.75, 0.9, 1.0]:
+        print('Degree4, u=' + str(u) + ', order=' + str(order) + " : " + str(UniformBSpline_eval_degrees4(u,  order)))
