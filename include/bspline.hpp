@@ -73,18 +73,22 @@ namespace iganet {
     {
       func   =    0, /*!< function value */
       dx     =    1, /*!< first derivative in x-direction */
+      dx1    =    1, /*!< first derivative in x-direction */
       dx2    =    2, /*!< second derivative in x-direction */
       dx3    =    3, /*!< third derivative in x-direction */
       dx4    =    4, /*!< fourth derivative in x-direction */
       dy     =   10, /*!< first derivative in y-direction */
+      dy1    =   10, /*!< first derivative in y-direction */
       dy2    =   20, /*!< second derivative in y-direction */
       dy3    =   30, /*!< third derivative in y-direction */
       dy4    =   40, /*!< fourth derivative in y-direction */
       dz     =  100, /*!< first derivative in z-direction */
+      dz1    =  100, /*!< first derivative in z-direction */
       dz2    =  200, /*!< second derivative in z-direction */
       dz3    =  300, /*!< third derivative in z-direction */
       dz4    =  400, /*!< fourth derivative in z-direction */
       dt     = 1000, /*!< first derivative in t-direction */
+      dt1    = 1000, /*!< first derivative in t-direction */
       dt2    = 2000, /*!< second derivative in t-direction */
       dt3    = 3000, /*!< third derivative in t-direction */
       dt4    = 4000  /*!< fourth derivative in t-direction */
@@ -1341,7 +1345,7 @@ namespace iganet {
     ///
     ///    3. \f$\mathbf{w}   = 1\div\left(\mathbf{t}_2-\mathbf{t}_1\right)\f$
     ///
-    ///    4. \f$\mathbf{b}   = \left[\left(1-\mathbf{w}\right)\odot\mathbf{b}, 0\right]
+    ///    4. \f$\mathbf{b}   = \left[-\mathbf{w}\odot\mathbf{b}, 0\right]
     ///                       + \left[0, \mathbf{w}\odot\mathbf{b}\right]\f$
     ///
     /// where \f$\div\f$ and \f$\odot\f$ denote the element-wise
