@@ -53,7 +53,8 @@ namespace iganet {
 
   /// Stream manipulator
   /// @{
-  inline int get_iomanip() { 
+  inline int get_iomanip()
+  { 
     static int i = std::ios_base::xalloc();
     return i;
   }
@@ -76,7 +77,15 @@ namespace iganet {
                  .requires_grad(true))
     {}
 
-    inline const virtual std::string& name() const noexcept {
+    core(c10::DeviceType deviceType)
+      : options_(torch::TensorOptions()
+                 .dtype(dtype<real_t>())
+                 .device(deviceType)
+                 .requires_grad(true))
+    {}
+    
+    inline const virtual std::string& name() const noexcept
+    {
       // If the name optional is empty at this point, we grab the name of the
       // dynamic type via RTTI. Note that we cannot do this in the constructor,
       // because in the constructor of a base class `this` always refers to the base
@@ -101,6 +110,12 @@ namespace iganet {
       return *name_;
     }
 
+    /// Returns constant reference to options
+    const torch::TensorOptions options() const
+    {
+      return options_;
+    }
+    
   protected:
     // Tensor options
     const torch::TensorOptions options_;
