@@ -35,6 +35,11 @@ int main()
               << bspline.eval( iganet::to_tensor({0.5}) ) << std::endl
               << bspline.eval( iganet::to_tensor({1.0}) ) << std::endl;
 
+    // Evaluate B-spline at xi=0, xi=0.5, and xi=1
+    std::cout << bspline.eval_( iganet::to_tensor({0.0, 0.5, 1.0}) ) << std::endl;
+
+    exit(0);
+    
     // Plot B-spline
     bspline.plot(50);
 
