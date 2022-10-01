@@ -20,37 +20,6 @@
 
 #pragma once
 
-
-/// @brief Vectorized version of `torch::indexing::Slice` (see
-/// https://pytorch.org/cppdocs/notes/tensor_indexing.html)
-///
-/// This macro creates a one-dimensional `torch::Tensor` object of
-/// size `index.size(0) * (stop_offset-start_offset)` with the
-/// following content
-///
-/// \code
-/// [ index[0]+start_offset,   ..., index[N-1]+start_offset,
-///   index[0]+start_offset+1, ..., index[N-1]+start_offset+1,
-///                            ...
-///   index[0]+stop_offset-1,  ...  index[N-1]+stop_offset-1 ]
-/// \endcode
-///
-/// @note It is assumed that `index` is a one-dimensional
-/// `torch::Tensor` object as only `index.size(0)` is used.
-///
-/// @param[in] index        Vector of indices
-///
-/// @param[in] start_offset Starting value of the offset
-///
-/// @param[in] stop_offset  Stopping value of the offset
-#define VSlice(index, start_offset, stop_offset)            \
-  ( index.repeat(stop_offset-start_offset) +                \
-    torch::linspace(start_offset,                           \
-                    stop_offset-1,                          \
-                    stop_offset-start_offset,               \
-                    index.options() )                       \
-    .repeat_interleave(index.size(0)))
-
 namespace iganet {
   
   /// @brief Enumerator for specifying the initialization of B-spline coefficients
@@ -742,27 +711,22 @@ namespace iganet {
     inline auto eval_(const torch::Tensor& xi,
                       const std::array<torch::Tensor,1>& idx) const
     {
-      assert(xi.size(0) == idx[0].size(0));
+      assert(xi.sizes() == idx[0].sizes());
 
-      return eval_univariate_<degrees_[0], 0, (short_t) deriv % 10>(xi, idx[0]);
-      
-#if 0
       if constexpr (geoDim_ > 1) {
-        auto basfunc = eval_univariate<degrees_[0], 0, (short_t) deriv % 10>(xi, idx[0]);
+        auto basfunc =
+          eval_prefactor<degrees_[0], (short_t) deriv % 10>() *
+          eval_univariate_<degrees_[0], 0, (short_t) deriv % 10>(xi, idx[0]);
         std::array<torch::Tensor, geoDim_> result;
-        for (std::size_t k = 0; k < geoDim_; ++k)
-          result[k] = torch::sum((coeffs<false>(k).index_select(0, VSlice(idx[0], -degrees_[0], 1) ) *
-                                  eval_univariate<degrees_[0], 0, (short_t) deriv % 10>(xi, idx[0])).view({-1, xi.size(0)}), 0);
+        for (std::size_t i = 0; i < geoDim_; ++i)
+          result[i] = dotproduct(basfunc,
+                                 coeffs<false>(i).index_select(0, VSlice(idx[0], -degrees_[0], 1)).view({-1, xi.numel()}), 0);
         return result;
-      } else {
-        //std::cout << eval_univariate<degrees_[0], 0, (short_t) deriv % 10>(xi, idx[0]) << std::endl;
-        //std::cout << VSlice(idx[0], -degrees_[0], 1) << std::endl;
-        //std::cout << idx[0] << std::endl;
+      } else        
         return
-          torch::sum((coeffs<false>(0).index_select(0, VSlice(idx[0], -degrees_[0], 1) ) *
-                      eval_univariate<degrees_[0], 0, (short_t) deriv % 10>(xi, idx[0])).view({-1, xi.size(0)}), 0);
-      }
-#endif
+          eval_prefactor<degrees_[0], (short_t) deriv % 10>() *
+          dotproduct(eval_univariate_<degrees_[0], 0, (short_t) deriv % 10>(xi, idx[0]),
+                     coeffs<false>(0).index_select(0, VSlice(idx[0], -degrees_[0], 1)).view({-1, xi.numel()}), 0);
     }
 
     /// @brief Returns the value of the bivariate B-spline object in
@@ -772,11 +736,11 @@ namespace iganet {
     /// BSplineEvaluation for bivariate B-splines
     /// (i.e. \f$d_\text{par}=2\f$)
     template<BSplineDeriv deriv = BSplineDeriv::func>
-    inline auto eval(const torch::Tensor& xi,
+    inline auto eval_(const torch::Tensor& xi,
                      const std::array<torch::Tensor, 2>& idx) const
     {
-      assert(    xi.size(0) == idx[0].size(0) &&
-             idx[0].size(0) == idx[1].size(0));
+      assert(    xi.sizes() == idx[0].sizes() &&
+             idx[0].sizes() == idx[1].sizes());
     }
 
     
@@ -787,12 +751,12 @@ namespace iganet {
     /// BSplineEvaluation for trivariate B-splines
     /// (i.e. \f$d_\text{par}=3\f$)
     template<BSplineDeriv deriv = BSplineDeriv::func>
-    inline auto eval(const torch::Tensor& xi,
+    inline auto eval_(const torch::Tensor& xi,
                      const std::array<torch::Tensor, 3>& idx) const
     {
-      assert(    xi.size(0) == idx[0].size(0) &&
-             idx[0].size(0) == idx[1].size(0) &&
-             idx[1].size(0) == idx[2].size(0));
+      assert(    xi.sizes() == idx[0].sizes() &&
+             idx[0].sizes() == idx[1].sizes() &&
+             idx[1].sizes() == idx[2].sizes());
     }
 
     
@@ -803,13 +767,13 @@ namespace iganet {
     /// BSplineEvaluation for quartvariate B-splines
     /// (i.e. \f$d_\text{par}=4\f$)
     template<BSplineDeriv deriv = BSplineDeriv::func>
-    inline auto eval(const torch::Tensor& xi,
+    inline auto eval_(const torch::Tensor& xi,
                      const std::array<torch::Tensor, 4>& idx) const
     {
-      assert(    xi.size(0) == idx[0].size(0) &&
-             idx[0].size(0) == idx[1].size(0) &&
-             idx[1].size(0) == idx[2].size(0) &&
-             idx[2].size(0) == idx[3].size(0));
+      assert(    xi.sizes() == idx[0].sizes() &&
+             idx[0].sizes() == idx[1].sizes() &&
+             idx[1].sizes() == idx[2].sizes() &&
+             idx[2].sizes() == idx[3].sizes());
     }
 
     /// @brief Returns the indices of knot spans containing `xi`
@@ -834,40 +798,40 @@ namespace iganet {
       else if constexpr (parDim_ == 1)
         return std::array<torch::Tensor, 1>({
             torch::min(torch::full_like(xi, ncoeffs_[0]-1, core<real_t>::options_),
-                       torch::floor(xi * (ncoeffs_[0] - degrees_[0]) + degrees_[0]).to(torch::kInt32))
+                       torch::floor(xi * (ncoeffs_[0] - degrees_[0]) + degrees_[0])).to(torch::kInt32)
           });
       
       // 2D
       else if constexpr (parDim_ == 2)
         return std::array<torch::Tensor, 2>({
             torch::min(torch::full_like(xi, ncoeffs_[0]-1, core<real_t>::options_),
-                       torch::floor(xi[0].item<real_t>() * (ncoeffs_[0] - degrees_[0]) + degrees_[0]).to(torch::kInt32)),
+                       torch::floor(xi[0].item<real_t>() * (ncoeffs_[0] - degrees_[0]) + degrees_[0])).to(torch::kInt32),
             torch::min(torch::full_like(xi, ncoeffs_[1]-1, core<real_t>::options_),
-                       torch::floor(xi[1].item<real_t>() * (ncoeffs_[1] - degrees_[1]) + degrees_[1]).to(torch::kInt32))
+                       torch::floor(xi[1].item<real_t>() * (ncoeffs_[1] - degrees_[1]) + degrees_[1])).to(torch::kInt32)
           });
       
       // 3D
       else if constexpr (parDim_ == 3)
         return std::array<torch::Tensor, 3>({
             torch::min(torch::full_like(xi, ncoeffs_[0]-1, core<real_t>::options_),
-                       torch::floor(xi[0].item<real_t>() * (ncoeffs_[0] - degrees_[0]) + degrees_[0]).to(torch::kInt32)),
+                       torch::floor(xi[0].item<real_t>() * (ncoeffs_[0] - degrees_[0]) + degrees_[0])).to(torch::kInt32),
             torch::min(torch::full_like(xi, ncoeffs_[1]-1, core<real_t>::options_),
-                       torch::floor(xi[1].item<real_t>() * (ncoeffs_[1] - degrees_[1]) + degrees_[1]).to(torch::kInt32)),
+                       torch::floor(xi[1].item<real_t>() * (ncoeffs_[1] - degrees_[1]) + degrees_[1])).to(torch::kInt32),
             torch::min(torch::full_like(xi, ncoeffs_[2]-1, core<real_t>::options_),
-                       torch::floor(xi[2].item<real_t>() * (ncoeffs_[2] - degrees_[2]) + degrees_[2]).to(torch::kInt32))
+                       torch::floor(xi[2].item<real_t>() * (ncoeffs_[2] - degrees_[2]) + degrees_[2])).to(torch::kInt32)
           });
 
       // 4D
       else if constexpr (parDim_ == 4)
         return std::array<torch::Tensor, 4>({
             torch::min(torch::full_like(xi, ncoeffs_[0]-1, core<real_t>::options_),
-                       torch::floor(xi[0].item<real_t>() * (ncoeffs_[0] - degrees_[0]) + degrees_[0]).to(torch::kInt32)),
+                       torch::floor(xi[0].item<real_t>() * (ncoeffs_[0] - degrees_[0]) + degrees_[0])).to(torch::kInt32),
             torch::min(torch::full_like(xi, ncoeffs_[1]-1, core<real_t>::options_),
-                       torch::floor(xi[1].item<real_t>() * (ncoeffs_[1] - degrees_[1]) + degrees_[1]).to(torch::kInt32)),
+                       torch::floor(xi[1].item<real_t>() * (ncoeffs_[1] - degrees_[1]) + degrees_[1])).to(torch::kInt32),
             torch::min(torch::full_like(xi, ncoeffs_[2]-1, core<real_t>::options_),
-                       torch::floor(xi[2].item<real_t>() * (ncoeffs_[2] - degrees_[2]) + degrees_[2]).to(torch::kInt32)),
+                       torch::floor(xi[2].item<real_t>() * (ncoeffs_[2] - degrees_[2]) + degrees_[2])).to(torch::kInt32),
             torch::min(torch::full_like(xi, ncoeffs_[3]-1, core<real_t>::options_),
-                       torch::floor(xi[3].item<real_t>() * (ncoeffs_[3] - degrees_[3]) + degrees_[3]).to(torch::kInt32))
+                       torch::floor(xi[3].item<real_t>() * (ncoeffs_[3] - degrees_[3]) + degrees_[3])).to(torch::kInt32)
           });
       
       else
@@ -1205,13 +1169,44 @@ namespace iganet {
         return 1;
     }
 
-    /// @brief Computes the dot-product between two Tensors with summation along the given direction
-    template<typename A, typename B>
-    inline auto dotproduct(A&& a, B&& b, short_t dim) const
+    /// @brief Computes the dot-product between two Tensors with
+    /// summation along the given direction
+    template<typename T0, typename T1>
+    inline auto static dotproduct(T0&& t0, T1&& t1, short_t dim)
     {
-      return torch::sum(torch::mul(a, b), dim);
+      return torch::sum(torch::mul(t0, t1), dim);
     }
-    
+
+    /// @brief Vectorized version of `torch::indexing::Slice` (see
+    /// https://pytorch.org/cppdocs/notes/tensor_indexing.html)
+    ///
+    /// Creates a one-dimensional `torch::Tensor` object of
+    /// size `index.numel() * (stop_offset-start_offset)` with the
+    /// following content
+    ///
+    /// \code
+    /// [ index[0]+start_offset,   ..., index[N-1]+start_offset,
+    ///   index[0]+start_offset+1, ..., index[N-1]+start_offset+1,
+    ///                            ...
+    ///   index[0]+stop_offset-1,  ...  index[N-1]+stop_offset-1 ]
+    /// \endcode
+    ///
+    /// @param[in] index        Vector of indices
+    ///
+    /// @param[in] start_offset Starting value of the offset
+    ///
+    /// @param[in] stop_offset  Stopping value of the offset
+    template<typename T>
+    inline auto static VSlice(T&& index, int64_t start_offset, int64_t stop_offset)
+    {
+      return index.repeat(stop_offset-start_offset)
+        +    torch::linspace(start_offset,                        
+                             stop_offset-1,                              
+                             stop_offset-start_offset,             
+                             index.options() )                         
+        .repeat_interleave(index.numel());
+    }
+      
   protected:
     /// @brief Initializes the B-spline coefficients
     inline void init_coeffs(BSplineInit init)
@@ -1420,7 +1415,7 @@ namespace iganet {
 
           // Instead of calculating t1 and t2 we calculate t1 and t21=(t2-t1)
           auto t1 = knots_[dim].index({torch::indexing::Slice(i-k+1, i+1, 1)});
-          auto t21 = knots_[dim].index({torch::indexing::Slice(i+1, i+k+1, 1)})-t1;
+          auto t21 = knots_[dim].index({torch::indexing::Slice(i+1, i+k+1, 1)}) - t1;
 
           // We handle the special case 0/0:=0 by first creating a
           // mask that is 1 if t2-t1 < eps and 0 otherwise. Note that
@@ -1459,7 +1454,7 @@ namespace iganet {
           // Calculate the vector of B-splines evaluated at xi
           b = torch::cat({ torch::mul(-w, b), zero_ }, 0)
             + torch::cat({ zero_, torch::mul(w, b) }, 0);
-        }        
+        }
         return b;
       }
     }
@@ -1472,29 +1467,66 @@ namespace iganet {
     template<short_t degree, short_t dim, short_t deriv>
     inline auto eval_univariate_(const torch::Tensor& xi, const torch::Tensor& i) const
     {
-      assert(xi.size(0) == i.size(0));
+      assert(xi.sizes() == i.sizes());
       
       if constexpr (deriv > degree+1) {
         // It might be enough to return zero as a scalar
-        return torch::zeros({degree+1, xi.size(0)}, core<real_t>::options_);
+        return torch::zeros({degree+1, xi.sizes()}, core<real_t>::options_);
       } else {
         // Algorithm 2.22 from \cite Lyche:2011
-        torch::Tensor b = torch::ones({1, xi.size(0)}, core<real_t>::options_);
+        torch::Tensor b = torch::ones({xi.numel()}, core<real_t>::options_);
 
         // Calculate R_k, k = 1, ..., p_d-r_d
         for (short_t k=1; k<= degree-deriv; ++k) {
 
           // Instead of calculating t1 and t2 we calculate t1 and t21=(t2-t1)
-
-          std::cout << "i=" << i << std::endl;
-           
-          std::cout << VSlice(i, -k+1, 1) << std::endl;
-          
           auto t1 = knots_[dim].index_select(0, VSlice(i, -k+1, 1) );
-          //auto t21 = knots_[dim].index({torch::indexing::Slice(i+1, i+k+1, 1)})-t1;
+          auto t21 = knots_[dim].index_select(0, VSlice(i, 1, k+1) ) - t1;
+
+          // We handle the special case 0/0:=0 by first creating a
+          // mask that is 1 if t2-t1 < eps and 0 otherwise. Note that
+          // we do not have to take the absolute value as t2 >= t1.
+          auto mask = (t21 < std::numeric_limits<real_t>::epsilon()).to(dtype<real_t>());
+
+          // Instead of computing (xi-t1)/(t2-t1) which is prone to
+          // yielding 0/0 we compute (xi-t1-mask)/(t2-t1-mask) which
+          // equals the original expression if the mask is 0, i.e.,
+          // t2-t1 >= eps and 1 otherwise since t1 <= xi < t2.          
+          auto w  = torch::div(xi.repeat(k)-t1-mask, t21-mask);
+
+          // Calculate the vector of B-splines evaluated at xi
+          b = torch::cat({ torch::mul(torch::ones_like(w, core<real_t>::options_)-w, b),
+              torch::zeros_like(xi, core<real_t>::options_) }, 0)
+            + torch::cat({ torch::zeros_like(xi, core<real_t>::options_),
+                torch::mul(w, b) }, 0);
+        }
+
+        // Calculate DR_k, k = p_d-r_d+1, ..., p_d
+        for (short_t k=degree-deriv+1; k<=degree; ++k) {
+          
+          // Instead of calculating t1 and t2 we calculate t1 and t21=(t2-t1)
+          auto t21 = knots_[dim].index_select(0, VSlice(i, 1, k+1) )
+            -        knots_[dim].index_select(0, VSlice(i, -k+1, 1) );
+
+          // We handle the special case 0/0:=0 by first creating a
+          // mask that is 1 if t2-t1 < eps and 0 otherwise. Note that
+          // we do not have to take the absolute value as t2 >= t1.
+          auto mask = (t21 < std::numeric_limits<real_t>::epsilon()).to(dtype<real_t>());
+
+          // Instead of computing 1/(t2-t1) which is prone to yielding
+          // 0/0 we compute (1-mask)/(t2-t1-mask) which equals the
+          // original expression if the mask is 0, i.e., t2-t1 >= eps
+          // and 1 otherwise since t1 <= xi < t2.
+          auto w  = torch::div(torch::ones_like(t21, core<real_t>::options_)-mask, t21-mask);
+
+          // Calculate the vector of B-splines evaluated at xi
+          b = torch::cat({ torch::mul(-w, b),
+              torch::zeros_like(xi, core<real_t>::options_) }, 0)
+            + torch::cat({ torch::zeros_like(xi, core<real_t>::options_),
+                torch::mul(w, b) }, 0);
         }
         
-        return b;
+        return b.view({degree+1, xi.numel()});
       }
     }      
   };
