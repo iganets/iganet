@@ -18,7 +18,7 @@
 int main()
 {
   using real_t = double;
-  torch::manual_seed(1);
+  iganet::init();
 
   {
     // Univariate non-uniform B-spline of degree 2 with 6 control points in R^1

@@ -28,8 +28,12 @@ namespace iganet {
 #define short_t unsigned short int
 
   /// Determines the LibTorch dtype from template parameter
+  ///
+  /// @tparam T C++ type
+  ///
+  /// @result Torch type corresponding to the C++ type
   /// @{
-  template<typename T>
+  template<typename real_t>
   inline constexpr auto dtype() { return torch::kByte; }
 
   template<>
@@ -65,11 +69,14 @@ namespace iganet {
   bool is_verbose(std::ostream& os) { return os.iword(get_iomanip()) != 0; }
   /// @}
 
-  // LibTorch core object handles the automated determination of dtype
-  // from the template argument and the selection of the device
+  /// LibTorch core object handles the automated determination of dtype
+  /// from the template argument and the selection of the device
+  ///
+  /// @tparam real_t Type of real-valued data
   template<typename real_t>
   class core {
   public:
+    /// Default constructor
     core()
       : options_(torch::TensorOptions()
                  .dtype(dtype<real_t>())
@@ -77,13 +84,17 @@ namespace iganet {
                  .requires_grad(true))
     {}
 
+    /// Constructor with user-defined device type
     core(c10::DeviceType deviceType)
       : options_(torch::TensorOptions()
                  .dtype(dtype<real_t>())
                  .device(deviceType)
                  .requires_grad(true))
     {}
-    
+
+    /// @brief Returns the full qualified name of the object
+    ///
+    /// @result Full qualified name of the object as string
     inline const virtual std::string& name() const noexcept
     {
       // If the name optional is empty at this point, we grab the name of the
@@ -110,21 +121,21 @@ namespace iganet {
       return *name_;
     }
 
-    /// Returns constant reference to options
+    /// @brief Returns constant reference to options
     const torch::TensorOptions options() const
     {
       return options_;
     }
     
   protected:
-    // Tensor options
+    /// @brief Tensor options
     const torch::TensorOptions options_;
 
-    // String storing the full qualified name of the object
+    /// @brief String storing the full qualified name of the object
     mutable at::optional<std::string> name_;
   };
 
-  // Concatenates multiple std::vector objects
+  /// @brief Concatenates multiple std::vector objects
   template<typename... Ts>
   inline auto concat(const std::vector<Ts>&... vectors)
   {
@@ -135,7 +146,7 @@ namespace iganet {
     return result;
   }
 
-  // Concatenates multiple std::array objects
+  /// @brief Concatenates multiple std::array objects
   template<typename T, std::size_t... N>
   inline auto concat(const std::array<T, N>&... arrays)
   {
@@ -147,38 +158,17 @@ namespace iganet {
     return result;
   }
 
+  /// @brief Converts an std::initializer_list to torch::Tensor
   template<typename T>
-  inline auto to_tensor(std::initializer_list<T> list)
+  inline auto to_tensor(std::initializer_list<T> list,
+                        torch::IntArrayRef sizes = {-1},
+                        const torch::TensorOptions& options = iganet::core<T>{}.options())
   {
-    auto it = list.begin();
-    switch (list.size()) {
-    case 1:
-      return torch::stack({
-          torch::full({1}, *it++)
-        }).flatten();
-    case 2:
-      return torch::stack({
-          torch::full({1}, *it++),
-          torch::full({1}, *it++)
-        }).flatten();
-    case 3:
-      return torch::stack({
-          torch::full({1}, *it++),
-          torch::full({1}, *it++),
-          torch::full({1}, *it++)
-        }).flatten();
-    case 4:
-      return torch::stack({
-          torch::full({1}, *it++),
-          torch::full({1}, *it++),
-          torch::full({1}, *it++),
-          torch::full({1}, *it++)
-        }).flatten();
-    default:
-      throw std::runtime_error("Invalid size");
-    }
+    return torch::from_blob(const_cast<T*>(std::data(list)),
+                            (sizes == torch::IntArrayRef{-1}) ? list.size() : sizes , options);
   }
 
+  /// @brief Initializes the library
   inline void init(std::ostream& os = std::cout)
   {
     os << "LibTorch version: "

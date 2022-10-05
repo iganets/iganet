@@ -57,8 +57,8 @@ TEST(Performance, MatmulTensorLayout)
         auto t2 = std::chrono::high_resolution_clock::now();
 
         std::cout << "   ("
-                  << std::right << std::setw(8) << n << ","
-                  << std::right << std::setw(8) << m << ") "
+                  << std::right << std::setw(8) << m << ","
+                  << std::right << std::setw(8) << n << ") "
                   << std::right << std::setw(12)
                   << std::chrono::duration_cast<std::chrono::nanoseconds>(t2-t1).count() / double(n*m*100)
                   << " (ns/entry)"
@@ -72,5 +72,6 @@ TEST(Performance, MatmulTensorLayout)
 
 int main(int argc, char **argv) {
   ::testing::InitGoogleTest(&argc, argv);
+  iganet::init();
   return RUN_ALL_TESTS();
 }

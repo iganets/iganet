@@ -18,7 +18,7 @@
 int main()
 {
   using real_t = double;
-  torch::manual_seed(1);
+  iganet::init();
 
   {
     // Univariate uniform B-spline of degree 2 with 6 control points in R^1
@@ -37,8 +37,6 @@ int main()
 
     // Evaluate B-spline at xi=0, xi=0.5, and xi=1
     std::cout << bspline.eval_( iganet::to_tensor({0.0, 0.5, 1.0}) ) << std::endl;
-
-    exit(0);
     
     // Plot B-spline
     bspline.plot(50);
@@ -63,6 +61,9 @@ int main()
               << bspline.eval( iganet::to_tensor({0.5}) ) << std::endl
               << bspline.eval( iganet::to_tensor({1.0}) ) << std::endl;
 
+    // Evaluate B-spline at xi=0, xi=0.5, and xi=1
+    std::cout << bspline.eval_( iganet::to_tensor({0.0, 0.5, 1.0}) ) << std::endl;
+    
     // Plot B-spline
     bspline.plot(50);
 
@@ -87,6 +88,9 @@ int main()
               << bspline.eval( iganet::to_tensor({0.5}) ) << std::endl
               << bspline.eval( iganet::to_tensor({1.0}) ) << std::endl;
 
+    // Evaluate B-spline at xi=0, xi=0.5, and xi=1
+    std::cout << bspline.eval_( iganet::to_tensor({0.0, 0.5, 1.0}) ) << std::endl;
+    
     // Plot B-spline
     bspline.plot(50);
 
@@ -101,8 +105,6 @@ int main()
 
     // Print information
     std::cout << bspline << std::endl;
-    std::cout << bspline.knots(0) << std::endl;
-    std::cout << bspline.knots(1) << std::endl;
 
     // Map control points to phyiscal coordinates
     bspline.transform( [](const std::array<real_t,2> xi){ return std::array<real_t,2>{(xi[0]+1)*cos(M_PI*xi[1]),
@@ -113,6 +115,9 @@ int main()
               << bspline.eval( iganet::to_tensor({0.5, 0.5}) ) << std::endl
               << bspline.eval( iganet::to_tensor({1.0, 0.5}) ) << std::endl;
 
+    // Evaluate B-spline at xi=0, xi=0.5, and xi=1
+    std::cout << bspline.eval_( iganet::to_tensor({0.0, 0.5, 1.0, 0.0, 0.5, 0.5}, {2,3}) ) << std::endl;
+    
     // Plot B-spline
     bspline.plot(50,50);
 

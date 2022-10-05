@@ -416,5 +416,6 @@ TEST(BSpline, UniformBSpline_eval_degrees4_double)
 
 int main(int argc, char **argv) {
   ::testing::InitGoogleTest(&argc, argv);
+  iganet::init();
   return RUN_ALL_TESTS();
 }

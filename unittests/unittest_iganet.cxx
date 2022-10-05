@@ -659,5 +659,6 @@ TEST(BSpline, IgaNet_NonUniformBSpline_4d_double)
 
 int main(int argc, char **argv) {
   ::testing::InitGoogleTest(&argc, argv);
+  iganet::init();
   return RUN_ALL_TESTS();
 }
