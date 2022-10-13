@@ -710,13 +710,13 @@ namespace iganet {
         std::array<torch::Tensor, geoDim_> result;
         for (std::size_t i = 0; i < geoDim_; ++i)
           result[i] = dotproduct(basfunc,
-                                 coeffs<false>(i).index_select(0, VSlice(idx[0], -degrees_[0], 1)).view({-1, xi.numel()}), 0);
+                                 coeffs(i).index_select(0, VSlice(idx[0], -degrees_[0], 1)).view({-1, xi.numel()}), 0);
         return result;
-      } else        
+      } else
         return
           eval_prefactor<degrees_[0], (short_t) deriv % 10>() *
           dotproduct(eval_univariate_<degrees_[0], 0, (short_t) deriv % 10>(xi, idx[0]),
-                     coeffs<false>(0).index_select(0, VSlice(idx[0], -degrees_[0], 1)).view({-1, xi.numel()}), 0);
+                     coeffs(0).index_select(0, VSlice(idx[0], -degrees_[0], 1)).view({-1, xi.numel()}), 0);
     }
 
     /// @brief Returns the value of the bivariate B-spline object in
@@ -730,32 +730,7 @@ namespace iganet {
                       const std::array<torch::Tensor, 2>& idx,
                       short_t dim = 0) const
     {
-      assert( xi[0].sizes() == idx[0].sizes() && xi[1].sizes() == idx[1].sizes());
-
-      std::cout << "XI=\n" << xi << std::endl;
-      std::cout << "IDX0=\n" << idx[0]
-                << "IDX1=\n" << idx[1]
-                << std::endl;
-
-      std::cout << "BAS0=\n" << eval_univariate_<degrees_[0], 0,  (short_t)deriv    %10>(xi[0], idx[0]) << std::endl;
-      std::cout << "BAS1=\n" << eval_univariate_<degrees_[1], 1, ((short_t)deriv/10)%10>(xi[1], idx[1]) << std::endl;
-
-      std::cout << "KRON=\n" << kronproduct(eval_univariate_<degrees_[0], 0,  (short_t)deriv    %10>(xi[0], idx[0]),
-                                            eval_univariate_<degrees_[1], 1, ((short_t)deriv/10)%10>(xi[1], idx[1]),
-                                            0) << std::endl;
-
-      std::cout << "COEFFS=\n"
-                << coeffs<false>(0).index(
-                                          {
-                                            torch::indexing::Slice((idx[0])[0].item<int>()-degrees_[0], (idx[0])[0].item<int>()+1, 1),
-                                            torch::indexing::Slice((idx[1])[0].item<int>()-degrees_[1], (idx[1])[0].item<int>()+1, 1)
-                                          }
-                                          ).flatten() << std::endl;
-
-      std::cout << VSlice(idx[0], -degrees_[0], 1) << std::endl;
-      std::cout << VSlice(idx[1], -degrees_[1], 1) << std::endl;
-      
-      exit(0);
+      assert(xi[0].sizes() == idx[0].sizes() && xi[1].sizes() == idx[1].sizes());
       
       if constexpr (geoDim_ > 1) {
         auto basfunc =
@@ -767,15 +742,23 @@ namespace iganet {
         std::array<torch::Tensor, geoDim_> result;
         for (std::size_t i = 0; i < geoDim_; ++i)
           result[i] = dotproduct(basfunc,
-                                 coeffs<false>(i).index_select(0, VSlice(idx[0], -degrees_[0], 1)).view({-1, xi.numel()}), 0);
+                                 coeffs(i).index_select(0, VSlice(idx,
+                                                                  std::array<int64_t,2>{-degrees_[0],-degrees_[1]},
+                                                                  std::array<int64_t,2>{1,1},
+                                                                  ncoeffs(0))).view({-1, xi[0].numel()}), 0);
         return result;
       } else        
-        return 
-          eval_prefactor<degrees_[0], (short_t) deriv % 10>() *
-          dotproduct(eval_univariate_<degrees_[0], 0, (short_t) deriv % 10>(xi, idx[0]),
-                     coeffs<false>(0).index_select(0, VSlice(idx[0], -degrees_[0], 1)).view({-1, xi.numel()}), 0);
+        return
+          eval_prefactor<degrees_[0],  (short_t)deriv    %10>() *
+          eval_prefactor<degrees_[1], ((short_t)deriv/10)%10>() *
+          dotproduct(kronproduct(eval_univariate_<degrees_[0], 0,  (short_t)deriv    %10>(xi[0], idx[0]),
+                                 eval_univariate_<degrees_[1], 1, ((short_t)deriv/10)%10>(xi[1], idx[1]),
+                                 0),
+                     coeffs(0).index_select(0, VSlice(idx,
+                                                      std::array<int64_t,2>{-degrees_[0],-degrees_[1]},
+                                                      std::array<int64_t,2>{1,1},
+                                                      ncoeffs(0))).view({-1, xi[0].numel()}), 0);
     }
-
     
     /// @brief Returns the value of the trivariate B-spline object in
     /// the points `xi`
@@ -788,9 +771,41 @@ namespace iganet {
                       const std::array<torch::Tensor, 3>& idx,
                       short_t dim = 0) const
     {
-      assert(    xi.sizes() == idx[0].sizes() &&
-             idx[0].sizes() == idx[1].sizes() &&
-             idx[1].sizes() == idx[2].sizes());
+      assert(xi[0].sizes() == idx[0].sizes() && xi[1].sizes() == idx[1].sizes() &&
+             xi[2].sizes() == idx[2].sizes());
+      
+      if constexpr (geoDim_ > 1) {
+        auto basfunc =
+          eval_prefactor<degrees_[0],  (short_t)deriv     %10>() *
+          eval_prefactor<degrees_[1], ((short_t)deriv/ 10)%10>() *
+          eval_prefactor<degrees_[2], ((short_t)deriv/100)%10>() *
+          kronproduct(kronproduct(eval_univariate_<degrees_[0], 0,  (short_t)deriv    %10>(xi[0], idx[0]),
+                                  eval_univariate_<degrees_[1], 1, ((short_t)deriv/10)%10>(xi[1], idx[1]),
+                                  0),
+                      eval_univariate_<degrees_[2], 2, ((short_t)deriv/100)%10>(xi[2], idx[2]),
+                      0);
+        std::array<torch::Tensor, geoDim_> result;
+        for (std::size_t i = 0; i < geoDim_; ++i)
+          result[i] = dotproduct(basfunc,
+                                 coeffs(i).index_select(0, VSlice(idx,
+                                                                  std::array<int64_t,3>{-degrees_[0],-degrees_[1],-degrees_[2]},
+                                                                  std::array<int64_t,3>{1,1,1},
+                                                                  ncoeffs(0))).view({-1, xi[0].numel()}), 0);
+        return result;
+      } else        
+        return
+          eval_prefactor<degrees_[0],  (short_t)deriv     %10>() *
+          eval_prefactor<degrees_[1], ((short_t)deriv/ 10)%10>() *
+          eval_prefactor<degrees_[2], ((short_t)deriv/100)%10>() *
+          dotproduct(kronproduct(kronproduct(eval_univariate_<degrees_[0], 0,  (short_t)deriv    %10>(xi[0], idx[0]),
+                                             eval_univariate_<degrees_[1], 1, ((short_t)deriv/10)%10>(xi[1], idx[1]),
+                                             0),
+                                 eval_univariate_<degrees_[2], 2, ((short_t)deriv/100)%10>(xi[2], idx[2]),
+                                 0),
+                     coeffs(0).index_select(0, VSlice(idx,
+                                                      std::array<int64_t,3>{-degrees_[0],-degrees_[1],-degrees_[2]},
+                                                      std::array<int64_t,3>{1,1,1},
+                                                      ncoeffs(0))).view({-1, xi[0].numel()}), 0);
     }
 
     
@@ -805,10 +820,47 @@ namespace iganet {
                       const std::array<torch::Tensor, 4>& idx,
                       short_t dim = 0) const
     {
-      assert(    xi.sizes() == idx[0].sizes() &&
-             idx[0].sizes() == idx[1].sizes() &&
-             idx[1].sizes() == idx[2].sizes() &&
-             idx[2].sizes() == idx[3].sizes());
+      assert(xi[0].sizes() == idx[0].sizes() && xi[1].sizes() == idx[1].sizes() &&
+             xi[2].sizes() == idx[2].sizes() && xi[3].sizes() == idx[3].sizes());
+      
+      if constexpr (geoDim_ > 1) {
+        auto basfunc =
+          eval_prefactor<degrees_[0],  (short_t)deriv      %10>() *
+          eval_prefactor<degrees_[1], ((short_t)deriv/  10)%10>() *
+          eval_prefactor<degrees_[2], ((short_t)deriv/ 100)%10>() *
+          eval_prefactor<degrees_[2], ((short_t)deriv/1000)%10>() *
+          kronproduct(kronproduct(eval_univariate_<degrees_[0], 0,  (short_t)deriv      %10>(xi[0], idx[0]),
+                                  eval_univariate_<degrees_[1], 1, ((short_t)deriv/  10)%10>(xi[1], idx[1]),
+                                  0),
+                      kronproduct(eval_univariate_<degrees_[2], 2, ((short_t)deriv/ 100)%10>(xi[2], idx[2]),
+                                  eval_univariate_<degrees_[3], 3, ((short_t)deriv/1000)%10>(xi[3], idx[3]),
+                                  0),
+                      0);
+        std::array<torch::Tensor, geoDim_> result;
+        for (std::size_t i = 0; i < geoDim_; ++i)
+          result[i] = dotproduct(basfunc,
+                                 coeffs(i).index_select(0, VSlice(idx,
+                                                                  std::array<int64_t,4>{-degrees_[0],-degrees_[1],-degrees_[2],-degrees_[3]},
+                                                                  std::array<int64_t,4>{1,1,1,1},
+                                                                  ncoeffs(0))).view({-1, xi[0].numel()}), 0);
+        return result;
+      } else        
+        return
+          eval_prefactor<degrees_[0],  (short_t)deriv      %10>() *
+          eval_prefactor<degrees_[1], ((short_t)deriv/  10)%10>() *
+          eval_prefactor<degrees_[2], ((short_t)deriv/ 100)%10>() *
+          eval_prefactor<degrees_[3], ((short_t)deriv/1000)%10>() *
+          dotproduct(kronproduct(kronproduct(eval_univariate_<degrees_[0], 0,  (short_t)deriv      %10>(xi[0], idx[0]),
+                                             eval_univariate_<degrees_[1], 1, ((short_t)deriv/  10)%10>(xi[1], idx[1]),
+                                             0),
+                                 kronproduct(eval_univariate_<degrees_[2], 2, ((short_t)deriv/ 100)%10>(xi[2], idx[2]),
+                                             eval_univariate_<degrees_[3], 3, ((short_t)deriv/1000)%10>(xi[3], idx[3]),
+                                             0),
+                                 0),
+                     coeffs(0).index_select(0, VSlice(idx,
+                                                      std::array<int64_t,4>{-degrees_[0],-degrees_[1],-degrees_[2],-degrees_[3]},
+                                                      std::array<int64_t,4>{1,1,1,1},
+                                                      ncoeffs(0))).view({-1, xi[0].numel()}), 0);
     }
 
     /// @brief Returns the indices of knot spans containing `xi`
@@ -1466,8 +1518,6 @@ namespace iganet {
     template<short_t degree, short_t dim, short_t deriv>
     inline auto eval_univariate_(const torch::Tensor& xi, const torch::Tensor& i) const
     {
-      std::cout << xi.sizes() << std::endl;
-      std::cout << i.sizes() << std::endl;
       assert(xi.sizes() == i.sizes());
       
       if constexpr (deriv > degree+1) {
@@ -1706,15 +1756,15 @@ namespace iganet {
     using BSplineCore::BSplineCore;
 
     /// Plots the B-spline object using matplotlibcpp
-    inline auto plot(int64_t xres=10, int64_t yres=10, int64_t zres=10) const
+    inline auto plot(int64_t res0=10, int64_t res1=10, int64_t res2=10) const
     {
-      return plot(*this, xres, yres, zres);
+      return plot(*this, res0, res1, res2);
     }
 
     /// Plots the B-spline object using matplotlibcpp
     template<typename BSplineCore_t>
     inline auto plot(const BSplineCommon<real_t, BSplineCore_t>& color,
-                     int64_t xres=10, int64_t yres=10, int64_t zres=10) const
+                     int64_t res0=10, int64_t res1=10, int64_t res2=10) const
     {
       static_assert(BSplineCore::parDim_ == BSplineCore_t::parDim_,
                     "Parametric dimensions must match");
@@ -1728,23 +1778,23 @@ namespace iganet {
         // mapping: [0,1] -> R^1
         //
 
-        matplot::vector_1d Xfine(xres, 0.0);
-        matplot::vector_1d Yfine(xres, 0.0);
+        matplot::vector_1d Xfine(res0, 0.0);
+        matplot::vector_1d Yfine(res0, 0.0);
 
-        torch::Tensor X = BSplineCore::eval_(torch::linspace(0, 1, xres));
-        auto Xaccessor = X.accessor<real_t,1>();
+        auto Coords = BSplineCore::eval_(torch::linspace(0, 1, res0));
+        auto XAccessor = Coords.template accessor<real_t,1>();
         
 #pragma omp parallel for simd
-        for (int64_t i=0; i<xres; ++i)
-          Xfine[i] = Xaccessor[i];
+        for (int64_t i=0; i<res0; ++i)
+          Xfine[i] = XAccessor[i];
 
         if ((void*)this != (void*)&color) {
           if constexpr (BSplineCore_t::geoDim_==1) {
-            torch::Tensor Y = color.eval_(torch::linspace(0, 1, xres));
-            auto Yaccessor = Y.accessor<real_t,1>();
+            torch::Tensor Color = color.eval_(torch::linspace(0, 1, res0));
+            auto CAccessor = Color.accessor<real_t,1>();
 #pragma omp parallel for simd
-            for (int64_t i=0; i<xres; ++i)
-              Yfine[i] = Yaccessor[i];
+            for (int64_t i=0; i<res0; ++i)
+              Yfine[i] = CAccessor[i];
           }
         }
 
@@ -1785,44 +1835,38 @@ namespace iganet {
         // Plotting...
         if ((void*)this != (void*)&color) {
           if constexpr (BSplineCore_t::geoDim_==1) {
-            matplot::vector_2d Xfine(1, matplot::vector_1d(xres, 0.0));
-            matplot::vector_2d Yfine(1, matplot::vector_1d(xres, 0.0));
-            matplot::vector_2d Zfine(1, matplot::vector_1d(xres, 0.0));
+            matplot::vector_2d Xfine(1, matplot::vector_1d(res0, 0.0));
+            matplot::vector_2d Yfine(1, matplot::vector_1d(res0, 0.0));
+            matplot::vector_2d Zfine(1, matplot::vector_1d(res0, 0.0));
 
+            auto Coords = BSplineCore::eval_(torch::linspace(0, 1, res0));
+            auto XAccessor = Coords[0].template accessor<real_t,1>();
+            auto YAccessor = Coords[1].template accessor<real_t,1>();
+
+            auto Color = color.eval_(torch::linspace(0, 1, res0));
+            auto CAccessor = Color.template accessor<real_t,1>();
+            
 #pragma omp parallel for simd
-            for (int64_t i=0; i<xres; ++i) {
-              auto coords = BSplineCore::eval(torch::stack(
-                                                           {
-                                                             torch::full({1}, i/real_t(xres-1))
-                                                           }
-                                                           ).view({1})
-                                              );
-              Xfine[0][i] = coords[0].template item<real_t>();
-              Yfine[0][i] = coords[1].template item<real_t>();
-              Zfine[0][i] = color.eval(torch::stack(
-                                                    {
-                                                      torch::full({1}, i/real_t(xres-1))
-                                                    }
-                                                    ).view({1})
-                                       ).template item<real_t>();
+            for (int64_t i=0; i<res0; ++i) {              
+              Xfine[0][i] = XAccessor[i];
+              Yfine[0][i] = YAccessor[i];
+              Zfine[0][i] = CAccessor[i];
             }
             matplot::view(2);
             matplot::mesh(Xfine, Yfine, Zfine);
           }
         } else {
-          matplot::vector_1d Xfine(xres, 0.0);
-          matplot::vector_1d Yfine(xres, 0.0);
+          matplot::vector_1d Xfine(res0, 0.0);
+          matplot::vector_1d Yfine(res0, 0.0);
 
+          auto Coords = BSplineCore::eval_(torch::linspace(0, 1, res0));
+          auto XAccessor = Coords[0].template accessor<real_t,1>();
+          auto YAccessor = Coords[1].template accessor<real_t,1>();
+          
 #pragma omp parallel for simd
-          for (int64_t i=0; i<xres; ++i) {
-            auto coords = BSplineCore::eval(torch::stack(
-                                                         {
-                                                           torch::full({1}, i/real_t(xres-1))
-                                                         }
-                                                         ).view({1})
-                                            );
-            Xfine[i] = coords[0].template item<real_t>();
-            Yfine[i] = coords[1].template item<real_t>();
+          for (int64_t i=0; i<res0; ++i) {
+            Xfine[i] = XAccessor[i];
+            Yfine[i] = YAccessor[i];
           }
 
           matplot::vector_1d X(BSplineCore::ncoeffs(0), 0.0);
@@ -1858,49 +1902,44 @@ namespace iganet {
         // Plotting...
         if ((void*)this != (void*)&color) {
           if constexpr (BSplineCore_t::geoDim_==1) {
-            matplot::vector_2d Xfine(1, matplot::vector_1d(xres, 0.0));
-            matplot::vector_2d Yfine(1, matplot::vector_1d(xres, 0.0));
-            matplot::vector_2d Zfine(1, matplot::vector_1d(xres, 0.0));
-            matplot::vector_2d Cfine(1, matplot::vector_1d(xres, 0.0));
+            matplot::vector_2d Xfine(1, matplot::vector_1d(res0, 0.0));
+            matplot::vector_2d Yfine(1, matplot::vector_1d(res0, 0.0));
+            matplot::vector_2d Zfine(1, matplot::vector_1d(res0, 0.0));
+            matplot::vector_2d Cfine(1, matplot::vector_1d(res0, 0.0));
 
+            auto Coords = BSplineCore::eval_(torch::linspace(0, 1, res0));
+            auto XAccessor = Coords[0].template accessor<real_t,1>();
+            auto YAccessor = Coords[1].template accessor<real_t,1>();
+            auto ZAccessor = Coords[2].template accessor<real_t,1>();
+
+            auto Color = color.eval_(torch::linspace(0, 1, res0));
+            auto CAccessor = Color.template accessor<real_t,1>();
+            
 #pragma omp parallel for simd
-            for (int64_t i=0; i<xres; ++i) {
-              auto coords = BSplineCore::eval(torch::stack(
-                                                           {
-                                                             torch::full({1}, i/real_t(xres-1))
-                                                           }
-                                                           ).view({1})
-                                              );
-              Xfine[0][i] = coords[0].template item<real_t>();
-              Yfine[0][i] = coords[1].template item<real_t>();
-              Zfine[0][i] = coords[2].template item<real_t>();
-
-              Cfine[0][i] = color.eval(torch::stack(
-                                                    {
-                                                      torch::full({1}, i/real_t(xres-1))
-                                                    }
-                                                    ).view({1})
-                                       ).template item<real_t>();
+            for (int64_t i=0; i<res0; ++i) {
+              Xfine[0][i] = XAccessor[i];
+              Yfine[0][i] = YAccessor[i];
+              Zfine[0][i] = ZAccessor[i];
+              Cfine[0][i] = CAccessor[i];
             }
 
             matplot::mesh(Xfine, Yfine, Zfine, Cfine);
           }
         } else {
-          matplot::vector_1d Xfine(xres, 0.0);
-          matplot::vector_1d Yfine(xres, 0.0);
-          matplot::vector_1d Zfine(xres, 0.0);
+          matplot::vector_1d Xfine(res0, 0.0);
+          matplot::vector_1d Yfine(res0, 0.0);
+          matplot::vector_1d Zfine(res0, 0.0);
 
+          auto Coords = BSplineCore::eval_(torch::linspace(0, 1, res0));
+          auto XAccessor = Coords[0].template accessor<real_t,1>();
+          auto YAccessor = Coords[1].template accessor<real_t,1>();
+          auto ZAccessor = Coords[2].template accessor<real_t,1>();
+          
 #pragma omp parallel for simd
-          for (int64_t i=0; i<xres; ++i) {
-            auto coords = BSplineCore::eval(torch::stack(
-                                                         {
-                                                           torch::full({1}, i/real_t(xres-1))
-                                                         }
-                                                         ).view({1})
-                                            );
-            Xfine[i] = coords[0].template item<real_t>();
-            Yfine[i] = coords[1].template item<real_t>();
-            Zfine[i] = coords[2].template item<real_t>();
+          for (int64_t i=0; i<res0; ++i) {
+            Xfine[i] = XAccessor[i];
+            Yfine[i] = YAccessor[i];
+            Zfine[i] = ZAccessor[i];
           }
 
           matplot::vector_1d X(BSplineCore::ncoeffs(0), 0.0);
@@ -1937,33 +1976,41 @@ namespace iganet {
         // mapping: [0,1]^2 -> R^2
         //
 
-        matplot::vector_2d Xfine(yres, matplot::vector_1d(xres, 0.0));
-        matplot::vector_2d Yfine(yres, matplot::vector_1d(xres, 0.0));
-        matplot::vector_2d Zfine(yres, matplot::vector_1d(xres, 0.0));
+        matplot::vector_2d Xfine(res1, matplot::vector_1d(res0, 0.0));
+        matplot::vector_2d Yfine(res1, matplot::vector_1d(res0, 0.0));
+        matplot::vector_2d Zfine(res1, matplot::vector_1d(res0, 0.0));
 
+        auto meshgrid = torch::meshgrid(
+                                        {torch::linspace(0, 1, res0),
+                                         torch::linspace(0, 1, res1)}, "ij");
+
+        std::cout << typeid(meshgrid).name() << std::endl;
+        
+        //auto Coords = BSplineCore::eval_(meshgrid[0].flatten(), meshgrid[1].flatten());
+
+        //std::cout << Coords[0] << std::endl;
+        //        std::cout << Coords[1] << std::endl;
+
+        exit(0);
+        //        auto XAccessor = Coords[0].template accessor<real_t,1>();
+        //        auto YAccessor = Coords[1].template accessor<real_t,1>();
+        
 #pragma omp parallel for simd collapse(2)
-        for (int64_t i=0; i<xres; ++i)
-          for (int64_t j=0; j<yres; ++j) {
-            auto coords = BSplineCore::eval(torch::stack(
-                                                         {
-                                                           torch::full({1}, i/real_t(xres-1)),
-                                                           torch::full({1}, j/real_t(yres-1))
-                                                         }
-                                                         ).view({2})
-                                            );
-            Xfine[j][i] = coords[0].template item<real_t>();
-            Yfine[j][i] = coords[1].template item<real_t>();
+        for (int64_t i=0; i<res0; ++i)
+          for (int64_t j=0; j<res1; ++j) {
+            //            Xfine[j][i] = XAccessor[j];
+            //            Yfine[j][i] = YAccessor[j];
           }
 
         if ((void*)this != (void*)&color) {
           if constexpr (BSplineCore_t::geoDim_==1) {
 #pragma omp parallel for simd collapse(2)
-            for (int64_t i=0; i<xres; ++i)
-              for (int64_t j=0; j<yres; ++j) {
+            for (int64_t i=0; i<res0; ++i)
+              for (int64_t j=0; j<res1; ++j) {
                 Zfine[j][i] = color.eval(torch::stack(
                                                       {
-                                                        torch::full({1}, i/real_t(xres-1)),
-                                                        torch::full({1}, j/real_t(yres-1))
+                                                        torch::full({1}, i/real_t(res0-1)),
+                                                        torch::full({1}, j/real_t(res1-1))
                                                       }
                                                       ).view({2})
                                          ).template item<real_t>();
@@ -2011,17 +2058,17 @@ namespace iganet {
         // mapping: [0,1]^2 -> R^3
         ///
 
-        matplot::vector_2d Xfine(yres, matplot::vector_1d(xres, 0.0));
-        matplot::vector_2d Yfine(yres, matplot::vector_1d(xres, 0.0));
-        matplot::vector_2d Zfine(yres, matplot::vector_1d(xres, 0.0));
+        matplot::vector_2d Xfine(res1, matplot::vector_1d(res0, 0.0));
+        matplot::vector_2d Yfine(res1, matplot::vector_1d(res0, 0.0));
+        matplot::vector_2d Zfine(res1, matplot::vector_1d(res0, 0.0));
 
 #pragma omp parallel for simd collapse(2)
-        for (int64_t i=0; i<xres; ++i)
-          for (int64_t j=0; j<yres; ++j) {
+        for (int64_t i=0; i<res0; ++i)
+          for (int64_t j=0; j<res1; ++j) {
             auto coords = BSplineCore::eval(torch::stack(
                                                          {
-                                                           torch::full({1}, i/real_t(xres-1)),
-                                                           torch::full({1}, j/real_t(yres-1))
+                                                           torch::full({1}, i/real_t(res0-1)),
+                                                           torch::full({1}, j/real_t(res1-1))
                                                          }
                                                          ).view({2})
                                             );
@@ -2033,15 +2080,15 @@ namespace iganet {
         // Plotting...
         if ((void*)this != (void*)&color) {
           if constexpr (BSplineCore_t::geoDim_==1) {
-            matplot::vector_2d Cfine(yres, matplot::vector_1d(xres, 0.0));
+            matplot::vector_2d Cfine(res1, matplot::vector_1d(res0, 0.0));
 
 #pragma omp parallel for simd collapse(2)
-            for (int64_t i=0; i<xres; ++i)
-              for (int64_t j=0; j<yres; ++j) {
+            for (int64_t i=0; i<res0; ++i)
+              for (int64_t j=0; j<res1; ++j) {
                 Cfine[j][i] = color.eval(torch::stack(
                                                       {
-                                                        torch::full({1}, i/real_t(xres-1)),
-                                                        torch::full({1}, j/real_t(yres-1))
+                                                        torch::full({1}, i/real_t(res0-1)),
+                                                        torch::full({1}, j/real_t(res1-1))
                                                       }
                                                       ).view({2})
                                          ).template item<real_t>();
