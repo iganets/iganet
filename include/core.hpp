@@ -27,6 +27,11 @@ namespace iganet {
 
 #define short_t unsigned short int
 
+  using TensorArray1 = std::array<torch::Tensor,1>;
+  using TensorArray2 = std::array<torch::Tensor,2>;
+  using TensorArray3 = std::array<torch::Tensor,3>;
+  using TensorArray4 = std::array<torch::Tensor,4>;
+  
   /// Determines the LibTorch dtype from template parameter
   ///
   /// @tparam T C++ type
@@ -134,39 +139,6 @@ namespace iganet {
     /// @brief String storing the full qualified name of the object
     mutable at::optional<std::string> name_;
   };
-
-  /// @brief Concatenates multiple std::vector objects
-  template<typename... Ts>
-  inline auto concat(const std::vector<Ts>&... vectors)
-  {
-    std::vector<typename std::tuple_element<0, std::tuple<Ts...> >::type> result;
-
-    (result.insert(result.end(), vectors.begin(), vectors.end()), ...);
-
-    return result;
-  }
-
-  /// @brief Concatenates multiple std::array objects
-  template<typename T, std::size_t... N>
-  inline auto concat(const std::array<T, N>&... arrays)
-  {
-    std::array<T, (N + ...)> result;
-    std::size_t index{};
-
-    ((std::copy_n(arrays.begin(), N, result.begin() + index), index += N), ...);
-
-    return result;
-  }
-
-  /// @brief Converts an std::initializer_list to torch::Tensor
-  template<typename T>
-  inline auto to_tensor(std::initializer_list<T> list,
-                        torch::IntArrayRef sizes = {-1},
-                        const torch::TensorOptions& options = iganet::core<T>{}.options())
-  {
-    return torch::from_blob(const_cast<T*>(std::data(list)),
-                            (sizes == torch::IntArrayRef{-1}) ? list.size() : sizes , options);
-  }
 
   /// @brief Initializes the library
   inline void init(std::ostream& os = std::cout)
