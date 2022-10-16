@@ -1004,25 +1004,25 @@ namespace iganet {
     }
 
     /// Returns a constant reference to the IgANet generator
-    inline const IgANetGenerator<real_t> & net() const
+    inline const IgANetGenerator<real_t>& net() const
     {
       return net_;
     }
 
     /// Returns a non-constant reference to the IgANet generator
-    inline IgANetGenerator<real_t> & net()
+    inline IgANetGenerator<real_t>& net()
     {
       return net_;
     }
 
     /// Returns a constant reference to the optimizer
-    inline const optimizer_t & opt() const
+    inline const optimizer_t& opt() const
     {
       return opt_;
     }
 
     /// Returns a non-constant reference to the optimizer
-    inline optimizer_t & opt()
+    inline optimizer_t& opt()
     {
       return opt_;
     }
