@@ -126,8 +126,7 @@ namespace iganet {
   {
     assert(index[0].numel() == index[1].numel());
 
-    auto repeat_dim = (stop_offset[0]-start_offset[0])*(stop_offset[1]-start_offset[1]);
-    
+    auto repeat_dim = (stop_offset[0]-start_offset[0])*(stop_offset[1]-start_offset[1]);    
     return (index[0].repeat(repeat_dim) +
             torch::linspace(start_offset[0],
                             stop_offset[0]-1,
@@ -181,6 +180,105 @@ namespace iganet {
     exit(0);
     
     return index;
+  }
+
+  /// @brief Concatenates multiple std::vector objects
+  template<typename... Ts>
+  inline auto concat(const std::vector<Ts>&... vectors)
+  {
+    std::vector<typename std::tuple_element<0, std::tuple<Ts...> >::type> result;
+
+    (result.insert(result.end(), vectors.begin(), vectors.end()), ...);
+
+    return result;
+  }
+
+  /// @brief Concatenates multiple std::array objects
+  template<typename T, std::size_t... N>
+  inline auto concat(const std::array<T, N>&... arrays)
+  {
+    std::array<T, (N + ...)> result;
+    std::size_t index{};
+
+    ((std::copy_n(arrays.begin(), N, result.begin() + index), index += N), ...);
+
+    return result;
+  }
+
+  /// @brief Converts an std::vector object into std::array
+  template<std::size_t N, typename T>
+  inline std::array<T, N> convert(std::vector<T>&& vector)
+  {
+    std::array<T, N> array;
+    std::move(vector.begin(), vector.end(), array.begin());
+    return array;
+  }
+  
+  /// @brief Converts an std::array object into std::vector
+  template<typename T, std::size_t N>
+  inline std::vector<T> convert(std::array<T, N>&& array)
+  {
+    std::vector<T> vector;
+    std::move(array.begin(), array.end(), vector.begin());
+    return vector;
+  }
+
+  /// @brief Converts an std::initializer_list to torch::Tensor
+  template<typename T>
+  inline auto to_tensor(std::initializer_list<T> list,
+                        torch::IntArrayRef sizes = {-1},
+                        const torch::TensorOptions& options = iganet::core<T>{}.options())
+  {
+    return torch::from_blob(const_cast<T*>(std::data(list)),
+                            (sizes == torch::IntArrayRef{-1}) ? list.size() : sizes , options);
+  }
+
+  /// @brief Converts an std::initializer_list to TensorArray1
+  template<typename T>
+  inline auto to_tensorArray(std::initializer_list<T> list,
+                             torch::IntArrayRef sizes = {-1},
+                             const torch::TensorOptions& options = iganet::core<T>{}.options())
+  {
+    return TensorArray1({to_tensor(list, sizes, options)});
+  }
+
+  /// @brief Converts two std::initializer_list's to TensorArray2
+  template<typename T>
+  inline auto to_tensorArray(std::initializer_list<T> list0,
+                             std::initializer_list<T> list1,
+                             torch::IntArrayRef sizes = {-1},
+                             const torch::TensorOptions& options = iganet::core<T>{}.options())
+  {
+    return TensorArray2({to_tensor(list0, sizes, options),
+                         to_tensor(list1, sizes, options)});
+  }
+
+  /// @brief Converts three std::initializer_list's to TensorArray3
+  template<typename T>
+  inline auto to_tensorArray(std::initializer_list<T> list0,
+                             std::initializer_list<T> list1,
+                             std::initializer_list<T> list2,
+                             torch::IntArrayRef sizes = {-1},
+                             const torch::TensorOptions& options = iganet::core<T>{}.options())
+  {
+    return TensorArray3({to_tensor(list0, sizes, options),
+                         to_tensor(list1, sizes, options),
+                         to_tensor(list2, sizes, options)});
+  }
+
+  /// @brief Converts four std::initializer_list's to TensorArray4
+  template<typename T>
+  inline auto to_tensorArray(std::initializer_list<T> list0,
+                             std::initializer_list<T> list1,
+                             std::initializer_list<T> list2,
+                             std::initializer_list<T> list3,
+                             torch::IntArrayRef sizes = {-1},
+                             const torch::TensorOptions& options = iganet::core<T>{}.options())
+  {
+    return TensorArray4({to_tensor(list0, sizes, options),
+                         to_tensor(list1, sizes, options),
+                         to_tensor(list2, sizes, options),
+                         to_tensor(list3, sizes, options)});
   }
   
 } // namespace iganet
