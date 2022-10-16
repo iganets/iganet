@@ -36,6 +36,15 @@ int main()
   std::cout
     << "VSlice=\n"
     << iganet::VSlice(idx, -1, 1) << std::endl;
+
+  torch::Tensor i = torch::linspace(1,4,4).to(torch::kInt64).reshape({2,2});
+
+  std::cout << i << std::endl;
+
+  std::cout
+    << "a.index_select=\n"
+    << a.flatten().index_select(0, i)
+    << std::endl;
   
   return 0;
 }
