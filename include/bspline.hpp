@@ -182,7 +182,7 @@ namespace iganet {
           zero_(torch::zeros(1, core<real_t>::options_)) {}
 
     /// @brief Constructor for equidistant knot vectors
-    UniformBSplineCore(const std::array<int64_t, parDim_> &ncoeffs,
+    UniformBSplineCore(const std::array<int64_t, parDim_>& ncoeffs,
                        BSplineInit init = BSplineInit::zeros)
         : core<real_t>(),
           ncoeffs_(ncoeffs),
@@ -231,14 +231,14 @@ namespace iganet {
     }
 
     /// @brief Returns a constant reference to the array of degrees
-    inline static constexpr const std::array<short_t, parDim_> &degrees()
+    inline static constexpr const std::array<short_t, parDim_>& degrees()
     {
       return degrees_;
     }
 
     /// @brief Returns a constant reference to the degree in the
     /// \f$i\f$-th dimension
-    inline static constexpr const short_t &degree(short_t i)
+    inline static constexpr const short_t& degree(short_t i)
     {
       assert(i >= 0 && i < parDim_);
       return degrees_[i];
@@ -246,28 +246,28 @@ namespace iganet {
 
     /// @brief Returns a constant reference to the array of knot
     /// vectors
-    inline const std::array<torch::Tensor, parDim_> &knots() const
+    inline const std::array<torch::Tensor, parDim_>& knots() const
     {
       return knots_;
     }
 
     /// @brief Returns a constant reference to the knot vector in the
     /// \f$i\f$-th dimension
-    inline const torch::Tensor &knots(short_t i) const {
+    inline const torch::Tensor& knots(short_t i) const {
       assert(i >= 0 && i < parDim_);
       return knots_[i];
     }
 
     /// @brief Returns a non-constant reference to the array of knot
     /// vectors
-    inline std::array<torch::Tensor, parDim_> &knots()
+    inline std::array<torch::Tensor, parDim_>& knots()
     {
       return knots_;
     }
 
     /// @brief Returns a non-constant reference to the knot vector in
     /// the \f$i\f$-th dimension
-    inline torch::Tensor &knots(short_t i)
+    inline torch::Tensor& knots(short_t i)
     {
       assert(i >= 0 && i < parDim_);
       return knots_[i];
@@ -275,7 +275,7 @@ namespace iganet {
 
     /// @brief Returns a constant reference to the array of knot
     /// vector dimensions
-    inline const std::array<int64_t, parDim_> &nknots() const
+    inline const std::array<int64_t, parDim_>& nknots() const
     {
       return nknots_;
     }
@@ -298,7 +298,7 @@ namespace iganet {
     template<bool flatten = true>
     inline auto coeffs() const
       -> typename std::conditional<flatten,
-                                   const std::array<torch::Tensor, geoDim_> &,
+                                   const std::array<torch::Tensor, geoDim_>& ,
                                    std::array<torch::Tensor, geoDim_>>::type
     {
       if constexpr (flatten || parDim_ == 0)
@@ -321,7 +321,7 @@ namespace iganet {
     template<bool flatten = true>
     inline auto coeffs(short_t i) const
       -> typename std::conditional<flatten,
-                                   const torch::Tensor &,
+                                   const torch::Tensor& ,
                                    torch::Tensor>::type
     {
       assert(i >= 0 && i < geoDim_);
@@ -333,14 +333,14 @@ namespace iganet {
 
     /// @brief Returns a non-constant reference to the array of
     /// coefficients
-    inline std::array<torch::Tensor, geoDim_> &coeffs()
+    inline std::array<torch::Tensor, geoDim_>& coeffs()
     {
       return coeffs_;
     }
 
     /// @brief Returns a non-constant reference to the coefficients in
     /// the \f$i\f$-th dimension
-    inline torch::Tensor &coeffs(short_t i)
+    inline torch::Tensor& coeffs(short_t i)
     {
       assert(i >= 0 && i < geoDim_);
       return coeffs_[i];
@@ -444,7 +444,7 @@ namespace iganet {
     /// @result Value(s) of the multivariate B-spline evaluated at the point(s) `xi`
     
     template<BSplineDeriv deriv = BSplineDeriv::func>
-    inline auto eval(const torch::Tensor &xi) const
+    inline auto eval(const torch::Tensor& xi) const
     {
       static_assert(parDim_ <= 4, "Unsupported parametric dimension");
 
@@ -538,6 +538,7 @@ namespace iganet {
     template<BSplineDeriv deriv = BSplineDeriv::func>
     inline auto eval(const torch::Tensor& xi, int64_t i, int64_t j) const
     {
+
       if constexpr (geoDim_ > 1) {
         auto basfunc =
           eval_prefactor<degrees_[0],  (short_t)deriv    %10>() *
@@ -680,14 +681,18 @@ namespace iganet {
     ///
     /// @copydetails UniformBSplineCore::eval
     template<BSplineDeriv deriv = BSplineDeriv::func>
-    inline auto eval_(const torch::Tensor &xi, short_t dim = 0) const
+    inline auto eval_(const torch::Tensor& xi, short_t dim = 0) const
     {
-      static_assert(parDim_ <= 4, "Unsupported parametric dimension");
-
+      return eval_<deriv>(TensorArray1({xi}), dim);
+    }
+          
+    template<BSplineDeriv deriv = BSplineDeriv::func>
+    inline auto eval_(const std::array<torch::Tensor, parDim_>& xi, short_t dim = 0) const
+    {
       if constexpr (parDim_ == 0)
         return coeffs_[0];
       else
-        return eval_(xi, eval_indices(xi, dim), dim);
+        return eval_<deriv>(xi, eval_indices(xi), dim);
     }
 
     /// @brief Returns the value of the univariate B-spline object in
@@ -697,26 +702,24 @@ namespace iganet {
     /// BSplineEvaluation for univariate B-splines
     /// (i.e. \f$d_\text{par}=1\f$)
     template<BSplineDeriv deriv = BSplineDeriv::func>
-    inline auto eval_(const torch::Tensor& xi,
-                      const std::array<torch::Tensor,1>& idx,
-                      short_t dim = 0) const
+    inline auto eval_(const TensorArray1& xi, const TensorArray1& idx, short_t dim = 0) const
     {
-      assert(xi.sizes() == idx[0].sizes());
-
+      assert(xi[0].sizes() == idx[0].sizes());
+      
       if constexpr (geoDim_ > 1) {
         auto basfunc =
           eval_prefactor<degrees_[0], (short_t) deriv % 10>() *
-          eval_univariate_<degrees_[0], 0, (short_t) deriv % 10>(xi, idx[0]);
+          eval_univariate_<degrees_[0], 0, (short_t) deriv % 10>(xi[0].flatten(), idx[0].flatten());
         std::array<torch::Tensor, geoDim_> result;
         for (std::size_t i = 0; i < geoDim_; ++i)
           result[i] = dotproduct(basfunc,
-                                 coeffs(i).index_select(0, VSlice(idx[0], -degrees_[0], 1)).view({-1, xi.numel()}), 0);
+                                 coeffs(i).index_select(0, VSlice(idx[0].flatten(), -degrees_[0], 1)).view({-1, xi[0].numel()}), 0).view(xi[0].sizes());
         return result;
       } else
         return
           eval_prefactor<degrees_[0], (short_t) deriv % 10>() *
-          dotproduct(eval_univariate_<degrees_[0], 0, (short_t) deriv % 10>(xi, idx[0]),
-                     coeffs(0).index_select(0, VSlice(idx[0], -degrees_[0], 1)).view({-1, xi.numel()}), 0);
+          dotproduct(eval_univariate_<degrees_[0], 0, (short_t) deriv % 10>(xi[0].flatten(), idx[0].flatten()),
+                     coeffs(0).index_select(0, VSlice(idx[0].flatten(), -degrees_[0], 1)).view({-1, xi[0].numel()}), 0).view(xi[0].sizes());
     }
 
     /// @brief Returns the value of the bivariate B-spline object in
@@ -726,9 +729,7 @@ namespace iganet {
     /// BSplineEvaluation for bivariate B-splines
     /// (i.e. \f$d_\text{par}=2\f$)
     template<BSplineDeriv deriv = BSplineDeriv::func>
-    inline auto eval_(const torch::Tensor& xi,
-                      const std::array<torch::Tensor, 2>& idx,
-                      short_t dim = 0) const
+    inline auto eval_(const TensorArray2& xi, const TensorArray2& idx, short_t dim = 0) const
     {
       assert(xi[0].sizes() == idx[0].sizes() && xi[1].sizes() == idx[1].sizes());
       
@@ -736,28 +737,28 @@ namespace iganet {
         auto basfunc =
           eval_prefactor<degrees_[0],  (short_t)deriv    %10>() *
           eval_prefactor<degrees_[1], ((short_t)deriv/10)%10>() *
-          kronproduct(eval_univariate_<degrees_[0], 0,  (short_t)deriv    %10>(xi[0], idx[0]),
-                      eval_univariate_<degrees_[1], 1, ((short_t)deriv/10)%10>(xi[1], idx[1]),
+          kronproduct(eval_univariate_<degrees_[0], 0,  (short_t)deriv    %10>(xi[0].flatten(), idx[0].flatten()),
+                      eval_univariate_<degrees_[1], 1, ((short_t)deriv/10)%10>(xi[1].flatten(), idx[1].flatten()),
                       0);
         std::array<torch::Tensor, geoDim_> result;
         for (std::size_t i = 0; i < geoDim_; ++i)
           result[i] = dotproduct(basfunc,
-                                 coeffs(i).index_select(0, VSlice(idx,
+                                 coeffs(i).index_select(0, VSlice(TensorArray2({idx[0].flatten(), idx[1].flatten()}),
                                                                   std::array<int64_t,2>{-degrees_[0],-degrees_[1]},
                                                                   std::array<int64_t,2>{1,1},
-                                                                  ncoeffs(0))).view({-1, xi[0].numel()}), 0);
+                                                                  ncoeffs(1))).view({-1, xi[0].numel()}), 0).view(xi[0].sizes());
         return result;
-      } else        
+      } else
         return
           eval_prefactor<degrees_[0],  (short_t)deriv    %10>() *
           eval_prefactor<degrees_[1], ((short_t)deriv/10)%10>() *
-          dotproduct(kronproduct(eval_univariate_<degrees_[0], 0,  (short_t)deriv    %10>(xi[0], idx[0]),
-                                 eval_univariate_<degrees_[1], 1, ((short_t)deriv/10)%10>(xi[1], idx[1]),
+          dotproduct(kronproduct(eval_univariate_<degrees_[0], 0,  (short_t)deriv    %10>(xi[0].flatten(), idx[0].flatten()),
+                                 eval_univariate_<degrees_[1], 1, ((short_t)deriv/10)%10>(xi[1].flatten(), idx[1].flatten()),
                                  0),
-                     coeffs(0).index_select(0, VSlice(idx,
+                     coeffs(0).index_select(0, VSlice(TensorArray2({idx[0].flatten(), idx[1].flatten()}),
                                                       std::array<int64_t,2>{-degrees_[0],-degrees_[1]},
                                                       std::array<int64_t,2>{1,1},
-                                                      ncoeffs(0))).view({-1, xi[0].numel()}), 0);
+                                                      ncoeffs(1))).view({-1, xi[0].numel()}), 0).view(xi[0].sizes());
     }
     
     /// @brief Returns the value of the trivariate B-spline object in
@@ -767,9 +768,7 @@ namespace iganet {
     /// BSplineEvaluation for trivariate B-splines
     /// (i.e. \f$d_\text{par}=3\f$)
     template<BSplineDeriv deriv = BSplineDeriv::func>
-    inline auto eval_(const torch::Tensor& xi,
-                      const std::array<torch::Tensor, 3>& idx,
-                      short_t dim = 0) const
+    inline auto eval_(const TensorArray3& xi, const TensorArray3& idx, short_t dim = 0) const
     {
       assert(xi[0].sizes() == idx[0].sizes() && xi[1].sizes() == idx[1].sizes() &&
              xi[2].sizes() == idx[2].sizes());
@@ -816,9 +815,7 @@ namespace iganet {
     /// BSplineEvaluation for quartvariate B-splines
     /// (i.e. \f$d_\text{par}=4\f$)
     template<BSplineDeriv deriv = BSplineDeriv::func>
-    inline auto eval_(const torch::Tensor& xi,
-                      const std::array<torch::Tensor, 4>& idx,
-                      short_t dim = 0) const
+    inline auto eval_(const TensorArray4& xi, const TensorArray4& idx, short_t dim = 0) const
     {
       assert(xi[0].sizes() == idx[0].sizes() && xi[1].sizes() == idx[1].sizes() &&
              xi[2].sizes() == idx[2].sizes() && xi[3].sizes() == idx[3].sizes());
@@ -874,62 +871,58 @@ namespace iganet {
     /// \f]
     ///
     /// The indices are returned as `std::array<torch::Tensor,
-    /// parDim_>` in the same order as provided in `xi`
-    inline auto eval_indices(const torch::Tensor &xi, short_t dim = 0) const
+    /// parDim_>` in the same order as provided in `xi`    
+    inline auto eval_indices(const TensorArray1& xi) const
     {
-      assert(parDim_ == xi.size(dim) || xi.sizes().size() == 1);
-        
-      // 0D (point value)
-      if constexpr (parDim_ == 0)
-        return NULL;
+      assert(parDim_ == 1);
+      return TensorArray1({
+          torch::min(torch::full_like(xi[0], ncoeffs_[0]-1, core<real_t>::options_),
+                     torch::floor(xi[0] * (ncoeffs_[0] - degrees_[0]) + degrees_[0])).to(torch::kInt64)
+        });
+    }
       
-      // 1D
-      else if constexpr (parDim_ == 1)
-        return std::array<torch::Tensor, 1>({
-            torch::min(torch::full_like(xi, ncoeffs_[0]-1, core<real_t>::options_),
-                       torch::floor(xi * (ncoeffs_[0] - degrees_[0]) + degrees_[0])).to(torch::kInt64)
-          });
-      
-      // 2D
-      else if constexpr (parDim_ == 2)
-        return std::array<torch::Tensor, 2>({
-            torch::min(torch::full_like(xi[0], ncoeffs_[0]-1, core<real_t>::options_),
-                       torch::floor(xi[0] * (ncoeffs_[0] - degrees_[0]) + degrees_[0])).to(torch::kInt64),
-            torch::min(torch::full_like(xi[1], ncoeffs_[1]-1, core<real_t>::options_),
-                       torch::floor(xi[1] * (ncoeffs_[1] - degrees_[1]) + degrees_[1])).to(torch::kInt64)
-          });
-      
-      // 3D
-      else if constexpr (parDim_ == 3)
-        return std::array<torch::Tensor, 3>({
-            torch::min(torch::full_like(xi, ncoeffs_[0]-1, core<real_t>::options_),
-                       torch::floor(xi[0] * (ncoeffs_[0] - degrees_[0]) + degrees_[0])).to(torch::kInt64),
-            torch::min(torch::full_like(xi, ncoeffs_[1]-1, core<real_t>::options_),
-                       torch::floor(xi[1] * (ncoeffs_[1] - degrees_[1]) + degrees_[1])).to(torch::kInt64),
-            torch::min(torch::full_like(xi, ncoeffs_[2]-1, core<real_t>::options_),
-                       torch::floor(xi[2] * (ncoeffs_[2] - degrees_[2]) + degrees_[2])).to(torch::kInt64)
-          });
-
-      // 4D
-      else if constexpr (parDim_ == 4)
-        return std::array<torch::Tensor, 4>({
-            torch::min(torch::full_like(xi, ncoeffs_[0]-1, core<real_t>::options_),
-                       torch::floor(xi[0] * (ncoeffs_[0] - degrees_[0]) + degrees_[0])).to(torch::kInt64),
-            torch::min(torch::full_like(xi, ncoeffs_[1]-1, core<real_t>::options_),
-                       torch::floor(xi[1] * (ncoeffs_[1] - degrees_[1]) + degrees_[1])).to(torch::kInt64),
-            torch::min(torch::full_like(xi, ncoeffs_[2]-1, core<real_t>::options_),
-                       torch::floor(xi[2] * (ncoeffs_[2] - degrees_[2]) + degrees_[2])).to(torch::kInt64),
-            torch::min(torch::full_like(xi, ncoeffs_[3]-1, core<real_t>::options_),
-                       torch::floor(xi[3] * (ncoeffs_[3] - degrees_[3]) + degrees_[3])).to(torch::kInt64)
-          });
-      
-      else
-        throw std::runtime_error("Unsupported parametric dimension");
+    inline auto eval_indices(const TensorArray2& xi) const
+    {
+      assert(parDim_ == 2);
+      return TensorArray2({
+          torch::min(torch::full_like(xi[0], ncoeffs_[0]-1, core<real_t>::options_),
+                     torch::floor(xi[0] * (ncoeffs_[0] - degrees_[0]) + degrees_[0])).to(torch::kInt64),
+          torch::min(torch::full_like(xi[1], ncoeffs_[1]-1, core<real_t>::options_),
+                     torch::floor(xi[1] * (ncoeffs_[1] - degrees_[1]) + degrees_[1])).to(torch::kInt64)
+        });
     }
 
+    inline auto eval_indices(const TensorArray3& xi) const
+    {
+      assert(parDim_ == 3);
+      return TensorArray3({
+          torch::min(torch::full_like(xi, ncoeffs_[0]-1, core<real_t>::options_),
+                     torch::floor(xi[0] * (ncoeffs_[0] - degrees_[0]) + degrees_[0])).to(torch::kInt64),
+          torch::min(torch::full_like(xi, ncoeffs_[1]-1, core<real_t>::options_),
+                     torch::floor(xi[1] * (ncoeffs_[1] - degrees_[1]) + degrees_[1])).to(torch::kInt64),
+          torch::min(torch::full_like(xi, ncoeffs_[2]-1, core<real_t>::options_),
+                     torch::floor(xi[2] * (ncoeffs_[2] - degrees_[2]) + degrees_[2])).to(torch::kInt64)
+        });
+    }
+
+    inline auto eval_indices(const TensorArray4& xi) const
+    {
+      assert(parDim_ == 4);
+      return TensorArray4({
+          torch::min(torch::full_like(xi, ncoeffs_[0]-1, core<real_t>::options_),
+                     torch::floor(xi[0] * (ncoeffs_[0] - degrees_[0]) + degrees_[0])).to(torch::kInt64),
+          torch::min(torch::full_like(xi, ncoeffs_[1]-1, core<real_t>::options_),
+                     torch::floor(xi[1] * (ncoeffs_[1] - degrees_[1]) + degrees_[1])).to(torch::kInt64),
+          torch::min(torch::full_like(xi, ncoeffs_[2]-1, core<real_t>::options_),
+                     torch::floor(xi[2] * (ncoeffs_[2] - degrees_[2]) + degrees_[2])).to(torch::kInt64),
+          torch::min(torch::full_like(xi, ncoeffs_[3]-1, core<real_t>::options_),
+                     torch::floor(xi[3] * (ncoeffs_[3] - degrees_[3]) + degrees_[3])).to(torch::kInt64)
+        });
+    }     
+
     /// @brief Transforms the coefficients based on the given mapping
-    inline UniformBSplineCore &
-    transform(const std::function<std::array<real_t, geoDim_>(const std::array<real_t, parDim_> &)> transformation)
+    inline UniformBSplineCore& 
+    transform(const std::function<std::array<real_t, geoDim_>(const std::array<real_t, parDim_>& )> transformation)
     {
       static_assert(parDim_ <= 4, "Unsupported parametric dimension");
 
@@ -1136,16 +1129,16 @@ namespace iganet {
     }
 
     /// @brief Saves the B-spline to file
-    inline void save(const std::string &filename,
-                     const std::string &key = "bspline") const
+    inline void save(const std::string& filename,
+                     const std::string& key = "bspline") const
     {
       torch::serialize::OutputArchive archive;
       write(archive, key).save_to(filename);
     }
 
     /// @brief Loads the B-spline from file
-    inline void load(const std::string &filename,
-                     const std::string &key = "bspline")
+    inline void load(const std::string& filename,
+                     const std::string& key = "bspline")
     {
       torch::serialize::InputArchive archive;
       archive.load_from(filename);
@@ -1153,8 +1146,8 @@ namespace iganet {
     }
 
     /// @brief Writes the B-spline into a torch::serialize::OutputArchive object
-    inline torch::serialize::OutputArchive &write(torch::serialize::OutputArchive &archive,
-                                                  const std::string &key = "bspline") const
+    inline torch::serialize::OutputArchive& write(torch::serialize::OutputArchive& archive,
+                                                  const std::string& key = "bspline") const
     {
       archive.write(key + ".parDim", torch::full({1}, parDim_));
       archive.write(key + ".geoDim", torch::full({1}, geoDim_));
@@ -1178,8 +1171,8 @@ namespace iganet {
     }
 
     /// @brief Reads the B-spline from a torch::serialize::InputArchive object
-    inline torch::serialize::InputArchive &read(torch::serialize::InputArchive &archive,
-                                                const std::string &key = "bspline")
+    inline torch::serialize::InputArchive& read(torch::serialize::InputArchive& archive,
+                                                const std::string& key = "bspline")
     {
       torch::Tensor tensor;
 
@@ -1217,7 +1210,7 @@ namespace iganet {
     }
 
     /// @brief Returns true if both B-spline objects are the same
-    bool operator==(const UniformBSplineCore &other) const
+    bool operator==(const UniformBSplineCore& other) const
     {
       bool result(true);
 
@@ -1243,7 +1236,7 @@ namespace iganet {
     }
 
     /// @brief Returns true if both B-spline objects are different
-    bool operator!=(const UniformBSplineCore &other) const {
+    bool operator!=(const UniformBSplineCore& other) const {
       return !(*this==other); // Do not change this to (*this != other) is it does not work
     }
 
@@ -1522,7 +1515,7 @@ namespace iganet {
       
       if constexpr (deriv > degree+1) {
         // It might be enough to return zero as a scalar
-        return torch::zeros({degree+1, xi.sizes()}, core<real_t>::options_);
+        return torch::zeros({degree+1, xi.numel()}, core<real_t>::options_);
       } else {
         // Algorithm 2.22 from \cite Lyche:2011
         torch::Tensor b = torch::ones({xi.numel()}, core<real_t>::options_);
@@ -1766,13 +1759,13 @@ namespace iganet {
     inline auto plot(const BSplineCommon<real_t, BSplineCore_t>& color,
                      int64_t res0=10, int64_t res1=10, int64_t res2=10) const
     {
-      static_assert(BSplineCore::parDim_ == BSplineCore_t::parDim_,
+      static_assert(BSplineCore::parDim() == BSplineCore_t::parDim(),
                     "Parametric dimensions must match");
 
-      if ((void*)this != (void*)&color && BSplineCore_t::geoDim_ > 1)
+      if ((void*)this != (void*)&color && BSplineCore_t::geoDim() > 1)
         throw std::runtime_error("BSpline for coloring must have geoDim=1");
 
-      if constexpr(BSplineCore::parDim_==1 && BSplineCore::geoDim_==1) {
+      if constexpr(BSplineCore::parDim()==1 && BSplineCore::geoDim()==1) {
 
         //
         // mapping: [0,1] -> R^1
@@ -1792,6 +1785,7 @@ namespace iganet {
           if constexpr (BSplineCore_t::geoDim_==1) {
             torch::Tensor Color = color.eval_(torch::linspace(0, 1, res0));
             auto CAccessor = Color.accessor<real_t,1>();
+            
 #pragma omp parallel for simd
             for (int64_t i=0; i<res0; ++i)
               Yfine[i] = CAccessor[i];
@@ -1807,11 +1801,11 @@ namespace iganet {
           matplot::vector_1d X(BSplineCore::ncoeffs(0), 0.0);
           matplot::vector_1d Y(BSplineCore::ncoeffs(0), 0.0);
 
-          auto x = BSplineCore::template coeffs<false>(0);
+          auto xaccessor = BSplineCore::template coeffs<true>(0).template accessor<real_t,1>();
 
 #pragma omp parallel for simd
           for (int64_t i=0; i<BSplineCore::ncoeffs(0); ++i) {
-            X[i] = x[i].template item<real_t>();
+            X[i] = xaccessor[i];
           }
 
           matplot::plot(Xfine, Yfine, "b-")->line_width(2);
@@ -1834,7 +1828,7 @@ namespace iganet {
 
         // Plotting...
         if ((void*)this != (void*)&color) {
-          if constexpr (BSplineCore_t::geoDim_==1) {
+          if constexpr (BSplineCore_t::geoDim()==1) {
             matplot::vector_2d Xfine(1, matplot::vector_1d(res0, 0.0));
             matplot::vector_2d Yfine(1, matplot::vector_1d(res0, 0.0));
             matplot::vector_2d Zfine(1, matplot::vector_1d(res0, 0.0));
@@ -1872,13 +1866,13 @@ namespace iganet {
           matplot::vector_1d X(BSplineCore::ncoeffs(0), 0.0);
           matplot::vector_1d Y(BSplineCore::ncoeffs(0), 0.0);
 
-          auto x = BSplineCore::template coeffs<false>(0);
-          auto y = BSplineCore::template coeffs<false>(1);
+          auto xaccessor = BSplineCore::template coeffs<true>(0).template accessor<real_t,1>();
+          auto yaccessor = BSplineCore::template coeffs<true>(1).template accessor<real_t,1>();
 
 #pragma omp parallel for simd
           for (int64_t i=0; i<BSplineCore::ncoeffs(0); ++i) {
-            X[i] = x[i].template item<real_t>();
-            Y[i] = y[i].template item<real_t>();
+            X[i] = xaccessor[i];
+            Y[i] = yaccessor[i];
           }
 
           matplot::plot(Xfine, Yfine, "b-")->line_width(2);
@@ -1893,7 +1887,7 @@ namespace iganet {
         return matplot::show();
       }
 
-      else if constexpr(BSplineCore::parDim_==1 && BSplineCore::geoDim_==3) {
+      else if constexpr(BSplineCore::parDim()==1 && BSplineCore::geoDim()==3) {
 
         //
         // mapping: [0,1] -> R^3
@@ -1901,7 +1895,7 @@ namespace iganet {
 
         // Plotting...
         if ((void*)this != (void*)&color) {
-          if constexpr (BSplineCore_t::geoDim_==1) {
+          if constexpr (BSplineCore_t::geoDim()==1) {
             matplot::vector_2d Xfine(1, matplot::vector_1d(res0, 0.0));
             matplot::vector_2d Yfine(1, matplot::vector_1d(res0, 0.0));
             matplot::vector_2d Zfine(1, matplot::vector_1d(res0, 0.0));
@@ -1946,15 +1940,15 @@ namespace iganet {
           matplot::vector_1d Y(BSplineCore::ncoeffs(0), 0.0);
           matplot::vector_1d Z(BSplineCore::ncoeffs(0), 0.0);
 
-          auto x = BSplineCore::template coeffs<false>(0);
-          auto y = BSplineCore::template coeffs<false>(1);
-          auto z = BSplineCore::template coeffs<false>(2);
+          auto xaccessor = BSplineCore::template coeffs<true>(0).template accessor<real_t,1>();
+          auto yaccessor = BSplineCore::template coeffs<true>(1).template accessor<real_t,1>();
+          auto zaccessor = BSplineCore::template coeffs<true>(2).template accessor<real_t,1>();
 
 #pragma omp parallel for simd
           for (int64_t i=0; i<BSplineCore::ncoeffs(0); ++i) {
-            X[i] = x[i].template item<real_t>();
-            Y[i] = y[i].template item<real_t>();
-            Z[i] = z[i].template item<real_t>();
+            X[i] = xaccessor[i];
+            Y[i] = yaccessor[i];
+            Z[i] = zaccessor[i];
           }
 
           matplot::plot3(Xfine, Yfine, Zfine, "b-")->line_width(2);
@@ -1970,7 +1964,7 @@ namespace iganet {
         return matplot::show();
       }
 
-      else if constexpr(BSplineCore::parDim_==2 && BSplineCore::geoDim_==2) {
+      else if constexpr(BSplineCore::parDim()==2 && BSplineCore::geoDim()==2) {
 
         //
         // mapping: [0,1]^2 -> R^2
@@ -1980,46 +1974,36 @@ namespace iganet {
         matplot::vector_2d Yfine(res1, matplot::vector_1d(res0, 0.0));
         matplot::vector_2d Zfine(res1, matplot::vector_1d(res0, 0.0));
 
-        auto meshgrid = torch::meshgrid(
-                                        {torch::linspace(0, 1, res0),
-                                         torch::linspace(0, 1, res1)}, "ij");
+        std::array<torch::Tensor,2> meshgrid = convert<2>(torch::meshgrid({torch::linspace(0, 1, res0),
+                                                                           torch::linspace(0, 1, res1)}, "xy"));
+        auto Coords = BSplineCore::eval_(meshgrid);
+        auto XAccessor = Coords[0].template accessor<real_t,2>();
+        auto YAccessor = Coords[1].template accessor<real_t,2>();
 
-        std::cout << typeid(meshgrid).name() << std::endl;
-        
-        //auto Coords = BSplineCore::eval_(meshgrid[0].flatten(), meshgrid[1].flatten());
+        auto xAccessor = meshgrid[0].template accessor<float,2>();
+        auto yAccessor = meshgrid[1].template accessor<float,2>();
 
-        //std::cout << Coords[0] << std::endl;
-        //        std::cout << Coords[1] << std::endl;
-
-        exit(0);
-        //        auto XAccessor = Coords[0].template accessor<real_t,1>();
-        //        auto YAccessor = Coords[1].template accessor<real_t,1>();
-        
 #pragma omp parallel for simd collapse(2)
         for (int64_t i=0; i<res0; ++i)
           for (int64_t j=0; j<res1; ++j) {
-            //            Xfine[j][i] = XAccessor[j];
-            //            Yfine[j][i] = YAccessor[j];
+            Xfine[j][i] = XAccessor[j][i];
+            Yfine[j][i] = YAccessor[j][i];
           }
-
+        
         if ((void*)this != (void*)&color) {
-          if constexpr (BSplineCore_t::geoDim_==1) {
+          if constexpr (BSplineCore_t::geoDim()==1) {            
+            auto Color = color.eval_(meshgrid);
+            auto CAccessor = Color.template accessor<real_t,2>();
+            
 #pragma omp parallel for simd collapse(2)
             for (int64_t i=0; i<res0; ++i)
-              for (int64_t j=0; j<res1; ++j) {
-                Zfine[j][i] = color.eval(torch::stack(
-                                                      {
-                                                        torch::full({1}, i/real_t(res0-1)),
-                                                        torch::full({1}, j/real_t(res1-1))
-                                                      }
-                                                      ).view({2})
-                                         ).template item<real_t>();
-              }
+              for (int64_t j=0; j<res1; ++j)
+                Zfine[j][i] = CAccessor[j][i];
           }
         }
 
         // Plotting...
-        if ((void*)this != (void*)&color && BSplineCore_t::geoDim_==1) {
+        if ((void*)this != (void*)&color && BSplineCore_t::geoDim()==1) {
           matplot::view(2);
           matplot::colormap(matplot::palette::hsv());
           matplot::mesh(Xfine, Yfine, Zfine)->palette_map_at_surface(true).face_alpha(0.7);
@@ -2052,7 +2036,7 @@ namespace iganet {
         return matplot::show();
       }
 
-      else if constexpr(BSplineCore::parDim_==2 && BSplineCore::geoDim_==3) {
+      else if constexpr(BSplineCore::parDim()==2 && BSplineCore::geoDim()==3) {
 
         ///
         // mapping: [0,1]^2 -> R^3
@@ -2079,7 +2063,7 @@ namespace iganet {
 
         // Plotting...
         if ((void*)this != (void*)&color) {
-          if constexpr (BSplineCore_t::geoDim_==1) {
+          if constexpr (BSplineCore_t::geoDim()==1) {
             matplot::vector_2d Cfine(res1, matplot::vector_1d(res0, 0.0));
 
 #pragma omp parallel for simd collapse(2)
