@@ -97,6 +97,22 @@ namespace iganet {
                  .requires_grad(true))
     {}
 
+    /// Constructor with used-defined gradient calculation
+    core(bool requiresGrad)
+      : options_(torch::TensorOptions()
+                 .dtype(dtype<real_t>())
+                 .device(torch::cuda::is_available() ? torch::kCUDA : torch::kCPU)
+                 .requires_grad(requiresGrad))
+    {}
+
+    /// Constructor with user-defined device type and gradient calculation
+    core(c10::DeviceType deviceType, bool requiresGrad)
+      : options_(torch::TensorOptions()
+                 .dtype(dtype<real_t>())
+                 .device(deviceType)
+                 .requires_grad(requiresGrad))
+    {}
+    
     /// @brief Returns the full qualified name of the object
     ///
     /// @result Full qualified name of the object as string
