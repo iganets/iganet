@@ -207,13 +207,14 @@ namespace iganet {
         for (int64_t j = 0; j < degrees_[i]; ++j)
           kv.push_back(static_cast<real_t>(1));
 
-	if (core<real_t>::options_.device() == torch::kCPU)
-	  knots_[i] = torch::from_blob(static_cast<real_t *>(kv.data()),
-				       kv.size(), core<real_t>::options_).clone();
-	else
-	  knots_[i] = torch::from_blob(static_cast<real_t *>(kv.data()),
-				       kv.size(), core<real_t>::options_.device(torch::kCPU)).to(core<real_t>::options_.device());
-	
+        if (core<real_t>::options_.device() == torch::kCPU)
+          knots_[i] = torch::from_blob(static_cast<real_t *>(kv.data()),
+                                       kv.size(), core<real_t>::options_).clone();
+        else
+          knots_[i] = torch::from_blob(static_cast<real_t *>(kv.data()),
+                                       kv.size(), core<real_t>::options_.device(torch::kCPU))
+            .to(core<real_t>::options_.device());
+        
         // Store the size of the knot vector
         nknots_[i] = knots_[i].size(0);
       }
@@ -1621,12 +1622,13 @@ namespace iganet {
         if (2*Base::degrees_[i]>kv[i].size()-2)
           throw std::runtime_error("Knot vector is too short for an open knot vector (n+p+1 > 2*(p+1))");
 
-	if (core<real_t>::options_.device() == torch::kCPU)
-	  Base::knots_[i] = torch::from_blob(static_cast<real_t*>(kv[i].data()),
-					     kv[i].size(), core<real_t>::options_).clone();
-	else
-	  Base::knots_[i] = torch::from_blob(static_cast<real_t *>(kv.data()),
-					     kv.size(), core<real_t>::options_.device(torch::kCPU)).to(core<real_t>::options_.device());
+        if (core<real_t>::options_.device() == torch::kCPU)
+          Base::knots_[i] = torch::from_blob(static_cast<real_t*>(kv[i].data()),
+                                             kv[i].size(), core<real_t>::options_).clone();
+        else
+          Base::knots_[i] = torch::from_blob(static_cast<real_t *>(kv[i].data()),
+                                             kv[i].size(), core<real_t>::options_.device(torch::kCPU))
+            .to(core<real_t>::options_.device());
 
         // Store the size of the knot vector
         Base::nknots_[i] = Base::knots_[i].size(0);
