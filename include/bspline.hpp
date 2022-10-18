@@ -714,17 +714,29 @@ namespace iganet {
       if constexpr (geoDim_ > 1) {
         auto basfunc =
           eval_prefactor<degrees_[0], (short_t) deriv % 10>() *
-          eval_univariate_<degrees_[0], 0, (short_t) deriv % 10>(xi[0].flatten(), idx[0].flatten());
+          eval_univariate_<degrees_[0], 0, (short_t) deriv % 10>( xi[0].flatten(),
+                                                                 idx[0].flatten());
         std::array<torch::Tensor, geoDim_> result;
         for (std::size_t i = 0; i < geoDim_; ++i)
           result[i] = dotproduct(basfunc,
-                                 coeffs(i).index_select(0, VSlice(idx[0].flatten(), -degrees_[0], 1)).view({-1, xi[0].numel()}), 0).view(xi[0].sizes());
+                                 coeffs(i).index_select(0,
+                                                        VSlice(idx[0].flatten(),
+                                                               -degrees_[0],
+                                                               1)
+                                                        ).view({-1, xi[0].numel()}),
+                                 0).view(xi[0].sizes());
         return result;
       } else
         return
           eval_prefactor<degrees_[0], (short_t) deriv % 10>() *
-          dotproduct(eval_univariate_<degrees_[0], 0, (short_t) deriv % 10>(xi[0].flatten(), idx[0].flatten()),
-                     coeffs(0).index_select(0, VSlice(idx[0].flatten(), -degrees_[0], 1)).view({-1, xi[0].numel()}), 0).view(xi[0].sizes());
+          dotproduct(eval_univariate_<degrees_[0], 0, (short_t) deriv % 10>( xi[0].flatten(),
+                                                                            idx[0].flatten()),
+                     coeffs(0).index_select(0,
+                                            VSlice(idx[0].flatten(),
+                                                   -degrees_[0],
+                                                   1)
+                                            ).view({-1, xi[0].numel()}),
+                     0).view(xi[0].sizes());
     }
 
     /// @brief Returns the value of the bivariate B-spline object in
@@ -736,34 +748,49 @@ namespace iganet {
     template<BSplineDeriv deriv = BSplineDeriv::func>
     inline auto eval_(const TensorArray2& xi, const TensorArray2& idx, short_t dim = 0) const
     {
-      assert(xi[0].sizes() == idx[0].sizes() && xi[1].sizes() == idx[1].sizes());
+      assert(xi[0].sizes() == idx[0].sizes() &&
+             xi[1].sizes() == idx[1].sizes());
       
       if constexpr (geoDim_ > 1) {
         auto basfunc =
           eval_prefactor<degrees_[0],  (short_t)deriv    %10>() *
           eval_prefactor<degrees_[1], ((short_t)deriv/10)%10>() *
-          kronproduct(eval_univariate_<degrees_[0], 0,  (short_t)deriv    %10>(xi[0].flatten(), idx[0].flatten()),
-                      eval_univariate_<degrees_[1], 1, ((short_t)deriv/10)%10>(xi[1].flatten(), idx[1].flatten()),
+          kronproduct(eval_univariate_<degrees_[0], 0,  (short_t)deriv    %10>( xi[0].flatten(),
+                                                                               idx[0].flatten()),
+                      eval_univariate_<degrees_[1], 1, ((short_t)deriv/10)%10>( xi[1].flatten(),
+                                                                               idx[1].flatten()),
                       0);
         std::array<torch::Tensor, geoDim_> result;
         for (std::size_t i = 0; i < geoDim_; ++i)
           result[i] = dotproduct(basfunc,
-                                 coeffs(i).index_select(0, VSlice(TensorArray2({idx[0].flatten(), idx[1].flatten()}),
-                                                                  std::array<int64_t,2>{-degrees_[0],-degrees_[1]},
-                                                                  std::array<int64_t,2>{1,1},
-                                                                  ncoeffs(1))).view({-1, xi[0].numel()}), 0).view(xi[0].sizes());
+                                 coeffs(i).index_select(0,
+                                                        VSlice(TensorArray2({idx[0].flatten(),
+                                                                             idx[1].flatten()}),
+                                                          std::array<int64_t,2>{-degrees_[0],
+                                                                                -degrees_[1]},
+                                                          std::array<int64_t,2>{1,1},
+                                                          ncoeffs(1))
+                                                        ).view({-1, xi[0].numel()}),
+                                 0).view(xi[0].sizes());
         return result;
       } else
         return
           eval_prefactor<degrees_[0],  (short_t)deriv    %10>() *
           eval_prefactor<degrees_[1], ((short_t)deriv/10)%10>() *
-          dotproduct(kronproduct(eval_univariate_<degrees_[0], 0,  (short_t)deriv    %10>(xi[0].flatten(), idx[0].flatten()),
-                                 eval_univariate_<degrees_[1], 1, ((short_t)deriv/10)%10>(xi[1].flatten(), idx[1].flatten()),
+          dotproduct(kronproduct(eval_univariate_<degrees_[0], 0,  (short_t)deriv    %10>( xi[0].flatten(),
+                                                                                          idx[0].flatten()),
+                                 eval_univariate_<degrees_[1], 1, ((short_t)deriv/10)%10>( xi[1].flatten(),
+                                                                                          idx[1].flatten()),
                                  0),
-                     coeffs(0).index_select(0, VSlice(TensorArray2({idx[0].flatten(), idx[1].flatten()}),
-                                                      std::array<int64_t,2>{-degrees_[0],-degrees_[1]},
-                                                      std::array<int64_t,2>{1,1},
-                                                      ncoeffs(1))).view({-1, xi[0].numel()}), 0).view(xi[0].sizes());
+                     coeffs(0).index_select(0,
+                                            VSlice(TensorArray2({idx[0].flatten(),
+                                                                 idx[1].flatten()}),
+                                              std::array<int64_t,2>{-degrees_[0],
+                                                                    -degrees_[1]},
+                                              std::array<int64_t,2>{1,1},
+                                              ncoeffs(1))
+                                            ).view({-1, xi[0].numel()}),
+                     0).view(xi[0].sizes());
     }
     
     /// @brief Returns the value of the trivariate B-spline object in
@@ -775,7 +802,8 @@ namespace iganet {
     template<BSplineDeriv deriv = BSplineDeriv::func>
     inline auto eval_(const TensorArray3& xi, const TensorArray3& idx, short_t dim = 0) const
     {
-      assert(xi[0].sizes() == idx[0].sizes() && xi[1].sizes() == idx[1].sizes() &&
+      assert(xi[0].sizes() == idx[0].sizes() &&
+             xi[1].sizes() == idx[1].sizes() &&
              xi[2].sizes() == idx[2].sizes());
       
       if constexpr (geoDim_ > 1) {
@@ -783,33 +811,53 @@ namespace iganet {
           eval_prefactor<degrees_[0],  (short_t)deriv     %10>() *
           eval_prefactor<degrees_[1], ((short_t)deriv/ 10)%10>() *
           eval_prefactor<degrees_[2], ((short_t)deriv/100)%10>() *
-          kronproduct(kronproduct(eval_univariate_<degrees_[0], 0,  (short_t)deriv    %10>(xi[0], idx[0]),
-                                  eval_univariate_<degrees_[1], 1, ((short_t)deriv/10)%10>(xi[1], idx[1]),
+          kronproduct(kronproduct(eval_univariate_<degrees_[0], 0,  (short_t)deriv    %10>( xi[0].flatten(),
+                                                                                           idx[0].flatten()),
+                                  eval_univariate_<degrees_[1], 1, ((short_t)deriv/10)%10>( xi[1].flatten(),
+                                                                                           idx[1].flatten()),
                                   0),
-                      eval_univariate_<degrees_[2], 2, ((short_t)deriv/100)%10>(xi[2], idx[2]),
+                      eval_univariate_<degrees_[2], 2, ((short_t)deriv/100)%10>( xi[2].flatten(),
+                                                                                idx[2].flatten()),
                       0);
         std::array<torch::Tensor, geoDim_> result;
         for (std::size_t i = 0; i < geoDim_; ++i)
           result[i] = dotproduct(basfunc,
-                                 coeffs(i).index_select(0, VSlice(idx,
-                                                                  std::array<int64_t,3>{-degrees_[0],-degrees_[1],-degrees_[2]},
-                                                                  std::array<int64_t,3>{1,1,1},
-                                                                  ncoeffs(0))).view({-1, xi[0].numel()}), 0);
+                                 coeffs(i).index_select(0,
+                                                        VSlice(TensorArray3({idx[0].flatten(),
+                                                                             idx[1].flatten(),
+                                                                             idx[2].flatten}),
+                                                          std::array<int64_t,3>{-degrees_[0],
+                                                                                -degrees_[1],
+                                                                                -degrees_[2]},
+                                                          std::array<int64_t,3>{1,1,1},
+                                                          ncoeffs(2)) // NEEDS TO BE FIXED!!!
+                                                        ).view({-1, xi[0].numel()}),
+                                 0).view(xi[0].sizes());
         return result;
       } else        
         return
           eval_prefactor<degrees_[0],  (short_t)deriv     %10>() *
           eval_prefactor<degrees_[1], ((short_t)deriv/ 10)%10>() *
           eval_prefactor<degrees_[2], ((short_t)deriv/100)%10>() *
-          dotproduct(kronproduct(kronproduct(eval_univariate_<degrees_[0], 0,  (short_t)deriv    %10>(xi[0], idx[0]),
-                                             eval_univariate_<degrees_[1], 1, ((short_t)deriv/10)%10>(xi[1], idx[1]),
+          dotproduct(kronproduct(kronproduct(eval_univariate_<degrees_[0], 0,  (short_t)deriv    %10>( xi[0].flatten(),
+                                                                                                      idx[0].flatten()),
+                                             eval_univariate_<degrees_[1], 1, ((short_t)deriv/10)%10>( xi[1].flatten(),
+                                                                                                      idx[1].flatten()),
                                              0),
-                                 eval_univariate_<degrees_[2], 2, ((short_t)deriv/100)%10>(xi[2], idx[2]),
+                                 eval_univariate_<degrees_[2], 2, ((short_t)deriv/100)%10>( xi[2].flatten(),
+                                                                                           idx[2].flatten()),
                                  0),
-                     coeffs(0).index_select(0, VSlice(idx,
-                                                      std::array<int64_t,3>{-degrees_[0],-degrees_[1],-degrees_[2]},
-                                                      std::array<int64_t,3>{1,1,1},
-                                                      ncoeffs(0))).view({-1, xi[0].numel()}), 0);
+                     coeffs(0).index_select(0,
+                                            VSlice(TensorArray3({idx[0].flatten(),
+                                                                 idx[1].flatten(),
+                                                                 idx[2].flatten()}),
+                                              std::array<int64_t,3>{-degrees_[0],
+                                                                    -degrees_[1],
+                                                                    -degrees_[2]},
+                                              std::array<int64_t,3>{1,1,1},
+                                              ncoeffs(2)) // NEEDS TO BE FIXED!!!
+                                            ).view({-1, xi[0].numel()}),
+                     0).view(xi[0].sizes());
     }
 
     
@@ -822,8 +870,10 @@ namespace iganet {
     template<BSplineDeriv deriv = BSplineDeriv::func>
     inline auto eval_(const TensorArray4& xi, const TensorArray4& idx, short_t dim = 0) const
     {
-      assert(xi[0].sizes() == idx[0].sizes() && xi[1].sizes() == idx[1].sizes() &&
-             xi[2].sizes() == idx[2].sizes() && xi[3].sizes() == idx[3].sizes());
+      assert(xi[0].sizes() == idx[0].sizes() &&
+             xi[1].sizes() == idx[1].sizes() &&
+             xi[2].sizes() == idx[2].sizes() &&
+             xi[3].sizes() == idx[3].sizes());
       
       if constexpr (geoDim_ > 1) {
         auto basfunc =
@@ -831,20 +881,33 @@ namespace iganet {
           eval_prefactor<degrees_[1], ((short_t)deriv/  10)%10>() *
           eval_prefactor<degrees_[2], ((short_t)deriv/ 100)%10>() *
           eval_prefactor<degrees_[2], ((short_t)deriv/1000)%10>() *
-          kronproduct(kronproduct(eval_univariate_<degrees_[0], 0,  (short_t)deriv      %10>(xi[0], idx[0]),
-                                  eval_univariate_<degrees_[1], 1, ((short_t)deriv/  10)%10>(xi[1], idx[1]),
+          kronproduct(kronproduct(eval_univariate_<degrees_[0], 0,  (short_t)deriv      %10>( xi[0].flatten(),
+                                                                                             idx[0].flatten()),
+                                  eval_univariate_<degrees_[1], 1, ((short_t)deriv/  10)%10>( xi[1].flatten(),
+                                                                                             idx[1].flatten()),
                                   0),
-                      kronproduct(eval_univariate_<degrees_[2], 2, ((short_t)deriv/ 100)%10>(xi[2], idx[2]),
-                                  eval_univariate_<degrees_[3], 3, ((short_t)deriv/1000)%10>(xi[3], idx[3]),
+                      kronproduct(eval_univariate_<degrees_[2], 2, ((short_t)deriv/ 100)%10>( xi[2].flatten(),
+                                                                                             idx[2].flatten()),
+                                  eval_univariate_<degrees_[3], 3, ((short_t)deriv/1000)%10>( xi[3].flatten(),
+                                                                                             idx[3].flatten()),
                                   0),
                       0);
         std::array<torch::Tensor, geoDim_> result;
         for (std::size_t i = 0; i < geoDim_; ++i)
           result[i] = dotproduct(basfunc,
-                                 coeffs(i).index_select(0, VSlice(idx,
-                                                                  std::array<int64_t,4>{-degrees_[0],-degrees_[1],-degrees_[2],-degrees_[3]},
-                                                                  std::array<int64_t,4>{1,1,1,1},
-                                                                  ncoeffs(0))).view({-1, xi[0].numel()}), 0);
+                                 coeffs(i).index_select(0,
+                                                        VSlice(TensorArray4({idx[0].flatten(),
+                                                                             idx[1].flatten(),
+                                                                             idx[2].flatten(),
+                                                                             idx[3].flatten()}),
+                                                          std::array<int64_t,4>{-degrees_[0],
+                                                                                -degrees_[1],
+                                                                                -degrees_[2],
+                                                                                -degrees_[3]},
+                                                          std::array<int64_t,4>{1,1,1,1},
+                                                          ncoeffs(2)) // NEEDS TO BE FIXED!!!
+                                                        ).view({-1, xi[0].numel()}),
+                                 0).view(xi[0].sizes());
         return result;
       } else        
         return
@@ -852,17 +915,30 @@ namespace iganet {
           eval_prefactor<degrees_[1], ((short_t)deriv/  10)%10>() *
           eval_prefactor<degrees_[2], ((short_t)deriv/ 100)%10>() *
           eval_prefactor<degrees_[3], ((short_t)deriv/1000)%10>() *
-          dotproduct(kronproduct(kronproduct(eval_univariate_<degrees_[0], 0,  (short_t)deriv      %10>(xi[0], idx[0]),
-                                             eval_univariate_<degrees_[1], 1, ((short_t)deriv/  10)%10>(xi[1], idx[1]),
+          dotproduct(kronproduct(kronproduct(eval_univariate_<degrees_[0], 0,  (short_t)deriv      %10>( xi[0].flatten(),
+                                                                                                        idx[0].flatten()),
+                                             eval_univariate_<degrees_[1], 1, ((short_t)deriv/  10)%10>( xi[1].flatten(),
+                                                                                                        idx[1].flatten()),
                                              0),
-                                 kronproduct(eval_univariate_<degrees_[2], 2, ((short_t)deriv/ 100)%10>(xi[2], idx[2]),
-                                             eval_univariate_<degrees_[3], 3, ((short_t)deriv/1000)%10>(xi[3], idx[3]),
+                                 kronproduct(eval_univariate_<degrees_[2], 2, ((short_t)deriv/ 100)%10>( xi[2].flatten(),
+                                                                                                        idx[2].flatten()),
+                                             eval_univariate_<degrees_[3], 3, ((short_t)deriv/1000)%10>( xi[3].flatten(),
+                                                                                                        idx[3].flatten()),
                                              0),
                                  0),
-                     coeffs(0).index_select(0, VSlice(idx,
-                                                      std::array<int64_t,4>{-degrees_[0],-degrees_[1],-degrees_[2],-degrees_[3]},
-                                                      std::array<int64_t,4>{1,1,1,1},
-                                                      ncoeffs(0))).view({-1, xi[0].numel()}), 0);
+                     coeffs(0).index_select(0,
+                                            VSlice(TensorArray4({idx[0].flatten(),
+                                                                 idx[1].flatten(),
+                                                                 idx[2].flatten(),
+                                                                 idx[3].flatten()}),
+                                              std::array<int64_t,4>{-degrees_[0],
+                                                                    -degrees_[1],
+                                                                    -degrees_[2],
+                                                                    -degrees_[3]},
+                                              std::array<int64_t,4>{1,1,1,1},
+                                              ncoeffs(2)) // NEEDS TO BE FIXED!!!@
+                                            ).view({-1, xi[0].numel()}),
+                     0).view(xi[0].sizes());
     }
 
     /// @brief Returns the indices of knot spans containing `xi`
