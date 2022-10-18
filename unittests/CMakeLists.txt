@@ -23,6 +23,13 @@ FetchContent_Declare(
 set(gtest_force_shared_crt ON CACHE BOOL "" FORCE)
 FetchContent_MakeAvailable(googletest)
 
+# Compile TinySpline
+include_directories("${PROJECT_SOURCE_DIR}/external/tinyspline")
+add_library(tinyspline STATIC
+  ${PROJECT_SOURCE_DIR}/external/tinyspline/parson.c
+  ${PROJECT_SOURCE_DIR}/external/tinyspline/tinyspline.c
+  ${PROJECT_SOURCE_DIR}/external/tinyspline/tinysplinecxx.cxx)
+
 file(GLOB UNITTESTS *.cxx)
 
 foreach(unittest ${UNITTESTS})
@@ -31,6 +38,7 @@ foreach(unittest ${UNITTESTS})
   add_executable(${name} ${filename})
   target_link_libraries(${name} PUBLIC "${TORCH_LIBRARIES}")
   target_link_libraries(${name} PUBLIC Matplot++::matplot)
+  target_link_libraries(${name} PUBLIC tinyspline)
   target_link_libraries(${name} PUBLIC gtest_main)
   target_compile_definitions(${name} PUBLIC UNITTEST_DISABLE_SHORT_MACROS)
   add_test(${name} ${name})
