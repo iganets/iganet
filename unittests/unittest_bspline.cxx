@@ -16,6 +16,7 @@
 #include <filesystem>
 #include <iostream>
 
+#include <tinysplinecxx.h>
 #include <gtest/gtest.h>
 
 TEST(BSpline, UniformBSpline_parDim1_geoDim1_degrees1_double)
@@ -207,6 +208,38 @@ TEST(BSpline, NonUniformBSpline_read_write_double)
 TEST(BSpline, UniformBSpline_eval_degrees1_double)
 {
   iganet::UniformBSpline<double, 1, 1> bspline({11}, iganet::BSplineInit::linear);
+
+  tinyspline::BSpline tinybspline(bspline.ncoeffs(0), 1, 1, tinyspline::BSpline::Type::Clamped);
+  std::vector<tinyspline::real> knots  = tinybspline.knots();
+  std::vector<tinyspline::real> coeffs = tinybspline.controlPoints();
+
+  for (int64_t i=0; i<bspline.nknots(0); ++i)
+    knots[i] = bspline.knots(0)[i].item<double>();
+  tinybspline.setKnots(knots);
+  
+  for (int64_t i=0; i<bspline.ncoeffs(0); ++i)
+    coeffs[i] = bspline.coeffs(0)[i].item<double>();
+  tinybspline.setControlPoints(coeffs);
+  
+  auto xi   = iganet::to_tensorArray({0.0, 0.2, 0.5, 0.75, 1.0});
+  auto val  = bspline.eval_<iganet::BSplineDeriv::func>(xi);
+
+  std::cout << xi[0] << std::endl;
+  std::cout << val << std::endl;
+
+  for (int64_t i=0; i<xi[0].size(0); ++i)
+    std::cout << xi[0][i].item<double>() << ", "
+      //              << (tinybspline.eval(xi[0][i].item<double>()).result())[0]
+              << std::endl;
+  
+  // Function
+  for (int64_t i=0; i<xi[0].size(0); ++i)
+    std::cout << xi[0][i].item<double>() << std::endl;
+  
+  //    EXPECT_NEAR(val[i].item<double>(),
+  //                (tinybspline.eval((xi[0])[i].item<double>()).result())[0], 1e-10);
+
+  exit(0);
   
   // Function
   for (auto value : std::vector<std::array<double,2>>{{0.0,  0.0},
