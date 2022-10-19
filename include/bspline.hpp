@@ -726,7 +726,7 @@ namespace iganet {
                                                         ).view({-1, xi[0].numel()}),
                                  0).view(xi[0].sizes());
         return result;
-      } else
+        } else
         return
           eval_prefactor<degrees_[0], (short_t) deriv % 10>() *
           dotproduct(eval_univariate_<degrees_[0], 0, (short_t) deriv % 10>( xi[0].flatten(),
@@ -1590,23 +1590,23 @@ namespace iganet {
     /// @note This is the vectorized version of
     /// `UniformBSplineCore::eval_univariate(const torch::Tensor& xi, int64_t i)`
     template<short_t degree, short_t dim, short_t deriv>
-    inline auto eval_univariate_(const torch::Tensor& xi, const torch::Tensor& i) const
+    inline auto eval_univariate_(const torch::Tensor& xi, const torch::Tensor& idx) const
     {
-      assert(xi.sizes() == i.sizes());
-      
-      if constexpr (deriv > degree+1) {
-        // It might be enough to return zero as a scalar
-        return torch::zeros({degree+1, xi.numel()}, core<real_t>::options_);
-      } else {
+      assert(xi.sizes() == idx.sizes());
+
+      if constexpr (deriv > degree) {
+          return torch::zeros({degree+1, xi.numel()}, core<real_t>::options_);
+        }
+      else {
         // Algorithm 2.22 from \cite Lyche:2011
         torch::Tensor b = torch::ones({xi.numel()}, core<real_t>::options_);
-
+        
         // Calculate R_k, k = 1, ..., p_d-r_d
         for (short_t k=1; k<= degree-deriv; ++k) {
 
           // Instead of calculating t1 and t2 we calculate t1 and t21=(t2-t1)
-          auto t1 = knots_[dim].index_select(0, VSlice(i, -k+1, 1) );
-          auto t21 = knots_[dim].index_select(0, VSlice(i, 1, k+1) ) - t1;
+          auto t1  = knots_[dim].index_select(0, VSlice(idx, -k+1,   1) );
+          auto t21 = knots_[dim].index_select(0, VSlice(idx,    1, k+1) ) - t1;
 
           // We handle the special case 0/0:=0 by first creating a
           // mask that is 1 if t2-t1 < eps and 0 otherwise. Note that
@@ -1630,8 +1630,8 @@ namespace iganet {
         for (short_t k=degree-deriv+1; k<=degree; ++k) {
           
           // Instead of calculating t1 and t2 we calculate t1 and t21=(t2-t1)
-          auto t21 = knots_[dim].index_select(0, VSlice(i, 1, k+1) )
-            -        knots_[dim].index_select(0, VSlice(i, -k+1, 1) );
+          auto t21 = knots_[dim].index_select(0, VSlice(idx,    1, k+1) )
+            -        knots_[dim].index_select(0, VSlice(idx, -k+1,   1) );
 
           // We handle the special case 0/0:=0 by first creating a
           // mask that is 1 if t2-t1 < eps and 0 otherwise. Note that
