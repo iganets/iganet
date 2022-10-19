@@ -205,246 +205,92 @@ TEST(BSpline, NonUniformBSpline_read_write_double)
   EXPECT_EQ( (bspline_in != bspline_out), false);
 }
 
-TEST(BSpline, UniformBSpline_eval_degrees1_double)
+template<typename T, typename BSpline_t, typename TensorArray_t>
+void test_bspline_evaluation(BSpline_t& bspline, TensorArray_t& xi, T tol = 1e-12)
 {
-  iganet::UniformBSpline<double, 1, 1> bspline({11}, iganet::BSplineInit::linear);
-
-  tinyspline::BSpline tinybspline(bspline.ncoeffs(0), 1, 1, tinyspline::BSpline::Type::Clamped);
+  tinyspline::BSpline tinybspline(bspline.ncoeffs(0), 1, bspline.degree(0), tinyspline::BSpline::Type::Clamped);
   std::vector<tinyspline::real> knots  = tinybspline.knots();
   std::vector<tinyspline::real> coeffs = tinybspline.controlPoints();
-
+  
   for (int64_t i=0; i<bspline.nknots(0); ++i)
-    knots[i] = bspline.knots(0)[i].item<double>();
+    knots[i] = bspline.knots(0)[i].template item<T>();
   tinybspline.setKnots(knots);
   
   for (int64_t i=0; i<bspline.ncoeffs(0); ++i)
-    coeffs[i] = bspline.coeffs(0)[i].item<double>();
+    coeffs[i] = bspline.coeffs(0)[i].template item<T>();
   tinybspline.setControlPoints(coeffs);
-  
-  auto xi   = iganet::to_tensorArray({0.0, 0.2, 0.5, 0.75, 1.0});
-  auto val  = bspline.eval_<iganet::BSplineDeriv::func>(xi);
 
-  std::cout << xi[0] << std::endl;
-  std::cout << val << std::endl;
-
-  for (int64_t i=0; i<xi[0].size(0); ++i)
-    std::cout << xi[0][i].item<double>() << ", "
-      //              << (tinybspline.eval(xi[0][i].item<double>()).result())[0]
-              << std::endl;
-  
   // Function
+  auto func = bspline.template eval_<iganet::BSplineDeriv::func>(xi);
   for (int64_t i=0; i<xi[0].size(0); ++i)
-    std::cout << xi[0][i].item<double>() << std::endl;
-  
-  //    EXPECT_NEAR(val[i].item<double>(),
-  //                (tinybspline.eval((xi[0])[i].item<double>()).result())[0], 1e-10);
-
-  exit(0);
-  
-  // Function
-  for (auto value : std::vector<std::array<double,2>>{{0.0,  0.0},
-                                                      {0.2,  0.2},
-                                                      {0.5,  0.5},
-                                                      {0.75, 0.75},
-                                                      {1.0,  1.0}})
-    EXPECT_NEAR(bspline.eval_<iganet::BSplineDeriv::func>( torch::ones({1}) * value[0] ).item<double>(), value[1], 1e-8);
+    EXPECT_NEAR(func[i].template item<T>(),
+                (tinybspline.eval((xi[0])[i].template item<T>()).result())[0], tol);
   
   // First derivative
-  for (auto value : std::vector<std::array<double,2>>{{0.0,  1.0},
-                                                      {0.2,  1.0},
-                                                      {0.5,  1.0},
-                                                      {0.75, 1.0},
-                                                      {1.0,  1.0}})
-    EXPECT_NEAR(bspline.eval_<iganet::BSplineDeriv::dx>( torch::ones({1}) * value[0] ).item<double>(), value[1], 1e-8);
+  auto dx = bspline.template eval_<iganet::BSplineDeriv::dx>(xi);
+  for (int64_t i=0; i<xi[0].size(0); ++i)
+    EXPECT_NEAR(dx[i].template item<T>(),
+                (tinybspline.derive(1, -1).eval((xi[0])[i].template item<T>()).result())[0], tol);
 
   // Second derivative
-  for (auto value : std::vector<std::array<double,2>>{{0.0,  0.0},
-                                                      {0.2,  0.0},
-                                                      {0.5,  0.0},
-                                                      {0.75, 0.0},
-                                                      {1.0,  0.0}})
-    EXPECT_NEAR(bspline.eval_<iganet::BSplineDeriv::dx2>( torch::ones({1}) * value[0] ).item<double>(), value[1], 1e-8);
+  auto dx2 = bspline.template eval_<iganet::BSplineDeriv::dx2>(xi);
+  for (int64_t i=0; i<xi[0].size(0); ++i)
+    EXPECT_NEAR(dx2[i].template item<T>(),
+                (tinybspline.derive(2, -1).eval((xi[0])[i].template item<T>()).result())[0], tol);
 
   // Third derivative
-  for (auto value : std::vector<std::array<double,2>>{{0.0,  0.0},
-                                                      {0.2,  0.0},
-                                                      {0.5,  0.0},
-                                                      {0.75, 0.0},
-                                                      {1.0,  0.0}})
-    EXPECT_NEAR(bspline.eval_<iganet::BSplineDeriv::dx3>( torch::ones({1}) * value[0] ).item<double>(), value[1], 1e-8);
+  auto dx3 = bspline.template eval_<iganet::BSplineDeriv::dx3>(xi);
+  for (int64_t i=0; i<xi[0].size(0); ++i)
+    EXPECT_NEAR(dx3[i].template item<T>(),
+                (tinybspline.derive(3, -1).eval((xi[0])[i].template item<T>()).result())[0], tol);
   
   // Fourth derivative
-  for (auto value : std::vector<std::array<double,2>>{{0.0,  0.0},
-                                                      {0.2,  0.0},
-                                                      {0.5,  0.0},
-                                                      {0.75, 0.0},
-                                                      {1.0,  0.0}})
-    EXPECT_NEAR(bspline.eval_<iganet::BSplineDeriv::dx4>( torch::ones({1}) * value[0] ).item<double>(), value[1], 1e-8);
+  auto dx4 = bspline.template eval_<iganet::BSplineDeriv::dx4>(xi);
+  for (int64_t i=0; i<xi[0].size(0); ++i)
+    EXPECT_NEAR(dx4[i].template item<T>(),
+                (tinybspline.derive(4, -1).eval((xi[0])[i].template item<T>()).result())[0], tol);
+}
+
+TEST(BSpline, UniformBSpline_eval_degrees1_double)
+{
+  iganet::UniformBSpline<double, 1, 1> bspline({11}, iganet::BSplineInit::linear);
+  auto xi  = iganet::to_tensorArray({0.0, 0.1, 0.2, 0.5, 0.75, 0.9, 1.0}, bspline.options());
+  test_bspline_evaluation<double>(bspline, xi, 1e-12);
 }
 
 TEST(BSpline, UniformBSpline_eval_degrees2_double)
 {
   iganet::UniformBSpline<double, 1, 2> bspline({10}, iganet::BSplineInit::linear);
-  
-  // Function
-  for (auto value : std::vector<std::array<double,2>>{{0.0,  0.0},
-                                                      {0.1,  0.14222222222222222},
-                                                      {0.2,  0.23333333333333334},
-                                                      {0.5,  0.5},
-                                                      {0.75, 0.7222222222222222},
-                                                      {0.9,  0.8577777777777778},
-                                                      {1.0,  1.0}})
-    EXPECT_NEAR(bspline.eval_<iganet::BSplineDeriv::func>( torch::ones({1}) * value[0] ).item<double>(), value[1], 1e-7);
-
-  // First derivative
-  for (auto value : std::vector<std::array<double,2>>{{0.0,  1.7777777777777777},
-                                                      {0.1,  1.0666666666666667},
-                                                      {0.2,  0.8888888888888888},
-                                                      {0.5,  0.8888888888888893},
-                                                      {0.75, 0.8888888888888893},
-                                                      {0.9,  1.0666666666666664},
-                                                      {1.0,  1.7777777777777786}})
-    EXPECT_NEAR(bspline.eval_<iganet::BSplineDeriv::dx>( torch::ones({1}) * value[0] ).item<double>(), value[1], 1e-6);    
-  
-  // Second derivative
-  for (auto value : std::vector<std::array<double,2>>{{0.0, -7.111111111111111},
-                                                      {0.1, -7.111111111111111},
-                                                      {0.2,  0.0},
-                                                      {0.5,  0.0},
-                                                      {0.75, 0.0},
-                                                      {0.9,  7.111111111111114},
-                                                      {1.0,  7.111111111111114}})
-    EXPECT_NEAR(bspline.eval_<iganet::BSplineDeriv::dx2>( torch::ones({1}) * value[0] ).item<double>(), value[1], 1e-6);    
-
-  // Third derivative
-  for (auto value : std::vector<std::array<double,2>>{{0.0,  0.0},
-                                                      {0.1,  0.0},
-                                                      {0.2,  0.0},
-                                                      {0.5,  0.0},
-                                                      {0.75, 0.0},
-                                                      {0.9,  0.0},
-                                                      {1.0,  0.0}})
-    EXPECT_NEAR(bspline.eval_<iganet::BSplineDeriv::dx3>( torch::ones({1}) * value[0] ).item<double>(), value[1], 1e-7);
-
-  // Fourth derivative
-  for (auto value : std::vector<std::array<double,2>>{{0.0,  0.0},
-                                                      {0.1,  0.0},
-                                                      {0.2,  0.0},
-                                                      {0.5,  0.0},
-                                                      {0.75, 0.0},
-                                                      {0.9,  0.0},
-                                                      {1.0,  0.0}})
-    EXPECT_NEAR(bspline.eval_<iganet::BSplineDeriv::dx4>( torch::ones({1}) * value[0] ).item<double>(), value[1], 1e-7);
+  auto xi  = iganet::to_tensorArray({0.0, 0.1, 0.2, 0.5, 0.75, 0.9, 1.0}, bspline.options());
+  test_bspline_evaluation<double>(bspline, xi, 1e-12); 
 }
 
 TEST(BSpline, UniformBSpline_eval_degrees3_double)
 {
   iganet::UniformBSpline<double, 1, 3> bspline({9}, iganet::BSplineInit::linear);
-  
-  // Function
-  for (auto value : std::vector<std::array<double,2>>{{0.0,  0.0},
-                                                      {0.1,  0.16875},
-                                                      {0.2,  0.26966666666666667},
-                                                      {0.5,  0.5},
-                                                      {0.75, 0.6888020833333333},
-                                                      {0.9,  0.83125},
-                                                      {1.0,  1.0}})
-    EXPECT_NEAR(bspline.eval_<iganet::BSplineDeriv::func>( torch::ones({1}) * value[0] ).item<double>(), value[1], 1e-7);
-
-  // First derivative
-  for (auto value : std::vector<std::array<double,2>>{{0.0,  2.25},
-                                                      {0.1,  1.2374999999999998},
-                                                      {0.2,  0.8699999999999998},
-                                                      {0.5,  0.75},
-                                                      {0.75, 0.7968749999999996},
-                                                      {0.9,  1.2374999999999994},
-                                                      {1.0,  2.25}})
-    EXPECT_NEAR(bspline.eval_<iganet::BSplineDeriv::dx>( torch::ones({1}) * value[0] ).item<double>(), value[1], 1e-6);
-
-  // Second derivative
-  for (auto value : std::vector<std::array<double,2>>{{0.0, -13.5},
-                                                      {0.1,  -6.75},
-                                                      {0.2,  -1.8},
-                                                      {0.5,   0.0},
-                                                      {0.75,  1.125},
-                                                      {0.9,   6.75},
-                                                      {1.0,  13.5}})
-    EXPECT_NEAR(bspline.eval_<iganet::BSplineDeriv::dx2>( torch::ones({1}) * value[0] ).item<double>(), value[1], 1e-5);
-
-  // Third derivative
-  for (auto value : std::vector<std::array<double,2>>{{0.0,  67.5},
-                                                      {0.1,  67.5},
-                                                      {0.2,  13.5},
-                                                      {0.5,   0.0},
-                                                      {0.75, 13.5},
-                                                      {0.9,  67.5},
-                                                      {1.0,  67.5}})
-    EXPECT_NEAR(bspline.eval_<iganet::BSplineDeriv::dx3>( torch::ones({1}) * value[0] ).item<double>(), value[1], 1e-8);
-
-  // Fourth derivative
-  for (auto value : std::vector<std::array<double,2>>{{0.0,  0.0},
-                                                      {0.1,  0.0},
-                                                      {0.2,  0.0},
-                                                      {0.5,  0.0},
-                                                      {0.75, 0.0},
-                                                      {0.9,  0.0},
-                                                      {1.0,  0.0}})
-    EXPECT_NEAR(bspline.eval_<iganet::BSplineDeriv::dx4>( torch::ones({1}) * value[0] ).item<double>(), value[1], 1e-8);
+  auto xi  = iganet::to_tensorArray({0.0, 0.1, 0.2, 0.5, 0.75, 0.9, 1.0}, bspline.options());
+  test_bspline_evaluation<double>(bspline, xi, 1e-12);  
 }
 
 TEST(BSpline, UniformBSpline_eval_degrees4_double)
 {
   iganet::UniformBSpline<double, 1, 4> bspline({9}, iganet::BSplineInit::linear);
+  auto xi  = iganet::to_tensorArray({0.0, 0.1, 0.24, 0.5, 0.75, 0.9, 1.0}, bspline.options());
+  test_bspline_evaluation<double>(bspline, xi, 1e-11); 
+}
 
-  // Function
-  for (auto value : std::vector<std::array<double,2>>{{0.0,  0.0},
-                                                      {0.1,  0.17925347222222224},
-                                                      {0.2,  0.28472222222222215},
-                                                      {0.5,  0.5},
-                                                      {0.75, 0.6725328233506945},
-                                                      {0.9,  0.8207465277777777},
-                                                      {1.0,  1.0}})
-    EXPECT_NEAR(bspline.eval_<iganet::BSplineDeriv::func>( torch::ones({1}) * value[0] ).item<double>(), value[1], 1e-7);
+TEST(BSpline, UniformBSpline_eval_degrees5_double)
+{
+  iganet::UniformBSpline<double, 1, 5> bspline({9}, iganet::BSplineInit::linear);
+  auto xi  = iganet::to_tensorArray({0.0, 0.1, 0.2, 0.5, 0.75, 0.9, 1.0}, bspline.options());
+  test_bspline_evaluation<double>(bspline, xi, 1e-11); 
+}
 
-  // First derivative
-  for (auto value : std::vector<std::array<double,2>>{{0.0,  2.5},
-                                                      {0.1,  1.284722222222222},
-                                                      {0.2,  0.9027777777777777},
-                                                      {0.5,  0.6336805555555556},
-                                                      {0.75, 0.8110894097222225},
-                                                      {0.9,  1.2847222222222223},
-                                                      {1.0,  2.5}})
-    EXPECT_NEAR(bspline.eval_<iganet::BSplineDeriv::dx>( torch::ones({1}) * value[0] ).item<double>(), value[1], 1e-6);
-
-  // Second derivative
-  for (auto value : std::vector<std::array<double,2>>{{0.0, -18.75},
-                                                      {0.1,  -6.770833333333332},
-                                                      {0.2,  -2.083333333333332},
-                                                      {0.5,   0.0},
-                                                      {0.75,  1.5950520833333357},
-                                                      {0.9,   6.770833333333343},
-                                                      {1.0,  18.75}})
-    EXPECT_NEAR(bspline.eval_<iganet::BSplineDeriv::dx2>( torch::ones({1}) * value[0] ).item<double>(), value[1], 1e-5);
-
-  // Third derivative
-  for (auto value : std::vector<std::array<double,2>>{{0.0, 156.25},
-                                                      {0.1,  83.33333333333339},
-                                                      {0.2,  10.4166666666666},
-                                                      {0.5,   5.208333333333336},
-                                                      {0.75,  9.114583333333371},
-                                                      {0.9,  83.33333333333348},
-                                                      {1.0, 156.25}})
-    EXPECT_NEAR(bspline.eval_<iganet::BSplineDeriv::dx3>( torch::ones({1}) * value[0] ).item<double>(), value[1], 1e-4);
-
-  // Fourth derivative
-  for (auto value : std::vector<std::array<double,2>>{{0.0, -729.1666666666679},
-                                                      {0.1, -729.1666666666679},
-                                                      {0.2,  -26.041666666666742},
-                                                      {0.5,    0.0},
-                                                      {0.75,  26.041666666667197},
-                                                      {0.9,  729.1666666666679},
-                                                      {1.0,  729.1666666666679}})
-    EXPECT_NEAR(bspline.eval_<iganet::BSplineDeriv::dx4>( torch::ones({1}) * value[0] ).item<double>(), value[1], 1e-8);
+TEST(BSpline, UniformBSpline_eval_degrees6_double)
+{
+  iganet::UniformBSpline<double, 1, 6> bspline({9}, iganet::BSplineInit::linear);
+  auto xi  = iganet::to_tensorArray({0.0, 0.1, 0.2, 0.5, 0.75, 0.9, 1.0}, bspline.options());
+  test_bspline_evaluation<double>(bspline, xi, 1e-11); 
 }
 
 int main(int argc, char **argv) {
