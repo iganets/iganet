@@ -95,7 +95,7 @@ TEST(Performance, UniformBSpline_parDim1_float)
                     << std::right << std::setw(8) << ncoeffs << ","
                     << std::right << std::setw(8) << nsamples << ") "
                     << std::right << std::setw(10)
-                    << std::chrono::duration_cast<std::chrono::nanoseconds>(t2-t1).count() / float(1000)
+                    << std::chrono::duration_cast<std::chrono::nanoseconds>(t2-t1).count() / double(1000)
                     << " (ns/entry)";
         } else {
           auto t1 = std::chrono::high_resolution_clock::now();
@@ -112,22 +112,28 @@ TEST(Performance, UniformBSpline_parDim1_float)
 
 #ifdef SPLINELIB
         {
-          auto splinelib_bspline = to_splinelib_bspline(bspline);
-
-          // B-spline evaluation
-          using ParametricCoordinate       = typename decltype(splinelib_bspline)::ParametricCoordinate_;
-          using ScalarParametricCoordinate = typename ParametricCoordinate::value_type;
-          
-          auto t1 = std::chrono::high_resolution_clock::now();
-          for (int i=0; i<1000; i++)
-            splinelib_bspline(ParametricCoordinate
-                              {
-                                ScalarParametricCoordinate{0.5}
-                              });
-          auto t2 = std::chrono::high_resolution_clock::now();
-          std::cout << std::right << std::setw(10)
-                    << std::chrono::duration_cast<std::chrono::nanoseconds>(t2-t1).count() / float(1000)
-                    << " (ns/entry)";
+	  if (nsamples == 1) {
+	    auto splinelib_bspline = to_splinelib_bspline(bspline);
+	    
+	    // B-spline evaluation
+	    using ParametricCoordinate       = typename decltype(splinelib_bspline)::ParametricCoordinate_;
+	    using ScalarParametricCoordinate = typename ParametricCoordinate::value_type;
+	    
+	    auto t1 = std::chrono::high_resolution_clock::now();
+	    for (int i=0; i<1000; i++)
+	      splinelib_bspline(ParametricCoordinate
+				{
+				 ScalarParametricCoordinate{0.5}
+				});
+	    auto t2 = std::chrono::high_resolution_clock::now();
+	    std::cout << std::right << std::setw(10)
+		      << std::chrono::duration_cast<std::chrono::nanoseconds>(t2-t1).count() / double(1000)
+		      << " (ns/entry)";
+	  } else {
+	    std::cout << std::right << std::setw(10)
+		      << "--"
+		      << " (ns/entry)";
+	  }
         }
 #endif
       }
@@ -142,7 +148,7 @@ TEST(Performance, UniformBSpline_parDim1_float)
             bspline.eval<iganet::BSplineDeriv::func>(xi[0]);
           auto t2 = std::chrono::high_resolution_clock::now();
           std::cout << std::right << std::setw(10)
-                    << std::chrono::duration_cast<std::chrono::nanoseconds>(t2-t1).count() / float(1000)
+                    << std::chrono::duration_cast<std::chrono::nanoseconds>(t2-t1).count() / double(1000)
                     << " (ns/entry)";
         } else {
           auto t1 = std::chrono::high_resolution_clock::now();
@@ -156,22 +162,28 @@ TEST(Performance, UniformBSpline_parDim1_float)
 
 #ifdef SPLINELIB
         {
-          auto splinelib_bspline = to_splinelib_bspline(bspline);
-
-          // B-spline evaluation
-          using ParametricCoordinate       = typename decltype(splinelib_bspline)::ParametricCoordinate_;
-          using ScalarParametricCoordinate = typename ParametricCoordinate::value_type;
-          
-          auto t1 = std::chrono::high_resolution_clock::now();
-          for (int i=0; i<1000; i++)
-            splinelib_bspline(ParametricCoordinate
-                              {
-                                ScalarParametricCoordinate{0.5}
-                              });
-          auto t2 = std::chrono::high_resolution_clock::now();
-          std::cout << std::right << std::setw(10)
-                    << std::chrono::duration_cast<std::chrono::nanoseconds>(t2-t1).count() / float(1000)
-                    << " (ns/entry)";
+	  if (nsamples == 1) {
+	    auto splinelib_bspline = to_splinelib_bspline(bspline);
+	    
+	    // B-spline evaluation
+	    using ParametricCoordinate       = typename decltype(splinelib_bspline)::ParametricCoordinate_;
+	    using ScalarParametricCoordinate = typename ParametricCoordinate::value_type;
+	    
+	    auto t1 = std::chrono::high_resolution_clock::now();
+	    for (int i=0; i<1000; i++)
+	      splinelib_bspline(ParametricCoordinate
+				{
+				 ScalarParametricCoordinate{0.5}
+				});
+	    auto t2 = std::chrono::high_resolution_clock::now();
+	    std::cout << std::right << std::setw(10)
+		      << std::chrono::duration_cast<std::chrono::nanoseconds>(t2-t1).count() / double(1000)
+		      << " (ns/entry)";
+	  } else {
+	    std::cout << std::right << std::setw(10)
+		      << "--"
+		      << " (ns/entry)";
+	  }
         }
 #endif
       }
@@ -186,7 +198,7 @@ TEST(Performance, UniformBSpline_parDim1_float)
             bspline.eval<iganet::BSplineDeriv::func>(xi[0]);
           auto t2 = std::chrono::high_resolution_clock::now();
           std::cout << std::right << std::setw(10)
-                    << std::chrono::duration_cast<std::chrono::nanoseconds>(t2-t1).count() / float(1000)
+                    << std::chrono::duration_cast<std::chrono::nanoseconds>(t2-t1).count() / double(1000)
                     << " (ns/entry)";
         } else {
           auto t1 = std::chrono::high_resolution_clock::now();
@@ -200,22 +212,28 @@ TEST(Performance, UniformBSpline_parDim1_float)
 
 #ifdef SPLINELIB
         {
-          auto splinelib_bspline = to_splinelib_bspline(bspline);
-
-          // B-spline evaluation
-          using ParametricCoordinate       = typename decltype(splinelib_bspline)::ParametricCoordinate_;
-          using ScalarParametricCoordinate = typename ParametricCoordinate::value_type;
-          
-          auto t1 = std::chrono::high_resolution_clock::now();
-          for (int i=0; i<1000; i++)
-            splinelib_bspline(ParametricCoordinate
-                              {
-                                ScalarParametricCoordinate{0.5}
-                              });
-          auto t2 = std::chrono::high_resolution_clock::now();
-          std::cout << std::right << std::setw(10)
-                    << std::chrono::duration_cast<std::chrono::nanoseconds>(t2-t1).count() / float(1000)
-                    << " (ns/entry)";
+	  if (nsamples == 1) {
+	    auto splinelib_bspline = to_splinelib_bspline(bspline);
+	    
+	    // B-spline evaluation
+	    using ParametricCoordinate       = typename decltype(splinelib_bspline)::ParametricCoordinate_;
+	    using ScalarParametricCoordinate = typename ParametricCoordinate::value_type;
+	    
+	    auto t1 = std::chrono::high_resolution_clock::now();
+	    for (int i=0; i<1000; i++)
+	      splinelib_bspline(ParametricCoordinate
+				{
+				 ScalarParametricCoordinate{0.5}
+				});
+	    auto t2 = std::chrono::high_resolution_clock::now();
+	    std::cout << std::right << std::setw(10)
+		      << std::chrono::duration_cast<std::chrono::nanoseconds>(t2-t1).count() / double(1000)
+		      << " (ns/entry)";
+	  } else {
+	    std::cout << std::right << std::setw(10)
+		      << "--"
+		      << " (ns/entry)";
+	  }
         }
 #endif
       }
@@ -230,7 +248,7 @@ TEST(Performance, UniformBSpline_parDim1_float)
             bspline.eval<iganet::BSplineDeriv::func>(xi[0]);
           auto t2 = std::chrono::high_resolution_clock::now();
           std::cout << std::right << std::setw(10)
-                    << std::chrono::duration_cast<std::chrono::nanoseconds>(t2-t1).count() / float(1000)
+                    << std::chrono::duration_cast<std::chrono::nanoseconds>(t2-t1).count() / double(1000)
                     << " (ns/entry)";
         } else {
           auto t1 = std::chrono::high_resolution_clock::now();
@@ -244,22 +262,28 @@ TEST(Performance, UniformBSpline_parDim1_float)
 
 #ifdef SPLINELIB
         {
-          auto splinelib_bspline = to_splinelib_bspline(bspline);
-
-          // B-spline evaluation
-          using ParametricCoordinate       = typename decltype(splinelib_bspline)::ParametricCoordinate_;
-          using ScalarParametricCoordinate = typename ParametricCoordinate::value_type;
-          
-          auto t1 = std::chrono::high_resolution_clock::now();
-          for (int i=0; i<1000; i++)
-            splinelib_bspline(ParametricCoordinate
-                              {
-                                ScalarParametricCoordinate{0.5}
-                              });
-          auto t2 = std::chrono::high_resolution_clock::now();
-          std::cout << std::right << std::setw(10)
-                    << std::chrono::duration_cast<std::chrono::nanoseconds>(t2-t1).count() / float(1000)
-                    << " (ns/entry)";
+	  if (nsamples == 1) {
+	    auto splinelib_bspline = to_splinelib_bspline(bspline);
+	    
+	    // B-spline evaluation
+	    using ParametricCoordinate       = typename decltype(splinelib_bspline)::ParametricCoordinate_;
+	    using ScalarParametricCoordinate = typename ParametricCoordinate::value_type;
+	    
+	    auto t1 = std::chrono::high_resolution_clock::now();
+	    for (int i=0; i<1000; i++)
+	      splinelib_bspline(ParametricCoordinate
+				{
+				 ScalarParametricCoordinate{0.5}
+				});
+	    auto t2 = std::chrono::high_resolution_clock::now();
+	    std::cout << std::right << std::setw(10)
+		      << std::chrono::duration_cast<std::chrono::nanoseconds>(t2-t1).count() / double(1000)
+		      << " (ns/entry)";
+	  } else {
+	    std::cout << std::right << std::setw(10)
+		      << "--"
+		      << " (ns/entry)";
+	  }
         }
 #endif
       }
@@ -274,7 +298,7 @@ TEST(Performance, UniformBSpline_parDim1_float)
             bspline.eval<iganet::BSplineDeriv::func>(xi[0]);
           auto t2 = std::chrono::high_resolution_clock::now();
           std::cout << std::right << std::setw(10)
-                    << std::chrono::duration_cast<std::chrono::nanoseconds>(t2-t1).count() / float(1000)
+                    << std::chrono::duration_cast<std::chrono::nanoseconds>(t2-t1).count() / double(1000)
                     << " (ns/entry)";
         } else {
           auto t1 = std::chrono::high_resolution_clock::now();
@@ -288,22 +312,28 @@ TEST(Performance, UniformBSpline_parDim1_float)
 
 #ifdef SPLINELIB
         {
-          auto splinelib_bspline = to_splinelib_bspline(bspline);
-
-          // B-spline evaluation
-          using ParametricCoordinate       = typename decltype(splinelib_bspline)::ParametricCoordinate_;
-          using ScalarParametricCoordinate = typename ParametricCoordinate::value_type;
-          
-          auto t1 = std::chrono::high_resolution_clock::now();
-          for (int i=0; i<1000; i++)
-            splinelib_bspline(ParametricCoordinate
-                              {
-                                ScalarParametricCoordinate{0.5}
-                              });
-          auto t2 = std::chrono::high_resolution_clock::now();
-          std::cout << std::right << std::setw(10)
-                    << std::chrono::duration_cast<std::chrono::nanoseconds>(t2-t1).count() / float(1000)
-                    << " (ns/entry)";
+	  if (nsamples == 1) {
+	    auto splinelib_bspline = to_splinelib_bspline(bspline);
+	    
+	    // B-spline evaluation
+	    using ParametricCoordinate       = typename decltype(splinelib_bspline)::ParametricCoordinate_;
+	    using ScalarParametricCoordinate = typename ParametricCoordinate::value_type;
+	    
+	    auto t1 = std::chrono::high_resolution_clock::now();
+	    for (int i=0; i<1000; i++)
+	      splinelib_bspline(ParametricCoordinate
+				{
+				 ScalarParametricCoordinate{0.5}
+				});
+	    auto t2 = std::chrono::high_resolution_clock::now();
+	    std::cout << std::right << std::setw(10)
+		      << std::chrono::duration_cast<std::chrono::nanoseconds>(t2-t1).count() / double(1000)
+		      << " (ns/entry)";
+	  } else {
+	    std::cout << std::right << std::setw(10)
+		      << "--"
+		      << " (ns/entry)";
+	  }
         }
 #endif
         std::cout << std::endl;
@@ -332,7 +362,7 @@ TEST(Performance, UniformBSpline_parDim1_double)
                     << std::right << std::setw(8) << ncoeffs << ","
                     << std::right << std::setw(8) << nsamples << ") "
                     << std::right << std::setw(10)
-                    << std::chrono::duration_cast<std::chrono::nanoseconds>(t2-t1).count() / float(1000)
+                    << std::chrono::duration_cast<std::chrono::nanoseconds>(t2-t1).count() / double(1000)
                     << " (ns/entry)";
         } else {
           auto t1 = std::chrono::high_resolution_clock::now();
@@ -349,23 +379,29 @@ TEST(Performance, UniformBSpline_parDim1_double)
 
 #ifdef SPLINELIB
         {
-          auto splinelib_bspline = to_splinelib_bspline(bspline);
-
-          // B-spline evaluation
-          using ParametricCoordinate       = typename decltype(splinelib_bspline)::ParametricCoordinate_;
-          using ScalarParametricCoordinate = typename ParametricCoordinate::value_type;
-          
-          auto t1 = std::chrono::high_resolution_clock::now();
-          for (int i=0; i<1000; i++)
-            splinelib_bspline(ParametricCoordinate
-                              {
-                                ScalarParametricCoordinate{0.5}
-                              });
-          auto t2 = std::chrono::high_resolution_clock::now();
-          std::cout << std::right << std::setw(10)
-                    << std::chrono::duration_cast<std::chrono::nanoseconds>(t2-t1).count() / float(1000)
-                    << " (ns/entry)";
-        }
+	  if (nsamples == 1) {
+	    auto splinelib_bspline = to_splinelib_bspline(bspline);
+	    
+	    // B-spline evaluation
+	    using ParametricCoordinate       = typename decltype(splinelib_bspline)::ParametricCoordinate_;
+	    using ScalarParametricCoordinate = typename ParametricCoordinate::value_type;
+	    
+	    auto t1 = std::chrono::high_resolution_clock::now();
+	    for (int i=0; i<1000; i++)
+	      splinelib_bspline(ParametricCoordinate
+				{
+				 ScalarParametricCoordinate{0.5}
+				});
+	    auto t2 = std::chrono::high_resolution_clock::now();
+	    std::cout << std::right << std::setw(10)
+		      << std::chrono::duration_cast<std::chrono::nanoseconds>(t2-t1).count() / double(1000)
+		      << " (ns/entry)";
+	  } else {
+	    std::cout << std::right << std::setw(10)
+		      << "--"
+		      << " (ns/entry)";
+	  }
+	}
 #endif
       }
 
@@ -379,7 +415,7 @@ TEST(Performance, UniformBSpline_parDim1_double)
             bspline.eval<iganet::BSplineDeriv::func>(xi[0]);
           auto t2 = std::chrono::high_resolution_clock::now();
           std::cout << std::right << std::setw(10)
-                    << std::chrono::duration_cast<std::chrono::nanoseconds>(t2-t1).count() / float(1000)
+                    << std::chrono::duration_cast<std::chrono::nanoseconds>(t2-t1).count() / double(1000)
                     << " (ns/entry)";
         } else {
           auto t1 = std::chrono::high_resolution_clock::now();
@@ -393,22 +429,28 @@ TEST(Performance, UniformBSpline_parDim1_double)
 
 #ifdef SPLINELIB
         {
-          auto splinelib_bspline = to_splinelib_bspline(bspline);
-
-          // B-spline evaluation
-          using ParametricCoordinate       = typename decltype(splinelib_bspline)::ParametricCoordinate_;
-          using ScalarParametricCoordinate = typename ParametricCoordinate::value_type;
-          
-          auto t1 = std::chrono::high_resolution_clock::now();
-          for (int i=0; i<1000; i++)
-            splinelib_bspline(ParametricCoordinate
-                              {
-                                ScalarParametricCoordinate{0.5}
-                              });
-          auto t2 = std::chrono::high_resolution_clock::now();
-          std::cout << std::right << std::setw(10)
-                    << std::chrono::duration_cast<std::chrono::nanoseconds>(t2-t1).count() / float(1000)
-                    << " (ns/entry)";
+	  if (nsamples == 1) {
+	    auto splinelib_bspline = to_splinelib_bspline(bspline);
+	    
+	    // B-spline evaluation
+	    using ParametricCoordinate       = typename decltype(splinelib_bspline)::ParametricCoordinate_;
+	    using ScalarParametricCoordinate = typename ParametricCoordinate::value_type;
+	    
+	    auto t1 = std::chrono::high_resolution_clock::now();
+	    for (int i=0; i<1000; i++)
+	      splinelib_bspline(ParametricCoordinate
+				{
+				 ScalarParametricCoordinate{0.5}
+				});
+	    auto t2 = std::chrono::high_resolution_clock::now();
+	    std::cout << std::right << std::setw(10)
+		      << std::chrono::duration_cast<std::chrono::nanoseconds>(t2-t1).count() / double(1000)
+		      << " (ns/entry)";
+	  } else {
+	    std::cout << std::right << std::setw(10)
+		      << "--"
+		      << " (ns/entry)";
+	  }
         }
 #endif
       }
@@ -423,7 +465,7 @@ TEST(Performance, UniformBSpline_parDim1_double)
             bspline.eval<iganet::BSplineDeriv::func>(xi[0]);
           auto t2 = std::chrono::high_resolution_clock::now();
           std::cout << std::right << std::setw(10)
-                    << std::chrono::duration_cast<std::chrono::nanoseconds>(t2-t1).count() / float(1000)
+                    << std::chrono::duration_cast<std::chrono::nanoseconds>(t2-t1).count() / double(1000)
                     << " (ns/entry)";
         } else {
           auto t1 = std::chrono::high_resolution_clock::now();
@@ -437,22 +479,28 @@ TEST(Performance, UniformBSpline_parDim1_double)
 
 #ifdef SPLINELIB
         {
-          auto splinelib_bspline = to_splinelib_bspline(bspline);
-
-          // B-spline evaluation
-          using ParametricCoordinate       = typename decltype(splinelib_bspline)::ParametricCoordinate_;
-          using ScalarParametricCoordinate = typename ParametricCoordinate::value_type;
-          
-          auto t1 = std::chrono::high_resolution_clock::now();
-          for (int i=0; i<1000; i++)
-            splinelib_bspline(ParametricCoordinate
-                              {
-                                ScalarParametricCoordinate{0.5}
-                              });
-          auto t2 = std::chrono::high_resolution_clock::now();
-          std::cout << std::right << std::setw(10)
-                    << std::chrono::duration_cast<std::chrono::nanoseconds>(t2-t1).count() / float(1000)
-                    << " (ns/entry)";
+	  if (nsamples == 1) {
+	    auto splinelib_bspline = to_splinelib_bspline(bspline);
+	    
+	    // B-spline evaluation
+	    using ParametricCoordinate       = typename decltype(splinelib_bspline)::ParametricCoordinate_;
+	    using ScalarParametricCoordinate = typename ParametricCoordinate::value_type;
+	    
+	    auto t1 = std::chrono::high_resolution_clock::now();
+	    for (int i=0; i<1000; i++)
+	      splinelib_bspline(ParametricCoordinate
+				{
+				 ScalarParametricCoordinate{0.5}
+				});
+	    auto t2 = std::chrono::high_resolution_clock::now();
+	    std::cout << std::right << std::setw(10)
+		      << std::chrono::duration_cast<std::chrono::nanoseconds>(t2-t1).count() / double(1000)
+		      << " (ns/entry)";
+	  } else {
+	    std::cout << std::right << std::setw(10)
+		      << "--"
+		      << " (ns/entry)";
+	  }
         }
 #endif
       }
@@ -467,7 +515,7 @@ TEST(Performance, UniformBSpline_parDim1_double)
             bspline.eval<iganet::BSplineDeriv::func>(xi[0]);
           auto t2 = std::chrono::high_resolution_clock::now();
           std::cout << std::right << std::setw(10)
-                    << std::chrono::duration_cast<std::chrono::nanoseconds>(t2-t1).count() / float(1000)
+                    << std::chrono::duration_cast<std::chrono::nanoseconds>(t2-t1).count() / double(1000)
                     << " (ns/entry)";
         } else {
           auto t1 = std::chrono::high_resolution_clock::now();
@@ -481,22 +529,28 @@ TEST(Performance, UniformBSpline_parDim1_double)
 
 #ifdef SPLINELIB
         {
-          auto splinelib_bspline = to_splinelib_bspline(bspline);
-
-          // B-spline evaluation
-          using ParametricCoordinate       = typename decltype(splinelib_bspline)::ParametricCoordinate_;
-          using ScalarParametricCoordinate = typename ParametricCoordinate::value_type;
-          
-          auto t1 = std::chrono::high_resolution_clock::now();
-          for (int i=0; i<1000; i++)
-            splinelib_bspline(ParametricCoordinate
-                              {
-                                ScalarParametricCoordinate{0.5}
-                              });
-          auto t2 = std::chrono::high_resolution_clock::now();
-          std::cout << std::right << std::setw(10)
-                    << std::chrono::duration_cast<std::chrono::nanoseconds>(t2-t1).count() / float(1000)
-                    << " (ns/entry)";
+	  if (nsamples == 1) {
+	    auto splinelib_bspline = to_splinelib_bspline(bspline);
+	    
+	    // B-spline evaluation
+	    using ParametricCoordinate       = typename decltype(splinelib_bspline)::ParametricCoordinate_;
+	    using ScalarParametricCoordinate = typename ParametricCoordinate::value_type;
+	    
+	    auto t1 = std::chrono::high_resolution_clock::now();
+	    for (int i=0; i<1000; i++)
+	      splinelib_bspline(ParametricCoordinate
+				{
+				 ScalarParametricCoordinate{0.5}
+				});
+	    auto t2 = std::chrono::high_resolution_clock::now();
+	    std::cout << std::right << std::setw(10)
+		      << std::chrono::duration_cast<std::chrono::nanoseconds>(t2-t1).count() / double(1000)
+		      << " (ns/entry)";
+	  } else {
+	    std::cout << std::right << std::setw(10)
+		      << "--"
+		      << " (ns/entry)";
+	  }
         }
 #endif
       }
@@ -511,7 +565,7 @@ TEST(Performance, UniformBSpline_parDim1_double)
             bspline.eval<iganet::BSplineDeriv::func>(xi[0]);
           auto t2 = std::chrono::high_resolution_clock::now();
           std::cout << std::right << std::setw(10)
-                    << std::chrono::duration_cast<std::chrono::nanoseconds>(t2-t1).count() / float(1000)
+                    << std::chrono::duration_cast<std::chrono::nanoseconds>(t2-t1).count() / double(1000)
                     << " (ns/entry)"
                     << std::endl;
         } else {
@@ -526,22 +580,28 @@ TEST(Performance, UniformBSpline_parDim1_double)
 
 #ifdef SPLINELIB
         {
-          auto splinelib_bspline = to_splinelib_bspline(bspline);
-
-          // B-spline evaluation
-          using ParametricCoordinate       = typename decltype(splinelib_bspline)::ParametricCoordinate_;
-          using ScalarParametricCoordinate = typename ParametricCoordinate::value_type;
-          
-          auto t1 = std::chrono::high_resolution_clock::now();
-          for (int i=0; i<1000; i++)
-            splinelib_bspline(ParametricCoordinate
-                              {
-                                ScalarParametricCoordinate{0.5}
-                              });
-          auto t2 = std::chrono::high_resolution_clock::now();
-          std::cout << std::right << std::setw(10)
-                    << std::chrono::duration_cast<std::chrono::nanoseconds>(t2-t1).count() / float(1000)
-                    << " (ns/entry)";
+	  if (nsamples == 1) {
+	    auto splinelib_bspline = to_splinelib_bspline(bspline);
+	    
+	    // B-spline evaluation
+	    using ParametricCoordinate       = typename decltype(splinelib_bspline)::ParametricCoordinate_;
+	    using ScalarParametricCoordinate = typename ParametricCoordinate::value_type;
+	    
+	    auto t1 = std::chrono::high_resolution_clock::now();
+	    for (int i=0; i<1000; i++)
+	      splinelib_bspline(ParametricCoordinate
+				{
+				 ScalarParametricCoordinate{0.5}
+				});
+	    auto t2 = std::chrono::high_resolution_clock::now();
+	    std::cout << std::right << std::setw(10)
+		      << std::chrono::duration_cast<std::chrono::nanoseconds>(t2-t1).count() / double(1000)
+		      << " (ns/entry)";
+	  } else {
+	    std::cout << std::right << std::setw(10)
+		      << "--"
+		      << " (ns/entry)";
+	  }
         }
 #endif
         std::cout << std::endl;
@@ -570,7 +630,7 @@ TEST(Performance, UniformBSpline_parDim2_float)
                     << std::right << std::setw(8) << ncoeffs << ","
                     << std::right << std::setw(8) << nsamples << ") "
                     << std::right << std::setw(10)
-                    << std::chrono::duration_cast<std::chrono::nanoseconds>(t2-t1).count() / float(1000)
+                    << std::chrono::duration_cast<std::chrono::nanoseconds>(t2-t1).count() / double(1000)
                     << " (ns/entry)";
         } else {
           auto t1 = std::chrono::high_resolution_clock::now();
@@ -587,23 +647,29 @@ TEST(Performance, UniformBSpline_parDim2_float)
 
 #ifdef SPLINELIB
         {
-          auto splinelib_bspline = to_splinelib_bspline(bspline);
-
-          // B-spline evaluation
-          using ParametricCoordinate       = typename decltype(splinelib_bspline)::ParametricCoordinate_;
-          using ScalarParametricCoordinate = typename ParametricCoordinate::value_type;
-          
-          auto t1 = std::chrono::high_resolution_clock::now();
-          for (int i=0; i<1000; i++)
-            splinelib_bspline(ParametricCoordinate
-                              {
-                                ScalarParametricCoordinate{0.5},
-                                ScalarParametricCoordinate{0.5}
-                              });
-          auto t2 = std::chrono::high_resolution_clock::now();
-          std::cout << std::right << std::setw(10)
-                    << std::chrono::duration_cast<std::chrono::nanoseconds>(t2-t1).count() / float(1000)
-                    << " (ns/entry)";
+	  if (nsamples == 1) {
+	    auto splinelib_bspline = to_splinelib_bspline(bspline);
+	    
+	    // B-spline evaluation
+	    using ParametricCoordinate       = typename decltype(splinelib_bspline)::ParametricCoordinate_;
+	    using ScalarParametricCoordinate = typename ParametricCoordinate::value_type;
+	    
+	    auto t1 = std::chrono::high_resolution_clock::now();
+	    for (int i=0; i<1000; i++)
+	      splinelib_bspline(ParametricCoordinate
+				{
+				 ScalarParametricCoordinate{0.5},
+				 ScalarParametricCoordinate{0.5}
+				});
+	    auto t2 = std::chrono::high_resolution_clock::now();
+	    std::cout << std::right << std::setw(10)
+		      << std::chrono::duration_cast<std::chrono::nanoseconds>(t2-t1).count() / double(1000)
+		      << " (ns/entry)";
+	  } else {
+	    std::cout << std::right << std::setw(10)
+		      << "--"
+		      << " (ns/entry)";
+	  }
         }
 #endif
       }
@@ -618,7 +684,7 @@ TEST(Performance, UniformBSpline_parDim2_float)
             bspline.eval<iganet::BSplineDeriv::func>(torch::rand(2, core_.options()));
           auto t2 = std::chrono::high_resolution_clock::now();
           std::cout << std::right << std::setw(10)
-                    << std::chrono::duration_cast<std::chrono::nanoseconds>(t2-t1).count() / float(1000)
+                    << std::chrono::duration_cast<std::chrono::nanoseconds>(t2-t1).count() / double(1000)
                     << " (ns/entry)";
         } else {
           auto t1 = std::chrono::high_resolution_clock::now();
@@ -632,23 +698,29 @@ TEST(Performance, UniformBSpline_parDim2_float)
 
 #ifdef SPLINELIB
         {
-          auto splinelib_bspline = to_splinelib_bspline(bspline);
-
-          // B-spline evaluation
-          using ParametricCoordinate       = typename decltype(splinelib_bspline)::ParametricCoordinate_;
-          using ScalarParametricCoordinate = typename ParametricCoordinate::value_type;
-          
-          auto t1 = std::chrono::high_resolution_clock::now();
-          for (int i=0; i<1000; i++)
-            splinelib_bspline(ParametricCoordinate
-                              {
-                                ScalarParametricCoordinate{0.5},
-                                ScalarParametricCoordinate{0.5}
-                              });
-          auto t2 = std::chrono::high_resolution_clock::now();
-          std::cout << std::right << std::setw(10)
-                    << std::chrono::duration_cast<std::chrono::nanoseconds>(t2-t1).count() / float(1000)
-                    << " (ns/entry)";
+	  if (nsamples == 1) {
+	    auto splinelib_bspline = to_splinelib_bspline(bspline);
+	    
+	    // B-spline evaluation
+	    using ParametricCoordinate       = typename decltype(splinelib_bspline)::ParametricCoordinate_;
+	    using ScalarParametricCoordinate = typename ParametricCoordinate::value_type;
+	    
+	    auto t1 = std::chrono::high_resolution_clock::now();
+	    for (int i=0; i<1000; i++)
+	      splinelib_bspline(ParametricCoordinate
+				{
+				 ScalarParametricCoordinate{0.5},
+				 ScalarParametricCoordinate{0.5}
+				});
+	    auto t2 = std::chrono::high_resolution_clock::now();
+	    std::cout << std::right << std::setw(10)
+		      << std::chrono::duration_cast<std::chrono::nanoseconds>(t2-t1).count() / double(1000)
+		      << " (ns/entry)";
+	  } else {
+	    std::cout << std::right << std::setw(10)
+		      << "--"
+		      << " (ns/entry)";
+	  }
         }
 #endif
       }
@@ -663,7 +735,7 @@ TEST(Performance, UniformBSpline_parDim2_float)
             bspline.eval<iganet::BSplineDeriv::func>(torch::rand(2, core_.options()));
           auto t2 = std::chrono::high_resolution_clock::now();
           std::cout << std::right << std::setw(10)
-                    << std::chrono::duration_cast<std::chrono::nanoseconds>(t2-t1).count() / float(1000)
+                    << std::chrono::duration_cast<std::chrono::nanoseconds>(t2-t1).count() / double(1000)
                     << " (ns/entry)";
         } else {
           auto t1 = std::chrono::high_resolution_clock::now();
@@ -677,23 +749,29 @@ TEST(Performance, UniformBSpline_parDim2_float)
 
 #ifdef SPLINELIB
         {
-          auto splinelib_bspline = to_splinelib_bspline(bspline);
-
-          // B-spline evaluation
-          using ParametricCoordinate       = typename decltype(splinelib_bspline)::ParametricCoordinate_;
-          using ScalarParametricCoordinate = typename ParametricCoordinate::value_type;
-          
-          auto t1 = std::chrono::high_resolution_clock::now();
-          for (int i=0; i<1000; i++)
-            splinelib_bspline(ParametricCoordinate
-                              {
-                                ScalarParametricCoordinate{0.5},
-                                ScalarParametricCoordinate{0.5}
-                              });
-          auto t2 = std::chrono::high_resolution_clock::now();
-          std::cout << std::right << std::setw(10)
-                    << std::chrono::duration_cast<std::chrono::nanoseconds>(t2-t1).count() / float(1000)
-                    << " (ns/entry)";
+	  if (nsamples == 1) {
+	    auto splinelib_bspline = to_splinelib_bspline(bspline);
+	    
+	    // B-spline evaluation
+	    using ParametricCoordinate       = typename decltype(splinelib_bspline)::ParametricCoordinate_;
+	    using ScalarParametricCoordinate = typename ParametricCoordinate::value_type;
+	    
+	    auto t1 = std::chrono::high_resolution_clock::now();
+	    for (int i=0; i<1000; i++)
+	      splinelib_bspline(ParametricCoordinate
+				{
+				 ScalarParametricCoordinate{0.5},
+				 ScalarParametricCoordinate{0.5}
+				});
+	    auto t2 = std::chrono::high_resolution_clock::now();
+	    std::cout << std::right << std::setw(10)
+		      << std::chrono::duration_cast<std::chrono::nanoseconds>(t2-t1).count() / double(1000)
+		      << " (ns/entry)";
+	  } else {
+	    std::cout << std::right << std::setw(10)
+		      << "--"
+		      << " (ns/entry)";
+	  }
         }
 #endif
       }
@@ -708,7 +786,7 @@ TEST(Performance, UniformBSpline_parDim2_float)
             bspline.eval<iganet::BSplineDeriv::func>(torch::rand(2, core_.options()));
           auto t2 = std::chrono::high_resolution_clock::now();
           std::cout << std::right << std::setw(10)
-                    << std::chrono::duration_cast<std::chrono::nanoseconds>(t2-t1).count() / float(1000)
+                    << std::chrono::duration_cast<std::chrono::nanoseconds>(t2-t1).count() / double(1000)
                     << " (ns/entry)";
         } else {
           auto t1 = std::chrono::high_resolution_clock::now();
@@ -722,23 +800,29 @@ TEST(Performance, UniformBSpline_parDim2_float)
 
 #ifdef SPLINELIB
         {
-          auto splinelib_bspline = to_splinelib_bspline(bspline);
-
-          // B-spline evaluation
-          using ParametricCoordinate       = typename decltype(splinelib_bspline)::ParametricCoordinate_;
-          using ScalarParametricCoordinate = typename ParametricCoordinate::value_type;
-          
-          auto t1 = std::chrono::high_resolution_clock::now();
-          for (int i=0; i<1000; i++)
-            splinelib_bspline(ParametricCoordinate
-                              {
-                                ScalarParametricCoordinate{0.5},
-                                ScalarParametricCoordinate{0.5}
-                              });
-          auto t2 = std::chrono::high_resolution_clock::now();
-          std::cout << std::right << std::setw(10)
-                    << std::chrono::duration_cast<std::chrono::nanoseconds>(t2-t1).count() / float(1000)
-                    << " (ns/entry)";
+	  if (nsamples == 1) {
+	    auto splinelib_bspline = to_splinelib_bspline(bspline);
+	    
+	    // B-spline evaluation
+	    using ParametricCoordinate       = typename decltype(splinelib_bspline)::ParametricCoordinate_;
+	    using ScalarParametricCoordinate = typename ParametricCoordinate::value_type;
+	    
+	    auto t1 = std::chrono::high_resolution_clock::now();
+	    for (int i=0; i<1000; i++)
+	      splinelib_bspline(ParametricCoordinate
+				{
+				 ScalarParametricCoordinate{0.5},
+				 ScalarParametricCoordinate{0.5}
+				});
+	    auto t2 = std::chrono::high_resolution_clock::now();
+	    std::cout << std::right << std::setw(10)
+		      << std::chrono::duration_cast<std::chrono::nanoseconds>(t2-t1).count() / double(1000)
+		      << " (ns/entry)";
+	  } else {
+	    std::cout << std::right << std::setw(10)
+		      << "--"
+		      << " (ns/entry)";
+	  }
         }
 #endif
       }
@@ -753,7 +837,7 @@ TEST(Performance, UniformBSpline_parDim2_float)
             bspline.eval<iganet::BSplineDeriv::func>(torch::rand(2, core_.options()));
           auto t2 = std::chrono::high_resolution_clock::now();
           std::cout << std::right << std::setw(10)
-                    << std::chrono::duration_cast<std::chrono::nanoseconds>(t2-t1).count() / float(1000)
+                    << std::chrono::duration_cast<std::chrono::nanoseconds>(t2-t1).count() / double(1000)
                     << " (ns/entry)"
                     << std::endl;
         } else {
@@ -768,23 +852,29 @@ TEST(Performance, UniformBSpline_parDim2_float)
 
 #ifdef SPLINELIB
         {
-          auto splinelib_bspline = to_splinelib_bspline(bspline);
-
-          // B-spline evaluation
-          using ParametricCoordinate       = typename decltype(splinelib_bspline)::ParametricCoordinate_;
-          using ScalarParametricCoordinate = typename ParametricCoordinate::value_type;
-          
-          auto t1 = std::chrono::high_resolution_clock::now();
-          for (int i=0; i<1000; i++)
-            splinelib_bspline(ParametricCoordinate
-                              {
-                                ScalarParametricCoordinate{0.5},
-                                ScalarParametricCoordinate{0.5}
-                              });
-          auto t2 = std::chrono::high_resolution_clock::now();
-          std::cout << std::right << std::setw(10)
-                    << std::chrono::duration_cast<std::chrono::nanoseconds>(t2-t1).count() / float(1000)
-                    << " (ns/entry)";
+	  if (nsamples == 1) {
+	    auto splinelib_bspline = to_splinelib_bspline(bspline);
+	    
+	    // B-spline evaluation
+	    using ParametricCoordinate       = typename decltype(splinelib_bspline)::ParametricCoordinate_;
+	    using ScalarParametricCoordinate = typename ParametricCoordinate::value_type;
+	    
+	    auto t1 = std::chrono::high_resolution_clock::now();
+	    for (int i=0; i<1000; i++)
+	      splinelib_bspline(ParametricCoordinate
+				{
+				 ScalarParametricCoordinate{0.5},
+				 ScalarParametricCoordinate{0.5}
+				});
+	    auto t2 = std::chrono::high_resolution_clock::now();
+	    std::cout << std::right << std::setw(10)
+		      << std::chrono::duration_cast<std::chrono::nanoseconds>(t2-t1).count() / double(1000)
+		      << " (ns/entry)";
+	  } else {
+	    std::cout << std::right << std::setw(10)
+		      << "--"
+		      << " (ns/entry)";
+	  }
         }
 #endif
         std::cout << std::endl;
@@ -830,23 +920,29 @@ TEST(Performance, UniformBSpline_parDim2_double)
 
 #ifdef SPLINELIB
         {
-          auto splinelib_bspline = to_splinelib_bspline(bspline);
-
-          // B-spline evaluation
-          using ParametricCoordinate       = typename decltype(splinelib_bspline)::ParametricCoordinate_;
-          using ScalarParametricCoordinate = typename ParametricCoordinate::value_type;
-          
-          auto t1 = std::chrono::high_resolution_clock::now();
-          for (int i=0; i<1000; i++)
-            splinelib_bspline(ParametricCoordinate
-                              {
-                                ScalarParametricCoordinate{0.5},
-                                ScalarParametricCoordinate{0.5}
-                              });
-          auto t2 = std::chrono::high_resolution_clock::now();
-          std::cout << std::right << std::setw(10)
-                    << std::chrono::duration_cast<std::chrono::nanoseconds>(t2-t1).count() / float(1000)
-                    << " (ns/entry)";
+	  if (nsamples == 1) {
+	    auto splinelib_bspline = to_splinelib_bspline(bspline);
+	    
+	    // B-spline evaluation
+	    using ParametricCoordinate       = typename decltype(splinelib_bspline)::ParametricCoordinate_;
+	    using ScalarParametricCoordinate = typename ParametricCoordinate::value_type;
+	    
+	    auto t1 = std::chrono::high_resolution_clock::now();
+	    for (int i=0; i<1000; i++)
+	      splinelib_bspline(ParametricCoordinate
+				{
+				 ScalarParametricCoordinate{0.5},
+				 ScalarParametricCoordinate{0.5}
+				});
+	    auto t2 = std::chrono::high_resolution_clock::now();
+	    std::cout << std::right << std::setw(10)
+		      << std::chrono::duration_cast<std::chrono::nanoseconds>(t2-t1).count() / double(1000)
+		      << " (ns/entry)";
+	  } else {
+	    std::cout << std::right << std::setw(10)
+		      << "--"
+		      << " (ns/entry)";
+	  }
         }
 #endif
       }
@@ -875,23 +971,29 @@ TEST(Performance, UniformBSpline_parDim2_double)
 
 #ifdef SPLINELIB
         {
-          auto splinelib_bspline = to_splinelib_bspline(bspline);
-
-          // B-spline evaluation
-          using ParametricCoordinate       = typename decltype(splinelib_bspline)::ParametricCoordinate_;
-          using ScalarParametricCoordinate = typename ParametricCoordinate::value_type;
-          
-          auto t1 = std::chrono::high_resolution_clock::now();
-          for (int i=0; i<1000; i++)
-            splinelib_bspline(ParametricCoordinate
-                              {
-                                ScalarParametricCoordinate{0.5},
-                                ScalarParametricCoordinate{0.5}
-                              });
-          auto t2 = std::chrono::high_resolution_clock::now();
-          std::cout << std::right << std::setw(10)
-                    << std::chrono::duration_cast<std::chrono::nanoseconds>(t2-t1).count() / float(1000)
-                    << " (ns/entry)";
+	  if (nsamples == 1) {
+	    auto splinelib_bspline = to_splinelib_bspline(bspline);
+	    
+	    // B-spline evaluation
+	    using ParametricCoordinate       = typename decltype(splinelib_bspline)::ParametricCoordinate_;
+	    using ScalarParametricCoordinate = typename ParametricCoordinate::value_type;
+	    
+	    auto t1 = std::chrono::high_resolution_clock::now();
+	    for (int i=0; i<1000; i++)
+	      splinelib_bspline(ParametricCoordinate
+				{
+				 ScalarParametricCoordinate{0.5},
+				 ScalarParametricCoordinate{0.5}
+				});
+	    auto t2 = std::chrono::high_resolution_clock::now();
+	    std::cout << std::right << std::setw(10)
+		      << std::chrono::duration_cast<std::chrono::nanoseconds>(t2-t1).count() / double(1000)
+		      << " (ns/entry)";
+	  } else {
+	    std::cout << std::right << std::setw(10)
+		      << "--"
+		      << " (ns/entry)";
+	  }
         }
 #endif
       }
@@ -920,23 +1022,29 @@ TEST(Performance, UniformBSpline_parDim2_double)
 
 #ifdef SPLINELIB
         {
-          auto splinelib_bspline = to_splinelib_bspline(bspline);
-
-          // B-spline evaluation
-          using ParametricCoordinate       = typename decltype(splinelib_bspline)::ParametricCoordinate_;
-          using ScalarParametricCoordinate = typename ParametricCoordinate::value_type;
-          
-          auto t1 = std::chrono::high_resolution_clock::now();
-          for (int i=0; i<1000; i++)
-            splinelib_bspline(ParametricCoordinate
-                              {
-                                ScalarParametricCoordinate{0.5},
-                                ScalarParametricCoordinate{0.5}
-                              });
-          auto t2 = std::chrono::high_resolution_clock::now();
-          std::cout << std::right << std::setw(10)
-                    << std::chrono::duration_cast<std::chrono::nanoseconds>(t2-t1).count() / float(1000)
-                    << " (ns/entry)";
+	  if (nsamples == 1) {
+	    auto splinelib_bspline = to_splinelib_bspline(bspline);
+	    
+	    // B-spline evaluation
+	    using ParametricCoordinate       = typename decltype(splinelib_bspline)::ParametricCoordinate_;
+	    using ScalarParametricCoordinate = typename ParametricCoordinate::value_type;
+	    
+	    auto t1 = std::chrono::high_resolution_clock::now();
+	    for (int i=0; i<1000; i++)
+	      splinelib_bspline(ParametricCoordinate
+				{
+				 ScalarParametricCoordinate{0.5},
+				 ScalarParametricCoordinate{0.5}
+				});
+	    auto t2 = std::chrono::high_resolution_clock::now();
+	    std::cout << std::right << std::setw(10)
+		      << std::chrono::duration_cast<std::chrono::nanoseconds>(t2-t1).count() / double(1000)
+		      << " (ns/entry)";
+	  } else {
+	    std::cout << std::right << std::setw(10)
+		      << "--"
+		      << " (ns/entry)";
+	  }
         }
 #endif
       }
@@ -965,23 +1073,29 @@ TEST(Performance, UniformBSpline_parDim2_double)
 
 #ifdef SPLINELIB
         {
-          auto splinelib_bspline = to_splinelib_bspline(bspline);
+	  if (nsamples == 1) {
+	    auto splinelib_bspline = to_splinelib_bspline(bspline);
 
-          // B-spline evaluation
-          using ParametricCoordinate       = typename decltype(splinelib_bspline)::ParametricCoordinate_;
-          using ScalarParametricCoordinate = typename ParametricCoordinate::value_type;
-          
-          auto t1 = std::chrono::high_resolution_clock::now();
-          for (int i=0; i<1000; i++)
-            splinelib_bspline(ParametricCoordinate
-                              {
-                                ScalarParametricCoordinate{0.5},
-                                ScalarParametricCoordinate{0.5}
-                              });
-          auto t2 = std::chrono::high_resolution_clock::now();
-          std::cout << std::right << std::setw(10)
-                    << std::chrono::duration_cast<std::chrono::nanoseconds>(t2-t1).count() / float(1000)
-                    << " (ns/entry)";
+	    // B-spline evaluation
+	    using ParametricCoordinate       = typename decltype(splinelib_bspline)::ParametricCoordinate_;
+	    using ScalarParametricCoordinate = typename ParametricCoordinate::value_type;
+	    
+	    auto t1 = std::chrono::high_resolution_clock::now();
+	    for (int i=0; i<1000; i++)
+	      splinelib_bspline(ParametricCoordinate
+				{
+				 ScalarParametricCoordinate{0.5},
+				 ScalarParametricCoordinate{0.5}
+				});
+	    auto t2 = std::chrono::high_resolution_clock::now();
+	    std::cout << std::right << std::setw(10)
+		      << std::chrono::duration_cast<std::chrono::nanoseconds>(t2-t1).count() / double(1000)
+		      << " (ns/entry)";
+	  } else {
+	    std::cout << std::right << std::setw(10)
+		      << "--"
+		      << " (ns/entry)";
+	  }
         }
 #endif
       }
@@ -1011,23 +1125,29 @@ TEST(Performance, UniformBSpline_parDim2_double)
 
 #ifdef SPLINELIB
         {
-          auto splinelib_bspline = to_splinelib_bspline(bspline);
-
-          // B-spline evaluation
-          using ParametricCoordinate       = typename decltype(splinelib_bspline)::ParametricCoordinate_;
-          using ScalarParametricCoordinate = typename ParametricCoordinate::value_type;
-          
-          auto t1 = std::chrono::high_resolution_clock::now();
-          for (int i=0; i<1000; i++)
-            splinelib_bspline(ParametricCoordinate
-                              {
-                                ScalarParametricCoordinate{0.5},
-                                ScalarParametricCoordinate{0.5}
-                              });
-          auto t2 = std::chrono::high_resolution_clock::now();
-          std::cout << std::right << std::setw(10)
-                    << std::chrono::duration_cast<std::chrono::nanoseconds>(t2-t1).count() / float(1000)
-                    << " (ns/entry)";
+	  if (nsamples == 1) {
+	    auto splinelib_bspline = to_splinelib_bspline(bspline);
+	    
+	    // B-spline evaluation
+	    using ParametricCoordinate       = typename decltype(splinelib_bspline)::ParametricCoordinate_;
+	    using ScalarParametricCoordinate = typename ParametricCoordinate::value_type;
+	    
+	    auto t1 = std::chrono::high_resolution_clock::now();
+	    for (int i=0; i<1000; i++)
+	      splinelib_bspline(ParametricCoordinate
+				{
+				 ScalarParametricCoordinate{0.5},
+				 ScalarParametricCoordinate{0.5}
+				});
+	    auto t2 = std::chrono::high_resolution_clock::now();
+	    std::cout << std::right << std::setw(10)
+		      << std::chrono::duration_cast<std::chrono::nanoseconds>(t2-t1).count() / double(1000)
+		      << " (ns/entry)";
+	  } else {
+	    std::cout << std::right << std::setw(10)
+		      << "--"
+		      << " (ns/entry)";
+	  }
         }
 #endif
         std::cout << std::endl;
@@ -1058,7 +1178,7 @@ TEST(Performance, UniformBSpline_parDim3_float)
                     << std::right << std::setw(8) << ncoeffs << ","
                     << std::right << std::setw(8) << nsamples << ") "
                     << std::right << std::setw(10)
-                    << std::chrono::duration_cast<std::chrono::nanoseconds>(t2-t1).count() / float(1000)
+                    << std::chrono::duration_cast<std::chrono::nanoseconds>(t2-t1).count() / double(1000)
                     << " (ns/entry)";
         } else {
           auto t1 = std::chrono::high_resolution_clock::now();
@@ -1075,24 +1195,30 @@ TEST(Performance, UniformBSpline_parDim3_float)
 
 #ifdef SPLINELIB
         {
-          auto splinelib_bspline = to_splinelib_bspline(bspline);
-
-          // B-spline evaluation
-          using ParametricCoordinate       = typename decltype(splinelib_bspline)::ParametricCoordinate_;
-          using ScalarParametricCoordinate = typename ParametricCoordinate::value_type;
-          
-          auto t1 = std::chrono::high_resolution_clock::now();
-          for (int i=0; i<1000; i++)
-            splinelib_bspline(ParametricCoordinate
-                              {
-                                ScalarParametricCoordinate{0.5},
-                                ScalarParametricCoordinate{0.5},
-                                ScalarParametricCoordinate{0.5}
-                              });
-          auto t2 = std::chrono::high_resolution_clock::now();
-          std::cout << std::right << std::setw(10)
-                    << std::chrono::duration_cast<std::chrono::nanoseconds>(t2-t1).count() / float(1000)
-                    << " (ns/entry)";
+	  if (nsamples == 1) {
+	    auto splinelib_bspline = to_splinelib_bspline(bspline);
+	    
+	    // B-spline evaluation
+	    using ParametricCoordinate       = typename decltype(splinelib_bspline)::ParametricCoordinate_;
+	    using ScalarParametricCoordinate = typename ParametricCoordinate::value_type;
+	    
+	    auto t1 = std::chrono::high_resolution_clock::now();
+	    for (int i=0; i<1000; i++)
+	      splinelib_bspline(ParametricCoordinate
+				{
+				 ScalarParametricCoordinate{0.5},
+				 ScalarParametricCoordinate{0.5},
+				 ScalarParametricCoordinate{0.5}
+				});
+	    auto t2 = std::chrono::high_resolution_clock::now();
+	    std::cout << std::right << std::setw(10)
+		      << std::chrono::duration_cast<std::chrono::nanoseconds>(t2-t1).count() / double(1000)
+		      << " (ns/entry)";
+	  } else {
+	    std::cout << std::right << std::setw(10)
+		      << "--"
+		      << " (ns/entry)";
+	  }
         }
 #endif
       }
@@ -1109,7 +1235,7 @@ TEST(Performance, UniformBSpline_parDim3_float)
             bspline.eval<iganet::BSplineDeriv::func>(torch::rand(3, core_.options()));
           auto t2 = std::chrono::high_resolution_clock::now();
           std::cout << std::right << std::setw(10)
-                    << std::chrono::duration_cast<std::chrono::nanoseconds>(t2-t1).count() / float(1000)
+                    << std::chrono::duration_cast<std::chrono::nanoseconds>(t2-t1).count() / double(1000)
                     << " (ns/entry)";
         } else {
           auto t1 = std::chrono::high_resolution_clock::now();
@@ -1123,24 +1249,30 @@ TEST(Performance, UniformBSpline_parDim3_float)
 
 #ifdef SPLINELIB
         {
-          auto splinelib_bspline = to_splinelib_bspline(bspline);
-
-          // B-spline evaluation
-          using ParametricCoordinate       = typename decltype(splinelib_bspline)::ParametricCoordinate_;
-          using ScalarParametricCoordinate = typename ParametricCoordinate::value_type;
-          
-          auto t1 = std::chrono::high_resolution_clock::now();
-          for (int i=0; i<1000; i++)
-            splinelib_bspline(ParametricCoordinate
-                              {
-                                ScalarParametricCoordinate{0.5},
-                                ScalarParametricCoordinate{0.5},
-                                ScalarParametricCoordinate{0.5}
-                              });
-          auto t2 = std::chrono::high_resolution_clock::now();
-          std::cout << std::right << std::setw(10)
-                    << std::chrono::duration_cast<std::chrono::nanoseconds>(t2-t1).count() / float(1000)
-                    << " (ns/entry)";
+	  if (nsamples == 1) {
+	    auto splinelib_bspline = to_splinelib_bspline(bspline);
+	    
+	    // B-spline evaluation
+	    using ParametricCoordinate       = typename decltype(splinelib_bspline)::ParametricCoordinate_;
+	    using ScalarParametricCoordinate = typename ParametricCoordinate::value_type;
+	    
+	    auto t1 = std::chrono::high_resolution_clock::now();
+	    for (int i=0; i<1000; i++)
+	      splinelib_bspline(ParametricCoordinate
+				{
+				 ScalarParametricCoordinate{0.5},
+				 ScalarParametricCoordinate{0.5},
+				 ScalarParametricCoordinate{0.5}
+				});
+	    auto t2 = std::chrono::high_resolution_clock::now();
+	    std::cout << std::right << std::setw(10)
+		      << std::chrono::duration_cast<std::chrono::nanoseconds>(t2-t1).count() / double(1000)
+		      << " (ns/entry)";
+	  } else {
+	    std::cout << std::right << std::setw(10)
+		      << "--"
+		      << " (ns/entry)";
+	  }
         }
 #endif
       }
@@ -1157,7 +1289,7 @@ TEST(Performance, UniformBSpline_parDim3_float)
             bspline.eval<iganet::BSplineDeriv::func>(torch::rand(3, core_.options()));
           auto t2 = std::chrono::high_resolution_clock::now();
           std::cout << std::right << std::setw(10)
-                    << std::chrono::duration_cast<std::chrono::nanoseconds>(t2-t1).count() / float(1000)
+                    << std::chrono::duration_cast<std::chrono::nanoseconds>(t2-t1).count() / double(1000)
                     << " (ns/entry)";
         } else {
           auto t1 = std::chrono::high_resolution_clock::now();
@@ -1171,24 +1303,30 @@ TEST(Performance, UniformBSpline_parDim3_float)
 
 #ifdef SPLINELIB
         {
-          auto splinelib_bspline = to_splinelib_bspline(bspline);
-
-          // B-spline evaluation
-          using ParametricCoordinate       = typename decltype(splinelib_bspline)::ParametricCoordinate_;
-          using ScalarParametricCoordinate = typename ParametricCoordinate::value_type;
-          
-          auto t1 = std::chrono::high_resolution_clock::now();
-          for (int i=0; i<1000; i++)
-            splinelib_bspline(ParametricCoordinate
-                              {
-                                ScalarParametricCoordinate{0.5},
-                                ScalarParametricCoordinate{0.5},
-                                ScalarParametricCoordinate{0.5}
-                              });
-          auto t2 = std::chrono::high_resolution_clock::now();
-          std::cout << std::right << std::setw(10)
-                    << std::chrono::duration_cast<std::chrono::nanoseconds>(t2-t1).count() / float(1000)
-                    << " (ns/entry)";
+	  if (nsamples == 1) {
+	    auto splinelib_bspline = to_splinelib_bspline(bspline);
+	    
+	    // B-spline evaluation
+	    using ParametricCoordinate       = typename decltype(splinelib_bspline)::ParametricCoordinate_;
+	    using ScalarParametricCoordinate = typename ParametricCoordinate::value_type;
+	    
+	    auto t1 = std::chrono::high_resolution_clock::now();
+	    for (int i=0; i<1000; i++)
+	      splinelib_bspline(ParametricCoordinate
+				{
+				 ScalarParametricCoordinate{0.5},
+				 ScalarParametricCoordinate{0.5},
+				 ScalarParametricCoordinate{0.5}
+				});
+	    auto t2 = std::chrono::high_resolution_clock::now();
+	    std::cout << std::right << std::setw(10)
+		      << std::chrono::duration_cast<std::chrono::nanoseconds>(t2-t1).count() / double(1000)
+		      << " (ns/entry)";
+	  } else {
+	    std::cout << std::right << std::setw(10)
+		      << "--"
+		      << " (ns/entry)";
+	  }
         }
 #endif
       }
@@ -1205,7 +1343,7 @@ TEST(Performance, UniformBSpline_parDim3_float)
             bspline.eval<iganet::BSplineDeriv::func>(torch::rand(3, core_.options()));
           auto t2 = std::chrono::high_resolution_clock::now();
           std::cout << std::right << std::setw(10)
-                    << std::chrono::duration_cast<std::chrono::nanoseconds>(t2-t1).count() / float(1000)
+                    << std::chrono::duration_cast<std::chrono::nanoseconds>(t2-t1).count() / double(1000)
                     << " (ns/entry)";
         } else {
           auto t1 = std::chrono::high_resolution_clock::now();
@@ -1219,24 +1357,30 @@ TEST(Performance, UniformBSpline_parDim3_float)
 
 #ifdef SPLINELIB
         {
-          auto splinelib_bspline = to_splinelib_bspline(bspline);
-
-          // B-spline evaluation
-          using ParametricCoordinate       = typename decltype(splinelib_bspline)::ParametricCoordinate_;
-          using ScalarParametricCoordinate = typename ParametricCoordinate::value_type;
-          
-          auto t1 = std::chrono::high_resolution_clock::now();
-          for (int i=0; i<1000; i++)
-            splinelib_bspline(ParametricCoordinate
-                              {
-                                ScalarParametricCoordinate{0.5},
-                                ScalarParametricCoordinate{0.5},
-                                ScalarParametricCoordinate{0.5}
-                              });
-          auto t2 = std::chrono::high_resolution_clock::now();
-          std::cout << std::right << std::setw(10)
-                    << std::chrono::duration_cast<std::chrono::nanoseconds>(t2-t1).count() / float(1000)
-                    << " (ns/entry)";
+	  if (nsamples == 1) {
+	    auto splinelib_bspline = to_splinelib_bspline(bspline);
+	    
+	    // B-spline evaluation
+	    using ParametricCoordinate       = typename decltype(splinelib_bspline)::ParametricCoordinate_;
+	    using ScalarParametricCoordinate = typename ParametricCoordinate::value_type;
+	    
+	    auto t1 = std::chrono::high_resolution_clock::now();
+	    for (int i=0; i<1000; i++)
+	      splinelib_bspline(ParametricCoordinate
+				{
+				 ScalarParametricCoordinate{0.5},
+				 ScalarParametricCoordinate{0.5},
+				 ScalarParametricCoordinate{0.5}
+				});
+	    auto t2 = std::chrono::high_resolution_clock::now();
+	    std::cout << std::right << std::setw(10)
+		      << std::chrono::duration_cast<std::chrono::nanoseconds>(t2-t1).count() / double(1000)
+		      << " (ns/entry)";
+	  } else {
+	    std::cout << std::right << std::setw(10)
+		      << "--"
+		      << " (ns/entry)";
+	  }
         }
 #endif
       }
@@ -1253,7 +1397,7 @@ TEST(Performance, UniformBSpline_parDim3_float)
             bspline.eval<iganet::BSplineDeriv::func>(torch::rand(3, core_.options()));
           auto t2 = std::chrono::high_resolution_clock::now();
           std::cout << std::right << std::setw(10)
-                    << std::chrono::duration_cast<std::chrono::nanoseconds>(t2-t1).count() / float(1000)
+                    << std::chrono::duration_cast<std::chrono::nanoseconds>(t2-t1).count() / double(1000)
                     << " (ns/entry)"
                     << std::endl;
         } else {
@@ -1268,25 +1412,31 @@ TEST(Performance, UniformBSpline_parDim3_float)
 
 #ifdef SPLINELIB
         {
-          auto splinelib_bspline = to_splinelib_bspline(bspline);
-
-          // B-spline evaluation
-          using ParametricCoordinate       = typename decltype(splinelib_bspline)::ParametricCoordinate_;
-          using ScalarParametricCoordinate = typename ParametricCoordinate::value_type;
-          
-          auto t1 = std::chrono::high_resolution_clock::now();
-          for (int i=0; i<1000; i++)
-            splinelib_bspline(ParametricCoordinate
-                              {
-                                ScalarParametricCoordinate{0.5},
-                                ScalarParametricCoordinate{0.5},
-                                ScalarParametricCoordinate{0.5}
-                              });
-          auto t2 = std::chrono::high_resolution_clock::now();
-          std::cout << std::right << std::setw(10)
-                    << std::chrono::duration_cast<std::chrono::nanoseconds>(t2-t1).count() / float(1000)
-                    << " (ns/entry)";
-        }
+	  if (nsamples == 1) {
+	    auto splinelib_bspline = to_splinelib_bspline(bspline);
+	    
+	    // B-spline evaluation
+	    using ParametricCoordinate       = typename decltype(splinelib_bspline)::ParametricCoordinate_;
+	    using ScalarParametricCoordinate = typename ParametricCoordinate::value_type;
+	    
+	    auto t1 = std::chrono::high_resolution_clock::now();
+	    for (int i=0; i<1000; i++)
+	      splinelib_bspline(ParametricCoordinate
+				{
+				 ScalarParametricCoordinate{0.5},
+				 ScalarParametricCoordinate{0.5},
+				 ScalarParametricCoordinate{0.5}
+				});
+	    auto t2 = std::chrono::high_resolution_clock::now();
+	    std::cout << std::right << std::setw(10)
+		      << std::chrono::duration_cast<std::chrono::nanoseconds>(t2-t1).count() / double(1000)
+		      << " (ns/entry)";
+	  } else {
+	    std::cout << std::right << std::setw(10)
+		      << "--"
+		      << " (ns/entry)";
+	  }
+	}
 #endif
         std::cout << std::endl;
       }
@@ -1333,24 +1483,30 @@ TEST(Performance, UniformBSpline_parDim3_double)
 
 #ifdef SPLINELIB
         {
-          auto splinelib_bspline = to_splinelib_bspline(bspline);
-
-          // B-spline evaluation
-          using ParametricCoordinate       = typename decltype(splinelib_bspline)::ParametricCoordinate_;
-          using ScalarParametricCoordinate = typename ParametricCoordinate::value_type;
-          
-          auto t1 = std::chrono::high_resolution_clock::now();
-          for (int i=0; i<1000; i++)
-            splinelib_bspline(ParametricCoordinate
-                              {
-                                ScalarParametricCoordinate{0.5},
-                                ScalarParametricCoordinate{0.5},
-                                ScalarParametricCoordinate{0.5}
-                              });
-          auto t2 = std::chrono::high_resolution_clock::now();
-          std::cout << std::right << std::setw(10)
-                    << std::chrono::duration_cast<std::chrono::nanoseconds>(t2-t1).count() / float(1000)
-                    << " (ns/entry)";
+	  if (nsamples == 1) {
+	    auto splinelib_bspline = to_splinelib_bspline(bspline);
+	    
+	    // B-spline evaluation
+	    using ParametricCoordinate       = typename decltype(splinelib_bspline)::ParametricCoordinate_;
+	    using ScalarParametricCoordinate = typename ParametricCoordinate::value_type;
+	    
+	    auto t1 = std::chrono::high_resolution_clock::now();
+	    for (int i=0; i<1000; i++)
+	      splinelib_bspline(ParametricCoordinate
+				{
+				 ScalarParametricCoordinate{0.5},
+				 ScalarParametricCoordinate{0.5},
+				 ScalarParametricCoordinate{0.5}
+				});
+	    auto t2 = std::chrono::high_resolution_clock::now();
+	    std::cout << std::right << std::setw(10)
+		      << std::chrono::duration_cast<std::chrono::nanoseconds>(t2-t1).count() / double(1000)
+		      << " (ns/entry)";
+	  } else {
+	    std::cout << std::right << std::setw(10)
+		      << "--"
+		      << " (ns/entry)";
+	  }
         }
 #endif
       }
@@ -1381,24 +1537,30 @@ TEST(Performance, UniformBSpline_parDim3_double)
 
 #ifdef SPLINELIB
         {
-          auto splinelib_bspline = to_splinelib_bspline(bspline);
-
-          // B-spline evaluation
-          using ParametricCoordinate       = typename decltype(splinelib_bspline)::ParametricCoordinate_;
-          using ScalarParametricCoordinate = typename ParametricCoordinate::value_type;
-          
-          auto t1 = std::chrono::high_resolution_clock::now();
-          for (int i=0; i<1000; i++)
-            splinelib_bspline(ParametricCoordinate
-                              {
-                                ScalarParametricCoordinate{0.5},
-                                ScalarParametricCoordinate{0.5},
-                                ScalarParametricCoordinate{0.5}
-                              });
-          auto t2 = std::chrono::high_resolution_clock::now();
-          std::cout << std::right << std::setw(10)
-                    << std::chrono::duration_cast<std::chrono::nanoseconds>(t2-t1).count() / float(1000)
-                    << " (ns/entry)";
+	  if (nsamples == 1) {
+	    auto splinelib_bspline = to_splinelib_bspline(bspline);
+	    
+	    // B-spline evaluation
+	    using ParametricCoordinate       = typename decltype(splinelib_bspline)::ParametricCoordinate_;
+	    using ScalarParametricCoordinate = typename ParametricCoordinate::value_type;
+	    
+	    auto t1 = std::chrono::high_resolution_clock::now();
+	    for (int i=0; i<1000; i++)
+	      splinelib_bspline(ParametricCoordinate
+				{
+				 ScalarParametricCoordinate{0.5},
+				 ScalarParametricCoordinate{0.5},
+				 ScalarParametricCoordinate{0.5}
+				});
+	    auto t2 = std::chrono::high_resolution_clock::now();
+	    std::cout << std::right << std::setw(10)
+		      << std::chrono::duration_cast<std::chrono::nanoseconds>(t2-t1).count() / double(1000)
+		      << " (ns/entry)";
+	  } else {
+	    std::cout << std::right << std::setw(10)
+		      << "--"
+		      << " (ns/entry)";
+	  }
         }
 #endif
       }
@@ -1429,24 +1591,30 @@ TEST(Performance, UniformBSpline_parDim3_double)
 
 #ifdef SPLINELIB
         {
-          auto splinelib_bspline = to_splinelib_bspline(bspline);
-
-          // B-spline evaluation
-          using ParametricCoordinate       = typename decltype(splinelib_bspline)::ParametricCoordinate_;
-          using ScalarParametricCoordinate = typename ParametricCoordinate::value_type;
-          
-          auto t1 = std::chrono::high_resolution_clock::now();
-          for (int i=0; i<1000; i++)
-            splinelib_bspline(ParametricCoordinate
-                              {
-                                ScalarParametricCoordinate{0.5},
-                                ScalarParametricCoordinate{0.5},
-                                ScalarParametricCoordinate{0.5}
-                              });
-          auto t2 = std::chrono::high_resolution_clock::now();
-          std::cout << std::right << std::setw(10)
-                    << std::chrono::duration_cast<std::chrono::nanoseconds>(t2-t1).count() / float(1000)
-                    << " (ns/entry)";
+	  if (nsamples == 1) {
+	    auto splinelib_bspline = to_splinelib_bspline(bspline);
+	    
+	    // B-spline evaluation
+	    using ParametricCoordinate       = typename decltype(splinelib_bspline)::ParametricCoordinate_;
+	    using ScalarParametricCoordinate = typename ParametricCoordinate::value_type;
+	    
+	    auto t1 = std::chrono::high_resolution_clock::now();
+	    for (int i=0; i<1000; i++)
+	      splinelib_bspline(ParametricCoordinate
+				{
+				 ScalarParametricCoordinate{0.5},
+				 ScalarParametricCoordinate{0.5},
+				 ScalarParametricCoordinate{0.5}
+				});
+	    auto t2 = std::chrono::high_resolution_clock::now();
+	    std::cout << std::right << std::setw(10)
+		      << std::chrono::duration_cast<std::chrono::nanoseconds>(t2-t1).count() / double(1000)
+		      << " (ns/entry)";
+	  } else {
+	    std::cout << std::right << std::setw(10)
+		      << "--"
+		      << " (ns/entry)";
+	  }
         }
 #endif
       }
@@ -1477,24 +1645,30 @@ TEST(Performance, UniformBSpline_parDim3_double)
 
 #ifdef SPLINELIB
         {
-          auto splinelib_bspline = to_splinelib_bspline(bspline);
-
-          // B-spline evaluation
-          using ParametricCoordinate       = typename decltype(splinelib_bspline)::ParametricCoordinate_;
-          using ScalarParametricCoordinate = typename ParametricCoordinate::value_type;
-          
-          auto t1 = std::chrono::high_resolution_clock::now();
-          for (int i=0; i<1000; i++)
-            splinelib_bspline(ParametricCoordinate
-                              {
-                                ScalarParametricCoordinate{0.5},
-                                ScalarParametricCoordinate{0.5},
-                                ScalarParametricCoordinate{0.5}
-                              });
-          auto t2 = std::chrono::high_resolution_clock::now();
-          std::cout << std::right << std::setw(10)
-                    << std::chrono::duration_cast<std::chrono::nanoseconds>(t2-t1).count() / float(1000)
-                    << " (ns/entry)";
+	  if (nsamples == 1) {
+	    auto splinelib_bspline = to_splinelib_bspline(bspline);
+	    
+	    // B-spline evaluation
+	    using ParametricCoordinate       = typename decltype(splinelib_bspline)::ParametricCoordinate_;
+	    using ScalarParametricCoordinate = typename ParametricCoordinate::value_type;
+	    
+	    auto t1 = std::chrono::high_resolution_clock::now();
+	    for (int i=0; i<1000; i++)
+	      splinelib_bspline(ParametricCoordinate
+				{
+				 ScalarParametricCoordinate{0.5},
+				 ScalarParametricCoordinate{0.5},
+				 ScalarParametricCoordinate{0.5}
+				});
+	    auto t2 = std::chrono::high_resolution_clock::now();
+	    std::cout << std::right << std::setw(10)
+		      << std::chrono::duration_cast<std::chrono::nanoseconds>(t2-t1).count() / double(1000)
+		      << " (ns/entry)";
+	  } else {
+	    std::cout << std::right << std::setw(10)
+		      << "--"
+		      << " (ns/entry)";
+	  }
         }
 #endif
       }
@@ -1526,24 +1700,30 @@ TEST(Performance, UniformBSpline_parDim3_double)
 
 #ifdef SPLINELIB
         {
-          auto splinelib_bspline = to_splinelib_bspline(bspline);
-
-          // B-spline evaluation
-          using ParametricCoordinate       = typename decltype(splinelib_bspline)::ParametricCoordinate_;
-          using ScalarParametricCoordinate = typename ParametricCoordinate::value_type;
-          
-          auto t1 = std::chrono::high_resolution_clock::now();
-          for (int i=0; i<1000; i++)
-            splinelib_bspline(ParametricCoordinate
-                              {
-                                ScalarParametricCoordinate{0.5},
-                                ScalarParametricCoordinate{0.5},
-                                ScalarParametricCoordinate{0.5}
-                              });
-          auto t2 = std::chrono::high_resolution_clock::now();
-          std::cout << std::right << std::setw(10)
-                    << std::chrono::duration_cast<std::chrono::nanoseconds>(t2-t1).count() / float(1000)
-                    << " (ns/entry)";
+	  if (nsamples == 1) {
+	    auto splinelib_bspline = to_splinelib_bspline(bspline);
+	    
+	    // B-spline evaluation
+	    using ParametricCoordinate       = typename decltype(splinelib_bspline)::ParametricCoordinate_;
+	    using ScalarParametricCoordinate = typename ParametricCoordinate::value_type;
+	    
+	    auto t1 = std::chrono::high_resolution_clock::now();
+	    for (int i=0; i<1000; i++)
+	      splinelib_bspline(ParametricCoordinate
+				{
+				 ScalarParametricCoordinate{0.5},
+				 ScalarParametricCoordinate{0.5},
+				 ScalarParametricCoordinate{0.5}
+				});
+	    auto t2 = std::chrono::high_resolution_clock::now();
+	    std::cout << std::right << std::setw(10)
+		      << std::chrono::duration_cast<std::chrono::nanoseconds>(t2-t1).count() / double(1000)
+		      << " (ns/entry)";
+	  } else {
+	    std::cout << std::right << std::setw(10)
+		      << "--"
+		      << " (ns/entry)";
+	  }
         }
 #endif
         std::cout << std::endl;
