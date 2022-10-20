@@ -12,24 +12,39 @@
 #
 ########################################################################
 
-# Define remote repository
+# Define remote repositoies
 include(FetchContent)
+
+# GoogleTest
 FetchContent_Declare(
   googletest  
   URL https://github.com/google/googletest/archive/refs/heads/main.zip
   )
-
 # For Windows: Prevent overriding the parent project's compiler/linker settings
 set(gtest_force_shared_crt ON CACHE BOOL "" FORCE)
-FetchContent_MakeAvailable(googletest)
 
-# Compile TinySpline
-include_directories("${PROJECT_SOURCE_DIR}/external/tinyspline")
-add_library(tinyspline STATIC
-  ${PROJECT_SOURCE_DIR}/external/tinyspline/parson.c
-  ${PROJECT_SOURCE_DIR}/external/tinyspline/tinyspline.c
-  ${PROJECT_SOURCE_DIR}/external/tinyspline/tinysplinecxx.cxx)
+# SplineLib
+FetchContent_Declare(
+  splinelib
+  URL https://github.com/tataratat/SplineLib/archive/refs/heads/tataratat.zip
+  FIND_PACKAGE_ARGS
+  )
+set(SPLINELIB_BUILD_PUGIXML OFF CACHE BOOL "" FORCE)
 
+# pugixml
+FetchContent_Declare(
+  pugixml
+  URL https://github.com/tataratat/pugixml/archive/refs/heads/tataratat.zip
+  FIND_PACKAGE_ARGS
+  )
+
+# Fetch content of remote repositories
+FetchContent_MakeAvailable(pugixml)
+
+set(pugixml_DIR ${pugixml_BINARY_DIR})
+FetchContent_MakeAvailable(googletest splinelib)
+
+# Collect unittest sources
 file(GLOB UNITTESTS *.cxx)
 
 foreach(unittest ${UNITTESTS})
@@ -38,7 +53,8 @@ foreach(unittest ${UNITTESTS})
   add_executable(${name} ${filename})
   target_link_libraries(${name} PUBLIC "${TORCH_LIBRARIES}")
   target_link_libraries(${name} PUBLIC Matplot++::matplot)
-  target_link_libraries(${name} PUBLIC tinyspline)
+  target_link_libraries(${name} PUBLIC pugixml)
+  target_link_libraries(${name} PUBLIC splines)
   target_link_libraries(${name} PUBLIC gtest_main)
   target_compile_definitions(${name} PUBLIC UNITTEST_DISABLE_SHORT_MACROS)
   add_test(${name} ${name})
