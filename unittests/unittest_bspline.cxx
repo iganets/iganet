@@ -846,175 +846,175 @@ TEST(BSpline, NonUniformBSpline_read_write_double)
   EXPECT_EQ( (bspline_in != bspline_out), false);
 }
 
-TEST(BSpline, UniformBSpline_eval_parDim1_geoDim1_degrees1_double)
+TEST(BSpline, UniformBSpline_evalparDim1_geoDim1_degrees1_double)
 {
   iganet::UniformBSpline<double, 1, 1> bspline({11}, iganet::BSplineInit::linear);
   auto xi  = iganet::to_tensorArray({0.0, 0.1, 0.2, 0.5, 0.75, 0.9, 1.0}, bspline.options());
   test_bspline_eval(bspline, xi, 1e-12);
 }
 
-TEST(BSpline, UniformBSpline_eval_parDim1_geoDim1_degrees2_double)
+TEST(BSpline, UniformBSpline_evalparDim1_geoDim1_degrees2_double)
 {
   iganet::UniformBSpline<double, 1, 2> bspline({11}, iganet::BSplineInit::linear);
   auto xi  = iganet::to_tensorArray({0.0, 0.1, 0.2, 0.5, 0.75, 0.9, 1.0}, bspline.options());
   test_bspline_eval(bspline, xi, 1e-12); 
 }
 
-TEST(BSpline, UniformBSpline_eval_parDim1_geoDim1_degrees3_double)
+TEST(BSpline, UniformBSpline_evalparDim1_geoDim1_degrees3_double)
 {
   iganet::UniformBSpline<double, 1, 3> bspline({11}, iganet::BSplineInit::linear);
   auto xi  = iganet::to_tensorArray({0.0, 0.1, 0.2, 0.5, 0.75, 0.9, 1.0}, bspline.options());
   test_bspline_eval(bspline, xi, 1e-12);  
 }
 
-TEST(BSpline, UniformBSpline_eval_parDim1_geoDim1_degrees4_double)
+TEST(BSpline, UniformBSpline_evalparDim1_geoDim1_degrees4_double)
 {
   iganet::UniformBSpline<double, 1, 4> bspline({11}, iganet::BSplineInit::linear);
   auto xi  = iganet::to_tensorArray({0.0, 0.1, 0.2, 0.5, 0.75, 0.9, 1.0}, bspline.options());
   test_bspline_eval(bspline, xi, 1e-10); 
 }
 
-TEST(BSpline, UniformBSpline_eval_parDim1_geoDim1_degrees5_double)
+TEST(BSpline, UniformBSpline_evalparDim1_geoDim1_degrees5_double)
 {
   iganet::UniformBSpline<double, 1, 5> bspline({11}, iganet::BSplineInit::linear);
   auto xi  = iganet::to_tensorArray({0.0, 0.1, 0.2, 0.5, 0.75, 0.9, 1.0}, bspline.options());
   test_bspline_eval(bspline, xi, 1e-10); 
 }
 
-TEST(BSpline, UniformBSpline_eval_parDim1_geoDim1_degrees6_double)
+TEST(BSpline, UniformBSpline_evalparDim1_geoDim1_degrees6_double)
 {
   iganet::UniformBSpline<double, 1, 6> bspline({11}, iganet::BSplineInit::linear);
   auto xi  = iganet::to_tensorArray({0.0, 0.1, 0.2, 0.5, 0.75, 0.9, 1.0}, bspline.options());
   test_bspline_eval(bspline, xi, 1e-10); 
 }
 
-TEST(BSpline, UniformBSpline_eval_parDim1_geoDim2_degrees1_double)
+TEST(BSpline, UniformBSpline_evalparDim1_geoDim2_degrees1_double)
 {
   iganet::UniformBSpline<double, 2, 1> bspline({11}, iganet::BSplineInit::linear);
   auto xi  = iganet::to_tensorArray({0.0, 0.1, 0.2, 0.5, 0.75, 0.9, 1.0}, bspline.options());
   test_bspline_eval(bspline, xi, 1e-12);
 }
 
-TEST(BSpline, UniformBSpline_eval_parDim1_geoDim2_degrees2_double)
+TEST(BSpline, UniformBSpline_evalparDim1_geoDim2_degrees2_double)
 {
   iganet::UniformBSpline<double, 2, 2> bspline({11}, iganet::BSplineInit::linear);
   auto xi  = iganet::to_tensorArray({0.0, 0.1, 0.2, 0.5, 0.75, 0.9, 1.0}, bspline.options());
   test_bspline_eval(bspline, xi, 1e-12);
 }
 
-TEST(BSpline, UniformBSpline_eval_parDim1_geoDim2_degrees3_double)
+TEST(BSpline, UniformBSpline_evalparDim1_geoDim2_degrees3_double)
 {
   iganet::UniformBSpline<double, 2, 3> bspline({11}, iganet::BSplineInit::linear);
   auto xi  = iganet::to_tensorArray({0.0, 0.1, 0.2, 0.5, 0.75, 0.9, 1.0}, bspline.options());
   test_bspline_eval(bspline, xi, 1e-12);
 }
 
-TEST(BSpline, UniformBSpline_eval_parDim1_geoDim2_degrees4_double)
+TEST(BSpline, UniformBSpline_evalparDim1_geoDim2_degrees4_double)
 {
   iganet::UniformBSpline<double, 2, 4> bspline({11}, iganet::BSplineInit::linear);
   auto xi  = iganet::to_tensorArray({0.0, 0.1, 0.2, 0.5, 0.75, 0.9, 1.0}, bspline.options());
   test_bspline_eval(bspline, xi, 1e-10);
 }
 
-TEST(BSpline, UniformBSpline_eval_parDim1_geoDim2_degrees5_double)
+TEST(BSpline, UniformBSpline_evalparDim1_geoDim2_degrees5_double)
 {
   iganet::UniformBSpline<double, 2, 5> bspline({11}, iganet::BSplineInit::linear);
   auto xi  = iganet::to_tensorArray({0.0, 0.1, 0.2, 0.5, 0.75, 0.9, 1.0}, bspline.options());
   test_bspline_eval(bspline, xi, 1e-10);
 }
 
-TEST(BSpline, UniformBSpline_eval_parDim1_geoDim2_degrees6_double)
+TEST(BSpline, UniformBSpline_evalparDim1_geoDim2_degrees6_double)
 {
   iganet::UniformBSpline<double, 2, 6> bspline({11}, iganet::BSplineInit::linear);
   auto xi  = iganet::to_tensorArray({0.0, 0.1, 0.2, 0.5, 0.75, 0.9, 1.0}, bspline.options());
   test_bspline_eval(bspline, xi, 1e-10);
 }
 
-TEST(BSpline, UniformBSpline_eval_parDim1_geoDim3_degrees1_double)
+TEST(BSpline, UniformBSpline_evalparDim1_geoDim3_degrees1_double)
 {
   iganet::UniformBSpline<double, 3, 1> bspline({11}, iganet::BSplineInit::linear);
   auto xi  = iganet::to_tensorArray({0.0, 0.1, 0.2, 0.5, 0.75, 0.9, 1.0}, bspline.options());
   test_bspline_eval(bspline, xi, 1e-12);
 }
 
-TEST(BSpline, UniformBSpline_eval_parDim1_geoDim3_degrees2_double)
+TEST(BSpline, UniformBSpline_evalparDim1_geoDim3_degrees2_double)
 {
   iganet::UniformBSpline<double, 3, 2> bspline({11}, iganet::BSplineInit::linear);
   auto xi  = iganet::to_tensorArray({0.0, 0.1, 0.2, 0.5, 0.75, 0.9, 1.0}, bspline.options());
   test_bspline_eval(bspline, xi, 1e-12);
 }
 
-TEST(BSpline, UniformBSpline_eval_parDim1_geoDim3_degrees3_double)
+TEST(BSpline, UniformBSpline_evalparDim1_geoDim3_degrees3_double)
 {
   iganet::UniformBSpline<double, 3, 3> bspline({11}, iganet::BSplineInit::linear);
   auto xi  = iganet::to_tensorArray({0.0, 0.1, 0.2, 0.5, 0.75, 0.9, 1.0}, bspline.options());
   test_bspline_eval(bspline, xi, 1e-12);
 }
 
-TEST(BSpline, UniformBSpline_eval_parDim1_geoDim3_degrees4_double)
+TEST(BSpline, UniformBSpline_evalparDim1_geoDim3_degrees4_double)
 {
   iganet::UniformBSpline<double, 3, 4> bspline({11}, iganet::BSplineInit::linear);
   auto xi  = iganet::to_tensorArray({0.0, 0.1, 0.2, 0.5, 0.75, 0.9, 1.0}, bspline.options());
   test_bspline_eval(bspline, xi, 1e-10);
 }
 
-TEST(BSpline, UniformBSpline_eval_parDim1_geoDim3_degrees5_double)
+TEST(BSpline, UniformBSpline_evalparDim1_geoDim3_degrees5_double)
 {
   iganet::UniformBSpline<double, 3, 5> bspline({11}, iganet::BSplineInit::linear);
   auto xi  = iganet::to_tensorArray({0.0, 0.1, 0.2, 0.5, 0.75, 0.9, 1.0}, bspline.options());
   test_bspline_eval(bspline, xi, 1e-10);
 }
 
-TEST(BSpline, UniformBSpline_eval_parDim1_geoDim3_degrees6_double)
+TEST(BSpline, UniformBSpline_evalparDim1_geoDim3_degrees6_double)
 {
   iganet::UniformBSpline<double, 3, 6> bspline({11}, iganet::BSplineInit::linear);
   auto xi  = iganet::to_tensorArray({0.0, 0.1, 0.2, 0.5, 0.75, 0.9, 1.0}, bspline.options());
   test_bspline_eval(bspline, xi, 1e-10);
 }
 
-TEST(BSpline, UniformBSpline_eval_parDim1_geoDim4_degrees1_double)
+TEST(BSpline, UniformBSpline_evalparDim1_geoDim4_degrees1_double)
 {
   iganet::UniformBSpline<double, 4, 1> bspline({11}, iganet::BSplineInit::linear);
   auto xi  = iganet::to_tensorArray({0.0, 0.1, 0.2, 0.5, 0.75, 0.9, 1.0}, bspline.options());
   test_bspline_eval(bspline, xi, 1e-12);
 }
 
-TEST(BSpline, UniformBSpline_eval_parDim1_geoDim4_degrees2_double)
+TEST(BSpline, UniformBSpline_evalparDim1_geoDim4_degrees2_double)
 {
   iganet::UniformBSpline<double, 4, 2> bspline({11}, iganet::BSplineInit::linear);
   auto xi  = iganet::to_tensorArray({0.0, 0.1, 0.2, 0.5, 0.75, 0.9, 1.0}, bspline.options());
   test_bspline_eval(bspline, xi, 1e-12);
 }
 
-TEST(BSpline, UniformBSpline_eval_parDim1_geoDim4_degrees3_double)
+TEST(BSpline, UniformBSpline_evalparDim1_geoDim4_degrees3_double)
 {
   iganet::UniformBSpline<double, 4, 3> bspline({11}, iganet::BSplineInit::linear);
   auto xi  = iganet::to_tensorArray({0.0, 0.1, 0.2, 0.5, 0.75, 0.9, 1.0}, bspline.options());
   test_bspline_eval(bspline, xi, 1e-12);
 }
 
-TEST(BSpline, UniformBSpline_eval_parDim1_geoDim4_degrees4_double)
+TEST(BSpline, UniformBSpline_evalparDim1_geoDim4_degrees4_double)
 {
   iganet::UniformBSpline<double, 4, 4> bspline({11}, iganet::BSplineInit::linear);
   auto xi  = iganet::to_tensorArray({0.0, 0.1, 0.2, 0.5, 0.75, 0.9, 1.0}, bspline.options());
   test_bspline_eval(bspline, xi, 1e-10);
 }
 
-TEST(BSpline, UniformBSpline_eval_parDim1_geoDim4_degrees5_double)
+TEST(BSpline, UniformBSpline_evalparDim1_geoDim4_degrees5_double)
 {
   iganet::UniformBSpline<double, 4, 5> bspline({11}, iganet::BSplineInit::linear);
   auto xi  = iganet::to_tensorArray({0.0, 0.1, 0.2, 0.5, 0.75, 0.9, 1.0}, bspline.options());
   test_bspline_eval(bspline, xi, 1e-10);
 }
 
-TEST(BSpline, UniformBSpline_eval_parDim1_geoDim4_degrees6_double)
+TEST(BSpline, UniformBSpline_evalparDim1_geoDim4_degrees6_double)
 {
   iganet::UniformBSpline<double, 4, 6> bspline({11}, iganet::BSplineInit::linear);
   auto xi  = iganet::to_tensorArray({0.0, 0.1, 0.2, 0.5, 0.75, 0.9, 1.0}, bspline.options());
   test_bspline_eval(bspline, xi, 1e-10);
 }
 
-TEST(BSpline, UniformBSpline_eval_parDim2_geoDim1_degrees22_double)
+TEST(BSpline, UniformBSpline_evalparDim2_geoDim1_degrees22_double)
 {
   iganet::UniformBSpline<double, 1, 2, 2> bspline({6, 5}, iganet::BSplineInit::linear);
   auto xi  = iganet::to_tensorArray({0.0, 0.1, 0.2, 0.5, 0.75, 0.9, 1.0},
@@ -1022,7 +1022,7 @@ TEST(BSpline, UniformBSpline_eval_parDim2_geoDim1_degrees22_double)
   test_bspline_eval(bspline, xi, 1e-12);
 }
 
-TEST(BSpline, UniformBSpline_eval_parDim2_geoDim1_degrees46_double)
+TEST(BSpline, UniformBSpline_evalparDim2_geoDim1_degrees46_double)
 {
   iganet::UniformBSpline<double, 1, 4, 6> bspline({5, 11}, iganet::BSplineInit::linear);
   auto xi  = iganet::to_tensorArray({0.0, 0.1, 0.2, 0.5, 0.75, 0.9, 1.0},
@@ -1030,7 +1030,7 @@ TEST(BSpline, UniformBSpline_eval_parDim2_geoDim1_degrees46_double)
   test_bspline_eval(bspline, xi, 1e-10);
 }
 
-TEST(BSpline, UniformBSpline_eval_parDim2_geoDim1_degrees64_double)
+TEST(BSpline, UniformBSpline_evalparDim2_geoDim1_degrees64_double)
 {
   iganet::UniformBSpline<double, 1, 6, 4> bspline({11, 5}, iganet::BSplineInit::linear);
   auto xi  = iganet::to_tensorArray({0.0, 0.1, 0.2, 0.5, 0.75, 0.9, 1.0},
@@ -1038,7 +1038,7 @@ TEST(BSpline, UniformBSpline_eval_parDim2_geoDim1_degrees64_double)
   test_bspline_eval(bspline, xi, 1e-10);
 }
 
-TEST(BSpline, UniformBSpline_eval_parDim2_geoDim2_degrees22_double)
+TEST(BSpline, UniformBSpline_evalparDim2_geoDim2_degrees22_double)
 {
   iganet::UniformBSpline<double, 2, 2, 2> bspline({6, 5}, iganet::BSplineInit::linear);
   auto xi  = iganet::to_tensorArray({0.0, 0.1, 0.2, 0.5, 0.75, 0.9, 1.0},
@@ -1046,7 +1046,7 @@ TEST(BSpline, UniformBSpline_eval_parDim2_geoDim2_degrees22_double)
   test_bspline_eval(bspline, xi, 1e-12);
 }
 
-TEST(BSpline, UniformBSpline_eval_parDim2_geoDim2_degrees46_double)
+TEST(BSpline, UniformBSpline_evalparDim2_geoDim2_degrees46_double)
 {
   iganet::UniformBSpline<double, 2, 4, 6> bspline({5, 11}, iganet::BSplineInit::linear);
   auto xi  = iganet::to_tensorArray({0.0, 0.1, 0.2, 0.5, 0.75, 0.9, 1.0},
@@ -1054,7 +1054,7 @@ TEST(BSpline, UniformBSpline_eval_parDim2_geoDim2_degrees46_double)
   test_bspline_eval(bspline, xi, 1e-10);
 }
 
-TEST(BSpline, UniformBSpline_eval_parDim2_geoDim2_degrees64_double)
+TEST(BSpline, UniformBSpline_evalparDim2_geoDim2_degrees64_double)
 {
   iganet::UniformBSpline<double, 2, 6, 4> bspline({11, 5}, iganet::BSplineInit::linear);
   auto xi  = iganet::to_tensorArray({0.0, 0.1, 0.2, 0.5, 0.75, 0.9, 1.0},
@@ -1062,7 +1062,7 @@ TEST(BSpline, UniformBSpline_eval_parDim2_geoDim2_degrees64_double)
   test_bspline_eval(bspline, xi, 1e-10);
 }
 
-TEST(BSpline, UniformBSpline_eval_parDim2_geoDim3_degrees22_double)
+TEST(BSpline, UniformBSpline_evalparDim2_geoDim3_degrees22_double)
 {
   iganet::UniformBSpline<double, 3, 2, 2> bspline({6, 5}, iganet::BSplineInit::linear);
   auto xi  = iganet::to_tensorArray({0.0, 0.1, 0.2, 0.5, 0.75, 0.9, 1.0},
@@ -1070,7 +1070,7 @@ TEST(BSpline, UniformBSpline_eval_parDim2_geoDim3_degrees22_double)
   test_bspline_eval(bspline, xi, 1e-12);
 }
 
-TEST(BSpline, UniformBSpline_eval_parDim2_geoDim3_degrees46_double)
+TEST(BSpline, UniformBSpline_evalparDim2_geoDim3_degrees46_double)
 {
   iganet::UniformBSpline<double, 3, 4, 6> bspline({5, 11}, iganet::BSplineInit::linear);
   auto xi  = iganet::to_tensorArray({0.0, 0.1, 0.2, 0.5, 0.75, 0.9, 1.0},
@@ -1078,7 +1078,7 @@ TEST(BSpline, UniformBSpline_eval_parDim2_geoDim3_degrees46_double)
   test_bspline_eval(bspline, xi, 1e-10);
 }
 
-TEST(BSpline, UniformBSpline_eval_parDim2_geoDim3_degrees64_double)
+TEST(BSpline, UniformBSpline_evalparDim2_geoDim3_degrees64_double)
 {
   iganet::UniformBSpline<double, 3, 6, 4> bspline({11, 5}, iganet::BSplineInit::linear);
   auto xi  = iganet::to_tensorArray({0.0, 0.1, 0.2, 0.5, 0.75, 0.9, 1.0},
@@ -1086,7 +1086,7 @@ TEST(BSpline, UniformBSpline_eval_parDim2_geoDim3_degrees64_double)
   test_bspline_eval(bspline, xi, 1e-10);
 }
 
-TEST(BSpline, UniformBSpline_eval_parDim2_geoDim4_degrees22_double)
+TEST(BSpline, UniformBSpline_evalparDim2_geoDim4_degrees22_double)
 {
   iganet::UniformBSpline<double, 4, 2, 2> bspline({6, 5}, iganet::BSplineInit::linear);
   auto xi  = iganet::to_tensorArray({0.0, 0.1, 0.2, 0.5, 0.75, 0.9, 1.0},
@@ -1094,7 +1094,7 @@ TEST(BSpline, UniformBSpline_eval_parDim2_geoDim4_degrees22_double)
   test_bspline_eval(bspline, xi, 1e-12);
 }
 
-TEST(BSpline, UniformBSpline_eval_parDim2_geoDim4_degrees46_double)
+TEST(BSpline, UniformBSpline_evalparDim2_geoDim4_degrees46_double)
 {
   iganet::UniformBSpline<double, 4, 4, 6> bspline({5, 11}, iganet::BSplineInit::linear);
   auto xi  = iganet::to_tensorArray({0.0, 0.1, 0.2, 0.5, 0.75, 0.9, 1.0},
@@ -1102,7 +1102,7 @@ TEST(BSpline, UniformBSpline_eval_parDim2_geoDim4_degrees46_double)
   test_bspline_eval(bspline, xi, 1e-10);
 }
 
-TEST(BSpline, UniformBSpline_eval_parDim2_geoDim4_degrees64_double)
+TEST(BSpline, UniformBSpline_evalparDim2_geoDim4_degrees64_double)
 {
   iganet::UniformBSpline<double, 4, 6, 4> bspline({11, 5}, iganet::BSplineInit::linear);
   auto xi  = iganet::to_tensorArray({0.0, 0.1, 0.2, 0.5, 0.75, 0.9, 1.0},
@@ -1110,7 +1110,7 @@ TEST(BSpline, UniformBSpline_eval_parDim2_geoDim4_degrees64_double)
   test_bspline_eval(bspline, xi, 1e-10);
 }
 
-TEST(BSpline, UniformBSpline_eval_parDim3_geoDim1_degrees222_double)
+TEST(BSpline, UniformBSpline_evalparDim3_geoDim1_degrees222_double)
 {
   iganet::UniformBSpline<double, 1, 2, 2, 2> bspline({11, 5, 3}, iganet::BSplineInit::linear);
   auto xi  = iganet::to_tensorArray({0.0, 0.1, 0.2, 0.5, 0.75, 0.9, 1.0},
@@ -1119,7 +1119,7 @@ TEST(BSpline, UniformBSpline_eval_parDim3_geoDim1_degrees222_double)
   test_bspline_eval(bspline, xi, 1e-12);
 }
 
-TEST(BSpline, UniformBSpline_eval_parDim3_geoDim1_degrees264_double)
+TEST(BSpline, UniformBSpline_evalparDim3_geoDim1_degrees264_double)
 {
   iganet::UniformBSpline<double, 1, 2, 6, 4> bspline({3, 11, 5}, iganet::BSplineInit::linear);
   auto xi  = iganet::to_tensorArray({0.0, 0.1, 0.2, 0.5, 0.75, 0.9, 1.0},
@@ -1128,7 +1128,7 @@ TEST(BSpline, UniformBSpline_eval_parDim3_geoDim1_degrees264_double)
   test_bspline_eval(bspline, xi, 1e-10);
 }
 
-TEST(BSpline, UniformBSpline_eval_parDim3_geoDim2_degrees222_double)
+TEST(BSpline, UniformBSpline_evalparDim3_geoDim2_degrees222_double)
 {
   iganet::UniformBSpline<double, 2, 2, 2, 2> bspline({11, 5, 3}, iganet::BSplineInit::linear);
   auto xi  = iganet::to_tensorArray({0.0, 0.1, 0.2, 0.5, 0.75, 0.9, 1.0},
@@ -1137,7 +1137,7 @@ TEST(BSpline, UniformBSpline_eval_parDim3_geoDim2_degrees222_double)
   test_bspline_eval(bspline, xi, 1e-12);
 }
 
-TEST(BSpline, UniformBSpline_eval_parDim3_geoDim2_degrees264_double)
+TEST(BSpline, UniformBSpline_evalparDim3_geoDim2_degrees264_double)
 {
   iganet::UniformBSpline<double, 2, 2, 6, 4> bspline({3, 11, 5}, iganet::BSplineInit::linear);
   auto xi  = iganet::to_tensorArray({0.0, 0.1, 0.2, 0.5, 0.75, 0.9, 1.0},
@@ -1146,7 +1146,7 @@ TEST(BSpline, UniformBSpline_eval_parDim3_geoDim2_degrees264_double)
   test_bspline_eval(bspline, xi, 1e-10);
 }
 
-TEST(BSpline, UniformBSpline_eval_parDim3_geoDim3_degrees222_double)
+TEST(BSpline, UniformBSpline_evalparDim3_geoDim3_degrees222_double)
 {
   iganet::UniformBSpline<double, 3, 2, 2, 2> bspline({11, 5, 3}, iganet::BSplineInit::linear);
   auto xi  = iganet::to_tensorArray({0.0, 0.1, 0.2, 0.5, 0.75, 0.9, 1.0},
@@ -1155,7 +1155,7 @@ TEST(BSpline, UniformBSpline_eval_parDim3_geoDim3_degrees222_double)
   test_bspline_eval(bspline, xi, 1e-12);
 }
 
-TEST(BSpline, UniformBSpline_eval_parDim3_geoDim3_degrees264_double)
+TEST(BSpline, UniformBSpline_evalparDim3_geoDim3_degrees264_double)
 {
   iganet::UniformBSpline<double, 3, 2, 6, 4> bspline({3, 11, 5}, iganet::BSplineInit::linear);
   auto xi  = iganet::to_tensorArray({0.0, 0.1, 0.2, 0.5, 0.75, 0.9, 1.0},
@@ -1164,7 +1164,7 @@ TEST(BSpline, UniformBSpline_eval_parDim3_geoDim3_degrees264_double)
   test_bspline_eval(bspline, xi, 1e-10);
 }
 
-TEST(BSpline, UniformBSpline_eval_parDim3_geoDim4_degrees222_double)
+TEST(BSpline, UniformBSpline_evalparDim3_geoDim4_degrees222_double)
 {
   iganet::UniformBSpline<double, 4, 2, 2, 2> bspline({11, 5, 3}, iganet::BSplineInit::linear);
   auto xi  = iganet::to_tensorArray({0.0, 0.1, 0.2, 0.5, 0.75, 0.9, 1.0},
@@ -1173,7 +1173,7 @@ TEST(BSpline, UniformBSpline_eval_parDim3_geoDim4_degrees222_double)
   test_bspline_eval(bspline, xi, 1e-12);
 }
 
-TEST(BSpline, UniformBSpline_eval_parDim3_geoDim4_degrees264_double)
+TEST(BSpline, UniformBSpline_evalparDim3_geoDim4_degrees264_double)
 {
   iganet::UniformBSpline<double, 4, 2, 6, 4> bspline({3, 11, 5}, iganet::BSplineInit::linear);
   auto xi  = iganet::to_tensorArray({0.0, 0.1, 0.2, 0.5, 0.75, 0.9, 1.0},
@@ -1182,7 +1182,7 @@ TEST(BSpline, UniformBSpline_eval_parDim3_geoDim4_degrees264_double)
   test_bspline_eval(bspline, xi, 1e-10);
 }
 
-TEST(BSpline, UniformBSpline_eval_parDim4_geoDim1_degrees2222_double)
+TEST(BSpline, UniformBSpline_evalparDim4_geoDim1_degrees2222_double)
 {
   iganet::UniformBSpline<double, 1, 2, 2, 2, 2> bspline({11, 5, 3, 8}, iganet::BSplineInit::linear);
   auto xi  = iganet::to_tensorArray({0.0, 0.1, 0.2, 0.5, 0.75, 0.9, 1.0},
@@ -1192,7 +1192,7 @@ TEST(BSpline, UniformBSpline_eval_parDim4_geoDim1_degrees2222_double)
   test_bspline_eval(bspline, xi, 1e-12);
 }
 
-TEST(BSpline, UniformBSpline_eval_parDim4_geoDim1_degrees2643_double)
+TEST(BSpline, UniformBSpline_evalparDim4_geoDim1_degrees2643_double)
 {
   iganet::UniformBSpline<double, 1, 2, 6, 4, 3> bspline({3, 11, 5, 8}, iganet::BSplineInit::linear);
   auto xi  = iganet::to_tensorArray({0.0, 0.1, 0.2, 0.5, 0.75, 0.9, 1.0},
@@ -1202,7 +1202,7 @@ TEST(BSpline, UniformBSpline_eval_parDim4_geoDim1_degrees2643_double)
   test_bspline_eval(bspline, xi, 1e-12);
 }
 
-TEST(BSpline, UniformBSpline_eval_parDim4_geoDim2_degrees2222_double)
+TEST(BSpline, UniformBSpline_evalparDim4_geoDim2_degrees2222_double)
 {
   iganet::UniformBSpline<double, 2, 2, 2, 2, 2> bspline({11, 5, 3, 8}, iganet::BSplineInit::linear);
   auto xi  = iganet::to_tensorArray({0.0, 0.1, 0.2, 0.5, 0.75, 0.9, 1.0},
@@ -1212,7 +1212,7 @@ TEST(BSpline, UniformBSpline_eval_parDim4_geoDim2_degrees2222_double)
   test_bspline_eval(bspline, xi, 1e-12);
 }
 
-TEST(BSpline, UniformBSpline_eval_parDim4_geoDim2_degrees2643_double)
+TEST(BSpline, UniformBSpline_evalparDim4_geoDim2_degrees2643_double)
 {
   iganet::UniformBSpline<double, 2, 2, 6, 4, 3> bspline({3, 11, 5, 8}, iganet::BSplineInit::linear);
   auto xi  = iganet::to_tensorArray({0.0, 0.1, 0.2, 0.5, 0.75, 0.9, 1.0},
@@ -1222,7 +1222,7 @@ TEST(BSpline, UniformBSpline_eval_parDim4_geoDim2_degrees2643_double)
   test_bspline_eval(bspline, xi, 1e-12);
 }
 
-TEST(BSpline, UniformBSpline_eval_parDim4_geoDim3_degrees2222_double)
+TEST(BSpline, UniformBSpline_evalparDim4_geoDim3_degrees2222_double)
 {
   iganet::UniformBSpline<double, 3, 2, 2, 2, 2> bspline({11, 5, 3, 8}, iganet::BSplineInit::linear);
   auto xi  = iganet::to_tensorArray({0.0, 0.1, 0.2, 0.5, 0.75, 0.9, 1.0},
@@ -1232,7 +1232,7 @@ TEST(BSpline, UniformBSpline_eval_parDim4_geoDim3_degrees2222_double)
   test_bspline_eval(bspline, xi, 1e-12);
 }
 
-TEST(BSpline, UniformBSpline_eval_parDim4_geoDim3_degrees2643_double)
+TEST(BSpline, UniformBSpline_evalparDim4_geoDim3_degrees2643_double)
 {
   iganet::UniformBSpline<double, 3, 2, 6, 4, 3> bspline({3, 11, 5, 8}, iganet::BSplineInit::linear);
   auto xi  = iganet::to_tensorArray({0.0, 0.1, 0.2, 0.5, 0.75, 0.9, 1.0},
@@ -1242,7 +1242,7 @@ TEST(BSpline, UniformBSpline_eval_parDim4_geoDim3_degrees2643_double)
   test_bspline_eval(bspline, xi, 1e-12);
 }
 
-TEST(BSpline, UniformBSpline_eval_parDim4_geoDim4_degrees2222_double)
+TEST(BSpline, UniformBSpline_evalparDim4_geoDim4_degrees2222_double)
 {
   iganet::UniformBSpline<double, 4, 2, 2, 2, 2> bspline({11, 5, 3, 8}, iganet::BSplineInit::linear);
   auto xi  = iganet::to_tensorArray({0.0, 0.1, 0.2, 0.5, 0.75, 0.9, 1.0},
@@ -1252,7 +1252,7 @@ TEST(BSpline, UniformBSpline_eval_parDim4_geoDim4_degrees2222_double)
   test_bspline_eval(bspline, xi, 1e-12);
 }
 
-TEST(BSpline, UniformBSpline_eval_parDim4_geoDim4_degrees2643_double)
+TEST(BSpline, UniformBSpline_evalparDim4_geoDim4_degrees2643_double)
 {
   iganet::UniformBSpline<double, 4, 2, 6, 4, 3> bspline({3, 11, 5, 8}, iganet::BSplineInit::linear);
   auto xi  = iganet::to_tensorArray({0.0, 0.1, 0.2, 0.5, 0.75, 0.9, 1.0},

@@ -92,7 +92,7 @@ auto to_splinelib_bspline(BSpline_t& bspline)
 
 template<iganet::BSplineDeriv deriv,
          typename BSpline_t, typename SplineLibBSpline_t, typename TensorArray_t>
-void test_bspline_eval_(BSpline_t& bspline, SplineLibBSpline_t splinelib_bspline,
+void test_bspline_eval(BSpline_t& bspline, SplineLibBSpline_t splinelib_bspline,
                         TensorArray_t& xi, typename BSpline_t::value_type tol = 1e-12)
 {
   // B-spline evaluation
@@ -101,7 +101,7 @@ void test_bspline_eval_(BSpline_t& bspline, SplineLibBSpline_t splinelib_bspline
   using Derivative                 = typename SplineLibBSpline_t::ParameterSpace_::Derivative_;
   using ScalarDerivative           = typename Derivative::value_type;
 
-  auto bspline_val = bspline.template eval_<deriv>(xi);
+  auto bspline_val = bspline.template eval<deriv>(xi);
 
   for (int64_t i=0; i<xi[0].size(0); ++i) {
     if constexpr (BSpline_t::parDim() == 1 &&
@@ -240,9 +240,9 @@ void test_bspline_eval(BSpline_t& bspline, TensorArray_t& xi, typename BSpline_t
   auto splinelib_bspline = to_splinelib_bspline(bspline);
 
   // Evaluate function and derivatives
-  test_bspline_eval_<iganet::BSplineDeriv::func>(bspline, splinelib_bspline, xi, tol);
-  test_bspline_eval_<iganet::BSplineDeriv::dx1 >(bspline, splinelib_bspline, xi, tol);
-  test_bspline_eval_<iganet::BSplineDeriv::dx2 >(bspline, splinelib_bspline, xi, tol);
-  test_bspline_eval_<iganet::BSplineDeriv::dx3 >(bspline, splinelib_bspline, xi, tol);
-  test_bspline_eval_<iganet::BSplineDeriv::dx4 >(bspline, splinelib_bspline, xi, tol);
+  test_bspline_eval<iganet::BSplineDeriv::func>(bspline, splinelib_bspline, xi, tol);
+  test_bspline_eval<iganet::BSplineDeriv::dx1 >(bspline, splinelib_bspline, xi, tol);
+  test_bspline_eval<iganet::BSplineDeriv::dx2 >(bspline, splinelib_bspline, xi, tol);
+  test_bspline_eval<iganet::BSplineDeriv::dx3 >(bspline, splinelib_bspline, xi, tol);
+  test_bspline_eval<iganet::BSplineDeriv::dx4 >(bspline, splinelib_bspline, xi, tol);
 }

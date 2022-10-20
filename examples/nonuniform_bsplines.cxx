@@ -31,9 +31,7 @@ int main()
     bspline.transform( [](const std::array<real_t,1> xi){ return std::array<real_t,1>{ xi[0]*xi[0] }; } );
 
     // Evaluate B-spline at xi=0, xi=0.5, and xi=1
-    std::cout << bspline.eval( iganet::to_tensor({0.0}) ) << std::endl
-              << bspline.eval( iganet::to_tensor({0.5}) ) << std::endl
-              << bspline.eval( iganet::to_tensor({1.0}) ) << std::endl;
+    std::cout << bspline.eval( iganet::to_tensorArray({0.0, 0.5, 1.0}) ) << std::endl;
 
     // Plot B-spline
     bspline.plot(50);
@@ -55,9 +53,7 @@ int main()
                                                                                        sin(M_PI*xi[0]) }; } );
 
     // Evaluate B-spline at xi=0, xi=0.5, and xi=1
-    std::cout << bspline.eval( iganet::to_tensor({0.0}) ) << std::endl
-              << bspline.eval( iganet::to_tensor({0.5}) ) << std::endl
-              << bspline.eval( iganet::to_tensor({1.0}) ) << std::endl;
+    std::cout << bspline.eval( iganet::to_tensorArray({0.0, 0.5, 1.0}) ) << std::endl;
 
     // Plot B-spline
     bspline.plot(50);
@@ -79,9 +75,7 @@ int main()
                                                                                        xi[0]          }; } );
 
     // Evaluate B-spline at xi=0, xi=0.5, and xi=1
-    std::cout << bspline.eval( iganet::to_tensor({0.0}) ) << std::endl
-              << bspline.eval( iganet::to_tensor({0.5}) ) << std::endl
-              << bspline.eval( iganet::to_tensor({1.0}) ) << std::endl;
+    std::cout << bspline.eval( iganet::to_tensorArray({0.0, 0.5, 1.0}) ) << std::endl;
 
     // Plot B-spline
     bspline.plot(50);
@@ -104,9 +98,8 @@ int main()
                                                                                       (xi[0]+1)*sin(M_PI*xi[1])}; } );
 
     // Evaluate B-spline at (xi=0,eta=0), (xi=0.5,eta=0.5), and (xi=1,eta=0.5)
-    std::cout << bspline.eval( iganet::to_tensor({0.0, 0.0}) ) << std::endl
-              << bspline.eval( iganet::to_tensor({0.5, 0.5}) ) << std::endl
-              << bspline.eval( iganet::to_tensor({1.0, 0.5}) ) << std::endl;
+    std::cout << bspline.eval( iganet::to_tensorArray({0.0, 0.5, 1.0},
+                                                      {0.0, 0.5, 0.5}) ) << std::endl;
 
     // Plot B-spline
     bspline.plot(50,50);
@@ -130,9 +123,8 @@ int main()
                                                                                        xi[0] }; } );
 
     // Evaluate B-spline at (xi=0,eta=0), (xi=0.5,eta=0.5), and (xi=1,eta=0.5)
-    std::cout << bspline.eval( iganet::to_tensor({0.0, 0.0}) ) << std::endl
-              << bspline.eval( iganet::to_tensor({0.5, 0.5}) ) << std::endl
-              << bspline.eval( iganet::to_tensor({1.0, 0.5}) ) << std::endl;
+    std::cout << bspline.eval( iganet::to_tensorArray({0.0, 0.5, 1.0},
+                                                      {0.0, 0.5, 0.5}) ) << std::endl;
 
     // Plot B-spline
     bspline.plot(50,50);

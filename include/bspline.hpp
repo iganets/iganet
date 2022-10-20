@@ -442,265 +442,28 @@ namespace iganet {
     ///    \mathbf{c}_{i_1-p_1:i_1,\dots,i_\text{par}-p_\text{par}:i_\text{par}}
     ///    \f]
     ///
-    /// @sa UniformBSplineCore::eval, UniformBSplineCore::eval_
-    ///
     /// @tparam deriv Composition of derivative indicators of type \ref BSplineDeriv
     ///
     /// @param[in] xi Point(s) where to evaluate the multivariate B-spline object
     ///
     /// @result Value(s) of the multivariate B-spline evaluated at the point(s) `xi`
-    
+    ///
+    /// @{
     template<BSplineDeriv deriv = BSplineDeriv::func>
     inline auto eval(const torch::Tensor& xi) const
     {
-      static_assert(parDim_ <= 4, "Unsupported parametric dimension");
-
-      // 0D (point value)
-      if constexpr (parDim_ == 0) {
-        return coeffs_[0];
-      }
-
-        // 1D
-      else if constexpr (parDim_ == 1) {
-        int64_t i = std::min(ncoeffs_[0]-1,
-                             int64_t(xi[0].item<real_t>() * (ncoeffs_[0] - degrees_[0]) + degrees_[0]));
-        return eval<deriv>(xi, i);
-      }
-
-        // 2D
-      else if constexpr (parDim_ == 2) {
-        int64_t i = std::min(ncoeffs_[0]-1,
-                             int64_t(xi[0].item<real_t>() * (ncoeffs_[0] - degrees_[0]) + degrees_[0]));
-        int64_t j = std::min(ncoeffs_[1]-1,
-                             int64_t(xi[1].item<real_t>() * (ncoeffs_[1] - degrees_[1]) + degrees_[1]));
-        return eval<deriv>(xi, i, j);
-      }
-
-        // 3D
-      else if constexpr (parDim_ == 3) {
-        int64_t i = std::min(ncoeffs_[0]-1,
-                             int64_t(xi[0].item<real_t>() * (ncoeffs_[0] - degrees_[0]) + degrees_[0]));
-        int64_t j = std::min(ncoeffs_[1]-1,
-                             int64_t(xi[1].item<real_t>() * (ncoeffs_[1] - degrees_[1]) + degrees_[1]));
-        int64_t k = std::min(ncoeffs_[2]-1,
-                             int64_t(xi[2].item<real_t>() * (ncoeffs_[2] - degrees_[2]) + degrees_[2]));
-        return eval<deriv>(xi, i, j, k);
-      }
-
-        // 4D
-      else if constexpr (parDim_ == 4) {
-        int64_t i = std::min(ncoeffs_[0]-1,
-                             int64_t(xi[0].item<real_t>() * (ncoeffs_[0] - degrees_[0]) + degrees_[0]));
-        int64_t j = std::min(ncoeffs_[1]-1,
-                             int64_t(xi[1].item<real_t>() * (ncoeffs_[1] - degrees_[1]) + degrees_[1]));
-        int64_t k = std::min(ncoeffs_[2]-1,
-                             int64_t(xi[2].item<real_t>() * (ncoeffs_[2] - degrees_[2]) + degrees_[2]));
-        int64_t l = std::min(ncoeffs_[3]-1,
-                             int64_t(xi[3].item<real_t>() * (ncoeffs_[3] - degrees_[3]) + degrees_[3]));
-        return eval<deriv>(xi, i, j, k, l);
-      } else {
-        throw std::runtime_error("Unsupported parametric dimension");
-      }
-    }
-
-    /// @brief Returns the value of the univariate B-spline object in
-    /// the point `xi`
-    ///
-    /// This function implements steps 2-3 of algorithm \ref
-    /// BSplineEvaluation for univariate B-splines
-    /// (i.e. \f$d_\text{par}=1\f$)
-    template<BSplineDeriv deriv = BSplineDeriv::func>
-    inline auto eval(const torch::Tensor& xi, int64_t i) const
-    {
-      if constexpr (geoDim_ > 1) {
-        auto basfunc =
-          eval_prefactor<degrees_[0], (short_t) deriv % 10>() *
-          eval_univariate<degrees_[0], 0, (short_t) deriv % 10>(xi[0], i);
-        std::array<torch::Tensor, geoDim_> result;
-        for (std::size_t g = 0; g < geoDim_; ++g)
-          result[g] = dotproduct(basfunc,
-                                 coeffs<false>(g).index(
-                                                        {
-                                                          torch::indexing::Slice(i - degrees_[0], i + 1, 1)
-                                                        }
-                                                        ).flatten(), 0);
-        return result;
-      } else        
-        return
-          eval_prefactor<degrees_[0], (short_t) deriv % 10>() *
-          dotproduct(eval_univariate<degrees_[0], 0, (short_t) deriv % 10>(xi[0], i),
-                     coeffs<false>(0).index(
-                                            {
-                                              torch::indexing::Slice(i - degrees_[0], i + 1, 1)
-                                            }
-                                            ).flatten(), 0);
-    }
-
-    /// @brief Returns the value of the bivariate B-spline object in
-    /// the point `xi`
-    ///
-    /// This function implements steps 2-3 of algorithm \ref
-    /// BSplineEvaluation for bivariate B-splines
-    /// (i.e. \f$d_\text{par}=2\f$)
-    template<BSplineDeriv deriv = BSplineDeriv::func>
-    inline auto eval(const torch::Tensor& xi, int64_t i, int64_t j) const
-    {
-
-      if constexpr (geoDim_ > 1) {
-        auto basfunc =
-          eval_prefactor<degrees_[0],  (short_t)deriv    %10>() *
-          eval_prefactor<degrees_[1], ((short_t)deriv/10)%10>() *
-          kronproduct(eval_univariate<degrees_[0], 0,  (short_t)deriv    %10>(xi[0], i),
-                      eval_univariate<degrees_[1], 1, ((short_t)deriv/10)%10>(xi[1], j),
-                      0);
-        std::array<torch::Tensor, geoDim_> result;
-        for (std::size_t g=0; g<geoDim_; ++g)
-          result[g] = dotproduct(basfunc,
-                                 coeffs<false>(g).index(
-                                                        {
-                                                          torch::indexing::Slice(i-degrees_[0], i+1, 1),
-                                                          torch::indexing::Slice(j-degrees_[1], j+1, 1)
-                                                        }
-                                                        ).flatten(), 0);
-        return result;
-      } else
-        return
-          eval_prefactor<degrees_[0],  (short_t)deriv    %10>() *
-          eval_prefactor<degrees_[1], ((short_t)deriv/10)%10>() *
-          dotproduct(kronproduct(eval_univariate<degrees_[0], 0,  (short_t)deriv    %10>(xi[0], i),
-                                 eval_univariate<degrees_[1], 1, ((short_t)deriv/10)%10>(xi[1], j),
-                                 0),
-                     coeffs<false>(0).index(
-                                            {
-                                              torch::indexing::Slice(i-degrees_[0], i+1, 1),
-                                              torch::indexing::Slice(j-degrees_[1], j+1, 1)
-                                            }
-                                            ).flatten(), 0);
-    }
-
-    /// @brief Returns the value of the trivariate B-spline object in
-    /// the point `xi`
-    ///
-    /// This function implements steps 2-3 of algorithm \ref
-    /// BSplineEvaluation for trivariate B-splines
-    /// (i.e. \f$d_\text{par}=3\f$)
-    template<BSplineDeriv deriv = BSplineDeriv::func>
-    inline auto eval(const torch::Tensor& xi, int64_t i, int64_t j, int64_t k) const
-    {
-      if constexpr (geoDim_ > 1) {
-        auto basfunc =
-          eval_prefactor<degrees_[0],  (short_t)deriv     %10>() *
-          eval_prefactor<degrees_[1], ((short_t)deriv/ 10)%10>() *
-          eval_prefactor<degrees_[2], ((short_t)deriv/100)%10>() *
-          kronproduct(kronproduct(eval_univariate<degrees_[0], 0,  (short_t)deriv    %10>(xi[0], i),
-                                  eval_univariate<degrees_[1], 1, ((short_t)deriv/10)%10>(xi[1], j),
-                                  0),
-                      eval_univariate<degrees_[2], 2, ((short_t)deriv/100)%10>(xi[2], k),
-                      0);
-        std::array<torch::Tensor, geoDim_> result;
-        for (std::size_t g=0; g<geoDim_; ++g)
-          result[g] = dotproduct(basfunc,
-                                 coeffs<false>(g).index(
-                                                        {
-                                                          torch::indexing::Slice(i-degrees_[0], i+1, 1),
-                                                          torch::indexing::Slice(j-degrees_[1], j+1, 1),
-                                                          torch::indexing::Slice(k-degrees_[2], k+1, 1)
-                                                        }
-                                                        ).flatten(), 0);
-        return result;
-      } else
-        return
-          eval_prefactor<degrees_[0],  (short_t)deriv     %10>() *
-          eval_prefactor<degrees_[1], ((short_t)deriv/ 10)%10>() *
-          eval_prefactor<degrees_[2], ((short_t)deriv/100)%10>() *
-          dotproduct(kronproduct(kronproduct(eval_univariate<degrees_[0], 0,  (short_t)deriv    %10>(xi[0], i),
-                                             eval_univariate<degrees_[1], 1, ((short_t)deriv/10)%10>(xi[1], j),
-                                             0),
-                                 eval_univariate<degrees_[2], 2, ((short_t)deriv/100)%10>(xi[2], k),
-                                 0),
-                     coeffs<false>(0).index(
-                                            {
-                                              torch::indexing::Slice(i-degrees_[0], i+1, 1),
-                                              torch::indexing::Slice(j-degrees_[1], j+1, 1),
-                                              torch::indexing::Slice(k-degrees_[2], k+1, 1)
-                                            }
-                                            ).flatten(), 0);
-    }
-
-    /// @brief Returns the value of the quartvariate B-spline object in
-    /// the point `xi`
-    ///
-    /// This function implements steps 2-3 of algorithm \ref
-    /// BSplineEvaluation for quartvariate B-splines
-    /// (i.e. \f$d_\text{par}=4\f$)
-    template<BSplineDeriv deriv = BSplineDeriv::func>
-    inline auto eval(const torch::Tensor& xi, int64_t i, int64_t j, int64_t k, int64_t l) const
-    {
-      if constexpr (geoDim_ > 1) {
-        auto basfunc =
-          eval_prefactor<degrees_[0],  (short_t)deriv      %10>() *
-          eval_prefactor<degrees_[1], ((short_t)deriv/  10)%10>() *
-          eval_prefactor<degrees_[2], ((short_t)deriv/ 100)%10>() *
-          eval_prefactor<degrees_[3], ((short_t)deriv/1000)%10>() *
-          kronproduct(kronproduct(eval_univariate<degrees_[0], 0,  (short_t)deriv      %10>(xi[0], i),
-                                  eval_univariate<degrees_[1], 1, ((short_t)deriv/  10)%10>(xi[1], j),
-                                  0),
-                      kronproduct(eval_univariate<degrees_[2], 2, ((short_t)deriv/ 100)%10>(xi[2], k),
-                                  eval_univariate<degrees_[3], 3, ((short_t)deriv/1000)%10>(xi[3], l),
-                                  0),
-                      0);
-        std::array<torch::Tensor, geoDim_> result;
-        for (std::size_t g=0; g<geoDim_; ++g)
-          result[g] = dotproduct(basfunc,
-                                 coeffs<false>(g).index(
-                                                        {
-                                                          torch::indexing::Slice(i-degrees_[0], i+1, 1),
-                                                          torch::indexing::Slice(j-degrees_[1], j+1, 1),
-                                                          torch::indexing::Slice(k-degrees_[2], k+1, 1),
-                                                          torch::indexing::Slice(l-degrees_[3], l+1, 1)
-                                                        }
-                                                        ).flatten(), 0);
-        return result;
-      } else
-        return
-          eval_prefactor<degrees_[0],  (short_t)deriv      %10>() *
-          eval_prefactor<degrees_[1], ((short_t)deriv/  10)%10>() *
-          eval_prefactor<degrees_[2], ((short_t)deriv/ 100)%10>() *
-          eval_prefactor<degrees_[3], ((short_t)deriv/1000)%10>() *
-          dotproduct(kronproduct(kronproduct(eval_univariate<degrees_[0],0, (short_t)deriv      %10>(xi[0], i),
-                                             eval_univariate<degrees_[1],1,((short_t)deriv/  10)%10>(xi[1], j),
-                                             0),
-                                 kronproduct(eval_univariate<degrees_[2],2,((short_t)deriv/ 100)%10>(xi[2], k),
-                                             eval_univariate<degrees_[3],3,((short_t)deriv/1000)%10>(xi[3], l),
-                                             0),
-                                 0),
-                     coeffs<false>(0).index(
-                                            {
-                                              torch::indexing::Slice(i-degrees_[0], i+1, 1),
-                                              torch::indexing::Slice(j-degrees_[1], j+1, 1),
-                                              torch::indexing::Slice(k-degrees_[2], k+1, 1),
-                                              torch::indexing::Slice(l-degrees_[3], l+1, 1)
-                                            }
-                                            ).flatten(), 0);
-    }
-
-    /// @brief Returns the values of the B-spline object in the points `xi`
-    ///
-    /// @copydetails UniformBSplineCore::eval
-    template<BSplineDeriv deriv = BSplineDeriv::func>
-    inline auto eval_(const torch::Tensor& xi, short_t dim = 0) const
-    {
-      return eval_<deriv>(TensorArray1({xi}), dim);
+      return eval<deriv>(TensorArray1({xi}));
     }
           
     template<BSplineDeriv deriv = BSplineDeriv::func>
-    inline auto eval_(const std::array<torch::Tensor, parDim_>& xi, short_t dim = 0) const
+    inline auto eval(const std::array<torch::Tensor, parDim_>& xi) const
     {
       if constexpr (parDim_ == 0)
         return coeffs_[0];
       else
-        return eval_<deriv>(xi, eval_indices(xi), dim);
+        return eval<deriv>(xi, eval_indices(xi));
     }
+    /// @}
 
     /// @brief Returns the value of the univariate B-spline object in
     /// the points `xi`
@@ -709,14 +472,14 @@ namespace iganet {
     /// BSplineEvaluation for univariate B-splines
     /// (i.e. \f$d_\text{par}=1\f$)
     template<BSplineDeriv deriv = BSplineDeriv::func>
-    inline auto eval_(const TensorArray1& xi, const TensorArray1& idx, short_t dim = 0) const
+    inline auto eval(const TensorArray1& xi, const TensorArray1& idx) const
     {
       assert(xi[0].sizes() == idx[0].sizes());
       
       if constexpr (geoDim_ > 1) {
         auto basfunc =
           eval_prefactor<degrees_[0], (short_t) deriv % 10>() *
-          eval_univariate_<degrees_[0], 0, (short_t) deriv % 10>( xi[0].flatten(),
+          eval_univariate<degrees_[0], 0, (short_t) deriv % 10>( xi[0].flatten(),
                                                                  idx[0].flatten());
         std::array<torch::Tensor, geoDim_> result;
         for (std::size_t i = 0; i < geoDim_; ++i)
@@ -731,7 +494,7 @@ namespace iganet {
         } else
         return
           eval_prefactor<degrees_[0], (short_t) deriv % 10>() *
-          dotproduct(eval_univariate_<degrees_[0], 0, (short_t) deriv % 10>( xi[0].flatten(),
+          dotproduct(eval_univariate<degrees_[0], 0, (short_t) deriv % 10>( xi[0].flatten(),
                                                                             idx[0].flatten()),
                      coeffs(0).index_select(0,
                                             VSlice(idx[0].flatten(),
@@ -748,7 +511,7 @@ namespace iganet {
     /// BSplineEvaluation for bivariate B-splines
     /// (i.e. \f$d_\text{par}=2\f$)
     template<BSplineDeriv deriv = BSplineDeriv::func>
-    inline auto eval_(const TensorArray2& xi, const TensorArray2& idx, short_t dim = 0) const
+    inline auto eval(const TensorArray2& xi, const TensorArray2& idx) const
     {
       assert(xi[0].sizes() == idx[0].sizes() &&
              xi[1].sizes() == idx[1].sizes() &&
@@ -758,9 +521,9 @@ namespace iganet {
         auto basfunc =
           eval_prefactor<degrees_[0],  (short_t)deriv    %10>() *
           eval_prefactor<degrees_[1], ((short_t)deriv/10)%10>() *
-          kronproduct(eval_univariate_<degrees_[1], 1, ((short_t)deriv/10)%10>( xi[1].flatten(),
+          kronproduct(eval_univariate<degrees_[1], 1, ((short_t)deriv/10)%10>( xi[1].flatten(),
                                                                                 idx[1].flatten()),
-                      eval_univariate_<degrees_[0], 0,  (short_t)deriv    %10>( xi[0].flatten(),
+                      eval_univariate<degrees_[0], 0,  (short_t)deriv    %10>( xi[0].flatten(),
                                                                                idx[0].flatten()),
                       0);
         std::array<torch::Tensor, geoDim_> result;
@@ -780,9 +543,9 @@ namespace iganet {
         return
           eval_prefactor<degrees_[0],  (short_t)deriv    %10>() *
           eval_prefactor<degrees_[1], ((short_t)deriv/10)%10>() *
-          dotproduct(kronproduct(eval_univariate_<degrees_[1], 1, ((short_t)deriv/10)%10>( xi[1].flatten(),
+          dotproduct(kronproduct(eval_univariate<degrees_[1], 1, ((short_t)deriv/10)%10>( xi[1].flatten(),
                                                                                            idx[1].flatten()),
-                                 eval_univariate_<degrees_[0], 0,  (short_t)deriv    %10>( xi[0].flatten(),
+                                 eval_univariate<degrees_[0], 0,  (short_t)deriv    %10>( xi[0].flatten(),
                                                                                            idx[0].flatten()),
                                  0),
                      coeffs(0).index_select(0,
@@ -803,7 +566,7 @@ namespace iganet {
     /// BSplineEvaluation for trivariate B-splines
     /// (i.e. \f$d_\text{par}=3\f$)
     template<BSplineDeriv deriv = BSplineDeriv::func>
-    inline auto eval_(const TensorArray3& xi, const TensorArray3& idx, short_t dim = 0) const
+    inline auto eval(const TensorArray3& xi, const TensorArray3& idx) const
     {
       assert(xi[0].sizes() == idx[0].sizes() &&
              xi[1].sizes() == idx[1].sizes() &&
@@ -816,11 +579,11 @@ namespace iganet {
           eval_prefactor<degrees_[0],  (short_t)deriv     %10>() *
           eval_prefactor<degrees_[1], ((short_t)deriv/ 10)%10>() *
           eval_prefactor<degrees_[2], ((short_t)deriv/100)%10>() *
-          kronproduct(eval_univariate_<degrees_[2], 2, ((short_t)deriv/100)%10>( xi[2].flatten(),
+          kronproduct(eval_univariate<degrees_[2], 2, ((short_t)deriv/100)%10>( xi[2].flatten(),
                                                                                  idx[2].flatten()),
-                      kronproduct(eval_univariate_<degrees_[1], 1, ((short_t)deriv/10)%10>( xi[1].flatten(),
+                      kronproduct(eval_univariate<degrees_[1], 1, ((short_t)deriv/10)%10>( xi[1].flatten(),
                                                                                             idx[1].flatten()),
-                                  eval_univariate_<degrees_[0], 0,  (short_t)deriv    %10>( xi[0].flatten(),
+                                  eval_univariate<degrees_[0], 0,  (short_t)deriv    %10>( xi[0].flatten(),
                                                                                             idx[0].flatten()),
                                   0),                      
                       0);
@@ -845,11 +608,11 @@ namespace iganet {
           eval_prefactor<degrees_[0],  (short_t)deriv     %10>() *
           eval_prefactor<degrees_[1], ((short_t)deriv/ 10)%10>() *
           eval_prefactor<degrees_[2], ((short_t)deriv/100)%10>() *
-          dotproduct(kronproduct(eval_univariate_<degrees_[2], 2, ((short_t)deriv/100)%10>( xi[2].flatten(),
+          dotproduct(kronproduct(eval_univariate<degrees_[2], 2, ((short_t)deriv/100)%10>( xi[2].flatten(),
                                                                                             idx[2].flatten()),
-                                 kronproduct(eval_univariate_<degrees_[1], 1, ((short_t)deriv/10)%10>( xi[1].flatten(),
+                                 kronproduct(eval_univariate<degrees_[1], 1, ((short_t)deriv/10)%10>( xi[1].flatten(),
                                                                                                        idx[1].flatten()),
-                                             eval_univariate_<degrees_[0], 0,  (short_t)deriv    %10>( xi[0].flatten(),
+                                             eval_univariate<degrees_[0], 0,  (short_t)deriv    %10>( xi[0].flatten(),
                                                                                                        idx[0].flatten()),
                                              0),                                 
                                  0),
@@ -875,7 +638,7 @@ namespace iganet {
     /// BSplineEvaluation for quartvariate B-splines
     /// (i.e. \f$d_\text{par}=4\f$)
     template<BSplineDeriv deriv = BSplineDeriv::func>
-    inline auto eval_(const TensorArray4& xi, const TensorArray4& idx, short_t dim = 0) const
+    inline auto eval(const TensorArray4& xi, const TensorArray4& idx) const
     {
       assert(xi[0].sizes() == idx[0].sizes() &&
              xi[1].sizes() == idx[1].sizes() &&
@@ -891,14 +654,14 @@ namespace iganet {
           eval_prefactor<degrees_[1], ((short_t)deriv/  10)%10>() *
           eval_prefactor<degrees_[2], ((short_t)deriv/ 100)%10>() *
           eval_prefactor<degrees_[2], ((short_t)deriv/1000)%10>() *
-          kronproduct(kronproduct(eval_univariate_<degrees_[3], 3, ((short_t)deriv/1000)%10>( xi[3].flatten(),
+          kronproduct(kronproduct(eval_univariate<degrees_[3], 3, ((short_t)deriv/1000)%10>( xi[3].flatten(),
                                                                                               idx[3].flatten()),
-                                  eval_univariate_<degrees_[2], 2, ((short_t)deriv/ 100)%10>( xi[2].flatten(),
+                                  eval_univariate<degrees_[2], 2, ((short_t)deriv/ 100)%10>( xi[2].flatten(),
                                                                                               idx[2].flatten()),
                                   0),
-                      kronproduct(eval_univariate_<degrees_[1], 1, ((short_t)deriv/  10)%10>( xi[1].flatten(),
+                      kronproduct(eval_univariate<degrees_[1], 1, ((short_t)deriv/  10)%10>( xi[1].flatten(),
                                                                                               idx[1].flatten()),
-                                  eval_univariate_<degrees_[0], 0,  (short_t)deriv      %10>( xi[0].flatten(),
+                                  eval_univariate<degrees_[0], 0,  (short_t)deriv      %10>( xi[0].flatten(),
                                                                                               idx[0].flatten()),
                                   0),                      
                       0);
@@ -927,14 +690,14 @@ namespace iganet {
           eval_prefactor<degrees_[1], ((short_t)deriv/  10)%10>() *
           eval_prefactor<degrees_[2], ((short_t)deriv/ 100)%10>() *
           eval_prefactor<degrees_[3], ((short_t)deriv/1000)%10>() *
-          dotproduct(kronproduct(kronproduct(eval_univariate_<degrees_[3], 3, ((short_t)deriv/1000)%10>( xi[3].flatten(),
+          dotproduct(kronproduct(kronproduct(eval_univariate<degrees_[3], 3, ((short_t)deriv/1000)%10>( xi[3].flatten(),
                                                                                                          idx[3].flatten()),
-                                             eval_univariate_<degrees_[2], 2, ((short_t)deriv/ 100)%10>( xi[2].flatten(),
+                                             eval_univariate<degrees_[2], 2, ((short_t)deriv/ 100)%10>( xi[2].flatten(),
                                                                                                          idx[2].flatten()),
                                              0),
-                                 kronproduct(eval_univariate_<degrees_[1], 1, ((short_t)deriv/  10)%10>( xi[1].flatten(),
+                                 kronproduct(eval_univariate<degrees_[1], 1, ((short_t)deriv/  10)%10>( xi[1].flatten(),
                                                                                                          idx[1].flatten()),
-                                             eval_univariate_<degrees_[0], 0,  (short_t)deriv      %10>( xi[0].flatten(),
+                                             eval_univariate<degrees_[0], 0,  (short_t)deriv      %10>( xi[0].flatten(),
                                                                                                          idx[0].flatten()),
                                              0),
                                  0),
@@ -1534,71 +1297,7 @@ namespace iganet {
     /// where \f$\div\f$ and \f$\odot\f$ denote the element-wise
     /// division and multiplication of vectors, respectively.
     template<short_t degree, short_t dim, short_t deriv>
-    inline auto eval_univariate(const torch::Tensor& xi, int64_t i) const
-    {
-      if constexpr (deriv > degree+1) {
-        // It might be enough to return zero as a scalar
-        return torch::zeros({degree+1}, core<real_t>::options_);
-      } else {
-        // Algorithm 2.22 from \cite Lyche:2011
-        torch::Tensor b = torch::ones({1}, core<real_t>::options_);        
-
-        // Calculate R_k, k = 1, ..., p_d-r_d
-        for (short_t k=1; k<= degree-deriv; ++k) {
-
-          // Instead of calculating t1 and t2 we calculate t1 and t21=(t2-t1)
-          auto t1 = knots_[dim].index({torch::indexing::Slice(i-k+1, i+1, 1)});
-          auto t21 = knots_[dim].index({torch::indexing::Slice(i+1, i+k+1, 1)}) - t1;
-
-          // We handle the special case 0/0:=0 by first creating a
-          // mask that is 1 if t2-t1 < eps and 0 otherwise. Note that
-          // we do not have to take the absolute value as t2 >= t1.
-          auto mask = (t21 < std::numeric_limits<real_t>::epsilon()).to(dtype<real_t>());
-
-          // Instead of computing (xi-t1)/(t2-t1) which is prone to
-          // yielding 0/0 we compute (xi-t1-mask)/(t2-t1-mask) which
-          // equals the original expression if the mask is 0, i.e.,
-          // t2-t1 >= eps and 1 otherwise since t1 <= xi < t2.          
-          auto w  = torch::div(xi-t1-mask, t21-mask);
-
-          // Calculate the vector of B-splines evaluated at xi
-          b = torch::cat({ torch::mul(torch::ones_like(w, core<real_t>::options_)-w, b), zero_ }, 0)
-            + torch::cat({ zero_, torch::mul(w, b) }, 0);
-        }
-
-        // Calculate DR_k, k = p_d-r_d+1, ..., p_d
-        for (short_t k=degree-deriv+1; k<=degree; ++k) {
-
-          // Instead of calculating t1 and t2 we calculate t21=(t2-t1)
-          auto t21 = knots_[dim].index({torch::indexing::Slice(i+1, i+k+1, 1)})
-            -        knots_[dim].index({torch::indexing::Slice(i-k+1, i+1, 1)});
-          
-          // We handle the special case 0/0:=0 by first creating a
-          // mask that is 1 if t2-t1 < eps and 0 otherwise. Note that
-          // we do not have to take the absolute value as t2 >= t1.
-          auto mask = (t21 < std::numeric_limits<real_t>::epsilon()).to(dtype<real_t>());
-
-          // Instead of computing 1/(t2-t1) which is prone to yielding
-          // 0/0 we compute (1-mask)/(t2-t1-mask) which equals the
-          // original expression if the mask is 0, i.e., t2-t1 >= eps
-          // and 1 otherwise since t1 <= xi < t2.
-          auto w  = torch::div(torch::ones_like(t21, core<real_t>::options_)-mask, t21-mask);
-
-          // Calculate the vector of B-splines evaluated at xi
-          b = torch::cat({ torch::mul(-w, b), zero_ }, 0)
-            + torch::cat({ zero_, torch::mul(w, b) }, 0);
-        }
-        return b;
-      }
-    }
-    
-    /// @brief Returns the vector of univariate B-spline basis
-    /// functions (or their derivatives) evaluated in the points `xi`
-    ///
-    /// @note This is the vectorized version of
-    /// `UniformBSplineCore::eval_univariate(const torch::Tensor& xi, int64_t i)`
-    template<short_t degree, short_t dim, short_t deriv>
-    inline auto eval_univariate_(const torch::Tensor& xi, const torch::Tensor& idx) const
+    inline auto eval_univariate(const torch::Tensor& xi, const torch::Tensor& idx) const
     {
       assert(xi.sizes() == idx.sizes());
 
@@ -1729,98 +1428,70 @@ namespace iganet {
     template<BSplineDeriv deriv = BSplineDeriv::func>
     inline auto eval(const torch::Tensor& xi) const
     {
-      static_assert(Base::parDim_ <= 4, "Unsupported parametric dimension");
-
-      // 0D (point value)
-      if constexpr (Base::parDim_ == 0) {
-        return Base::coeffs_[0];
-      }
-      
-      // 1D
-      else if constexpr (Base::parDim_ == 1) {
-        int64_t i;
-        auto knots = Base::knots_[0].template accessor<real_t,1>();
-        for (i=Base::degrees_[0]; i<Base::nknots_[0]-Base::degrees_[0]-1; ++i)
-          if (knots[i+1] > xi[0].item<real_t>())
-            break;
-
-        return Base::eval(xi, i);
-      }
-
-      // 2D
-      else if constexpr (Base::parDim_ == 2) {
-        int64_t i;
-        auto knots = Base::knots_[0].template accessor<real_t,1>();
-        for (i=Base::degrees_[0]; i<Base::nknots_[0]-Base::degrees_[0]-1; ++i) {
-          if (knots[i+1] > xi[0].item<real_t>())
-            break;
-        }
-
-        int64_t j;
-        knots = Base::knots_[1].template accessor<real_t,1>();
-        for (j=Base::degrees_[1]; j<Base::nknots_[1]-Base::degrees_[1]-1; ++j) {
-          if (knots[j+1] > xi[1].item<real_t>())
-            break;
-        }
-        return Base::eval(xi, i, j);
-      }
-
-      // 3D
-      else if constexpr (Base::parDim_ == 3) {
-        int64_t i;
-        auto knots = Base::knots_[0].template accessor<real_t,1>();
-        for (i=Base::degrees_[0]; i<Base::nknots_[0]-Base::degrees_[0]-1; ++i)
-          if (knots[i+1] > xi[0].item<real_t>())
-            break;
-
-        int64_t j;
-        knots = Base::knots_[1].template accessor<real_t,1>();
-        for (j=Base::degrees_[1]; j<Base::nknots_[1]-Base::degrees_[1]-1; ++j)
-          if (knots[j+1] > xi[1].item<real_t>())
-            break;
-
-        int64_t k;
-        knots = Base::knots_[2].template accessor<real_t,1>();
-        for (k=Base::degrees_[2]; k<Base::nknots_[2]-Base::degrees_[2]-1; ++k)
-          if (knots[k+1] > xi[2].item<real_t>())
-            break;
-
-        return Base::eval(xi, i, j, k);
-      }
-
-      // 4D
-      else if constexpr (Base::parDim_ == 4) {
-        int64_t i;
-        auto knots = Base::knots_[0].template accessor<real_t,1>();
-        for (i=Base::degrees_[0]; i<Base::nknots_[0]-Base::degrees_[0]-1; ++i)
-          if (knots[i+1] > xi[0].item<real_t>())
-            break;
-
-        int64_t j;
-        knots = Base::knots_[1].template accessor<real_t,1>();
-        for (j=Base::degrees_[1]; j<Base::nknots_[1]-Base::degrees_[1]-1; ++j)
-          if (knots[j+1] > xi[1].item<real_t>())
-            break;
-
-        int64_t k;
-        knots = Base::knots_[2].template accessor<real_t,1>();
-        for (k=Base::degrees_[2]; k<Base::nknots_[2]-Base::degrees_[2]-1; ++k)
-          if (knots[k+1] > xi[2].item<real_t>())
-            break;
-
-        int64_t l;
-        knots = Base::knots_[3].template accessor<real_t,1>();
-        for (l=Base::degrees_[3]; l<Base::nknots_[3]-Base::degrees_[3]-1; ++l)
-          if (knots[l+1] > xi[3].item<real_t>())
-            break;
-
-        return Base::eval(xi, i, j, k, l);
-      }
-
-      else {
-        throw std::runtime_error("Unsupported parametric dimension");
-      }
+      return eval<deriv>(TensorArray1({xi}));
     }
+
+    /// @brief Evaluates the B-spline in the point `xi`
+    template<BSplineDeriv deriv = BSplineDeriv::func>
+    inline auto eval(const std::array<torch::Tensor, Base::parDim_>& xi) const
+    {
+      if constexpr (Base::parDim_ == 0)
+        return Base::coeffs_[0];
+      else
+        return Base::template eval<deriv>(xi, eval_indices(xi));
+    }
+    
+    /// @brief Returns the indices of knot spans containing `xi`    
+    inline auto eval_indices(const TensorArray1& xi) const
+    {
+      // 1D
+      // else if constexpr (Base::parDim_ == 1) {
+      //   int64_t i;
+      //   auto knots = Base::knots_[0].template accessor<real_t,1>();
+      //   for (i=Base::degrees_[0]; i<Base::nknots_[0]-Base::degrees_[0]-1; ++i)
+      //     if (knots[i+1] > xi[0].item<real_t>())
+      //       break;
+      return Base::eval_indices(xi);
+    }
+
+    /// @brief Returns the indices of knot spans containing `xi`    
+    inline auto eval_indices(const TensorArray2& xi) const
+    {
+      // 1D
+      // else if constexpr (Base::parDim_ == 1) {
+      //   int64_t i;
+      //   auto knots = Base::knots_[0].template accessor<real_t,1>();
+      //   for (i=Base::degrees_[0]; i<Base::nknots_[0]-Base::degrees_[0]-1; ++i)
+      //     if (knots[i+1] > xi[0].item<real_t>())
+      //       break;
+      return Base::eval_indices(xi);
+    }
+
+    /// @brief Returns the indices of knot spans containing `xi`    
+    inline auto eval_indices(const TensorArray3& xi) const
+    {
+      // 1D
+      // else if constexpr (Base::parDim_ == 1) {
+      //   int64_t i;
+      //   auto knots = Base::knots_[0].template accessor<real_t,1>();
+      //   for (i=Base::degrees_[0]; i<Base::nknots_[0]-Base::degrees_[0]-1; ++i)
+      //     if (knots[i+1] > xi[0].item<real_t>())
+      //       break;
+      return Base::eval_indices(xi);
+    }
+
+    /// @brief Returns the indices of knot spans containing `xi`    
+    inline auto eval_indices(const TensorArray4& xi) const
+    {
+      // 1D
+      // else if constexpr (Base::parDim_ == 1) {
+      //   int64_t i;
+      //   auto knots = Base::knots_[0].template accessor<real_t,1>();
+      //   for (i=Base::degrees_[0]; i<Base::nknots_[0]-Base::degrees_[0]-1; ++i)
+      //     if (knots[i+1] > xi[0].item<real_t>())
+      //       break;
+      return Base::eval_indices(xi);
+    }    
   };
 
   /// B-spline (common high-level functionality)
@@ -1868,7 +1539,7 @@ namespace iganet {
         matplot::vector_1d Xfine(res0, 0.0);
         matplot::vector_1d Yfine(res0, 0.0);
 
-        auto Coords = BSplineCore::eval_(torch::linspace(0, 1, res0));
+        auto Coords = BSplineCore::eval(torch::linspace(0, 1, res0));
         auto XAccessor = Coords.template accessor<real_t,1>();
         
 #pragma omp parallel for simd
@@ -1877,7 +1548,7 @@ namespace iganet {
 
         if ((void*)this != (void*)&color) {
           if constexpr (BSplineCore_t::geoDim_==1) {
-            torch::Tensor Color = color.eval_(torch::linspace(0, 1, res0));
+            torch::Tensor Color = color.eval(torch::linspace(0, 1, res0));
             auto CAccessor = Color.accessor<real_t,1>();
             
 #pragma omp parallel for simd
@@ -1927,11 +1598,11 @@ namespace iganet {
             matplot::vector_2d Yfine(1, matplot::vector_1d(res0, 0.0));
             matplot::vector_2d Zfine(1, matplot::vector_1d(res0, 0.0));
 
-            auto Coords = BSplineCore::eval_(torch::linspace(0, 1, res0));
+            auto Coords = BSplineCore::eval(torch::linspace(0, 1, res0));
             auto XAccessor = Coords[0].template accessor<real_t,1>();
             auto YAccessor = Coords[1].template accessor<real_t,1>();
 
-            auto Color = color.eval_(torch::linspace(0, 1, res0));
+            auto Color = color.eval(torch::linspace(0, 1, res0));
             auto CAccessor = Color.template accessor<real_t,1>();
             
 #pragma omp parallel for simd
@@ -1947,7 +1618,7 @@ namespace iganet {
           matplot::vector_1d Xfine(res0, 0.0);
           matplot::vector_1d Yfine(res0, 0.0);
 
-          auto Coords = BSplineCore::eval_(torch::linspace(0, 1, res0));
+          auto Coords = BSplineCore::eval(torch::linspace(0, 1, res0));
           auto XAccessor = Coords[0].template accessor<real_t,1>();
           auto YAccessor = Coords[1].template accessor<real_t,1>();
           
@@ -1995,12 +1666,12 @@ namespace iganet {
             matplot::vector_2d Zfine(1, matplot::vector_1d(res0, 0.0));
             matplot::vector_2d Cfine(1, matplot::vector_1d(res0, 0.0));
 
-            auto Coords = BSplineCore::eval_(torch::linspace(0, 1, res0));
+            auto Coords = BSplineCore::eval(torch::linspace(0, 1, res0));
             auto XAccessor = Coords[0].template accessor<real_t,1>();
             auto YAccessor = Coords[1].template accessor<real_t,1>();
             auto ZAccessor = Coords[2].template accessor<real_t,1>();
 
-            auto Color = color.eval_(torch::linspace(0, 1, res0));
+            auto Color = color.eval(torch::linspace(0, 1, res0));
             auto CAccessor = Color.template accessor<real_t,1>();
             
 #pragma omp parallel for simd
@@ -2018,7 +1689,7 @@ namespace iganet {
           matplot::vector_1d Yfine(res0, 0.0);
           matplot::vector_1d Zfine(res0, 0.0);
 
-          auto Coords = BSplineCore::eval_(torch::linspace(0, 1, res0));
+          auto Coords = BSplineCore::eval(torch::linspace(0, 1, res0));
           auto XAccessor = Coords[0].template accessor<real_t,1>();
           auto YAccessor = Coords[1].template accessor<real_t,1>();
           auto ZAccessor = Coords[2].template accessor<real_t,1>();
@@ -2070,12 +1741,9 @@ namespace iganet {
 
         std::array<torch::Tensor,2> meshgrid = convert<2>(torch::meshgrid({torch::linspace(0, 1, res0),
                                                                            torch::linspace(0, 1, res1)}, "xy"));
-        auto Coords = BSplineCore::eval_(meshgrid);
+        auto Coords = BSplineCore::eval(meshgrid);
         auto XAccessor = Coords[0].template accessor<real_t,2>();
         auto YAccessor = Coords[1].template accessor<real_t,2>();
-
-        auto xAccessor = meshgrid[0].template accessor<float,2>();
-        auto yAccessor = meshgrid[1].template accessor<float,2>();
 
 #pragma omp parallel for simd collapse(2)
         for (int64_t i=0; i<res0; ++i)
@@ -2086,7 +1754,7 @@ namespace iganet {
         
         if ((void*)this != (void*)&color) {
           if constexpr (BSplineCore_t::geoDim()==1) {            
-            auto Color = color.eval_(meshgrid);
+            auto Color = color.eval(meshgrid);
             auto CAccessor = Color.template accessor<real_t,2>();
             
 #pragma omp parallel for simd collapse(2)
@@ -2140,36 +1808,36 @@ namespace iganet {
         matplot::vector_2d Yfine(res1, matplot::vector_1d(res0, 0.0));
         matplot::vector_2d Zfine(res1, matplot::vector_1d(res0, 0.0));
 
+        std::array<torch::Tensor,2> meshgrid = convert<2>(torch::meshgrid({torch::linspace(0, 1, res0),
+              torch::linspace(0, 1, res1)}, "xy"));
+        auto Coords = BSplineCore::eval(meshgrid);
+        auto XAccessor = Coords[0].template accessor<real_t,2>();
+        auto YAccessor = Coords[1].template accessor<real_t,2>();
+        auto ZAccessor = Coords[1].template accessor<real_t,2>();
+
+        auto xAccessor = meshgrid[0].template accessor<float,2>();
+        auto yAccessor = meshgrid[1].template accessor<float,2>();
+        
 #pragma omp parallel for simd collapse(2)
         for (int64_t i=0; i<res0; ++i)
           for (int64_t j=0; j<res1; ++j) {
-            auto coords = BSplineCore::eval(torch::stack(
-                                                         {
-                                                           torch::full({1}, i/real_t(res0-1)),
-                                                           torch::full({1}, j/real_t(res1-1))
-                                                         }
-                                                         ).view({2})
-                                            );
-            Xfine[j][i] = coords[0].template item<real_t>();
-            Yfine[j][i] = coords[1].template item<real_t>();
-            Zfine[j][i] = coords[2].template item<real_t>();
+            Xfine[j][i] = XAccessor[j][i];
+            Yfine[j][i] = YAccessor[j][i];
+            Zfine[j][i] = ZAccessor[j][i];            
           }
 
         // Plotting...
         if ((void*)this != (void*)&color) {
-          if constexpr (BSplineCore_t::geoDim()==1) {
+          if constexpr (BSplineCore_t::geoDim()==1) {            
             matplot::vector_2d Cfine(res1, matplot::vector_1d(res0, 0.0));
 
+            auto Color = color.eval(meshgrid);
+            auto CAccessor = Color.template accessor<real_t,2>();
+            
 #pragma omp parallel for simd collapse(2)
             for (int64_t i=0; i<res0; ++i)
               for (int64_t j=0; j<res1; ++j) {
-                Cfine[j][i] = color.eval(torch::stack(
-                                                      {
-                                                        torch::full({1}, i/real_t(res0-1)),
-                                                        torch::full({1}, j/real_t(res1-1))
-                                                      }
-                                                      ).view({2})
-                                         ).template item<real_t>();
+                Cfine[j][i] = CAccessor[j][i];                
               }
             matplot::colormap(matplot::palette::hsv());
             matplot::mesh(Xfine, Yfine, Zfine, Cfine);
