@@ -126,17 +126,22 @@ namespace iganet {
   {
     assert(index[0].numel() == index[1].numel());
 
-    auto repeat_dim = (stop_offset[0]-start_offset[0])*(stop_offset[1]-start_offset[1]);    
-    return (index[0].repeat(repeat_dim) +
-            torch::linspace(start_offset[0],
-                            stop_offset[0]-1,
-                            stop_offset[0]-start_offset[0],
-                            index[0].options()).repeat_interleave(index[0].numel()*(stop_offset[1]-start_offset[1])))*leading_dim +
-      index[1].repeat(repeat_dim) +
-      torch::linspace(start_offset[1],
-                      stop_offset[1]-1,
-                      stop_offset[1]-start_offset[1],
-                      index[1].options()).repeat_interleave(index[0].numel()).repeat({stop_offset[0]-start_offset[0]});
+    auto dist0   = stop_offset[0]-start_offset[0];
+    auto dist1   = stop_offset[1]-start_offset[1];
+    auto dist01  = dist0 * dist1;
+    
+    return
+      (index[1].repeat(dist01)
+       +
+       torch::linspace(start_offset[1], stop_offset[1]-1, dist1, index[0].options()
+                       ).repeat_interleave(index[0].numel()*dist0)
+       ) * leading_dim
+      +
+      (index[0].repeat(dist0)
+       +
+       torch::linspace(start_offset[0], stop_offset[0]-1,dist0, index[0].options()
+                       ).repeat_interleave(index[1].numel())
+       ).repeat({dist1});
   }
 
   /// @brief Vectorized version of `torch::indexing::Slice` (see
@@ -155,9 +160,31 @@ namespace iganet {
     assert(index[0].numel() == index[1].numel() &&
            index[1].numel() == index[2].numel());
 
-    exit(0);
+    auto dist0   = stop_offset[0]-start_offset[0];
+    auto dist1   = stop_offset[1]-start_offset[1];
+    auto dist2   = stop_offset[2]-start_offset[2];
+    auto dist01  = dist0 * dist1;
+    auto dist12  = dist1 * dist2;
+    auto dist012 = dist0 * dist12;
     
-    return index;
+    return
+      (index[2].repeat(dist012)
+       +
+       torch::linspace(start_offset[2], stop_offset[2]-1, dist2, index[0].options()
+                       ).repeat_interleave(index[0].numel()*dist01)
+       ) * leading_dim[0]*leading_dim[1]
+      +
+      (index[1].repeat(dist01)
+       +
+       torch::linspace(start_offset[1], stop_offset[1]-1, dist1, index[0].options()
+                       ).repeat_interleave(index[0].numel()*dist0)
+       ).repeat({dist2})*leading_dim[0]
+      +
+      (index[0].repeat(dist0)
+       +
+       torch::linspace(start_offset[0], stop_offset[0]-1, dist0, index[0].options()
+                       ).repeat_interleave(index[0].numel())
+       ).repeat({dist12});    
   }
 
   /// @brief Vectorized version of `torch::indexing::Slice` (see
@@ -177,9 +204,19 @@ namespace iganet {
            index[1].numel() == index[2].numel() &&
            index[2].numel() == index[3].numel());
 
+    auto dist0    = stop_offset[0]-start_offset[0];
+    auto dist1    = stop_offset[1]-start_offset[1];
+    auto dist2    = stop_offset[2]-start_offset[2];
+    auto dist3    = stop_offset[3]-start_offset[3];
+    auto dist01   = dist0 * dist1;
+    auto dist12   = dist1 * dist2;
+    auto dist23   = dist2 * dist3;
+    auto dist012  = dist0 * dist12;
+    auto dist123  = dist1 * dist23;
+    auto dist0123 = dist01 * dist23;
     exit(0);
     
-    return index;
+    return VSlice(index[0], start_offset[0], stop_offset[0]);
   }
 
   /// @brief Concatenates multiple std::vector objects

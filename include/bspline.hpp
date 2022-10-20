@@ -175,6 +175,8 @@ namespace iganet {
     /// @}
 
   public:
+    using value_type = real_t;
+    
     /// @brief Default constructor
     UniformBSplineCore()
         : core<real_t>(),
@@ -388,10 +390,10 @@ namespace iganet {
                 greville[k] += knots[k + l];
               greville[k] /= degrees_[j];
             }
-            coeffs[i] = coeffs[i].kron(greville_);
+            coeffs[i] = torch::kron(greville_, coeffs[i]);
           } else
-            coeffs[i] = coeffs[i].kron(torch::ones(ncoeffs_[j],
-                                                   core<real_t>::options_));
+            coeffs[i] = torch::kron(torch::ones(ncoeffs_[j],
+                                                core<real_t>::options_), coeffs[i]);
         }
       }
 
@@ -749,16 +751,17 @@ namespace iganet {
     inline auto eval_(const TensorArray2& xi, const TensorArray2& idx, short_t dim = 0) const
     {
       assert(xi[0].sizes() == idx[0].sizes() &&
-             xi[1].sizes() == idx[1].sizes());
+             xi[1].sizes() == idx[1].sizes() &&
+             xi[0].sizes() ==  xi[1].sizes());
       
-      if constexpr (geoDim_ > 1) {
+      if constexpr (geoDim_ > 1) {       
         auto basfunc =
           eval_prefactor<degrees_[0],  (short_t)deriv    %10>() *
           eval_prefactor<degrees_[1], ((short_t)deriv/10)%10>() *
-          kronproduct(eval_univariate_<degrees_[0], 0,  (short_t)deriv    %10>( xi[0].flatten(),
+          kronproduct(eval_univariate_<degrees_[1], 1, ((short_t)deriv/10)%10>( xi[1].flatten(),
+                                                                                idx[1].flatten()),
+                      eval_univariate_<degrees_[0], 0,  (short_t)deriv    %10>( xi[0].flatten(),
                                                                                idx[0].flatten()),
-                      eval_univariate_<degrees_[1], 1, ((short_t)deriv/10)%10>( xi[1].flatten(),
-                                                                               idx[1].flatten()),
                       0);
         std::array<torch::Tensor, geoDim_> result;
         for (std::size_t i = 0; i < geoDim_; ++i)
@@ -769,7 +772,7 @@ namespace iganet {
                                                           std::array<int64_t,2>{-degrees_[0],
                                                                                 -degrees_[1]},
                                                           std::array<int64_t,2>{1,1},
-                                                          ncoeffs(1))
+                                                          ncoeffs(0))
                                                         ).view({-1, xi[0].numel()}),
                                  0).view(xi[0].sizes());
         return result;
@@ -777,10 +780,10 @@ namespace iganet {
         return
           eval_prefactor<degrees_[0],  (short_t)deriv    %10>() *
           eval_prefactor<degrees_[1], ((short_t)deriv/10)%10>() *
-          dotproduct(kronproduct(eval_univariate_<degrees_[0], 0,  (short_t)deriv    %10>( xi[0].flatten(),
-                                                                                          idx[0].flatten()),
-                                 eval_univariate_<degrees_[1], 1, ((short_t)deriv/10)%10>( xi[1].flatten(),
-                                                                                          idx[1].flatten()),
+          dotproduct(kronproduct(eval_univariate_<degrees_[1], 1, ((short_t)deriv/10)%10>( xi[1].flatten(),
+                                                                                           idx[1].flatten()),
+                                 eval_univariate_<degrees_[0], 0,  (short_t)deriv    %10>( xi[0].flatten(),
+                                                                                           idx[0].flatten()),
                                  0),
                      coeffs(0).index_select(0,
                                             VSlice(TensorArray2({idx[0].flatten(),
@@ -788,7 +791,7 @@ namespace iganet {
                                               std::array<int64_t,2>{-degrees_[0],
                                                                     -degrees_[1]},
                                               std::array<int64_t,2>{1,1},
-                                              ncoeffs(1))
+                                              ncoeffs(0))
                                             ).view({-1, xi[0].numel()}),
                      0).view(xi[0].sizes());
     }
@@ -804,20 +807,22 @@ namespace iganet {
     {
       assert(xi[0].sizes() == idx[0].sizes() &&
              xi[1].sizes() == idx[1].sizes() &&
-             xi[2].sizes() == idx[2].sizes());
+             xi[2].sizes() == idx[2].sizes() &&
+             xi[0].sizes() ==  xi[1].sizes() &&
+             xi[1].sizes() ==  xi[2].sizes());
       
       if constexpr (geoDim_ > 1) {
         auto basfunc =
           eval_prefactor<degrees_[0],  (short_t)deriv     %10>() *
           eval_prefactor<degrees_[1], ((short_t)deriv/ 10)%10>() *
           eval_prefactor<degrees_[2], ((short_t)deriv/100)%10>() *
-          kronproduct(kronproduct(eval_univariate_<degrees_[0], 0,  (short_t)deriv    %10>( xi[0].flatten(),
-                                                                                           idx[0].flatten()),
-                                  eval_univariate_<degrees_[1], 1, ((short_t)deriv/10)%10>( xi[1].flatten(),
-                                                                                           idx[1].flatten()),
-                                  0),
-                      eval_univariate_<degrees_[2], 2, ((short_t)deriv/100)%10>( xi[2].flatten(),
-                                                                                idx[2].flatten()),
+          kronproduct(eval_univariate_<degrees_[2], 2, ((short_t)deriv/100)%10>( xi[2].flatten(),
+                                                                                 idx[2].flatten()),
+                      kronproduct(eval_univariate_<degrees_[1], 1, ((short_t)deriv/10)%10>( xi[1].flatten(),
+                                                                                            idx[1].flatten()),
+                                  eval_univariate_<degrees_[0], 0,  (short_t)deriv    %10>( xi[0].flatten(),
+                                                                                            idx[0].flatten()),
+                                  0),                      
                       0);
         std::array<torch::Tensor, geoDim_> result;
         for (std::size_t i = 0; i < geoDim_; ++i)
@@ -825,12 +830,13 @@ namespace iganet {
                                  coeffs(i).index_select(0,
                                                         VSlice(TensorArray3({idx[0].flatten(),
                                                                              idx[1].flatten(),
-                                                                             idx[2].flatten}),
+                                                                             idx[2].flatten()}),
                                                           std::array<int64_t,3>{-degrees_[0],
                                                                                 -degrees_[1],
                                                                                 -degrees_[2]},
                                                           std::array<int64_t,3>{1,1,1},
-                                                          ncoeffs(2)) // NEEDS TO BE FIXED!!!
+                                                          std::array<int64_t,2>{ncoeffs(0),
+                                                                                ncoeffs(1)})
                                                         ).view({-1, xi[0].numel()}),
                                  0).view(xi[0].sizes());
         return result;
@@ -839,13 +845,13 @@ namespace iganet {
           eval_prefactor<degrees_[0],  (short_t)deriv     %10>() *
           eval_prefactor<degrees_[1], ((short_t)deriv/ 10)%10>() *
           eval_prefactor<degrees_[2], ((short_t)deriv/100)%10>() *
-          dotproduct(kronproduct(kronproduct(eval_univariate_<degrees_[0], 0,  (short_t)deriv    %10>( xi[0].flatten(),
-                                                                                                      idx[0].flatten()),
-                                             eval_univariate_<degrees_[1], 1, ((short_t)deriv/10)%10>( xi[1].flatten(),
-                                                                                                      idx[1].flatten()),
-                                             0),
-                                 eval_univariate_<degrees_[2], 2, ((short_t)deriv/100)%10>( xi[2].flatten(),
-                                                                                           idx[2].flatten()),
+          dotproduct(kronproduct(eval_univariate_<degrees_[2], 2, ((short_t)deriv/100)%10>( xi[2].flatten(),
+                                                                                            idx[2].flatten()),
+                                 kronproduct(eval_univariate_<degrees_[1], 1, ((short_t)deriv/10)%10>( xi[1].flatten(),
+                                                                                                       idx[1].flatten()),
+                                             eval_univariate_<degrees_[0], 0,  (short_t)deriv    %10>( xi[0].flatten(),
+                                                                                                       idx[0].flatten()),
+                                             0),                                 
                                  0),
                      coeffs(0).index_select(0,
                                             VSlice(TensorArray3({idx[0].flatten(),
@@ -855,7 +861,8 @@ namespace iganet {
                                                                     -degrees_[1],
                                                                     -degrees_[2]},
                                               std::array<int64_t,3>{1,1,1},
-                                              ncoeffs(2)) // NEEDS TO BE FIXED!!!
+                                              std::array<int64_t,2>{ncoeffs(0),
+                                                                    ncoeffs(1)})
                                             ).view({-1, xi[0].numel()}),
                      0).view(xi[0].sizes());
     }
@@ -873,7 +880,10 @@ namespace iganet {
       assert(xi[0].sizes() == idx[0].sizes() &&
              xi[1].sizes() == idx[1].sizes() &&
              xi[2].sizes() == idx[2].sizes() &&
-             xi[3].sizes() == idx[3].sizes());
+             xi[3].sizes() == idx[3].sizes() &&
+             xi[0].sizes() ==  xi[1].sizes() &&
+             xi[1].sizes() ==  xi[2].sizes() &&
+             xi[2].sizes() ==  xi[3].sizes());
       
       if constexpr (geoDim_ > 1) {
         auto basfunc =
@@ -881,16 +891,16 @@ namespace iganet {
           eval_prefactor<degrees_[1], ((short_t)deriv/  10)%10>() *
           eval_prefactor<degrees_[2], ((short_t)deriv/ 100)%10>() *
           eval_prefactor<degrees_[2], ((short_t)deriv/1000)%10>() *
-          kronproduct(kronproduct(eval_univariate_<degrees_[0], 0,  (short_t)deriv      %10>( xi[0].flatten(),
-                                                                                             idx[0].flatten()),
-                                  eval_univariate_<degrees_[1], 1, ((short_t)deriv/  10)%10>( xi[1].flatten(),
-                                                                                             idx[1].flatten()),
+          kronproduct(kronproduct(eval_univariate_<degrees_[3], 3, ((short_t)deriv/1000)%10>( xi[3].flatten(),
+                                                                                              idx[3].flatten()),
+                                  eval_univariate_<degrees_[2], 2, ((short_t)deriv/ 100)%10>( xi[2].flatten(),
+                                                                                              idx[2].flatten()),
                                   0),
-                      kronproduct(eval_univariate_<degrees_[2], 2, ((short_t)deriv/ 100)%10>( xi[2].flatten(),
-                                                                                             idx[2].flatten()),
-                                  eval_univariate_<degrees_[3], 3, ((short_t)deriv/1000)%10>( xi[3].flatten(),
-                                                                                             idx[3].flatten()),
-                                  0),
+                      kronproduct(eval_univariate_<degrees_[1], 1, ((short_t)deriv/  10)%10>( xi[1].flatten(),
+                                                                                              idx[1].flatten()),
+                                  eval_univariate_<degrees_[0], 0,  (short_t)deriv      %10>( xi[0].flatten(),
+                                                                                              idx[0].flatten()),
+                                  0),                      
                       0);
         std::array<torch::Tensor, geoDim_> result;
         for (std::size_t i = 0; i < geoDim_; ++i)
@@ -905,7 +915,9 @@ namespace iganet {
                                                                                 -degrees_[2],
                                                                                 -degrees_[3]},
                                                           std::array<int64_t,4>{1,1,1,1},
-                                                          ncoeffs(2)) // NEEDS TO BE FIXED!!!
+                                                          std::array<int64_t,3>{ncoeffs(0),
+                                                                                ncoeffs(1),
+                                                                                ncoeffs(2)})
                                                         ).view({-1, xi[0].numel()}),
                                  0).view(xi[0].sizes());
         return result;
@@ -915,15 +927,15 @@ namespace iganet {
           eval_prefactor<degrees_[1], ((short_t)deriv/  10)%10>() *
           eval_prefactor<degrees_[2], ((short_t)deriv/ 100)%10>() *
           eval_prefactor<degrees_[3], ((short_t)deriv/1000)%10>() *
-          dotproduct(kronproduct(kronproduct(eval_univariate_<degrees_[0], 0,  (short_t)deriv      %10>( xi[0].flatten(),
-                                                                                                        idx[0].flatten()),
-                                             eval_univariate_<degrees_[1], 1, ((short_t)deriv/  10)%10>( xi[1].flatten(),
-                                                                                                        idx[1].flatten()),
+          dotproduct(kronproduct(kronproduct(eval_univariate_<degrees_[3], 3, ((short_t)deriv/1000)%10>( xi[3].flatten(),
+                                                                                                         idx[3].flatten()),
+                                             eval_univariate_<degrees_[2], 2, ((short_t)deriv/ 100)%10>( xi[2].flatten(),
+                                                                                                         idx[2].flatten()),
                                              0),
-                                 kronproduct(eval_univariate_<degrees_[2], 2, ((short_t)deriv/ 100)%10>( xi[2].flatten(),
-                                                                                                        idx[2].flatten()),
-                                             eval_univariate_<degrees_[3], 3, ((short_t)deriv/1000)%10>( xi[3].flatten(),
-                                                                                                        idx[3].flatten()),
+                                 kronproduct(eval_univariate_<degrees_[1], 1, ((short_t)deriv/  10)%10>( xi[1].flatten(),
+                                                                                                         idx[1].flatten()),
+                                             eval_univariate_<degrees_[0], 0,  (short_t)deriv      %10>( xi[0].flatten(),
+                                                                                                         idx[0].flatten()),
                                              0),
                                  0),
                      coeffs(0).index_select(0,
@@ -936,7 +948,9 @@ namespace iganet {
                                                                     -degrees_[2],
                                                                     -degrees_[3]},
                                               std::array<int64_t,4>{1,1,1,1},
-                                              ncoeffs(2)) // NEEDS TO BE FIXED!!!@
+                                              std::array<int64_t,3>{ncoeffs(0),
+                                                                    ncoeffs(1),
+                                                                    ncoeffs(2)})                                            
                                             ).view({-1, xi[0].numel()}),
                      0).view(xi[0].sizes());
     }
@@ -977,11 +991,11 @@ namespace iganet {
     {
       assert(parDim_ == 3);
       return TensorArray3({
-          torch::min(torch::full_like(xi, ncoeffs_[0]-1, core<real_t>::options_),
+          torch::min(torch::full_like(xi[0], ncoeffs_[0]-1, core<real_t>::options_),
                      torch::floor(xi[0] * (ncoeffs_[0] - degrees_[0]) + degrees_[0])).to(torch::kInt64),
-          torch::min(torch::full_like(xi, ncoeffs_[1]-1, core<real_t>::options_),
+          torch::min(torch::full_like(xi[1], ncoeffs_[1]-1, core<real_t>::options_),
                      torch::floor(xi[1] * (ncoeffs_[1] - degrees_[1]) + degrees_[1])).to(torch::kInt64),
-          torch::min(torch::full_like(xi, ncoeffs_[2]-1, core<real_t>::options_),
+          torch::min(torch::full_like(xi[2], ncoeffs_[2]-1, core<real_t>::options_),
                      torch::floor(xi[2] * (ncoeffs_[2] - degrees_[2]) + degrees_[2])).to(torch::kInt64)
         });
     }
@@ -990,13 +1004,13 @@ namespace iganet {
     {
       assert(parDim_ == 4);
       return TensorArray4({
-          torch::min(torch::full_like(xi, ncoeffs_[0]-1, core<real_t>::options_),
+          torch::min(torch::full_like(xi[0], ncoeffs_[0]-1, core<real_t>::options_),
                      torch::floor(xi[0] * (ncoeffs_[0] - degrees_[0]) + degrees_[0])).to(torch::kInt64),
-          torch::min(torch::full_like(xi, ncoeffs_[1]-1, core<real_t>::options_),
+          torch::min(torch::full_like(xi[1], ncoeffs_[1]-1, core<real_t>::options_),
                      torch::floor(xi[1] * (ncoeffs_[1] - degrees_[1]) + degrees_[1])).to(torch::kInt64),
-          torch::min(torch::full_like(xi, ncoeffs_[2]-1, core<real_t>::options_),
+          torch::min(torch::full_like(xi[2], ncoeffs_[2]-1, core<real_t>::options_),
                      torch::floor(xi[2] * (ncoeffs_[2] - degrees_[2]) + degrees_[2])).to(torch::kInt64),
-          torch::min(torch::full_like(xi, ncoeffs_[3]-1, core<real_t>::options_),
+          torch::min(torch::full_like(xi[3], ncoeffs_[3]-1, core<real_t>::options_),
                      torch::floor(xi[3] * (ncoeffs_[3] - degrees_[3]) + degrees_[3])).to(torch::kInt64)
         });
     }     
@@ -1342,11 +1356,7 @@ namespace iganet {
 
           // Fill coefficients with zeros
           for (short_t i = 0; i < geoDim_; ++i) {
-
-            int64_t size = 1;
-            for (short_t j = 0; j < parDim_; ++j)
-              size *= ncoeffs_[j];
-
+            int64_t size = ncoeffs();
             coeffs_[i] = torch::zeros(size, core<real_t>::options_);
           }
           break;
@@ -1356,11 +1366,7 @@ namespace iganet {
 
           // Fill coefficients with ones
           for (short_t i = 0; i < geoDim_; ++i) {
-
-            int64_t size = 1;
-            for (short_t j = 0; j < parDim_; ++j)
-              size *= ncoeffs_[j];
-
+            int64_t size = ncoeffs();
             coeffs_[i] = torch::ones(size, core<real_t>::options_);
           }
           break;
@@ -1375,13 +1381,15 @@ namespace iganet {
 
             for (short_t j = 0; j < parDim_; ++j) {
               if (i == j)
-                coeffs_[i] = coeffs_[i].kron(torch::linspace(static_cast<real_t>(0),
-                                                             static_cast<real_t>(1),
-                                                             ncoeffs_[j],
-                                                             core<real_t>::options_));
+                coeffs_[i] = torch::kron(torch::linspace(static_cast<real_t>(0),
+                                                         static_cast<real_t>(1),
+                                                         ncoeffs_[j],
+                                                         core<real_t>::options_),
+                                         coeffs_[i]);
               else
-                coeffs_[i] = coeffs_[i].kron(torch::ones(ncoeffs_[j],
-                                                         core<real_t>::options_));
+                coeffs_[i] = torch::kron(torch::ones(ncoeffs_[j],
+                                                     core<real_t>::options_),
+                                         coeffs_[i]);
             }
           }
           break;
@@ -1418,10 +1426,10 @@ namespace iganet {
                     greville[k] += knots[k + l];
                   greville[k] /= degrees_[j];
                 }
-                coeffs_[i] = coeffs_[i].kron(greville_);
+                coeffs_[i] = torch::kron(greville_, coeffs_[i]);
               } else
-                coeffs_[i] = coeffs_[i].kron(torch::ones(ncoeffs_[j],
-                                                         core<real_t>::options_));
+                coeffs_[i] = torch::kron(torch::ones(ncoeffs_[j],
+                                                     core<real_t>::options_), coeffs_[i]);
             }
           }
           break;
