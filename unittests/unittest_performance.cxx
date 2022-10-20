@@ -602,6 +602,292 @@ TEST(Performance, UniformBSpline_parDim2_double)
   }
 }
 
+TEST(Performance, UniformBSpline_parDim3_float)
+{
+  iganet::core<float> core_;
+
+  for (int64_t ncoeffs : {10, 100, 1000, 10000}) {
+    for (int64_t nsamples : {1, 10, 100, 1000, 10000, 25000, 50000, 100000, 250000, 500000, 1000000}) {
+
+      { // linear B-Splines
+        iganet::UniformBSpline<float, 1, 1, 1, 1> bspline({ncoeffs, ncoeffs, ncoeffs}, iganet::BSplineInit::linear);
+        iganet::TensorArray3 xi = {torch::rand(nsamples, core_.options()),
+                                   torch::rand(nsamples, core_.options()),
+                                   torch::rand(nsamples, core_.options())};
+
+        if (nsamples == 1) {
+          auto t1 = std::chrono::high_resolution_clock::now();
+          for (int i=0; i<1000; i++)
+            bspline.eval<iganet::BSplineDeriv::func>(torch::rand(3, core_.options()));
+          auto t2 = std::chrono::high_resolution_clock::now();
+          std::cout << "   ("
+                    << std::right << std::setw(8) << ncoeffs << ","
+                    << std::right << std::setw(8) << nsamples << ") "
+                    << std::right << std::setw(12)
+                    << std::chrono::duration_cast<std::chrono::nanoseconds>(t2-t1).count() / float(1000)
+                    << " (ns/entry)";
+        } else {
+          auto t1 = std::chrono::high_resolution_clock::now();
+          for (int i=0; i<10; i++)
+            bspline.eval_<iganet::BSplineDeriv::func>(xi);
+          auto t2 = std::chrono::high_resolution_clock::now();
+          std::cout << "   ("
+                    << std::right << std::setw(8) << ncoeffs << ","
+                    << std::right << std::setw(8) << nsamples << ") "
+                    << std::right << std::setw(12)
+                    << std::chrono::duration_cast<std::chrono::nanoseconds>(t2-t1).count() / float(nsamples*10)
+                    << " (ns/entry)";
+        }
+      }
+
+      { // quadratic B-Splines
+        iganet::UniformBSpline<float, 1, 2, 2, 2> bspline({ncoeffs, ncoeffs, ncoeffs}, iganet::BSplineInit::linear);
+        iganet::TensorArray3 xi = {torch::rand(nsamples, core_.options()),
+                                   torch::rand(nsamples, core_.options()),
+                                   torch::rand(nsamples, core_.options())};
+
+        if (nsamples == 1) {
+          auto t1 = std::chrono::high_resolution_clock::now();
+          for (int i=0; i<1000; i++)
+            bspline.eval<iganet::BSplineDeriv::func>(torch::rand(3, core_.options()));
+          auto t2 = std::chrono::high_resolution_clock::now();
+          std::cout << std::right << std::setw(12)
+                    << std::chrono::duration_cast<std::chrono::nanoseconds>(t2-t1).count() / float(1000)
+                    << " (ns/entry)";
+        } else {
+          auto t1 = std::chrono::high_resolution_clock::now();
+          for (int i=0; i<10; i++)
+            bspline.eval_<iganet::BSplineDeriv::func>(xi);
+          auto t2 = std::chrono::high_resolution_clock::now();
+          std::cout << std::right << std::setw(12)
+                    << std::chrono::duration_cast<std::chrono::nanoseconds>(t2-t1).count() / float(nsamples*10)
+                    << " (ns/entry)";
+        }
+      }
+
+      { // cubic B-Splines
+        iganet::UniformBSpline<float, 1, 3, 3, 3> bspline({ncoeffs, ncoeffs, ncoeffs}, iganet::BSplineInit::linear);
+        iganet::TensorArray3 xi = {torch::rand(nsamples, core_.options()),
+                                   torch::rand(nsamples, core_.options()),
+                                   torch::rand(nsamples, core_.options())};
+
+        if (nsamples == 1) {
+          auto t1 = std::chrono::high_resolution_clock::now();
+          for (int i=0; i<1000; i++)
+            bspline.eval<iganet::BSplineDeriv::func>(torch::rand(3, core_.options()));
+          auto t2 = std::chrono::high_resolution_clock::now();
+          std::cout << std::right << std::setw(12)
+                    << std::chrono::duration_cast<std::chrono::nanoseconds>(t2-t1).count() / float(1000)
+                    << " (ns/entry)";
+        } else {
+          auto t1 = std::chrono::high_resolution_clock::now();
+          for (int i=0; i<10; i++)
+            bspline.eval_<iganet::BSplineDeriv::func>(xi);
+          auto t2 = std::chrono::high_resolution_clock::now();
+          std::cout << std::right << std::setw(12)
+                    << std::chrono::duration_cast<std::chrono::nanoseconds>(t2-t1).count() / float(nsamples*10)
+                    << " (ns/entry)";
+        }
+      }
+
+      { // quartic B-Splines
+        iganet::UniformBSpline<float, 1, 4, 4, 4> bspline({ncoeffs, ncoeffs, ncoeffs}, iganet::BSplineInit::linear);
+        iganet::TensorArray3 xi = {torch::rand(nsamples, core_.options()),
+                                   torch::rand(nsamples, core_.options()),
+                                   torch::rand(nsamples, core_.options())};
+
+        if (nsamples == 1) {
+          auto t1 = std::chrono::high_resolution_clock::now();
+          for (int i=0; i<1000; i++)
+            bspline.eval<iganet::BSplineDeriv::func>(torch::rand(3, core_.options()));
+          auto t2 = std::chrono::high_resolution_clock::now();
+          std::cout << std::right << std::setw(12)
+                    << std::chrono::duration_cast<std::chrono::nanoseconds>(t2-t1).count() / float(1000)
+                    << " (ns/entry)";
+        } else {
+          auto t1 = std::chrono::high_resolution_clock::now();
+          for (int i=0; i<10; i++)
+            bspline.eval_<iganet::BSplineDeriv::func>(xi);
+          auto t2 = std::chrono::high_resolution_clock::now();
+          std::cout << std::right << std::setw(12)
+                    << std::chrono::duration_cast<std::chrono::nanoseconds>(t2-t1).count() / float(nsamples*10)
+                    << " (ns/entry)";
+        }
+      }
+
+      { // quintic B-Splines
+        iganet::UniformBSpline<float, 1, 5, 5, 5> bspline({ncoeffs, ncoeffs, ncoeffs}, iganet::BSplineInit::linear);
+        iganet::TensorArray3 xi = {torch::rand(nsamples, core_.options()),
+                                   torch::rand(nsamples, core_.options()),
+                                   torch::rand(nsamples, core_.options())};
+
+        if (nsamples == 1) {
+          auto t1 = std::chrono::high_resolution_clock::now();
+          for (int i=0; i<1000; i++)
+            bspline.eval<iganet::BSplineDeriv::func>(torch::rand(3, core_.options()));
+          auto t2 = std::chrono::high_resolution_clock::now();
+          std::cout << std::right << std::setw(12)
+                    << std::chrono::duration_cast<std::chrono::nanoseconds>(t2-t1).count() / float(1000)
+                    << " (ns/entry)"
+                    << std::endl;
+        } else {
+          auto t1 = std::chrono::high_resolution_clock::now();
+          for (int i=0; i<10; i++)
+            bspline.eval_<iganet::BSplineDeriv::func>(xi);
+          auto t2 = std::chrono::high_resolution_clock::now();
+          std::cout << std::right << std::setw(12)
+                    << std::chrono::duration_cast<std::chrono::nanoseconds>(t2-t1).count() / float(nsamples*10)
+                    << " (ns/entry)"
+                    << std::endl;
+        }
+      }
+    }
+  }
+}
+
+TEST(Performance, UniformBSpline_parDim3_double)
+{
+  iganet::core<double> core_;
+
+  for (int64_t ncoeffs : {10, 100, 1000, 10000}) {
+    for (int64_t nsamples : {1, 10, 100, 1000, 10000, 25000, 50000, 100000, 250000, 500000, 1000000}) {
+
+      { // linear B-Splines
+        iganet::UniformBSpline<double, 1, 1, 1, 1> bspline({ncoeffs, ncoeffs, ncoeffs}, iganet::BSplineInit::linear);
+        iganet::TensorArray3 xi = {torch::rand(nsamples, core_.options()),
+                                   torch::rand(nsamples, core_.options()),
+                                   torch::rand(nsamples, core_.options())};
+
+        if (nsamples == 1) {
+          auto t1 = std::chrono::high_resolution_clock::now();
+          for (int i=0; i<1000; i++)
+            bspline.eval<iganet::BSplineDeriv::func>(torch::rand(3, core_.options()));
+          auto t2 = std::chrono::high_resolution_clock::now();
+          std::cout << "   ("
+                    << std::right << std::setw(8) << ncoeffs << ","
+                    << std::right << std::setw(8) << nsamples << ") "
+                    << std::right << std::setw(12)
+                    << std::chrono::duration_cast<std::chrono::nanoseconds>(t2-t1).count() / double(1000)
+                    << " (ns/entry)";
+        } else {
+          auto t1 = std::chrono::high_resolution_clock::now();
+          for (int i=0; i<10; i++)
+            bspline.eval_<iganet::BSplineDeriv::func>(xi);
+          auto t2 = std::chrono::high_resolution_clock::now();
+          std::cout << "   ("
+                    << std::right << std::setw(8) << ncoeffs << ","
+                    << std::right << std::setw(8) << nsamples << ") "
+                    << std::right << std::setw(12)
+                    << std::chrono::duration_cast<std::chrono::nanoseconds>(t2-t1).count() / double(nsamples*10)
+                    << " (ns/entry)";
+        }
+      }
+
+      { // quadratic B-Splines
+        iganet::UniformBSpline<double, 1, 2, 2, 2> bspline({ncoeffs, ncoeffs, ncoeffs}, iganet::BSplineInit::linear);
+        iganet::TensorArray3 xi = {torch::rand(nsamples, core_.options()),
+                                   torch::rand(nsamples, core_.options()),
+                                   torch::rand(nsamples, core_.options())};
+
+        if (nsamples == 1) {
+          auto t1 = std::chrono::high_resolution_clock::now();
+          for (int i=0; i<1000; i++)
+            bspline.eval<iganet::BSplineDeriv::func>(torch::rand(3, core_.options()));
+          auto t2 = std::chrono::high_resolution_clock::now();
+          std::cout << std::right << std::setw(12)
+                    << std::chrono::duration_cast<std::chrono::nanoseconds>(t2-t1).count() / double(1000)
+                    << " (ns/entry)";
+        } else {
+          auto t1 = std::chrono::high_resolution_clock::now();
+          for (int i=0; i<10; i++)
+            bspline.eval_<iganet::BSplineDeriv::func>(xi);
+          auto t2 = std::chrono::high_resolution_clock::now();
+          std::cout << std::right << std::setw(12)
+                    << std::chrono::duration_cast<std::chrono::nanoseconds>(t2-t1).count() / double(nsamples*10)
+                    << " (ns/entry)";
+        }
+      }
+
+      { // cubic B-Splines
+        iganet::UniformBSpline<double, 1, 3, 3, 4> bspline({ncoeffs, ncoeffs, ncoeffs}, iganet::BSplineInit::linear);
+        iganet::TensorArray3 xi = {torch::rand(nsamples, core_.options()),
+                                   torch::rand(nsamples, core_.options()),
+                                   torch::rand(nsamples, core_.options())};
+
+        if (nsamples == 1) {
+          auto t1 = std::chrono::high_resolution_clock::now();
+          for (int i=0; i<1000; i++)
+            bspline.eval<iganet::BSplineDeriv::func>(torch::rand(3, core_.options()));
+          auto t2 = std::chrono::high_resolution_clock::now();
+          std::cout << std::right << std::setw(12)
+                    << std::chrono::duration_cast<std::chrono::nanoseconds>(t2-t1).count() / double(1000)
+                    << " (ns/entry)";
+        } else {
+          auto t1 = std::chrono::high_resolution_clock::now();
+          for (int i=0; i<10; i++)
+            bspline.eval_<iganet::BSplineDeriv::func>(xi);
+          auto t2 = std::chrono::high_resolution_clock::now();
+          std::cout << std::right << std::setw(12)
+                    << std::chrono::duration_cast<std::chrono::nanoseconds>(t2-t1).count() / double(nsamples*10)
+                    << " (ns/entry)";
+        }
+      }
+
+      { // quartic B-Splines
+        iganet::UniformBSpline<double, 1, 4, 4, 4> bspline({ncoeffs, ncoeffs, ncoeffs}, iganet::BSplineInit::linear);
+        iganet::TensorArray3 xi = {torch::rand(nsamples, core_.options()),
+                                   torch::rand(nsamples, core_.options()),
+                                   torch::rand(nsamples, core_.options())};
+
+        if (nsamples == 1) {
+          auto t1 = std::chrono::high_resolution_clock::now();
+          for (int i=0; i<1000; i++)
+            bspline.eval<iganet::BSplineDeriv::func>(torch::rand(3, core_.options()));
+          auto t2 = std::chrono::high_resolution_clock::now();
+          std::cout << std::right << std::setw(12)
+                    << std::chrono::duration_cast<std::chrono::nanoseconds>(t2-t1).count() / double(1000)
+                    << " (ns/entry)";
+        } else {
+          auto t1 = std::chrono::high_resolution_clock::now();
+          for (int i=0; i<10; i++)
+            bspline.eval_<iganet::BSplineDeriv::func>(xi);
+          auto t2 = std::chrono::high_resolution_clock::now();
+          std::cout << std::right << std::setw(12)
+                    << std::chrono::duration_cast<std::chrono::nanoseconds>(t2-t1).count() / double(nsamples*10)
+                    << " (ns/entry)";
+        }
+      }
+
+      { // quintic B-Splines
+        iganet::UniformBSpline<double, 1, 5, 5, 5> bspline({ncoeffs, ncoeffs, ncoeffs}, iganet::BSplineInit::linear);
+        iganet::TensorArray3 xi = {torch::rand(nsamples, core_.options()),
+                                   torch::rand(nsamples, core_.options()),
+                                   torch::rand(nsamples, core_.options())};
+
+        if (nsamples == 1) {
+          auto t1 = std::chrono::high_resolution_clock::now();
+          for (int i=0; i<1000; i++)
+            bspline.eval<iganet::BSplineDeriv::func>(torch::rand(3, core_.options()));
+          auto t2 = std::chrono::high_resolution_clock::now();
+          std::cout << std::right << std::setw(12)
+                    << std::chrono::duration_cast<std::chrono::nanoseconds>(t2-t1).count() / double(1000)
+                    << " (ns/entry)"
+                    << std::endl;
+        } else {
+          auto t1 = std::chrono::high_resolution_clock::now();
+          for (int i=0; i<10; i++)
+            bspline.eval_<iganet::BSplineDeriv::func>(xi);
+          auto t2 = std::chrono::high_resolution_clock::now();
+          std::cout << std::right << std::setw(12)
+                    << std::chrono::duration_cast<std::chrono::nanoseconds>(t2-t1).count() / double(nsamples*10)
+                    << " (ns/entry)"
+                    << std::endl;
+        }
+      }
+    }
+  }
+}
+
 int main(int argc, char **argv) {
   ::testing::InitGoogleTest(&argc, argv);
   iganet::init();
