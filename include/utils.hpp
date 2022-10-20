@@ -172,13 +172,13 @@ namespace iganet {
        +
        torch::linspace(start_offset[2], stop_offset[2]-1, dist2, index[0].options()
                        ).repeat_interleave(index[0].numel()*dist01)
-       ) * leading_dim[0]*leading_dim[1]
+       ) * leading_dim[0] * leading_dim[1]
       +
       (index[1].repeat(dist01)
        +
        torch::linspace(start_offset[1], stop_offset[1]-1, dist1, index[0].options()
                        ).repeat_interleave(index[0].numel()*dist0)
-       ).repeat({dist2})*leading_dim[0]
+       ).repeat({dist2}) * leading_dim[0]
       +
       (index[0].repeat(dist0)
        +
@@ -214,9 +214,31 @@ namespace iganet {
     auto dist012  = dist0 * dist12;
     auto dist123  = dist1 * dist23;
     auto dist0123 = dist01 * dist23;
-    exit(0);
-    
-    return VSlice(index[0], start_offset[0], stop_offset[0]);
+
+    return
+      (index[3].repeat(dist0123)
+       +
+       torch::linspace(start_offset[3], stop_offset[3]-1, dist3, index[0].options()
+                       ).repeat_interleave(index[0].numel()*dist012)
+       ) * leading_dim[0] * leading_dim[1] * leading_dim[2]
+      +
+      (index[2].repeat(dist012)
+       +
+       torch::linspace(start_offset[2], stop_offset[2]-1, dist2, index[0].options()
+                       ).repeat_interleave(index[0].numel()*dist01)
+       ).repeat({dist3}) * leading_dim[0] * leading_dim[1]
+      +
+      (index[1].repeat(dist01)
+       +
+       torch::linspace(start_offset[1], stop_offset[1]-1, dist1, index[0].options()
+                       ).repeat_interleave(index[0].numel()*dist0)
+       ).repeat({dist23}) * leading_dim[0]
+      +
+      (index[0].repeat(dist0)
+       +
+       torch::linspace(start_offset[0], stop_offset[0]-1, dist0, index[0].options()
+                       ).repeat_interleave(index[0].numel())
+       ).repeat({dist123});    
   }
 
   /// @brief Concatenates multiple std::vector objects
