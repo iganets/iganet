@@ -447,9 +447,6 @@ namespace iganet {
     inline auto eval(const TensorArray1& xi, const TensorArray1& idx) const
     {
       assert(xi[0].sizes() == idx[0].sizes());
-
-      std::cout << "xi=\n" << xi[0] << std::endl;
-      std::cout << "idx=\n" << idx[0] << std::endl;
       
       if constexpr (geoDim_ > 1) {
         auto basfunc =
@@ -1421,10 +1418,11 @@ namespace iganet {
     inline auto eval_indices(const TensorArray1& xi) const
     {
       assert(Base::parDim_ == 1);
-      auto nnz0 = Base::knots_[0].repeat({xi[0].numel(), 1}) > xi[0].view({-1, 1});
+      
+      auto nnz0 = Base::knots_[0].repeat({xi[0].numel(), 1}) > xi[0].flatten().view({-1, 1});
       return TensorArray1({
                            torch::remainder(std::get<1>(((nnz0.cumsum(1) == 1) & nnz0).max(1))-1,
-                                            Base::nknots_[0]-Base::degrees_[0]-1)
+                                            Base::nknots_[0]-Base::degrees_[0]-1).view(xi[0].sizes())
                           });
     }
 
@@ -1432,13 +1430,14 @@ namespace iganet {
     inline auto eval_indices(const TensorArray2& xi) const
     {
       assert(Base::parDim_ == 2);
-      auto nnz0 = Base::knots_[0].repeat({xi[0].numel(), 1}) > xi[0].view({-1, 1});
-      auto nnz1 = Base::knots_[1].repeat({xi[1].numel(), 1}) > xi[1].view({-1, 1});
+      
+      auto nnz0 = Base::knots_[0].repeat({xi[0].numel(), 1}) > xi[0].flatten().view({-1, 1});
+      auto nnz1 = Base::knots_[1].repeat({xi[1].numel(), 1}) > xi[1].flatten().view({-1, 1});
       return TensorArray2({
                            torch::remainder(std::get<1>(((nnz0.cumsum(1) == 1) & nnz0).max(1))-1,
-                                            Base::nknots_[0]-Base::degrees_[0]-1),
+                                            Base::nknots_[0]-Base::degrees_[0]-1).view(xi[0].sizes()),
                            torch::remainder(std::get<1>(((nnz1.cumsum(1) == 1) & nnz1).max(1))-1,
-                                            Base::nknots_[1]-Base::degrees_[1]-1)
+                                            Base::nknots_[1]-Base::degrees_[1]-1).view(xi[1].sizes())
                           });
     }
 
@@ -1446,16 +1445,17 @@ namespace iganet {
     inline auto eval_indices(const TensorArray3& xi) const
     {
       assert(Base::parDim_ == 3);
-      auto nnz0 = Base::knots_[0].repeat({xi[0].numel(), 1}) > xi[0].view({-1, 1});
-      auto nnz1 = Base::knots_[1].repeat({xi[1].numel(), 1}) > xi[1].view({-1, 1});
-      auto nnz2 = Base::knots_[2].repeat({xi[2].numel(), 1}) > xi[2].view({-1, 1});
+      
+      auto nnz0 = Base::knots_[0].repeat({xi[0].numel(), 1}) > xi[0].flatten().view({-1, 1});
+      auto nnz1 = Base::knots_[1].repeat({xi[1].numel(), 1}) > xi[1].flatten().view({-1, 1});
+      auto nnz2 = Base::knots_[2].repeat({xi[2].numel(), 1}) > xi[2].flatten().view({-1, 1});
       return TensorArray3({
                            torch::remainder(std::get<1>(((nnz0.cumsum(1) == 1) & nnz0).max(1))-1,
-                                            Base::nknots_[0]-Base::degrees_[0]-1),
+                                            Base::nknots_[0]-Base::degrees_[0]-1).view(xi[0].sizes()),
                            torch::remainder(std::get<1>(((nnz1.cumsum(1) == 1) & nnz1).max(1))-1,
-                                            Base::nknots_[1]-Base::degrees_[1]-1),
+                                            Base::nknots_[1]-Base::degrees_[1]-1).view(xi[1].sizes()),
                            torch::remainder(std::get<1>(((nnz2.cumsum(1) == 1) & nnz2).max(1))-1,
-                                            Base::nknots_[2]-Base::degrees_[2]-1)
+                                            Base::nknots_[2]-Base::degrees_[2]-1).view(xi[2].sizes())
                           });
     }
 
@@ -1463,19 +1463,20 @@ namespace iganet {
     inline auto eval_indices(const TensorArray4& xi) const
     {
       assert(Base::parDim_ == 4);
-      auto nnz0 = Base::knots_[0].repeat({xi[0].numel(), 1}) > xi[0].view({-1, 1});
-      auto nnz1 = Base::knots_[1].repeat({xi[1].numel(), 1}) > xi[1].view({-1, 1});
-      auto nnz2 = Base::knots_[2].repeat({xi[2].numel(), 1}) > xi[2].view({-1, 1});
-      auto nnz3 = Base::knots_[3].repeat({xi[3].numel(), 1}) > xi[3].view({-1, 1});
-      return TensorArray3({
+      
+      auto nnz0 = Base::knots_[0].repeat({xi[0].numel(), 1}) > xi[0].flatten().view({-1, 1});
+      auto nnz1 = Base::knots_[1].repeat({xi[1].numel(), 1}) > xi[1].flatten().view({-1, 1});
+      auto nnz2 = Base::knots_[2].repeat({xi[2].numel(), 1}) > xi[2].flatten().view({-1, 1});
+      auto nnz3 = Base::knots_[3].repeat({xi[3].numel(), 1}) > xi[3].flatten().view({-1, 1});
+      return TensorArray4({
                            torch::remainder(std::get<1>(((nnz0.cumsum(1) == 1) & nnz0).max(1))-1,
-                                            Base::nknots_[0]-Base::degrees_[0]-1),
+                                            Base::nknots_[0]-Base::degrees_[0]-1).view(xi[0].sizes()),
                            torch::remainder(std::get<1>(((nnz1.cumsum(1) == 1) & nnz1).max(1))-1,
-                                            Base::nknots_[1]-Base::degrees_[1]-1),
+                                            Base::nknots_[1]-Base::degrees_[1]-1).view(xi[1].sizes()),
                            torch::remainder(std::get<1>(((nnz2.cumsum(1) == 1) & nnz2).max(1))-1,
-                                            Base::nknots_[2]-Base::degrees_[2]-1),
+                                            Base::nknots_[2]-Base::degrees_[2]-1).view(xi[2].sizes()),
                            torch::remainder(std::get<1>(((nnz3.cumsum(1) == 1) & nnz3).max(1))-1,
-                                            Base::nknots_[3]-Base::degrees_[3]-1)
+                                            Base::nknots_[3]-Base::degrees_[3]-1).view(xi[3].sizes())
                           });
     }    
   };

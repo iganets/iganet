@@ -17,6 +17,7 @@
 
 int main()
 {
+  std::cout << iganet::verbose;
   using real_t = double;
   iganet::init();
 
@@ -35,7 +36,7 @@ int main()
     
     // Evaluate B-spline at xi=0, xi=0.5, and xi=1
     std::cout << bspline.eval( iganet::to_tensorArray({0.0, 0.5, 1.0}) ) << std::endl;
-    
+
     // Plot B-spline
     bspline.plot(50);
     bspline.plot(color, 50);
