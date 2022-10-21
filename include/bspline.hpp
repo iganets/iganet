@@ -297,57 +297,29 @@ namespace iganet {
 
     /// @brief Returns a constant reference to the array of
     /// coefficients.
-    ///
-    /// @note If `flatten=false`, this function returns an
-    /// `std::array` of `torch::Tensor` objects with coefficients
-    /// reshaped according to the dimensions of the knot vectors
-    /// (return by value in this case)
-    template<bool flatten = true>
-    inline auto coeffs() const
-      -> typename std::conditional<flatten,
-                                   const std::array<torch::Tensor, geoDim_>& ,
-                                   std::array<torch::Tensor, geoDim_>>::type
+    inline const auto& coeffs() const
     {
-      if constexpr (flatten || parDim_ == 0)
-        return coeffs_;
-      else {
-        std::array<torch::Tensor, geoDim_> result;
-        for (short_t i = 0; i < geoDim_; ++i)
-          result[i] = coeffs_[i].view(ncoeffs_);
-        return result;
-      }
+      return coeffs_;
     }
 
     /// @brief Returns a constant reference to the coefficients in the
     /// \f$i\f$-th dimension.
-    ///
-    /// @note If `flatten=false`, this function returns a
-    /// `torch::Tensor` with coefficients in the \f$i\f$-th dimension
-    /// reshaped according to the dimensions of the knot vectors
-    /// (return by value in this case)
-    template<bool flatten = true>
-    inline auto coeffs(short_t i) const
-      -> typename std::conditional<flatten,
-                                   const torch::Tensor& ,
-                                   torch::Tensor>::type
+    inline const auto& coeffs(short_t i) const
     {
       assert(i >= 0 && i < geoDim_);
-      if constexpr (flatten || parDim_ == 0)
-        return coeffs_[i];
-      else
-        return coeffs_[i].view(ncoeffs_);
+      return coeffs_[i];
     }
 
     /// @brief Returns a non-constant reference to the array of
     /// coefficients
-    inline std::array<torch::Tensor, geoDim_>& coeffs()
+    inline auto& coeffs()
     {
       return coeffs_;
     }
 
     /// @brief Returns a non-constant reference to the coefficients in
     /// the \f$i\f$-th dimension
-    inline torch::Tensor& coeffs(short_t i)
+    inline auto& coeffs(short_t i)
     {
       assert(i >= 0 && i < geoDim_);
       return coeffs_[i];
@@ -475,6 +447,9 @@ namespace iganet {
     inline auto eval(const TensorArray1& xi, const TensorArray1& idx) const
     {
       assert(xi[0].sizes() == idx[0].sizes());
+
+      std::cout << "xi=\n" << xi[0] << std::endl;
+      std::cout << "idx=\n" << idx[0] << std::endl;
       
       if constexpr (geoDim_ > 1) {
         auto basfunc =
@@ -801,7 +776,7 @@ namespace iganet {
           for (int64_t j = 0; j < ncoeffs_[1]; ++j) {
             auto c = transformation(std::array<real_t, 2>{i / real_t(ncoeffs_[0] - 1), j / real_t(ncoeffs_[1] - 1)});
             for (short_t d = 0; d < geoDim_; ++d)
-              coeffs_[d].detach()[i * ncoeffs_[1] + j] = c[d];
+              coeffs_[d].detach()[j * ncoeffs_[0] + i] = c[d];
           }
         }
       }
@@ -815,7 +790,7 @@ namespace iganet {
               auto c = transformation(std::array<real_t, 3>{i / real_t(ncoeffs_[0] - 1), j / real_t(ncoeffs_[1] - 1),
                                                             k / real_t(ncoeffs_[2] - 1)});
               for (short_t d = 0; d < geoDim_; ++d)
-                coeffs_[d].detach()[i * ncoeffs_[1] * ncoeffs_[2] + j * ncoeffs_[2] + k] = c[d];
+                coeffs_[d].detach()[k * ncoeffs_[0] * ncoeffs_[1] + j * ncoeffs_[0] + i] = c[d];
             }
           }
         }
@@ -832,8 +807,9 @@ namespace iganet {
                                                               k / real_t(ncoeffs_[2] - 1),
                                                               l / real_t(ncoeffs_[3] - 1)});
                 for (short_t d = 0; d < geoDim_; ++d)
-                  coeffs_[d].detach()[i * ncoeffs_[1] * ncoeffs_[2] * ncoeffs_[3] + j * ncoeffs_[2] * ncoeffs_[3] +
-                                      k * ncoeffs_[3] + l] = c[d];
+                  coeffs_[d].detach()[l * ncoeffs_[0] * ncoeffs_[1] * ncoeffs_[2] +
+                                      k * ncoeffs_[0] * ncoeffs_[1] +
+                                      k * ncoeffs_[0] + i] = c[d];
               }
             }
           }
@@ -1444,53 +1420,63 @@ namespace iganet {
     /// @brief Returns the indices of knot spans containing `xi`    
     inline auto eval_indices(const TensorArray1& xi) const
     {
-      // 1D
-      // else if constexpr (Base::parDim_ == 1) {
-      //   int64_t i;
-      //   auto knots = Base::knots_[0].template accessor<real_t,1>();
-      //   for (i=Base::degrees_[0]; i<Base::nknots_[0]-Base::degrees_[0]-1; ++i)
-      //     if (knots[i+1] > xi[0].item<real_t>())
-      //       break;
-      return Base::eval_indices(xi);
+      assert(Base::parDim_ == 1);
+      auto nnz0 = Base::knots_[0].repeat({xi[0].numel(), 1}) > xi[0].view({-1, 1});
+      return TensorArray1({
+                           torch::remainder(std::get<1>(((nnz0.cumsum(1) == 1) & nnz0).max(1))-1,
+                                            Base::nknots_[0]-Base::degrees_[0]-1)
+                          });
     }
 
     /// @brief Returns the indices of knot spans containing `xi`    
     inline auto eval_indices(const TensorArray2& xi) const
     {
-      // 1D
-      // else if constexpr (Base::parDim_ == 1) {
-      //   int64_t i;
-      //   auto knots = Base::knots_[0].template accessor<real_t,1>();
-      //   for (i=Base::degrees_[0]; i<Base::nknots_[0]-Base::degrees_[0]-1; ++i)
-      //     if (knots[i+1] > xi[0].item<real_t>())
-      //       break;
-      return Base::eval_indices(xi);
+      assert(Base::parDim_ == 2);
+      auto nnz0 = Base::knots_[0].repeat({xi[0].numel(), 1}) > xi[0].view({-1, 1});
+      auto nnz1 = Base::knots_[1].repeat({xi[1].numel(), 1}) > xi[1].view({-1, 1});
+      return TensorArray2({
+                           torch::remainder(std::get<1>(((nnz0.cumsum(1) == 1) & nnz0).max(1))-1,
+                                            Base::nknots_[0]-Base::degrees_[0]-1),
+                           torch::remainder(std::get<1>(((nnz1.cumsum(1) == 1) & nnz1).max(1))-1,
+                                            Base::nknots_[1]-Base::degrees_[1]-1)
+                          });
     }
 
     /// @brief Returns the indices of knot spans containing `xi`    
     inline auto eval_indices(const TensorArray3& xi) const
     {
-      // 1D
-      // else if constexpr (Base::parDim_ == 1) {
-      //   int64_t i;
-      //   auto knots = Base::knots_[0].template accessor<real_t,1>();
-      //   for (i=Base::degrees_[0]; i<Base::nknots_[0]-Base::degrees_[0]-1; ++i)
-      //     if (knots[i+1] > xi[0].item<real_t>())
-      //       break;
-      return Base::eval_indices(xi);
+      assert(Base::parDim_ == 3);
+      auto nnz0 = Base::knots_[0].repeat({xi[0].numel(), 1}) > xi[0].view({-1, 1});
+      auto nnz1 = Base::knots_[1].repeat({xi[1].numel(), 1}) > xi[1].view({-1, 1});
+      auto nnz2 = Base::knots_[2].repeat({xi[2].numel(), 1}) > xi[2].view({-1, 1});
+      return TensorArray3({
+                           torch::remainder(std::get<1>(((nnz0.cumsum(1) == 1) & nnz0).max(1))-1,
+                                            Base::nknots_[0]-Base::degrees_[0]-1),
+                           torch::remainder(std::get<1>(((nnz1.cumsum(1) == 1) & nnz1).max(1))-1,
+                                            Base::nknots_[1]-Base::degrees_[1]-1),
+                           torch::remainder(std::get<1>(((nnz2.cumsum(1) == 1) & nnz2).max(1))-1,
+                                            Base::nknots_[2]-Base::degrees_[2]-1)
+                          });
     }
 
     /// @brief Returns the indices of knot spans containing `xi`    
     inline auto eval_indices(const TensorArray4& xi) const
     {
-      // 1D
-      // else if constexpr (Base::parDim_ == 1) {
-      //   int64_t i;
-      //   auto knots = Base::knots_[0].template accessor<real_t,1>();
-      //   for (i=Base::degrees_[0]; i<Base::nknots_[0]-Base::degrees_[0]-1; ++i)
-      //     if (knots[i+1] > xi[0].item<real_t>())
-      //       break;
-      return Base::eval_indices(xi);
+      assert(Base::parDim_ == 4);
+      auto nnz0 = Base::knots_[0].repeat({xi[0].numel(), 1}) > xi[0].view({-1, 1});
+      auto nnz1 = Base::knots_[1].repeat({xi[1].numel(), 1}) > xi[1].view({-1, 1});
+      auto nnz2 = Base::knots_[2].repeat({xi[2].numel(), 1}) > xi[2].view({-1, 1});
+      auto nnz3 = Base::knots_[3].repeat({xi[3].numel(), 1}) > xi[3].view({-1, 1});
+      return TensorArray3({
+                           torch::remainder(std::get<1>(((nnz0.cumsum(1) == 1) & nnz0).max(1))-1,
+                                            Base::nknots_[0]-Base::degrees_[0]-1),
+                           torch::remainder(std::get<1>(((nnz1.cumsum(1) == 1) & nnz1).max(1))-1,
+                                            Base::nknots_[1]-Base::degrees_[1]-1),
+                           torch::remainder(std::get<1>(((nnz2.cumsum(1) == 1) & nnz2).max(1))-1,
+                                            Base::nknots_[2]-Base::degrees_[2]-1),
+                           torch::remainder(std::get<1>(((nnz3.cumsum(1) == 1) & nnz3).max(1))-1,
+                                            Base::nknots_[3]-Base::degrees_[3]-1)
+                          });
     }    
   };
 
@@ -1566,11 +1552,11 @@ namespace iganet {
           matplot::vector_1d X(BSplineCore::ncoeffs(0), 0.0);
           matplot::vector_1d Y(BSplineCore::ncoeffs(0), 0.0);
 
-          auto xaccessor = BSplineCore::template coeffs<true>(0).template accessor<real_t,1>();
+          auto xAccessor = BSplineCore::coeffs(0).template accessor<real_t,1>();
 
 #pragma omp parallel for simd
           for (int64_t i=0; i<BSplineCore::ncoeffs(0); ++i) {
-            X[i] = xaccessor[i];
+            X[i] = xAccessor[i];
           }
 
           matplot::plot(Xfine, Yfine, "b-")->line_width(2);
@@ -1631,13 +1617,13 @@ namespace iganet {
           matplot::vector_1d X(BSplineCore::ncoeffs(0), 0.0);
           matplot::vector_1d Y(BSplineCore::ncoeffs(0), 0.0);
 
-          auto xaccessor = BSplineCore::template coeffs<true>(0).template accessor<real_t,1>();
-          auto yaccessor = BSplineCore::template coeffs<true>(1).template accessor<real_t,1>();
+          auto xAccessor = BSplineCore::coeffs(0).template accessor<real_t,1>();
+          auto yAccessor = BSplineCore::coeffs(1).template accessor<real_t,1>();
 
 #pragma omp parallel for simd
           for (int64_t i=0; i<BSplineCore::ncoeffs(0); ++i) {
-            X[i] = xaccessor[i];
-            Y[i] = yaccessor[i];
+            X[i] = xAccessor[i];
+            Y[i] = yAccessor[i];
           }
 
           matplot::plot(Xfine, Yfine, "b-")->line_width(2);
@@ -1705,15 +1691,15 @@ namespace iganet {
           matplot::vector_1d Y(BSplineCore::ncoeffs(0), 0.0);
           matplot::vector_1d Z(BSplineCore::ncoeffs(0), 0.0);
 
-          auto xaccessor = BSplineCore::template coeffs<true>(0).template accessor<real_t,1>();
-          auto yaccessor = BSplineCore::template coeffs<true>(1).template accessor<real_t,1>();
-          auto zaccessor = BSplineCore::template coeffs<true>(2).template accessor<real_t,1>();
+          auto xAccessor = BSplineCore::coeffs(0).template accessor<real_t,1>();
+          auto yAccessor = BSplineCore::coeffs(1).template accessor<real_t,1>();
+          auto zAccessor = BSplineCore::coeffs(2).template accessor<real_t,1>();
 
 #pragma omp parallel for simd
           for (int64_t i=0; i<BSplineCore::ncoeffs(0); ++i) {
-            X[i] = xaccessor[i];
-            Y[i] = yaccessor[i];
-            Z[i] = zaccessor[i];
+            X[i] = xAccessor[i];
+            Y[i] = yAccessor[i];
+            Z[i] = zAccessor[i];
           }
 
           matplot::plot3(Xfine, Yfine, Zfine, "b-")->line_width(2);
@@ -1775,14 +1761,14 @@ namespace iganet {
           matplot::vector_2d Y(BSplineCore::ncoeffs(1), matplot::vector_1d(BSplineCore::ncoeffs(0), 0.0));
           matplot::vector_2d Z(BSplineCore::ncoeffs(1), matplot::vector_1d(BSplineCore::ncoeffs(0), 0.0));
 
-          auto x = BSplineCore::template coeffs<false>(0);
-          auto y = BSplineCore::template coeffs<false>(1);
+          auto xAccessor = BSplineCore::coeffs(0).template accessor<real_t,1>();
+          auto yAccessor = BSplineCore::coeffs(1).template accessor<real_t,1>();
 
 #pragma omp parallel for simd collapse(2)
           for (int64_t i=0; i<BSplineCore::ncoeffs(0); ++i)
             for (int64_t j=0; j<BSplineCore::ncoeffs(1); ++j) {
-              X[j][i] = x[i][j].template item<real_t>();
-              Y[j][i] = y[i][j].template item<real_t>();
+              X[j][i] = xAccessor[j*BSplineCore::ncoeffs(0) + i];
+              Y[j][i] = yAccessor[j*BSplineCore::ncoeffs(0) + i];
             }
 
           matplot::colormap(matplot::palette::winter());
@@ -1809,14 +1795,11 @@ namespace iganet {
         matplot::vector_2d Zfine(res1, matplot::vector_1d(res0, 0.0));
 
         std::array<torch::Tensor,2> meshgrid = convert<2>(torch::meshgrid({torch::linspace(0, 1, res0),
-              torch::linspace(0, 1, res1)}, "xy"));
+                                                                           torch::linspace(0, 1, res1)}, "xy"));
         auto Coords = BSplineCore::eval(meshgrid);
         auto XAccessor = Coords[0].template accessor<real_t,2>();
         auto YAccessor = Coords[1].template accessor<real_t,2>();
-        auto ZAccessor = Coords[1].template accessor<real_t,2>();
-
-        auto xAccessor = meshgrid[0].template accessor<float,2>();
-        auto yAccessor = meshgrid[1].template accessor<float,2>();
+        auto ZAccessor = Coords[2].template accessor<real_t,2>();
         
 #pragma omp parallel for simd collapse(2)
         for (int64_t i=0; i<res0; ++i)
@@ -1848,16 +1831,16 @@ namespace iganet {
           matplot::vector_2d Y(BSplineCore::ncoeffs(1), matplot::vector_1d(BSplineCore::ncoeffs(0), 0.0));
           matplot::vector_2d Z(BSplineCore::ncoeffs(1), matplot::vector_1d(BSplineCore::ncoeffs(0), 0.0));
 
-          auto x = BSplineCore::template coeffs<false>(0);
-          auto y = BSplineCore::template coeffs<false>(1);
-          auto z = BSplineCore::template coeffs<false>(2);
+          auto xAccessor = BSplineCore::coeffs(0).template accessor<real_t,1>();
+          auto yAccessor = BSplineCore::coeffs(1).template accessor<real_t,1>();
+          auto zAccessor = BSplineCore::coeffs(2).template accessor<real_t,1>();
 
 #pragma omp parallel for simd collapse(2)
           for (int64_t i=0; i<BSplineCore::ncoeffs(0); ++i)
             for (int64_t j=0; j<BSplineCore::ncoeffs(1); ++j) {
-              X[j][i] = x[i][j].template item<real_t>();
-              Y[j][i] = y[i][j].template item<real_t>();
-              Z[j][i] = z[i][j].template item<real_t>();
+              X[j][i] = xAccessor[j*BSplineCore::ncoeffs(0) + i];
+              Y[j][i] = yAccessor[j*BSplineCore::ncoeffs(0) + i];
+              Z[j][i] = zAccessor[j*BSplineCore::ncoeffs(0) + i];
             }
 
           matplot::colormap(matplot::palette::winter());
@@ -1917,7 +1900,7 @@ namespace iganet {
         else
           os << "{}";
         os << "\ncoeffs = "
-           << BSplineCore::template coeffs<false>();
+           << BSplineCore::coeffs();
       }
       
       os << "\n)";
