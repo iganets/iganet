@@ -17,6 +17,7 @@
 #include <functional>
 
 #include <core.hpp>
+#include <matrix.hpp>
 #include <utils.hpp>
 
 #pragma once
