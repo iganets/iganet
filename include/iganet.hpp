@@ -1099,15 +1099,8 @@ namespace iganet {
       // Get Greville points
       auto sample_points = sol_.greville();
 
-      // Create memory
-      auto rhs = torch::empty_like(sample_points[0].view({1,-1}));
-      auto out = torch::empty_like(sample_points[0].view({1,-1}));
-      
       // Evaluate right-hand side
-      for (int64_t i=0; i<rhs.size(1); ++i)
-        rhs.index_put_({0, i}, rhs_.eval( sample_points[0].index({i}).flatten() ) );
-
-      std::cout << rhs << std::endl;
+      auto rhs = rhs_.eval( sample_points );
       
       // Construct full sample set
       auto samples = torch::cat(
@@ -1128,23 +1121,18 @@ namespace iganet {
           // Execute the model on the input data
           auto pred = net_->forward(samples);
 
-          std::cout << out.size(1) << std::endl;
-          
           // Evaluate solution
-          for (int64_t i=0; i<out.size(1); ++i)
-            out.index_put_({0, i}, pred.index({0, i}));
-          //            out.index_put_({0, i}, pred.index({i})); //out_.eval( sample_points[0].index({i}).flatten() ) );
+          auto out = out_.eval( sample_points );
+
+          std::cout << pred << std::endl;
+          std::cout << out << std::endl;
           
           // Compute the loss value
-          auto loss_pde = torch::mse_loss( out , rhs );
-
-          std::cout << "sol = \n" << out << std::endl;
-          std::cout << "rhs = \n" << rhs << std::endl;
-          
+          auto loss_pde = torch::mse_loss( pred , rhs );
           std::cout << "loss = " << loss_pde.template item<real_t>() << std::endl;
 
           // Compute gradients of the loss w.r.t. the model parameters
-          loss_pde.backward({}, true, true);
+          loss_pde.backward({}, true, false);
 
           // Update the parameters based on the calculated gradients
           opt_.step();
