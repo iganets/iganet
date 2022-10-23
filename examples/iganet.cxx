@@ -19,6 +19,8 @@ int main()
 {
   using real_t      = float;
   using optimizer_t = torch::optim::Adam;
+
+  torch::autograd::AnomalyMode::set_enabled(true);
   
   iganet::init();
   iganet::verbose(std::cout);
@@ -37,11 +39,8 @@ int main()
     // Set rhs to x
     net.rhs().transform( [](const std::array<real_t,1> X){ return std::array<real_t,1>{ static_cast<real_t>( X[0] ) }; } );
 
-    // Evaluate rhs
-    std::cout << net.rhs().eval( iganet::to_tensor({0.0, 0.2, 0.5, 1.0}) ) << std::endl;    
-
     // Set left boundary value to 0
-    net.bdr().coeffs()[0].accessor<real_t ,1>()[0] = 0;
+    net.bdr().coeffs()[0].accessor<real_t,1>()[0] = 0;
     net.bdr().coeffs()[1].accessor<real_t,1>()[0] = 1;
 
     net.options().max_epoch(1000);
@@ -66,7 +65,7 @@ int main()
     std::cout << "Saved IgaNet1\n";
     std::cout << net << std::endl;
     net.sol().transform( [](const std::array<real_t,1> X){ return std::array<real_t,1>{ static_cast<real_t>( X[0]*sin(M_PI*X[0]) ) }; } );
-    std::cout << net.sol().eval( iganet::to_tensor({0.0, 0.2, 0.5, 1.0}) ) << std::endl;    
+    std::cout << net.sol().eval( iganet::to_tensor<real_t>({0.0, 0.2, 0.5, 1.0}) ) << std::endl;    
 
     net.save("iganet1.pt");
 
@@ -94,8 +93,8 @@ int main()
     std::cout << "Saved IgaNet2\n";
     std::cout << net << std::endl;
     net.sol().transform( [](const std::array<real_t,2> X){ return std::array<real_t,1>{ static_cast<real_t>( sin(M_PI*X[0])*sin(M_PI*X[1]) ) }; } );
-    std::cout << net.sol().eval( iganet::to_tensorArray({0.0, 0.2, 0.5, 1.0},
-                                                        {0.0, 0.2, 0.5, 1.0}) ) << std::endl;    
+    std::cout << net.sol().eval( iganet::to_tensorArray<real_t>({0.0, 0.2, 0.5, 1.0},
+                                                                {0.0, 0.2, 0.5, 1.0}) ) << std::endl;    
 
     net.save("iganet2.pt");
   }
@@ -113,9 +112,9 @@ int main()
     std::cout << "Saved IgaNet3\n";
     std::cout << net << std::endl;
     net.sol().transform( [](const std::array<real_t,3> X){ return std::array<real_t,1>{ static_cast<real_t>( sin(M_PI*X[0])*sin(M_PI*X[1])*sin(M_PI*X[2]) ) }; } );
-    std::cout << net.sol().eval( iganet::to_tensorArray({0.0, 0.2, 0.5, 1.0},
-                                                        {0.0, 0.2, 0.5, 1.0},
-                                                        {0.0, 0.2, 0.5, 1.0}) ) << std::endl;
+    std::cout << net.sol().eval( iganet::to_tensorArray<real_t>({0.0, 0.2, 0.5, 1.0},
+                                                                {0.0, 0.2, 0.5, 1.0},
+                                                                {0.0, 0.2, 0.5, 1.0}) ) << std::endl;
     
     net.save("iganet3.pt");
   }
@@ -133,11 +132,11 @@ int main()
     std::cout << "Saved IgaNet4\n";
     std::cout << net << std::endl;
     net.sol().transform( [](const std::array<real_t,4> X){ return std::array<real_t,1>{ static_cast<real_t>( sin(M_PI*X[0])*sin(M_PI*X[1])*sin(M_PI*X[2])*sin(M_PI*X[3]) ) }; } );
-    std::cout << net.sol().eval( iganet::to_tensorArray({0.0, 0.2, 0.5, 1.0},
-                                                        {0.0, 0.2, 0.5, 1.0},
-                                                        {0.0, 0.2, 0.5, 1.0},
-                                                        {0.0, 0.2, 0.5, 1.0}) ) << std::endl;
-
+    std::cout << net.sol().eval( iganet::to_tensorArray<real_t>({0.0, 0.2, 0.5, 1.0},
+                                                                {0.0, 0.2, 0.5, 1.0},
+                                                                {0.0, 0.2, 0.5, 1.0},
+                                                                {0.0, 0.2, 0.5, 1.0}) ) << std::endl;
+    
     net.save("iganet4.pt");
   }
 
