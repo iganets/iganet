@@ -52,13 +52,13 @@ namespace iganet {
     template<typename T>
     BoundaryCore(const std::array<T, 1>& ncoeffs,
                    BSplineInit init = BSplineInit::zeros)
-      : core<real_t>()// ,
-          // bdr_(
-          //      {
-          //        bspline_t<real_t, GeoDim>({}, init),
-          //        bspline_t<real_t, GeoDim>({}, init),
-          //      }               
-          //      )
+      : core<real_t>() ,
+        bdr_(
+             {
+               bspline_t<real_t, GeoDim>({}, init),
+               bspline_t<real_t, GeoDim>({}, init),
+             }               
+             )
     {}
     
     /// Returns the number of sides
