@@ -729,7 +729,7 @@ namespace iganet {
       assert(parDim_ == 2 &&
              xi[0].sizes() == idx[0].sizes() &&
              xi[1].sizes() == idx[1].sizes() &&
-             xi[0].sizes() ==  ix[1].sizes());
+             xi[0].sizes() ==  xi[1].sizes());
       return
         eval_prefactor<degrees_[0],  (short_t)deriv    %10>() *
         eval_prefactor<degrees_[1], ((short_t)deriv/10)%10>() *
@@ -747,8 +747,8 @@ namespace iganet {
              xi[0].sizes() == idx[0].sizes() &&
              xi[1].sizes() == idx[1].sizes() &&
              xi[2].sizes() == idx[2].sizes() &&
-             xi[0].sizes() ==  ix[1].sizes() &&
-             xi[1].sizes() ==  ix[2].sizes());
+             xi[0].sizes() ==  xi[1].sizes() &&
+             xi[1].sizes() ==  xi[2].sizes());
       return
         eval_prefactor<degrees_[0],  (short_t)deriv     %10>() *
         eval_prefactor<degrees_[1], ((short_t)deriv/ 10)%10>() *
@@ -771,9 +771,9 @@ namespace iganet {
              xi[1].sizes() == idx[1].sizes() &&
              xi[2].sizes() == idx[2].sizes() &&
              xi[3].sizes() == idx[3].sizes() &&
-             xi[0].sizes() ==  ix[1].sizes() &&
-             xi[1].sizes() ==  ix[2].sizes() &&
-             xi[2].sizes() ==  ix[3].sizes());
+             xi[0].sizes() ==  xi[1].sizes() &&
+             xi[1].sizes() ==  xi[2].sizes() &&
+             xi[2].sizes() ==  xi[3].sizes());
       return
         eval_prefactor<degrees_[0],  (short_t)deriv      %10>() *
         eval_prefactor<degrees_[1], ((short_t)deriv/  10)%10>() *
