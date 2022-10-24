@@ -17,7 +17,7 @@
 #include <functional>
 
 #include <core.hpp>
-#include <matrix.hpp>
+#include <blocktensor.hpp>
 #include <utils.hpp>
 
 #pragma once
@@ -434,7 +434,7 @@ namespace iganet {
       if constexpr (parDim_ == 0)
         return coeffs_[0];
       else
-        return eval<deriv>(xi, eval_indices(xi));
+        return eval<deriv>(xi, eval_knot_indices(xi));
     }
     /// @}
 
@@ -495,7 +495,7 @@ namespace iganet {
           eval_prefactor<degrees_[0],  (short_t)deriv    %10>() *
           eval_prefactor<degrees_[1], ((short_t)deriv/10)%10>() *
           kronproduct(eval_univariate<degrees_[1], 1, ((short_t)deriv/10)%10>( xi[1].flatten(),
-                                                                                idx[1].flatten()),
+                                                                               idx[1].flatten()),
                       eval_univariate<degrees_[0], 0,  (short_t)deriv    %10>( xi[0].flatten(),
                                                                                idx[0].flatten()),
                       0);
@@ -702,8 +702,9 @@ namespace iganet {
     /// \f]
     ///
     /// The indices are returned as `std::array<torch::Tensor,
-    /// parDim_>` in the same order as provided in `xi`    
-    inline auto eval_indices(const TensorArray1& xi) const
+    /// parDim_>` in the same order as provided in `xi`
+    /// @{
+    inline auto eval_knot_indices(const TensorArray1& xi) const
     {
       assert(parDim_ == 1);
       return TensorArray1({
@@ -712,7 +713,7 @@ namespace iganet {
         });
     }
       
-    inline auto eval_indices(const TensorArray2& xi) const
+    inline auto eval_knot_indices(const TensorArray2& xi) const
     {
       assert(parDim_ == 2);
       return TensorArray2({
@@ -723,7 +724,7 @@ namespace iganet {
         });
     }
 
-    inline auto eval_indices(const TensorArray3& xi) const
+    inline auto eval_knot_indices(const TensorArray3& xi) const
     {
       assert(parDim_ == 3);
       return TensorArray3({
@@ -736,7 +737,7 @@ namespace iganet {
         });
     }
 
-    inline auto eval_indices(const TensorArray4& xi) const
+    inline auto eval_knot_indices(const TensorArray4& xi) const
     {
       assert(parDim_ == 4);
       return TensorArray4({
@@ -749,8 +750,45 @@ namespace iganet {
           torch::min(torch::full_like(xi[3], ncoeffs_[3]-1, core<real_t>::options_),
                      torch::floor(xi[3] * (ncoeffs_[3] - degrees_[3]) + degrees_[3])).to(torch::kInt64)
         });
-    }     
+    }
+    /// @}
 
+    /// @brief Returns the indices of the coefficients corresponding to the knot indices `idx`
+    /// @{
+    inline auto eval_coeff_indices(const TensorArray1& idx) const
+    {
+      assert(parDim_ == 1);
+      return VSlice(idx[0].flatten(), -degrees_[0], 1);
+    }
+
+    inline auto eval_coeff_indices(const TensorArray2& idx) const
+    {
+      assert(parDim_ == 2);
+      return VSlice(TensorArray2({idx[0].flatten(), idx[1].flatten()}),
+                    std::array<int64_t, 2>{-degrees_[0], -degrees_[1]},
+                    std::array<int64_t, 2>{1, 1},
+                    ncoeffs(0));
+    }
+
+    inline auto eval_coeff_indices(const TensorArray3& idx) const
+    {
+      assert(parDim_ == 3);
+      return VSlice(TensorArray3({idx[0].flatten(), idx[1].flatten(), idx[2].flatten()}),
+                    std::array<int64_t, 3>{-degrees_[0], -degrees_[1], -degrees_[2]},
+                    std::array<int64_t, 3>{1, 1, 1},
+                    std::array<int64_t, 2>{ncoeffs(0), ncoeffs(1)});
+    }
+
+    inline auto eval_coeff_indices(const TensorArray4& idx) const
+    {
+      assert(parDim_ == 4);
+      return VSlice(TensorArray4({idx[0].flatten(), idx[1].flatten(), idx[2].flatten(), idx[3].flatten()}),
+                    std::array<int64_t, 4>{-degrees_[0], -degrees_[1], -degrees_[2], -degrees_[3]},
+                    std::array<int64_t, 4>{1, 1, 1, 1},
+                    std::array<int64_t, 3>{ncoeffs(0), ncoeffs(1), ncoeffs(2)});
+    }
+    /// @}
+    
     /// @brief Transforms the coefficients based on the given mapping
     inline UniformBSplineCore& 
     transform(const std::function<std::array<real_t, geoDim_>(const std::array<real_t, parDim_>& )> transformation)
@@ -1412,11 +1450,23 @@ namespace iganet {
       if constexpr (Base::parDim_ == 0)
         return Base::coeffs_[0];
       else
-        return Base::template eval<deriv>(xi, eval_indices(xi));
+        return Base::template eval<deriv>(xi, eval_knot_indices(xi));
     }
     
-    /// @brief Returns the indices of knot spans containing `xi`    
-    inline auto eval_indices(const TensorArray1& xi) const
+    /// @brief Returns the indices of knot spans containing `xi`
+    ///
+    /// This function returns the indices
+    /// \f$(i_d)_{d=1}^{d_\text{par}}\f$ of the knot spans such that
+    ///
+    /// \f[
+    ///   \boldsymbol{\xi} \in [t_{i_1}, t_{i_1+1}) \times [t_{i_2}, t_{i_2+1})
+    ///   \times \dots \times [t_{i_{d_\text{par}}}, t_{i_{d_\text{par}}+1}).
+    /// \f]
+    ///
+    /// The indices are returned as `std::array<torch::Tensor,
+    /// parDim_>` in the same order as provided in `xi`
+    /// @{
+    inline auto eval_knot_indices(const TensorArray1& xi) const
     {
       assert(Base::parDim_ == 1);
       
@@ -1428,7 +1478,7 @@ namespace iganet {
     }
 
     /// @brief Returns the indices of knot spans containing `xi`    
-    inline auto eval_indices(const TensorArray2& xi) const
+    inline auto eval_knot_indices(const TensorArray2& xi) const
     {
       assert(Base::parDim_ == 2);
       
@@ -1443,7 +1493,7 @@ namespace iganet {
     }
 
     /// @brief Returns the indices of knot spans containing `xi`    
-    inline auto eval_indices(const TensorArray3& xi) const
+    inline auto eval_knot_indices(const TensorArray3& xi) const
     {
       assert(Base::parDim_ == 3);
       
@@ -1461,7 +1511,7 @@ namespace iganet {
     }
 
     /// @brief Returns the indices of knot spans containing `xi`    
-    inline auto eval_indices(const TensorArray4& xi) const
+    inline auto eval_knot_indices(const TensorArray4& xi) const
     {
       assert(Base::parDim_ == 4);
       
@@ -1479,7 +1529,9 @@ namespace iganet {
                            torch::remainder(std::get<1>(((nnz3.cumsum(1) == 1) & nnz3).max(1))-1,
                                             Base::nknots_[3]-Base::degrees_[3]-1).view(xi[3].sizes())
                           });
-    }    
+    }
+    /// @}
+  
   };
 
   /// B-spline (common high-level functionality)
