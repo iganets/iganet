@@ -21,6 +21,7 @@
 #include <gtest/gtest.h>
 
 #define SPLINELIB
+static constexpr bool precompute = true;
 
 TEST(Performance, MatmulTensorLayout_double)
 {
@@ -76,7 +77,9 @@ TEST(Performance, MatmulTensorLayout_double)
 namespace unittest {
 
   template<typename real_t, short_t GeoDim,
-           short_t Degree0, iganet::BSplineDeriv deriv>
+           short_t Degree0,
+           iganet::BSplineDeriv deriv,
+           bool precompute = false>
   auto test_UniformBSpline(int64_t ncoeffs, int64_t nsamples)
   {
     iganet::core<real_t> core_;
@@ -84,8 +87,17 @@ namespace unittest {
     iganet::TensorArray1 xi = {torch::rand(nsamples, core_.options())};
     
     auto t1 = std::chrono::high_resolution_clock::now();
-    for (int i=0; i<10; i++)
-      bspline.template eval<deriv>(xi);
+    if constexpr (precompute)
+    {
+      auto knot_idx  = bspline.eval_knot_indices(xi);
+      auto basfunc   = bspline.template eval_basfunc<deriv>(xi, knot_idx);
+      auto coeff_idx = bspline.eval_coeff_indices(knot_idx);
+      for (int i=0; i<10; i++)
+        auto bspline_val = bspline.eval_from_precomputed(basfunc, coeff_idx, xi[0].numel(), xi[0].sizes());
+    }
+    else
+      for (int i=0; i<10; i++)
+        bspline.template eval<deriv>(xi);
     auto t2 = std::chrono::high_resolution_clock::now();
     std::cout << std::right << std::setw(10)
               << std::chrono::duration_cast<std::chrono::nanoseconds>(t2-t1).count() / float(nsamples*10)
@@ -125,7 +137,8 @@ namespace unittest {
 
   template<typename real_t, short_t GeoDim,
            short_t Degree0, short_t Degree1,
-           iganet::BSplineDeriv deriv>
+           iganet::BSplineDeriv deriv,
+           bool precompute = false>
   auto test_UniformBSpline(int64_t ncoeffs, int64_t nsamples)
   {
     iganet::core<real_t> core_;
@@ -135,8 +148,17 @@ namespace unittest {
                                torch::rand(nsamples, core_.options())};
     
     auto t1 = std::chrono::high_resolution_clock::now();
-    for (int i=0; i<10; i++)
-      bspline.template eval<deriv>(xi);
+    if constexpr (precompute)
+    {
+      auto knot_idx  = bspline.eval_knot_indices(xi);
+      auto basfunc   = bspline.template eval_basfunc<deriv>(xi, knot_idx);
+      auto coeff_idx = bspline.eval_coeff_indices(knot_idx);
+      for (int i=0; i<10; i++)
+        auto bspline_val = bspline.eval_from_precomputed(basfunc, coeff_idx, xi[0].numel(), xi[0].sizes());
+    }
+    else
+      for (int i=0; i<10; i++)
+        bspline.template eval<deriv>(xi);
     auto t2 = std::chrono::high_resolution_clock::now();
     std::cout << std::right << std::setw(10)
               << std::chrono::duration_cast<std::chrono::nanoseconds>(t2-t1).count() / float(nsamples*10)
@@ -178,7 +200,8 @@ namespace unittest {
 
   template<typename real_t, short_t GeoDim,
            short_t Degree0, short_t Degree1, short_t Degree2,
-           iganet::BSplineDeriv deriv>
+           iganet::BSplineDeriv deriv,
+           bool precompute = false>
   auto test_UniformBSpline(int64_t ncoeffs, int64_t nsamples)
   {
     iganet::core<real_t> core_;
@@ -190,8 +213,17 @@ namespace unittest {
                                torch::rand(nsamples, core_.options())};
     
     auto t1 = std::chrono::high_resolution_clock::now();
-    for (int i=0; i<10; i++)
-      bspline.template eval<deriv>(xi);
+    if constexpr (precompute)
+    {
+      auto knot_idx  = bspline.eval_knot_indices(xi);
+      auto basfunc   = bspline.template eval_basfunc<deriv>(xi, knot_idx);
+      auto coeff_idx = bspline.eval_coeff_indices(knot_idx);
+      for (int i=0; i<10; i++)
+        auto bspline_val = bspline.eval_from_precomputed(basfunc, coeff_idx, xi[0].numel(), xi[0].sizes());
+    }
+    else
+      for (int i=0; i<10; i++)
+        bspline.template eval<deriv>(xi);
     auto t2 = std::chrono::high_resolution_clock::now();
     std::cout << std::right << std::setw(10)
               << std::chrono::duration_cast<std::chrono::nanoseconds>(t2-t1).count() / float(nsamples*10)
@@ -235,7 +267,8 @@ namespace unittest {
 
   template<typename real_t, short_t GeoDim,
            short_t Degree0, short_t Degree1, short_t Degree2, short_t Degree3,
-           iganet::BSplineDeriv deriv>
+           iganet::BSplineDeriv deriv,
+           bool precompute = false>
   auto test_UniformBSpline(int64_t ncoeffs, int64_t nsamples)
   {
     iganet::core<real_t> core_;
@@ -249,8 +282,17 @@ namespace unittest {
                                torch::rand(nsamples, core_.options())};
     
     auto t1 = std::chrono::high_resolution_clock::now();
-    for (int i=0; i<10; i++)
-      bspline.template eval<deriv>(xi);
+    if constexpr (precompute)
+    {
+      auto knot_idx  = bspline.eval_knot_indices(xi);
+      auto basfunc   = bspline.template eval_basfunc<deriv>(xi, knot_idx);
+      auto coeff_idx = bspline.eval_coeff_indices(knot_idx);
+      for (int i=0; i<10; i++)
+        auto bspline_val = bspline.eval_from_precomputed(basfunc, coeff_idx, xi[0].numel(), xi[0].sizes());
+    }
+    else
+      for (int i=0; i<10; i++)
+        bspline.template eval<deriv>(xi);
     auto t2 = std::chrono::high_resolution_clock::now();
     std::cout << std::right << std::setw(10)
               << std::chrono::duration_cast<std::chrono::nanoseconds>(t2-t1).count() / float(nsamples*10)
@@ -296,26 +338,6 @@ namespace unittest {
   
 } // namespace unittest
 
-TEST(Performance, UniformBSpline_parDim1_float)
-{
-  std::cout << std::scientific << std::setprecision(3);  
-  for (int64_t ncoeffs : {10, 100}) {
-    for (int64_t nsamples : {1, 10, 100, 1000, 10000, 25000, 50000, 100000, 250000, 500000, 1000000}) {
-
-      std::cout << "("
-                << std::right << std::setw(8) << ncoeffs << ","
-                << std::right << std::setw(8) << nsamples << ") ";
-      
-      unittest::template test_UniformBSpline<float, 1, 1, iganet::BSplineDeriv::func>(ncoeffs, nsamples);
-      unittest::template test_UniformBSpline<float, 1, 2, iganet::BSplineDeriv::func>(ncoeffs, nsamples);
-      unittest::template test_UniformBSpline<float, 1, 3, iganet::BSplineDeriv::func>(ncoeffs, nsamples);
-      unittest::template test_UniformBSpline<float, 1, 4, iganet::BSplineDeriv::func>(ncoeffs, nsamples);
-      unittest::template test_UniformBSpline<float, 1, 5, iganet::BSplineDeriv::func>(ncoeffs, nsamples);
-      std::cout << std::endl;
-    }
-  }
-}
-
 TEST(Performance, UniformBSpline_parDim1_double)
 {
   std::cout << std::scientific << std::setprecision(3);  
@@ -326,31 +348,11 @@ TEST(Performance, UniformBSpline_parDim1_double)
                 << std::right << std::setw(8) << ncoeffs << ","
                 << std::right << std::setw(8) << nsamples << ") ";
       
-      unittest::template test_UniformBSpline<double, 1, 1, iganet::BSplineDeriv::func>(ncoeffs, nsamples);
-      unittest::template test_UniformBSpline<double, 1, 2, iganet::BSplineDeriv::func>(ncoeffs, nsamples);
-      unittest::template test_UniformBSpline<double, 1, 3, iganet::BSplineDeriv::func>(ncoeffs, nsamples);
-      unittest::template test_UniformBSpline<double, 1, 4, iganet::BSplineDeriv::func>(ncoeffs, nsamples);
-      unittest::template test_UniformBSpline<double, 1, 5, iganet::BSplineDeriv::func>(ncoeffs, nsamples);
-      std::cout << std::endl;
-    }
-  }
-}
-
-TEST(Performance, UniformBSpline_parDim2_float)
-{
-  std::cout << std::scientific << std::setprecision(3);  
-  for (int64_t ncoeffs : {10, 100}) {
-    for (int64_t nsamples : {1, 10, 100, 1000, 10000, 25000, 50000, 100000, 250000, 500000, 1000000}) {
-      
-      std::cout << "("
-                << std::right << std::setw(8) << ncoeffs << ","
-                << std::right << std::setw(8) << nsamples << ") ";
-      
-      unittest::template test_UniformBSpline<float, 1, 1, 1, iganet::BSplineDeriv::func>(ncoeffs, nsamples);
-      unittest::template test_UniformBSpline<float, 1, 2, 2, iganet::BSplineDeriv::func>(ncoeffs, nsamples);
-      unittest::template test_UniformBSpline<float, 1, 3, 3, iganet::BSplineDeriv::func>(ncoeffs, nsamples);
-      unittest::template test_UniformBSpline<float, 1, 4, 4, iganet::BSplineDeriv::func>(ncoeffs, nsamples);
-      unittest::template test_UniformBSpline<float, 1, 5, 5, iganet::BSplineDeriv::func>(ncoeffs, nsamples);
+      unittest::template test_UniformBSpline<double, 1, 1, iganet::BSplineDeriv::func, precompute>(ncoeffs, nsamples);
+      unittest::template test_UniformBSpline<double, 1, 2, iganet::BSplineDeriv::func, precompute>(ncoeffs, nsamples);
+      unittest::template test_UniformBSpline<double, 1, 3, iganet::BSplineDeriv::func, precompute>(ncoeffs, nsamples);
+      unittest::template test_UniformBSpline<double, 1, 4, iganet::BSplineDeriv::func, precompute>(ncoeffs, nsamples);
+      unittest::template test_UniformBSpline<double, 1, 5, iganet::BSplineDeriv::func, precompute>(ncoeffs, nsamples);
       std::cout << std::endl;
     }
   }
@@ -366,31 +368,11 @@ TEST(Performance, UniformBSpline_parDim2_double)
                 << std::right << std::setw(8) << ncoeffs << ","
                 << std::right << std::setw(8) << nsamples << ") ";
       
-      unittest::template test_UniformBSpline<double, 1, 1, 1, iganet::BSplineDeriv::func>(ncoeffs, nsamples);
-      unittest::template test_UniformBSpline<double, 1, 2, 2, iganet::BSplineDeriv::func>(ncoeffs, nsamples);
-      unittest::template test_UniformBSpline<double, 1, 3, 3, iganet::BSplineDeriv::func>(ncoeffs, nsamples);
-      unittest::template test_UniformBSpline<double, 1, 4, 4, iganet::BSplineDeriv::func>(ncoeffs, nsamples);
-      unittest::template test_UniformBSpline<double, 1, 5, 5, iganet::BSplineDeriv::func>(ncoeffs, nsamples);
-      std::cout << std::endl;
-    }
-  }
-}
-
-TEST(Performance, UniformBSpline_parDim3_float)
-{
-  std::cout << std::scientific << std::setprecision(3);  
-  for (int64_t ncoeffs : {10, 100}) {
-    for (int64_t nsamples : {1, 10, 100, 1000, 10000, 25000, 50000, 100000, 250000, 500000, 1000000}) {
-      
-      std::cout << "("
-                << std::right << std::setw(8) << ncoeffs << ","
-                << std::right << std::setw(8) << nsamples << ") ";
-      
-      unittest::template test_UniformBSpline<float, 1, 1, 1, 1, iganet::BSplineDeriv::func>(ncoeffs, nsamples);
-      unittest::template test_UniformBSpline<float, 1, 2, 2, 2, iganet::BSplineDeriv::func>(ncoeffs, nsamples);
-      unittest::template test_UniformBSpline<float, 1, 3, 3, 3, iganet::BSplineDeriv::func>(ncoeffs, nsamples);
-      unittest::template test_UniformBSpline<float, 1, 4, 4, 4, iganet::BSplineDeriv::func>(ncoeffs, nsamples);
-      unittest::template test_UniformBSpline<float, 1, 5, 5, 5, iganet::BSplineDeriv::func>(ncoeffs, nsamples);
+      unittest::template test_UniformBSpline<double, 1, 1, 1, iganet::BSplineDeriv::func, precompute>(ncoeffs, nsamples);
+      unittest::template test_UniformBSpline<double, 1, 2, 2, iganet::BSplineDeriv::func, precompute>(ncoeffs, nsamples);
+      unittest::template test_UniformBSpline<double, 1, 3, 3, iganet::BSplineDeriv::func, precompute>(ncoeffs, nsamples);
+      unittest::template test_UniformBSpline<double, 1, 4, 4, iganet::BSplineDeriv::func, precompute>(ncoeffs, nsamples);
+      unittest::template test_UniformBSpline<double, 1, 5, 5, iganet::BSplineDeriv::func, precompute>(ncoeffs, nsamples);
       std::cout << std::endl;
     }
   }
@@ -406,34 +388,14 @@ TEST(Performance, UniformBSpline_parDim3_double)
                 << std::right << std::setw(8) << ncoeffs << ","
                 << std::right << std::setw(8) << nsamples << ") ";
       
-      unittest::template test_UniformBSpline<double, 1, 1, 1, 1, iganet::BSplineDeriv::func>(ncoeffs, nsamples);
-      unittest::template test_UniformBSpline<double, 1, 2, 2, 2, iganet::BSplineDeriv::func>(ncoeffs, nsamples);
-      unittest::template test_UniformBSpline<double, 1, 3, 3, 3, iganet::BSplineDeriv::func>(ncoeffs, nsamples);
-      unittest::template test_UniformBSpline<double, 1, 4, 4, 4, iganet::BSplineDeriv::func>(ncoeffs, nsamples);
-      unittest::template test_UniformBSpline<double, 1, 5, 5, 5, iganet::BSplineDeriv::func>(ncoeffs, nsamples);
+      unittest::template test_UniformBSpline<double, 1, 1, 1, 1, iganet::BSplineDeriv::func, precompute>(ncoeffs, nsamples);
+      unittest::template test_UniformBSpline<double, 1, 2, 2, 2, iganet::BSplineDeriv::func, precompute>(ncoeffs, nsamples);
+      unittest::template test_UniformBSpline<double, 1, 3, 3, 3, iganet::BSplineDeriv::func, precompute>(ncoeffs, nsamples);
+      unittest::template test_UniformBSpline<double, 1, 4, 4, 4, iganet::BSplineDeriv::func, precompute>(ncoeffs, nsamples);
+      unittest::template test_UniformBSpline<double, 1, 5, 5, 5, iganet::BSplineDeriv::func, precompute>(ncoeffs, nsamples);
       std::cout << std::endl;
     }
   }
-}
-
-TEST(Performance, UniformBSpline_parDim4_float)
-{
-  std::cout << std::scientific << std::setprecision(3);  
-  for (int64_t ncoeffs : {10, 100}) {
-    for (int64_t nsamples : {1, 10, 100, 1000, 10000, 25000, 50000, 100000, 250000, 500000, 1000000}) {
-      
-      std::cout << "("
-                << std::right << std::setw(8) << ncoeffs << ","
-                << std::right << std::setw(8) << nsamples << ") ";
-      
-      unittest::template test_UniformBSpline<float, 1, 1, 1, 1, 1, iganet::BSplineDeriv::func>(ncoeffs, nsamples);
-      unittest::template test_UniformBSpline<float, 1, 2, 2, 2, 2, iganet::BSplineDeriv::func>(ncoeffs, nsamples);
-      unittest::template test_UniformBSpline<float, 1, 3, 3, 3, 3, iganet::BSplineDeriv::func>(ncoeffs, nsamples);
-      unittest::template test_UniformBSpline<float, 1, 4, 4, 4, 4, iganet::BSplineDeriv::func>(ncoeffs, nsamples);
-      unittest::template test_UniformBSpline<float, 1, 5, 5, 5, 5, iganet::BSplineDeriv::func>(ncoeffs, nsamples);
-      std::cout << std::endl;
-    }
-  } 
 }
 
 TEST(Performance, UniformBSpline_parDim4_double)
@@ -446,11 +408,11 @@ TEST(Performance, UniformBSpline_parDim4_double)
                 << std::right << std::setw(8) << ncoeffs << ","
                 << std::right << std::setw(8) << nsamples << ") ";
       
-      unittest::template test_UniformBSpline<double, 1, 1, 1, 1, 1, iganet::BSplineDeriv::func>(ncoeffs, nsamples);
-      unittest::template test_UniformBSpline<double, 1, 2, 2, 2, 2, iganet::BSplineDeriv::func>(ncoeffs, nsamples);
-      unittest::template test_UniformBSpline<double, 1, 3, 3, 3, 3, iganet::BSplineDeriv::func>(ncoeffs, nsamples);
-      unittest::template test_UniformBSpline<double, 1, 4, 4, 4, 4, iganet::BSplineDeriv::func>(ncoeffs, nsamples);
-      unittest::template test_UniformBSpline<double, 1, 5, 5, 5, 5, iganet::BSplineDeriv::func>(ncoeffs, nsamples);
+      unittest::template test_UniformBSpline<double, 1, 1, 1, 1, 1, iganet::BSplineDeriv::func, precompute>(ncoeffs, nsamples);
+      unittest::template test_UniformBSpline<double, 1, 2, 2, 2, 2, iganet::BSplineDeriv::func, precompute>(ncoeffs, nsamples);
+      unittest::template test_UniformBSpline<double, 1, 3, 3, 3, 3, iganet::BSplineDeriv::func, precompute>(ncoeffs, nsamples);
+      unittest::template test_UniformBSpline<double, 1, 4, 4, 4, 4, iganet::BSplineDeriv::func, precompute>(ncoeffs, nsamples);
+      unittest::template test_UniformBSpline<double, 1, 5, 5, 5, 5, iganet::BSplineDeriv::func, precompute>(ncoeffs, nsamples);
       std::cout << std::endl;
     }
   } 

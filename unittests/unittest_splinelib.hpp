@@ -93,7 +93,7 @@ auto to_splinelib_bspline(BSpline_t& bspline)
 template<iganet::BSplineDeriv deriv,
          typename BSpline_t, typename SplineLibBSpline_t, typename TensorArray_t>
 void test_bspline_eval(BSpline_t& bspline, SplineLibBSpline_t splinelib_bspline,
-                        TensorArray_t& xi, typename BSpline_t::value_type tol = 1e-12)
+                       TensorArray_t& xi, typename BSpline_t::value_type tol = 1e-12)
 {
   // B-spline evaluation
   using ParametricCoordinate       = typename SplineLibBSpline_t::ParametricCoordinate_;
@@ -101,7 +101,12 @@ void test_bspline_eval(BSpline_t& bspline, SplineLibBSpline_t splinelib_bspline,
   using Derivative                 = typename SplineLibBSpline_t::ParameterSpace_::Derivative_;
   using ScalarDerivative           = typename Derivative::value_type;
 
-  auto bspline_val = bspline.template eval<deriv>(xi);
+  auto knot_idx  = bspline.eval_knot_indices(xi);
+  auto basfunc   = bspline.template eval_basfunc<deriv>(xi, knot_idx);
+  auto coeff_idx = bspline.eval_coeff_indices(knot_idx);
+  auto bspline_val = bspline.eval_from_precomputed(basfunc, coeff_idx, xi[0].numel(), xi[0].sizes());
+  
+  //  auto bspline_val = bspline.template eval<deriv>(xi);
 
   for (int64_t i=0; i<xi[0].size(0); ++i) {
     if constexpr (BSpline_t::parDim() == 1 &&
