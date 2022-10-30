@@ -173,9 +173,11 @@ endif()
 ########################################################################
 # Documentation
 ########################################################################
-add_custom_target(docs
-  DEPENDS Doxygen
-  DEPENDS Sphinx)
+if(IGANET_BUILD_DOCS)
+  add_custom_target(docs
+    DEPENDS Doxygen
+    DEPENDS Sphinx)
+endif()
 
 ########################################################################
 # Summary
