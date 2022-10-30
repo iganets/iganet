@@ -1128,7 +1128,7 @@ namespace iganet {
           std::cout << out << std::endl;
           
           // Compute the loss value
-          auto loss_pde = torch::mse_loss( pred , rhs );
+          auto loss_pde = torch::mse_loss( pred , rhs(0) );
           std::cout << "loss = " << loss_pde.template item<real_t>() << std::endl;
 
           // Compute gradients of the loss w.r.t. the model parameters
