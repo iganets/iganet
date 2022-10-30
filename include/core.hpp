@@ -74,12 +74,49 @@ namespace iganet {
   bool is_verbose(std::ostream& os) { return os.iword(get_iomanip()) != 0; }
   /// @}
 
-  /// LibTorch core object handles the automated determination of dtype
-  /// from the template argument and the selection of the device
+  /// @brief Full qualified name descriptor
+  class fqn {
+  public:
+    /// @brief Returns the full qualified name of the object
+    ///
+    /// @result Full qualified name of the object as string
+    inline const virtual std::string& name() const noexcept
+    {
+      // If the name optional is empty at this point, we grab the name of the
+      // dynamic type via RTTI. Note that we cannot do this in the constructor,
+      // because in the constructor of a base class `this` always refers to the base
+      // type. Inheritance effectively does not work in constructors. Also this note
+      // from http://en.cppreference.com/w/cpp/language/typeid:
+      // If typeid is used on an object under construction or destruction (in a
+      // destructor or in a constructor, including constructor's initializer list
+      // or default member initializers), then the std::type_info object referred
+      // to by this typeid represents the class that is being constructed or
+      // destroyed even if it is not the most-derived class.
+      if (!name_.has_value()) {
+        name_ = c10::demangle(typeid(*this).name());
+#if defined(_WIN32)
+        // Windows adds "struct" or "class" as a prefix.
+        if (name_->find("struct ") == 0) {
+          name_->erase(name_->begin(), name_->begin() + 7);
+        } else if (name_->find("class ") == 0) {
+          name_->erase(name_->begin(), name_->begin() + 6);
+        }
+#endif // defined(_WIN32)
+        }
+      return *name_;
+    }
+  protected:
+    /// @brief String storing the full qualified name of the object
+    mutable at::optional<std::string> name_;
+  };
+  
+  /// @brief LibTorch core object handles the automated determination
+  /// of dtype from the template argument and the selection of the
+  /// device
   ///
   /// @tparam real_t Type of real-valued data
   template<typename real_t>
-  class core {
+  class core : public fqn {
   public:
     /// Default constructor
     core()
@@ -113,35 +150,6 @@ namespace iganet {
                  .requires_grad(requiresGrad))
     {}
     
-    /// @brief Returns the full qualified name of the object
-    ///
-    /// @result Full qualified name of the object as string
-    inline const virtual std::string& name() const noexcept
-    {
-      // If the name optional is empty at this point, we grab the name of the
-      // dynamic type via RTTI. Note that we cannot do this in the constructor,
-      // because in the constructor of a base class `this` always refers to the base
-      // type. Inheritance effectively does not work in constructors. Also this note
-      // from http://en.cppreference.com/w/cpp/language/typeid:
-      // If typeid is used on an object under construction or destruction (in a
-      // destructor or in a constructor, including constructor's initializer list
-      // or default member initializers), then the std::type_info object referred
-      // to by this typeid represents the class that is being constructed or
-      // destroyed even if it is not the most-derived class.
-      if (!name_.has_value()) {
-        name_ = c10::demangle(typeid(*this).name());
-#if defined(_WIN32)
-        // Windows adds "struct" or "class" as a prefix.
-        if (name_->find("struct ") == 0) {
-          name_->erase(name_->begin(), name_->begin() + 7);
-        } else if (name_->find("class ") == 0) {
-          name_->erase(name_->begin(), name_->begin() + 6);
-        }
-#endif // defined(_WIN32)
-        }
-      return *name_;
-    }
-
     /// @brief Returns constant reference to options
     const torch::TensorOptions options() const
     {
@@ -151,9 +159,6 @@ namespace iganet {
   protected:
     /// @brief Tensor options
     const torch::TensorOptions options_;
-
-    /// @brief String storing the full qualified name of the object
-    mutable at::optional<std::string> name_;
   };
 
   /// @brief Initializes the library
