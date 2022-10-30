@@ -97,7 +97,7 @@ namespace iganet {
   ///   index[0]+stop_offset-1,  ...  index[N-1]+stop_offset-1 ]
   /// \endcode
   ///
-  /// @param[in] index        Vector of indices
+  /// @param[in] index        Tensor of indices
   ///
   /// @param[in] start_offset Starting value of the offset
   ///
@@ -114,11 +114,13 @@ namespace iganet {
   /// @brief Vectorized version of `torch::indexing::Slice` (see
   /// https://pytorch.org/cppdocs/notes/tensor_indexing.html)
   ///
-  /// @param[in] index        2d Vector of indices
+  /// @param[in] index        2d array of tensors of indices
   ///
-  /// @param[in] start_offset 2d Vector of starting value of the offset
+  /// @param[in] start_offset 2d array of starting value of the offset
   ///
-  /// @param[in] stop_offset  2d Vector of stopping value of the offset
+  /// @param[in] stop_offset  2d array of stopping value of the offset
+  ///
+  /// @param[in] leading_dim  Leading dimension
   inline auto VSlice(const std::array<torch::Tensor, 2>& index,
                      const std::array<int64_t, 2> start_offset,
                      const std::array<int64_t, 2> stop_offset,
@@ -147,11 +149,13 @@ namespace iganet {
   /// @brief Vectorized version of `torch::indexing::Slice` (see
   /// https://pytorch.org/cppdocs/notes/tensor_indexing.html)
   ///
-  /// @param[in] index        3d Vector of indices
+  /// @param[in] index        3d array of tensors of indices
   ///
-  /// @param[in] start_offset 3d Vector of starting value of the offset
+  /// @param[in] start_offset 3d array of starting value of the offset
   ///
-  /// @param[in] stop_offset  3d Vector of stopping value of the offset
+  /// @param[in] stop_offset  3d array of stopping value of the offset
+  ///
+  /// @param[in] leading_dim  2d array of leading dimension
   inline auto VSlice(const std::array<torch::Tensor, 3>& index,
                      const std::array<int64_t, 3> start_offset,
                      const std::array<int64_t, 3> stop_offset,
@@ -190,11 +194,13 @@ namespace iganet {
   /// @brief Vectorized version of `torch::indexing::Slice` (see
   /// https://pytorch.org/cppdocs/notes/tensor_indexing.html)
   ///
-  /// @param[in] index        4d Vector of indices
+  /// @param[in] index        4d array of tensors of indices
   ///
-  /// @param[in] start_offset 4d Vector of starting value of the offset
+  /// @param[in] start_offset 4d array of starting value of the offset
   ///
-  /// @param[in] stop_offset  4d Vector of stopping value of the offset
+  /// @param[in] stop_offset  4d array of stopping value of the offset
+  ///
+  /// @param[in] leading_dim  3d array of leading dimension
   inline auto VSlice(const std::array<torch::Tensor, 4>& index,
                      const std::array<int64_t, 4> start_offset,
                      const std::array<int64_t, 4> stop_offset,
