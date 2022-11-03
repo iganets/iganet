@@ -14,6 +14,7 @@
 #
 # IGANET_BUILD_DOCS
 # IGANET_BUILD_EXAMPLES
+# IGANET_BUILD_PERFTESTS
 # IGANET_BUILD_PYBIND11
 # IGANET_BUILD_UNITTESTS
 #
@@ -85,6 +86,7 @@ list(APPEND CMAKE_MODULE_PATH "${PROJECT_SOURCE_DIR}/cmake")
 option(IGANET_BUILD_DOCS        "Build documentation"       OFF)
 option(IGANET_BUILD_EXAMPLES    "Build examples"            ON )
 option(IGANET_BUILD_PYBIND11    "Build Python bindings"     OFF)
+option(IGANET_BUILD_UNITTESTS   "Build perftests"           OFF)
 option(IGANET_BUILD_UNITTESTS   "Build unittests"           OFF)
 option(IGANET_WITH_OPENMP       "With OpenMP"               ON )
 
@@ -236,6 +238,7 @@ message("")
 message("Options:")
 message("IGANET_BUILD_DOCS..................: ${IGANET_BUILD_DOCS}")
 message("IGANET_BUILD_EXAMPLES..............: ${IGANET_BUILD_EXAMPLES}")
+message("IGANET_BUILD_PERFTESTS.............: ${IGANET_BUILD_PERFTESTS}")
 message("IGANET_BUILD_PYBIND11..............: ${IGANET_BUILD_PYBIND11}")
 message("IGANET_BUILD_UNITTESTS.............: ${IGANET_BUILD_UNITTESTS}")
 
@@ -254,6 +257,14 @@ include_directories(${PROJECT_SOURCE_DIR}/include)
 ########################################################################
 if (IGANET_BUILD_EXAMPLES)
   add_subdirectory(${PROJECT_SOURCE_DIR}/examples)
+endif()
+
+########################################################################
+# Add perftests (if enabled)
+########################################################################
+if (IGANET_BUILD_PERFTESTS)
+  enable_testing()
+  add_subdirectory(${PROJECT_SOURCE_DIR}/perftests)
 endif()
 
 ########################################################################
