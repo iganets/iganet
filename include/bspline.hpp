@@ -43,32 +43,254 @@ namespace iganet {
   enum class BSplineDeriv : short_t
     {
       func   =    0, /*!< function value */
-      dx     =    1, /*!< first derivative in x-direction */
-      dx1    =    1, /*!< first derivative in x-direction */
+      
+      dx     =    1, /*!< first derivative in x-direction  */
+      dx1    =    1, /*!< first derivative in x-direction  */
       dx2    =    2, /*!< second derivative in x-direction */
-      dx3    =    3, /*!< third derivative in x-direction */
+      dx3    =    3, /*!< third derivative in x-direction  */
       dx4    =    4, /*!< fourth derivative in x-direction */
-      dy     =   10, /*!< first derivative in y-direction */
-      dy1    =   10, /*!< first derivative in y-direction */
+      dy     =   10, /*!< first derivative in y-direction  */
+      dy1    =   10, /*!< first derivative in y-direction  */
       dy2    =   20, /*!< second derivative in y-direction */
-      dy3    =   30, /*!< third derivative in y-direction */
+      dy3    =   30, /*!< third derivative in y-direction  */
       dy4    =   40, /*!< fourth derivative in y-direction */
-      dz     =  100, /*!< first derivative in z-direction */
-      dz1    =  100, /*!< first derivative in z-direction */
+      dz     =  100, /*!< first derivative in z-direction  */
+      dz1    =  100, /*!< first derivative in z-direction  */
       dz2    =  200, /*!< second derivative in z-direction */
-      dz3    =  300, /*!< third derivative in z-direction */
+      dz3    =  300, /*!< third derivative in z-direction  */
       dz4    =  400, /*!< fourth derivative in z-direction */
-      dt     = 1000, /*!< first derivative in t-direction */
-      dt1    = 1000, /*!< first derivative in t-direction */
+      dt     = 1000, /*!< first derivative in t-direction  */
+      dt1    = 1000, /*!< first derivative in t-direction  */
       dt2    = 2000, /*!< second derivative in t-direction */
-      dt3    = 3000, /*!< third derivative in t-direction */
-      dt4    = 4000  /*!< fourth derivative in t-direction */
+      dt3    = 3000, /*!< third derivative in t-direction  */
+      dt4    = 4000, /*!< fourth derivative in t-direction */
+      
+      dxdy   =   11, /*!< second mixed derivative in x- and y-direction  */
+      dx1dy1 =   11, /*!< second mixed derivative in x- and y-direction  */
+      dx2dy1 =   12, /*!< third mixed derivative in x- and y-direction   */
+      dx3dy1 =   13, /*!< fourth mixed derivative in x- and y-direction  */
+      dx4dy1 =   14, /*!< fifth mixed derivative in x- and y-direction   */
+      dx1dy2 =   21, /*!< third mixed derivative in x- and y-direction   */
+      dx2dy2 =   22, /*!< fourth mixed derivative in x- and y-direction  */
+      dx3dy2 =   23, /*!< fifth mixed derivative in x- and y-direction   */
+      dx4dy2 =   24, /*!< sixth mixed derivative in x- and y-direction   */
+      dx1dy3 =   31, /*!< fourth mixed derivative in x- and y-direction  */
+      dx2dy3 =   32, /*!< fifth mixed derivative in x- and y-direction   */
+      dx3dy3 =   33, /*!< sixth mixed derivative in x- and y-direction   */
+      dx4dy3 =   34, /*!< seventh mixed derivative in x- and y-direction */
+      dx1dy4 =   41, /*!< fifth mixed derivative in x- and y-direction   */
+      dx2dy4 =   42, /*!< sixth mixed derivative in x- and y-direction   */
+      dx3dy4 =   43, /*!< seventh mixed derivative in x- and y-direction */
+      dx4dy4 =   44, /*!< eigths mixed derivative in x- and y-direction  */
+      
+      dxdz   =  101, /*!< second mixed derivative in x- and z-direction  */
+      dx1dz1 =  101, /*!< second mixed derivative in x- and z-direction  */
+      dx2dz1 =  102, /*!< third mixed derivative in x- and z-direction   */
+      dx3dz1 =  103, /*!< fourth mixed derivative in x- and z-direction  */
+      dx4dz1 =  104, /*!< fifth mixed derivative in x- and z-direction   */
+      dx1dz2 =  201, /*!< third mixed derivative in x- and z-direction   */
+      dx2dz2 =  202, /*!< fourth mixed derivative in x- and z-direction  */
+      dx3dz2 =  203, /*!< fifth mixed derivative in x- and z-direction   */
+      dx4dz2 =  204, /*!< sixth mixed derivative in x- and z-direction   */
+      dx1dz3 =  301, /*!< fourth mixed derivative in x- and z-direction  */
+      dx2dz3 =  302, /*!< fifth mixed derivative in x- and z-direction   */
+      dx3dz3 =  303, /*!< sixth mixed derivative in x- and z-direction   */
+      dx4dz3 =  304, /*!< seventh mixed derivative in x- and z-direction */
+      dx1dz4 =  401, /*!< fifth mixed derivative in x- and z-direction   */
+      dx2dz4 =  402, /*!< sixth mixed derivative in x- and z-direction   */
+      dx3dz4 =  403, /*!< seventh mixed derivative in x- and z-direction */
+      dx4dz4 =  404, /*!< eigths mixed derivative in x- and z-direction  */
+      
+      dxdt   = 1001, /*!< second mixed derivative in x- and t-direction  */
+      dx1dt1 = 1001, /*!< second mixed derivative in x- and t-direction  */
+      dx2dt1 = 1002, /*!< third mixed derivative in x- and t-direction   */
+      dx3dt1 = 1003, /*!< fourth mixed derivative in x- and t-direction  */
+      dx4dt1 = 1004, /*!< fifth mixed derivative in x- and t-direction   */
+      dx1dt2 = 2001, /*!< third mixed derivative in x- and t-direction   */
+      dx2dt2 = 2002, /*!< fourth mixed derivative in x- and t-direction  */
+      dx3dt2 = 2003, /*!< fifth mixed derivative in x- and t-direction   */
+      dx4dt2 = 2004, /*!< sixth mixed derivative in x- and t-direction   */
+      dx1dt3 = 3001, /*!< fourth mixed derivative in x- and t-direction  */
+      dx2dt3 = 3002, /*!< fifth mixed derivative in x- and t-direction   */
+      dx3dt3 = 3003, /*!< sixth mixed derivative in x- and t-direction   */
+      dx4dt3 = 3004, /*!< seventh mixed derivative in x- and t-direction */
+      dx1dt4 = 4001, /*!< fifth mixed derivative in x- and t-direction   */
+      dx2dt4 = 4002, /*!< sixth mixed derivative in x- and t-direction   */
+      dx3dt4 = 4003, /*!< seventh mixed derivative in x- and t-direction */
+      dx4dt4 = 4004, /*!< eigths mixed derivative in x- and t-direction  */
+
+      dydx   =   11, /*!< second mixed derivative in y- and x-direction  */
+      dy1dx1 =   11, /*!< second mixed derivative in y- and x-direction  */
+      dy2dx1 =   21, /*!< third mixed derivative in y- and x-direction   */
+      dy3dx1 =   31, /*!< fourth mixed derivative in y- and x-direction  */
+      dy4dx1 =   41, /*!< fifth mixed derivative in y- and x-direction   */
+      dy1dx2 =   12, /*!< third mixed derivative in y- and x-direction   */
+      dy2dx2 =   22, /*!< fourth mixed derivative in y- and x-direction  */
+      dy3dx2 =   32, /*!< fifth mixed derivative in y- and x-direction   */
+      dy4dx2 =   42, /*!< sixth mixed derivative in y- and x-direction   */
+      dy1dx3 =   13, /*!< fourth mixed derivative in y- and x-direction  */
+      dy2dx3 =   23, /*!< fifth mixed derivative in y- and x-direction   */
+      dy3dx3 =   33, /*!< sixth mixed derivative in y- and x-direction   */
+      dy4dx3 =   43, /*!< seventh mixed derivative in y- and x-direction */
+      dy1dx4 =   14, /*!< fifth mixed derivative in y- and x-direction   */
+      dy2dx4 =   24, /*!< sixth mixed derivative in y- and x-direction   */
+      dy3dx4 =   34, /*!< seventh mixed derivative in y- and x-direction */
+      dy4dx4 =   44, /*!< eigths mixed derivative in y- and x-direction  */
+
+      dydz   =  110, /*!< second mixed derivative in y- and z-direction  */
+      dy1dz1 =  110, /*!< second mixed derivative in y- and z-direction  */
+      dy2dz1 =  120, /*!< third mixed derivative in y- and z-direction   */
+      dy3dz1 =  130, /*!< fourth mixed derivative in y- and z-direction  */
+      dy4dz1 =  140, /*!< fifth mixed derivative in y- and z-direction   */
+      dy1dz2 =  210, /*!< third mixed derivative in y- and z-direction   */
+      dy2dz2 =  220, /*!< fourth mixed derivative in y- and z-direction  */
+      dy3dz2 =  230, /*!< fifth mixed derivative in y- and z-direction   */
+      dy4dz2 =  240, /*!< sixth mixed derivative in y- and z-direction   */
+      dy1dz3 =  310, /*!< fourth mixed derivative in y- and z-direction  */
+      dy2dz3 =  320, /*!< fifth mixed derivative in y- and z-direction   */
+      dy3dz3 =  330, /*!< sixth mixed derivative in y- and z-direction   */
+      dy4dz3 =  340, /*!< seventh mixed derivative in y- and z-direction */
+      dy1dz4 =  410, /*!< fifth mixed derivative in y- and z-direction   */
+      dy2dz4 =  420, /*!< sixth mixed derivative in y- and z-direction   */
+      dy3dz4 =  430, /*!< seventh mixed derivative in y- and z-direction */
+      dy4dz4 =  440, /*!< eigths mixed derivative in y- and z-direction  */
+
+      dydt   = 1010, /*!< second mixed derivative in y- and t-direction  */
+      dy1dt1 = 1010, /*!< second mixed derivative in y- and t-direction  */
+      dy2dt1 = 1020, /*!< third mixed derivative in y- and t-direction   */
+      dy3dt1 = 1030, /*!< fourth mixed derivative in y- and t-direction  */
+      dy4dt1 = 1040, /*!< fifth mixed derivative in y- and t-direction   */
+      dy1dt2 = 2010, /*!< third mixed derivative in y- and t-direction   */
+      dy2dt2 = 2020, /*!< fourth mixed derivative in y- and t-direction  */
+      dy3dt2 = 2030, /*!< fifth mixed derivative in y- and t-direction   */
+      dy4dt2 = 2040, /*!< sixth mixed derivative in y- and t-direction   */
+      dy1dt3 = 3010, /*!< fourth mixed derivative in y- and t-direction  */
+      dy2dt3 = 3020, /*!< fifth mixed derivative in y- and t-direction   */
+      dy3dt3 = 3030, /*!< sixth mixed derivative in y- and t-direction   */
+      dy4dt3 = 3040, /*!< seventh mixed derivative in y- and t-direction */
+      dy1dt4 = 4010, /*!< fifth mixed derivative in y- and t-direction   */
+      dy2dt4 = 4020, /*!< sixth mixed derivative in y- and t-direction   */
+      dy3dt4 = 4030, /*!< seventh mixed derivative in y- and t-direction */
+      dy4dt4 = 4040, /*!< eigths mixed derivative in y- and t-direction  */
+
+      dzdx   =  101, /*!< second mixed derivative in z- and x-direction  */
+      dz1dx1 =  101, /*!< second mixed derivative in z- and x-direction  */
+      dz2dx1 =  102, /*!< third mixed derivative in z- and x-direction   */
+      dz3dx1 =  103, /*!< fourth mixed derivative in z- and x-direction  */
+      dz4dx1 =  104, /*!< fifth mixed derivative in z- and x-direction   */
+      dz1dx2 =  201, /*!< third mixed derivative in z- and x-direction   */
+      dz2dx2 =  202, /*!< fourth mixed derivative in z- and x-direction  */
+      dz3dx2 =  203, /*!< fifth mixed derivative in z- and x-direction   */
+      dz4dx2 =  204, /*!< sixth mixed derivative in z- and x-direction   */
+      dz1dx3 =  301, /*!< fourth mixed derivative in z- and x-direction  */
+      dz2dx3 =  302, /*!< fifth mixed derivative in z- and x-direction   */
+      dz3dx3 =  303, /*!< sixth mixed derivative in z- and x-direction   */
+      dz4dx3 =  304, /*!< seventh mixed derivative in z- and x-direction */
+      dz1dx4 =  401, /*!< fifth mixed derivative in z- and x-direction   */
+      dz2dx4 =  402, /*!< sixth mixed derivative in z- and x-direction   */
+      dz3dx4 =  403, /*!< seventh mixed derivative in z- and x-direction */
+      dz4dx4 =  404, /*!< eigths mixed derivative in z- and x-direction  */
+
+      dzdy   =  110, /*!< second mixed derivative in z- and y-direction  */
+      dz1dy1 =  110, /*!< second mixed derivative in z- and y-direction  */
+      dz2dy1 =  120, /*!< third mixed derivative in z- and y-direction   */
+      dz3dy1 =  130, /*!< fourth mixed derivative in z- and y-direction  */
+      dz4dy1 =  140, /*!< fifth mixed derivative in z- and y-direction   */
+      dz1dy2 =  210, /*!< third mixed derivative in z- and y-direction   */
+      dz2dy2 =  220, /*!< fourth mixed derivative in z- and y-direction  */
+      dz3dy2 =  230, /*!< fifth mixed derivative in z- and y-direction   */
+      dz4dy2 =  240, /*!< sixth mixed derivative in z- and y-direction   */
+      dz1dy3 =  310, /*!< fourth mixed derivative in z- and y-direction  */
+      dz2dy3 =  320, /*!< fifth mixed derivative in z- and y-direction   */
+      dz3dy3 =  330, /*!< sixth mixed derivative in z- and y-direction   */
+      dz4dy3 =  340, /*!< seventh mixed derivative in z- and y-direction */
+      dz1dy4 =  410, /*!< fifth mixed derivative in z- and y-direction   */
+      dz2dy4 =  420, /*!< sixth mixed derivative in z- and y-direction   */
+      dz3dy4 =  430, /*!< seventh mixed derivative in z- and y-direction */
+      dz4dy4 =  440, /*!< eigths mixed derivative in z- and y-direction  */
+
+      dzdt   = 1100, /*!< second mixed derivative in z- and t-direction  */
+      dz1dt1 = 1100, /*!< second mixed derivative in z- and t-direction  */
+      dz2dt1 = 1200, /*!< third mixed derivative in z- and t-direction   */
+      dz3dt1 = 1300, /*!< fourth mixed derivative in z- and t-direction  */
+      dz4dt1 = 1400, /*!< fifth mixed derivative in z- and t-direction   */
+      dz1dt2 = 2100, /*!< third mixed derivative in z- and t-direction   */
+      dz2dt2 = 2200, /*!< fourth mixed derivative in z- and t-direction  */
+      dz3dt2 = 2300, /*!< fifth mixed derivative in z- and t-direction   */
+      dz4dt2 = 2400, /*!< sixth mixed derivative in z- and t-direction   */
+      dz1dt3 = 3100, /*!< fourth mixed derivative in z- and t-direction  */
+      dz2dt3 = 3200, /*!< fifth mixed derivative in z- and t-direction   */
+      dz3dt3 = 3300, /*!< sixth mixed derivative in z- and t-direction   */
+      dz4dt3 = 3400, /*!< seventh mixed derivative in z- and t-direction */
+      dz1dt4 = 4100, /*!< fifth mixed derivative in z- and t-direction   */
+      dz2dt4 = 4200, /*!< sixth mixed derivative in z- and t-direction   */
+      dz3dt4 = 4300, /*!< seventh mixed derivative in z- and t-direction */
+      dz4dt4 = 4400, /*!< eigths mixed derivative in z- and t-direction  */
+      
+      dtdx   = 1001, /*!< second mixed derivative in t- and x-direction  */
+      dt1dx1 = 1001, /*!< second mixed derivative in t- and x-direction  */
+      dt2dx1 = 1002, /*!< third mixed derivative in t- and x-direction   */
+      dt3dx1 = 1003, /*!< fourth mixed derivative in t- and x-direction  */
+      dt4dx1 = 1004, /*!< fifth mixed derivative in t- and x-direction   */
+      dt1dx2 = 2001, /*!< third mixed derivative in t- and x-direction   */
+      dt2dx2 = 2002, /*!< fourth mixed derivative in t- and x-direction  */
+      dt3dx2 = 2003, /*!< fifth mixed derivative in t- and x-direction   */
+      dt4dx2 = 2004, /*!< sixth mixed derivative in t- and x-direction   */
+      dt1dx3 = 3001, /*!< fourth mixed derivative in t- and x-direction  */
+      dt2dx3 = 3002, /*!< fifth mixed derivative in t- and x-direction   */
+      dt3dx3 = 3003, /*!< sixth mixed derivative in t- and x-direction   */
+      dt4dx3 = 3004, /*!< seventh mixed derivative in t- and x-direction */
+      dt1dx4 = 4001, /*!< fifth mixed derivative in t- and x-direction   */
+      dt2dx4 = 4002, /*!< sixth mixed derivative in t- and x-direction   */
+      dt3dx4 = 4003, /*!< seventh mixed derivative in t- and x-direction */
+      dt4dx4 = 4004, /*!< eigths mixed derivative in t- and x-direction  */
+
+      dtdy   = 1010, /*!< second mixed derivative in t- and y-direction  */
+      dt1dy1 = 1010, /*!< second mixed derivative in t- and y-direction  */
+      dt2dy1 = 2010, /*!< third mixed derivative in t- and y-direction   */
+      dt3dy1 = 3010, /*!< fourth mixed derivative in t- and y-direction  */
+      dt4dy1 = 4010, /*!< fifth mixed derivative in t- and y-direction   */
+      dt1dy2 = 1020, /*!< third mixed derivative in t- and y-direction   */
+      dt2dy2 = 2020, /*!< fourth mixed derivative in t- and y-direction  */
+      dt3dy2 = 3020, /*!< fifth mixed derivative in t- and y-direction   */
+      dt4dy2 = 4020, /*!< sixth mixed derivative in t- and y-direction   */
+      dt1dy3 = 1030, /*!< fourth mixed derivative in t- and y-direction  */
+      dt2dy3 = 2030, /*!< fifth mixed derivative in t- and y-direction   */
+      dt3dy3 = 3030, /*!< sixth mixed derivative in t- and y-direction   */
+      dt4dy3 = 4030, /*!< seventh mixed derivative in t- and y-direction */
+      dt1dy4 = 1040, /*!< fifth mixed derivative in t- and y-direction   */
+      dt2dy4 = 2040, /*!< sixth mixed derivative in t- and y-direction   */
+      dt3dy4 = 3040, /*!< seventh mixed derivative in t- and y-direction */
+      dt4dy4 = 4040, /*!< eigths mixed derivative in t- and y-direction  */
+
+      dtdz   = 1100, /*!< second mixed derivative in t- and z-direction  */
+      dt1dz1 = 1100, /*!< second mixed derivative in t- and z-direction  */
+      dt2dz1 = 2100, /*!< third mixed derivative in t- and z-direction   */
+      dt3dz1 = 3100, /*!< fourth mixed derivative in t- and z-direction  */
+      dt4dz1 = 4100, /*!< fifth mixed derivative in t- and z-direction   */
+      dt1dz2 = 1200, /*!< third mixed derivative in t- and z-direction   */
+      dt2dz2 = 2200, /*!< fourth mixed derivative in t- and z-direction  */
+      dt3dz2 = 3200, /*!< fifth mixed derivative in t- and z-direction   */
+      dt4dz2 = 4200, /*!< sixth mixed derivative in t- and z-direction   */
+      dt1dz3 = 1300, /*!< fourth mixed derivative in t- and z-direction  */
+      dt2dz3 = 2300, /*!< fifth mixed derivative in t- and z-direction   */
+      dt3dz3 = 3300, /*!< sixth mixed derivative in t- and z-direction   */
+      dt4dz3 = 4300, /*!< seventh mixed derivative in t- and z-direction */
+      dt1dz4 = 1400, /*!< fifth mixed derivative in t- and z-direction   */
+      dt2dz4 = 2400, /*!< sixth mixed derivative in t- and z-direction   */
+      dt3dz4 = 3400, /*!< seventh mixed derivative in t- and z-direction */
+      dt4dz4 = 4400, /*!< eigths mixed derivative in t- and z-direction  */
     };
 
+  inline auto operator+(BSplineDeriv lhs, BSplineDeriv rhs)
+  {
+    return BSplineDeriv( static_cast<short_t>(lhs)+static_cast<short_t>(rhs) );
+  }
+  
   /// @brief Tensor-product uniform B-spline (core functionality)
   ///
   /// This class implements the core functionality of all B-spline
-  /// classes and serves as base class for non-uniform B-splines.
+  /// classes and serves as base class for (non-)uniform B-splines.
   ///
   /// Mathematically, this class defines a mapping
   ///
@@ -394,17 +616,17 @@ namespace iganet {
                                       int64_t numeval, torch::IntArrayRef sizes) const
     {
       if constexpr (geoDim_ > 1) {
-        std::array<torch::Tensor, geoDim_> result;
+        BlockTensor<torch::Tensor, 1, geoDim_> result;
         for (std::size_t i = 0; i < geoDim_; ++i)
-          result[i] = dotproduct(basfunc,
-                                 coeffs(i).index_select(0, idx).view({-1, numeval}),
-                                 0).view(sizes);
+          result.set(i, dotproduct(basfunc,
+                                   coeffs(i).index_select(0, idx).view({-1, numeval}),
+                                   0).view(sizes));
         return result;
-        } else
+      } else
         return
-          dotproduct(basfunc,
-                     coeffs(0).index_select(0, idx).view({-1, numeval}),
-                     0).view(sizes);
+          BlockTensor<torch::Tensor, 1, 1>(dotproduct(basfunc,
+                                                      coeffs(0).index_select(0, idx).view({-1, numeval}),
+                                                      0).view(sizes));
     }
     
     /// @brief Returns the value of the B-spline object in the point `xi`
@@ -481,29 +703,68 @@ namespace iganet {
     ///
     /// @tparam deriv Composition of derivative indicators of type \ref BSplineDeriv
     ///
-    /// @param[in] xi Point(s) where to evaluate the multivariate B-spline object
+    /// @param[in] xi Point(s) where to evaluate the univariate B-spline object
     ///
-    /// @param[in] idx Knot indices where to evaluate the multivariate B-spline object
+    /// @param[in] idx Knot indices where to evaluate the univariate B-spline object
     ///
-    /// @result Value(s) of the multivariate B-spline evaluated at the point(s) `xi`
+    /// @result Value(s) of the univariate B-spline evaluated at the point(s) `xi`
     template<BSplineDeriv deriv = BSplineDeriv::func>
     inline auto eval(const TensorArray1& xi, const TensorArray1& idx) const
     {
-      assert(xi[0].sizes() == idx[0].sizes());
+      assert(parDim_ == 1 &&
+             xi[0].sizes() == idx[0].sizes());
       
       if constexpr (geoDim_ > 1) {
         auto basfunc = eval_basfunc<deriv>(xi, idx);
-        std::array<torch::Tensor, geoDim_> result;
+        BlockTensor<torch::Tensor, 1, geoDim_> result;
         for (std::size_t i = 0; i < geoDim_; ++i)
-          result[i] = dotproduct(basfunc,
-                                 coeffs(i).index_select(0, eval_coeff_indices(idx)).view({-1, xi[0].numel()}),
-                                 0).view(xi[0].sizes());
+          result.set(i, dotproduct(basfunc,
+                                   coeffs(i).index_select(0, eval_coeff_indices(idx)).view({-1, xi[0].numel()}),
+                                   0).view(xi[0].sizes()));
         return result;
         } else
         return
-          dotproduct(eval_basfunc<deriv>(xi, idx),
-                     coeffs(0).index_select(0, eval_coeff_indices(idx)).view({-1, xi[0].numel()}),
-                     0).view(xi[0].sizes());
+          BlockTensor<torch::Tensor, 1, 1>(dotproduct(eval_basfunc<deriv>(xi, idx),
+                                                      coeffs(0).index_select(0, eval_coeff_indices(idx)).view({-1, xi[0].numel()}),
+                                                      0).view(xi[0].sizes()));
+    }
+
+    /// @brief Returns the value of the univariate B-spline object in
+    /// the points `xi`
+    ///
+    /// This function implements steps 2-3 of algorithm \ref
+    /// BSplineEvaluation for univariate B-splines
+    /// (i.e. \f$d_\text{par}=1\f$)
+    ///
+    /// @tparam deriv Composition of derivative indicators of type \ref BSplineDeriv
+    ///
+    /// @param[in] xi Point(s) where to evaluate the univariate B-spline object
+    ///
+    /// @param[in] idx Knot indices where to evaluate the univariate B-spline object
+    ///
+    /// @param[in] coeff_idx Coefficient indices where to evaluate the univariate B-spline object
+    ///
+    /// @result Value(s) of the univariate B-spline evaluated at the point(s) `xi`
+    template<BSplineDeriv deriv = BSplineDeriv::func>
+    inline auto eval(const TensorArray1& xi, const TensorArray1& idx,
+                     const torch::Tensor& coeff_idx) const
+    {
+      assert(parDim_ == 1 &&
+             xi[0].sizes() == idx[0].sizes());
+      
+      if constexpr (geoDim_ > 1) {
+        auto basfunc = eval_basfunc<deriv>(xi, idx);
+        BlockTensor<torch::Tensor, 1, geoDim_> result;
+        for (std::size_t i = 0; i < geoDim_; ++i)
+          result.set(i, dotproduct(basfunc,
+                                   coeffs(i).index_select(0, coeff_idx).view({-1, xi[0].numel()}),
+                                   0).view(xi[0].sizes()));
+        return result;
+        } else
+        return
+          BlockTensor<torch::Tensor, 1, 1>(dotproduct(eval_basfunc<deriv>(xi, idx),
+                                                      coeffs(0).index_select(0, coeff_idx).view({-1, xi[0].numel()}),
+                                                      0).view(xi[0].sizes()));
     }
     
     /// @brief Returns the value of the bivariate B-spline object in
@@ -512,68 +773,177 @@ namespace iganet {
     /// This function implements steps 2-3 of algorithm \ref
     /// BSplineEvaluation for bivariate B-splines
     /// (i.e. \f$d_\text{par}=2\f$)
+    ///
+    /// @tparam deriv Composition of derivative indicators of type \ref BSplineDeriv
+    ///
+    /// @param[in] xi Point(s) where to evaluate the bivariate B-spline object
+    ///
+    /// @param[in] idx Knot indices where to evaluate the bivariate B-spline object
+    ///
+    /// @result Value(s) of the bivariate B-spline evaluated at the point(s) `xi`
     template<BSplineDeriv deriv = BSplineDeriv::func>
     inline auto eval(const TensorArray2& xi, const TensorArray2& idx) const
     {
-      assert(xi[0].sizes() == idx[0].sizes() &&
+      assert(parDim_ == 2 &&
+             xi[0].sizes() == idx[0].sizes() &&
              xi[1].sizes() == idx[1].sizes() &&
              xi[0].sizes() ==  xi[1].sizes());
       
       if constexpr (geoDim_ > 1) {       
         auto basfunc = eval_basfunc<deriv>(xi, idx);
-        std::array<torch::Tensor, geoDim_> result;
+        BlockTensor<torch::Tensor, 1, geoDim_> result;
         for (std::size_t i = 0; i < geoDim_; ++i)
-          result[i] = dotproduct(basfunc,
-                                 coeffs(i).index_select(0, eval_coeff_indices(idx)).view({-1, xi[0].numel()}),
-                                 0).view(xi[0].sizes());
+          result.set(i, dotproduct(basfunc,
+                                   coeffs(i).index_select(0, eval_coeff_indices(idx)).view({-1, xi[0].numel()}),
+                                   0).view(xi[0].sizes()));
         return result;
       } else
         return
-          dotproduct(eval_basfunc<deriv>(xi, idx),
-                     coeffs(0).index_select(0, eval_coeff_indices(idx)).view({-1, xi[0].numel()}),
-                     0).view(xi[0].sizes());
+          BlockTensor<torch::Tensor, 1, 1>(dotproduct(eval_basfunc<deriv>(xi, idx),
+                                                      coeffs(0).index_select(0, eval_coeff_indices(idx)).view({-1, xi[0].numel()}),
+                                                      0).view(xi[0].sizes()));
     }
-    
+
+    /// @brief Returns the value of the bivariate B-spline object in
+    /// the points `xi`
+    ///
+    /// This function implements steps 2-3 of algorithm \ref
+    /// BSplineEvaluation for bivariate B-splines
+    /// (i.e. \f$d_\text{par}=2\f$)
+    ///
+    /// @tparam deriv Composition of derivative indicators of type \ref BSplineDeriv
+    ///
+    /// @param[in] xi Point(s) where to evaluate the bivariate B-spline object
+    ///
+    /// @param[in] idx Knot indices where to evaluate the bivariate B-spline object
+    ///
+    /// @param[in] coeff_idx Coefficient indices where to evaluate the bivariate B-spline object
+    ///
+    /// @result Value(s) of the bivariate B-spline evaluated at the point(s) `xi`
+    template<BSplineDeriv deriv = BSplineDeriv::func>
+    inline auto eval(const TensorArray2& xi, const TensorArray2& idx,
+                     const torch::Tensor& coeff_idx) const
+    {
+      assert(parDim_ == 2 &&
+             xi[0].sizes() == idx[0].sizes() &&
+             xi[1].sizes() == idx[1].sizes() &&
+             xi[0].sizes() ==  xi[1].sizes());
+      
+      if constexpr (geoDim_ > 1) {       
+        auto basfunc = eval_basfunc<deriv>(xi, idx);
+        BlockTensor<torch::Tensor, 1, geoDim_> result;
+        for (std::size_t i = 0; i < geoDim_; ++i)
+          result.set(i, dotproduct(basfunc,
+                                   coeffs(i).index_select(0, coeff_idx).view({-1, xi[0].numel()}),
+                                   0).view(xi[0].sizes()));
+        return result;
+      } else
+        return
+          BlockTensor<torch::Tensor, 1, 1>(dotproduct(eval_basfunc<deriv>(xi, idx),
+                                                      coeffs(0).index_select(0, coeff_idx).view({-1, xi[0].numel()}),
+                                                      0).view(xi[0].sizes()));
+    }
+
     /// @brief Returns the value of the trivariate B-spline object in
     /// the points `xi`
     ///
     /// This function implements steps 2-3 of algorithm \ref
-    /// BSplineEvaluation for trivariate B-splines
+    /// BSplineEvaluation for bivariate B-splines
     /// (i.e. \f$d_\text{par}=3\f$)
+    ///
+    /// @tparam deriv Composition of derivative indicators of type \ref BSplineDeriv
+    ///
+    /// @param[in] xi Point(s) where to evaluate the trivariate B-spline object
+    ///
+    /// @param[in] idx Knot indices where to evaluate the trivariate B-spline object
+    ///
+    /// @result Value(s) of the trivariate B-spline evaluated at the point(s) `xi`
     template<BSplineDeriv deriv = BSplineDeriv::func>
     inline auto eval(const TensorArray3& xi, const TensorArray3& idx) const
     {
-      assert(xi[0].sizes() == idx[0].sizes() &&
+      assert(parDim_ == 3 &&
+             xi[0].sizes() == idx[0].sizes() &&
              xi[1].sizes() == idx[1].sizes() &&
              xi[2].sizes() == idx[2].sizes() &&
              xi[0].sizes() ==  xi[1].sizes() &&
              xi[1].sizes() ==  xi[2].sizes());
       
       if constexpr (geoDim_ > 1) {
-        auto basfunc = eval_basfunc<deriv>(xi, idx);        
-        std::array<torch::Tensor, geoDim_> result;
+        auto basfunc = eval_basfunc<deriv>(xi, idx);
+        BlockTensor<torch::Tensor, 1, geoDim_> result;
         for (std::size_t i = 0; i < geoDim_; ++i)
-          result[i] = dotproduct(basfunc,
-                                 coeffs(i).index_select(0, eval_coeff_indices(idx)).view({-1, xi[0].numel()}),
-                                 0).view(xi[0].sizes());
+          result.set(i, dotproduct(basfunc,
+                                   coeffs(i).index_select(0, eval_coeff_indices(idx)).view({-1, xi[0].numel()}),
+                                   0).view(xi[0].sizes()));
         return result;
       } else        
         return
-          dotproduct(eval_basfunc<deriv>(xi, idx),
-                     coeffs(0).index_select(0, eval_coeff_indices(idx)).view({-1, xi[0].numel()}),
-                     0).view(xi[0].sizes());
+          BlockTensor<torch::Tensor, 1, 1>(dotproduct(eval_basfunc<deriv>(xi, idx),
+                                                      coeffs(0).index_select(0, eval_coeff_indices(idx)).view({-1, xi[0].numel()}),
+                                                      0).view(xi[0].sizes()));
     }
 
-    /// @brief Returns the value of the quartvariate B-spline object
-    /// in the points `xi`
+    /// @brief Returns the value of the trivariate B-spline object in
+    /// the points `xi`
     ///
     /// This function implements steps 2-3 of algorithm \ref
-    /// BSplineEvaluation for quartvariate B-splines
+    /// BSplineEvaluation for bivariate B-splines
+    /// (i.e. \f$d_\text{par}=3\f$)
+    ///
+    /// @tparam deriv Composition of derivative indicators of type \ref BSplineDeriv
+    ///
+    /// @param[in] xi Point(s) where to evaluate the trivariate B-spline object
+    ///
+    /// @param[in] idx Knot indices where to evaluate the trivariate B-spline object
+    ///
+    /// @param[in] coeff_idx Coefficient indices where to evaluate the trivariate B-spline object
+    ///
+    /// @result Value(s) of the trivariate B-spline evaluated at the point(s) `xi`
+    template<BSplineDeriv deriv = BSplineDeriv::func>
+    inline auto eval(const TensorArray3& xi, const TensorArray3& idx,
+                     const torch::Tensor& coeff_idx) const
+    {
+      assert(parDim_ == 3 &&
+             xi[0].sizes() == idx[0].sizes() &&
+             xi[1].sizes() == idx[1].sizes() &&
+             xi[2].sizes() == idx[2].sizes() &&
+             xi[0].sizes() ==  xi[1].sizes() &&
+             xi[1].sizes() ==  xi[2].sizes());
+      
+      if constexpr (geoDim_ > 1) {
+        auto basfunc = eval_basfunc<deriv>(xi, idx);
+        BlockTensor<torch::Tensor, 1, geoDim_> result;
+        for (std::size_t i = 0; i < geoDim_; ++i)
+          result.set(i, dotproduct(basfunc,
+                                   coeffs(i).index_select(0, coeff_idx).view({-1, xi[0].numel()}),
+                                   0).view(xi[0].sizes()));
+        return result;
+      } else        
+        return
+          BlockTensor<torch::Tensor, 1, 1>(dotproduct(eval_basfunc<deriv>(xi, idx),
+                                                      coeffs(0).index_select(0, coeff_idx).view({-1, xi[0].numel()}),
+                                                      0).view(xi[0].sizes()));
+    }
+
+    /// @brief Returns the value of the quartvariate B-spline object in
+    /// the points `xi`
+    ///
+    /// This function implements steps 2-3 of algorithm \ref
+    /// BSplineEvaluation for bivariate B-splines
     /// (i.e. \f$d_\text{par}=4\f$)
+    ///
+    /// @tparam deriv Composition of derivative indicators of type \ref BSplineDeriv
+    ///
+    /// @param[in] xi Point(s) where to evaluate the quartvariate B-spline object
+    ///
+    /// @param[in] idx Knot indices where to evaluate the quartvariate B-spline object
+    ///
+    /// @result Value(s) of the quartvariate B-spline evaluated at the point(s) `xi`
     template<BSplineDeriv deriv = BSplineDeriv::func>
     inline auto eval(const TensorArray4& xi, const TensorArray4& idx) const
     {
-      assert(xi[0].sizes() == idx[0].sizes() &&
+      assert(parDim_ == 4 &&
+             xi[0].sizes() == idx[0].sizes() &&
              xi[1].sizes() == idx[1].sizes() &&
              xi[2].sizes() == idx[2].sizes() &&
              xi[3].sizes() == idx[3].sizes() &&
@@ -583,17 +953,61 @@ namespace iganet {
       
       if constexpr (geoDim_ > 1) {
         auto basfunc = eval_basfunc<deriv>(xi, idx);
-        std::array<torch::Tensor, geoDim_> result;
+        BlockTensor<torch::Tensor, 1, geoDim_> result;
         for (std::size_t i = 0; i < geoDim_; ++i)
-          result[i] = dotproduct(basfunc,
-                                 coeffs(i).index_select(0, eval_coeff_indices(idx)).view({-1, xi[0].numel()}),
-                                 0).view(xi[0].sizes());
+          result.set(i, dotproduct(basfunc,
+                                   coeffs(i).index_select(0, eval_coeff_indices(idx)).view({-1, xi[0].numel()}),
+                                   0).view(xi[0].sizes()));
         return result;
       } else        
         return
-          dotproduct(eval_basfunc<deriv>(xi, idx),
-                     coeffs(0).index_select(0, eval_coeff_indices(idx)).view({-1, xi[0].numel()}),
-                     0).view(xi[0].sizes());
+          BlockTensor<torch::Tensor, 1, 1>(dotproduct(eval_basfunc<deriv>(xi, idx),
+                                                      coeffs(0).index_select(0, eval_coeff_indices(idx)).view({-1, xi[0].numel()}),
+                                                      0).view(xi[0].sizes()));
+    }
+
+    /// @brief Returns the value of the quartvariate B-spline object in
+    /// the points `xi`
+    ///
+    /// This function implements steps 2-3 of algorithm \ref
+    /// BSplineEvaluation for bivariate B-splines
+    /// (i.e. \f$d_\text{par}=4\f$)
+    ///
+    /// @tparam deriv Composition of derivative indicators of type \ref BSplineDeriv
+    ///
+    /// @param[in] xi Point(s) where to evaluate the quartvariate B-spline object
+    ///
+    /// @param[in] idx Knot indices where to evaluate the quartvariate B-spline object
+    ///
+    /// @param[in] coeff_idx Coefficient indices where to evaluate the quartvariate B-spline object
+    ///
+    /// @result Value(s) of the quartvariate B-spline evaluated at the point(s) `xi`
+    template<BSplineDeriv deriv = BSplineDeriv::func>
+    inline auto eval(const TensorArray4& xi, const TensorArray4& idx,
+                     const torch::Tensor& coeff_idx) const
+    {
+      assert(parDim_ == 4 &&
+             xi[0].sizes() == idx[0].sizes() &&
+             xi[1].sizes() == idx[1].sizes() &&
+             xi[2].sizes() == idx[2].sizes() &&
+             xi[3].sizes() == idx[3].sizes() &&
+             xi[0].sizes() ==  xi[1].sizes() &&
+             xi[1].sizes() ==  xi[2].sizes() &&
+             xi[2].sizes() ==  xi[3].sizes());
+      
+      if constexpr (geoDim_ > 1) {
+        auto basfunc = eval_basfunc<deriv>(xi, idx);
+        BlockTensor<torch::Tensor, 1, geoDim_> result;
+        for (std::size_t i = 0; i < geoDim_; ++i)
+          result.set(i, dotproduct(basfunc,
+                                   coeffs(i).index_select(0, coeff_idx).view({-1, xi[0].numel()}),
+                                   0).view(xi[0].sizes()));
+        return result;
+      } else        
+        return
+          BlockTensor<torch::Tensor, 1, 1>(dotproduct(eval_basfunc<deriv>(xi, idx),
+                                                      coeffs(0).index_select(0, coeff_idx).view({-1, xi[0].numel()}),
+                                                      0).view(xi[0].sizes()));
     }
 
     /// @brief Returns the indices of knot spans containing `xi`
@@ -814,9 +1228,11 @@ namespace iganet {
 #pragma omp parallel for simd collapse(2)
         for (int64_t i = 0; i < ncoeffs_[0]; ++i) {
           for (int64_t j = 0; j < ncoeffs_[1]; ++j) {
-            auto c = transformation(std::array<real_t, 2>{i / real_t(ncoeffs_[0] - 1), j / real_t(ncoeffs_[1] - 1)});
+            auto c = transformation(std::array<real_t, 2>{i / real_t(ncoeffs_[0] - 1),
+                                                          j / real_t(ncoeffs_[1] - 1)});
             for (short_t d = 0; d < geoDim_; ++d)
-              coeffs_[d].detach()[j * ncoeffs_[0] + i] = c[d];
+              coeffs_[d].detach()[j * ncoeffs_[0] +
+                                  i] = c[d];
           }
         }
       }
@@ -827,10 +1243,13 @@ namespace iganet {
         for (int64_t i = 0; i < ncoeffs_[0]; ++i) {
           for (int64_t j = 0; j < ncoeffs_[1]; ++j) {
             for (int64_t k = 0; k < ncoeffs_[2]; ++k) {
-              auto c = transformation(std::array<real_t, 3>{i / real_t(ncoeffs_[0] - 1), j / real_t(ncoeffs_[1] - 1),
+              auto c = transformation(std::array<real_t, 3>{i / real_t(ncoeffs_[0] - 1),
+                                                            j / real_t(ncoeffs_[1] - 1),
                                                             k / real_t(ncoeffs_[2] - 1)});
               for (short_t d = 0; d < geoDim_; ++d)
-                coeffs_[d].detach()[k * ncoeffs_[0] * ncoeffs_[1] + j * ncoeffs_[0] + i] = c[d];
+                coeffs_[d].detach()[k * ncoeffs_[0] * ncoeffs_[1] +
+                                    j * ncoeffs_[0] +
+                                    i] = c[d];
             }
           }
         }
@@ -843,13 +1262,15 @@ namespace iganet {
           for (int64_t j = 0; j < ncoeffs_[1]; ++j) {
             for (int64_t k = 0; k < ncoeffs_[2]; ++k) {
               for (int64_t l = 0; l < ncoeffs_[3]; ++l) {
-                auto c = transformation(std::array<real_t, 4>{i / real_t(ncoeffs_[0] - 1), j / real_t(ncoeffs_[1] - 1),
+                auto c = transformation(std::array<real_t, 4>{i / real_t(ncoeffs_[0] - 1),
+                                                              j / real_t(ncoeffs_[1] - 1),
                                                               k / real_t(ncoeffs_[2] - 1),
                                                               l / real_t(ncoeffs_[3] - 1)});
                 for (short_t d = 0; d < geoDim_; ++d)
                   coeffs_[d].detach()[l * ncoeffs_[0] * ncoeffs_[1] * ncoeffs_[2] +
                                       k * ncoeffs_[0] * ncoeffs_[1] +
-                                      k * ncoeffs_[0] + i] = c[d];
+                                      j * ncoeffs_[0] +
+                                      i] = c[d];
               }
             }
           }
@@ -1376,7 +1797,7 @@ namespace iganet {
         
         return b.view({degree+1, xi.numel()});
       }
-    }      
+    }
   };
 
   /// @brief Serializes a B-spline object
@@ -1440,7 +1861,7 @@ namespace iganet {
       Base::init_coeffs(init);
     }
 
-    /// @brief Returns the value of the B-spline object in the point `xi`
+    /// @brief Returns the value of the multivariate B-spline object in the point `xi`
     /// @{
     template<BSplineDeriv deriv = BSplineDeriv::func>
     inline auto eval(const torch::Tensor& xi) const
@@ -1456,6 +1877,27 @@ namespace iganet {
       else
         return Base::template eval<deriv>(xi, eval_knot_indices(xi));
     }
+
+    template<BSplineDeriv deriv = BSplineDeriv::func>
+    inline auto eval(const std::array<torch::Tensor, Base::parDim_>& xi,
+                     const std::array<torch::Tensor, Base::parDim_>& idx) const
+    {
+      if constexpr (Base::parDim_ == 0)
+        return Base::coeffs_[0];
+      else
+        return Base::template eval<deriv>(xi, idx);
+    }
+
+    template<BSplineDeriv deriv = BSplineDeriv::func>
+    inline auto eval(const std::array<torch::Tensor, Base::parDim_>& xi,
+                     const std::array<torch::Tensor, Base::parDim_>& idx,
+                     const torch::Tensor& coeff_idx) const
+    {
+      if constexpr (Base::parDim_ == 0)
+        return Base::coeffs_[0];
+      else
+        return Base::template eval<deriv>(xi, idx, coeff_idx);
+    }
     /// @}
     
     /// @brief Returns the indices of knot spans containing `xi`
@@ -1470,7 +1912,6 @@ namespace iganet {
     ///
     /// The indices are returned as `std::array<torch::Tensor,
     /// parDim_>` in the same order as provided in `xi`
-    /// @{
     inline auto eval_knot_indices(const TensorArray1& xi) const
     {
       assert(Base::parDim_ == 1);
@@ -1535,8 +1976,6 @@ namespace iganet {
                                             Base::nknots_[3]-Base::degrees_[3]-1).view(xi[3].sizes())
                           });
     }
-    /// @}
-  
   };
 
   /// B-spline (common high-level functionality)
@@ -1558,6 +1997,1130 @@ namespace iganet {
   public:
     using BSplineCore::BSplineCore;
 
+    /// @brief Returns a block-tensor with the divergence of the
+    /// B-spline object with respect to the parametric variables
+    ///
+    /// @param[in] xi Point(s) where to evaluate the divergence
+    ///
+    /// @result Block-tensor with the divergence with respect to the
+    /// parametric variables `xi`
+    /// \f[
+    ///     \nabla_{\boldsymbol{\xi}} \cdot \mathbf{u}
+    ///        =
+    ///     \text{trace} ( J_{\boldsymbol{\xi}}(u) )
+    ///        =
+    ///     \frac{\partial u_0}{\partial \xi_0} +
+    ///     \frac{\partial u_1}{\partial \xi_1} +
+    ///        \dots
+    ///     \frac{\partial u_{d_\text{geo}}}{\partial \xi_{d_\text{par}}}
+    /// \f]
+    ///
+    /// @note This function can only be applied to B-spline objects with
+    /// equal parametric and geometric multiplicity.
+    /// @{
+    auto div(torch::Tensor& xi) const
+    {
+      return div(TensorArray1({xi}));
+    }
+    
+    inline auto div(const std::array<torch::Tensor, BSplineCore::parDim_>& xi) const
+    {
+      return div(xi, BSplineCore::eval_knot_indices(xi));
+    }
+    /// @}
+    
+    /// @brief Returns a block-tensor with the divergence of the
+    /// B-spline object with respect to the parametric variables
+    ///
+    /// @param[in] xi Point(s) where to evaluate the divergence
+    ///
+    /// @param[in] idx Knot indices where to evaluate the divergence
+    ///
+    /// @result Block-tensor with the divergence with respect to
+    /// the parametric variables
+    /// \f[
+    ///     \nabla_{\boldsymbol{\xi}} \cdot \mathbf{u}
+    ///        =
+    ///     \text{trace} ( J_{\boldsymbol{\xi}}(u) )
+    ///        =
+    ///     \frac{\partial u_0}{\partial \xi_0} +
+    ///     \frac{\partial u_1}{\partial \xi_1} +
+    ///        \dots
+    ///     \frac{\partial u_{d_\text{geo}}}{\partial \xi_{d_\text{par}}}
+    /// \f]
+    ///
+    /// @note This function can only be applied to B-spline objects with
+    /// equal parametric and geometric multiplicity.
+    inline auto div(const std::array<torch::Tensor, BSplineCore::parDim_>& xi,
+                    const std::array<torch::Tensor, BSplineCore::parDim_>& idx) const
+    {
+      return div(xi, idx, BSplineCore::eval_coeff_indices(idx));
+    }
+    
+    /// @brief Returns a block-tensor with the divergence of the
+    /// B-spline object with respect to the parametric variables
+    ///
+    /// @param[in] xi Point(s) where to evaluate the divergence
+    ///
+    /// @param[in] idx Knot indices where to evaluate the divergence
+    ///
+    /// @param[in] coeff_idx Coefficient indices where to evaluate the divergence
+    ///
+    /// @result Block-tensor with the divergence of with respect to
+    /// the parametric variables
+    /// \f[
+    ///     \nabla_{\boldsymbol{\xi}} \cdot \mathbf{u}
+    ///        =
+    ///     \text{trace} ( J_{\boldsymbol{\xi}}(u) )
+    ///        =
+    ///     \frac{\partial u_0}{\partial \xi_0} +
+    ///     \frac{\partial u_1}{\partial \xi_1} +
+    ///        \dots
+    ///     \frac{\partial u_{d_\text{geo}}}{\partial \xi_{d_\text{par}}}
+    /// \f]
+    ///
+    /// @note This function can only be applied to B-spline objects with
+    /// equal parametric and geometric multiplicity.
+    ///
+    /// @{
+    inline auto div(const TensorArray1& xi, const TensorArray1& idx,
+                    const torch::Tensor& coeff_idx) const
+    {
+      assert(xi[0].sizes() == idx[0].sizes());
+      if constexpr (BSplineCore::parDim_ == 1)
+        
+        return BlockTensor<torch::Tensor, 1, 1>
+          (BSplineCore::template eval<BSplineDeriv::dx>(xi, idx, coeff_idx)[0]);
+      
+      else
+        throw std::runtime_error("Unsupported parametric dimension");
+    }
+    
+    inline auto div(const TensorArray2& xi, const TensorArray2& idx,
+                    const torch::Tensor& coeff_idx) const
+    {
+      assert(xi[0].sizes() == idx[0].sizes() &&
+             xi[1].sizes() == idx[1].sizes());
+
+      if constexpr (BSplineCore::parDim_ == 2)
+      
+        return BlockTensor<torch::Tensor, 1, 1>
+          (BSplineCore::template eval<BSplineDeriv::dx>(xi, idx, coeff_idx)[0] +
+           BSplineCore::template eval<BSplineDeriv::dy>(xi, idx, coeff_idx)[1]);
+       
+      else
+        throw std::runtime_error("Unsupported parametric dimension");
+    }
+
+    inline auto div(const TensorArray3& xi, const TensorArray3& idx,
+                    const torch::Tensor& coeff_idx) const
+    {
+      assert(xi[0].sizes() == idx[0].sizes() &&
+             xi[1].sizes() == idx[1].sizes() &&
+             xi[2].sizes() == idx[2].sizes());
+    
+      if constexpr (BSplineCore::parDim_ == 3)
+      
+        return BlockTensor<torch::Tensor, 1, 1>
+          (BSplineCore::template eval<BSplineDeriv::dx>(xi, idx, coeff_idx)[0] +
+           BSplineCore::template eval<BSplineDeriv::dy>(xi, idx, coeff_idx)[1] +
+           BSplineCore::template eval<BSplineDeriv::dz>(xi, idx, coeff_idx)[2]);
+    
+      else
+        throw std::runtime_error("Unsupported parametric dimension");
+    }
+
+    inline auto div(const TensorArray4& xi, const TensorArray4& idx,
+                    const torch::Tensor& coeff_idx) const
+    {
+      assert(xi[0].sizes() == idx[0].sizes() &&
+             xi[1].sizes() == idx[1].sizes() &&
+             xi[2].sizes() == idx[2].sizes() &&
+             xi[3].sizes() == idx[3].sizes());
+    
+      if constexpr (BSplineCore::parDim_ == 4)
+      
+        return BlockTensor<torch::Tensor, 1, 1>
+          (BSplineCore::template eval<BSplineDeriv::dx>(xi, idx, coeff_idx)[0] +
+           BSplineCore::template eval<BSplineDeriv::dy>(xi, idx, coeff_idx)[1] +
+           BSplineCore::template eval<BSplineDeriv::dz>(xi, idx, coeff_idx)[2] +
+           BSplineCore::template eval<BSplineDeriv::dt>(xi, idx, coeff_idx)[3]);
+    
+      else
+        throw std::runtime_error("Unsupported parametric dimension");
+    }
+    /// @}
+
+    /// @brief Returns a block-tensor with the divergence of the
+    /// B-spline object with respect to the physical variables
+    ///
+    /// @tparam Geometrymap_t Type of the geometry map's B-spline object
+    ///
+    /// @param[in] G B-spline object of the geometry map
+    ///
+    /// @param[in] xi Point(s) where to evaluate the divergence
+    ///
+    /// @result Block-tensor with the divergence with respect to the
+    /// parametric variables    
+    /// \f[
+    ///     \nabla_{\mathbf{x}} \cdot \mathbf{u}
+    ///        =
+    ///     \text{trace} ( J_{\mathbf{x}}(u) )
+    ///        =
+    ///     \frac{\partial u_0}{\partial x_0} +
+    ///     \frac{\partial u_1}{\partial x_1} +
+    ///     \frac{\partial u_{d_\text{geo}}}{\partial x_{d_\text{par}}}
+    /// \f]
+    ///
+    /// @{
+    template<typename Geometrymap_t>
+    auto idiv(const Geometrymap_t& G, torch::Tensor& xi)
+    {
+      return idiv(G, TensorArray1({xi}));
+    }
+  
+    template<typename Geometrymap_t>
+    inline auto idiv(const Geometrymap_t& G,
+                     const std::array<torch::Tensor, BSplineCore::parDim_>& xi) const
+    {
+      return idiv(G, xi, eval_knot_indices(xi), G.eval_knot_indices(xi));
+    }
+    /// @}
+
+    /// @brief Returns a block-tensor with the divergence of the
+    /// B-spline object with respect to the physical variables
+    ///
+    /// @tparam Geometrymap_t Type of the geometry map's B-spline object
+    ///
+    /// @param[in] G B-spline object of the geometry map
+    ///
+    /// @param[in] xi Point(s) where to evaluate the divergence
+    ///
+    /// @param[in] idx Knot indices where to evaluate the divergence
+    ///
+    /// @param[in] idx_G Knot indices where to evaluate the Jacobian of `G`
+    ///
+    /// @result Block-tensor with the divergence with respect to the
+    /// physical variables
+    /// \f[
+    ///     \nabla_{\mathbf{x}} \cdot \mathbf{u}
+    ///        =
+    ///     \text{trace} ( J_{\mathbf{x}}(u) )
+    ///        =
+    ///     \frac{\partial u_0}{\partial x_0} +
+    ///     \frac{\partial u_1}{\partial x_1} +
+    ///     \frac{\partial u_{d_\text{geo}}}{\partial x_{d_\text{par}}}
+    /// \f]
+    template<typename Geometrymap_t>
+    inline auto idiv(const Geometrymap_t G,
+                     const std::array<torch::Tensor, BSplineCore::parDim_>& xi,
+                     const std::array<torch::Tensor, BSplineCore::parDim_>& idx,
+                     const std::array<torch::Tensor, Geometrymap_t::parDim()>& idx_G) const
+    {
+      return idiv(G, xi, idx, eval_coeff_indices(idx),
+                  idx_G, G.eval_coeff_indices(idx_G));
+    }
+
+    /// @brief Returns a block-tensor with the divergence of the
+    /// B-spline object with respect to the physical variables
+    ///
+    /// @tparam Geometrymap_t Type of the geometry map's B-spline object
+    ///
+    /// @param[in] G B-spline object of the geometry map
+    ///
+    /// @param[in] xi Point(s) where to evaluate the divergence
+    ///
+    /// @param[in] idx Knot indices where to evaluate the divergence
+    ///
+    /// @param[in] idx_G Knot indices where to evaluate the Jacobian of `G`
+    ///
+    /// @param[in] coeff_idx Coefficient indices where to evaluate the divergence
+    ///
+    /// @param[in] coeff_idx_G Coefficient indices where to evaluate the Jacobian of `G`
+    ///
+    /// @result Block-tensor with the divergence with respect to the
+    /// physical variables
+    /// \f[
+    ///     \nabla_{\mathbf{x}} \cdot \mathbf{u}
+    ///        =
+    ///     \text{trace} ( J_{\mathbf{x}}(u) )
+    ///        =
+    ///     \frac{\partial u_0}{\partial x_0} +
+    ///     \frac{\partial u_1}{\partial x_1} +
+    ///     \frac{\partial u_{d_\text{geo}}}{\partial x_{d_\text{par}}}
+    /// \f]
+    template<typename Geometrymap_t>
+    inline auto idiv(const Geometrymap_t& G,
+                     const std::array<torch::Tensor, BSplineCore::parDim_>& xi,
+                     const std::array<torch::Tensor, BSplineCore::parDim_>& idx,
+                     const torch::Tensor& coeff_idx, 
+                     const std::array<torch::Tensor, Geometrymap_t::parDim()>& idx_G,
+                     const torch::Tensor& coeff_idx_G) const
+    {
+      return BSplineCore::ijac(xi, idx, coeff_idx, idx_G, coeff_idx_G).trace();
+    }
+    
+    /// @brief Returns a block-tensor with the gradient of the B-spline
+    /// object with respect to the parametric variables
+    ///
+    /// @param[in] xi Point(s) where to evaluate the gradient
+    ///
+    /// @result Block-tensor with the gradient with respect to the
+    /// parametric variables `xi`
+    /// \f[
+    ///     \nabla_{\boldsymbol{\xi}}u
+    ///        =
+    ///     \left(\frac{\partial u}{\partial \xi_0},
+    ///           \frac{\partial u}{\partial \xi_1},
+    ///           \dots
+    ///           \frac{\partial u}{\partial \xi_{d_\text{par}}}\right)
+    /// \f]
+    ///
+    /// @note This function can only be applied to B-spline objects with
+    /// geometric multiplicity 1, i.e. scalar fields.
+    ///
+    /// @{
+    auto grad(torch::Tensor& xi) const
+    {
+      return grad(TensorArray1({xi}));
+    }
+    
+    inline auto grad(const std::array<torch::Tensor, BSplineCore::parDim_>& xi) const
+    {
+      return grad(xi, BSplineCore::eval_knot_indices(xi));
+    }
+    /// @}
+    
+    /// @brief Returns a block-tensor with the gradient of the
+    /// B-spline object with respect to the parametric variables
+    ///
+    /// @param[in] xi Point(s) where to evaluate the gradient
+    ///
+    /// @param[in] idx Knot indices where to evaluate the gradient
+    ///
+    /// @result Block-tensor with the gradient with respect to
+    /// the parametric variables
+    /// \f[
+    ///     \nabla_{\boldsymbol{\xi}}u
+    ///        =
+    ///     \left(\frac{\partial u}{\partial \xi_0},
+    ///           \frac{\partial u}{\partial \xi_1},
+    ///           \dots
+    ///           \frac{\partial u}{\partial \xi_{d_\text{par}}}\right)
+    /// \f]
+    ///
+    /// @note This function can only be applied to B-spline objects with
+    /// geometric multiplicity 1, i.e. scalar fields.
+    inline auto grad(const std::array<torch::Tensor, BSplineCore::parDim_>& xi,
+                     const std::array<torch::Tensor, BSplineCore::parDim_>& idx) const
+    {
+      return grad(xi, idx, BSplineCore::eval_coeff_indices(idx));
+    }
+    
+    /// @brief Returns a block-tensor with the gradient of the
+    /// B-spline object with respect to the parametric variables
+    ///
+    /// @param[in] xi Point(s) where to evaluate the gradient
+    ///
+    /// @param[in] idx Knot indices where to evaluate the gradient
+    ///
+    /// @param[in] coeff_idx Coefficient indices where to evaluate the gradient
+    ///
+    /// @result Block-tensor with the gradient with respect to the
+    /// parametric variables    
+    /// \f[
+    ///     \nabla_{\boldsymbol{\xi}}u
+    ///        =
+    ///     \left(\frac{\partial u}{\partial \xi_0},
+    ///           \frac{\partial u}{\partial \xi_1},
+    ///           \dots
+    ///           \frac{\partial u}{\partial \xi_{d_\text{par}}}\right)
+    /// \f]
+    ///
+    /// @note This function can only be applied to B-spline objects with
+    /// geometric multiplicity 1, i.e. scalar fields.
+    ///
+    /// @{
+    inline auto grad(const TensorArray1& xi, const TensorArray1& idx,
+                     const torch::Tensor& coeff_idx) const
+    {
+      static_assert(BSplineCore::geoDim_ == 1,
+                    "grad(.) requires 1D variable, use jac(.) instead");
+      assert(xi[0].sizes() == idx[0].sizes());
+      if constexpr (BSplineCore::parDim_ == 1)
+        
+        return BlockTensor<torch::Tensor, 1, 1>
+          (BSplineCore::template eval<BSplineDeriv::dx>(xi, idx, coeff_idx));
+      
+      else
+        throw std::runtime_error("Unsupported parametric dimension");
+    }
+
+    inline auto grad(const TensorArray2& xi, const TensorArray2& idx,
+                     const torch::Tensor& coeff_idx) const
+    {
+      static_assert(BSplineCore::geoDim_ == 1,
+                    "grad(.) requires 1D variable, use jac(.) instead");
+      assert(xi[0].sizes() == idx[0].sizes() &&
+             xi[1].sizes() == idx[1].sizes());
+
+      if constexpr (BSplineCore::parDim_ == 2)
+      
+        return BlockTensor<torch::Tensor, 1, 2>
+          (BSplineCore::template eval<BSplineDeriv::dx>(xi, idx, coeff_idx),
+           BSplineCore::template eval<BSplineDeriv::dy>(xi, idx, coeff_idx));
+       
+      else
+        throw std::runtime_error("Unsupported parametric dimension");
+    }
+
+    inline auto grad(const TensorArray3& xi, const TensorArray3& idx,
+                     const torch::Tensor& coeff_idx) const
+    {
+      static_assert(BSplineCore::geoDim_ == 1,
+                    "grad(.) requires 1D variable, use jac(.) instead");
+      assert(xi[0].sizes() == idx[0].sizes() &&
+             xi[1].sizes() == idx[1].sizes() &&
+             xi[2].sizes() == idx[2].sizes());
+    
+      if constexpr (BSplineCore::parDim_ == 3)
+      
+        return BlockTensor<torch::Tensor, 1, 3>
+          (BSplineCore::template eval<BSplineDeriv::dx>(xi, idx, coeff_idx),
+           BSplineCore::template eval<BSplineDeriv::dy>(xi, idx, coeff_idx),
+           BSplineCore::template eval<BSplineDeriv::dz>(xi, idx, coeff_idx));
+    
+      else
+        throw std::runtime_error("Unsupported parametric dimension");
+    }
+
+    inline auto grad(const TensorArray4& xi, const TensorArray4& idx,
+                     const torch::Tensor& coeff_idx) const
+    {
+      static_assert(BSplineCore::geoDim_ == 1,
+                    "grad(.) requires 1D variable, use jac(.) instead");
+      assert(xi[0].sizes() == idx[0].sizes() &&
+             xi[1].sizes() == idx[1].sizes() &&
+             xi[2].sizes() == idx[2].sizes() &&
+             xi[3].sizes() == idx[3].sizes());
+    
+      if constexpr (BSplineCore::parDim_ == 4)
+      
+        return BlockTensor<torch::Tensor, 1, 4>
+          (BSplineCore::template eval<BSplineDeriv::dx>(xi, idx, coeff_idx),
+           BSplineCore::template eval<BSplineDeriv::dy>(xi, idx, coeff_idx),
+           BSplineCore::template eval<BSplineDeriv::dz>(xi, idx, coeff_idx),
+           BSplineCore::template eval<BSplineDeriv::dt>(xi, idx, coeff_idx));
+    
+      else
+        throw std::runtime_error("Unsupported parametric dimension");
+    }
+    /// @}
+
+    /// @brief Returns a block-tensor with the gradient of the B-spline
+    /// object with respect to the physical variables
+    ///
+    /// @tparam Geometrymap_t Type of the geometry map's B-spline object
+    ///
+    /// @param[in] G B-spline object of the geometry map
+    ///
+    /// @param[in] xi Point(s) where to evaluate the gradient
+    ///
+    /// @result Block-tensor with the gradient with respect to the
+    /// parametric variables    
+    /// \f[
+    ///     \nabla_{\mathbf{x}} u
+    ///        =
+    ///     \nabla_{\boldsymbol{\xi}} u \, J_{\boldsymbol{\xi}}(G)^{-T} ,
+    ///     \quad
+    ///     \mathbf{x} = G(\boldsymbol{\xi})
+    /// \f]
+    ///
+    /// @{
+    template<typename Geometrymap_t>
+    auto igrad(const Geometrymap_t& G, torch::Tensor& xi)
+    {
+      return igrad(G, TensorArray1({xi}));
+    }
+  
+    template<typename Geometrymap_t>
+    inline auto igrad(const Geometrymap_t& G,
+                      const std::array<torch::Tensor, BSplineCore::parDim_>& xi) const
+    {
+      return igrad(G, xi, BSplineCore::eval_knot_indices(xi), G.eval_knot_indices(xi));
+    }
+    /// @}
+
+    /// @brief Returns a block-tensor with the gradient of the B-spline
+    /// object with respect to the physical variables
+    ///
+    /// @tparam Geometrymap_t Type of the geometry map's B-spline object
+    ///
+    /// @param[in] G B-spline object of the geometry map
+    ///
+    /// @param[in] xi Point(s) where to evaluate the gradient
+    ///
+    /// @param[in] idx Knot indices where to evaluate the gradient
+    ///
+    /// @param[in] idx_G Knot indices where to evaluate Jacobian of `G`
+    ///
+    /// @result Block-tensor with the gradient with respect to the
+    /// physical variables    
+    /// \f[
+    ///     \nabla_{\mathbf{x}} u
+    ///        =
+    ///     \nabla_{\boldsymbol{\xi}} u \, J_{\boldsymbol{\xi}}(G)^{-T} ,
+    ///     \quad
+    ///     \mathbf{x} = G(\boldsymbol{\xi}) 
+    /// \f]
+    template<typename Geometrymap_t>
+    inline auto igrad(const Geometrymap_t G,
+                      const std::array<torch::Tensor, BSplineCore::parDim_>& xi,
+                      const std::array<torch::Tensor, BSplineCore::parDim_>& idx,
+                      const std::array<torch::Tensor, Geometrymap_t::parDim()>& idx_G) const
+    {
+      return igrad(G, xi, idx, BSplineCore::eval_coeff_indices(idx),
+                   idx_G, G.eval_coeff_indices(idx_G));
+    }
+
+    /// @brief Returns a block-tensor with the gradient of the B-spline
+    /// object with respect to the physical variables
+    ///
+    /// @tparam Geometrymap_t Type of the geometry map's B-spline object
+    ///
+    /// @param[in] G B-spline object of the geometry map
+    ///
+    /// @param[in] xi Point(s) where to evaluate the gradient
+    ///
+    /// @param[in] idx Knot indices where to evaluate the gradient
+    ///
+    /// @param[in] idx_G Knot indices where to evaluate the Jacobian of `G`
+    ///
+    /// @param[in] coeff_idx Coefficient indices where to evaluate the gradient
+    ///
+    /// @param[in] coeff_idx_G Coefficient indices where to evaluate the Jacobian of `G`
+    ///
+    /// @result Block-tensor with the gradient with respect to the
+    /// physical variables    
+    /// \f[
+    ///     \nabla_{\mathbf{x}} u
+    ///        =
+    ///     \nabla_{\boldsymbol{\xi}} u \, J_{\boldsymbol{\xi}}(G)^{-T} ,
+    ///     \quad
+    ///     \mathbf{x} = G(\boldsymbol{\xi}) 
+    /// \f]
+    template<typename Geometrymap_t>
+    inline auto igrad(const Geometrymap_t& G,
+                      const std::array<torch::Tensor, BSplineCore::parDim_>& xi,
+                      const std::array<torch::Tensor, BSplineCore::parDim_>& idx,
+                      const torch::Tensor& coeff_idx, 
+                      const std::array<torch::Tensor, Geometrymap_t::parDim()>& idx_G,
+                      const torch::Tensor& coeff_idx_G) const
+    {
+      return grad(xi, idx, coeff_idx) * G.jac(xi, idx_G, coeff_idx_G).ginv();
+    }
+
+    /// @brief Returns a block-tensor with the Hessian of the B-spline
+    /// object with respect to the parametric variables
+    ///
+    /// @param[in] xi Point(s) where to evaluate the Hessian
+    ///
+    /// @result Block-tensor with the Hessian with respect to the
+    /// parametric variables `xi`
+    /// \f[
+    ///     H_{\boldsymbol{\xi}}(u)
+    ///        =
+    ///     \begin{bmatrix}
+    ///           \frac{\partial^2 u}{\partial^2 \xi_0}&
+    ///           \frac{\partial^2 u}{\partial \xi_0\partial \xi_1}&
+    ///           \dots&
+    ///           \frac{\partial^2 u}{\partial \xi_0\partial \xi_{d_\text{par}}}\\
+    ///           \frac{\partial^2 u}{\partial \xi_1\partial \xi_0}&
+    ///           \frac{\partial^2 u}{\partial^2 \xi_1}&
+    ///           \dots&
+    ///           \frac{\partial^2 u}{\partial \xi_1\partial \xi_{d_\text{par}}}\\
+    ///           \vdots& \vdots & \ddots & \vdots\\
+    ///           \frac{\partial^2 u}{\partial \xi_{d_\text{par}}\partial \xi_0}&
+    ///           \frac{\partial^2 u}{\partial \xi_{d_\text{par}}\partial \xi_1}&
+    ///           \dots&
+    ///           \frac{\partial^2 u}{\partial^2 \xi_{d_\text{par}}}
+    ///     \end{bmatrix}
+    /// \f]
+    ///
+    /// @note This function can only be applied to B-spline objects with
+    /// geometric multiplicity 1, i.e. scalar fields.
+    ///
+    /// @{
+    auto hess(torch::Tensor& xi) const
+    {
+      return hess(TensorArray1({xi}));
+    }
+    
+    inline auto hess(const std::array<torch::Tensor, BSplineCore::parDim_>& xi) const
+    {
+      return hess(xi, BSplineCore::eval_knot_indices(xi));
+    }
+    /// @}
+    
+    /// @brief Returns a block-tensor with the Hessian of the
+    /// B-spline object with respect to the parametric variables
+    ///
+    /// @param[in] xi Point(s) where to evaluate the gradient
+    ///
+    /// @param[in] idx Knot indices where to evaluate the Hessian
+    ///
+    /// @result Block-tensor with the Hessian with respect to
+    /// the parametric variables
+    /// \f[
+    ///     H_{\boldsymbol{\xi}}(u)
+    ///        =
+    ///     \begin{bmatrix}
+    ///           \frac{\partial^2 u}{\partial^2 \xi_0}&
+    ///           \frac{\partial^2 u}{\partial \xi_0\partial \xi_1}&
+    ///           \dots&
+    ///           \frac{\partial^2 u}{\partial \xi_0\partial \xi_{d_\text{par}}}\\
+    ///           \frac{\partial^2 u}{\partial \xi_1\partial \xi_0}&
+    ///           \frac{\partial^2 u}{\partial^2 \xi_1}&
+    ///           \dots&
+    ///           \frac{\partial^2 u}{\partial \xi_1\partial \xi_{d_\text{par}}}\\
+    ///           \vdots& \vdots & \ddots & \vdots\\
+    ///           \frac{\partial^2 u}{\partial \xi_{d_\text{par}}\partial \xi_0}&
+    ///           \frac{\partial^2 u}{\partial \xi_{d_\text{par}}\partial \xi_1}&
+    ///           \dots&
+    ///           \frac{\partial^2 u}{\partial^2 \xi_{d_\text{par}}}
+    ///     \end{bmatrix}
+    /// \f]
+    ///
+    /// @note This function can only be applied to B-spline objects with
+    /// geometric multiplicity 1, i.e. scalar fields.
+    inline auto hess(const std::array<torch::Tensor, BSplineCore::parDim_>& xi,
+                     const std::array<torch::Tensor, BSplineCore::parDim_>& idx) const
+    {
+      return hess(xi, idx, BSplineCore::eval_coeff_indices(idx));
+    }
+    
+    /// @brief Returns a block-tensor with the Hessian of the
+    /// B-spline object with respect to the parametric variables
+    ///
+    /// @param[in] xi Point(s) where to evaluate the Hessian
+    ///
+    /// @param[in] idx Knot indices where to evaluate the Hessian
+    ///
+    /// @param[in] coeff_idx Coefficient indices where to evaluate the Hessian
+    ///
+    /// @result Block-tensor with the Hessian with respect to the
+    /// parametric variables
+    /// \f[
+    ///     H_{\boldsymbol{\xi}}(u)
+    ///        =
+    ///     \begin{bmatrix}
+    ///           \frac{\partial^2 u}{\partial^2 \xi_0}&
+    ///           \frac{\partial^2 u}{\partial \xi_0\partial \xi_1}&
+    ///           \dots&
+    ///           \frac{\partial^2 u}{\partial \xi_0\partial \xi_{d_\text{par}}}\\
+    ///           \frac{\partial^2 u}{\partial \xi_1\partial \xi_0}&
+    ///           \frac{\partial^2 u}{\partial^2 \xi_1}&
+    ///           \dots&
+    ///           \frac{\partial^2 u}{\partial \xi_1\partial \xi_{d_\text{par}}}\\
+    ///           \vdots& \vdots & \ddots & \vdots\\
+    ///           \frac{\partial^2 u}{\partial \xi_{d_\text{par}}\partial \xi_0}&
+    ///           \frac{\partial^2 u}{\partial \xi_{d_\text{par}}\partial \xi_1}&
+    ///           \dots&
+    ///           \frac{\partial^2 u}{\partial^2 \xi_{d_\text{par}}}
+    ///     \end{bmatrix}
+    /// \f]
+    ///
+    /// @note This function can only be applied to B-spline objects with
+    /// geometric multiplicity 1, i.e. scalar fields.
+    ///
+    /// @{
+    inline auto hess(const TensorArray1& xi, const TensorArray1& idx,
+                     const torch::Tensor& coeff_idx) const
+    {
+      static_assert(BSplineCore::geoDim_ == 1,
+                    "hess(.) requires 1D variable");
+      assert(xi[0].sizes() == idx[0].sizes());
+      if constexpr (BSplineCore::parDim_ == 1)
+        
+        return BlockTensor<torch::Tensor, 1, 1>
+          (BSplineCore::template eval<BSplineDeriv::dx2>(xi, idx, coeff_idx));
+      
+      else
+        throw std::runtime_error("Unsupported parametric dimension");
+    }
+
+    inline auto hess(const TensorArray2& xi, const TensorArray2& idx,
+                     const torch::Tensor& coeff_idx) const
+    {
+      static_assert(BSplineCore::geoDim_ == 1,
+                    "hess(.) requires 1D variable");
+      assert(xi[0].sizes() == idx[0].sizes() &&
+             xi[1].sizes() == idx[1].sizes());
+
+      if constexpr (BSplineCore::parDim_ == 2)
+      
+        return BlockTensor<torch::Tensor, 2, 2>
+          (BSplineCore::template eval<BSplineDeriv::dx2 >(xi, idx, coeff_idx),
+           BSplineCore::template eval<BSplineDeriv::dxdy>(xi, idx, coeff_idx),
+           BSplineCore::template eval<BSplineDeriv::dydx>(xi, idx, coeff_idx),
+           BSplineCore::template eval<BSplineDeriv::dy2 >(xi, idx, coeff_idx));
+       
+      else
+        throw std::runtime_error("Unsupported parametric dimension");
+    }
+
+    inline auto hess(const TensorArray3& xi, const TensorArray3& idx,
+                     const torch::Tensor& coeff_idx) const
+    {
+      static_assert(BSplineCore::geoDim_ == 1,
+                    "hess(.) requires 1D variable");
+      assert(xi[0].sizes() == idx[0].sizes() &&
+             xi[1].sizes() == idx[1].sizes() &&
+             xi[2].sizes() == idx[2].sizes());
+    
+      if constexpr (BSplineCore::parDim_ == 3)
+      
+        return BlockTensor<torch::Tensor, 3, 3>
+          (BSplineCore::template eval<BSplineDeriv::dx2 >(xi, idx, coeff_idx),
+           BSplineCore::template eval<BSplineDeriv::dxdy>(xi, idx, coeff_idx),
+           BSplineCore::template eval<BSplineDeriv::dxdz>(xi, idx, coeff_idx),
+           BSplineCore::template eval<BSplineDeriv::dydx>(xi, idx, coeff_idx),
+           BSplineCore::template eval<BSplineDeriv::dy2> (xi, idx, coeff_idx),
+           BSplineCore::template eval<BSplineDeriv::dydz>(xi, idx, coeff_idx),
+           BSplineCore::template eval<BSplineDeriv::dzdx>(xi, idx, coeff_idx),
+           BSplineCore::template eval<BSplineDeriv::dzdy>(xi, idx, coeff_idx),
+           BSplineCore::template eval<BSplineDeriv::dz2 >(xi, idx, coeff_idx));
+    
+      else
+        throw std::runtime_error("Unsupported parametric dimension");
+    }
+
+    inline auto hess(const TensorArray4& xi, const TensorArray4& idx,
+                     const torch::Tensor& coeff_idx) const
+    {
+      static_assert(BSplineCore::geoDim_ == 1,
+                    "hess(.) requires 1D variable");
+      assert(xi[0].sizes() == idx[0].sizes() &&
+             xi[1].sizes() == idx[1].sizes() &&
+             xi[2].sizes() == idx[2].sizes() &&
+             xi[3].sizes() == idx[3].sizes());
+    
+      if constexpr (BSplineCore::parDim_ == 4)
+      
+        return BlockTensor<torch::Tensor, 4, 4>
+          (BSplineCore::template eval<BSplineDeriv::dx2 >(xi, idx, coeff_idx),
+           BSplineCore::template eval<BSplineDeriv::dxdy>(xi, idx, coeff_idx),
+           BSplineCore::template eval<BSplineDeriv::dxdz>(xi, idx, coeff_idx),
+           BSplineCore::template eval<BSplineDeriv::dxdt>(xi, idx, coeff_idx),
+           BSplineCore::template eval<BSplineDeriv::dydx>(xi, idx, coeff_idx),
+           BSplineCore::template eval<BSplineDeriv::dy2 >(xi, idx, coeff_idx),
+           BSplineCore::template eval<BSplineDeriv::dydz>(xi, idx, coeff_idx),
+           BSplineCore::template eval<BSplineDeriv::dydt>(xi, idx, coeff_idx),
+           BSplineCore::template eval<BSplineDeriv::dzdx>(xi, idx, coeff_idx),
+           BSplineCore::template eval<BSplineDeriv::dzdy>(xi, idx, coeff_idx),
+           BSplineCore::template eval<BSplineDeriv::dz2 >(xi, idx, coeff_idx),
+           BSplineCore::template eval<BSplineDeriv::dzdt>(xi, idx, coeff_idx),
+           BSplineCore::template eval<BSplineDeriv::dtdx>(xi, idx, coeff_idx),
+           BSplineCore::template eval<BSplineDeriv::dtdy>(xi, idx, coeff_idx),
+           BSplineCore::template eval<BSplineDeriv::dtdz>(xi, idx, coeff_idx),
+           BSplineCore::template eval<BSplineDeriv::dt2 >(xi, idx, coeff_idx));
+    
+      else
+        throw std::runtime_error("Unsupported parametric dimension");
+    }
+    /// @}
+
+    /// @brief Returns a block-tensor with the Hessian of the B-spline
+    /// object with respect to the physical variables
+    ///
+    /// @tparam Geometrymap_t Type of the geometry map's B-spline object
+    ///
+    /// @param[in] G B-spline object of the geometry map
+    ///
+    /// @param[in] xi Point(s) where to evaluate the Hessian
+    ///
+    /// @result Block-tensor with the Hessian with respect to the
+    /// parametric variables   
+    /// \f[
+    ///     H_{\mathbf{x}}(u)
+    ///        =
+    ///     J_{\boldsymbol{\xi}}(G)^{-t} (H_\boldsymbol{\xi}(u)
+    ///     - \nabla_{\mathbf{x}}u + H_{\boldsymbol{\xi}}(G)) J_{\boldsymbol{\xi}}(G)^{-1} ,
+    ///     \quad
+    ///     \mathbf{x} = G(\boldsymbol{\xi})
+    /// \f]
+    ///
+    /// @{
+    template<typename Geometrymap_t>
+    auto ihess(const Geometrymap_t& G, torch::Tensor& xi)
+    {
+      return ihess(G, TensorArray1({xi}));
+    }
+  
+    template<typename Geometrymap_t>
+    inline auto ihess(const Geometrymap_t& G,
+                      const std::array<torch::Tensor, BSplineCore::parDim_>& xi) const
+    {
+      return ihess(G, xi, BSplineCore::eval_knot_indices(xi), G.eval_knot_indices(xi));
+    }
+    /// @}
+
+    /// @brief Returns a block-tensor with the Hessian of the B-spline
+    /// object with respect to the physical variables
+    ///
+    /// @tparam Geometrymap_t Type of the geometry map's B-spline object
+    ///
+    /// @param[in] G B-spline object of the geometry map
+    ///
+    /// @param[in] xi Point(s) where to evaluate the Hessian
+    ///
+    /// @param[in] idx Knot indices where to evaluate the Hessian
+    ///
+    /// @param[in] idx_G Knot indices where to evaluate Jacobian of `G`
+    ///
+    /// @result Block-tensor with the Hessian with respect to the
+    /// physical variables    
+    /// \f[
+    ///     H_{\mathbf{x}}(u)
+    ///        =
+    ///     J_{\boldsymbol{\xi}}(G)^{-t} (H_\boldsymbol{\xi}(u)
+    ///     - \nabla_{\mathbf{x}}u + H_{\boldsymbol{\xi}}(G)) J_{\boldsymbol{\xi}}(G)^{-1} ,
+    ///     \quad
+    ///     \mathbf{x} = G(\boldsymbol{\xi})
+    /// \f]
+    template<typename Geometrymap_t>
+    inline auto ihess(const Geometrymap_t G,
+                      const std::array<torch::Tensor, BSplineCore::parDim_>& xi,
+                      const std::array<torch::Tensor, BSplineCore::parDim_>& idx,
+                      const std::array<torch::Tensor, Geometrymap_t::parDim()>& idx_G) const
+    {
+      return ihess(G, xi, idx, BSplineCore::eval_coeff_indices(idx),
+                   idx_G, G.eval_coeff_indices(idx_G));
+    }
+
+    /// @brief Returns a block-tensor with the Hessian of the B-spline
+    /// object with respect to the physical variables
+    ///
+    /// @tparam Geometrymap_t Type of the geometry map's B-spline object
+    ///
+    /// @param[in] G B-spline object of the geometry map
+    ///
+    /// @param[in] xi Point(s) where to evaluate the Hessian
+    ///
+    /// @param[in] idx Knot indices where to evaluate the Hessian
+    ///
+    /// @param[in] idx_G Knot indices where to evaluate the Jacobian of `G`
+    ///
+    /// @param[in] coeff_idx Coefficient indices where to evaluate the Hessian
+    ///
+    /// @param[in] coeff_idx_G Coefficient indices where to evaluate the Jacobian of `G`
+    ///
+    /// @result Block-tensor with the Hessian with respect to the
+    /// physical variables    
+    /// \f[
+    ///     H_{\mathbf{x}}(u)
+    ///        =
+    ///     J_{\boldsymbol{\xi}}(G)^{-t} (H_\boldsymbol{\xi}(u)
+    ///     - \nabla_{\mathbf{x}}u + H_{\boldsymbol{\xi}}(G)) J_{\boldsymbol{\xi}}(G)^{-1} ,
+    ///     \quad
+    ///     \mathbf{x} = G(\boldsymbol{\xi})
+    /// \f]
+    template<typename Geometrymap_t>
+    inline auto ihess(const Geometrymap_t& G,
+                      const std::array<torch::Tensor, BSplineCore::parDim_>& xi,
+                      const std::array<torch::Tensor, BSplineCore::parDim_>& idx,
+                      const torch::Tensor& coeff_idx, 
+                      const std::array<torch::Tensor, Geometrymap_t::parDim()>& idx_G,
+                      const torch::Tensor& coeff_idx_G) const
+    {
+      auto invJac = G.jac(xi, idx_G, coeff_idx_G).ginv();
+      return invJac.tr();
+      //return invJac.tr() * ( hess(xi, idx, coeff_idx) -
+      //                       igrad(G, xi, idx, coeff_idx, idx_G, coeff_idx_G) -
+      //                       G.hess(xi, idx_G, coeff_idx_G) ) * invJac;
+    }
+
+    /// @brief Returns a block-tensor with the Jacobian of the B-spline
+    /// object with respect to the parametric variables
+    ///
+    /// @param[in] xi Point(s) where to evaluate the Jacobian
+    ///
+    /// @result Block-tensor with the Jacobian with respect to the
+    /// parametric variables    
+    /// \f[
+    ///     J_{\boldsymbol{\xi}}(u)
+    ///        =
+    ///     \begin{bmatrix}
+    ///           \frac{\partial u_0}{\partial \xi_0}&
+    ///           \frac{\partial u_0}{\partial \xi_1}&
+    ///           \dots&
+    ///           \frac{\partial u_0}{\partial \xi_{d_\text{par}}}\\
+    ///           \frac{\partial u_1}{\partial \xi_0}&
+    ///           \frac{\partial u_1}{\partial \xi_1}&
+    ///           \dots&
+    ///           \frac{\partial u_1}{\partial \xi_{d_\text{par}}}\\
+    ///           \vdots& \vdots & \ddots & \vdots\\
+    ///           \frac{\partial u_{d_\text{geo}}}{\partial \xi_0}&
+    ///           \frac{\partial u_{d_\text{geo}}}{\partial \xi_1}&
+    ///           \dots&
+    ///           \frac{\partial u_{d_\text{geo}}}{\partial \xi_{d_\text{par}}}
+    ///     \end{bmatrix}
+    /// \f]
+    ///
+    /// @{
+    auto jac(torch::Tensor& xi)
+    {
+      return jac(TensorArray1({xi}));
+    }
+  
+    inline auto jac(const std::array<torch::Tensor, BSplineCore::parDim_>& xi) const
+    {
+      return jac(xi, BSplineCore::eval_knot_indices(xi));
+    }
+    /// @}
+
+    /// @brief Returns a block-tensor with the Jacobian of the B-spline
+    /// object with respect to the parametric variables
+    ///
+    /// @param[in] xi Point(s) where to evaluate the Jacobian
+    ///
+    /// @param[in] idx Knot indices where to evaluate the Jacobian
+    ///
+    /// @result Block-tensor with the Jacobian with respect to the
+    /// parametric variables   
+    /// \f[
+    ///     J_{\boldsymbol{\xi}}(u)
+    ///        =
+    ///     \begin{bmatrix}
+    ///           \frac{\partial u_0}{\partial \xi_0}&
+    ///           \frac{\partial u_0}{\partial \xi_1}&
+    ///           \dots&
+    ///           \frac{\partial u_0}{\partial \xi_{d_\text{par}}}\\
+    ///           \frac{\partial u_1}{\partial \xi_0}&
+    ///           \frac{\partial u_1}{\partial \xi_1}&
+    ///           \dots&
+    ///           \frac{\partial u_1}{\partial \xi_{d_\text{par}}}\\
+    ///           \vdots& \vdots & \ddots & \vdots\\
+    ///           \frac{\partial u_{d_\text{geo}}}{\partial \xi_0}&
+    ///           \frac{\partial u_{d_\text{geo}}}{\partial \xi_1}&
+    ///           \dots&
+    ///           \frac{\partial u_{d_\text{geo}}}{\partial \xi_{d_\text{par}}}
+    ///     \end{bmatrix}
+    /// \f]
+    inline auto jac(const std::array<torch::Tensor, BSplineCore::parDim_>& xi,
+                    const std::array<torch::Tensor, BSplineCore::parDim_>& idx) const
+    {
+      return jac(xi, idx, BSplineCore::eval_coeff_indices(idx));
+    }
+
+    /// @brief Returns a block-tensor with the Jacobian of the B-spline
+    /// object with respect to the parametric variables
+    ///
+    /// @param[in] xi Point(s) where to evaluate the Jacobian
+    ///
+    /// @param[in] idx Knot indices where to evaluate the Jacobian
+    ///
+    /// @param[in] coeff_idx Coefficient indices where to evaluate the Jacobian
+    ///
+    /// @result Block-tensor with the Jacobian with respect to the
+    /// parametric variables    
+    /// \f[
+    ///     J_{\boldsymbol{\xi}}(u)
+    ///        =
+    ///     \begin{bmatrix}
+    ///           \frac{\partial u_0}{\partial \xi_0}&
+    ///           \frac{\partial u_0}{\partial \xi_1}&
+    ///           \dots&
+    ///           \frac{\partial u_0}{\partial \xi_{d_\text{par}}}\\
+    ///           \frac{\partial u_1}{\partial \xi_0}&
+    ///           \frac{\partial u_1}{\partial \xi_1}&
+    ///           \dots&
+    ///           \frac{\partial u_1}{\partial \xi_{d_\text{par}}}\\
+    ///           \vdots& \vdots & \ddots & \vdots\\
+    ///           \frac{\partial u_{d_\text{geo}}}{\partial \xi_0}&
+    ///           \frac{\partial u_{d_\text{geo}}}{\partial \xi_1}&
+    ///           \dots&
+    ///           \frac{\partial u_{d_\text{geo}}}{\partial \xi_{d_\text{par}}}
+    ///     \end{bmatrix}
+    /// \f]
+    ///
+    /// @note Since the B-spline evaluation function computes the
+    /// specified derivatives for all variables simultaneously we
+    /// compute the transpose of the Jacobian and return its
+    /// tranposed, hence, the Jacobian.    
+    /// @{
+    inline auto jac(const TensorArray1& xi, const TensorArray1& idx,
+                    const torch::Tensor& coeff_idx) const
+    {
+      assert(xi[0].sizes() == idx[0].sizes());
+    
+      if constexpr (BSplineCore::parDim_ == 1)
+      
+        return BlockTensor<torch::Tensor, 1, BSplineCore::geoDim_>
+          (BSplineCore::template eval<BSplineDeriv::dx>(xi, idx, coeff_idx)).tr();
+    
+      else
+        throw std::runtime_error("Unsupported parametric dimension");
+    }
+  
+    inline auto jac(const TensorArray2& xi, const TensorArray2& idx,
+                    const torch::Tensor& coeff_idx) const
+    {
+      assert(xi[0].sizes() == idx[0].sizes() &&
+             xi[1].sizes() == idx[1].sizes());
+
+      if constexpr (BSplineCore::parDim_ == 2)
+      
+        return BlockTensor<torch::Tensor, 2, BSplineCore::geoDim_>
+          (BSplineCore::template eval<BSplineDeriv::dx>(xi, idx, coeff_idx),
+           BSplineCore::template eval<BSplineDeriv::dy>(xi, idx, coeff_idx)).tr();
+    
+      else
+        throw std::runtime_error("Unsupported parametric dimension");
+    }
+
+    inline auto jac(const TensorArray3& xi, const TensorArray3& idx,
+                    const torch::Tensor& coeff_idx) const
+    {
+      assert(xi[0].sizes() == idx[0].sizes() &&
+             xi[1].sizes() == idx[1].sizes() &&
+             xi[2].sizes() == idx[2].sizes());
+
+      if constexpr (BSplineCore::parDim_ == 3)
+      
+        return BlockTensor<torch::Tensor, 3, BSplineCore::geoDim_>
+          (BSplineCore::template eval<BSplineDeriv::dx>(xi, idx, coeff_idx),
+           BSplineCore::template eval<BSplineDeriv::dy>(xi, idx, coeff_idx),
+           BSplineCore::template eval<BSplineDeriv::dz>(xi, idx, coeff_idx)).tr();
+    
+      else
+        throw std::runtime_error("Unsupported parametric dimension");
+    }
+
+    inline auto jac(const TensorArray4& xi, const TensorArray4& idx,
+                    const torch::Tensor& coeff_idx) const
+    {
+      assert(xi[0].sizes() == idx[0].sizes() &&
+             xi[1].sizes() == idx[1].sizes() &&
+             xi[2].sizes() == idx[2].sizes() &&
+             xi[3].sizes() == idx[3].sizes());
+
+      if constexpr (BSplineCore::parDim_ == 4)
+      
+        return BlockTensor<torch::Tensor, 4, BSplineCore::geoDim_>
+          (BSplineCore::template eval<BSplineDeriv::dx>(xi, idx, coeff_idx),
+           BSplineCore::template eval<BSplineDeriv::dy>(xi, idx, coeff_idx),
+           BSplineCore::template eval<BSplineDeriv::dz>(xi, idx, coeff_idx),
+           BSplineCore::template eval<BSplineDeriv::dt>(xi, idx, coeff_idx)).tr();
+    
+      else
+        throw std::runtime_error("Unsupported parametric dimension");
+    }
+    /// @}
+
+    /// @brief Returns a block-tensor with the Jacobian of the B-spline
+    /// object with respect to the physical variables
+    ///
+    /// @tparam Geometrymap_t Type of the geometry map's B-spline object
+    ///
+    /// @param[in] G B-spline object of the geometry map
+    ///
+    /// @param[in] xi Point(s) where to evaluate the Jacobian
+    ///
+    /// @result Block-tensor with the Jacobian with respect to the
+    /// parametric variables    
+    /// \f[
+    ///     J_{\mathbf{x}}(u)
+    ///        =
+    ///     J_{\boldsymbol{\xi}}(u) \, J_{\boldsymbol{\xi}}(G)^{-T} ,
+    ///     \quad
+    ///     \mathbf{x} = G(\boldsymbol{\xi})
+    /// \f]
+    ///
+    /// @{
+    template<typename Geometrymap_t>
+    auto ijac(const Geometrymap_t& G, torch::Tensor& xi)
+    {
+      return ijac(G, TensorArray1({xi}));
+    }
+  
+    template<typename Geometrymap_t>
+    inline auto ijac(const Geometrymap_t& G,
+                     const std::array<torch::Tensor, BSplineCore::parDim_>& xi) const
+    {
+      return ijac(G, xi, BSplineCore::eval_knot_indices(xi), G.eval_knot_indices(xi));
+    }
+    /// @}
+
+    /// @brief Returns a block-tensor with the Jacobian of the B-spline
+    /// object with respect to the physical variables
+    ///
+    /// @tparam Geometrymap_t Type of the geometry map's B-spline object
+    ///
+    /// @param[in] G B-spline object of the geometry map
+    ///
+    /// @param[in] xi Point(s) where to evaluate the Jacobian
+    ///
+    /// @param[in] idx Knot indices where to evaluate the Jacobian
+    ///
+    /// @param[in] idx_G Knot indices where to evaluate the Jacobian of `G`
+    ///
+    /// @result Block-tensor with the Jacobian with respect to the
+    /// physical variables    
+    /// \f[
+    ///     J_{\mathbf{x}}(u)
+    ///        =
+    ///     J_{\boldsymbol{\xi}}(u) \, J_{\boldsymbol{\xi}}(G)^{-T} ,
+    ///     \quad
+    ///     \mathbf{x} = G(\boldsymbol{\xi})
+    /// \f]
+    template<typename Geometrymap_t>
+    inline auto ijac(const Geometrymap_t G,
+                     const std::array<torch::Tensor, BSplineCore::parDim_>& xi,
+                     const std::array<torch::Tensor, BSplineCore::parDim_>& idx,
+                     const std::array<torch::Tensor, Geometrymap_t::parDim()>& idx_G) const
+    {
+      return ijac(G, xi, idx, BSplineCore::eval_coeff_indices(idx),
+                  idx_G, G.eval_coeff_indices(idx_G));
+    }
+
+    /// @brief Returns a block-tensor with the Jacobian of the B-spline
+    /// object with respect to the physical variables
+    ///
+    /// @tparam Geometrymap_t Type of the geometry map's B-spline object
+    ///
+    /// @param[in] G B-spline object of the geometry map
+    ///
+    /// @param[in] xi Point(s) where to evaluate the Jacobian
+    ///
+    /// @param[in] idx Knot indices where to evaluate the Jacobain
+    ///
+    /// @param[in] idx_G Knot indices where to evaluate the Jacobian of `G`
+    ///
+    /// @param[in] coeff_idx Coefficient indices where to evaluate the Jacobian
+    ///
+    /// @param[in] coeff_idx_G Coefficient indices where to evaluate the Jacobian of `G`
+    ///
+    /// @result Block-tensor with the Jacobian with respect to the
+    /// physical variables    
+    /// \f[
+    ///     J_{\mathbf{x}}(u)
+    ///        =
+    ///     J_{\boldsymbol{\xi}}(u) \, J_{\boldsymbol{\xi}}(G)^{-T} ,
+    ///     \quad
+    ///     \mathbf{x} = G(\boldsymbol{\xi})
+    /// \f]
+    template<typename Geometrymap_t>
+    inline auto ijac(const Geometrymap_t& G,
+                     const std::array<torch::Tensor, BSplineCore::parDim_>& xi,
+                     const std::array<torch::Tensor, BSplineCore::parDim_>& idx,
+                     const torch::Tensor& coeff_idx, 
+                     const std::array<torch::Tensor, Geometrymap_t::parDim()>& idx_G,
+                     const torch::Tensor& coeff_idx_G) const
+    {
+      return jac(xi, idx, coeff_idx) * G.jac(xi, idx_G, coeff_idx_G).ginv();
+    }  
+    
     /// Plots the B-spline object using matplotlibcpp
     inline auto plot(int64_t res0=10, int64_t res1=10, int64_t res2=10) const
     {
@@ -1585,7 +3148,7 @@ namespace iganet {
         matplot::vector_1d Yfine(res0, 0.0);
 
         auto Coords = BSplineCore::eval(torch::linspace(0, 1, res0));
-        auto XAccessor = Coords.template accessor<real_t,1>();
+        auto XAccessor = Coords(0).template accessor<real_t,1>();
         
 #pragma omp parallel for simd
         for (int64_t i=0; i<res0; ++i)
@@ -1593,8 +3156,8 @@ namespace iganet {
 
         if ((void*)this != (void*)&color) {
           if constexpr (BSplineCore_t::geoDim_==1) {
-            torch::Tensor Color = color.eval(torch::linspace(0, 1, res0));
-            auto CAccessor = Color.accessor<real_t,1>();
+            auto Color = color.eval(torch::linspace(0, 1, res0));
+            auto CAccessor = Color(0).template accessor<real_t,1>();
             
 #pragma omp parallel for simd
             for (int64_t i=0; i<res0; ++i)
@@ -1644,11 +3207,11 @@ namespace iganet {
             matplot::vector_2d Zfine(1, matplot::vector_1d(res0, 0.0));
 
             auto Coords = BSplineCore::eval(torch::linspace(0, 1, res0));
-            auto XAccessor = Coords[0].template accessor<real_t,1>();
-            auto YAccessor = Coords[1].template accessor<real_t,1>();
+            auto XAccessor = Coords(0).template accessor<real_t,1>();
+            auto YAccessor = Coords(1).template accessor<real_t,1>();
 
             auto Color = color.eval(torch::linspace(0, 1, res0));
-            auto CAccessor = Color.template accessor<real_t,1>();
+            auto CAccessor = Color(0).template accessor<real_t,1>();
             
 #pragma omp parallel for simd
             for (int64_t i=0; i<res0; ++i) {              
@@ -1664,8 +3227,8 @@ namespace iganet {
           matplot::vector_1d Yfine(res0, 0.0);
 
           auto Coords = BSplineCore::eval(torch::linspace(0, 1, res0));
-          auto XAccessor = Coords[0].template accessor<real_t,1>();
-          auto YAccessor = Coords[1].template accessor<real_t,1>();
+          auto XAccessor = Coords(0).template accessor<real_t,1>();
+          auto YAccessor = Coords(1).template accessor<real_t,1>();
           
 #pragma omp parallel for simd
           for (int64_t i=0; i<res0; ++i) {
@@ -1712,12 +3275,12 @@ namespace iganet {
             matplot::vector_2d Cfine(1, matplot::vector_1d(res0, 0.0));
 
             auto Coords = BSplineCore::eval(torch::linspace(0, 1, res0));
-            auto XAccessor = Coords[0].template accessor<real_t,1>();
-            auto YAccessor = Coords[1].template accessor<real_t,1>();
-            auto ZAccessor = Coords[2].template accessor<real_t,1>();
+            auto XAccessor = Coords(0).template accessor<real_t,1>();
+            auto YAccessor = Coords(1).template accessor<real_t,1>();
+            auto ZAccessor = Coords(2).template accessor<real_t,1>();
 
             auto Color = color.eval(torch::linspace(0, 1, res0));
-            auto CAccessor = Color.template accessor<real_t,1>();
+            auto CAccessor = Color(0).template accessor<real_t,1>();
             
 #pragma omp parallel for simd
             for (int64_t i=0; i<res0; ++i) {
@@ -1735,9 +3298,9 @@ namespace iganet {
           matplot::vector_1d Zfine(res0, 0.0);
 
           auto Coords = BSplineCore::eval(torch::linspace(0, 1, res0));
-          auto XAccessor = Coords[0].template accessor<real_t,1>();
-          auto YAccessor = Coords[1].template accessor<real_t,1>();
-          auto ZAccessor = Coords[2].template accessor<real_t,1>();
+          auto XAccessor = Coords(0).template accessor<real_t,1>();
+          auto YAccessor = Coords(1).template accessor<real_t,1>();
+          auto ZAccessor = Coords(2).template accessor<real_t,1>();
           
 #pragma omp parallel for simd
           for (int64_t i=0; i<res0; ++i) {
@@ -1787,8 +3350,8 @@ namespace iganet {
         std::array<torch::Tensor,2> meshgrid = convert<2>(torch::meshgrid({torch::linspace(0, 1, res0),
                                                                            torch::linspace(0, 1, res1)}, "xy"));
         auto Coords = BSplineCore::eval(meshgrid);
-        auto XAccessor = Coords[0].template accessor<real_t,2>();
-        auto YAccessor = Coords[1].template accessor<real_t,2>();
+        auto XAccessor = Coords(0).template accessor<real_t,2>();
+        auto YAccessor = Coords(1).template accessor<real_t,2>();
 
 #pragma omp parallel for simd collapse(2)
         for (int64_t i=0; i<res0; ++i)
@@ -1800,7 +3363,7 @@ namespace iganet {
         if ((void*)this != (void*)&color) {
           if constexpr (BSplineCore_t::geoDim()==1) {            
             auto Color = color.eval(meshgrid);
-            auto CAccessor = Color.template accessor<real_t,2>();
+            auto CAccessor = Color(0).template accessor<real_t,2>();
             
 #pragma omp parallel for simd collapse(2)
             for (int64_t i=0; i<res0; ++i)
@@ -1856,9 +3419,9 @@ namespace iganet {
         std::array<torch::Tensor,2> meshgrid = convert<2>(torch::meshgrid({torch::linspace(0, 1, res0),
                                                                            torch::linspace(0, 1, res1)}, "xy"));
         auto Coords = BSplineCore::eval(meshgrid);
-        auto XAccessor = Coords[0].template accessor<real_t,2>();
-        auto YAccessor = Coords[1].template accessor<real_t,2>();
-        auto ZAccessor = Coords[2].template accessor<real_t,2>();
+        auto XAccessor = Coords(0).template accessor<real_t,2>();
+        auto YAccessor = Coords(1).template accessor<real_t,2>();
+        auto ZAccessor = Coords(2).template accessor<real_t,2>();
         
 #pragma omp parallel for simd collapse(2)
         for (int64_t i=0; i<res0; ++i)
@@ -1874,7 +3437,7 @@ namespace iganet {
             matplot::vector_2d Cfine(res1, matplot::vector_1d(res0, 0.0));
 
             auto Color = color.eval(meshgrid);
-            auto CAccessor = Color.template accessor<real_t,2>();
+            auto CAccessor = Color(0).template accessor<real_t,2>();
             
 #pragma omp parallel for simd collapse(2)
             for (int64_t i=0; i<res0; ++i)
@@ -1991,5 +3554,4 @@ namespace iganet {
     obj.pretty_print(os);
     return os;
   }
-
 } // namespace iganet
