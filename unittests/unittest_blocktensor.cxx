@@ -49,23 +49,23 @@ TEST(BlockTensor, BlockTensor_double)
   
   iganet::BlockTensor<torch::Tensor, 1, 1> C( 5*torch::ones({5,5}) );
 
-  EXPECT_EQ(C.inv(),
+  EXPECT_EQ(C.ginv(),
             (iganet::BlockTensor<torch::Tensor, 1, 1>( 0.2*torch::ones({5,5}))) );
 
-  EXPECT_EQ(C.invtr(), C.inv().tr());
+  EXPECT_EQ(C.ginvtr(), C.ginv().tr());
   
   iganet::BlockTensor<torch::Tensor, 2, 2> D(   torch::ones({5,5}),
                                               2*torch::ones({5,5}),
                                               3*torch::ones({5,5}),
                                               4*torch::ones({5,5}));
   
-  EXPECT_EQ(D.inv(),
+  EXPECT_EQ(D.ginv(),
             (iganet::BlockTensor<torch::Tensor, 2, 2>( -2.0*torch::ones({5,5}),
                                                         1.5*torch::ones({5,5}),
                                                         1.0*torch::ones({5,5}),
                                                        -0.5*torch::ones({5,5}))) );
   
-  EXPECT_EQ(D.invtr(), D.inv().tr());
+  EXPECT_EQ(D.ginvtr(), D.ginv().tr());
   
   iganet::BlockTensor<torch::Tensor, 3, 3> E( 2*torch::ones({5,5}),
                                                 torch::ones({5,5}),
@@ -77,7 +77,7 @@ TEST(BlockTensor, BlockTensor_double)
                                                 torch::ones({5,5}),
                                               2*torch::ones({5,5}));
 
-  EXPECT_EQ(E.inv(),
+  EXPECT_EQ(E.ginv(),
             (iganet::BlockTensor<torch::Tensor, 3, 3>(  0.75*torch::ones({5,5}),
                                                        -0.50*torch::ones({5,5}),
                                                         0.25*torch::ones({5,5}),
@@ -88,7 +88,7 @@ TEST(BlockTensor, BlockTensor_double)
                                                        -0.50*torch::ones({5,5}),
                                                         0.75*torch::ones({5,5}))) );
   
-  EXPECT_EQ(E.invtr(), E.inv().tr());
+  EXPECT_EQ(E.ginvtr(), E.ginv().tr());
 }
 
 #define test_unary_op(op, A, ...)                                   \

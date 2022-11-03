@@ -3,48 +3,44 @@
 
 int main()
 {
-  auto a = torch::linspace(0,19,20).reshape({4,5});
-
-  std::cout
-    << "a=\n"
-    << a << std::endl;
+  std::cout << iganet::verbose;
+  using real_t = double;
+  iganet::init();
   
-  std::cout
-    << "a.index=\n"
-    << a.index({
-        torch::indexing::Slice(1,3,1),
-        torch::indexing::Slice(1,4,1)
-      }) << std::endl;
-
-  torch::Tensor idx0 = torch::linspace(1,2,2).to(torch::kInt64);
-  torch::Tensor idx1 = torch::linspace(1,3,3).to(torch::kInt64);
-
-  std::cout
-    << "idx0=\n"
-    << idx0 << std::endl;
-
-  std::cout
-    << "idx1=\n"
-    << idx1 << std::endl;
+  iganet::UniformBSpline<double,3,3,4> bspline({5,6});
+  iganet::UniformBSpline<double,1,3,4> color({5,6});
   
-  std::cout
-    << "a.index_select=\n"
-    << a.index_select(0, idx0).index_select(1, idx1)
-    << std::endl;
-
-  torch::Tensor idx = torch::full({4}, 2).to(torch::kInt64);
-  std::cout
-    << "VSlice=\n"
-    << iganet::VSlice(idx, -1, 1) << std::endl;
-
-  torch::Tensor i = torch::linspace(1,4,4).to(torch::kInt64).reshape({2,2});
-
-  std::cout << i << std::endl;
-
-  std::cout
-    << "a.index_select=\n"
-    << a.flatten().index_select(0, i)
-    << std::endl;
+  // Print information
+  std::cout << bspline << std::endl;
+  std::cout << color << std::endl;
   
+  // Map control points to phyiscal coordinates
+  bspline.transform( [](const std::array<real_t,2> xi){ return std::array<real_t,3>{(xi[0]+1)*cos(M_PI*xi[1]),
+                                                                                    (xi[0]+1)*sin(M_PI*xi[1]),
+                                                                                    xi[0] }; } );
+  
+  // Map colors
+  color.transform( [](const std::array<real_t,2> xi){ return std::array<real_t,1>{ xi[0]*xi[1] }; } );
+  
+  // Evaluate B-spline at (xi=0,eta=0), (xi=0.5,eta=0.5), and (xi=1,eta=0.5)
+  std::cout << bspline.eval( iganet::to_tensorArray<real_t>({0.0, 0.5, 1.0},
+                                                            {0.0, 0.5, 0.5}) ) << std::endl;
+  
+  // Plot B-spline
+  //bspline.plot(50, 50);
+  //bspline.plot(color, 50, 50);
+  
+  // Export B-spline to XML
+  //std::cout << bspline.to_xml() << std::endl;
+  
+  auto xi = iganet::to_tensorArray<real_t>({0.0, 0.5, 1.0},
+                                           {0.0, 0.5, 0.5});
+  
+  //std::cout << color.igrad(bspline, xi) << std::endl;
+  //std::cout << color.ijac(bspline, xi) << std::endl;
+
+  //std::cout << bspline.ijac(bspline, xi) << std::endl;
+  std::cout << color.hess(xi) << std::endl;
+  //std::cout << color.ihess(bspline, xi) << std::endl;  
   return 0;
 }

@@ -17,21 +17,36 @@
 
 #include <gtest/gtest.h>
 
+template<typename real_t,
+         typename optimizer_t,
+         template<typename, short_t, short_t...> class bspline_t,
+         short_t... Degrees>
+class IgANet : public iganet::IgANet<real_t, optimizer_t, bspline_t, Degrees...>
+{
+public:
+  using iganet::IgANet<real_t, optimizer_t, bspline_t, Degrees...>::IgANet;
+  
+  virtual iganet::IgaNetEpochUpdate epoch_init(int64_t epoch) override
+  {
+    std::cout << "Epoch " << std::to_string(epoch) << ": ";
+    return iganet::IgaNetEpochUpdate(0);
+  }
+};
+
 TEST(BSpline, IgaNet_UniformBSpline_1d_double)
 {
   using real_t      = double;
   using optimizer_t = torch::optim::Adam;
 
-  iganet::IgANet<real_t, optimizer_t,
-                 iganet::UniformBSpline, 
-                 5> net({50,30,70}, // Number of neurons per layers
-                        {
-                          {iganet::activation::tanh},
-                          {iganet::activation::relu},
-                          {iganet::activation::sigmoid},
-                          {iganet::activation::none}
-                        },          // Activation functions
-                        {6});       // Number of B-spline coefficients
+  IgANet<real_t, optimizer_t, iganet::UniformBSpline, 
+         5> net({50,30,70}, // Number of neurons per layers
+                {
+                  {iganet::activation::tanh},
+                  {iganet::activation::relu},
+                  {iganet::activation::sigmoid},
+                  {iganet::activation::none}
+                },          // Activation functions
+                {6});       // Number of B-spline coefficients
 
   EXPECT_EQ(net.geo().parDim(), 1);
   EXPECT_EQ(net.rhs().parDim(), 1);
@@ -61,17 +76,16 @@ TEST(BSpline, IgaNet_UniformBSpline_2d_double)
   using real_t      = double;
   using optimizer_t = torch::optim::Adam;
 
-  iganet::IgANet<real_t, optimizer_t,
-                 iganet::UniformBSpline, 
-                 3, 5> net({50,30,70}, // Number of neurons per layers
-                           {
-                             {iganet::activation::tanh},
-                             {iganet::activation::relu},
-                             {iganet::activation::sigmoid},
-                             {iganet::activation::none}
-                           },          // Activation functions
-                           {4,6});     // Number of B-spline coefficients
-
+  IgANet<real_t, optimizer_t, iganet::UniformBSpline, 
+         3, 5> net({50,30,70}, // Number of neurons per layers
+                   {
+                     {iganet::activation::tanh},
+                     {iganet::activation::relu},
+                     {iganet::activation::sigmoid},
+                     {iganet::activation::none}
+                   },          // Activation functions
+                   {4,6});     // Number of B-spline coefficients
+  
   EXPECT_EQ(net.geo().parDim(), 2);
   EXPECT_EQ(net.rhs().parDim(), 2);
   EXPECT_EQ(net.sol().parDim(), 2);
@@ -122,17 +136,16 @@ TEST(BSpline, IgaNet_UniformBSpline_3d_double)
   using real_t      = double;
   using optimizer_t = torch::optim::Adam;
 
-  iganet::IgANet<real_t, optimizer_t,
-                 iganet::UniformBSpline,
-                 3, 5, 1> net({50,30,70}, // Number of neurons per layers
-                              {
-                                {iganet::activation::tanh},
-                                {iganet::activation::relu},
-                                {iganet::activation::sigmoid},
-                                {iganet::activation::none}
-                              },          // Activation functions
-                              {4,6,3});   // Number of B-spline coefficients
-
+  IgANet<real_t, optimizer_t, iganet::UniformBSpline,
+         3, 5, 1> net({50,30,70}, // Number of neurons per layers
+                      {
+                        {iganet::activation::tanh},
+                        {iganet::activation::relu},
+                        {iganet::activation::sigmoid},
+                        {iganet::activation::none}
+                      },          // Activation functions
+                      {4,6,3});   // Number of B-spline coefficients
+  
   EXPECT_EQ(net.geo().parDim(), 3);
   EXPECT_EQ(net.rhs().parDim(), 3);
   EXPECT_EQ(net.sol().parDim(), 3);
@@ -213,16 +226,15 @@ TEST(BSpline, IgaNet_UniformBSpline_4d_double)
   using real_t      = double;
   using optimizer_t = torch::optim::Adam;
 
-  iganet::IgANet<real_t, optimizer_t,
-                 iganet::UniformBSpline,
-                 3, 5, 1, 4> net({50,30,70}, // Number of neurons per layers
-                                {
-                                  {iganet::activation::tanh},
-                                  {iganet::activation::relu},
-                                  {iganet::activation::sigmoid},
-                                  {iganet::activation::none}
-                                },          // Activation functions
-                                {4,6,3,5}); // Number of B-spline coefficients
+  IgANet<real_t, optimizer_t, iganet::UniformBSpline,
+         3, 5, 1, 4> net({50,30,70}, // Number of neurons per layers
+                         {
+                           {iganet::activation::tanh},
+                           {iganet::activation::relu},
+                           {iganet::activation::sigmoid},
+                           {iganet::activation::none}
+                         },          // Activation functions
+                         {4,6,3,5}); // Number of B-spline coefficients
 
   EXPECT_EQ(net.geo().parDim(), 4);
   EXPECT_EQ(net.rhs().parDim(), 4);
@@ -342,17 +354,16 @@ TEST(BSpline, IgaNet_NonUniformBSpline_1d_double)
   using real_t      = double;
   using optimizer_t = torch::optim::LBFGS;
 
-  iganet::IgANet<real_t, optimizer_t,
-                 iganet::NonUniformBSpline, 
-                 5> net({50,30,70}, // Number of neurons per layers
-                        {
-                          {iganet::activation::tanh},
-                          {iganet::activation::relu},
-                          {iganet::activation::sigmoid},
-                          {iganet::activation::none}
-                        },          // Activation functions
-                        {6});       // Number of B-spline coefficients
-
+  IgANet<real_t, optimizer_t, iganet::NonUniformBSpline, 
+         5> net({50,30,70}, // Number of neurons per layers
+                {
+                  {iganet::activation::tanh},
+                  {iganet::activation::relu},
+                  {iganet::activation::sigmoid},
+                  {iganet::activation::none}
+                },          // Activation functions
+                {6});       // Number of B-spline coefficients
+  
   EXPECT_EQ(net.geo().parDim(), 1);
   EXPECT_EQ(net.rhs().parDim(), 1);
   EXPECT_EQ(net.sol().parDim(), 1);
@@ -381,17 +392,16 @@ TEST(BSpline, IgaNet_NonUniformBSpline_2d_double)
   using real_t      = double;
   using optimizer_t = torch::optim::LBFGS;
 
-  iganet::IgANet<real_t, optimizer_t,
-                 iganet::NonUniformBSpline, 
-                 3, 5> net({50,30,70}, // Number of neurons per layers
-                           {
-                             {iganet::activation::tanh},
-                             {iganet::activation::relu},
-                             {iganet::activation::sigmoid},
-                             {iganet::activation::none}
-                           },          // Activation functions
-                           {4,6});     // Number of B-spline coefficients
-
+  IgANet<real_t, optimizer_t, iganet::NonUniformBSpline, 
+         3, 5> net({50,30,70}, // Number of neurons per layers
+                   {
+                     {iganet::activation::tanh},
+                     {iganet::activation::relu},
+                     {iganet::activation::sigmoid},
+                     {iganet::activation::none}
+                   },          // Activation functions
+                   {4,6});     // Number of B-spline coefficients
+  
   EXPECT_EQ(net.geo().parDim(), 2);
   EXPECT_EQ(net.rhs().parDim(), 2);
   EXPECT_EQ(net.sol().parDim(), 2);
@@ -442,17 +452,16 @@ TEST(BSpline, IgaNet_NonUniformBSpline_3d_double)
   using real_t      = double;
   using optimizer_t = torch::optim::LBFGS;
 
-  iganet::IgANet<real_t, optimizer_t,
-                 iganet::NonUniformBSpline,
-                 3, 5, 1> net({50,30,70}, // Number of neurons per layers
-                              {
-                                {iganet::activation::tanh},
-                                {iganet::activation::relu},
-                                {iganet::activation::sigmoid},
-                                {iganet::activation::none}
-                              },          // Activation functions
-                              {4,6,3});   // Number of B-spline coefficients
-
+  IgANet<real_t, optimizer_t, iganet::NonUniformBSpline,
+         3, 5, 1> net({50,30,70}, // Number of neurons per layers
+                      {
+                        {iganet::activation::tanh},
+                        {iganet::activation::relu},
+                        {iganet::activation::sigmoid},
+                        {iganet::activation::none}
+                      },          // Activation functions
+                      {4,6,3});   // Number of B-spline coefficients
+  
   EXPECT_EQ(net.geo().parDim(), 3);
   EXPECT_EQ(net.rhs().parDim(), 3);
   EXPECT_EQ(net.sol().parDim(), 3);
@@ -533,17 +542,16 @@ TEST(BSpline, IgaNet_NonUniformBSpline_4d_double)
   using real_t      = double;
   using optimizer_t = torch::optim::LBFGS;
 
-  iganet::IgANet<real_t, optimizer_t,
-                 iganet::NonUniformBSpline,
-                 3, 5, 1, 4> net({50,30,70}, // Number of neurons per layers
-                                {
-                                  {iganet::activation::tanh},
-                                  {iganet::activation::relu},
-                                  {iganet::activation::sigmoid},
-                                  {iganet::activation::none}
-                                },          // Activation functions
-                                {4,6,3,5}); // Number of B-spline coefficients
-
+  IgANet<real_t, optimizer_t, iganet::NonUniformBSpline,
+         3, 5, 1, 4> net({50,30,70}, // Number of neurons per layers
+                         {
+                           {iganet::activation::tanh},
+                           {iganet::activation::relu},
+                           {iganet::activation::sigmoid},
+                           {iganet::activation::none}
+                         },          // Activation functions
+                         {4,6,3,5}); // Number of B-spline coefficients
+  
   EXPECT_EQ(net.geo().parDim(), 4);
   EXPECT_EQ(net.rhs().parDim(), 4);
   EXPECT_EQ(net.sol().parDim(), 4);

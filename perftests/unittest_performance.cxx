@@ -25,7 +25,7 @@ static constexpr bool precompute = true;
 
 TEST(Performance, MatmulTensorLayout_double)
 {
-  iganet::core<double> core_;
+  iganet::core<double> core_(false);
 
   for (short_t n : {2, 3, 4, 5}) {
     for (int64_t m : {100, 500, 1000, 5000, 10000, 50000, 100000}) {

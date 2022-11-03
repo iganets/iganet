@@ -20,7 +20,7 @@ int main()
   std::cout << iganet::verbose;
   using real_t = double;
   iganet::init();
-
+  
   {
     // Univariate uniform B-spline of degree 2 with 6 control points in R^1
     iganet::UniformBSpline<double,1,2> bspline({6}), color({6});
@@ -153,5 +153,15 @@ int main()
 
     // Export B-spline to XML
     std::cout << bspline.to_xml() << std::endl;
+
+    auto xi = iganet::to_tensorArray<real_t>({0.0, 0.5, 1.0},
+                                             {0.0, 0.5, 0.5});
+
+    std::cout << color.grad(xi) << std::endl;
+    //std::cout << color.igrad(bspline, xi) << std::endl;
+    std::cout << color.jac(xi) << std::endl;
+    //std::cout << color.ijac(bspline, xi) << std::endl;
+    //std::cout << color.hess(xi) << std::endl;
+    //std::cout << color.ihess(bspline, xi) << std::endl;
   }
 }
