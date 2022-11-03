@@ -1,0 +1,42 @@
+before_script:
+   - apt-get update -y
+   - apt-get install build-essential cmake libtoch-dev -y
+
+stages:
+  - build
+
+#
+# Create Doxygen documentation
+#
+pages:
+  stage: build
+  image: ubuntu:22.04
+  script:
+    - mkdir -p build
+    - cd build
+    - CC=gcc CXX=g++ cmake .. -DIGANET_BUILD_DOCS=ON
+    - make Doxygen
+    - mv docs/doxygen/html ../public
+    - mv docs/doxygen/*.xml ../public
+  artifacts:
+    paths:
+      - public
+
+#
+# Compile and run unittests with GNU compiler collection
+#
+unittests-gcc:
+  stage: build
+  image: ubuntu:22.0
+  script:
+    - mkdir -p build
+    - cd build
+    - CC=gcc CXX=g++  cmake .. -DIGANET_BUILD_UNITTESTS=ON
+    - make
+    - make test
+  only:
+    changes:
+      - CMakeLists.txt
+      - include/*
+      - examples/*
+      - unittests/*
