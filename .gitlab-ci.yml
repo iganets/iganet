@@ -1,6 +1,6 @@
 before_script:
    - apt-get update -y
-   - apt-get install build-essential cmake libtoch-dev -y
+   - apt-get install build-essential cmake libtorch-dev -y
 
 stages:
   - build
@@ -27,7 +27,7 @@ pages:
 #
 unittests-gcc:
   stage: build
-  image: ubuntu:22.0
+  image: ubuntu:22.04
   script:
     - mkdir -p build
     - cd build
