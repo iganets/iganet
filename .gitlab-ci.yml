@@ -21,7 +21,8 @@ pages:
     - make Doxygen
     - mv docs/doxygen/html ../public
     - mv docs/doxygen/*.xml ../public
-changes:
+  only:
+    changes:
       - CMakeLists.txt
       - cmake/*
       - docs/*
