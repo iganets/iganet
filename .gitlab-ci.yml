@@ -21,6 +21,15 @@ pages:
     - make Doxygen
     - mv docs/doxygen/html ../public
     - mv docs/doxygen/*.xml ../public
+changes:
+      - CMakeLists.txt
+      - cmake/*
+      - docs/*
+      - include/*
+      - examples/*
+      - perftests/*
+      - pybind11/*
+      - unittests/*
   artifacts:
     paths:
       - public
@@ -40,6 +49,9 @@ unittests-gcc:
   only:
     changes:
       - CMakeLists.txt
+      - cmake/*
       - include/*
       - examples/*
+      - perftests/*
+      - pybind11/*
       - unittests/*
