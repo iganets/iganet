@@ -1,6 +1,6 @@
 before_script:
    - apt-get update -y
-   - apt-get install build-essential cmake unzip wget -y
+   - apt-get install build-essential cmake doxygen unzip wget -y
    - wget https://download.pytorch.org/libtorch/cpu/libtorch-cxx11-abi-shared-with-deps-1.13.0%2Bcpu.zip -O libtorch.zip
    - unzip libtorch.zip
    - rm -f libtorch.zip
@@ -17,7 +17,7 @@ pages:
   script:
     - mkdir -p build
     - cd build
-    - CC=gcc CXX=g++ cmake .. -DIGANET_BUILD_DOCS=ON -DTorch_DIR=/libtorch/share/cmake/Torch
+    - CC=gcc CXX=g++ cmake .. -DIGANET_BUILD_DOCS=ON -DTorch_DIR=${HOME}/libtorch/share/cmake/Torch
     - make Doxygen
     - mv docs/doxygen/html ../public
     - mv docs/doxygen/*.xml ../public
@@ -34,7 +34,7 @@ unittests-gcc:
   script:
     - mkdir -p build
     - cd build
-    - CC=gcc CXX=g++  cmake .. -DIGANET_BUILD_UNITTESTS=ON -DTorch_DIR=/libtorch/share/cmake/Torch
+    - CC=gcc CXX=g++  cmake .. -DIGANET_BUILD_UNITTESTS=ON -DTorch_DIR=${HOME}/libtorch/share/cmake/Torch
     - make
     - make test
   only:
