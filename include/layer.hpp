@@ -19,7 +19,7 @@
 
 namespace iganet {
 
-  /// Enumerator for nonlinear activation functions
+  /// @brief Enumerator for nonlinear activation functions
   enum class activation : short_t
     {
       none                         =  0,
@@ -59,28 +59,28 @@ namespace iganet {
       threshold                    = 34
     };
 
-  /// Abstract activation function structure
+  /// @brief Abstract activation function structure
   class ActivationFunction
   {
   public:
     virtual ~ActivationFunction() = default;
 
-    /// Applies the activation function to the given input
+    /// @brief Applies the activation function to the given input
     virtual torch::Tensor apply(const torch::Tensor&) const = 0;
 
-    /// Returns a string representation of the activation function
+    /// @brief Returns a string representation of the activation function
     virtual void pretty_print(std::ostream& os) const = 0;
 
-    /// Writes the activation function into a torch::serialize::OutputArchive object
+    /// @brief Writes the activation function into a torch::serialize::OutputArchive object
     virtual torch::serialize::OutputArchive& write(torch::serialize::OutputArchive& archive,
                                                    const std::string& key) const = 0;
 
-    /// Reads the activation function from a torch::serialize::InputArchive object
+    /// @brief Reads the activation function from a torch::serialize::InputArchive object
     virtual torch::serialize::InputArchive& read(torch::serialize::InputArchive& archive,
                                                  const std::string& key) = 0;
   };
 
-  /// Print (as string) an ActivationFunction object
+  /// @brief Print (as string) an ActivationFunction object
   inline std::ostream& operator<<(std::ostream& os,
                                   const ActivationFunction& obj)
   {
@@ -88,23 +88,23 @@ namespace iganet {
     return os;
   }
   
-  /// No-op activation function
+  /// @brief No-op activation function
   class None : public ActivationFunction
   {
   public:
-    /// Applies the activation function to the given input
+    /// @brief Applies the activation function to the given input
     inline torch::Tensor apply(const torch::Tensor& input) const override
     {
       return input;
     }
 
-    /// Returns a string representation of the activation function
+    /// @brief Returns a string representation of the activation function
     inline void pretty_print(std::ostream& os) const override
     {
       os << "none";
     }
 
-    /// Writes the activation function into a torch::serialize::OutputArchive object
+    /// @brief Writes the activation function into a torch::serialize::OutputArchive object
     inline torch::serialize::OutputArchive& write(torch::serialize::OutputArchive& archive,
                                                   const std::string& key="none") const override
     {
@@ -113,7 +113,7 @@ namespace iganet {
       return archive;
     }
 
-    /// Reads the activation function from a torch::serialize::InputArchive object
+    /// @brief Reads the activation function from a torch::serialize::InputArchive object
     inline torch::serialize::InputArchive& read(torch::serialize::InputArchive& archive,
                                                 const std::string& key="none") override
     {
@@ -127,7 +127,7 @@ namespace iganet {
     }
   };
 
-  /// Batch Normalization as described in the paper
+  /// @brief Batch Normalization as described in the paper
   ///
   /// Batch Normalization: Accelerating Deep Network Training by
   /// Reducing Internal Covariate Shift,
@@ -159,49 +159,49 @@ namespace iganet {
 
     ~BatchNorm() override = default;
 
-    /// Applies the activation function to the given input
+    /// @brief Applies the activation function to the given input
     inline torch::Tensor apply(const torch::Tensor& input) const override
     {
       return torch::nn::functional::batch_norm(input, running_mean_, running_var_, options_);
     }
 
-    /// Returns constant reference to running mean
+    /// @brief Returns constant reference to running mean
     inline const torch::Tensor& running_mean() const
     {
       return running_mean_;
     }
 
-    /// Returns non-constant reference to running mean
+    /// @brief Returns non-constant reference to running mean
     inline torch::Tensor& running_mean()
     {
       return running_mean_;
     }
 
-    /// Returns constant reference to running variance
+    /// @brief Returns constant reference to running variance
     inline const torch::Tensor& running_var() const
     {
       return running_var_;
     }
 
-    /// Returns non-constant reference to running var
+    /// @brief Returns non-constant reference to running var
     inline torch::Tensor& running_var()
     {
       return running_var_;
     }
 
-    /// Returns constant reference to options
+    /// @brief Returns constant reference to options
     inline const torch::nn::functional::BatchNormFuncOptions& options() const
     {
       return options_;
     }
 
-    /// Returns non-constant reference to options
+    /// @brief Returns non-constant reference to options
     inline torch::nn::functional::BatchNormFuncOptions& options()
     {
       return options_;
     }
 
-    /// Returns a string representation of the activation function
+    /// @brief Returns a string representation of the activation function
     inline void pretty_print(std::ostream& os = std::cout) const override
     {
       os << "BatchNorm"
@@ -219,7 +219,7 @@ namespace iganet {
       os << "\n)";
     }
 
-    /// Writes the activation function into a torch::serialize::OutputArchive object
+    /// @brief Writes the activation function into a torch::serialize::OutputArchive object
     inline torch::serialize::OutputArchive& write(torch::serialize::OutputArchive& archive,
                                                   const std::string& key="batch_norm") const override
     {
@@ -235,7 +235,7 @@ namespace iganet {
       return archive;
     }
 
-    /// Reads the activation function from a torch::serialize::InputArchive object
+    /// @brief Reads the activation function from a torch::serialize::InputArchive object
     inline torch::serialize::InputArchive& read(torch::serialize::InputArchive& archive,
                                                 const std::string& key="batch_norm") override
     {
@@ -261,7 +261,7 @@ namespace iganet {
     torch::Tensor running_mean_, running_var_;
   };
   
-  /// Continuously Differentiable Exponential Linear Units activation function
+  /// @brief Continuously Differentiable Exponential Linear Units activation function
   ///
   /// \f[
   ///     \text{CELU}(x) = \max(0,x) + \min(0, \alpha * (\exp(x/\alpha)-1))
@@ -279,25 +279,25 @@ namespace iganet {
 
     ~CELU() override = default;
 
-    /// Applies the activation function to the given input
+    /// @brief Applies the activation function to the given input
     inline torch::Tensor apply(const torch::Tensor& input) const override
     {
       return torch::nn::functional::celu(input, options_);
     }
 
-    /// Returns constant reference to options
+    /// @brief Returns constant reference to options
     inline const torch::nn::functional::CELUFuncOptions& options() const
     {
       return options_;
     }
 
-    /// Returns non-constant reference to options
+    /// @brief Returns non-constant reference to options
     inline torch::nn::functional::CELUFuncOptions& options()
     {
       return options_;
     }
 
-    /// Returns a string representation of the activation function
+    /// @brief Returns a string representation of the activation function
     inline void pretty_print(std::ostream& os = std::cout) const override
     {
       os << "CELU"
@@ -306,7 +306,7 @@ namespace iganet {
          << "\n)";
     }
 
-    /// Writes the activation function into a torch::serialize::OutputArchive object
+    /// @brief Writes the activation function into a torch::serialize::OutputArchive object
     inline torch::serialize::OutputArchive& write(torch::serialize::OutputArchive& archive,
                                                           const std::string& key="celu") const override
     {
@@ -317,7 +317,7 @@ namespace iganet {
       return archive;
     }
 
-    /// Reads the activation function from a torch::serialize::InputArchive object
+    /// @brief Reads the activation function from a torch::serialize::InputArchive object
     inline torch::serialize::InputArchive& read(torch::serialize::InputArchive& archive,
                                                         const std::string& key="celu") override
     {
@@ -336,7 +336,7 @@ namespace iganet {
     torch::nn::functional::CELUFuncOptions options_;
   };
 
-  /// Exponential Linear Units activation function
+  /// @brief Exponential Linear Units activation function
   ///
   /// \f[
   ///     \text{ELU}(x) =
@@ -358,25 +358,25 @@ namespace iganet {
 
     ~ELU() override = default;
 
-    /// Applies the activation function to the given input
+    /// @brief Applies the activation function to the given input
     inline torch::Tensor apply(const torch::Tensor& input) const override
     {
       return torch::nn::functional::elu(input, options_);
     }
 
-    /// Returns constant reference to options
+    /// @brief Returns constant reference to options
     inline const torch::nn::functional::ELUFuncOptions& options() const
     {
       return options_;
     }
 
-    /// Returns non-constant reference to options
+    /// @brief Returns non-constant reference to options
     inline torch::nn::functional::ELUFuncOptions& options()
     {
       return options_;
     }
 
-    /// Returns a string representation of the activation function
+    /// @brief Returns a string representation of the activation function
     inline void pretty_print(std::ostream& os = std::cout) const override
     {
       os << "ELU"
@@ -385,7 +385,7 @@ namespace iganet {
          << "\n)";
     }
 
-/// Writes the activation function into a torch::serialize::OutputArchive object
+    /// @brief Writes the activation function into a torch::serialize::OutputArchive object
     inline torch::serialize::OutputArchive& write(torch::serialize::OutputArchive& archive,
                                                           const std::string& key="elu") const override
     {
@@ -396,7 +396,7 @@ namespace iganet {
       return archive;
     }
 
-    /// Reads the activation function from a torch::serialize::InputArchive object
+    /// @brief Reads the activation function from a torch::serialize::InputArchive object
     inline torch::serialize::InputArchive& read(torch::serialize::InputArchive& archive,
                                                         const std::string& key="elu") override
     {
@@ -416,7 +416,7 @@ namespace iganet {
     torch::nn::functional::ELUFuncOptions options_;
   };
 
-  /// Gaussian Error Linear Units activation function
+  /// @brief Gaussian Error Linear Units activation function
   ///
   /// \f[
   ///     \text{GELU}(x) = x * \Psi(x),
@@ -431,19 +431,19 @@ namespace iganet {
 
     ~GELU() override = default;
 
-    /// Applies the activation function to the given input
+    /// @brief Applies the activation function to the given input
     inline torch::Tensor apply(const torch::Tensor& input) const override
     {
       return torch::gelu(input);
     }
 
-    /// Returns a string representation of the activation function
+    /// @brief Returns a string representation of the activation function
     inline void pretty_print(std::ostream& os = std::cout) const override
     {
       os << "GELU";
     }
 
-    /// Writes the activation function into a torch::serialize::OutputArchive object
+    /// @brief Writes the activation function into a torch::serialize::OutputArchive object
     inline torch::serialize::OutputArchive& write(torch::serialize::OutputArchive& archive,
                                                           const std::string& key="gelu") const override
     {
@@ -452,7 +452,7 @@ namespace iganet {
       return archive;
     }
 
-    /// Reads the activation function from a torch::serialize::InputArchive object
+    /// @brief Reads the activation function from a torch::serialize::InputArchive object
     inline torch::serialize::InputArchive& read(torch::serialize::InputArchive& archive,
                                                         const std::string& key="gelu") override
     {
@@ -466,7 +466,7 @@ namespace iganet {
     }
   };
 
-  /// Grated Linear Units activation function
+  /// @brief Grated Linear Units activation function
   ///
   /// \f[
   ///     \text{GLU}(a,b) = a \otimes \sigma(b),
@@ -487,25 +487,25 @@ namespace iganet {
 
     ~GLU() override = default;
 
-    /// Applies the activation function to the given input
+    /// @brief Applies the activation function to the given input
     inline torch::Tensor apply(const torch::Tensor& input) const override
     {
       return torch::nn::functional::glu(input, options_);
     }
 
-    /// Returns constant reference to options
+    /// @brief Returns constant reference to options
     inline const torch::nn::functional::GLUFuncOptions& options() const
     {
       return options_;
     }
 
-    /// Returns non-constant reference to options
+    /// @brief Returns non-constant reference to options
     inline torch::nn::functional::GLUFuncOptions& options()
     {
       return options_;
     }
 
-    /// Returns a string representation of the activation function
+    /// @brief Returns a string representation of the activation function
     inline void pretty_print(std::ostream& os = std::cout) const override
     {
       os << "GLU"
@@ -513,7 +513,7 @@ namespace iganet {
          << "\n)";
     }
 
-    /// Writes the activation function into a torch::serialize::OutputArchive object
+    /// @brief Writes the activation function into a torch::serialize::OutputArchive object
     inline torch::serialize::OutputArchive& write(torch::serialize::OutputArchive& archive,
                                                           const std::string& key="glu") const override
     {
@@ -523,7 +523,7 @@ namespace iganet {
       return archive;
     }
 
-    /// Reads the activation function from a torch::serialize::InputArchive object
+    /// @brief Reads the activation function from a torch::serialize::InputArchive object
     inline torch::serialize::InputArchive& read(torch::serialize::InputArchive& archive,
                                                         const std::string& key="glu") override
     {
@@ -542,7 +542,7 @@ namespace iganet {
     torch::nn::functional::GLUFuncOptions options_;
   };
 
-  /// Group Normalization over a mini-batch of inputs as described in
+  /// @brief Group Normalization over a mini-batch of inputs as described in
   /// the paper Group Normalization, https://arxiv.org/abs/1803.08494
   class GroupNorm : public ActivationFunction
   {
@@ -564,25 +564,25 @@ namespace iganet {
 
     ~GroupNorm() override = default;
 
-    /// Applies the activation function to the given input
+    /// @brief Applies the activation function to the given input
     inline torch::Tensor apply(const torch::Tensor& input) const override
     {
       return torch::nn::functional::group_norm(input, options_);
     }
 
-    /// Returns constant reference to options
+    /// @brief Returns constant reference to options
     inline const torch::nn::functional::GroupNormFuncOptions& options() const
     {
       return options_;
     }
 
-    /// Returns non-constant reference to options
+    /// @brief Returns non-constant reference to options
     inline torch::nn::functional::GroupNormFuncOptions& options()
     {
       return options_;
     }
 
-    /// Returns a string representation of the activation function
+    /// @brief Returns a string representation of the activation function
     inline void pretty_print(std::ostream& os = std::cout) const override
     {
       os << "GroupNorm"
@@ -596,7 +596,7 @@ namespace iganet {
       os << "\n)";
     }
 
-    /// Writes the activation function into a torch::serialize::OutputArchive object
+    /// @brief Writes the activation function into a torch::serialize::OutputArchive object
     inline torch::serialize::OutputArchive& write(torch::serialize::OutputArchive& archive,
                                                           const std::string& key="group_norm") const override
     {
@@ -608,7 +608,7 @@ namespace iganet {
       return archive;
     }
 
-    /// Reads the activation function from a torch::serialize::InputArchive object
+    /// @brief Reads the activation function from a torch::serialize::InputArchive object
     inline torch::serialize::InputArchive& read(torch::serialize::InputArchive& archive,
                                                         const std::string& key="group_norm") override
     {
@@ -628,7 +628,7 @@ namespace iganet {
     torch::nn::functional::GroupNormFuncOptions options_;
   };
 
-  /// Gumbel-Softmax distribution activation function
+  /// @brief Gumbel-Softmax distribution activation function
   class GumbelSoftmax : public ActivationFunction
   {
   public:
@@ -643,25 +643,25 @@ namespace iganet {
 
     ~GumbelSoftmax() override = default;
 
-    /// Applies the activation function to the given input
+    /// @brief Applies the activation function to the given input
     inline torch::Tensor apply(const torch::Tensor& input) const override
     {
       return torch::nn::functional::gumbel_softmax(input, options_);
     }
 
-    /// Returns constant reference to options
+    /// @brief Returns constant reference to options
     inline const torch::nn::functional::GumbelSoftmaxFuncOptions& options() const
     {
       return options_;
     }
 
-    /// Returns non-constant reference to options
+    /// @brief Returns non-constant reference to options
     inline torch::nn::functional::GumbelSoftmaxFuncOptions& options()
     {
       return options_;
     }
 
-    /// Returns a string representation of the activation function
+    /// @brief Returns a string representation of the activation function
     inline void pretty_print(std::ostream& os = std::cout) const override
     {
       os << "GumbelSoftmax"
@@ -671,7 +671,7 @@ namespace iganet {
          << "\n)";
     }
 
-    /// Writes the activation function into a torch::serialize::OutputArchive object
+    /// @brief Writes the activation function into a torch::serialize::OutputArchive object
     inline torch::serialize::OutputArchive& write(torch::serialize::OutputArchive& archive,
                                                           const std::string& key="gumbel_softmax") const override
     {
@@ -683,7 +683,7 @@ namespace iganet {
       return archive;
     }
 
-    /// Reads the activation function from a torch::serialize::InputArchive object
+    /// @brief Reads the activation function from a torch::serialize::InputArchive object
     inline torch::serialize::InputArchive& read(torch::serialize::InputArchive& archive,
                                                         const std::string& key="gumbel_softmax") override
     {
@@ -703,7 +703,7 @@ namespace iganet {
     torch::nn::functional::GumbelSoftmaxFuncOptions options_;
   };
 
-  /// Hard shrinkish activation function
+  /// @brief Hard shrinkish activation function
   class Hardshrink : public ActivationFunction
   {
   public:
@@ -716,25 +716,25 @@ namespace iganet {
 
     ~Hardshrink() override = default;
 
-    /// Applies the activation function to the given input
+    /// @brief Applies the activation function to the given input
     inline torch::Tensor apply(const torch::Tensor& input) const override
     {
       return torch::nn::functional::hardshrink(input, options_);
     }
 
-    /// Returns constant reference to options
+    /// @brief Returns constant reference to options
     inline const torch::nn::functional::HardshrinkFuncOptions& options() const
     {
       return options_;
     }
 
-    /// Returns non-constant reference to options
+    /// @brief Returns non-constant reference to options
     inline torch::nn::functional::HardshrinkFuncOptions& options()
     {
       return options_;
     }
 
-    /// Returns a string representation of the activation function
+    /// @brief Returns a string representation of the activation function
     inline void pretty_print(std::ostream& os = std::cout) const override
     {
       os << "Hardshrink"
@@ -742,7 +742,7 @@ namespace iganet {
          << "\n)";
     }
 
-    /// Writes the activation function into a torch::serialize::OutputArchive object
+    /// @brief Writes the activation function into a torch::serialize::OutputArchive object
     inline torch::serialize::OutputArchive& write(torch::serialize::OutputArchive& archive,
                                                           const std::string& key="hardshrink") const override
     {
@@ -752,7 +752,7 @@ namespace iganet {
       return archive;
     }
 
-    /// Reads the activation function from a torch::serialize::InputArchive object
+    /// @brief Reads the activation function from a torch::serialize::InputArchive object
     inline torch::serialize::InputArchive& read(torch::serialize::InputArchive& archive,
                                                         const std::string& key="hardshrink") override
     {
@@ -770,7 +770,7 @@ namespace iganet {
     torch::nn::functional::HardshrinkFuncOptions options_;
   };
 
-  /// Hardsigmoid activation function
+  /// @brief Hardsigmoid activation function
   ///
   /// \f[
   ///     \text{Hardsigmoid}(x) =
@@ -787,19 +787,19 @@ namespace iganet {
 
     ~Hardsigmoid() override = default;
 
-    /// Applies the activation function to the given input
+    /// @brief Applies the activation function to the given input
     inline torch::Tensor apply(const torch::Tensor& input) const override
     {
       return torch::hardsigmoid(input);
     }
 
-    /// Returns a string representation of the activation function
+    /// @brief Returns a string representation of the activation function
     inline void pretty_print(std::ostream& os = std::cout) const override
     {
       os << "Hardsigmoid";
     }
 
-    /// Writes the activation function into a torch::serialize::OutputArchive object
+    /// @brief Writes the activation function into a torch::serialize::OutputArchive object
     inline torch::serialize::OutputArchive& write(torch::serialize::OutputArchive& archive,
                                                           const std::string& key="hardsigmoid") const override
     {
@@ -808,7 +808,7 @@ namespace iganet {
       return archive;
     }
 
-    /// Reads the activation function from a torch::serialize::InputArchive object
+    /// @brief Reads the activation function from a torch::serialize::InputArchive object
     inline torch::serialize::InputArchive& read(torch::serialize::InputArchive& archive,
                                                         const std::string& key="hardsigmoid") override
     {
@@ -822,7 +822,7 @@ namespace iganet {
     }
   };
 
-  /// Hardswish activation function
+  /// @brief Hardswish activation function
   ///
   /// \f[
   ///     \text{Hardswish}(x) =
@@ -839,19 +839,19 @@ namespace iganet {
 
     ~Hardswish() override = default;
 
-    /// Applies the activation function to the given input
+    /// @brief Applies the activation function to the given input
     inline torch::Tensor apply(const torch::Tensor& input) const override
     {
       return torch::hardswish(input);
     }
 
-    /// Returns a string representation of the activation function
+    /// @brief Returns a string representation of the activation function
     inline void pretty_print(std::ostream& os = std::cout) const override
     {
       os << "Hardswish";
     }
 
-    /// Writes the activation function into a torch::serialize::OutputArchive object
+    /// @brief Writes the activation function into a torch::serialize::OutputArchive object
     inline torch::serialize::OutputArchive& write(torch::serialize::OutputArchive& archive,
                                                           const std::string& key="hardswish") const override
     {
@@ -860,7 +860,7 @@ namespace iganet {
       return archive;
     }
 
-    /// Reads the activation function from a torch::serialize::InputArchive object
+    /// @brief Reads the activation function from a torch::serialize::InputArchive object
     inline torch::serialize::InputArchive& read(torch::serialize::InputArchive& archive,
                                                         const std::string& key="hardswish") override
     {
@@ -874,7 +874,7 @@ namespace iganet {
     }
   };
   
-  /// Hardtanh activation function
+  /// @brief Hardtanh activation function
   ///
   /// \f[
   ///     \text{Hardtanh}(x) =
@@ -898,25 +898,25 @@ namespace iganet {
 
     ~Hardtanh() override = default;
 
-    /// Applies the activation function to the given input
+    /// @brief Applies the activation function to the given input
     inline torch::Tensor apply(const torch::Tensor& input) const override
     {
       return torch::nn::functional::hardtanh(input, options_);
     }
 
-    /// Returns constant reference to options
+    /// @brief Returns constant reference to options
     inline const torch::nn::functional::HardtanhFuncOptions& options() const
     {
       return options_;
     }
 
-    /// Returns non-constant reference to options
+    /// @brief Returns non-constant reference to options
     inline torch::nn::functional::HardtanhFuncOptions& options()
     {
       return options_;
     }
 
-    /// Returns a string representation of the activation function
+    /// @brief Returns a string representation of the activation function
     inline void pretty_print(std::ostream& os = std::cout) const override
     {
       os << "Hardtanh"
@@ -926,7 +926,7 @@ namespace iganet {
          << "\n)";
     }
 
-/// Writes the activation function into a torch::serialize::OutputArchive object
+/// @brief Writes the activation function into a torch::serialize::OutputArchive object
     inline torch::serialize::OutputArchive& write(torch::serialize::OutputArchive& archive,
                                                           const std::string& key="hardtanh") const override
     {
@@ -938,7 +938,7 @@ namespace iganet {
       return archive;
     }
 
-    /// Reads the activation function from a torch::serialize::InputArchive object
+    /// @brief Reads the activation function from a torch::serialize::InputArchive object
     inline torch::serialize::InputArchive& read(torch::serialize::InputArchive& archive,
                                                         const std::string& key="hardtanh") override
     {
@@ -959,7 +959,7 @@ namespace iganet {
     torch::nn::functional::HardtanhFuncOptions options_;
   };
 
-  /// Instance Normalization as described in the paper
+  /// @brief Instance Normalization as described in the paper
   ///
   /// Instance Normalization: The Missing Ingredient for Fast
   /// Stylization, https://arxiv.org/abs/1607.08022
@@ -986,25 +986,25 @@ namespace iganet {
 
     ~InstanceNorm() override = default;
 
-    /// Applies the activation function to the given input
+    /// @brief Applies the activation function to the given input
     inline torch::Tensor apply(const torch::Tensor& input) const override
     {
       return torch::nn::functional::instance_norm(input, options_);
     }
 
-    /// Returns constant reference to options
+    /// @brief Returns constant reference to options
     inline const torch::nn::functional::InstanceNormFuncOptions& options() const
     {
       return options_;
     }
 
-    /// Returns non-constant reference to options
+    /// @brief Returns non-constant reference to options
     inline torch::nn::functional::InstanceNormFuncOptions& options()
     {
       return options_;
     }
 
-    /// Returns a string representation of the activation function
+    /// @brief Returns a string representation of the activation function
     inline void pretty_print(std::ostream& os = std::cout) const override
     {
       os << "InstanceNorm"
@@ -1022,7 +1022,7 @@ namespace iganet {
       os << "\n)";
     }
 
-    /// Writes the activation function into a torch::serialize::OutputArchive object
+    /// @brief Writes the activation function into a torch::serialize::OutputArchive object
     inline torch::serialize::OutputArchive& write(torch::serialize::OutputArchive& archive,
                                                           const std::string& key="instance_norm") const override
     {
@@ -1038,7 +1038,7 @@ namespace iganet {
       return archive;
     }
 
-    /// Reads the activation function from a torch::serialize::InputArchive object
+    /// @brief Reads the activation function from a torch::serialize::InputArchive object
     inline torch::serialize::InputArchive& read(torch::serialize::InputArchive& archive,
                                                         const std::string& key="instance_norm") override
     {
@@ -1063,7 +1063,7 @@ namespace iganet {
     torch::nn::functional::InstanceNormFuncOptions options_;
   };
 
-  /// Layer Normalization as described in the paper
+  /// @brief Layer Normalization as described in the paper
   ///
   /// Layer Normalization, https://arxiv.org/abs/1607.06450
   class LayerNorm : public ActivationFunction
@@ -1086,25 +1086,25 @@ namespace iganet {
 
     ~LayerNorm() override = default;
 
-    /// Applies the activation function to the given input
+    /// @brief Applies the activation function to the given input
     inline torch::Tensor apply(const torch::Tensor& input) const override
     {
       return torch::nn::functional::layer_norm(input, options_);
     }
 
-    /// Returns constant reference to options
+    /// @brief Returns constant reference to options
     inline const torch::nn::functional::LayerNormFuncOptions& options() const
     {
       return options_;
     }
 
-    /// Returns non-constant reference to options
+    /// @brief Returns non-constant reference to options
     inline torch::nn::functional::LayerNormFuncOptions& options()
     {
       return options_;
     }
 
-    /// Returns a string representation of the activation function
+    /// @brief Returns a string representation of the activation function
     inline void pretty_print(std::ostream& os = std::cout) const override
     {
       os << "LayerNorm"
@@ -1119,7 +1119,7 @@ namespace iganet {
       os << "\n)";
     }
 
-    /// Writes the activation function into a torch::serialize::OutputArchive object
+    /// @brief Writes the activation function into a torch::serialize::OutputArchive object
     inline torch::serialize::OutputArchive& write(torch::serialize::OutputArchive& archive,
                                                           const std::string& key="layer_norm") const override
     {
@@ -1130,7 +1130,7 @@ namespace iganet {
       return archive;
     }
 
-    /// Reads the activation function from a torch::serialize::InputArchive object
+    /// @brief Reads the activation function from a torch::serialize::InputArchive object
     inline torch::serialize::InputArchive& read(torch::serialize::InputArchive& archive,
                                                         const std::string& key="layer_norm") override
     {
@@ -1150,7 +1150,7 @@ namespace iganet {
     torch::nn::functional::LayerNormFuncOptions options_;
   };
   
-  /// Leaky ReLU activation function
+  /// @brief Leaky ReLU activation function
   ///
   /// \f[
   ///     \text{LeakyReLU}(x) =
@@ -1172,25 +1172,25 @@ namespace iganet {
 
     ~LeakyReLU() override = default;
 
-    /// Applies the activation function to the given input
+    /// @brief Applies the activation function to the given input
     inline torch::Tensor apply(const torch::Tensor& input) const override
     {
       return torch::nn::functional::leaky_relu(input, options_);
     }
 
-    /// Returns constant reference to options
+    /// @brief Returns constant reference to options
     inline const torch::nn::functional::LeakyReLUFuncOptions& options() const
     {
       return options_;
     }
 
-    /// Returns non-constant reference to options
+    /// @brief Returns non-constant reference to options
     inline torch::nn::functional::LeakyReLUFuncOptions& options()
     {
       return options_;
     }
 
-    /// Returns a string representation of the activation function
+    /// @brief Returns a string representation of the activation function
     inline void pretty_print(std::ostream& os = std::cout) const override
     {
       os << "LeakyReLU"
@@ -1199,7 +1199,7 @@ namespace iganet {
          << "\n)";
     }
 
-/// Writes the activation function into a torch::serialize::OutputArchive object
+/// @brief Writes the activation function into a torch::serialize::OutputArchive object
     inline torch::serialize::OutputArchive& write(torch::serialize::OutputArchive& archive,
                                                           const std::string& key="leaky_relu") const override
     {
@@ -1211,7 +1211,7 @@ namespace iganet {
       return archive;
     }
 
-    /// Reads the activation function from a torch::serialize::InputArchive object
+    /// @brief Reads the activation function from a torch::serialize::InputArchive object
     inline torch::serialize::InputArchive& read(torch::serialize::InputArchive& archive,
                                                         const std::string& key="leaky_relu") override
     {
@@ -1231,7 +1231,7 @@ namespace iganet {
     torch::nn::functional::LeakyReLUFuncOptions options_;
   };
 
-  /// Local response Normalization
+  /// @brief Local response Normalization
   class LocalResponseNorm : public ActivationFunction
   {
   public:
@@ -1250,25 +1250,25 @@ namespace iganet {
 
     ~LocalResponseNorm() override = default;
 
-    /// Applies the activation function to the given input
+    /// @brief Applies the activation function to the given input
     inline torch::Tensor apply(const torch::Tensor& input) const override
     {
       return torch::nn::functional::local_response_norm(input, options_);
     }
 
-    /// Returns constant reference to options
+    /// @brief Returns constant reference to options
     inline const torch::nn::functional::LocalResponseNormFuncOptions& options() const
     {
       return options_;
     }
 
-    /// Returns non-constant reference to options
+    /// @brief Returns non-constant reference to options
     inline torch::nn::functional::LocalResponseNormFuncOptions& options()
     {
       return options_;
     }
 
-    /// Returns a string representation of the activation function
+    /// @brief Returns a string representation of the activation function
     inline void pretty_print(std::ostream& os = std::cout) const override
     {
       os << "LocalResponseNorm"
@@ -1279,7 +1279,7 @@ namespace iganet {
          << "\n)";
     }
 
-/// Writes the activation function into a torch::serialize::OutputArchive object
+/// @brief Writes the activation function into a torch::serialize::OutputArchive object
     inline torch::serialize::OutputArchive& write(torch::serialize::OutputArchive& archive,
                                                           const std::string& key="local_response_norm") const override
     {
@@ -1293,7 +1293,7 @@ namespace iganet {
       return archive;
     }
 
-    /// Reads the activation function from a torch::serialize::InputArchive object
+    /// @brief Reads the activation function from a torch::serialize::InputArchive object
     inline torch::serialize::InputArchive& read(torch::serialize::InputArchive& archive,
                                                         const std::string& key="local_response_norm") override
     {
@@ -1315,7 +1315,7 @@ namespace iganet {
     torch::nn::functional::LocalResponseNormFuncOptions options_;
   };
 
-  /// LogSigmoid activation function
+  /// @brief LogSigmoid activation function
   ///
   /// \f[
   ///     \text{LogSigmoid}(x) = \log \left( \frac{1}{1+\exp(-x)} \right)
@@ -1327,19 +1327,19 @@ namespace iganet {
 
     ~LogSigmoid() override = default;
 
-    /// Applies the activation function to the given input
+    /// @brief Applies the activation function to the given input
     inline torch::Tensor apply(const torch::Tensor& input) const override
     {
       return torch::log_sigmoid(input);
     }
 
-    /// Returns a string representation of the activation function
+    /// @brief Returns a string representation of the activation function
     inline void pretty_print(std::ostream& os = std::cout) const override
     {
       os << "LogSigmoid";
     }
 
-    /// Writes the activation function into a torch::serialize::OutputArchive object
+    /// @brief Writes the activation function into a torch::serialize::OutputArchive object
     inline torch::serialize::OutputArchive& write(torch::serialize::OutputArchive& archive,
                                                           const std::string& key="logsigmoid") const override
     {
@@ -1348,7 +1348,7 @@ namespace iganet {
       return archive;
     }
 
-    /// Reads the activation function from a torch::serialize::InputArchive object
+    /// @brief Reads the activation function from a torch::serialize::InputArchive object
     inline torch::serialize::InputArchive& read(torch::serialize::InputArchive& archive,
                                                         const std::string& key="logsigmoid") override
     {
@@ -1362,7 +1362,7 @@ namespace iganet {
     }
   };
 
-  /// LogSoftmax activation function
+  /// @brief LogSoftmax activation function
   ///
   /// \f[
   ///     \text{LogSigmoid}(x_i) = \log \left( \frac{\exp(x_i)}{\sum_j \exp(x_j)} \right)
@@ -1380,25 +1380,25 @@ namespace iganet {
 
     ~LogSoftmax() override = default;
 
-    /// Applies the activation function to the given input
+    /// @brief Applies the activation function to the given input
     inline torch::Tensor apply(const torch::Tensor& input) const override
     {
       return torch::nn::functional::log_softmax(input, options_);
     }
 
-    /// Returns constant reference to options
+    /// @brief Returns constant reference to options
     inline const torch::nn::functional::LogSoftmaxFuncOptions& options() const
     {
       return options_;
     }
 
-    /// Returns non-constant reference to options
+    /// @brief Returns non-constant reference to options
     inline torch::nn::functional::LogSoftmaxFuncOptions& options()
     {
       return options_;
     }
 
-    /// Returns a string representation of the activation function
+    /// @brief Returns a string representation of the activation function
     inline void pretty_print(std::ostream& os = std::cout) const override
     {
       os << "LogSoftmax"
@@ -1406,7 +1406,7 @@ namespace iganet {
          << "\n)";
     }
 
-    /// Writes the activation function into a torch::serialize::OutputArchive object
+    /// @brief Writes the activation function into a torch::serialize::OutputArchive object
     inline torch::serialize::OutputArchive& write(torch::serialize::OutputArchive& archive,
                                                           const std::string& key="logsoftmax") const override
     {
@@ -1415,7 +1415,7 @@ namespace iganet {
       return archive;
     }
 
-    /// Reads the activation function from a torch::serialize::InputArchive object
+    /// @brief Reads the activation function from a torch::serialize::InputArchive object
     inline torch::serialize::InputArchive& read(torch::serialize::InputArchive& archive,
                                                         const std::string& key="logsoftmax") override
     {
@@ -1432,7 +1432,7 @@ namespace iganet {
     torch::nn::functional::LogSoftmaxFuncOptions options_;
   };
 
-  /// Mish activation function
+  /// @brief Mish activation function
   ///
   /// \f[
   ///     \text{Mish}(x) = x * \tanh(\text{Softplus}(x))
@@ -1444,19 +1444,19 @@ namespace iganet {
 
     ~Mish() override = default;
 
-    /// Applies the activation function to the given input
+    /// @brief Applies the activation function to the given input
     inline torch::Tensor apply(const torch::Tensor& input) const override
     {
       return torch::mish(input);
     }
 
-    /// Returns a string representation of the activation function
+    /// @brief Returns a string representation of the activation function
     inline void pretty_print(std::ostream& os = std::cout) const override
     {
       os << "Mish";
     }
 
-    /// Writes the activation function into a torch::serialize::OutputArchive object
+    /// @brief Writes the activation function into a torch::serialize::OutputArchive object
     inline torch::serialize::OutputArchive& write(torch::serialize::OutputArchive& archive,
                                                           const std::string& key="mish") const override
     {
@@ -1465,7 +1465,7 @@ namespace iganet {
       return archive;
     }
 
-    /// Reads the activation function from a torch::serialize::InputArchive object
+    /// @brief Reads the activation function from a torch::serialize::InputArchive object
     inline torch::serialize::InputArchive& read(torch::serialize::InputArchive& archive,
                                                         const std::string& key="mish") override
     {
@@ -1479,7 +1479,7 @@ namespace iganet {
     }
   };
 
-  /// \f$L_p\f$ Normalization
+  /// @brief Lp Normalization
   class Normalize : public ActivationFunction
   {
   public:
@@ -1494,25 +1494,25 @@ namespace iganet {
 
     ~Normalize() override = default;
 
-    /// Applies the activation function to the given input
+    /// @brief Applies the activation function to the given input
     inline torch::Tensor apply(const torch::Tensor& input) const override
     {
       return torch::nn::functional::normalize(input, options_);
     }
 
-    /// Returns constant reference to options
+    /// @brief Returns constant reference to options
     inline const torch::nn::functional::NormalizeFuncOptions& options() const
     {
       return options_;
     }
 
-    /// Returns non-constant reference to options
+    /// @brief Returns non-constant reference to options
     inline torch::nn::functional::NormalizeFuncOptions& options()
     {
       return options_;
     }
 
-    /// Returns a string representation of the activation function
+    /// @brief Returns a string representation of the activation function
     inline void pretty_print(std::ostream& os = std::cout) const override
     {
       os << "Normalize"
@@ -1522,7 +1522,7 @@ namespace iganet {
          << "\n)";
     }
 
-    /// Writes the activation function into a torch::serialize::OutputArchive object
+    /// @brief Writes the activation function into a torch::serialize::OutputArchive object
     inline torch::serialize::OutputArchive& write(torch::serialize::OutputArchive& archive,
                                                           const std::string& key="normalize") const override
     {
@@ -1534,7 +1534,7 @@ namespace iganet {
       return archive;
     }
 
-    /// Reads the activation function from a torch::serialize::InputArchive object
+    /// @brief Reads the activation function from a torch::serialize::InputArchive object
     inline torch::serialize::InputArchive& read(torch::serialize::InputArchive& archive,
                                                         const std::string& key="normalize") override
     {
@@ -1555,7 +1555,7 @@ namespace iganet {
     torch::nn::functional::NormalizeFuncOptions options_;
   };
 
-  /// PReLU activation function
+  /// @brief PReLU activation function
   class PReLU : public ActivationFunction
   {
   public:
@@ -1564,25 +1564,25 @@ namespace iganet {
 
     ~PReLU() override = default;
 
-    /// Returns constant reference to weights
+    /// @brief Returns constant reference to weights
     const torch::Tensor& weight() const
     {
       return weight_;
     }
 
-    /// Returns non-constant reference to weights
+    /// @brief Returns non-constant reference to weights
     torch::Tensor& weight()
     {
       return weight_;
     }
 
-    /// Applies the activation function to the given input
+    /// @brief Applies the activation function to the given input
     inline torch::Tensor apply(const torch::Tensor& input) const override
     {
       return torch::nn::functional::prelu(input, weight());
     }
 
-    /// Returns a string representation of the activation function
+    /// @brief Returns a string representation of the activation function
     inline void pretty_print(std::ostream& os = std::cout) const override
     {
       os << "PReLU";
@@ -1591,7 +1591,7 @@ namespace iganet {
         os << "(\n  weight = " << weight() << "\n)";
     }
 
-    /// Writes the activation function into a torch::serialize::OutputArchive object
+    /// @brief Writes the activation function into a torch::serialize::OutputArchive object
     inline torch::serialize::OutputArchive& write(torch::serialize::OutputArchive& archive,
                                                           const std::string& key="prelu") const override
     {
@@ -1601,7 +1601,7 @@ namespace iganet {
       return archive;
     }
 
-    /// Reads the activation function from a torch::serialize::InputArchive object
+    /// @brief Reads the activation function from a torch::serialize::InputArchive object
     inline torch::serialize::InputArchive& read(torch::serialize::InputArchive& archive,
                                                         const std::string& key="prelu") override
     {
@@ -1619,7 +1619,7 @@ namespace iganet {
     torch::Tensor weight_;
   };
 
-  /// ReLU activation function
+  /// @brief ReLU activation function
   ///
   /// \f[
   ///     \text{ReLU}(x) = \max(0,x)
@@ -1636,25 +1636,25 @@ namespace iganet {
 
     ~ReLU() override = default;
 
-    /// Applies the activation function to the given input
+    /// @brief Applies the activation function to the given input
     inline torch::Tensor apply(const torch::Tensor& input) const override
     {
       return torch::nn::functional::relu(input, options_);
     }
 
-    /// Returns constant reference to options
+    /// @brief Returns constant reference to options
     inline const torch::nn::functional::ReLUFuncOptions& options() const
     {
       return options_;
     }
 
-    /// Returns non-constant reference to options
+    /// @brief Returns non-constant reference to options
     inline torch::nn::functional::ReLUFuncOptions& options()
     {
       return options_;
     }
 
-    /// Returns a string representation of the activation function
+    /// @brief Returns a string representation of the activation function
     inline void pretty_print(std::ostream& os = std::cout) const override
     {
       os << "ReLU"
@@ -1662,7 +1662,7 @@ namespace iganet {
          << "\n)";
     }
 
-    /// Writes the activation function into a torch::serialize::OutputArchive object
+    /// @brief Writes the activation function into a torch::serialize::OutputArchive object
     inline torch::serialize::OutputArchive& write(torch::serialize::OutputArchive& archive,
                                                           const std::string& key="relu") const override
     {
@@ -1672,7 +1672,7 @@ namespace iganet {
       return archive;
     }
 
-    /// Reads the activation function from a torch::serialize::InputArchive object
+    /// @brief Reads the activation function from a torch::serialize::InputArchive object
     inline torch::serialize::InputArchive& read(torch::serialize::InputArchive& archive,
                                                         const std::string& key="relu") override
     {
@@ -1690,7 +1690,7 @@ namespace iganet {
     torch::nn::functional::ReLUFuncOptions options_;
   };
 
-  /// ReLU6 activation function
+  /// @brief ReLU6 activation function
   ///
   /// \f[
   ///     \text{ReLU6}(x) = \min(\max(0,x),6)
@@ -1707,25 +1707,25 @@ namespace iganet {
 
     ~ReLU6() override = default;
 
-    /// Applies the activation function to the given input
+    /// @brief Applies the activation function to the given input
     inline torch::Tensor apply(const torch::Tensor& input) const override
     {
       return torch::nn::functional::relu6(input, options_);
     }
 
-    /// Returns constant reference to options
+    /// @brief Returns constant reference to options
     inline const torch::nn::functional::ReLU6FuncOptions& options() const
     {
       return options_;
     }
 
-    /// Returns non-constant reference to options
+    /// @brief Returns non-constant reference to options
     inline torch::nn::functional::ReLU6FuncOptions& options()
     {
       return options_;
     }
 
-    /// Returns a string representation of the activation function
+    /// @brief Returns a string representation of the activation function
     inline void pretty_print(std::ostream& os = std::cout) const override
     {
       os << "ReLU6"
@@ -1733,7 +1733,7 @@ namespace iganet {
          << "\n)";
     }
 
-    /// Writes the activation function into a torch::serialize::OutputArchive object
+    /// @brief Writes the activation function into a torch::serialize::OutputArchive object
     inline torch::serialize::OutputArchive& write(torch::serialize::OutputArchive& archive,
                                                           const std::string& key="relu6") const override
     {
@@ -1743,7 +1743,7 @@ namespace iganet {
       return archive;
     }
 
-    /// Reads the activation function from a torch::serialize::InputArchive object
+    /// @brief Reads the activation function from a torch::serialize::InputArchive object
     inline torch::serialize::InputArchive& read(torch::serialize::InputArchive& archive,
                                                         const std::string& key="relu6") override
     {
@@ -1761,7 +1761,7 @@ namespace iganet {
     torch::nn::functional::ReLU6FuncOptions options_;
   };
 
-  /// Randomized ReLU activation function
+  /// @brief Randomized ReLU activation function
   ///
   /// \f[
   ///     \text{RReLU}(x) =
@@ -1784,25 +1784,25 @@ namespace iganet {
 
     ~RReLU() override = default;
 
-    /// Applies the activation function to the given input
+    /// @brief Applies the activation function to the given input
     inline torch::Tensor apply(const torch::Tensor& input) const override
     {
       return torch::nn::functional::rrelu(input, options_);
     }
 
-    /// Returns constant reference to options
+    /// @brief Returns constant reference to options
     inline const torch::nn::functional::RReLUFuncOptions& options() const
     {
       return options_;
     }
     
-    /// Returns non-constant reference to options
+    /// @brief Returns non-constant reference to options
     inline torch::nn::functional::RReLUFuncOptions& options()
     {
       return options_;
     }
 
-    /// Returns a string representation of the activation function
+    /// @brief Returns a string representation of the activation function
     inline void pretty_print(std::ostream& os = std::cout) const override
     {
       os << "PReLU"
@@ -1812,7 +1812,7 @@ namespace iganet {
          << "\n)";
     }
 
-    /// Writes the activation function into a torch::serialize::OutputArchive object
+    /// @brief Writes the activation function into a torch::serialize::OutputArchive object
     inline torch::serialize::OutputArchive& write(torch::serialize::OutputArchive& archive,
                                                           const std::string& key="rrelu") const override
     {
@@ -1824,7 +1824,7 @@ namespace iganet {
       return archive;
     }
 
-    /// Reads the activation function from a torch::serialize::InputArchive object
+    /// @brief Reads the activation function from a torch::serialize::InputArchive object
     inline torch::serialize::InputArchive& read(torch::serialize::InputArchive& archive,
                                                         const std::string& key="rrelu") override
     {
@@ -1844,7 +1844,7 @@ namespace iganet {
     torch::nn::functional::RReLUFuncOptions options_;
   };
 
-  /// SELU activation function
+  /// @brief SELU activation function
   ///
   /// \f[
   ///     \text{SELU}(x) = s * ( \max(0,x) + \min(0, \alpha*(\exp(x)-1 ) ) )
@@ -1864,25 +1864,25 @@ namespace iganet {
 
     ~SELU() override = default;
 
-    /// Applies the activation function to the given input
+    /// @brief Applies the activation function to the given input
     inline torch::Tensor apply(const torch::Tensor& input) const override
     {
       return torch::nn::functional::selu(input, options_);
     }
 
-    /// Returns constant reference to options
+    /// @brief Returns constant reference to options
     inline const torch::nn::functional::SELUFuncOptions& options() const
     {
       return options_;
     }
 
-    /// Returns non-constant reference to options
+    /// @brief Returns non-constant reference to options
     inline torch::nn::functional::SELUFuncOptions& options()
     {
       return options_;
     }
 
-    /// Returns a string representation of the activation function
+    /// @brief Returns a string representation of the activation function
     inline void pretty_print(std::ostream& os = std::cout) const override
     {
       os << "SELU"
@@ -1890,7 +1890,7 @@ namespace iganet {
          << "\n)";
     }
 
-    /// Writes the activation function into a torch::serialize::OutputArchive object
+    /// @brief Writes the activation function into a torch::serialize::OutputArchive object
     inline torch::serialize::OutputArchive& write(torch::serialize::OutputArchive& archive,
                                                           const std::string& key="selu") const override
     {
@@ -1900,7 +1900,7 @@ namespace iganet {
       return archive;
     }
 
-    /// Reads the activation function from a torch::serialize::InputArchive object
+    /// @brief Reads the activation function from a torch::serialize::InputArchive object
     inline torch::serialize::InputArchive& read(torch::serialize::InputArchive& archive,
                                                         const std::string& key="selu") override
     {
@@ -1919,7 +1919,7 @@ namespace iganet {
     torch::nn::functional::SELUFuncOptions options_;
   };
 
-  /// Sigmoid activation function
+  /// @brief Sigmoid activation function
   ///
   /// \f[
   ///    \text{Sigmoid}(x) = \sigma(x) = \frac{1}{1+\exp(-x)}
@@ -1927,19 +1927,19 @@ namespace iganet {
   class Sigmoid : public ActivationFunction
   {
   public:
-    /// Applies the activation function to the given input
+    /// @brief Applies the activation function to the given input
     inline torch::Tensor apply(const torch::Tensor& input) const override
     {
       return torch::sigmoid(input);
     }
 
-    /// Returns a string representation of the activation function
+    /// @brief Returns a string representation of the activation function
     inline void pretty_print(std::ostream& os = std::cout) const override
     {
       os << "Sigmoid";
     }
 
-    /// Writes the activation function into a torch::serialize::OutputArchive object
+    /// @brief Writes the activation function into a torch::serialize::OutputArchive object
     inline torch::serialize::OutputArchive& write(torch::serialize::OutputArchive& archive,
                                                           const std::string& key="sigmoid") const override
     {
@@ -1948,7 +1948,7 @@ namespace iganet {
       return archive;
     }
 
-    /// Reads the activation function from a torch::serialize::InputArchive object
+    /// @brief Reads the activation function from a torch::serialize::InputArchive object
     inline torch::serialize::InputArchive& read(torch::serialize::InputArchive& archive,
                                                         const std::string& key="sigmoid") override
     {
@@ -1962,7 +1962,7 @@ namespace iganet {
     }
   };
 
-  /// Sigmoid Linear Unit activation function
+  /// @brief Sigmoid Linear Unit activation function
   ///
   /// \f[
   ///    \text{SiLU}(x) = x * \sigma(x)
@@ -1970,19 +1970,19 @@ namespace iganet {
   class SiLU : public ActivationFunction
   {
   public:
-    /// Applies the activation function to the given input
+    /// @brief Applies the activation function to the given input
     inline torch::Tensor apply(const torch::Tensor& input) const override
     {
       return torch::silu(input);
     }
 
-    /// Returns a string representation of the activation function
+    /// @brief Returns a string representation of the activation function
     inline void pretty_print(std::ostream& os = std::cout) const override
     {
       os << "SiLU";
     }
 
-    /// Writes the activation function into a torch::serialize::OutputArchive object
+    /// @brief Writes the activation function into a torch::serialize::OutputArchive object
     inline torch::serialize::OutputArchive& write(torch::serialize::OutputArchive& archive,
                                                           const std::string& key="silu") const override
     {
@@ -1991,7 +1991,7 @@ namespace iganet {
       return archive;
     }
 
-    /// Reads the activation function from a torch::serialize::InputArchive object
+    /// @brief Reads the activation function from a torch::serialize::InputArchive object
     inline torch::serialize::InputArchive& read(torch::serialize::InputArchive& archive,
                                                         const std::string& key="silu") override
     {
@@ -2005,7 +2005,7 @@ namespace iganet {
     }
   };
 
-  /// Softmax activation function
+  /// @brief Softmax activation function
   ///
   /// \f[
   ///     \text{Softmax}(x_i) = \frac{\exp(x_i)}{\sum_j \exp(x_j)}
@@ -2023,25 +2023,25 @@ namespace iganet {
     
     ~Softmax() override = default;
 
-    /// Applies the activation function to the given input
+    /// @brief Applies the activation function to the given input
     inline torch::Tensor apply(const torch::Tensor& input) const override
     {
       return torch::nn::functional::softmax(input, options_);
     }
 
-    /// Returns constant reference to options
+    /// @brief Returns constant reference to options
     inline const torch::nn::functional::SoftmaxFuncOptions& options() const
     {
       return options_;
     }
 
-    /// Returns non-constant reference to options
+    /// @brief Returns non-constant reference to options
     inline torch::nn::functional::SoftmaxFuncOptions& options()
     {
       return options_;
     }
 
-    /// Returns a string representation of the activation function
+    /// @brief Returns a string representation of the activation function
     inline void pretty_print(std::ostream& os = std::cout) const override
     {
       os << "Softmax"
@@ -2049,7 +2049,7 @@ namespace iganet {
          << "\n)";
     }
 
-    /// Writes the activation function into a torch::serialize::OutputArchive object
+    /// @brief Writes the activation function into a torch::serialize::OutputArchive object
     inline torch::serialize::OutputArchive& write(torch::serialize::OutputArchive& archive,
                                                           const std::string& key="softmax") const override
     {
@@ -2059,7 +2059,7 @@ namespace iganet {
       return archive;
     }
 
-    /// Reads the activation function from a torch::serialize::InputArchive object
+    /// @brief Reads the activation function from a torch::serialize::InputArchive object
     inline torch::serialize::InputArchive& read(torch::serialize::InputArchive& archive,
                                                         const std::string& key="softmax") override
     {
@@ -2078,7 +2078,7 @@ namespace iganet {
     torch::nn::functional::SoftmaxFuncOptions options_;
   };
 
-  /// Softmin activation function
+  /// @brief Softmin activation function
   ///
   /// \f[
   ///     \text{Softmin}(x) = \text{Softmax}(-x)
@@ -2094,25 +2094,25 @@ namespace iganet {
     
     ~Softmin() override = default;
 
-    /// Applies the activation function to the given input
+    /// @brief Applies the activation function to the given input
     inline torch::Tensor apply(const torch::Tensor& input) const override
     {
       return torch::nn::functional::softmin(input, options_);
     }
 
-    /// Returns constant reference to options
+    /// @brief Returns constant reference to options
     inline const torch::nn::functional::SoftminFuncOptions& options() const
     {
       return options_;
     }
 
-    /// Returns non-constant reference to options
+    /// @brief Returns non-constant reference to options
     inline torch::nn::functional::SoftminFuncOptions& options()
     {
       return options_;
     }
 
-    /// Returns a string representation of the activation function
+    /// @brief Returns a string representation of the activation function
     inline void pretty_print(std::ostream& os = std::cout) const override
     {
       os << "Softmin"
@@ -2120,7 +2120,7 @@ namespace iganet {
          << "\n)";
     }
 
-    /// Writes the activation function into a torch::serialize::OutputArchive object
+    /// @brief Writes the activation function into a torch::serialize::OutputArchive object
     inline torch::serialize::OutputArchive& write(torch::serialize::OutputArchive& archive,
                                                           const std::string& key="softmin") const override
     {
@@ -2130,7 +2130,7 @@ namespace iganet {
       return archive;
     }
 
-    /// Reads the activation function from a torch::serialize::InputArchive object
+    /// @brief Reads the activation function from a torch::serialize::InputArchive object
     inline torch::serialize::InputArchive& read(torch::serialize::InputArchive& archive,
                                                         const std::string& key="softmin") override
     {
@@ -2149,7 +2149,7 @@ namespace iganet {
     torch::nn::functional::SoftminFuncOptions options_;
   };
 
-  /// Softplus activation function
+  /// @brief Softplus activation function
   ///
   /// \f[
   ///     \text{Softplus}(x) = \frac{1}{\beta} * \log( 1+\exp(\beta * x) )
@@ -2167,25 +2167,25 @@ namespace iganet {
     
     ~Softplus() override = default;
 
-    /// Applies the activation function to the given input
+    /// @brief Applies the activation function to the given input
     inline torch::Tensor apply(const torch::Tensor& input) const override
     {
       return torch::nn::functional::softplus(input, options_);
     }
 
-    /// Returns constant reference to options
+    /// @brief Returns constant reference to options
     inline const torch::nn::functional::SoftplusFuncOptions& options() const
     {
       return options_;
     }
 
-    /// Returns non-constant reference to options
+    /// @brief Returns non-constant reference to options
     inline torch::nn::functional::SoftplusFuncOptions& options()
     {
       return options_;
     }
 
-    /// Returns a string representation of the activation function
+    /// @brief Returns a string representation of the activation function
     inline void pretty_print(std::ostream& os = std::cout) const override
     {
       os << "Softplus"
@@ -2194,7 +2194,7 @@ namespace iganet {
          << "\n)";
     }
 
-    /// Writes the activation function into a torch::serialize::OutputArchive object
+    /// @brief Writes the activation function into a torch::serialize::OutputArchive object
     inline torch::serialize::OutputArchive& write(torch::serialize::OutputArchive& archive,
                                                           const std::string& key="softplus") const override
     {
@@ -2205,7 +2205,7 @@ namespace iganet {
       return archive;
     }
 
-    /// Reads the activation function from a torch::serialize::InputArchive object
+    /// @brief Reads the activation function from a torch::serialize::InputArchive object
     inline torch::serialize::InputArchive& read(torch::serialize::InputArchive& archive,
                                                         const std::string& key="softplus") override
     {
@@ -2225,7 +2225,7 @@ namespace iganet {
     torch::nn::functional::SoftplusFuncOptions options_;
   };
   
-  /// Softshrink activation function
+  /// @brief Softshrink activation function
   ///
   /// \f[
   ///     \text{Softshrink}(x) =
@@ -2247,25 +2247,25 @@ namespace iganet {
     
     ~Softshrink() override = default;
 
-    /// Applies the activation function to the given input
+    /// @brief Applies the activation function to the given input
     inline torch::Tensor apply(const torch::Tensor& input) const override
     {
       return torch::nn::functional::softshrink(input, options_);
     }
 
-    /// Returns constant reference to options
+    /// @brief Returns constant reference to options
     inline const torch::nn::functional::SoftshrinkFuncOptions& options() const
     {
       return options_;
     }
 
-    /// Returns non-constant reference to options
+    /// @brief Returns non-constant reference to options
     inline torch::nn::functional::SoftshrinkFuncOptions& options()
     {
       return options_;
     }
 
-    /// Returns a string representation of the activation function
+    /// @brief Returns a string representation of the activation function
     inline void pretty_print(std::ostream& os = std::cout) const override
     {
       os << "Softshrink"
@@ -2273,7 +2273,7 @@ namespace iganet {
          << "\n)";
     }
 
-    /// Writes the activation function into a torch::serialize::OutputArchive object
+    /// @brief Writes the activation function into a torch::serialize::OutputArchive object
     inline torch::serialize::OutputArchive& write(torch::serialize::OutputArchive& archive,
                                                           const std::string& key="softshrink") const override
     {
@@ -2283,7 +2283,7 @@ namespace iganet {
       return archive;
     }
 
-    /// Reads the activation function from a torch::serialize::InputArchive object
+    /// @brief Reads the activation function from a torch::serialize::InputArchive object
     inline torch::serialize::InputArchive& read(torch::serialize::InputArchive& archive,
                                                         const std::string& key="softshrink") override
     {
@@ -2301,7 +2301,7 @@ namespace iganet {
     torch::nn::functional::SoftshrinkFuncOptions options_;
   };
 
-  /// Softsign activation function
+  /// @brief Softsign activation function
   ///
   /// \f[
   ///    \text{Softsign}(x) = \frac{x}{1+\abs{x}}
@@ -2309,19 +2309,19 @@ namespace iganet {
   class Softsign : public ActivationFunction
   {
   public:
-    /// Applies the activation function to the given input
+    /// @brief Applies the activation function to the given input
     inline torch::Tensor apply(const torch::Tensor& input) const override
     {
       return torch::nn::functional::softsign(input);
     }
 
-    /// Returns a string representation of the activation function
+    /// @brief Returns a string representation of the activation function
     inline void pretty_print(std::ostream& os = std::cout) const override
     {
       os << "Softsign";
     }
 
-    /// Writes the activation function into a torch::serialize::OutputArchive object
+    /// @brief Writes the activation function into a torch::serialize::OutputArchive object
     inline torch::serialize::OutputArchive& write(torch::serialize::OutputArchive& archive,
                                                           const std::string& key="softsign") const override
     {
@@ -2330,7 +2330,7 @@ namespace iganet {
       return archive;
     }
 
-    /// Reads the activation function from a torch::serialize::InputArchive object
+    /// @brief Reads the activation function from a torch::serialize::InputArchive object
     inline torch::serialize::InputArchive& read(torch::serialize::InputArchive& archive,
                                                         const std::string& key="softsign") override
     {
@@ -2344,7 +2344,7 @@ namespace iganet {
     }
   };
 
-  /// Tanh activation function
+  /// @brief Tanh activation function
   ///
   /// \f[
   ///    \text{Tanh}(x) = \frac{\exp(x)-\exp(-x)}{\exp(x)+\exp(-x)}
@@ -2352,19 +2352,19 @@ namespace iganet {
   class Tanh : public ActivationFunction
   {
   public:
-    /// Applies the activation function to the given input
+    /// @brief Applies the activation function to the given input
     inline torch::Tensor apply(const torch::Tensor& input) const override
     {
       return torch::tanh(input);
     }
 
-    /// Returns a string representation of the activation function
+    /// @brief Returns a string representation of the activation function
     inline void pretty_print(std::ostream& os = std::cout) const override
     {
       os << "Tanh";
     }
 
-    /// Writes the activation function into a torch::serialize::OutputArchive object
+    /// @brief Writes the activation function into a torch::serialize::OutputArchive object
     inline torch::serialize::OutputArchive& write(torch::serialize::OutputArchive& archive,
                                                           const std::string& key="tanh") const override
     {
@@ -2373,7 +2373,7 @@ namespace iganet {
       return archive;
     }
 
-    /// Reads the activation function from a torch::serialize::InputArchive object
+    /// @brief Reads the activation function from a torch::serialize::InputArchive object
     inline torch::serialize::InputArchive& read(torch::serialize::InputArchive& archive,
                                                         const std::string& key="tanh") override
     {
@@ -2387,7 +2387,7 @@ namespace iganet {
     }
   };
 
-  /// Tanhshrink activation function
+  /// @brief Tanhshrink activation function
   ///
   /// \f[
   ///    \text{Tanhshrink}(x) = x - \text{Tanh}(x)
@@ -2395,19 +2395,19 @@ namespace iganet {
   class Tanhshrink : public ActivationFunction
   {
   public:
-    /// Applies the activation function to the given input
+    /// @brief Applies the activation function to the given input
     inline torch::Tensor apply(const torch::Tensor& input) const override
     {
       return torch::nn::functional::tanhshrink(input);
     }
 
-    /// Returns a string representation of the activation function
+    /// @brief Returns a string representation of the activation function
     inline void pretty_print(std::ostream& os = std::cout) const override
     {
       os << "Tanhshrink";
     }
 
-    /// Writes the activation function into a torch::serialize::OutputArchive object
+    /// @brief Writes the activation function into a torch::serialize::OutputArchive object
     inline torch::serialize::OutputArchive& write(torch::serialize::OutputArchive& archive,
                                                           const std::string& key="tanhshrink") const override
     {
@@ -2416,7 +2416,7 @@ namespace iganet {
       return archive;
     }
 
-    /// Reads the activation function from a torch::serialize::InputArchive object
+    /// @brief Reads the activation function from a torch::serialize::InputArchive object
     inline torch::serialize::InputArchive& read(torch::serialize::InputArchive& archive,
                                                         const std::string& key="tanhshrink") override
     {
@@ -2430,7 +2430,7 @@ namespace iganet {
     }
   };
   
-  /// Threshold activation function
+  /// @brief Threshold activation function
   ///
   /// \f[
   ///     \text{Threshold}(x) =
@@ -2451,25 +2451,25 @@ namespace iganet {
     
     ~Threshold() override = default;
 
-    /// Applies the activation function to the given input
+    /// @brief Applies the activation function to the given input
     inline torch::Tensor apply(const torch::Tensor& input) const override
     {
       return torch::nn::functional::threshold(input, options_);
     }
 
-    /// Returns constant reference to options
+    /// @brief Returns constant reference to options
     inline const torch::nn::functional::ThresholdFuncOptions& options() const
     {
       return options_;
     }
 
-    /// Returns non-constant reference to options
+    /// @brief Returns non-constant reference to options
     inline torch::nn::functional::ThresholdFuncOptions& options()
     {
       return options_;
     }
 
-    /// Returns a string representation of the activation function
+    /// @brief Returns a string representation of the activation function
     inline void pretty_print(std::ostream& os = std::cout) const override
     {
       os << "Threshold"
@@ -2479,7 +2479,7 @@ namespace iganet {
          << "\n)";
     }
 
-    /// Writes the activation function into a torch::serialize::OutputArchive object
+    /// @brief Writes the activation function into a torch::serialize::OutputArchive object
     inline torch::serialize::OutputArchive& write(torch::serialize::OutputArchive& archive,
                                                           const std::string& key="threshold") const override
     {
@@ -2491,7 +2491,7 @@ namespace iganet {
       return archive;
     }
 
-    /// Reads the activation function from a torch::serialize::InputArchive object
+    /// @brief Reads the activation function from a torch::serialize::InputArchive object
     inline torch::serialize::InputArchive& read(torch::serialize::InputArchive& archive,
                                                         const std::string& key="threshold") override
     {
