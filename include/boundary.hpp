@@ -18,25 +18,21 @@
 
 namespace iganet {
 
-  /// Identifiers for topological sides
+  /// @brief Identifiers for topological sides
   enum side { west  = 1, east  = 2, south = 3, north = 4, front = 5, back = 6,
               stime = 7, etime = 8,
               left  = 1, right = 2, down  = 3, up    = 4, none  = 0 };
 
-  /**
-   * BoundaryCore
-   */
+  /// @brief BoundaryCore
   template<template<typename, short_t, short_t...> class bspline_t,
            typename real_t, short_t GeoDim, short_t ParDim, short_t... Degrees>
   class BoundaryCore;
   
-  /**
-   * BoundaryCore (1d specialization)
-   *
-   * This specialization has 2 sides
-   * - west (u=0)
-   * - east (u=1)
-   */
+  /// @brief BoundaryCore (1d specialization)
+  ///
+  /// This specialization has 2 sides
+  /// - west (u=0)
+  /// - east (u=1)
   template<template<typename, short_t, short_t...> class bspline_t,
            typename real_t, short_t GeoDim, short_t... Degrees>
   class BoundaryCore<bspline_t, real_t, GeoDim, 1, Degrees...>
@@ -145,15 +141,13 @@ namespace iganet {
                bspline_t<real_t, GeoDim>> bdr_;
   };
 
-  /**
-   * BoundaryCore (2d specialization)
-   *
-   * This specialization has 4 sides
-   * - west  (u=0, v  )
-   * - east  (u=1, v  )
-   * - south (u,   v=0)
-   * - north (u,   v=1)
-   */
+  /// @brief BoundaryCore (2d specialization)
+  ///
+  /// This specialization has 4 sides
+  /// - west  (u=0, v  )
+  /// - east  (u=1, v  )
+  /// - south (u,   v=0)
+  /// - north (u,   v=1)
   template<template<typename, short_t, short_t...> class bspline_t,
            typename real_t, short_t GeoDim, short_t... Degrees>
   class BoundaryCore<bspline_t, real_t, GeoDim, 2, Degrees...>
@@ -269,17 +263,15 @@ namespace iganet {
                bspline_t<real_t, GeoDim, std::get<0>(degrees_)>> bdr_;
   };
 
-  /**
-   * BoundaryCore (3d specialization)
-   *
-   * This specialization has 6 sides
-   * - west  (u=0, v,   w)
-   * - east  (u=1, v,   w)
-   * - south (u,   v=0, w)
-   * - north (u,   v=1, w)
-   * - front (u,   v,   w=0)
-   * - back  (u,   v,   w=1)
-   */
+  /// @brief BoundaryCore (3d specialization)
+  ///
+  /// This specialization has 6 sides
+  /// - west  (u=0, v,   w)
+  /// - east  (u=1, v,   w)
+  /// - south (u,   v=0, w)
+  /// - north (u,   v=1, w)
+  /// - front (u,   v,   w=0)
+  /// - back  (u,   v,   w=1)
   template<template<typename, short_t, short_t...> class bspline_t,
            typename real_t, short_t GeoDim, short_t... Degrees>
   class BoundaryCore<bspline_t, real_t, GeoDim, 3, Degrees...>
@@ -407,19 +399,17 @@ namespace iganet {
                bspline_t<real_t, GeoDim, std::get<0>(degrees_), std::get<1>(degrees_)>> bdr_;
   };
 
-  /**
-   * BoundaryCore (4d specialization)
-   *   
-   * This specialization has 8 sides
-   * - west  (u=0, v,   w,   t)
-   * - east  (u=1, v,   w,   t)
-   * - south (u,   v=0, w,   t)
-   * - north (u,   v=1, w,   t)
-   * - front (u,   v,   w=0, t)
-   * - back  (u,   v,   w=1, t)
-   * - stime (u,   v,   w,   t=0)
-   * - etime (u,   v,   w,   t=1)
-   */
+  /// @brief BoundaryCore (4d specialization)
+  ///   
+  /// This specialization has 8 sides
+  /// - west  (u=0, v,   w,   t)
+  /// - east  (u=1, v,   w,   t)
+  /// - south (u,   v=0, w,   t)
+  /// - north (u,   v=1, w,   t)
+  /// - front (u,   v,   w=0, t)
+  /// - back  (u,   v,   w=1, t)
+  /// - stime (u,   v,   w,   t=0)
+  /// - etime (u,   v,   w,   t=1)
   template<template<typename, short_t, short_t...> class bspline_t,
            typename real_t, short_t GeoDim, short_t... Degrees>
   class BoundaryCore<bspline_t, real_t, GeoDim, 4, Degrees...>
@@ -559,9 +549,7 @@ namespace iganet {
                bspline_t<real_t, GeoDim, std::get<0>(degrees_), std::get<1>(degrees_), std::get<2>(degrees_)>> bdr_;
   };
   
-  /**
-   * Boundary
-   */
+  /// @brief Boundary
   template<template<typename, short_t, short_t...> class bspline_t,
            typename real_t, short_t GeoDim, short_t... Degrees>
   class Boundary : public BoundaryCore<bspline_t, real_t, GeoDim, sizeof...(Degrees), Degrees...>
