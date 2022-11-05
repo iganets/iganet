@@ -2728,15 +2728,20 @@ namespace iganet {
     /// @param[in] xi Point(s) where to evaluate the Hessian
     ///
     /// @result Block-tensor with the Hessian with respect to the
-    /// parametric variables   
+    /// parametric variables
     /// \f[
     ///     H_{\mathbf{x}}(u)
     ///        =
-    ///     J_{\boldsymbol{\xi}}(G)^{-t} (H_\boldsymbol{\xi}(u)
-    ///     - \nabla_{\mathbf{x}}u + H_{\boldsymbol{\xi}}(G)) J_{\boldsymbol{\xi}}(G)^{-1} ,
+    ///     J_{\boldsymbol{\xi}}(G)^{-T}
+    ///     \left(
+    ///       H_\boldsymbol{\xi}(u)
+    ///       -
+    ///       \sum_k \nabla_{\mathbf{x},k}u H_{\boldsymbol{\xi}}(G_k)
+    ///     \right)
+    ///     J_{\boldsymbol{\xi}}(G)^{-1} ,
     ///     \quad
     ///     \mathbf{x} = G(\boldsymbol{\xi})
-    /// \f]
+    /// \f]    
     ///
     /// @{
     template<typename Geometrymap_t>
@@ -2767,15 +2772,20 @@ namespace iganet {
     /// @param[in] idx_G Knot indices where to evaluate Jacobian of `G`
     ///
     /// @result Block-tensor with the Hessian with respect to the
-    /// physical variables    
+    /// physical variables
     /// \f[
     ///     H_{\mathbf{x}}(u)
     ///        =
-    ///     J_{\boldsymbol{\xi}}(G)^{-t} (H_\boldsymbol{\xi}(u)
-    ///     - \nabla_{\mathbf{x}}u + H_{\boldsymbol{\xi}}(G)) J_{\boldsymbol{\xi}}(G)^{-1} ,
+    ///     J_{\boldsymbol{\xi}}(G)^{-T}
+    ///     \left(
+    ///       H_\boldsymbol{\xi}(u)
+    ///       -
+    ///       \sum_k \nabla_{\mathbf{x},k}u H_{\boldsymbol{\xi}}(G_k)
+    ///     \right)
+    ///     J_{\boldsymbol{\xi}}(G)^{-1} ,
     ///     \quad
     ///     \mathbf{x} = G(\boldsymbol{\xi})
-    /// \f]
+    /// \f]    
     template<typename Geometrymap_t>
     inline auto ihess(const Geometrymap_t G,
                       const std::array<torch::Tensor, BSplineCore::parDim_>& xi,
@@ -2808,11 +2818,16 @@ namespace iganet {
     /// \f[
     ///     H_{\mathbf{x}}(u)
     ///        =
-    ///     J_{\boldsymbol{\xi}}(G)^{-t} (H_\boldsymbol{\xi}(u)
-    ///     - \nabla_{\mathbf{x}}u + H_{\boldsymbol{\xi}}(G)) J_{\boldsymbol{\xi}}(G)^{-1} ,
+    ///     J_{\boldsymbol{\xi}}(G)^{-T}
+    ///     \left(
+    ///       H_\boldsymbol{\xi}(u)
+    ///       -
+    ///       \sum_k \nabla_{\mathbf{x},k}u H_{\boldsymbol{\xi}}(G_k)
+    ///     \right)
+    ///     J_{\boldsymbol{\xi}}(G)^{-1} ,
     ///     \quad
     ///     \mathbf{x} = G(\boldsymbol{\xi})
-    /// \f]
+    /// \f]    
     template<typename Geometrymap_t>
     inline auto ihess(const Geometrymap_t& G,
                       const std::array<torch::Tensor, BSplineCore::parDim_>& xi,
@@ -2821,11 +2836,19 @@ namespace iganet {
                       const std::array<torch::Tensor, Geometrymap_t::parDim()>& idx_G,
                       const torch::Tensor& coeff_idx_G) const
     {
-      auto invJac = G.jac(xi, idx_G, coeff_idx_G).ginv();
-      return invJac.tr();
-      //return invJac.tr() * ( hess(xi, idx, coeff_idx) -
-      //                       igrad(G, xi, idx, coeff_idx, idx_G, coeff_idx_G) -
-      //                       G.hess(xi, idx_G, coeff_idx_G) ) * invJac;
+      
+      auto hessu  = hess(xi, idx, coeff_idx).slice(0);
+
+      {
+        auto igradG = igrad(G, xi, idx, coeff_idx, idx_G, coeff_idx_G);
+        auto hessG  = G.hess(xi, idx_G, coeff_idx_G);
+        assert(igradG.cols() == hessG.slices());
+        for (short_t k=0; k<hessG.slices(); ++k)
+          hessu -= igradG(0,k)*hessG.slice(k);
+      }
+
+      auto jacInv = G.jac(xi, idx_G, coeff_idx_G).ginv();
+      return jacInv.tr() * hessu * jacInv;
     }
 
     /// @brief Returns a block-tensor with the Jacobian of the B-spline
