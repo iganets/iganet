@@ -2547,8 +2547,9 @@ namespace iganet {
     ///     \end{bmatrix}
     /// \f]
     ///
-    /// @note This function can only be applied to B-spline objects with
-    /// geometric multiplicity 1, i.e. scalar fields.
+    /// @note If the B-spline object has geometric dimension larger
+    /// then one then all Hessian matrices are returned as slices of a
+    /// rank-3 tensor.
     ///
     /// @{
     auto hess(torch::Tensor& xi) const
@@ -2591,8 +2592,9 @@ namespace iganet {
     ///     \end{bmatrix}
     /// \f]
     ///
-    /// @note This function can only be applied to B-spline objects with
-    /// geometric multiplicity 1, i.e. scalar fields.
+    /// @note If the B-spline object has geometric dimension larger
+    /// then one then all Hessian matrices are returned as slices of a
+    /// rank-3 tensor.
     inline auto hess(const std::array<torch::Tensor, BSplineCore::parDim_>& xi,
                      const std::array<torch::Tensor, BSplineCore::parDim_>& idx) const
     {
@@ -2630,21 +2632,19 @@ namespace iganet {
     ///     \end{bmatrix}
     /// \f]
     ///
-    /// @note This function can only be applied to B-spline objects with
-    /// geometric multiplicity 1, i.e. scalar fields.
+    ///
+    /// @note If the B-spline object has geometric dimension larger
+    /// then one then all Hessian matrices are returned as slices of a
+    /// rank-3 tensor.
     ///
     /// @{
     inline auto hess(const TensorArray1& xi, const TensorArray1& idx,
                      const torch::Tensor& coeff_idx) const
     {
-      static_assert(BSplineCore::geoDim_ == 1,
-                    "hess(.) requires 1D variable");
       assert(xi[0].sizes() == idx[0].sizes());
-      if constexpr (BSplineCore::parDim_ == 1)
-        
-        return BlockTensor<torch::Tensor, 1, 1>
-          (BSplineCore::template eval<BSplineDeriv::dx2>(xi, idx, coeff_idx));
-      
+      if constexpr (BSplineCore::parDim_ == 1)        
+        return BlockTensor<torch::Tensor, 1, 1, BSplineCore::geoDim_>
+          (BSplineCore::template eval<BSplineDeriv::dx2>(xi, idx, coeff_idx));      
       else
         throw std::runtime_error("Unsupported parametric dimension");
     }
@@ -2652,19 +2652,15 @@ namespace iganet {
     inline auto hess(const TensorArray2& xi, const TensorArray2& idx,
                      const torch::Tensor& coeff_idx) const
     {
-      static_assert(BSplineCore::geoDim_ == 1,
-                    "hess(.) requires 1D variable");
       assert(xi[0].sizes() == idx[0].sizes() &&
              xi[1].sizes() == idx[1].sizes());
 
-      if constexpr (BSplineCore::parDim_ == 2)
-      
-        return BlockTensor<torch::Tensor, 2, 2>
+      if constexpr (BSplineCore::parDim_ == 2)     
+        return BlockTensor<torch::Tensor, 2, BSplineCore::geoDim_, 2>
           (BSplineCore::template eval<BSplineDeriv::dx2 >(xi, idx, coeff_idx),
            BSplineCore::template eval<BSplineDeriv::dxdy>(xi, idx, coeff_idx),
            BSplineCore::template eval<BSplineDeriv::dydx>(xi, idx, coeff_idx),
-           BSplineCore::template eval<BSplineDeriv::dy2 >(xi, idx, coeff_idx));
-       
+           BSplineCore::template eval<BSplineDeriv::dy2 >(xi, idx, coeff_idx)).reorder_ikj();       
       else
         throw std::runtime_error("Unsupported parametric dimension");
     }
@@ -2672,15 +2668,12 @@ namespace iganet {
     inline auto hess(const TensorArray3& xi, const TensorArray3& idx,
                      const torch::Tensor& coeff_idx) const
     {
-      static_assert(BSplineCore::geoDim_ == 1,
-                    "hess(.) requires 1D variable");
       assert(xi[0].sizes() == idx[0].sizes() &&
              xi[1].sizes() == idx[1].sizes() &&
              xi[2].sizes() == idx[2].sizes());
     
-      if constexpr (BSplineCore::parDim_ == 3)
-      
-        return BlockTensor<torch::Tensor, 3, 3>
+      if constexpr (BSplineCore::parDim_ == 3)     
+        return BlockTensor<torch::Tensor, 3, BSplineCore::geoDim_, 3>
           (BSplineCore::template eval<BSplineDeriv::dx2 >(xi, idx, coeff_idx),
            BSplineCore::template eval<BSplineDeriv::dxdy>(xi, idx, coeff_idx),
            BSplineCore::template eval<BSplineDeriv::dxdz>(xi, idx, coeff_idx),
@@ -2689,8 +2682,7 @@ namespace iganet {
            BSplineCore::template eval<BSplineDeriv::dydz>(xi, idx, coeff_idx),
            BSplineCore::template eval<BSplineDeriv::dzdx>(xi, idx, coeff_idx),
            BSplineCore::template eval<BSplineDeriv::dzdy>(xi, idx, coeff_idx),
-           BSplineCore::template eval<BSplineDeriv::dz2 >(xi, idx, coeff_idx));
-    
+           BSplineCore::template eval<BSplineDeriv::dz2 >(xi, idx, coeff_idx)).reorder_ikj();    
       else
         throw std::runtime_error("Unsupported parametric dimension");
     }
@@ -2698,16 +2690,13 @@ namespace iganet {
     inline auto hess(const TensorArray4& xi, const TensorArray4& idx,
                      const torch::Tensor& coeff_idx) const
     {
-      static_assert(BSplineCore::geoDim_ == 1,
-                    "hess(.) requires 1D variable");
       assert(xi[0].sizes() == idx[0].sizes() &&
              xi[1].sizes() == idx[1].sizes() &&
              xi[2].sizes() == idx[2].sizes() &&
              xi[3].sizes() == idx[3].sizes());
     
-      if constexpr (BSplineCore::parDim_ == 4)
-      
-        return BlockTensor<torch::Tensor, 4, 4>
+      if constexpr (BSplineCore::parDim_ == 4)      
+        return BlockTensor<torch::Tensor, 4, BSplineCore::geoDim_, 4>
           (BSplineCore::template eval<BSplineDeriv::dx2 >(xi, idx, coeff_idx),
            BSplineCore::template eval<BSplineDeriv::dxdy>(xi, idx, coeff_idx),
            BSplineCore::template eval<BSplineDeriv::dxdz>(xi, idx, coeff_idx),
@@ -2723,8 +2712,7 @@ namespace iganet {
            BSplineCore::template eval<BSplineDeriv::dtdx>(xi, idx, coeff_idx),
            BSplineCore::template eval<BSplineDeriv::dtdy>(xi, idx, coeff_idx),
            BSplineCore::template eval<BSplineDeriv::dtdz>(xi, idx, coeff_idx),
-           BSplineCore::template eval<BSplineDeriv::dt2 >(xi, idx, coeff_idx));
-    
+           BSplineCore::template eval<BSplineDeriv::dt2 >(xi, idx, coeff_idx)).reorder_ikj();    
       else
         throw std::runtime_error("Unsupported parametric dimension");
     }
