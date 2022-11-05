@@ -117,24 +117,28 @@ namespace iganet {
     /// @brief Returns a constant shared pointer to entry (idx)
     inline const std::shared_ptr<T>& operator[](short_t idx) const
     {
+      assert(0 <= idx && idx < (Dims*...));
       return data_[idx];
     }
 
     /// @brief Returns a non-constant shared pointer to entry (idx)
     inline std::shared_ptr<T>& operator[](short_t idx)
     {
+      assert(0 <= idx && idx < (Dims*...));
       return data_[idx];
     }
     
     /// @brief Returns a constant reference to entry (idx)
     inline const T& operator()(short_t idx) const
     {
+      assert(0 <= idx && idx < (Dims*...));
       return *data_[idx];
     }
 
     /// @brief Returns a non-constant reference to entry (idx)
     inline T& operator()(short_t idx)
     {
+      assert(0 <= idx && idx < (Dims*...));
       return *data_[idx];
     }
 
@@ -142,6 +146,7 @@ namespace iganet {
     template<typename D>
     inline T& set(short_t idx, D&& data)
     {
+      assert(0 <= idx && idx < (Dims*...));
       data_[idx] = make_shared<D>(data);
       return *data_[idx];
     }
@@ -186,6 +191,10 @@ namespace iganet {
   };
 
   /// @brief Compile-time rank-2 block tensor (matrix)
+  ///
+  /// Data is store in row-major order, i.e. all entries of a row are
+  /// stored contiguously in memory and the entries of the next row
+  /// are stored with an offset of Cols
   template<typename T, short_t Rows, short_t Cols>
   class BlockTensor<T, Rows, Cols> : public BlockTensorCore<T, Rows, Cols>
   {
@@ -212,12 +221,14 @@ namespace iganet {
     /// @brief Returns a constant reference to entry (row, col)
     inline const T& operator()(short_t row, short_t col) const
     {
+      assert(0 <= row && row < Rows && 0 <= col && col < Cols);
       return *Base::data_[Cols*row+col];
     }
 
     /// @brief Returns a non-constant reference to entry (row, col)
     inline T& operator()(short_t row, short_t col)
     {
+      assert(0 <= row && row < Rows && 0 <= col && col < Cols);
       return *Base::data_[Cols*row+col];
     }
 
@@ -227,6 +238,7 @@ namespace iganet {
     template<typename D>
     inline T& set(short_t row, short_t col, D&& data)
     {
+      assert(0 <= row && row < Rows && 0 <= col && col < Cols);
       Base::data_[Cols*row+col] = make_shared<D>(data);
       return *Base::data_[Cols*row+col];
     }
@@ -416,6 +428,156 @@ namespace iganet {
     }
   };
 
+  /// @brief Multiplies one compile-time rank-2 block tensor with
+  /// another compile-time rank-2 block tensor
+  template<typename T, typename U, short_t Rows, short_t Common, short_t Cols>
+  inline auto operator*(const BlockTensor<T, Rows, Common>& lhs,
+                        const BlockTensor<U, Common, Cols>& rhs)
+  {
+    BlockTensor<typename std::common_type<T, U>::type, Rows, Cols> result;
+    for (short_t row = 0; row<Rows; ++row)
+      for (short_t col = 0; col<Cols; ++col) {
+        T tmp = torch::mul(*lhs[Common*row], *rhs[col]);
+          for (short_t idx = 1; idx<Common; ++idx)
+            tmp += torch::mul(*lhs[Common*row+idx], *rhs[Cols*idx+col]);
+        result[Cols*row+col] = std::make_shared<T>(tmp);
+      }
+    return result;
+  }
+
+  /// @brief Compile-time rank-3 block tensor (tensor)
+  ///
+  /// Data is store in row-major order, i.e. all entries of a row are
+  /// stored contiguously in memory and the entries of the next row
+  /// are stored with an offset of Cols. The entries of the next slice
+  /// are store with an offset of Rows*Cols.
+  template<typename T, short_t Rows, short_t Cols, short_t Slices>
+  class BlockTensor<T, Rows, Cols, Slices> : public BlockTensorCore<T, Rows, Cols, Slices>
+  {
+  private:
+    using Base = BlockTensorCore<T, Rows, Cols, Slices>;
+    
+  public:
+    using BlockTensorCore<T, Rows, Cols, Slices>::BlockTensorCore;
+
+    /// @brief Returns the number of rows
+    inline static constexpr short_t rows()
+    {
+      return Rows;
+    }
+
+    /// @brief Returns the number of columns
+    inline static constexpr short_t cols()
+    {
+      return Cols;
+    }
+
+    /// @brief Returns the number of slices
+    inline static constexpr short_t slices()
+    {
+      return Slices;
+    }
+
+    using Base::operator();
+    
+    /// @brief Returns a constant reference to entry (row, col, slice)
+    inline const T& operator()(short_t row, short_t col, short_t slice) const
+    {
+      assert(0 <= row && row < Rows && 0 <= col && col < Cols &&
+             0 <= slice && slice < Slices);
+      return *Base::data_[Rows*Cols*slice+Cols*row+col];
+    }
+
+    /// @brief Returns a non-constant reference to entry (row, col, slice)
+    inline T& operator()(short_t row, short_t col, short_t slice)
+    {
+      assert(0 <= row && row < Rows && 0 <= col && col < Cols &&
+             0 <= slice && slice < Slices);
+      return *Base::data_[Rows*Cols*slice+Cols*row+col];
+    }
+
+    using Base::set;
+    
+    /// @brief Stores the given data object at the given position
+    template<typename D>
+    inline T& set(short_t row, short_t col, short_t slice, D&& data)
+    {
+      Base::data_[Rows*Cols*slice+Cols*row+col] = make_shared<D>(data);
+      return *Base::data_[Rows*Cols*slice+Cols*row+col];
+    }
+
+    /// @brief Returns a rank-2 tensor of the k-th slice
+    inline auto slice(short_t slice) const
+    {
+      assert(0 <= slice && slice < Slices);
+      BlockTensor<T, Rows, Cols> result;
+      for (short_t row = 0; row<Rows; ++row)
+        for (short_t col = 0; col<Cols; ++col)
+          result[Cols*row+col] = Base::data_[Rows*Cols*slice+Cols*row+col];
+      return result;
+    }
+
+    /// @brief Returns a new block vector with rows, columns, and
+    ///  slices permuted according to (i,j,k) -> (i,k,j)
+    inline auto reorder_ikj() const
+    {
+      BlockTensor<T, Rows, Slices, Cols> result;
+      for (short_t slice = 0; slice<Slices; ++slice)
+        for (short_t row = 0; row<Rows; ++row)
+          for (short_t col = 0; col<Cols; ++col)
+            result[Rows*Slices*col+Slices*row+slice] = Base::data_[Rows*Cols*slice+Cols*row+col];
+      return result;
+    }
+    
+    /// @brief Returns a new block vector with rows and columns
+    /// transposed and slices remaining fixed. This is equivalent to
+    /// looping through all slices and transposing each rank-2 tensor.
+    inline auto reorder_jik() const
+    {
+      BlockTensor<T, Cols, Rows, Slices> result;
+      for (short_t slice = 0; slice<Slices; ++slice)
+        for (short_t row = 0; row<Rows; ++row)
+          for (short_t col = 0; col<Cols; ++col)
+            result[Rows*Cols*slice+Rows*col+row] = Base::data_[Rows*Cols*slice+Cols*row+col];
+      return result;
+    }
+    
+    /// @brief Returns a new block vector with rows, columns, and
+    ///  slices permuted according to (i,j,k) -> (k,j,i)
+    inline auto reorder_kji() const
+    {
+      BlockTensor<T, Slices, Cols, Rows> result;
+      for (short_t slice = 0; slice<Slices; ++slice)
+        for (short_t row = 0; row<Rows; ++row)
+          for (short_t col = 0; col<Cols; ++col)
+            result[Slices*Cols*row+Cols*slice+col] = Base::data_[Rows*Cols*slice+Cols*row+col];
+      return result;
+    }
+    
+    /// @brief Returns a new block vector with rows, columns, and
+    ///  slices permuted according to (i,j,k) -> (k,i,j)
+    inline auto reorder_kij() const
+    {
+      BlockTensor<T, Slices, Rows, Cols> result;
+      for (short_t slice = 0; slice<Slices; ++slice)
+        for (short_t row = 0; row<Rows; ++row)
+          for (short_t col = 0; col<Cols; ++col)
+            result[Slices*Rows*col+Rows*slice+row] = Base::data_[Rows*Cols*slice+Cols*row+col];
+      return result;
+    }
+
+    /// Returns a string representation of the BSplineCommon object
+    inline void pretty_print(std::ostream& os = std::cout) const
+    {
+      os << Base::name() << "\n";
+      for (short_t slice = 0; slice<Slices; ++slice)
+        for (short_t row = 0; row<Rows; ++row)
+          for (short_t col = 0; col<Cols; ++col)
+            os << "[" << row << "," << col << "," << slice << "] = \n"
+               << *Base::data_[Rows*Cols*slice+Cols*row+col] << "\n";
+    }
+  };
+  
 #define unary_op(name)                                                  \
   template<typename T, short_t... Dims>                                 \
   inline auto name(const BlockTensor<T, Dims...>& input)                \
@@ -981,22 +1143,6 @@ namespace iganet {
     BlockTensor<typename std::common_type<T, U>::type, Dims...> result;
     for (short_t idx = 0; idx<(Dims*...); ++idx)
       result[idx] = std::make_shared<T>(*lhs[idx] - *rhs[idx]);
-    return result;
-  }
-
-  /// @brief Multiplies one compile-time block tensor with another
-  template<typename T, typename U, short_t Rows, short_t Common, short_t Cols>
-  inline auto operator*(const BlockTensor<T, Rows, Common>& lhs,
-                        const BlockTensor<U, Common, Cols>& rhs)
-  {
-    BlockTensor<typename std::common_type<T, U>::type, Rows, Cols> result;
-    for (short_t row = 0; row<Rows; ++row)
-      for (short_t col = 0; col<Cols; ++col) {
-        T tmp = torch::mul(*lhs[Common*row], *rhs[col]);
-          for (short_t idx = 1; idx<Common; ++idx)
-            tmp += torch::mul(*lhs[Common*row+idx], *rhs[Cols*idx+col]);
-        result[Cols*row+col] = std::make_shared<T>(tmp);
-      }
     return result;
   }
 
