@@ -1978,7 +1978,7 @@ namespace iganet {
     }
   };
 
-  /// B-spline (common high-level functionality)
+  /// @brief B-spline (common high-level functionality)
   ///
   /// This class implements some high-level common functionality of
   /// all B-spline classes, e.g., plotting which rely on low-level
