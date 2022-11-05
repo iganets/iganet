@@ -192,8 +192,32 @@ namespace std {
 #endif // defined(_WIN32)
 
     os << *name_ << "(\n";
-    for (auto i : obj)
+    for (const auto& i : obj)
       os << ((i.sizes().size() == 1) ? i.view({1,i.size(0)}) : i) << std::endl;
+    os << ")";
+    
+    return os;
+  }
+
+  /// Print (as string) an array of generic objects
+  template<typename T, std::size_t N>
+  inline std::ostream& operator<<(std::ostream& os,
+                                  const std::array<T, N>& obj)
+  {
+    at::optional<std::string> name_ = c10::demangle(typeid(obj).name());
+
+#if defined(_WIN32)
+    // Windows adds "struct" or "class" as a prefix.
+    if (name_->find("struct ") == 0) {
+      name_->erase(name_->begin(), name_->begin() + 7);
+    } else if (name_->find("class ") == 0) {
+      name_->erase(name_->begin(), name_->begin() + 6);
+    }
+#endif // defined(_WIN32)
+
+    os << *name_ << "(";
+    for (const auto& i : obj)
+      os << i << (&i==&(*obj.rbegin()) ? "" : ",");
     os << ")";
     
     return os;
