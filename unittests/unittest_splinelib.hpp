@@ -308,19 +308,10 @@ void test_bspline_jac(BSpline_t& bspline, TensorArray_t& xi,
     bspline_jac_val = bspline.jac(xi);
 
   if constexpr (BSpline_t::parDim() >= 1) {
-
     for (short_t k=0; k<BSpline_t::geoDim(); ++k)
       EXPECT_TRUE(torch::allclose(bspline_jac_val(k,0),
                                   bspline.template eval<iganet::BSplineDeriv::dx>(xi)(k)
                                   ));
-
-    if (::testing::Test::HasFailure()) {
-      std::cout << "bspline_jac_val=\n" << bspline_jac_val << std::endl;
-      
-      std::cout << "deriv_x=\n" << bspline.template eval<iganet::BSplineDeriv::dx>(xi)
-                << std::endl;
-      exit(0);
-    }
   }
 
   if constexpr (BSpline_t::parDim() >= 2) {
@@ -342,6 +333,89 @@ void test_bspline_jac(BSpline_t& bspline, TensorArray_t& xi,
       EXPECT_TRUE(torch::allclose(bspline_jac_val(k,3),
                                   bspline.template eval<iganet::BSplineDeriv::dt>(xi)(k)
                                   ));
+  }
+}
+
+template<bool precompute, typename BSpline_t, typename TensorArray_t>
+void test_bspline_hess(BSpline_t& bspline, TensorArray_t& xi,
+                       typename BSpline_t::value_type tol = 1e-12)
+{
+  iganet::BlockTensor<torch::Tensor,
+                      BSpline_t::parDim(), BSpline_t::parDim(),
+                      BSpline_t::geoDim()> bspline_hess_val;
+  
+  if constexpr (precompute) {
+    auto knot_idx  = bspline.eval_knot_indices(xi);
+    auto coeff_idx = bspline.eval_coeff_indices(knot_idx);
+    bspline_hess_val = bspline.hess(xi, knot_idx, coeff_idx);
+  } else
+    bspline_hess_val = bspline.hess(xi);
+
+  if constexpr (BSpline_t::parDim() >= 1) {
+    for (short_t k=0; k<BSpline_t::geoDim(); ++k)
+      EXPECT_TRUE(torch::allclose(bspline_hess_val(0,0,k),
+                                  bspline.template eval<iganet::BSplineDeriv::dx2>(xi)(k)
+                                  ));
+  }
+
+  if constexpr (BSpline_t::parDim() >= 2) {
+    for (short_t k=0; k<BSpline_t::geoDim(); ++k) {
+      EXPECT_TRUE(torch::allclose(bspline_hess_val(0,1,k),
+                                  bspline.template eval<iganet::BSplineDeriv::dxdy>(xi)(k)
+                                  ));
+      EXPECT_TRUE(torch::allclose(bspline_hess_val(1,0,k),
+                                  bspline.template eval<iganet::BSplineDeriv::dydx>(xi)(k)
+                                  ));
+      EXPECT_TRUE(torch::allclose(bspline_hess_val(1,1,k),
+                                  bspline.template eval<iganet::BSplineDeriv::dy2>(xi)(k)
+                                  ));
+    }
+  }
+  
+  if constexpr (BSpline_t::parDim() >= 3) {
+    for (short_t k=0; k<BSpline_t::geoDim(); ++k) {
+      EXPECT_TRUE(torch::allclose(bspline_hess_val(0,2,k),
+                                  bspline.template eval<iganet::BSplineDeriv::dxdz>(xi)(k)
+                                  ));
+      EXPECT_TRUE(torch::allclose(bspline_hess_val(1,2,k),
+                                  bspline.template eval<iganet::BSplineDeriv::dydz>(xi)(k)
+                                  ));
+      EXPECT_TRUE(torch::allclose(bspline_hess_val(2,0,k),
+                                  bspline.template eval<iganet::BSplineDeriv::dzdx>(xi)(k)
+                                  ));
+      EXPECT_TRUE(torch::allclose(bspline_hess_val(2,1,k),
+                                  bspline.template eval<iganet::BSplineDeriv::dzdy>(xi)(k)
+                                  ));
+      EXPECT_TRUE(torch::allclose(bspline_hess_val(2,2,k),
+                                  bspline.template eval<iganet::BSplineDeriv::dz2>(xi)(k)
+                                  ));
+    }
+  }
+
+  if constexpr (BSpline_t::parDim() >= 4) {
+    for (short_t k=0; k<BSpline_t::geoDim(); ++k) {
+      EXPECT_TRUE(torch::allclose(bspline_hess_val(0,3,k),
+                                  bspline.template eval<iganet::BSplineDeriv::dxdt>(xi)(k)
+                                  ));
+      EXPECT_TRUE(torch::allclose(bspline_hess_val(1,3,k),
+                                  bspline.template eval<iganet::BSplineDeriv::dydt>(xi)(k)
+                                  ));
+      EXPECT_TRUE(torch::allclose(bspline_hess_val(2,3,k),
+                                  bspline.template eval<iganet::BSplineDeriv::dzdt>(xi)(k)
+                                  ));
+      EXPECT_TRUE(torch::allclose(bspline_hess_val(3,0,k),
+                                  bspline.template eval<iganet::BSplineDeriv::dtdx>(xi)(k)
+                                  ));
+      EXPECT_TRUE(torch::allclose(bspline_hess_val(3,1,k),
+                                  bspline.template eval<iganet::BSplineDeriv::dtdy>(xi)(k)
+                                  ));
+      EXPECT_TRUE(torch::allclose(bspline_hess_val(3,2,k),
+                                  bspline.template eval<iganet::BSplineDeriv::dtdz>(xi)(k)
+                                  ));
+      EXPECT_TRUE(torch::allclose(bspline_hess_val(3,3,k),
+                                  bspline.template eval<iganet::BSplineDeriv::dt2>(xi)(k)
+                                  ));                        
+    }
   }
 }
 
@@ -422,4 +496,10 @@ void test_bspline_eval(BSpline_t& bspline, TensorArray_t& xi, typename BSpline_t
   /// Evaluate Jacobian
   test_bspline_jac<false>(bspline, xi, tol);
   test_bspline_jac<true>(bspline, xi, tol);
+
+  /// Evaluate Hessian
+  if constexpr (BSpline_t::geoDim() == 1) {
+    test_bspline_hess<false>(bspline, xi, tol);
+    test_bspline_hess<true>(bspline, xi, tol);
+  }
 }
