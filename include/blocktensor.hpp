@@ -804,9 +804,11 @@ namespace iganet {
   /// quadrant
   binary_op(atan2);
 
+#if TORCH_VERSION_MAJOR >= 1 && TORCH_VERSION_MINOR >= 11
   /// @brief Alias for atan2()
   binary_op(arctan2);
-
+#endif
+  
   /// @brief Returns a new block tensor with the bitwise NOT of the
   /// elements of `input`
   unary_op(bitwise_not);
