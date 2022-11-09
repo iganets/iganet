@@ -23,8 +23,8 @@ int main()
 
   {
     // Univariate non-uniform B-spline of degree 2 with 6 control points in R^1
-    iganet::NonUniformBSpline<double,1,2> bspline({{{0.0, 0.0, 0.0, 0.25, 0.5, 0.75, 1.0, 1.0, 1.0}}});
-    iganet::NonUniformBSpline<double,1,2>   color({{{0.0, 0.0, 0.0, 0.25, 0.5, 0.75, 1.0, 1.0, 1.0}}});
+    iganet::NonUniformBSpline<real_t,1,2> bspline({{{0.0, 0.0, 0.0, 0.25, 0.5, 0.75, 1.0, 1.0, 1.0}}});
+    iganet::NonUniformBSpline<real_t,1,2>   color({{{0.0, 0.0, 0.0, 0.25, 0.5, 0.75, 1.0, 1.0, 1.0}}});
 
     // Print information
     std::cout << bspline << std::endl;
@@ -48,8 +48,8 @@ int main()
 
   {
     // Univariate non-uniform B-spline of degree 2 with 6 control points in R^2
-    iganet::NonUniformBSpline<double,2,2> bspline({{{0.0,0.0,0.0,0.25,0.5,0.75,1.0,1.0,1.0}}});
-    iganet::NonUniformBSpline<double,1,2> color({{{0.0,0.0,0.0,0.25,0.5,0.75,1.0,1.0,1.0}}});
+    iganet::NonUniformBSpline<real_t,2,2> bspline({{{0.0,0.0,0.0,0.25,0.5,0.75,1.0,1.0,1.0}}});
+    iganet::NonUniformBSpline<real_t,1,2> color({{{0.0,0.0,0.0,0.25,0.5,0.75,1.0,1.0,1.0}}});
 
     // Print information
     std::cout << bspline << std::endl;
@@ -74,8 +74,8 @@ int main()
 
   {
     // Univariate non-uniform B-spline of degree 2 with 6 control points in R^3
-    iganet::NonUniformBSpline<double,3,2> bspline({{{0.0,0.0,0.0,0.25,0.5,0.75,1.0,1.0,1.0}}});
-    iganet::NonUniformBSpline<double,1,2> color({{{0.0,0.0,0.0,0.25,0.5,0.75,1.0,1.0,1.0}}});
+    iganet::NonUniformBSpline<real_t,3,2> bspline({{{0.0,0.0,0.0,0.25,0.5,0.75,1.0,1.0,1.0}}});
+    iganet::NonUniformBSpline<real_t,1,2> color({{{0.0,0.0,0.0,0.25,0.5,0.75,1.0,1.0,1.0}}});
 
     // Print information
     std::cout << bspline << std::endl;
@@ -102,9 +102,9 @@ int main()
   {
     // Bivariate non-uniform B-spline of degree 3 in xi-direction and 4
     // in eta-direction with 5 x 6 control points in R^2
-    iganet::NonUniformBSpline<double,2,3,4> bspline({{{0.0,0.0,0.0,0.0,0.5,1.0,1.0,1.0,1.0},
+    iganet::NonUniformBSpline<real_t,2,3,4> bspline({{{0.0,0.0,0.0,0.0,0.5,1.0,1.0,1.0,1.0},
                                                       {0.0,0.0,0.0,0.0,0.0,0.5,1.0,1.0,1.0,1.0,1.0}}});
-    iganet::NonUniformBSpline<double,1,3,4> color({{{0.0,0.0,0.0,0.0,0.5,1.0,1.0,1.0,1.0},
+    iganet::NonUniformBSpline<real_t,1,3,4> color({{{0.0,0.0,0.0,0.0,0.5,1.0,1.0,1.0,1.0},
                                                     {0.0,0.0,0.0,0.0,0.0,0.5,1.0,1.0,1.0,1.0,1.0}}});
     
     // Print information
@@ -132,9 +132,9 @@ int main()
   {
     // Bivariate non-uniform B-spline of degree 3 in xi-direction and 4
     // in eta-direction with 5 x 6 control points in R^3
-    iganet::NonUniformBSpline<double,3,3,4> bspline({{{0.0,0.0,0.0,0.0,0.5,1.0,1.0,1.0,1.0},
+    iganet::NonUniformBSpline<real_t,3,3,4> bspline({{{0.0,0.0,0.0,0.0,0.5,1.0,1.0,1.0,1.0},
                                                       {0.0,0.0,0.0,0.0,0.0,0.5,1.0,1.0,1.0,1.0,1.0}}});
-    iganet::NonUniformBSpline<double,1,3,4> color({{{0.0,0.0,0.0,0.0,0.5,1.0,1.0,1.0,1.0},
+    iganet::NonUniformBSpline<real_t,1,3,4> color({{{0.0,0.0,0.0,0.0,0.5,1.0,1.0,1.0,1.0},
                                                     {0.0,0.0,0.0,0.0,0.0,0.5,1.0,1.0,1.0,1.0,1.0}}});
 
     // Print information

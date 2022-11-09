@@ -23,7 +23,7 @@ int main()
   
   {
     // Univariate uniform B-spline of degree 2 with 6 control points in R^1
-    iganet::UniformBSpline<double,1,2> bspline({6}), color({6});
+    iganet::UniformBSpline<real_t,1,2> bspline({6}), color({6});
 
     // Print information
     std::cout << bspline << std::endl;
@@ -47,8 +47,8 @@ int main()
 
   {
     // Univariate uniform B-spline of degree 2 with 6 control points in R^2
-    iganet::UniformBSpline<double,2,2> bspline({6});
-    iganet::UniformBSpline<double,1,2> color({6});
+    iganet::UniformBSpline<real_t,2,2> bspline({6});
+    iganet::UniformBSpline<real_t,1,2> color({6});
 
     // Print information
     std::cout << bspline << std::endl;
@@ -73,8 +73,8 @@ int main()
 
   {
     // Univariate uniform B-spline of degree 2 with 6 control points in R^3
-    iganet::UniformBSpline<double,3,2> bspline({6});
-    iganet::UniformBSpline<double,1,2> color({6});
+    iganet::UniformBSpline<real_t,3,2> bspline({6});
+    iganet::UniformBSpline<real_t,1,2> color({6});
 
     // Print information
     std::cout << bspline << std::endl;
@@ -101,8 +101,8 @@ int main()
   {
     // Bivariate uniform B-spline of degree 3 in xi-direction and 4
     // in eta-direction with 5 x 6 control points in R^2
-    iganet::UniformBSpline<double,2,3,4> bspline({5,6});
-    iganet::UniformBSpline<double,1,3,4> color({5,6});
+    iganet::UniformBSpline<real_t,2,3,4> bspline({5,6});
+    iganet::UniformBSpline<real_t,1,3,4> color({5,6});
 
     // Print information
     std::cout << bspline << std::endl;
@@ -129,8 +129,8 @@ int main()
   {
     // Bivariate uniform B-spline of degree 3 in xi-direction and 4
     // in eta-direction with 5 x 6 control points in R^3
-    iganet::UniformBSpline<double,3,3,4> bspline({5,6});
-    iganet::UniformBSpline<double,1,3,4> color({5,6});
+    iganet::UniformBSpline<real_t,3,3,4> bspline({5,6});
+    iganet::UniformBSpline<real_t,1,3,4> color({5,6});
 
     // Print information
     std::cout << bspline << std::endl;
