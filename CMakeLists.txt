@@ -88,7 +88,7 @@ list(APPEND CMAKE_MODULE_PATH "${PROJECT_SOURCE_DIR}/cmake")
 option(IGANET_BUILD_DOCS        "Build documentation"       OFF)
 option(IGANET_BUILD_EXAMPLES    "Build examples"            ON )
 option(IGANET_BUILD_PYBIND11    "Build Python bindings"     OFF)
-option(IGANET_BUILD_UNITTESTS   "Build perftests"           OFF)
+option(IGANET_BUILD_PERFTESTS   "Build perftests"           OFF)
 option(IGANET_BUILD_UNITTESTS   "Build unittests"           OFF)
 option(IGANET_WITH_OPENMP       "With OpenMP"               ON )
 

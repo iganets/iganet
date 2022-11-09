@@ -17,7 +17,7 @@
 #include <iostream>
 #include <chrono>
 
-#include "unittest_splinelib.hpp"
+#include "../unittests/unittest_splinelib.hpp"
 #include <gtest/gtest.h>
 
 #define SPLINELIB
@@ -82,7 +82,7 @@ namespace unittest {
            bool precompute = false>
   auto test_UniformBSpline(int64_t ncoeffs, int64_t nsamples)
   {
-    iganet::core<real_t> core_;
+    iganet::core<real_t> core_(false);
     iganet::UniformBSpline<real_t, GeoDim, Degree0> bspline({ncoeffs}, iganet::BSplineInit::linear);
     iganet::TensorArray1 xi = {torch::rand(nsamples, core_.options())};
     
@@ -100,7 +100,7 @@ namespace unittest {
         bspline.template eval<deriv>(xi);
     auto t2 = std::chrono::high_resolution_clock::now();
     std::cout << std::right << std::setw(10)
-              << std::chrono::duration_cast<std::chrono::nanoseconds>(t2-t1).count() / float(nsamples*10)
+              << std::chrono::duration_cast<std::chrono::nanoseconds>(t2-t1).count() / double(nsamples*10)
               << " (ns/entry)";
     
 #ifdef SPLINELIB
@@ -141,7 +141,7 @@ namespace unittest {
            bool precompute = false>
   auto test_UniformBSpline(int64_t ncoeffs, int64_t nsamples)
   {
-    iganet::core<real_t> core_;
+    iganet::core<real_t> core_(false);
     iganet::UniformBSpline<real_t, GeoDim, Degree0, Degree1> bspline({ncoeffs,
                                                                       ncoeffs}, iganet::BSplineInit::linear);
     iganet::TensorArray2 xi = {torch::rand(nsamples, core_.options()),
@@ -161,7 +161,7 @@ namespace unittest {
         bspline.template eval<deriv>(xi);
     auto t2 = std::chrono::high_resolution_clock::now();
     std::cout << std::right << std::setw(10)
-              << std::chrono::duration_cast<std::chrono::nanoseconds>(t2-t1).count() / float(nsamples*10)
+              << std::chrono::duration_cast<std::chrono::nanoseconds>(t2-t1).count() / double(nsamples*10)
               << " (ns/entry)";
     
 #ifdef SPLINELIB
@@ -204,7 +204,7 @@ namespace unittest {
            bool precompute = false>
   auto test_UniformBSpline(int64_t ncoeffs, int64_t nsamples)
   {
-    iganet::core<real_t> core_;
+    iganet::core<real_t> core_(false);
     iganet::UniformBSpline<real_t, GeoDim, Degree0, Degree1, Degree2> bspline({ncoeffs,
                                                                                ncoeffs,
                                                                                ncoeffs}, iganet::BSplineInit::linear);
@@ -226,7 +226,7 @@ namespace unittest {
         bspline.template eval<deriv>(xi);
     auto t2 = std::chrono::high_resolution_clock::now();
     std::cout << std::right << std::setw(10)
-              << std::chrono::duration_cast<std::chrono::nanoseconds>(t2-t1).count() / float(nsamples*10)
+              << std::chrono::duration_cast<std::chrono::nanoseconds>(t2-t1).count() / double(nsamples*10)
               << " (ns/entry)";
     
 #ifdef SPLINELIB
@@ -271,7 +271,7 @@ namespace unittest {
            bool precompute = false>
   auto test_UniformBSpline(int64_t ncoeffs, int64_t nsamples)
   {
-    iganet::core<real_t> core_;
+    iganet::core<real_t> core_(false);
     iganet::UniformBSpline<real_t, GeoDim, Degree0, Degree1, Degree2, Degree3> bspline({ncoeffs,
                                                                                         ncoeffs,
                                                                                         ncoeffs,
@@ -295,7 +295,7 @@ namespace unittest {
         bspline.template eval<deriv>(xi);
     auto t2 = std::chrono::high_resolution_clock::now();
     std::cout << std::right << std::setw(10)
-              << std::chrono::duration_cast<std::chrono::nanoseconds>(t2-t1).count() / float(nsamples*10)
+              << std::chrono::duration_cast<std::chrono::nanoseconds>(t2-t1).count() / double(nsamples*10)
               << " (ns/entry)";
     
 #ifdef SPLINELIB
