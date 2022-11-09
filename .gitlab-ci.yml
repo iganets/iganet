@@ -8,6 +8,8 @@ before_script:
    - unzip libtorch.zip -d /
    - rm -f libtorch.zip
    - export PATH=$PATH:/cmake-3.24.3-linux-x86_64/bin
+   - export LANG=en_US.UTF-8
+   - export LC_ALL=en_US.UTF-8
 
 stages:
   - build
