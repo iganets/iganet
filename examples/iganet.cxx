@@ -17,17 +17,18 @@
 
 template<typename real_t,
          typename optimizer_t,
+         short_t GeoDim, short_t PdeDim,
          template<typename, short_t, short_t...> class bspline_t,
          short_t... Degrees>
-class poisson : public iganet::IgANet<real_t, optimizer_t, bspline_t, Degrees...>
+class poisson : public iganet::IgANet<real_t, optimizer_t, GeoDim, PdeDim, bspline_t, Degrees...>
 {
 public:
-  using iganet::IgANet<real_t, optimizer_t, bspline_t, Degrees...>::IgANet;
+  using iganet::IgANet<real_t, optimizer_t, GeoDim, PdeDim, bspline_t, Degrees...>::IgANet;
 
-  virtual iganet::IgaNetEpochUpdate epoch_init(int64_t epoch) override
+  virtual iganet::IgaNetDataStatus get_epoch(int64_t epoch) const override
   {
     std::cout << "Epoch " << std::to_string(epoch) << ": ";
-    return iganet::IgaNetEpochUpdate(0);
+    return iganet::IgaNetDataStatus(0);
   }
 };
 
@@ -42,7 +43,7 @@ int main()
   iganet::verbose(std::cout);
   
   {
-    poisson<real_t, optimizer_t, iganet::UniformBSpline,
+    poisson<real_t, optimizer_t, 1, 1, iganet::UniformBSpline,
             2> net({100,100}, // Number of neurons per layers
                    {
                      {iganet::activation::relu},
@@ -67,7 +68,7 @@ int main()
   return 0;
   
   {
-    poisson<real_t, optimizer_t, iganet::UniformBSpline,
+    poisson<real_t, optimizer_t, 1, 1, iganet::UniformBSpline,
             5> net({50,30,70}, // Number of neurons per layers
                    {
                      {iganet::activation::relu},
@@ -83,7 +84,7 @@ int main()
 
     net.save("poisson1.pt");
 
-    poisson<real_t, optimizer_t, iganet::UniformBSpline,
+    poisson<real_t, optimizer_t, 1, 1, iganet::UniformBSpline,
             5> net1;
 
     net1.load("poisson1.pt");
@@ -94,7 +95,7 @@ int main()
   }
 
   {
-    poisson<real_t, optimizer_t, iganet::UniformBSpline,
+    poisson<real_t, optimizer_t, 2, 1, iganet::UniformBSpline,
             2, 2> net({50,30,70}, // Number of neurons per layers
                       {
                         {iganet::activation::relu},
@@ -113,7 +114,7 @@ int main()
   }
 
   {
-    poisson<real_t, optimizer_t, iganet::UniformBSpline,
+    poisson<real_t, optimizer_t, 3, 1, iganet::UniformBSpline,
             5, 5, 5> net({50,30,70}, // Number of neurons per layers
                          {
                            {iganet::activation::relu},
@@ -133,7 +134,7 @@ int main()
   }
 
   {
-    poisson<real_t, optimizer_t, iganet::UniformBSpline, 
+    poisson<real_t, optimizer_t, 4, 1, iganet::UniformBSpline, 
             5, 5, 5, 5> net({50,30,70}, // Number of neurons per layers
                             {
                               {iganet::activation::relu},
