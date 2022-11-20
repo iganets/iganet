@@ -2154,9 +2154,9 @@ namespace iganet {
     /// @brief Returns a block-tensor with the divergence of the
     /// B-spline object with respect to the physical variables
     ///
-    /// @tparam Geometrymap_t Type of the geometry map's B-spline object
+    /// @tparam Geometry_t Type of the geometry B-spline object
     ///
-    /// @param[in] G B-spline object of the geometry map
+    /// @param[in] G B-spline geometry object
     ///
     /// @param[in] xi Point(s) where to evaluate the divergence
     ///
@@ -2173,14 +2173,14 @@ namespace iganet {
     /// \f]
     ///
     /// @{
-    template<typename Geometrymap_t>
-    auto idiv(const Geometrymap_t& G, torch::Tensor& xi)
+    template<typename Geometry_t>
+    auto idiv(const Geometry_t& G, torch::Tensor& xi)
     {
       return idiv(G, TensorArray1({xi}));
     }
   
-    template<typename Geometrymap_t>
-    inline auto idiv(const Geometrymap_t& G,
+    template<typename Geometry_t>
+    inline auto idiv(const Geometry_t& G,
                      const std::array<torch::Tensor, BSplineCore::parDim_>& xi) const
     {
       return idiv(G, xi, eval_knot_indices(xi), G.eval_knot_indices(xi));
@@ -2190,9 +2190,9 @@ namespace iganet {
     /// @brief Returns a block-tensor with the divergence of the
     /// B-spline object with respect to the physical variables
     ///
-    /// @tparam Geometrymap_t Type of the geometry map's B-spline object
+    /// @tparam Geometry_t Type of the geometry B-spline object
     ///
-    /// @param[in] G B-spline object of the geometry map
+    /// @param[in] G B-spline geometry object
     ///
     /// @param[in] xi Point(s) where to evaluate the divergence
     ///
@@ -2211,11 +2211,11 @@ namespace iganet {
     ///     \frac{\partial u_1}{\partial x_1} +
     ///     \frac{\partial u_{d_\text{geo}}}{\partial x_{d_\text{par}}}
     /// \f]
-    template<typename Geometrymap_t>
-    inline auto idiv(const Geometrymap_t G,
+    template<typename Geometry_t>
+    inline auto idiv(const Geometry_t G,
                      const std::array<torch::Tensor, BSplineCore::parDim_>& xi,
                      const std::array<torch::Tensor, BSplineCore::parDim_>& idx,
-                     const std::array<torch::Tensor, Geometrymap_t::parDim()>& idx_G) const
+                     const std::array<torch::Tensor, Geometry_t::parDim()>& idx_G) const
     {
       return idiv(G, xi, idx, eval_coeff_indices(idx),
                   idx_G, G.eval_coeff_indices(idx_G));
@@ -2224,9 +2224,9 @@ namespace iganet {
     /// @brief Returns a block-tensor with the divergence of the
     /// B-spline object with respect to the physical variables
     ///
-    /// @tparam Geometrymap_t Type of the geometry map's B-spline object
+    /// @tparam Geometry_t Type of the geometry B-spline object
     ///
-    /// @param[in] G B-spline object of the geometry map
+    /// @param[in] G B-spline geometry object
     ///
     /// @param[in] xi Point(s) where to evaluate the divergence
     ///
@@ -2249,12 +2249,12 @@ namespace iganet {
     ///     \frac{\partial u_1}{\partial x_1} +
     ///     \frac{\partial u_{d_\text{geo}}}{\partial x_{d_\text{par}}}
     /// \f]
-    template<typename Geometrymap_t>
-    inline auto idiv(const Geometrymap_t& G,
+    template<typename Geometry_t>
+    inline auto idiv(const Geometry_t& G,
                      const std::array<torch::Tensor, BSplineCore::parDim_>& xi,
                      const std::array<torch::Tensor, BSplineCore::parDim_>& idx,
                      const torch::Tensor& coeff_idx, 
-                     const std::array<torch::Tensor, Geometrymap_t::parDim()>& idx_G,
+                     const std::array<torch::Tensor, Geometry_t::parDim()>& idx_G,
                      const torch::Tensor& coeff_idx_G) const
     {
       return BSplineCore::ijac(xi, idx, coeff_idx, idx_G, coeff_idx_G).trace();
@@ -2420,9 +2420,9 @@ namespace iganet {
     /// @brief Returns a block-tensor with the gradient of the B-spline
     /// object with respect to the physical variables
     ///
-    /// @tparam Geometrymap_t Type of the geometry map's B-spline object
+    /// @tparam Geometry_t Type of the geometry B-spline object
     ///
-    /// @param[in] G B-spline object of the geometry map
+    /// @param[in] G B-spline geometry object
     ///
     /// @param[in] xi Point(s) where to evaluate the gradient
     ///
@@ -2437,14 +2437,14 @@ namespace iganet {
     /// \f]
     ///
     /// @{
-    template<typename Geometrymap_t>
-    auto igrad(const Geometrymap_t& G, torch::Tensor& xi)
+    template<typename Geometry_t>
+    auto igrad(const Geometry_t& G, torch::Tensor& xi)
     {
       return igrad(G, TensorArray1({xi}));
     }
   
-    template<typename Geometrymap_t>
-    inline auto igrad(const Geometrymap_t& G,
+    template<typename Geometry_t>
+    inline auto igrad(const Geometry_t& G,
                       const std::array<torch::Tensor, BSplineCore::parDim_>& xi) const
     {
       return igrad(G, xi, BSplineCore::eval_knot_indices(xi), G.eval_knot_indices(xi));
@@ -2454,9 +2454,9 @@ namespace iganet {
     /// @brief Returns a block-tensor with the gradient of the B-spline
     /// object with respect to the physical variables
     ///
-    /// @tparam Geometrymap_t Type of the geometry map's B-spline object
+    /// @tparam Geometry_t Type of the geometry B-spline object
     ///
-    /// @param[in] G B-spline object of the geometry map
+    /// @param[in] G B-spline geometry object
     ///
     /// @param[in] xi Point(s) where to evaluate the gradient
     ///
@@ -2473,11 +2473,11 @@ namespace iganet {
     ///     \quad
     ///     \mathbf{x} = G(\boldsymbol{\xi}) 
     /// \f]
-    template<typename Geometrymap_t>
-    inline auto igrad(const Geometrymap_t G,
+    template<typename Geometry_t>
+    inline auto igrad(const Geometry_t G,
                       const std::array<torch::Tensor, BSplineCore::parDim_>& xi,
                       const std::array<torch::Tensor, BSplineCore::parDim_>& idx,
-                      const std::array<torch::Tensor, Geometrymap_t::parDim()>& idx_G) const
+                      const std::array<torch::Tensor, Geometry_t::parDim()>& idx_G) const
     {
       return igrad(G, xi, idx, BSplineCore::eval_coeff_indices(idx),
                    idx_G, G.eval_coeff_indices(idx_G));
@@ -2486,9 +2486,9 @@ namespace iganet {
     /// @brief Returns a block-tensor with the gradient of the B-spline
     /// object with respect to the physical variables
     ///
-    /// @tparam Geometrymap_t Type of the geometry map's B-spline object
+    /// @tparam Geometry_t Type of the geometry B-spline object
     ///
-    /// @param[in] G B-spline object of the geometry map
+    /// @param[in] G B-spline geometry object
     ///
     /// @param[in] xi Point(s) where to evaluate the gradient
     ///
@@ -2509,12 +2509,12 @@ namespace iganet {
     ///     \quad
     ///     \mathbf{x} = G(\boldsymbol{\xi}) 
     /// \f]
-    template<typename Geometrymap_t>
-    inline auto igrad(const Geometrymap_t& G,
+    template<typename Geometry_t>
+    inline auto igrad(const Geometry_t& G,
                       const std::array<torch::Tensor, BSplineCore::parDim_>& xi,
                       const std::array<torch::Tensor, BSplineCore::parDim_>& idx,
                       const torch::Tensor& coeff_idx, 
-                      const std::array<torch::Tensor, Geometrymap_t::parDim()>& idx_G,
+                      const std::array<torch::Tensor, Geometry_t::parDim()>& idx_G,
                       const torch::Tensor& coeff_idx_G) const
     {
       return grad(xi, idx, coeff_idx) * G.jac(xi, idx_G, coeff_idx_G).ginv();
@@ -2721,9 +2721,9 @@ namespace iganet {
     /// @brief Returns a block-tensor with the Hessian of the B-spline
     /// object with respect to the physical variables
     ///
-    /// @tparam Geometrymap_t Type of the geometry map's B-spline object
+    /// @tparam Geometry_t Type of the geometry B-spline object
     ///
-    /// @param[in] G B-spline object of the geometry map
+    /// @param[in] G B-spline geometry object
     ///
     /// @param[in] xi Point(s) where to evaluate the Hessian
     ///
@@ -2744,14 +2744,14 @@ namespace iganet {
     /// \f]    
     ///
     /// @{
-    template<typename Geometrymap_t>
-    auto ihess(const Geometrymap_t& G, torch::Tensor& xi)
+    template<typename Geometry_t>
+    auto ihess(const Geometry_t& G, torch::Tensor& xi)
     {
       return ihess(G, TensorArray1({xi}));
     }
   
-    template<typename Geometrymap_t>
-    inline auto ihess(const Geometrymap_t& G,
+    template<typename Geometry_t>
+    inline auto ihess(const Geometry_t& G,
                       const std::array<torch::Tensor, BSplineCore::parDim_>& xi) const
     {
       return ihess(G, xi, BSplineCore::eval_knot_indices(xi), G.eval_knot_indices(xi));
@@ -2761,9 +2761,9 @@ namespace iganet {
     /// @brief Returns a block-tensor with the Hessian of the B-spline
     /// object with respect to the physical variables
     ///
-    /// @tparam Geometrymap_t Type of the geometry map's B-spline object
+    /// @tparam Geometry_t Type of the geometry B-spline object
     ///
-    /// @param[in] G B-spline object of the geometry map
+    /// @param[in] G B-spline geometry object
     ///
     /// @param[in] xi Point(s) where to evaluate the Hessian
     ///
@@ -2786,11 +2786,11 @@ namespace iganet {
     ///     \quad
     ///     \mathbf{x} = G(\boldsymbol{\xi})
     /// \f]    
-    template<typename Geometrymap_t>
-    inline auto ihess(const Geometrymap_t G,
+    template<typename Geometry_t>
+    inline auto ihess(const Geometry_t G,
                       const std::array<torch::Tensor, BSplineCore::parDim_>& xi,
                       const std::array<torch::Tensor, BSplineCore::parDim_>& idx,
-                      const std::array<torch::Tensor, Geometrymap_t::parDim()>& idx_G) const
+                      const std::array<torch::Tensor, Geometry_t::parDim()>& idx_G) const
     {
       return ihess(G, xi, idx, BSplineCore::eval_coeff_indices(idx),
                    idx_G, G.eval_coeff_indices(idx_G));
@@ -2799,9 +2799,9 @@ namespace iganet {
     /// @brief Returns a block-tensor with the Hessian of the B-spline
     /// object with respect to the physical variables
     ///
-    /// @tparam Geometrymap_t Type of the geometry map's B-spline object
+    /// @tparam Geometry_t Type of the geometry B-spline object
     ///
-    /// @param[in] G B-spline object of the geometry map
+    /// @param[in] G B-spline geometry object
     ///
     /// @param[in] xi Point(s) where to evaluate the Hessian
     ///
@@ -2828,12 +2828,12 @@ namespace iganet {
     ///     \quad
     ///     \mathbf{x} = G(\boldsymbol{\xi})
     /// \f]    
-    template<typename Geometrymap_t>
-    inline auto ihess(const Geometrymap_t& G,
+    template<typename Geometry_t>
+    inline auto ihess(const Geometry_t& G,
                       const std::array<torch::Tensor, BSplineCore::parDim_>& xi,
                       const std::array<torch::Tensor, BSplineCore::parDim_>& idx,
                       const torch::Tensor& coeff_idx, 
-                      const std::array<torch::Tensor, Geometrymap_t::parDim()>& idx_G,
+                      const std::array<torch::Tensor, Geometry_t::parDim()>& idx_G,
                       const torch::Tensor& coeff_idx_G) const
     {
       
@@ -3032,9 +3032,9 @@ namespace iganet {
     /// @brief Returns a block-tensor with the Jacobian of the B-spline
     /// object with respect to the physical variables
     ///
-    /// @tparam Geometrymap_t Type of the geometry map's B-spline object
+    /// @tparam Geometry_t Type of the geometry B-spline object
     ///
-    /// @param[in] G B-spline object of the geometry map
+    /// @param[in] G B-spline geometry object
     ///
     /// @param[in] xi Point(s) where to evaluate the Jacobian
     ///
@@ -3049,14 +3049,14 @@ namespace iganet {
     /// \f]
     ///
     /// @{
-    template<typename Geometrymap_t>
-    auto ijac(const Geometrymap_t& G, torch::Tensor& xi)
+    template<typename Geometry_t>
+    auto ijac(const Geometry_t& G, torch::Tensor& xi)
     {
       return ijac(G, TensorArray1({xi}));
     }
   
-    template<typename Geometrymap_t>
-    inline auto ijac(const Geometrymap_t& G,
+    template<typename Geometry_t>
+    inline auto ijac(const Geometry_t& G,
                      const std::array<torch::Tensor, BSplineCore::parDim_>& xi) const
     {
       return ijac(G, xi, BSplineCore::eval_knot_indices(xi), G.eval_knot_indices(xi));
@@ -3066,9 +3066,9 @@ namespace iganet {
     /// @brief Returns a block-tensor with the Jacobian of the B-spline
     /// object with respect to the physical variables
     ///
-    /// @tparam Geometrymap_t Type of the geometry map's B-spline object
+    /// @tparam Geometry_t Type of the geometry B-spline object
     ///
-    /// @param[in] G B-spline object of the geometry map
+    /// @param[in] G B-spline geometry object
     ///
     /// @param[in] xi Point(s) where to evaluate the Jacobian
     ///
@@ -3085,11 +3085,11 @@ namespace iganet {
     ///     \quad
     ///     \mathbf{x} = G(\boldsymbol{\xi})
     /// \f]
-    template<typename Geometrymap_t>
-    inline auto ijac(const Geometrymap_t G,
+    template<typename Geometry_t>
+    inline auto ijac(const Geometry_t G,
                      const std::array<torch::Tensor, BSplineCore::parDim_>& xi,
                      const std::array<torch::Tensor, BSplineCore::parDim_>& idx,
-                     const std::array<torch::Tensor, Geometrymap_t::parDim()>& idx_G) const
+                     const std::array<torch::Tensor, Geometry_t::parDim()>& idx_G) const
     {
       return ijac(G, xi, idx, BSplineCore::eval_coeff_indices(idx),
                   idx_G, G.eval_coeff_indices(idx_G));
@@ -3098,9 +3098,9 @@ namespace iganet {
     /// @brief Returns a block-tensor with the Jacobian of the B-spline
     /// object with respect to the physical variables
     ///
-    /// @tparam Geometrymap_t Type of the geometry map's B-spline object
+    /// @tparam Geometry_t Type of the geometry B-spline object
     ///
-    /// @param[in] G B-spline object of the geometry map
+    /// @param[in] G B-spline geometry object
     ///
     /// @param[in] xi Point(s) where to evaluate the Jacobian
     ///
@@ -3121,12 +3121,12 @@ namespace iganet {
     ///     \quad
     ///     \mathbf{x} = G(\boldsymbol{\xi})
     /// \f]
-    template<typename Geometrymap_t>
-    inline auto ijac(const Geometrymap_t& G,
+    template<typename Geometry_t>
+    inline auto ijac(const Geometry_t& G,
                      const std::array<torch::Tensor, BSplineCore::parDim_>& xi,
                      const std::array<torch::Tensor, BSplineCore::parDim_>& idx,
                      const torch::Tensor& coeff_idx, 
-                     const std::array<torch::Tensor, Geometrymap_t::parDim()>& idx_G,
+                     const std::array<torch::Tensor, Geometry_t::parDim()>& idx_G,
                      const torch::Tensor& coeff_idx_G) const
     {
       return jac(xi, idx, coeff_idx) * G.jac(xi, idx_G, coeff_idx_G).ginv();
