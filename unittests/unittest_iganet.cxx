@@ -19,17 +19,18 @@
 
 template<typename real_t,
          typename optimizer_t,
+         short_t GeoDim, short_t PdeDim,
          template<typename, short_t, short_t...> class bspline_t,
          short_t... Degrees>
-class IgANet : public iganet::IgANet<real_t, optimizer_t, bspline_t, Degrees...>
+class IgANet : public iganet::IgANet<real_t, optimizer_t, GeoDim, PdeDim, bspline_t, Degrees...>
 {
 public:
-  using iganet::IgANet<real_t, optimizer_t, bspline_t, Degrees...>::IgANet;
+  using iganet::IgANet<real_t, optimizer_t, GeoDim, PdeDim, bspline_t, Degrees...>::IgANet;
   
-  virtual iganet::IgaNetEpochUpdate epoch_init(int64_t epoch) override
+  virtual iganet::IgaNetDataStatus get_epoch(int64_t epoch) const override
   {
     std::cout << "Epoch " << std::to_string(epoch) << ": ";
-    return iganet::IgaNetEpochUpdate(0);
+    return iganet::IgaNetDataStatus(0);
   }
 };
 
@@ -38,7 +39,7 @@ TEST(BSpline, IgaNet_UniformBSpline_1d_double)
   using real_t      = double;
   using optimizer_t = torch::optim::Adam;
 
-  IgANet<real_t, optimizer_t, iganet::UniformBSpline, 
+  IgANet<real_t, optimizer_t, 1, 1, iganet::UniformBSpline, 
          5> net({50,30,70}, // Number of neurons per layers
                 {
                   {iganet::activation::tanh},
@@ -76,7 +77,7 @@ TEST(BSpline, IgaNet_UniformBSpline_2d_double)
   using real_t      = double;
   using optimizer_t = torch::optim::Adam;
 
-  IgANet<real_t, optimizer_t, iganet::UniformBSpline, 
+  IgANet<real_t, optimizer_t, 2, 1, iganet::UniformBSpline, 
          3, 5> net({50,30,70}, // Number of neurons per layers
                    {
                      {iganet::activation::tanh},
@@ -136,7 +137,7 @@ TEST(BSpline, IgaNet_UniformBSpline_3d_double)
   using real_t      = double;
   using optimizer_t = torch::optim::Adam;
 
-  IgANet<real_t, optimizer_t, iganet::UniformBSpline,
+  IgANet<real_t, optimizer_t, 3, 1, iganet::UniformBSpline,
          3, 5, 1> net({50,30,70}, // Number of neurons per layers
                       {
                         {iganet::activation::tanh},
@@ -226,7 +227,7 @@ TEST(BSpline, IgaNet_UniformBSpline_4d_double)
   using real_t      = double;
   using optimizer_t = torch::optim::Adam;
 
-  IgANet<real_t, optimizer_t, iganet::UniformBSpline,
+  IgANet<real_t, optimizer_t, 4, 1, iganet::UniformBSpline,
          3, 5, 1, 4> net({50,30,70}, // Number of neurons per layers
                          {
                            {iganet::activation::tanh},
@@ -354,7 +355,7 @@ TEST(BSpline, IgaNet_NonUniformBSpline_1d_double)
   using real_t      = double;
   using optimizer_t = torch::optim::LBFGS;
 
-  IgANet<real_t, optimizer_t, iganet::NonUniformBSpline, 
+  IgANet<real_t, optimizer_t, 1, 1, iganet::NonUniformBSpline, 
          5> net({50,30,70}, // Number of neurons per layers
                 {
                   {iganet::activation::tanh},
@@ -392,7 +393,7 @@ TEST(BSpline, IgaNet_NonUniformBSpline_2d_double)
   using real_t      = double;
   using optimizer_t = torch::optim::LBFGS;
 
-  IgANet<real_t, optimizer_t, iganet::NonUniformBSpline, 
+  IgANet<real_t, optimizer_t, 2, 1, iganet::NonUniformBSpline, 
          3, 5> net({50,30,70}, // Number of neurons per layers
                    {
                      {iganet::activation::tanh},
@@ -452,7 +453,7 @@ TEST(BSpline, IgaNet_NonUniformBSpline_3d_double)
   using real_t      = double;
   using optimizer_t = torch::optim::LBFGS;
 
-  IgANet<real_t, optimizer_t, iganet::NonUniformBSpline,
+  IgANet<real_t, optimizer_t, 3, 1, iganet::NonUniformBSpline,
          3, 5, 1> net({50,30,70}, // Number of neurons per layers
                       {
                         {iganet::activation::tanh},
@@ -542,7 +543,7 @@ TEST(BSpline, IgaNet_NonUniformBSpline_4d_double)
   using real_t      = double;
   using optimizer_t = torch::optim::LBFGS;
 
-  IgANet<real_t, optimizer_t, iganet::NonUniformBSpline,
+  IgANet<real_t, optimizer_t, 4, 1, iganet::NonUniformBSpline,
          3, 5, 1, 4> net({50,30,70}, // Number of neurons per layers
                          {
                            {iganet::activation::tanh},
