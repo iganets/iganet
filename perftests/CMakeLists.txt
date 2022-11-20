@@ -49,11 +49,11 @@ FetchContent_MakeAvailable(pugixml)
 set(pugixml_DIR ${pugixml_BINARY_DIR})
 FetchContent_MakeAvailable(googletest splinelib)
 
-# Collect unittest sources
-file(GLOB UNITTESTS *.cxx)
+# Collect perftest sources
+file(GLOB PERFTESTS *.cxx)
 
-foreach(unittest ${UNITTESTS})
-  file(RELATIVE_PATH filename ${CMAKE_CURRENT_SOURCE_DIR} ${unittest})
+foreach(perftest ${PERFTESTS})
+  file(RELATIVE_PATH filename ${CMAKE_CURRENT_SOURCE_DIR} ${perftest})
   string(REPLACE ".cxx" "" name ${filename})
   add_executable(${name} ${filename})
   target_link_libraries(${name} PUBLIC "${TORCH_LIBRARIES}")
@@ -61,7 +61,7 @@ foreach(unittest ${UNITTESTS})
   target_link_libraries(${name} PUBLIC pugixml)
   target_link_libraries(${name} PUBLIC splines)
   target_link_libraries(${name} PUBLIC gtest_main)
-  target_compile_definitions(${name} PUBLIC UNITTEST_DISABLE_SHORT_MACROS)
+  target_compile_definitions(${name} PUBLIC PERFTEST_DISABLE_SHORT_MACROS)
   add_test(${name} ${name})
 endforeach()
 
