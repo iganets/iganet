@@ -47,7 +47,7 @@ namespace iganet {
     /// Constructor
     template<typename T>
     BoundaryCore(const std::array<T, 1>& ncoeffs,
-                   BSplineInit init = BSplineInit::zeros)
+                 BSplineInit init = BSplineInit::zeros)
       : core<real_t>() ,
         bdr_(
              {
@@ -80,19 +80,15 @@ namespace iganet {
     }
 
     /// Returns a constant reference to the array of coefficients for
-    /// all boundary segments. If flatten=false, this function returns
-    /// an std::array of torch::Tensor objects with coefficients
-    /// reshaped according to the dimensions of the knot vectors
-    /// (return by value in this case)
-    template<bool flatten=true>
+    /// all boundary segments.
     inline auto coeffs() const
     {
       std::array<torch::Tensor, GeoDim*sides()> coeffs;
 
 #pragma omp parallel for
       for (short_t i=0; i<GeoDim; ++i) {
-        coeffs[GeoDim*(west-1)+i] = std::get<west-1>(bdr_).template coeffs<flatten>(i);
-        coeffs[GeoDim*(east-1)+i] = std::get<east-1>(bdr_).template coeffs<flatten>(i);
+        coeffs[GeoDim*(west-1)+i] = std::get<west-1>(bdr_).template coeffs(i);
+        coeffs[GeoDim*(east-1)+i] = std::get<east-1>(bdr_).template coeffs(i);
       }
 
       return coeffs;
@@ -192,21 +188,17 @@ namespace iganet {
     }
 
     /// Returns a constant reference to the array of coefficients for
-    /// all boundary segments. If flatten=false, this function returns
-    /// an std::array of torch::Tensor objects with coefficients
-    /// reshaped according to the dimensions of the knot vectors
-    /// (return by value in this case)
-    template<bool flatten=true>
+    /// all boundary segments.
     inline auto coeffs() const
     {
       std::array<torch::Tensor, GeoDim*sides()> coeffs;
 
 #pragma omp parallel for
       for (short_t i=0; i<GeoDim; ++i) {
-        coeffs[GeoDim*(west-1)+i]  = std::get<west-1>(bdr_).template coeffs<flatten>(i);
-        coeffs[GeoDim*(east-1)+i]  = std::get<east-1>(bdr_).template coeffs<flatten>(i);
-        coeffs[GeoDim*(south-1)+i] = std::get<south-1>(bdr_).template coeffs<flatten>(i);
-        coeffs[GeoDim*(north-1)+i] = std::get<north-1>(bdr_).template coeffs<flatten>(i);
+        coeffs[GeoDim*(west-1)+i]  = std::get<west-1>(bdr_).template coeffs(i);
+        coeffs[GeoDim*(east-1)+i]  = std::get<east-1>(bdr_).template coeffs(i);
+        coeffs[GeoDim*(south-1)+i] = std::get<south-1>(bdr_).template coeffs(i);
+        coeffs[GeoDim*(north-1)+i] = std::get<north-1>(bdr_).template coeffs(i);
       }
 
       return coeffs;
@@ -318,23 +310,19 @@ namespace iganet {
     }
 
     /// Returns a constant reference to the array of coefficients for
-    /// all boundary segments. If flatten=false, this function returns
-    /// an std::array of torch::Tensor objects with coefficients
-    /// reshaped according to the dimensions of the knot vectors
-    /// (return by value in this case)
-    template<bool flatten=true>
+    /// all boundary segments.
     inline auto coeffs() const
     {
       std::array<torch::Tensor, GeoDim*sides()> coeffs;
 
 #pragma omp parallel for
       for (short_t i=0; i<GeoDim; ++i) {
-        coeffs[GeoDim*(west-1)+i]  = std::get<west-1>(bdr_).template coeffs<flatten>(i);
-        coeffs[GeoDim*(east-1)+i]  = std::get<east-1>(bdr_).template coeffs<flatten>(i);
-        coeffs[GeoDim*(south-1)+i] = std::get<south-1>(bdr_).template coeffs<flatten>(i);
-        coeffs[GeoDim*(north-1)+i] = std::get<north-1>(bdr_).template coeffs<flatten>(i);
-        coeffs[GeoDim*(front-1)+i] = std::get<front-1>(bdr_).template coeffs<flatten>(i);
-        coeffs[GeoDim*(back-1)+i]  = std::get<back-1>(bdr_).template coeffs<flatten>(i);
+        coeffs[GeoDim*(west-1)+i]  = std::get<west-1>(bdr_).template coeffs(i);
+        coeffs[GeoDim*(east-1)+i]  = std::get<east-1>(bdr_).template coeffs(i);
+        coeffs[GeoDim*(south-1)+i] = std::get<south-1>(bdr_).template coeffs(i);
+        coeffs[GeoDim*(north-1)+i] = std::get<north-1>(bdr_).template coeffs(i);
+        coeffs[GeoDim*(front-1)+i] = std::get<front-1>(bdr_).template coeffs(i);
+        coeffs[GeoDim*(back-1)+i]  = std::get<back-1>(bdr_).template coeffs(i);
       }
 
       return coeffs;
@@ -458,25 +446,21 @@ namespace iganet {
     }
 
     /// Returns a constant reference to the array of coefficients for
-    /// all boundary segments. If flatten=false, this function returns
-    /// an std::array of torch::Tensor objects with coefficients
-    /// reshaped according to the dimensions of the knot vectors
-    /// (return by value in this case)
-    template<bool flatten=true>
+    /// all boundary segments. 
     inline auto coeffs() const
     {
       std::array<torch::Tensor, GeoDim*sides()> coeffs;
 
 #pragma omp parallel for
       for (short_t i=0; i<GeoDim; ++i) {
-        coeffs[GeoDim*(west-1)+i]  = std::get<west-1>(bdr_).template coeffs<flatten>(i);
-        coeffs[GeoDim*(east-1)+i]  = std::get<east-1>(bdr_).template coeffs<flatten>(i);
-        coeffs[GeoDim*(south-1)+i] = std::get<south-1>(bdr_).template coeffs<flatten>(i);
-        coeffs[GeoDim*(north-1)+i] = std::get<north-1>(bdr_).template coeffs<flatten>(i);
-        coeffs[GeoDim*(front-1)+i] = std::get<front-1>(bdr_).template coeffs<flatten>(i);
-        coeffs[GeoDim*(back-1)+i]  = std::get<back-1>(bdr_).template coeffs<flatten>(i);
-        coeffs[GeoDim*(stime-1)+i] = std::get<stime-1>(bdr_).template coeffs<flatten>(i);
-        coeffs[GeoDim*(etime-1)+i] = std::get<etime-1>(bdr_).template coeffs<flatten>(i);       
+        coeffs[GeoDim*(west-1)+i]  = std::get<west-1>(bdr_).template coeffs(i);
+        coeffs[GeoDim*(east-1)+i]  = std::get<east-1>(bdr_).template coeffs(i);
+        coeffs[GeoDim*(south-1)+i] = std::get<south-1>(bdr_).template coeffs(i);
+        coeffs[GeoDim*(north-1)+i] = std::get<north-1>(bdr_).template coeffs(i);
+        coeffs[GeoDim*(front-1)+i] = std::get<front-1>(bdr_).template coeffs(i);
+        coeffs[GeoDim*(back-1)+i]  = std::get<back-1>(bdr_).template coeffs(i);
+        coeffs[GeoDim*(stime-1)+i] = std::get<stime-1>(bdr_).template coeffs(i);
+        coeffs[GeoDim*(etime-1)+i] = std::get<etime-1>(bdr_).template coeffs(i);       
       }
 
       return coeffs;
