@@ -21,7 +21,7 @@
 
 namespace iganet {
 
-  /// @brrief Abstract creator class
+  /// @brief Abstract creator class
   template<typename T>
   class CreatorCore : public fqn
   {
