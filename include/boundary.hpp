@@ -39,12 +39,12 @@ namespace iganet {
     : public core<real_t>
   {
   public:
-    /// Default constructor
+    /// @brief Default constructor
     BoundaryCore()
       : core<real_t>()
     {}
     
-    /// Constructor
+    /// @brief Constructor
     template<typename T>
     BoundaryCore(const std::array<T, 1>& ncoeffs,
                  BSplineInit init = BSplineInit::zeros)
@@ -57,59 +57,43 @@ namespace iganet {
              )
     {}
     
-    /// Returns the number of sides
+    /// @brief Returns the number of sides
     inline static constexpr short_t sides()
     {
       return side::east;
     }
 
-    /// Returns constant reference to side-th B-Spline
+    /// @brief Returns constant reference to side-th B-Spline
     template<short_t s>
-    inline auto& side() const
+    inline constexpr auto& side() const
     {
       static_assert(s>none && s<=sides());
       return std::get<s-1>(bdr_);
     }
 
-    /// Returns non-constant reference to side-th B-Spline
+    /// @brief Returns non-constant reference to side-th B-Spline
     template<short_t s>
-    inline auto& side()
+    inline constexpr auto& side()
     {
       static_assert(s>none && s<=sides());
       return std::get<s-1>(bdr_);
     }
 
-    /// Returns a constant reference to the array of coefficients for
-    /// all boundary segments.
-    inline auto coeffs() const
+    /// @brief Returns a constant reference to the array of
+    /// coefficients for all boundary segments.
+    inline constexpr auto& coeffs() const
     {
-      std::array<torch::Tensor, GeoDim*sides()> coeffs;
-
-#pragma omp parallel for
-      for (short_t i=0; i<GeoDim; ++i) {
-        coeffs[GeoDim*(west-1)+i] = std::get<west-1>(bdr_).template coeffs(i);
-        coeffs[GeoDim*(east-1)+i] = std::get<east-1>(bdr_).template coeffs(i);
-      }
-
-      return coeffs;
+      return bdr_;
     }
     
-    /// Returns a non-constant reference to the array of coefficients
-    /// for all boundary segments.
-    inline auto coeffs()
+    /// @brief Returns a non-constant reference to the array of
+    /// coefficients for all boundary segments.
+    inline constexpr auto& coeffs()
     {
-      std::array<torch::Tensor, GeoDim*sides()> coeffs;
-
-#pragma omp parallel for
-      for (short_t i=0; i<GeoDim; ++i) {
-        coeffs[GeoDim*(west-1)+i] = std::get<west-1>(bdr_).coeffs(i);
-        coeffs[GeoDim*(east-1)+i] = std::get<east-1>(bdr_).coeffs(i);
-      }
-      
-      return coeffs;
+      return bdr_;
     }
 
-    /// Returns the total number of coefficients
+    /// @brief Returns the total number of coefficients
     inline int64_t ncoeffs() const
     {
       int64_t s=0;
@@ -119,7 +103,7 @@ namespace iganet {
       return s;
     }
     
-    /// Returns a string representation of the Boundary object
+    /// @brief Returns a string representation of the Boundary object
     inline void pretty_print(std::ostream& os = std::cout) const
     {
       os << core<real_t>::name()
@@ -130,9 +114,10 @@ namespace iganet {
     }
     
   private:
+    /// @brief Array storing the degrees
     static constexpr const std::array<short_t, sizeof...(Degrees)> degrees_ = { Degrees... };
 
-    /// Tuple of B-Splines
+    /// @brief Tuple of B-Splines
     std::tuple<bspline_t<real_t, GeoDim>,
                bspline_t<real_t, GeoDim>> bdr_;
   };
@@ -150,7 +135,7 @@ namespace iganet {
     : public core<real_t>
   {
   public:
-    /// Constructor
+    /// @brief Constructor
     template<typename T>
     BoundaryCore(const std::array<T, 2>& ncoeffs,
                  BSplineInit init = BSplineInit::zeros)
@@ -165,63 +150,43 @@ namespace iganet {
              )
     {}
     
-    /// Returns the number of sides
+    /// @brief Returns the number of sides
     inline static constexpr short_t sides()
     {
       return side::north;
     }
 
-    /// Returns constant reference to side-th B-Spline
+    /// @brief Returns constant reference to side-th B-Spline
     template<short_t s>
-    inline auto& side() const
+    inline constexpr auto& side() const
     {
       static_assert(s>none && s<=sides());
       return std::get<s-1>(bdr_);
     }
 
-    /// Returns non-constant reference to side-th B-Spline
+    /// @brief Returns non-constant reference to side-th B-Spline
     template<short_t s>
-    inline auto& side()
+    inline constexpr auto& side()
     {
       static_assert(s>none && s<=sides());
       return std::get<s-1>(bdr_);
     }
 
-    /// Returns a constant reference to the array of coefficients for
-    /// all boundary segments.
-    inline auto coeffs() const
+    /// @brief Returns a constant reference to the array of
+    /// coefficients for all boundary segments.
+    inline constexpr auto& coeffs() const
     {
-      std::array<torch::Tensor, GeoDim*sides()> coeffs;
-
-#pragma omp parallel for
-      for (short_t i=0; i<GeoDim; ++i) {
-        coeffs[GeoDim*(west-1)+i]  = std::get<west-1>(bdr_).template coeffs(i);
-        coeffs[GeoDim*(east-1)+i]  = std::get<east-1>(bdr_).template coeffs(i);
-        coeffs[GeoDim*(south-1)+i] = std::get<south-1>(bdr_).template coeffs(i);
-        coeffs[GeoDim*(north-1)+i] = std::get<north-1>(bdr_).template coeffs(i);
-      }
-
-      return coeffs;
+      return bdr_;
     }
     
-    /// Returns a non-constant reference to the array of coefficients
-    /// for all boundary segments.
-    inline auto coeffs()
+    /// @brief Returns a non-constant reference to the array of
+    /// coefficients for all boundary segments.
+    inline constexpr auto& coeffs()
     {
-      std::array<torch::Tensor, GeoDim*sides()> coeffs;
-
-#pragma omp parallel for
-      for (short_t i=0; i<GeoDim; ++i) {
-        coeffs[GeoDim*(west-1)+i]  = std::get<west-1>(bdr_).coeffs(i);
-        coeffs[GeoDim*(east-1)+i]  = std::get<east-1>(bdr_).coeffs(i);
-        coeffs[GeoDim*(south-1)+i] = std::get<south-1>(bdr_).coeffs(i);
-        coeffs[GeoDim*(north-1)+i] = std::get<north-1>(bdr_).coeffs(i);        
-      }
-      
-      return coeffs;
+      return bdr_;
     }
 
-    /// Returns the total number of coefficients
+    /// @brief Returns the total number of coefficients
     inline int64_t ncoeffs() const
     {
       int64_t s=0;
@@ -233,7 +198,7 @@ namespace iganet {
       return s;
     }
     
-    /// Returns a string representation of the Boundary object
+    /// @brief Returns a string representation of the Boundary object
     inline void pretty_print(std::ostream& os = std::cout) const
     {
       os << core<real_t>::name()
@@ -246,9 +211,10 @@ namespace iganet {
     }
     
   private:
+    /// @brief Array storing the degrees
     static constexpr const std::array<short_t, sizeof...(Degrees)> degrees_ = { Degrees... };
     
-    /// Tuple of B-Splines
+    /// @brief Tuple of B-Splines
     std::tuple<bspline_t<real_t, GeoDim, std::get<1>(degrees_)>,
                bspline_t<real_t, GeoDim, std::get<1>(degrees_)>,
                bspline_t<real_t, GeoDim, std::get<0>(degrees_)>,
@@ -270,7 +236,7 @@ namespace iganet {
     : public core<real_t>
   {
   public:
-    /// Constructor
+    /// @brief Constructor
     template<typename T>
     BoundaryCore(const std::array<T, 3>& ncoeffs,
                  BSplineInit init = BSplineInit::zeros)
@@ -287,67 +253,43 @@ namespace iganet {
              )
     {}
 
-    /// Returns constant reference to side-th B-Spline
+    /// @brief Returns constant reference to side-th B-Spline
     template<short_t s>
-    inline auto& side() const
+    inline constexpr auto& side() const
     {
       static_assert(s>none && s<=sides());
       return std::get<s-1>(bdr_);
     }
 
-    /// Returns non-constant reference to side-th B-Spline
+    /// @brief Returns non-constant reference to side-th B-Spline
     template<short_t s>
-    inline auto& side()
+    inline constexpr auto& side()
     {
       static_assert(s>none && s<=sides());
       return std::get<s-1>(bdr_);
     }
     
-    /// Returns the number of sides
+    /// @brief Returns the number of sides
     inline static constexpr short_t sides()
     {
       return side::back;
     }
 
-    /// Returns a constant reference to the array of coefficients for
-    /// all boundary segments.
-    inline auto coeffs() const
+    /// @brief Returns a constant reference to the array of
+    /// coefficients for all boundary segments.
+    inline constexpr auto& coeffs() const
     {
-      std::array<torch::Tensor, GeoDim*sides()> coeffs;
-
-#pragma omp parallel for
-      for (short_t i=0; i<GeoDim; ++i) {
-        coeffs[GeoDim*(west-1)+i]  = std::get<west-1>(bdr_).template coeffs(i);
-        coeffs[GeoDim*(east-1)+i]  = std::get<east-1>(bdr_).template coeffs(i);
-        coeffs[GeoDim*(south-1)+i] = std::get<south-1>(bdr_).template coeffs(i);
-        coeffs[GeoDim*(north-1)+i] = std::get<north-1>(bdr_).template coeffs(i);
-        coeffs[GeoDim*(front-1)+i] = std::get<front-1>(bdr_).template coeffs(i);
-        coeffs[GeoDim*(back-1)+i]  = std::get<back-1>(bdr_).template coeffs(i);
-      }
-
-      return coeffs;
+      return bdr_;
     }
     
-    /// Returns a non-constant reference to the array of coefficients
-    /// for all boundary segments.
-    inline auto coeffs()
+    /// @brief Returns a non-constant reference to the array of
+    /// coefficients for all boundary segments.
+    inline constexpr auto& coeffs()
     {
-      std::array<torch::Tensor, GeoDim*sides()> coeffs;
-
-#pragma omp parallel for
-      for (short_t i=0; i<GeoDim; ++i) {
-        coeffs[GeoDim*(west-1)+i]  = std::get<west-1>(bdr_).coeffs(i);
-        coeffs[GeoDim*(east-1)+i]  = std::get<east-1>(bdr_).coeffs(i);
-        coeffs[GeoDim*(south-1)+i] = std::get<south-1>(bdr_).coeffs(i);
-        coeffs[GeoDim*(north-1)+i] = std::get<north-1>(bdr_).coeffs(i);
-        coeffs[GeoDim*(front-1)+i] = std::get<front-1>(bdr_).coeffs(i);
-        coeffs[GeoDim*(back-1)+i]  = std::get<back-1>(bdr_).coeffs(i);                
-      }
-
-      return coeffs;
+      return bdr_;
     }
 
-    /// Returns the total number of coefficients
+    /// @brief Returns the total number of coefficients
     inline int64_t ncoeffs() const
     {
       int64_t s=0;
@@ -361,7 +303,7 @@ namespace iganet {
       return s;
     }
     
-    /// Returns a string representation of the Boundary object
+    /// @brief Returns a string representation of the Boundary object
     inline void pretty_print(std::ostream& os = std::cout) const
     {
       os << core<real_t>::name()
@@ -376,9 +318,10 @@ namespace iganet {
     }
     
   private:
+    /// @brief Array storing the degrees
     static constexpr const std::array<short_t, sizeof...(Degrees)> degrees_ = { Degrees... };
 
-    /// Tuple of B-Splines
+    /// @brief Tuple of B-Splines
     std::tuple<bspline_t<real_t, GeoDim, std::get<1>(degrees_), std::get<2>(degrees_)>,
                bspline_t<real_t, GeoDim, std::get<1>(degrees_), std::get<2>(degrees_)>,
                bspline_t<real_t, GeoDim, std::get<0>(degrees_), std::get<2>(degrees_)>,
@@ -404,7 +347,7 @@ namespace iganet {
     : public core<real_t>
   {
   public:
-    /// Constructor
+    /// @brief Constructor
     template<typename T>
     BoundaryCore(const std::array<T, 4>& ncoeffs,
                  BSplineInit init = BSplineInit::zeros)
@@ -423,71 +366,43 @@ namespace iganet {
              )
     {}
     
-    /// Returns the number of sides
+    /// @brief Returns the number of sides
     inline static constexpr short_t sides()
     {
       return side::etime;
     }
 
-    /// Returns constant reference to side-th B-Spline
+    /// @brief Returns constant reference to side-th B-Spline
     template<short_t s>
-    inline auto& side() const
+    inline constexpr auto& side() const
     {
       static_assert(s>none && s<=sides());
       return std::get<s-1>(bdr_);
     }
 
-    /// Returns non-constant reference to side-th B-Spline
+    /// @brief Returns non-constant reference to side-th B-Spline
     template<short_t s>
-    inline auto& side()
+    inline constexpr auto& side()
     {
       static_assert(s>none && s<=sides());
       return std::get<s-1>(bdr_);
     }
 
-    /// Returns a constant reference to the array of coefficients for
-    /// all boundary segments. 
-    inline auto coeffs() const
+    /// @brief Returns a constant reference to the array of
+    /// coefficients for all boundary segments.
+    inline constexpr auto& coeffs() const
     {
-      std::array<torch::Tensor, GeoDim*sides()> coeffs;
-
-#pragma omp parallel for
-      for (short_t i=0; i<GeoDim; ++i) {
-        coeffs[GeoDim*(west-1)+i]  = std::get<west-1>(bdr_).template coeffs(i);
-        coeffs[GeoDim*(east-1)+i]  = std::get<east-1>(bdr_).template coeffs(i);
-        coeffs[GeoDim*(south-1)+i] = std::get<south-1>(bdr_).template coeffs(i);
-        coeffs[GeoDim*(north-1)+i] = std::get<north-1>(bdr_).template coeffs(i);
-        coeffs[GeoDim*(front-1)+i] = std::get<front-1>(bdr_).template coeffs(i);
-        coeffs[GeoDim*(back-1)+i]  = std::get<back-1>(bdr_).template coeffs(i);
-        coeffs[GeoDim*(stime-1)+i] = std::get<stime-1>(bdr_).template coeffs(i);
-        coeffs[GeoDim*(etime-1)+i] = std::get<etime-1>(bdr_).template coeffs(i);       
-      }
-
-      return coeffs;
+      return bdr_;
     }
     
-    /// Returns a non-constant reference to the array of coefficients
-    /// for all boundary segments.
-    inline auto coeffs()
+    /// @brief Returns a non-constant reference to the array of
+    /// coefficients for all boundary segments.
+    inline constexpr auto& coeffs()
     {
-      std::array<torch::Tensor, GeoDim*sides()> coeffs;
-
-#pragma omp parallel for
-      for (short_t i=0; i<GeoDim; ++i) {
-        coeffs[GeoDim*(west-1)+i]  = std::get<west-1>(bdr_).coeffs(i);
-        coeffs[GeoDim*(east-1)+i]  = std::get<east-1>(bdr_).coeffs(i);
-        coeffs[GeoDim*(south-1)+i] = std::get<south-1>(bdr_).coeffs(i);
-        coeffs[GeoDim*(north-1)+i] = std::get<north-1>(bdr_).coeffs(i);
-        coeffs[GeoDim*(front-1)+i] = std::get<front-1>(bdr_).coeffs(i);
-        coeffs[GeoDim*(back-1)+i]  = std::get<back-1>(bdr_).coeffs(i);
-        coeffs[GeoDim*(stime-1)+i] = std::get<stime-1>(bdr_).coeffs(i);
-        coeffs[GeoDim*(etime-1)+i] = std::get<etime-1>(bdr_).coeffs(i);                
-      }
-
-      return coeffs;
+      return bdr_;
     }
 
-    /// Returns the total number of coefficients
+    /// @brief Returns the total number of coefficients
     inline int64_t ncoeffs() const
     {
       int64_t s=0;
@@ -503,7 +418,7 @@ namespace iganet {
       return s;
     }
     
-    /// Returns a string representation of the Boundary object
+    /// @brief Returns a string representation of the Boundary object
     inline void pretty_print(std::ostream& os = std::cout) const
     {
       os << core<real_t>::name()
@@ -520,9 +435,10 @@ namespace iganet {
     }
     
   private:
+    /// @brief Array storing the degrees
     static constexpr const std::array<short_t, sizeof...(Degrees)> degrees_ = { Degrees... };
     
-    /// Tuple of B-Splines
+    /// @brief Tuple of B-Splines
     std::tuple<bspline_t<real_t, GeoDim, std::get<1>(degrees_), std::get<2>(degrees_), std::get<3>(degrees_)>,
                bspline_t<real_t, GeoDim, std::get<1>(degrees_), std::get<2>(degrees_), std::get<3>(degrees_)>,
                bspline_t<real_t, GeoDim, std::get<0>(degrees_), std::get<2>(degrees_), std::get<3>(degrees_)>,
@@ -542,7 +458,7 @@ namespace iganet {
     using BoundaryCore<bspline_t, real_t, GeoDim, sizeof...(Degrees), Degrees...>::BoundaryCore;
   };
   
-  /// Print (as string) a Boundary object
+  /// @brief Print (as string) a Boundary object
 template<template<typename, short_t, short_t...> class bspline_t,
          typename real_t, short_t GeoDim, short_t... Degrees>
 inline std::ostream& operator<<(std::ostream& os,
