@@ -5,7 +5,7 @@
 
    @author Matthias Moller
 
-   @copyright This file is part of the IgaNet project
+   @copyright This file is part of the IgANet project
 
    This Source Code Form is subject to the terms of the Mozilla Public
    License, v. 2.0. If a copy of the MPL was not distributed with this
@@ -47,7 +47,7 @@ namespace iganet {
     /// @brief Constructor
     template<typename T>
     BoundaryCore(const std::array<T, 1>& ncoeffs,
-                 BSplineInit init = BSplineInit::zeros)
+                 enum init init = init::zeros)
       : core<real_t>() ,
         bdr_(
              {
@@ -138,7 +138,7 @@ namespace iganet {
     /// @brief Constructor
     template<typename T>
     BoundaryCore(const std::array<T, 2>& ncoeffs,
-                 BSplineInit init = BSplineInit::zeros)
+                 enum init init = init::zeros)
       : core<real_t>(),
         bdr_(
              {
@@ -239,7 +239,7 @@ namespace iganet {
     /// @brief Constructor
     template<typename T>
     BoundaryCore(const std::array<T, 3>& ncoeffs,
-                 BSplineInit init = BSplineInit::zeros)
+                 enum init init = init::zeros)
       : core<real_t>(),
         bdr_(
              {
@@ -350,7 +350,7 @@ namespace iganet {
     /// @brief Constructor
     template<typename T>
     BoundaryCore(const std::array<T, 4>& ncoeffs,
-                 BSplineInit init = BSplineInit::zeros)
+                 enum init init = init::zeros)
       : core<real_t>(),
         bdr_(
              {

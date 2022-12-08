@@ -5,7 +5,7 @@
 
    @author Matthias Moller
 
-   @copyright This file is part of the IgaNet project
+   @copyright This file is part of the IgANet project
 
    This Source Code Form is subject to the terms of the Mozilla Public
    License, v. 2.0. If a copy of the MPL was not distributed with this
@@ -25,7 +25,7 @@
 namespace iganet {
   
   /// @brief Enumerator for specifying the initialization of B-spline coefficients
-  enum class BSplineInit : short_t
+  enum class init : short_t
     {
       zeros    = 0, /*!< set coefficient values to zero */
       ones     = 1, /*!< set coefficient values to one */
@@ -40,7 +40,7 @@ namespace iganet {
   ///
   /// * 3d Laplace operator `dx2+dy2+dz2`
   /// * 2d convection operator with time derivative dt+dx+dy`
-  enum class BSplineDeriv : short_t
+  enum class deriv : short_t
     {
       func   =    0, /*!< function value */
       
@@ -282,9 +282,9 @@ namespace iganet {
       dt4dz4 = 4400, /*!< eigths mixed derivative in t- and z-direction  */
     };
 
-  inline auto operator+(BSplineDeriv lhs, BSplineDeriv rhs)
+  inline auto operator+(deriv lhs, deriv rhs)
   {
-    return BSplineDeriv( static_cast<short_t>(lhs)+static_cast<short_t>(rhs) );
+    return deriv( static_cast<short_t>(lhs)+static_cast<short_t>(rhs) );
   }
   
   /// @brief Tensor-product uniform B-spline (core functionality)
@@ -401,7 +401,7 @@ namespace iganet {
 
     /// @brief Constructor for equidistant knot vectors
     UniformBSplineCore(const std::array<int64_t, parDim_>& ncoeffs,
-                       BSplineInit init = BSplineInit::zeros)
+                       enum init init = init::zeros)
         : core<real_t>(),
           ncoeffs_(ncoeffs)
     {
@@ -672,20 +672,20 @@ namespace iganet {
     ///    \mathbf{c}_{i_1-p_1:i_1,\dots,i_\text{par}-p_\text{par}:i_\text{par}}
     ///    \f]
     ///
-    /// @tparam deriv Composition of derivative indicators of type \ref BSplineDeriv
+    /// @tparam deriv Composition of derivative indicators of type \ref deriv
     ///
     /// @param[in] xi Point(s) where to evaluate the multivariate B-spline object
     ///
     /// @result Value(s) of the multivariate B-spline evaluated at the point(s) `xi`
     ///
     /// @{
-    template<BSplineDeriv deriv = BSplineDeriv::func>
+    template<deriv deriv = deriv::func>
     inline auto eval(const torch::Tensor& xi) const
     {
       return eval<deriv>(TensorArray1({xi}));
     }
           
-    template<BSplineDeriv deriv = BSplineDeriv::func>
+    template<deriv deriv = deriv::func>
     inline auto eval(const std::array<torch::Tensor, parDim_>& xi) const
     {
       if constexpr (parDim_ == 0)
@@ -702,14 +702,14 @@ namespace iganet {
     /// BSplineEvaluation for univariate B-splines
     /// (i.e. \f$d_\text{par}=1\f$)
     ///
-    /// @tparam deriv Composition of derivative indicators of type \ref BSplineDeriv
+    /// @tparam deriv Composition of derivative indicators of type \ref deriv
     ///
     /// @param[in] xi Point(s) where to evaluate the univariate B-spline object
     ///
     /// @param[in] idx Knot indices where to evaluate the univariate B-spline object
     ///
     /// @result Value(s) of the univariate B-spline evaluated at the point(s) `xi`
-    template<BSplineDeriv deriv = BSplineDeriv::func>
+    template<deriv deriv = deriv::func>
     inline auto eval(const TensorArray1& xi, const TensorArray1& idx) const
     {
       assert(parDim_ == 1 &&
@@ -737,7 +737,7 @@ namespace iganet {
     /// BSplineEvaluation for univariate B-splines
     /// (i.e. \f$d_\text{par}=1\f$)
     ///
-    /// @tparam deriv Composition of derivative indicators of type \ref BSplineDeriv
+    /// @tparam deriv Composition of derivative indicators of type \ref deriv
     ///
     /// @param[in] xi Point(s) where to evaluate the univariate B-spline object
     ///
@@ -746,7 +746,7 @@ namespace iganet {
     /// @param[in] coeff_idx Coefficient indices where to evaluate the univariate B-spline object
     ///
     /// @result Value(s) of the univariate B-spline evaluated at the point(s) `xi`
-    template<BSplineDeriv deriv = BSplineDeriv::func>
+    template<deriv deriv = deriv::func>
     inline auto eval(const TensorArray1& xi, const TensorArray1& idx,
                      const torch::Tensor& coeff_idx) const
     {
@@ -775,14 +775,14 @@ namespace iganet {
     /// BSplineEvaluation for bivariate B-splines
     /// (i.e. \f$d_\text{par}=2\f$)
     ///
-    /// @tparam deriv Composition of derivative indicators of type \ref BSplineDeriv
+    /// @tparam deriv Composition of derivative indicators of type \ref deriv
     ///
     /// @param[in] xi Point(s) where to evaluate the bivariate B-spline object
     ///
     /// @param[in] idx Knot indices where to evaluate the bivariate B-spline object
     ///
     /// @result Value(s) of the bivariate B-spline evaluated at the point(s) `xi`
-    template<BSplineDeriv deriv = BSplineDeriv::func>
+    template<deriv deriv = deriv::func>
     inline auto eval(const TensorArray2& xi, const TensorArray2& idx) const
     {
       assert(parDim_ == 2 &&
@@ -812,7 +812,7 @@ namespace iganet {
     /// BSplineEvaluation for bivariate B-splines
     /// (i.e. \f$d_\text{par}=2\f$)
     ///
-    /// @tparam deriv Composition of derivative indicators of type \ref BSplineDeriv
+    /// @tparam deriv Composition of derivative indicators of type \ref deriv
     ///
     /// @param[in] xi Point(s) where to evaluate the bivariate B-spline object
     ///
@@ -821,7 +821,7 @@ namespace iganet {
     /// @param[in] coeff_idx Coefficient indices where to evaluate the bivariate B-spline object
     ///
     /// @result Value(s) of the bivariate B-spline evaluated at the point(s) `xi`
-    template<BSplineDeriv deriv = BSplineDeriv::func>
+    template<deriv deriv = deriv::func>
     inline auto eval(const TensorArray2& xi, const TensorArray2& idx,
                      const torch::Tensor& coeff_idx) const
     {
@@ -852,14 +852,14 @@ namespace iganet {
     /// BSplineEvaluation for bivariate B-splines
     /// (i.e. \f$d_\text{par}=3\f$)
     ///
-    /// @tparam deriv Composition of derivative indicators of type \ref BSplineDeriv
+    /// @tparam deriv Composition of derivative indicators of type \ref deriv
     ///
     /// @param[in] xi Point(s) where to evaluate the trivariate B-spline object
     ///
     /// @param[in] idx Knot indices where to evaluate the trivariate B-spline object
     ///
     /// @result Value(s) of the trivariate B-spline evaluated at the point(s) `xi`
-    template<BSplineDeriv deriv = BSplineDeriv::func>
+    template<deriv deriv = deriv::func>
     inline auto eval(const TensorArray3& xi, const TensorArray3& idx) const
     {
       assert(parDim_ == 3 &&
@@ -891,7 +891,7 @@ namespace iganet {
     /// BSplineEvaluation for bivariate B-splines
     /// (i.e. \f$d_\text{par}=3\f$)
     ///
-    /// @tparam deriv Composition of derivative indicators of type \ref BSplineDeriv
+    /// @tparam deriv Composition of derivative indicators of type \ref deriv
     ///
     /// @param[in] xi Point(s) where to evaluate the trivariate B-spline object
     ///
@@ -900,7 +900,7 @@ namespace iganet {
     /// @param[in] coeff_idx Coefficient indices where to evaluate the trivariate B-spline object
     ///
     /// @result Value(s) of the trivariate B-spline evaluated at the point(s) `xi`
-    template<BSplineDeriv deriv = BSplineDeriv::func>
+    template<deriv deriv = deriv::func>
     inline auto eval(const TensorArray3& xi, const TensorArray3& idx,
                      const torch::Tensor& coeff_idx) const
     {
@@ -933,14 +933,14 @@ namespace iganet {
     /// BSplineEvaluation for bivariate B-splines
     /// (i.e. \f$d_\text{par}=4\f$)
     ///
-    /// @tparam deriv Composition of derivative indicators of type \ref BSplineDeriv
+    /// @tparam deriv Composition of derivative indicators of type \ref deriv
     ///
     /// @param[in] xi Point(s) where to evaluate the quartvariate B-spline object
     ///
     /// @param[in] idx Knot indices where to evaluate the quartvariate B-spline object
     ///
     /// @result Value(s) of the quartvariate B-spline evaluated at the point(s) `xi`
-    template<BSplineDeriv deriv = BSplineDeriv::func>
+    template<deriv deriv = deriv::func>
     inline auto eval(const TensorArray4& xi, const TensorArray4& idx) const
     {
       assert(parDim_ == 4 &&
@@ -974,7 +974,7 @@ namespace iganet {
     /// BSplineEvaluation for bivariate B-splines
     /// (i.e. \f$d_\text{par}=4\f$)
     ///
-    /// @tparam deriv Composition of derivative indicators of type \ref BSplineDeriv
+    /// @tparam deriv Composition of derivative indicators of type \ref deriv
     ///
     /// @param[in] xi Point(s) where to evaluate the quartvariate B-spline object
     ///
@@ -983,7 +983,7 @@ namespace iganet {
     /// @param[in] coeff_idx Coefficient indices where to evaluate the quartvariate B-spline object
     ///
     /// @result Value(s) of the quartvariate B-spline evaluated at the point(s) `xi`
-    template<BSplineDeriv deriv = BSplineDeriv::func>
+    template<deriv deriv = deriv::func>
     inline auto eval(const TensorArray4& xi, const TensorArray4& idx,
                      const torch::Tensor& coeff_idx) const
     {
@@ -1112,13 +1112,13 @@ namespace iganet {
     /// @brief Returns the vector of multivariate B-spline basis
     /// functions (or their derivatives) evaluated in the point `xi`
     /// @{
-    template<BSplineDeriv deriv = BSplineDeriv::func>
+    template<deriv deriv = deriv::func>
     inline auto eval_basfunc(const torch::Tensor& xi) const
     {
       return eval_basfunc<deriv>(TensorArray1({xi}));
     }
           
-    template<BSplineDeriv deriv = BSplineDeriv::func>
+    template<deriv deriv = deriv::func>
     inline auto eval_basfunc(const std::array<torch::Tensor, parDim_>& xi) const
     {
       if constexpr (parDim_ == 0)
@@ -1127,7 +1127,7 @@ namespace iganet {
         return eval_basfunc<deriv>(xi, eval_knot_indices(xi));
     }
     
-    template<BSplineDeriv deriv = BSplineDeriv::func>
+    template<deriv deriv = deriv::func>
     inline auto eval_basfunc(const TensorArray1& xi, const TensorArray1& idx) const
     {
       assert(parDim_ == 1 &&
@@ -1138,7 +1138,7 @@ namespace iganet {
                                                               idx[0].flatten());
     }
 
-    template<BSplineDeriv deriv = BSplineDeriv::func>
+    template<deriv deriv = deriv::func>
     inline auto eval_basfunc(const TensorArray2& xi, const TensorArray2& idx) const
     {
       assert(parDim_ == 2 &&
@@ -1155,7 +1155,7 @@ namespace iganet {
                     0);
     }
 
-    template<BSplineDeriv deriv = BSplineDeriv::func>
+    template<deriv deriv = deriv::func>
     inline auto eval_basfunc(const TensorArray3& xi, const TensorArray3& idx) const
     {
       assert(parDim_ == 3 &&
@@ -1178,7 +1178,7 @@ namespace iganet {
                     0);
     }
 
-    template<BSplineDeriv deriv = BSplineDeriv::func>
+    template<deriv deriv = deriv::func>
     inline auto eval_basfunc(const TensorArray4& xi, const TensorArray4& idx) const
     {
       assert(parDim_ == 4 &&
@@ -1553,11 +1553,11 @@ namespace iganet {
     
   protected:
     /// @brief Initializes the B-spline coefficients
-    inline void init_coeffs(BSplineInit init)
+    inline void init_coeffs(enum init init)
     {
       switch (init) {
 
-        case (BSplineInit::zeros): {
+        case (init::zeros): {
 
           // Fill coefficients with zeros
           for (short_t i = 0; i < geoDim_; ++i) {
@@ -1567,7 +1567,7 @@ namespace iganet {
           break;
         }
 
-        case (BSplineInit::ones): {
+        case (init::ones): {
 
           // Fill coefficients with ones
           for (short_t i = 0; i < geoDim_; ++i) {
@@ -1577,7 +1577,7 @@ namespace iganet {
           break;
         }
 
-        case (BSplineInit::linear): {
+        case (init::linear): {
 
           // Fill coefficients with the tensor-product of linearly
           // increasing values between 0 and 1 per univariate dimension
@@ -1600,7 +1600,7 @@ namespace iganet {
           break;
         }
 
-        case (BSplineInit::random): {
+        case (init::random): {
 
           // Fill coefficients with random values
           for (short_t i = 0; i < geoDim_; ++i) {
@@ -1614,7 +1614,7 @@ namespace iganet {
           break;
         }
 
-        case (BSplineInit::greville): {
+        case (init::greville): {
 
           // Fill coefficients with the tensor-product of Greville
           // abscissae values per univariate dimension
@@ -1641,7 +1641,7 @@ namespace iganet {
         }
 
         default:
-          throw std::runtime_error("Unsupported BSplineInit option");
+          throw std::runtime_error("Unsupported init option");
       }
     }
 
@@ -1838,7 +1838,7 @@ namespace iganet {
 
     /// @brief Constructor for non-equidistant knot vectors
     NonUniformBSplineCore(std::array<std::vector<real_t>, Base::parDim_> kv,
-                          BSplineInit init = BSplineInit::zeros)
+                          enum init init = init::zeros)
       : Base(std::array<int64_t, Base::parDim_>{Degrees...}, init)
     {
       for (short_t i=0; i<Base::parDim_; ++i) {
@@ -1868,13 +1868,13 @@ namespace iganet {
 
     /// @brief Returns the value of the multivariate B-spline object in the point `xi`
     /// @{
-    template<BSplineDeriv deriv = BSplineDeriv::func>
+    template<deriv deriv = deriv::func>
     inline auto eval(const torch::Tensor& xi) const
     {
       return eval<deriv>(TensorArray1({xi}));
     }
 
-    template<BSplineDeriv deriv = BSplineDeriv::func>
+    template<deriv deriv = deriv::func>
     inline auto eval(const std::array<torch::Tensor, Base::parDim_>& xi) const
     {
       if constexpr (Base::parDim_ == 0)
@@ -1883,7 +1883,7 @@ namespace iganet {
         return Base::template eval<deriv>(xi, eval_knot_indices(xi));
     }
 
-    template<BSplineDeriv deriv = BSplineDeriv::func>
+    template<deriv deriv = deriv::func>
     inline auto eval(const std::array<torch::Tensor, Base::parDim_>& xi,
                      const std::array<torch::Tensor, Base::parDim_>& idx) const
     {
@@ -1893,7 +1893,7 @@ namespace iganet {
         return Base::template eval<deriv>(xi, idx);
     }
 
-    template<BSplineDeriv deriv = BSplineDeriv::func>
+    template<deriv deriv = deriv::func>
     inline auto eval(const std::array<torch::Tensor, Base::parDim_>& xi,
                      const std::array<torch::Tensor, Base::parDim_>& idx,
                      const torch::Tensor& coeff_idx) const
@@ -2142,7 +2142,7 @@ namespace iganet {
       if constexpr (BSplineCore::parDim_ == 1)
         
         return BlockTensor<torch::Tensor, 1, 1>
-          (BSplineCore::template eval<BSplineDeriv::dx>(xi, idx, coeff_idx)[0]);
+          (BSplineCore::template eval<deriv::dx>(xi, idx, coeff_idx)[0]);
       
       else
         throw std::runtime_error("Unsupported parametric dimension");
@@ -2157,8 +2157,8 @@ namespace iganet {
       if constexpr (BSplineCore::parDim_ == 2)
       
         return BlockTensor<torch::Tensor, 1, 1>
-          (BSplineCore::template eval<BSplineDeriv::dx>(xi, idx, coeff_idx)[0] +
-           BSplineCore::template eval<BSplineDeriv::dy>(xi, idx, coeff_idx)[1]);
+          (BSplineCore::template eval<deriv::dx>(xi, idx, coeff_idx)[0] +
+           BSplineCore::template eval<deriv::dy>(xi, idx, coeff_idx)[1]);
        
       else
         throw std::runtime_error("Unsupported parametric dimension");
@@ -2174,9 +2174,9 @@ namespace iganet {
       if constexpr (BSplineCore::parDim_ == 3)
       
         return BlockTensor<torch::Tensor, 1, 1>
-          (BSplineCore::template eval<BSplineDeriv::dx>(xi, idx, coeff_idx)[0] +
-           BSplineCore::template eval<BSplineDeriv::dy>(xi, idx, coeff_idx)[1] +
-           BSplineCore::template eval<BSplineDeriv::dz>(xi, idx, coeff_idx)[2]);
+          (BSplineCore::template eval<deriv::dx>(xi, idx, coeff_idx)[0] +
+           BSplineCore::template eval<deriv::dy>(xi, idx, coeff_idx)[1] +
+           BSplineCore::template eval<deriv::dz>(xi, idx, coeff_idx)[2]);
     
       else
         throw std::runtime_error("Unsupported parametric dimension");
@@ -2193,10 +2193,10 @@ namespace iganet {
       if constexpr (BSplineCore::parDim_ == 4)
       
         return BlockTensor<torch::Tensor, 1, 1>
-          (BSplineCore::template eval<BSplineDeriv::dx>(xi, idx, coeff_idx)[0] +
-           BSplineCore::template eval<BSplineDeriv::dy>(xi, idx, coeff_idx)[1] +
-           BSplineCore::template eval<BSplineDeriv::dz>(xi, idx, coeff_idx)[2] +
-           BSplineCore::template eval<BSplineDeriv::dt>(xi, idx, coeff_idx)[3]);
+          (BSplineCore::template eval<deriv::dx>(xi, idx, coeff_idx)[0] +
+           BSplineCore::template eval<deriv::dy>(xi, idx, coeff_idx)[1] +
+           BSplineCore::template eval<deriv::dz>(xi, idx, coeff_idx)[2] +
+           BSplineCore::template eval<deriv::dt>(xi, idx, coeff_idx)[3]);
     
       else
         throw std::runtime_error("Unsupported parametric dimension");
@@ -2402,7 +2402,7 @@ namespace iganet {
       if constexpr (BSplineCore::parDim_ == 1)
         
         return BlockTensor<torch::Tensor, 1, 1>
-          (BSplineCore::template eval<BSplineDeriv::dx>(xi, idx, coeff_idx));
+          (BSplineCore::template eval<deriv::dx>(xi, idx, coeff_idx));
       
       else
         throw std::runtime_error("Unsupported parametric dimension");
@@ -2419,8 +2419,8 @@ namespace iganet {
       if constexpr (BSplineCore::parDim_ == 2)
       
         return BlockTensor<torch::Tensor, 1, 2>
-          (BSplineCore::template eval<BSplineDeriv::dx>(xi, idx, coeff_idx),
-           BSplineCore::template eval<BSplineDeriv::dy>(xi, idx, coeff_idx));
+          (BSplineCore::template eval<deriv::dx>(xi, idx, coeff_idx),
+           BSplineCore::template eval<deriv::dy>(xi, idx, coeff_idx));
        
       else
         throw std::runtime_error("Unsupported parametric dimension");
@@ -2438,9 +2438,9 @@ namespace iganet {
       if constexpr (BSplineCore::parDim_ == 3)
       
         return BlockTensor<torch::Tensor, 1, 3>
-          (BSplineCore::template eval<BSplineDeriv::dx>(xi, idx, coeff_idx),
-           BSplineCore::template eval<BSplineDeriv::dy>(xi, idx, coeff_idx),
-           BSplineCore::template eval<BSplineDeriv::dz>(xi, idx, coeff_idx));
+          (BSplineCore::template eval<deriv::dx>(xi, idx, coeff_idx),
+           BSplineCore::template eval<deriv::dy>(xi, idx, coeff_idx),
+           BSplineCore::template eval<deriv::dz>(xi, idx, coeff_idx));
     
       else
         throw std::runtime_error("Unsupported parametric dimension");
@@ -2459,10 +2459,10 @@ namespace iganet {
       if constexpr (BSplineCore::parDim_ == 4)
       
         return BlockTensor<torch::Tensor, 1, 4>
-          (BSplineCore::template eval<BSplineDeriv::dx>(xi, idx, coeff_idx),
-           BSplineCore::template eval<BSplineDeriv::dy>(xi, idx, coeff_idx),
-           BSplineCore::template eval<BSplineDeriv::dz>(xi, idx, coeff_idx),
-           BSplineCore::template eval<BSplineDeriv::dt>(xi, idx, coeff_idx));
+          (BSplineCore::template eval<deriv::dx>(xi, idx, coeff_idx),
+           BSplineCore::template eval<deriv::dy>(xi, idx, coeff_idx),
+           BSplineCore::template eval<deriv::dz>(xi, idx, coeff_idx),
+           BSplineCore::template eval<deriv::dt>(xi, idx, coeff_idx));
     
       else
         throw std::runtime_error("Unsupported parametric dimension");
@@ -2696,7 +2696,7 @@ namespace iganet {
       assert(xi[0].sizes() == idx[0].sizes());
       if constexpr (BSplineCore::parDim_ == 1)        
         return BlockTensor<torch::Tensor, 1, 1, BSplineCore::geoDim_>
-          (BSplineCore::template eval<BSplineDeriv::dx2>(xi, idx, coeff_idx));      
+          (BSplineCore::template eval<deriv::dx2>(xi, idx, coeff_idx));      
       else
         throw std::runtime_error("Unsupported parametric dimension");
     }
@@ -2709,10 +2709,10 @@ namespace iganet {
 
       if constexpr (BSplineCore::parDim_ == 2)     
         return BlockTensor<torch::Tensor, 2, BSplineCore::geoDim_, 2>
-          (BSplineCore::template eval<BSplineDeriv::dx2 >(xi, idx, coeff_idx),
-           BSplineCore::template eval<BSplineDeriv::dxdy>(xi, idx, coeff_idx),
-           BSplineCore::template eval<BSplineDeriv::dydx>(xi, idx, coeff_idx),
-           BSplineCore::template eval<BSplineDeriv::dy2 >(xi, idx, coeff_idx)).reorder_ikj();       
+          (BSplineCore::template eval<deriv::dx2 >(xi, idx, coeff_idx),
+           BSplineCore::template eval<deriv::dxdy>(xi, idx, coeff_idx),
+           BSplineCore::template eval<deriv::dydx>(xi, idx, coeff_idx),
+           BSplineCore::template eval<deriv::dy2 >(xi, idx, coeff_idx)).reorder_ikj();       
       else
         throw std::runtime_error("Unsupported parametric dimension");
     }
@@ -2726,15 +2726,15 @@ namespace iganet {
     
       if constexpr (BSplineCore::parDim_ == 3)     
         return BlockTensor<torch::Tensor, 3, BSplineCore::geoDim_, 3>
-          (BSplineCore::template eval<BSplineDeriv::dx2 >(xi, idx, coeff_idx),
-           BSplineCore::template eval<BSplineDeriv::dxdy>(xi, idx, coeff_idx),
-           BSplineCore::template eval<BSplineDeriv::dxdz>(xi, idx, coeff_idx),
-           BSplineCore::template eval<BSplineDeriv::dydx>(xi, idx, coeff_idx),
-           BSplineCore::template eval<BSplineDeriv::dy2> (xi, idx, coeff_idx),
-           BSplineCore::template eval<BSplineDeriv::dydz>(xi, idx, coeff_idx),
-           BSplineCore::template eval<BSplineDeriv::dzdx>(xi, idx, coeff_idx),
-           BSplineCore::template eval<BSplineDeriv::dzdy>(xi, idx, coeff_idx),
-           BSplineCore::template eval<BSplineDeriv::dz2 >(xi, idx, coeff_idx)).reorder_ikj();    
+          (BSplineCore::template eval<deriv::dx2 >(xi, idx, coeff_idx),
+           BSplineCore::template eval<deriv::dxdy>(xi, idx, coeff_idx),
+           BSplineCore::template eval<deriv::dxdz>(xi, idx, coeff_idx),
+           BSplineCore::template eval<deriv::dydx>(xi, idx, coeff_idx),
+           BSplineCore::template eval<deriv::dy2> (xi, idx, coeff_idx),
+           BSplineCore::template eval<deriv::dydz>(xi, idx, coeff_idx),
+           BSplineCore::template eval<deriv::dzdx>(xi, idx, coeff_idx),
+           BSplineCore::template eval<deriv::dzdy>(xi, idx, coeff_idx),
+           BSplineCore::template eval<deriv::dz2 >(xi, idx, coeff_idx)).reorder_ikj();    
       else
         throw std::runtime_error("Unsupported parametric dimension");
     }
@@ -2749,22 +2749,22 @@ namespace iganet {
     
       if constexpr (BSplineCore::parDim_ == 4)      
         return BlockTensor<torch::Tensor, 4, BSplineCore::geoDim_, 4>
-          (BSplineCore::template eval<BSplineDeriv::dx2 >(xi, idx, coeff_idx),
-           BSplineCore::template eval<BSplineDeriv::dxdy>(xi, idx, coeff_idx),
-           BSplineCore::template eval<BSplineDeriv::dxdz>(xi, idx, coeff_idx),
-           BSplineCore::template eval<BSplineDeriv::dxdt>(xi, idx, coeff_idx),
-           BSplineCore::template eval<BSplineDeriv::dydx>(xi, idx, coeff_idx),
-           BSplineCore::template eval<BSplineDeriv::dy2 >(xi, idx, coeff_idx),
-           BSplineCore::template eval<BSplineDeriv::dydz>(xi, idx, coeff_idx),
-           BSplineCore::template eval<BSplineDeriv::dydt>(xi, idx, coeff_idx),
-           BSplineCore::template eval<BSplineDeriv::dzdx>(xi, idx, coeff_idx),
-           BSplineCore::template eval<BSplineDeriv::dzdy>(xi, idx, coeff_idx),
-           BSplineCore::template eval<BSplineDeriv::dz2 >(xi, idx, coeff_idx),
-           BSplineCore::template eval<BSplineDeriv::dzdt>(xi, idx, coeff_idx),
-           BSplineCore::template eval<BSplineDeriv::dtdx>(xi, idx, coeff_idx),
-           BSplineCore::template eval<BSplineDeriv::dtdy>(xi, idx, coeff_idx),
-           BSplineCore::template eval<BSplineDeriv::dtdz>(xi, idx, coeff_idx),
-           BSplineCore::template eval<BSplineDeriv::dt2 >(xi, idx, coeff_idx)).reorder_ikj();    
+          (BSplineCore::template eval<deriv::dx2 >(xi, idx, coeff_idx),
+           BSplineCore::template eval<deriv::dxdy>(xi, idx, coeff_idx),
+           BSplineCore::template eval<deriv::dxdz>(xi, idx, coeff_idx),
+           BSplineCore::template eval<deriv::dxdt>(xi, idx, coeff_idx),
+           BSplineCore::template eval<deriv::dydx>(xi, idx, coeff_idx),
+           BSplineCore::template eval<deriv::dy2 >(xi, idx, coeff_idx),
+           BSplineCore::template eval<deriv::dydz>(xi, idx, coeff_idx),
+           BSplineCore::template eval<deriv::dydt>(xi, idx, coeff_idx),
+           BSplineCore::template eval<deriv::dzdx>(xi, idx, coeff_idx),
+           BSplineCore::template eval<deriv::dzdy>(xi, idx, coeff_idx),
+           BSplineCore::template eval<deriv::dz2 >(xi, idx, coeff_idx),
+           BSplineCore::template eval<deriv::dzdt>(xi, idx, coeff_idx),
+           BSplineCore::template eval<deriv::dtdx>(xi, idx, coeff_idx),
+           BSplineCore::template eval<deriv::dtdy>(xi, idx, coeff_idx),
+           BSplineCore::template eval<deriv::dtdz>(xi, idx, coeff_idx),
+           BSplineCore::template eval<deriv::dt2 >(xi, idx, coeff_idx)).reorder_ikj();    
       else
         throw std::runtime_error("Unsupported parametric dimension");
     }
@@ -3020,7 +3020,7 @@ namespace iganet {
       if constexpr (BSplineCore::parDim_ == 1)
       
         return BlockTensor<torch::Tensor, 1, BSplineCore::geoDim_>
-          (BSplineCore::template eval<BSplineDeriv::dx>(xi, idx, coeff_idx)).tr();
+          (BSplineCore::template eval<deriv::dx>(xi, idx, coeff_idx)).tr();
     
       else
         throw std::runtime_error("Unsupported parametric dimension");
@@ -3035,8 +3035,8 @@ namespace iganet {
       if constexpr (BSplineCore::parDim_ == 2)
       
         return BlockTensor<torch::Tensor, 2, BSplineCore::geoDim_>
-          (BSplineCore::template eval<BSplineDeriv::dx>(xi, idx, coeff_idx),
-           BSplineCore::template eval<BSplineDeriv::dy>(xi, idx, coeff_idx)).tr();
+          (BSplineCore::template eval<deriv::dx>(xi, idx, coeff_idx),
+           BSplineCore::template eval<deriv::dy>(xi, idx, coeff_idx)).tr();
     
       else
         throw std::runtime_error("Unsupported parametric dimension");
@@ -3052,9 +3052,9 @@ namespace iganet {
       if constexpr (BSplineCore::parDim_ == 3)
       
         return BlockTensor<torch::Tensor, 3, BSplineCore::geoDim_>
-          (BSplineCore::template eval<BSplineDeriv::dx>(xi, idx, coeff_idx),
-           BSplineCore::template eval<BSplineDeriv::dy>(xi, idx, coeff_idx),
-           BSplineCore::template eval<BSplineDeriv::dz>(xi, idx, coeff_idx)).tr();
+          (BSplineCore::template eval<deriv::dx>(xi, idx, coeff_idx),
+           BSplineCore::template eval<deriv::dy>(xi, idx, coeff_idx),
+           BSplineCore::template eval<deriv::dz>(xi, idx, coeff_idx)).tr();
     
       else
         throw std::runtime_error("Unsupported parametric dimension");
@@ -3071,10 +3071,10 @@ namespace iganet {
       if constexpr (BSplineCore::parDim_ == 4)
       
         return BlockTensor<torch::Tensor, 4, BSplineCore::geoDim_>
-          (BSplineCore::template eval<BSplineDeriv::dx>(xi, idx, coeff_idx),
-           BSplineCore::template eval<BSplineDeriv::dy>(xi, idx, coeff_idx),
-           BSplineCore::template eval<BSplineDeriv::dz>(xi, idx, coeff_idx),
-           BSplineCore::template eval<BSplineDeriv::dt>(xi, idx, coeff_idx)).tr();
+          (BSplineCore::template eval<deriv::dx>(xi, idx, coeff_idx),
+           BSplineCore::template eval<deriv::dy>(xi, idx, coeff_idx),
+           BSplineCore::template eval<deriv::dz>(xi, idx, coeff_idx),
+           BSplineCore::template eval<deriv::dt>(xi, idx, coeff_idx)).tr();
     
       else
         throw std::runtime_error("Unsupported parametric dimension");

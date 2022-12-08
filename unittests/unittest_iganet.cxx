@@ -27,10 +27,10 @@ class IgANet : public iganet::IgANet<real_t, optimizer_t, GeoDim, PdeDim, bsplin
 public:
   using iganet::IgANet<real_t, optimizer_t, GeoDim, PdeDim, bspline_t, Degrees...>::IgANet;
   
-  virtual iganet::IgANetDataStatus get_epoch(int64_t epoch) const override
+  virtual iganet::status get_epoch(int64_t epoch) const override
   {
     std::cout << "Epoch " << std::to_string(epoch) << ": ";
-    return iganet::IgANetDataStatus(0);
+    return iganet::status(0);
   }
 };
 

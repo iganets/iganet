@@ -78,12 +78,12 @@ namespace unittest {
 
   template<typename real_t, short_t GeoDim,
            short_t Degree0,
-           iganet::BSplineDeriv deriv,
+           iganet::deriv deriv,
            bool precompute = false>
   auto test_UniformBSpline(int64_t ncoeffs, int64_t nsamples)
   {
     iganet::core<real_t> core_(false);
-    iganet::UniformBSpline<real_t, GeoDim, Degree0> bspline({ncoeffs}, iganet::BSplineInit::linear);
+    iganet::UniformBSpline<real_t, GeoDim, Degree0> bspline({ncoeffs}, iganet::init::linear);
     iganet::TensorArray1 xi = {torch::rand(nsamples, core_.options())};
     
     auto t1 = std::chrono::high_resolution_clock::now();
@@ -137,13 +137,13 @@ namespace unittest {
 
   template<typename real_t, short_t GeoDim,
            short_t Degree0, short_t Degree1,
-           iganet::BSplineDeriv deriv,
+           iganet::deriv deriv,
            bool precompute = false>
   auto test_UniformBSpline(int64_t ncoeffs, int64_t nsamples)
   {
     iganet::core<real_t> core_(false);
     iganet::UniformBSpline<real_t, GeoDim, Degree0, Degree1> bspline({ncoeffs,
-                                                                      ncoeffs}, iganet::BSplineInit::linear);
+                                                                      ncoeffs}, iganet::init::linear);
     iganet::TensorArray2 xi = {torch::rand(nsamples, core_.options()),
                                torch::rand(nsamples, core_.options())};
     
@@ -200,14 +200,14 @@ namespace unittest {
 
   template<typename real_t, short_t GeoDim,
            short_t Degree0, short_t Degree1, short_t Degree2,
-           iganet::BSplineDeriv deriv,
+           iganet::deriv deriv,
            bool precompute = false>
   auto test_UniformBSpline(int64_t ncoeffs, int64_t nsamples)
   {
     iganet::core<real_t> core_(false);
     iganet::UniformBSpline<real_t, GeoDim, Degree0, Degree1, Degree2> bspline({ncoeffs,
                                                                                ncoeffs,
-                                                                               ncoeffs}, iganet::BSplineInit::linear);
+                                                                               ncoeffs}, iganet::init::linear);
     iganet::TensorArray3 xi = {torch::rand(nsamples, core_.options()),
                                torch::rand(nsamples, core_.options()),
                                torch::rand(nsamples, core_.options())};
@@ -267,7 +267,7 @@ namespace unittest {
 
   template<typename real_t, short_t GeoDim,
            short_t Degree0, short_t Degree1, short_t Degree2, short_t Degree3,
-           iganet::BSplineDeriv deriv,
+           iganet::deriv deriv,
            bool precompute = false>
   auto test_UniformBSpline(int64_t ncoeffs, int64_t nsamples)
   {
@@ -275,7 +275,7 @@ namespace unittest {
     iganet::UniformBSpline<real_t, GeoDim, Degree0, Degree1, Degree2, Degree3> bspline({ncoeffs,
                                                                                         ncoeffs,
                                                                                         ncoeffs,
-                                                                                        ncoeffs}, iganet::BSplineInit::linear);
+                                                                                        ncoeffs}, iganet::init::linear);
     iganet::TensorArray4 xi = {torch::rand(nsamples, core_.options()),
                                torch::rand(nsamples, core_.options()),
                                torch::rand(nsamples, core_.options()),
@@ -348,11 +348,11 @@ TEST(Performance, UniformBSpline_parDim1_double)
                 << std::right << std::setw(8) << ncoeffs << ","
                 << std::right << std::setw(8) << nsamples << ") ";
       
-      unittest::template test_UniformBSpline<double, 1, 1, iganet::BSplineDeriv::func, precompute>(ncoeffs, nsamples);
-      unittest::template test_UniformBSpline<double, 1, 2, iganet::BSplineDeriv::func, precompute>(ncoeffs, nsamples);
-      unittest::template test_UniformBSpline<double, 1, 3, iganet::BSplineDeriv::func, precompute>(ncoeffs, nsamples);
-      unittest::template test_UniformBSpline<double, 1, 4, iganet::BSplineDeriv::func, precompute>(ncoeffs, nsamples);
-      unittest::template test_UniformBSpline<double, 1, 5, iganet::BSplineDeriv::func, precompute>(ncoeffs, nsamples);
+      unittest::template test_UniformBSpline<double, 1, 1, iganet::deriv::func, precompute>(ncoeffs, nsamples);
+      unittest::template test_UniformBSpline<double, 1, 2, iganet::deriv::func, precompute>(ncoeffs, nsamples);
+      unittest::template test_UniformBSpline<double, 1, 3, iganet::deriv::func, precompute>(ncoeffs, nsamples);
+      unittest::template test_UniformBSpline<double, 1, 4, iganet::deriv::func, precompute>(ncoeffs, nsamples);
+      unittest::template test_UniformBSpline<double, 1, 5, iganet::deriv::func, precompute>(ncoeffs, nsamples);
       std::cout << std::endl;
     }
   }
@@ -368,11 +368,11 @@ TEST(Performance, UniformBSpline_parDim2_double)
                 << std::right << std::setw(8) << ncoeffs << ","
                 << std::right << std::setw(8) << nsamples << ") ";
       
-      unittest::template test_UniformBSpline<double, 1, 1, 1, iganet::BSplineDeriv::func, precompute>(ncoeffs, nsamples);
-      unittest::template test_UniformBSpline<double, 1, 2, 2, iganet::BSplineDeriv::func, precompute>(ncoeffs, nsamples);
-      unittest::template test_UniformBSpline<double, 1, 3, 3, iganet::BSplineDeriv::func, precompute>(ncoeffs, nsamples);
-      unittest::template test_UniformBSpline<double, 1, 4, 4, iganet::BSplineDeriv::func, precompute>(ncoeffs, nsamples);
-      unittest::template test_UniformBSpline<double, 1, 5, 5, iganet::BSplineDeriv::func, precompute>(ncoeffs, nsamples);
+      unittest::template test_UniformBSpline<double, 1, 1, 1, iganet::deriv::func, precompute>(ncoeffs, nsamples);
+      unittest::template test_UniformBSpline<double, 1, 2, 2, iganet::deriv::func, precompute>(ncoeffs, nsamples);
+      unittest::template test_UniformBSpline<double, 1, 3, 3, iganet::deriv::func, precompute>(ncoeffs, nsamples);
+      unittest::template test_UniformBSpline<double, 1, 4, 4, iganet::deriv::func, precompute>(ncoeffs, nsamples);
+      unittest::template test_UniformBSpline<double, 1, 5, 5, iganet::deriv::func, precompute>(ncoeffs, nsamples);
       std::cout << std::endl;
     }
   }
@@ -388,11 +388,11 @@ TEST(Performance, UniformBSpline_parDim3_double)
                 << std::right << std::setw(8) << ncoeffs << ","
                 << std::right << std::setw(8) << nsamples << ") ";
       
-      unittest::template test_UniformBSpline<double, 1, 1, 1, 1, iganet::BSplineDeriv::func, precompute>(ncoeffs, nsamples);
-      unittest::template test_UniformBSpline<double, 1, 2, 2, 2, iganet::BSplineDeriv::func, precompute>(ncoeffs, nsamples);
-      unittest::template test_UniformBSpline<double, 1, 3, 3, 3, iganet::BSplineDeriv::func, precompute>(ncoeffs, nsamples);
-      unittest::template test_UniformBSpline<double, 1, 4, 4, 4, iganet::BSplineDeriv::func, precompute>(ncoeffs, nsamples);
-      unittest::template test_UniformBSpline<double, 1, 5, 5, 5, iganet::BSplineDeriv::func, precompute>(ncoeffs, nsamples);
+      unittest::template test_UniformBSpline<double, 1, 1, 1, 1, iganet::deriv::func, precompute>(ncoeffs, nsamples);
+      unittest::template test_UniformBSpline<double, 1, 2, 2, 2, iganet::deriv::func, precompute>(ncoeffs, nsamples);
+      unittest::template test_UniformBSpline<double, 1, 3, 3, 3, iganet::deriv::func, precompute>(ncoeffs, nsamples);
+      unittest::template test_UniformBSpline<double, 1, 4, 4, 4, iganet::deriv::func, precompute>(ncoeffs, nsamples);
+      unittest::template test_UniformBSpline<double, 1, 5, 5, 5, iganet::deriv::func, precompute>(ncoeffs, nsamples);
       std::cout << std::endl;
     }
   }
@@ -408,11 +408,11 @@ TEST(Performance, UniformBSpline_parDim4_double)
                 << std::right << std::setw(8) << ncoeffs << ","
                 << std::right << std::setw(8) << nsamples << ") ";
       
-      unittest::template test_UniformBSpline<double, 1, 1, 1, 1, 1, iganet::BSplineDeriv::func, precompute>(ncoeffs, nsamples);
-      unittest::template test_UniformBSpline<double, 1, 2, 2, 2, 2, iganet::BSplineDeriv::func, precompute>(ncoeffs, nsamples);
-      unittest::template test_UniformBSpline<double, 1, 3, 3, 3, 3, iganet::BSplineDeriv::func, precompute>(ncoeffs, nsamples);
-      unittest::template test_UniformBSpline<double, 1, 4, 4, 4, 4, iganet::BSplineDeriv::func, precompute>(ncoeffs, nsamples);
-      unittest::template test_UniformBSpline<double, 1, 5, 5, 5, 5, iganet::BSplineDeriv::func, precompute>(ncoeffs, nsamples);
+      unittest::template test_UniformBSpline<double, 1, 1, 1, 1, 1, iganet::deriv::func, precompute>(ncoeffs, nsamples);
+      unittest::template test_UniformBSpline<double, 1, 2, 2, 2, 2, iganet::deriv::func, precompute>(ncoeffs, nsamples);
+      unittest::template test_UniformBSpline<double, 1, 3, 3, 3, 3, iganet::deriv::func, precompute>(ncoeffs, nsamples);
+      unittest::template test_UniformBSpline<double, 1, 4, 4, 4, 4, iganet::deriv::func, precompute>(ncoeffs, nsamples);
+      unittest::template test_UniformBSpline<double, 1, 5, 5, 5, 5, iganet::deriv::func, precompute>(ncoeffs, nsamples);
       std::cout << std::endl;
     }
   } 
