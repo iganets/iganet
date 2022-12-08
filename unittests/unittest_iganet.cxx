@@ -5,7 +5,7 @@
 
    @author Matthias Moller
 
-   @copyright This file is part of the IgaNet project
+   @copyright This file is part of the IgANet project
 
    This Source Code Form is subject to the terms of the Mozilla Public
    License, v. 2.0. If a copy of the MPL was not distributed with this
@@ -27,14 +27,14 @@ class IgANet : public iganet::IgANet<real_t, optimizer_t, GeoDim, PdeDim, bsplin
 public:
   using iganet::IgANet<real_t, optimizer_t, GeoDim, PdeDim, bspline_t, Degrees...>::IgANet;
   
-  virtual iganet::IgaNetDataStatus get_epoch(int64_t epoch) const override
+  virtual iganet::IgANetDataStatus get_epoch(int64_t epoch) const override
   {
     std::cout << "Epoch " << std::to_string(epoch) << ": ";
-    return iganet::IgaNetDataStatus(0);
+    return iganet::IgANetDataStatus(0);
   }
 };
 
-TEST(BSpline, IgaNet_UniformBSpline_1d_double)
+TEST(BSpline, IgANet_UniformBSpline_1d_double)
 {
   using real_t      = double;
   using optimizer_t = torch::optim::Adam;
@@ -72,7 +72,7 @@ TEST(BSpline, IgaNet_UniformBSpline_1d_double)
   EXPECT_EQ(net.sol().ncoeffs(0), 6);
 }
 
-TEST(BSpline, IgaNet_UniformBSpline_2d_double)
+TEST(BSpline, IgANet_UniformBSpline_2d_double)
 {
   using real_t      = double;
   using optimizer_t = torch::optim::Adam;
@@ -132,7 +132,7 @@ TEST(BSpline, IgaNet_UniformBSpline_2d_double)
   EXPECT_EQ(net.bdr().side<iganet::side::north>().ncoeffs(0), 4);
 }
 
-TEST(BSpline, IgaNet_UniformBSpline_3d_double)
+TEST(BSpline, IgANet_UniformBSpline_3d_double)
 {
   using real_t      = double;
   using optimizer_t = torch::optim::Adam;
@@ -222,7 +222,7 @@ TEST(BSpline, IgaNet_UniformBSpline_3d_double)
   EXPECT_EQ(net.bdr().side<iganet::side::back>().ncoeffs(1),  6);
 }
 
-TEST(BSpline, IgaNet_UniformBSpline_4d_double)
+TEST(BSpline, IgANet_UniformBSpline_4d_double)
 {
   using real_t      = double;
   using optimizer_t = torch::optim::Adam;
@@ -350,7 +350,7 @@ TEST(BSpline, IgaNet_UniformBSpline_4d_double)
   EXPECT_EQ(net.bdr().side<iganet::side::etime>().ncoeffs(2), 3);
 }
 
-TEST(BSpline, IgaNet_NonUniformBSpline_1d_double)
+TEST(BSpline, IgANet_NonUniformBSpline_1d_double)
 {
   using real_t      = double;
   using optimizer_t = torch::optim::Adam;
@@ -388,7 +388,7 @@ TEST(BSpline, IgaNet_NonUniformBSpline_1d_double)
   EXPECT_EQ(net.sol().ncoeffs(0), 6);
 }
 
-TEST(BSpline, IgaNet_NonUniformBSpline_2d_double)
+TEST(BSpline, IgANet_NonUniformBSpline_2d_double)
 {
   using real_t      = double;
   using optimizer_t = torch::optim::Adam;
@@ -448,7 +448,7 @@ TEST(BSpline, IgaNet_NonUniformBSpline_2d_double)
   EXPECT_EQ(net.bdr().side<iganet::side::north>().ncoeffs(0), 4);
 }
 
-TEST(BSpline, IgaNet_NonUniformBSpline_3d_double)
+TEST(BSpline, IgANet_NonUniformBSpline_3d_double)
 {
   using real_t      = double;
   using optimizer_t = torch::optim::Adam;
@@ -538,7 +538,7 @@ TEST(BSpline, IgaNet_NonUniformBSpline_3d_double)
   EXPECT_EQ(net.bdr().side<iganet::side::back>().ncoeffs(1),  6);
 }
 
-TEST(BSpline, IgaNet_NonUniformBSpline_4d_double)
+TEST(BSpline, IgANet_NonUniformBSpline_4d_double)
 {
   using real_t      = double;
   using optimizer_t = torch::optim::Adam;
