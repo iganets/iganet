@@ -90,7 +90,7 @@ auto to_splinelib_bspline(BSpline_t& bspline)
   return splinelib_bspline;
 }
 
-template<iganet::BSplineDeriv deriv, bool precompute,
+template<iganet::deriv deriv, bool precompute,
          typename BSpline_t, typename SplineLibBSpline_t, typename TensorArray_t>
 void test_bspline_eval(BSpline_t& bspline, SplineLibBSpline_t splinelib_bspline,
                        TensorArray_t& xi, typename BSpline_t::value_type tol = 1e-12)
@@ -256,40 +256,40 @@ void test_bspline_grad(BSpline_t& bspline, TensorArray_t& xi,
 
   if constexpr (BSpline_t::parDim() == 1) {
     EXPECT_TRUE(torch::allclose(bspline_grad_val(0,0),
-                                bspline.template eval<iganet::BSplineDeriv::dx>(xi)(0)
+                                bspline.template eval<iganet::deriv::dx>(xi)(0)
                                 ));
   }
   else if constexpr (BSpline_t::parDim() == 2) {
     EXPECT_TRUE(torch::allclose(bspline_grad_val(0,0),
-                                bspline.template eval<iganet::BSplineDeriv::dx>(xi)(0)
+                                bspline.template eval<iganet::deriv::dx>(xi)(0)
                                 ));
     EXPECT_TRUE(torch::allclose(bspline_grad_val(0,1),
-                                bspline.template eval<iganet::BSplineDeriv::dy>(xi)(0)
+                                bspline.template eval<iganet::deriv::dy>(xi)(0)
                                 ));    
   }
   else if constexpr (BSpline_t::parDim() == 3) {
     EXPECT_TRUE(torch::allclose(bspline_grad_val(0,0),
-                                bspline.template eval<iganet::BSplineDeriv::dx>(xi)(0)
+                                bspline.template eval<iganet::deriv::dx>(xi)(0)
                                 ));
     EXPECT_TRUE(torch::allclose(bspline_grad_val(0,1),
-                                bspline.template eval<iganet::BSplineDeriv::dy>(xi)(0)
+                                bspline.template eval<iganet::deriv::dy>(xi)(0)
                                 ));
     EXPECT_TRUE(torch::allclose(bspline_grad_val(0,2),
-                                bspline.template eval<iganet::BSplineDeriv::dz>(xi)(0)
+                                bspline.template eval<iganet::deriv::dz>(xi)(0)
                                 ));
   }
   else if constexpr (BSpline_t::parDim() == 4) {
     EXPECT_TRUE(torch::allclose(bspline_grad_val(0,0),
-                                bspline.template eval<iganet::BSplineDeriv::dx>(xi)(0)
+                                bspline.template eval<iganet::deriv::dx>(xi)(0)
                                 ));
     EXPECT_TRUE(torch::allclose(bspline_grad_val(0,1),
-                                bspline.template eval<iganet::BSplineDeriv::dy>(xi)(0)
+                                bspline.template eval<iganet::deriv::dy>(xi)(0)
                                 ));
     EXPECT_TRUE(torch::allclose(bspline_grad_val(0,2),
-                                bspline.template eval<iganet::BSplineDeriv::dz>(xi)(0)
+                                bspline.template eval<iganet::deriv::dz>(xi)(0)
                                 ));
     EXPECT_TRUE(torch::allclose(bspline_grad_val(0,3),
-                                bspline.template eval<iganet::BSplineDeriv::dt>(xi)(0)
+                                bspline.template eval<iganet::deriv::dt>(xi)(0)
                                 ));
   }
 }
@@ -310,28 +310,28 @@ void test_bspline_jac(BSpline_t& bspline, TensorArray_t& xi,
   if constexpr (BSpline_t::parDim() >= 1) {
     for (short_t k=0; k<BSpline_t::geoDim(); ++k)
       EXPECT_TRUE(torch::allclose(bspline_jac_val(k,0),
-                                  bspline.template eval<iganet::BSplineDeriv::dx>(xi)(k)
+                                  bspline.template eval<iganet::deriv::dx>(xi)(k)
                                   ));
   }
 
   if constexpr (BSpline_t::parDim() >= 2) {
     for (short_t k=0; k<BSpline_t::geoDim(); ++k)
       EXPECT_TRUE(torch::allclose(bspline_jac_val(k,1),
-                                  bspline.template eval<iganet::BSplineDeriv::dy>(xi)(k)
+                                  bspline.template eval<iganet::deriv::dy>(xi)(k)
                                   ));
   }
   
   if constexpr (BSpline_t::parDim() >= 3) {
     for (short_t k=0; k<BSpline_t::geoDim(); ++k)
       EXPECT_TRUE(torch::allclose(bspline_jac_val(k,2),
-                                  bspline.template eval<iganet::BSplineDeriv::dz>(xi)(k)
+                                  bspline.template eval<iganet::deriv::dz>(xi)(k)
                                   ));
   }
 
   if constexpr (BSpline_t::parDim() >= 4) {
     for (short_t k=0; k<BSpline_t::geoDim(); ++k)
       EXPECT_TRUE(torch::allclose(bspline_jac_val(k,3),
-                                  bspline.template eval<iganet::BSplineDeriv::dt>(xi)(k)
+                                  bspline.template eval<iganet::deriv::dt>(xi)(k)
                                   ));
   }
 }
@@ -354,20 +354,20 @@ void test_bspline_hess(BSpline_t& bspline, TensorArray_t& xi,
   if constexpr (BSpline_t::parDim() >= 1) {
     for (short_t k=0; k<BSpline_t::geoDim(); ++k)
       EXPECT_TRUE(torch::allclose(bspline_hess_val(0,0,k),
-                                  bspline.template eval<iganet::BSplineDeriv::dx2>(xi)(k)
+                                  bspline.template eval<iganet::deriv::dx2>(xi)(k)
                                   ));
   }
 
   if constexpr (BSpline_t::parDim() >= 2) {
     for (short_t k=0; k<BSpline_t::geoDim(); ++k) {
       EXPECT_TRUE(torch::allclose(bspline_hess_val(0,1,k),
-                                  bspline.template eval<iganet::BSplineDeriv::dxdy>(xi)(k)
+                                  bspline.template eval<iganet::deriv::dxdy>(xi)(k)
                                   ));
       EXPECT_TRUE(torch::allclose(bspline_hess_val(1,0,k),
-                                  bspline.template eval<iganet::BSplineDeriv::dydx>(xi)(k)
+                                  bspline.template eval<iganet::deriv::dydx>(xi)(k)
                                   ));
       EXPECT_TRUE(torch::allclose(bspline_hess_val(1,1,k),
-                                  bspline.template eval<iganet::BSplineDeriv::dy2>(xi)(k)
+                                  bspline.template eval<iganet::deriv::dy2>(xi)(k)
                                   ));
     }
   }
@@ -375,19 +375,19 @@ void test_bspline_hess(BSpline_t& bspline, TensorArray_t& xi,
   if constexpr (BSpline_t::parDim() >= 3) {
     for (short_t k=0; k<BSpline_t::geoDim(); ++k) {
       EXPECT_TRUE(torch::allclose(bspline_hess_val(0,2,k),
-                                  bspline.template eval<iganet::BSplineDeriv::dxdz>(xi)(k)
+                                  bspline.template eval<iganet::deriv::dxdz>(xi)(k)
                                   ));
       EXPECT_TRUE(torch::allclose(bspline_hess_val(1,2,k),
-                                  bspline.template eval<iganet::BSplineDeriv::dydz>(xi)(k)
+                                  bspline.template eval<iganet::deriv::dydz>(xi)(k)
                                   ));
       EXPECT_TRUE(torch::allclose(bspline_hess_val(2,0,k),
-                                  bspline.template eval<iganet::BSplineDeriv::dzdx>(xi)(k)
+                                  bspline.template eval<iganet::deriv::dzdx>(xi)(k)
                                   ));
       EXPECT_TRUE(torch::allclose(bspline_hess_val(2,1,k),
-                                  bspline.template eval<iganet::BSplineDeriv::dzdy>(xi)(k)
+                                  bspline.template eval<iganet::deriv::dzdy>(xi)(k)
                                   ));
       EXPECT_TRUE(torch::allclose(bspline_hess_val(2,2,k),
-                                  bspline.template eval<iganet::BSplineDeriv::dz2>(xi)(k)
+                                  bspline.template eval<iganet::deriv::dz2>(xi)(k)
                                   ));
     }
   }
@@ -395,25 +395,25 @@ void test_bspline_hess(BSpline_t& bspline, TensorArray_t& xi,
   if constexpr (BSpline_t::parDim() >= 4) {
     for (short_t k=0; k<BSpline_t::geoDim(); ++k) {
       EXPECT_TRUE(torch::allclose(bspline_hess_val(0,3,k),
-                                  bspline.template eval<iganet::BSplineDeriv::dxdt>(xi)(k)
+                                  bspline.template eval<iganet::deriv::dxdt>(xi)(k)
                                   ));
       EXPECT_TRUE(torch::allclose(bspline_hess_val(1,3,k),
-                                  bspline.template eval<iganet::BSplineDeriv::dydt>(xi)(k)
+                                  bspline.template eval<iganet::deriv::dydt>(xi)(k)
                                   ));
       EXPECT_TRUE(torch::allclose(bspline_hess_val(2,3,k),
-                                  bspline.template eval<iganet::BSplineDeriv::dzdt>(xi)(k)
+                                  bspline.template eval<iganet::deriv::dzdt>(xi)(k)
                                   ));
       EXPECT_TRUE(torch::allclose(bspline_hess_val(3,0,k),
-                                  bspline.template eval<iganet::BSplineDeriv::dtdx>(xi)(k)
+                                  bspline.template eval<iganet::deriv::dtdx>(xi)(k)
                                   ));
       EXPECT_TRUE(torch::allclose(bspline_hess_val(3,1,k),
-                                  bspline.template eval<iganet::BSplineDeriv::dtdy>(xi)(k)
+                                  bspline.template eval<iganet::deriv::dtdy>(xi)(k)
                                   ));
       EXPECT_TRUE(torch::allclose(bspline_hess_val(3,2,k),
-                                  bspline.template eval<iganet::BSplineDeriv::dtdz>(xi)(k)
+                                  bspline.template eval<iganet::deriv::dtdz>(xi)(k)
                                   ));
       EXPECT_TRUE(torch::allclose(bspline_hess_val(3,3,k),
-                                  bspline.template eval<iganet::BSplineDeriv::dt2>(xi)(k)
+                                  bspline.template eval<iganet::deriv::dt2>(xi)(k)
                                   ));                        
     }
   }
@@ -426,65 +426,65 @@ void test_bspline_eval(BSpline_t& bspline, TensorArray_t& xi, typename BSpline_t
   auto splinelib_bspline = to_splinelib_bspline(bspline);
 
   // Evaluate function and derivatives
-  test_bspline_eval<iganet::BSplineDeriv::func, false>(bspline, splinelib_bspline, xi, tol);
+  test_bspline_eval<iganet::deriv::func, false>(bspline, splinelib_bspline, xi, tol);
 
   if constexpr (BSpline_t::parDim() == 1) {
-    test_bspline_eval<iganet::BSplineDeriv::dx1, false>(bspline, splinelib_bspline, xi, tol);
-    test_bspline_eval<iganet::BSplineDeriv::dx2, false>(bspline, splinelib_bspline, xi, tol);
-    test_bspline_eval<iganet::BSplineDeriv::dx3, false>(bspline, splinelib_bspline, xi, tol);
-    test_bspline_eval<iganet::BSplineDeriv::dx4, false>(bspline, splinelib_bspline, xi, tol);
+    test_bspline_eval<iganet::deriv::dx1, false>(bspline, splinelib_bspline, xi, tol);
+    test_bspline_eval<iganet::deriv::dx2, false>(bspline, splinelib_bspline, xi, tol);
+    test_bspline_eval<iganet::deriv::dx3, false>(bspline, splinelib_bspline, xi, tol);
+    test_bspline_eval<iganet::deriv::dx4, false>(bspline, splinelib_bspline, xi, tol);
   }
 
   if constexpr (BSpline_t::parDim() == 2) {
-    test_bspline_eval<iganet::BSplineDeriv::dy1, false>(bspline, splinelib_bspline, xi, tol);
-    test_bspline_eval<iganet::BSplineDeriv::dy2, false>(bspline, splinelib_bspline, xi, tol);
-    test_bspline_eval<iganet::BSplineDeriv::dy3, false>(bspline, splinelib_bspline, xi, tol);
-    test_bspline_eval<iganet::BSplineDeriv::dy4, false>(bspline, splinelib_bspline, xi, tol);
+    test_bspline_eval<iganet::deriv::dy1, false>(bspline, splinelib_bspline, xi, tol);
+    test_bspline_eval<iganet::deriv::dy2, false>(bspline, splinelib_bspline, xi, tol);
+    test_bspline_eval<iganet::deriv::dy3, false>(bspline, splinelib_bspline, xi, tol);
+    test_bspline_eval<iganet::deriv::dy4, false>(bspline, splinelib_bspline, xi, tol);
   }
 
   if constexpr (BSpline_t::parDim() == 3) {
-    test_bspline_eval<iganet::BSplineDeriv::dz1, false>(bspline, splinelib_bspline, xi, tol);
-    test_bspline_eval<iganet::BSplineDeriv::dz2, false>(bspline, splinelib_bspline, xi, tol);
-    test_bspline_eval<iganet::BSplineDeriv::dz3, false>(bspline, splinelib_bspline, xi, tol);
-    test_bspline_eval<iganet::BSplineDeriv::dz4, false>(bspline, splinelib_bspline, xi, tol);
+    test_bspline_eval<iganet::deriv::dz1, false>(bspline, splinelib_bspline, xi, tol);
+    test_bspline_eval<iganet::deriv::dz2, false>(bspline, splinelib_bspline, xi, tol);
+    test_bspline_eval<iganet::deriv::dz3, false>(bspline, splinelib_bspline, xi, tol);
+    test_bspline_eval<iganet::deriv::dz4, false>(bspline, splinelib_bspline, xi, tol);
   }
 
   if constexpr (BSpline_t::parDim() == 4) {
-    test_bspline_eval<iganet::BSplineDeriv::dt1, false>(bspline, splinelib_bspline, xi, tol);
-    test_bspline_eval<iganet::BSplineDeriv::dt2, false>(bspline, splinelib_bspline, xi, tol);
-    test_bspline_eval<iganet::BSplineDeriv::dt3, false>(bspline, splinelib_bspline, xi, tol);
-    test_bspline_eval<iganet::BSplineDeriv::dt4, false>(bspline, splinelib_bspline, xi, tol);
+    test_bspline_eval<iganet::deriv::dt1, false>(bspline, splinelib_bspline, xi, tol);
+    test_bspline_eval<iganet::deriv::dt2, false>(bspline, splinelib_bspline, xi, tol);
+    test_bspline_eval<iganet::deriv::dt3, false>(bspline, splinelib_bspline, xi, tol);
+    test_bspline_eval<iganet::deriv::dt4, false>(bspline, splinelib_bspline, xi, tol);
   }
   
   // Evaluate function and derivatives from precomputed data
-  test_bspline_eval<iganet::BSplineDeriv::func, true>(bspline, splinelib_bspline, xi, tol);
+  test_bspline_eval<iganet::deriv::func, true>(bspline, splinelib_bspline, xi, tol);
 
   if constexpr (BSpline_t::parDim() == 1) {
-    test_bspline_eval<iganet::BSplineDeriv::dx1, true>(bspline, splinelib_bspline, xi, tol);
-    test_bspline_eval<iganet::BSplineDeriv::dx2, true>(bspline, splinelib_bspline, xi, tol);
-    test_bspline_eval<iganet::BSplineDeriv::dx3, true>(bspline, splinelib_bspline, xi, tol);
-    test_bspline_eval<iganet::BSplineDeriv::dx4, true>(bspline, splinelib_bspline, xi, tol);
+    test_bspline_eval<iganet::deriv::dx1, true>(bspline, splinelib_bspline, xi, tol);
+    test_bspline_eval<iganet::deriv::dx2, true>(bspline, splinelib_bspline, xi, tol);
+    test_bspline_eval<iganet::deriv::dx3, true>(bspline, splinelib_bspline, xi, tol);
+    test_bspline_eval<iganet::deriv::dx4, true>(bspline, splinelib_bspline, xi, tol);
   }
 
   if constexpr (BSpline_t::parDim() == 2) {
-    test_bspline_eval<iganet::BSplineDeriv::dy1, true>(bspline, splinelib_bspline, xi, tol);
-    test_bspline_eval<iganet::BSplineDeriv::dy2, true>(bspline, splinelib_bspline, xi, tol);
-    test_bspline_eval<iganet::BSplineDeriv::dy3, true>(bspline, splinelib_bspline, xi, tol);
-    test_bspline_eval<iganet::BSplineDeriv::dy4, true>(bspline, splinelib_bspline, xi, tol);
+    test_bspline_eval<iganet::deriv::dy1, true>(bspline, splinelib_bspline, xi, tol);
+    test_bspline_eval<iganet::deriv::dy2, true>(bspline, splinelib_bspline, xi, tol);
+    test_bspline_eval<iganet::deriv::dy3, true>(bspline, splinelib_bspline, xi, tol);
+    test_bspline_eval<iganet::deriv::dy4, true>(bspline, splinelib_bspline, xi, tol);
   }
 
   if constexpr (BSpline_t::parDim() == 3) {
-    test_bspline_eval<iganet::BSplineDeriv::dz1, true>(bspline, splinelib_bspline, xi, tol);
-    test_bspline_eval<iganet::BSplineDeriv::dz2, true>(bspline, splinelib_bspline, xi, tol);
-    test_bspline_eval<iganet::BSplineDeriv::dz3, true>(bspline, splinelib_bspline, xi, tol);
-    test_bspline_eval<iganet::BSplineDeriv::dz4, true>(bspline, splinelib_bspline, xi, tol);
+    test_bspline_eval<iganet::deriv::dz1, true>(bspline, splinelib_bspline, xi, tol);
+    test_bspline_eval<iganet::deriv::dz2, true>(bspline, splinelib_bspline, xi, tol);
+    test_bspline_eval<iganet::deriv::dz3, true>(bspline, splinelib_bspline, xi, tol);
+    test_bspline_eval<iganet::deriv::dz4, true>(bspline, splinelib_bspline, xi, tol);
   }
 
   if constexpr (BSpline_t::parDim() == 4) {
-    test_bspline_eval<iganet::BSplineDeriv::dt1, true>(bspline, splinelib_bspline, xi, tol);
-    test_bspline_eval<iganet::BSplineDeriv::dt2, true>(bspline, splinelib_bspline, xi, tol);
-    test_bspline_eval<iganet::BSplineDeriv::dt3, true>(bspline, splinelib_bspline, xi, tol);
-    test_bspline_eval<iganet::BSplineDeriv::dt4, true>(bspline, splinelib_bspline, xi, tol);
+    test_bspline_eval<iganet::deriv::dt1, true>(bspline, splinelib_bspline, xi, tol);
+    test_bspline_eval<iganet::deriv::dt2, true>(bspline, splinelib_bspline, xi, tol);
+    test_bspline_eval<iganet::deriv::dt3, true>(bspline, splinelib_bspline, xi, tol);
+    test_bspline_eval<iganet::deriv::dt4, true>(bspline, splinelib_bspline, xi, tol);
   }
 
   // Evaluate gradients
