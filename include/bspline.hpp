@@ -392,27 +392,18 @@ namespace iganet {
     /// control net \f$\left(n_d\right)_{d=1}^{d_\text{par}}\f$
     std::array<int64_t, parDim_> ncoeffs_;
 
-    /// @brief LibTorch constants
-    /// @{
-    const torch::Tensor one_, zero_;
-    /// @}
-
   public:
     using value_type = real_t;
     
     /// @brief Default constructor
     UniformBSplineCore()
-        : core<real_t>(),
-          one_(torch::ones(1, core<real_t>::options_)),
-          zero_(torch::zeros(1, core<real_t>::options_)) {}
+        : core<real_t>() {}
 
     /// @brief Constructor for equidistant knot vectors
     UniformBSplineCore(const std::array<int64_t, parDim_>& ncoeffs,
                        BSplineInit init = BSplineInit::zeros)
         : core<real_t>(),
-          ncoeffs_(ncoeffs),
-          one_(torch::ones(1, core<real_t>::options_)),
-          zero_(torch::zeros(1, core<real_t>::options_))
+          ncoeffs_(ncoeffs)
     {
       for (short_t i = 0; i < parDim_; ++i) {
 
@@ -566,33 +557,43 @@ namespace iganet {
     }
 
     /// @brief Returns the Greville abscissae
-    inline std::array<torch::Tensor, geoDim_> greville() const
+    ///
+    /// The Greville abscissae are defined as
+    ///
+    /// \f[
+    ///   g_{i_d} = \frac{\xi_{i_d+1} + \xi_{i_d+2} + \dots + \xi_{i_d+p_d+1}}{p_d-1}
+    /// \f]
+    inline auto greville() const
     {
-      std::array<torch::Tensor, geoDim_> coeffs;
-
-      // Fill coefficients with the tensor-product of Greville
-      // abscissae values per univariate dimension
-      for (short_t i = 0; i < geoDim_; ++i) {
-        coeffs[i] = torch::ones(1, core<real_t>::options_);
-
-        for (short_t j = 0; j < parDim_; ++j) {
-          if (i == j) {
-            auto greville_ = torch::zeros(ncoeffs_[j], core<real_t>::options_);
-            auto greville = greville_.template accessor<real_t, 1>();
-            auto knots = knots_[j].template accessor<real_t, 1>();
-            for (int64_t k = 0; k < ncoeffs_[j]; ++k) {
-              for (short_t l = 1; l <= degrees_[j]; ++l)
-                greville[k] += knots[k + l];
-              greville[k] /= degrees_[j];
-            }
-            coeffs[i] = torch::kron(greville_, coeffs[i]);
-          } else
-            coeffs[i] = torch::kron(torch::ones(ncoeffs_[j],
-                                                core<real_t>::options_), coeffs[i]);
-        }
+      if constexpr (parDim_ == 0)
+        return torch::zeros_like(coeffs_[0]);
+      
+      else {
+        std::array<torch::Tensor, parDim_> coeffs;
+        
+        // Fill coefficients with the tensor-product of Greville
+        // abscissae values per univariate dimension
+        for (short_t i = 0; i < parDim_; ++i) {
+          coeffs[i] = torch::ones(1, core<real_t>::options_);
+          
+          for (short_t j = 0; j < parDim_; ++j) {
+            if (i == j) {
+              auto greville_ = torch::zeros(ncoeffs_[j], core<real_t>::options_);
+              auto greville = greville_.template accessor<real_t, 1>();
+              auto knots = knots_[j].template accessor<real_t, 1>();
+              for (int64_t k = 0; k < ncoeffs_[j]; ++k) {
+                for (short_t l = 1; l <= degrees_[j]; ++l)
+                  greville[k] += knots[k + l];
+                greville[k] /= degrees_[j];
+              }
+              coeffs[i] = torch::kron(greville_, coeffs[i]);
+            } else
+              coeffs[i] = torch::kron(torch::ones(ncoeffs_[j],
+                                                  core<real_t>::options_), coeffs[i]);
+          }
+        }        
+        return coeffs;
       }
-
-      return coeffs;
     }
 
     /// @brief Returns the value of the B-spline object in the points `xi`
@@ -1215,9 +1216,10 @@ namespace iganet {
 
       // 1D
       if constexpr (parDim_ == 1) {
-#pragma omp parallel for simd
+#pragma omp parallel for
         for (int64_t i = 0; i < ncoeffs_[0]; ++i) {
           auto c = transformation(std::array<real_t, 1>{i / real_t(ncoeffs_[0] - 1)});
+#pragma omp simd
           for (short_t d = 0; d < geoDim_; ++d)
             coeffs_[d].detach()[i] = c[d];
         }
@@ -1225,11 +1227,12 @@ namespace iganet {
 
         // 2D
       else if constexpr (parDim_ == 2) {
-#pragma omp parallel for simd collapse(2)
+#pragma omp parallel for collapse(2)
         for (int64_t i = 0; i < ncoeffs_[0]; ++i) {
           for (int64_t j = 0; j < ncoeffs_[1]; ++j) {
             auto c = transformation(std::array<real_t, 2>{i / real_t(ncoeffs_[0] - 1),
                                                           j / real_t(ncoeffs_[1] - 1)});
+#pragma omp simd
             for (short_t d = 0; d < geoDim_; ++d)
               coeffs_[d].detach()[j * ncoeffs_[0] +
                                   i] = c[d];
@@ -1239,13 +1242,14 @@ namespace iganet {
 
         // 3D
       else if constexpr (parDim_ == 3) {
-#pragma omp parallel for simd collapse(3)
+#pragma omp parallel for collapse(3)
         for (int64_t i = 0; i < ncoeffs_[0]; ++i) {
           for (int64_t j = 0; j < ncoeffs_[1]; ++j) {
             for (int64_t k = 0; k < ncoeffs_[2]; ++k) {
               auto c = transformation(std::array<real_t, 3>{i / real_t(ncoeffs_[0] - 1),
                                                             j / real_t(ncoeffs_[1] - 1),
                                                             k / real_t(ncoeffs_[2] - 1)});
+#pragma omp simd
               for (short_t d = 0; d < geoDim_; ++d)
                 coeffs_[d].detach()[k * ncoeffs_[0] * ncoeffs_[1] +
                                     j * ncoeffs_[0] +
@@ -1257,7 +1261,7 @@ namespace iganet {
 
         // 4D
       else if constexpr (parDim_ == 4) {
-#pragma omp parallel for simd collapse(4)
+#pragma omp parallel for collapse(4)
         for (int64_t i = 0; i < ncoeffs_[0]; ++i) {
           for (int64_t j = 0; j < ncoeffs_[1]; ++j) {
             for (int64_t k = 0; k < ncoeffs_[2]; ++k) {
@@ -1266,6 +1270,7 @@ namespace iganet {
                                                               j / real_t(ncoeffs_[1] - 1),
                                                               k / real_t(ncoeffs_[2] - 1),
                                                               l / real_t(ncoeffs_[3] - 1)});
+#pragma omp simd
                 for (short_t d = 0; d < geoDim_; ++d)
                   coeffs_[d].detach()[l * ncoeffs_[0] * ncoeffs_[1] * ncoeffs_[2] +
                                       k * ncoeffs_[0] * ncoeffs_[1] +
@@ -1997,6 +2002,53 @@ namespace iganet {
   public:
     using BSplineCore::BSplineCore;
 
+    /// @brief Copy constructor
+    BSplineCommon(const BSplineCommon&) = default;
+
+    /// @brief Copy constructor with external coefficients
+    explicit BSplineCommon(const BSplineCommon& other,
+                           const std::array<torch::Tensor, BSplineCore::geoDim_>& coeffs)
+      : BSplineCommon(other)
+    {
+      for (short_t i=0; i< BSplineCore::geoDim_; ++i)
+        BSplineCore::coeffs_[i] = coeffs[i].clone();
+    }
+    
+    /// @brief Move constructor
+    BSplineCommon(BSplineCommon&&) = default;
+
+    /// @brief Move constructor with external coefficients
+    explicit BSplineCommon(BSplineCommon&& other,
+                           std::array<torch::Tensor, BSplineCore::geoDim_>&& coeffs)
+      : BSplineCommon(other)
+    {
+      for (short_t i=0; i< BSplineCore::geoDim_; ++i)
+        BSplineCore::coeffs_[i] = std::move(coeffs[i]);
+    }
+    
+    /// @brief Copy assignment operator
+    BSplineCommon& operator=(const BSplineCommon&) = default;
+
+    /// @brief Move assignment operator
+    BSplineCommon& operator=(BSplineCommon&&) = default;
+    
+    /// @brief Returns a clone of the B-spline object
+    inline auto clone() const
+    {
+      BSplineCommon result;
+      
+      result.nknots_  = BSplineCore::nknots_;
+      result.ncoeffs_ = BSplineCore::ncoeffs_;
+      
+      for (short_t i=0; i< BSplineCore::parDim_; ++i)
+        result.knots_[i] = BSplineCore::knots_[i].clone();
+      
+      for (short_t i=0; i< BSplineCore::geoDim_; ++i)
+        result.coeffs_[i] = BSplineCore::coeffs_[i].clone();
+      
+      return result;
+    }
+    
     /// @brief Returns a block-tensor with the divergence of the
     /// B-spline object with respect to the parametric variables
     ///
