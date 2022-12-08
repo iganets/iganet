@@ -24,17 +24,24 @@
 namespace iganet {
 
   /// @brief Enumerator for the status of the various data
-  enum class IgaNetDataStatus : short_t
+  enum class status : short_t
     {
       bdr  = 1<<0, /*!< boundary data needs update */
       geo  = 1<<1, /*!< geometry data needs update */
       rhs  = 1<<2  /*!< right-hand side data needs update */
     };
 
-  IgaNetDataStatus operator+(IgaNetDataStatus input, IgaNetDataStatus other)
+  /// @brief Returns the sum of two status objects
+  status operator+(status lhs, status rhs)
   {
-    return IgaNetDataStatus(static_cast<short_t>(input)+static_cast<short_t>(other));
+    return status(static_cast<short_t>(lhs)+static_cast<short_t>(rhs));
   }
+
+  /// @brief Enumerator for the approximation spaces
+  enum class space
+    {
+      
+    };
   
   /// @brief IgANetOptions
   struct IgANetOptions
@@ -960,18 +967,18 @@ namespace iganet {
       : core<real_t>(),
 
         // Construct the different B-Spline objects individually
-        geo_(geo_bspline_ncoeffs, BSplineInit::greville),
-        rhs_(rhs_bspline_ncoeffs, BSplineInit::zeros),
-        bdr_(sol_bspline_ncoeffs, BSplineInit::zeros),
-        sol_(sol_bspline_ncoeffs, BSplineInit::random),
-        out_(sol_bspline_ncoeffs, BSplineInit::random),
+        geo_(geo_bspline_ncoeffs, init::greville),
+        rhs_(rhs_bspline_ncoeffs, init::zeros),
+        bdr_(sol_bspline_ncoeffs, init::zeros),
+        sol_(sol_bspline_ncoeffs, init::random),
+        out_(sol_bspline_ncoeffs, init::random),
 
         // Construct the deep neural network with the large tensor as
         // input and the coefficient vector of the solution's BSpline
         // object as output
-        net_(concat(std::vector<int64_t>{geo_.ncoeffs()+rhs_.ncoeffs()+bdr_.ncoeffs()},
+        net_(concat(std::vector<int64_t>{GeoDim*geo_.ncoeffs()+PdeDim*rhs_.ncoeffs()+PdeDim*bdr_.ncoeffs()},
                     layers,
-                    std::vector<int64_t>{sol_.ncoeffs()}
+                    std::vector<int64_t>{PdeDim*sol_.ncoeffs()}
                     ),
              activations),
 
@@ -1002,18 +1009,18 @@ namespace iganet {
       : core<real_t>(),
 
         // Construct the different B-Spline objects individually
-        geo_(geo_bspline_kv, BSplineInit::greville),
-        rhs_(rhs_bspline_kv, BSplineInit::zeros),
-        bdr_(sol_bspline_kv, BSplineInit::zeros),
-        sol_(sol_bspline_kv, BSplineInit::random),
-        out_(sol_bspline_kv, BSplineInit::random),
+        geo_(geo_bspline_kv, init::greville),
+        rhs_(rhs_bspline_kv, init::zeros),
+        bdr_(sol_bspline_kv, init::zeros),
+        sol_(sol_bspline_kv, init::random),
+        out_(sol_bspline_kv, init::random),
 
         // Construct the deep neural network with the large tensor as
         // input and the coefficient vector of the solution's BSpline
         // object as output
-        net_(concat(std::vector<int64_t>{geo_.ncoeffs()+rhs_.ncoeffs()+bdr_.ncoeffs()},
+        net_(concat(std::vector<int64_t>{GeoDim*geo_.ncoeffs()+PdeDim*rhs_.ncoeffs()+PdeDim*bdr_.ncoeffs()},
                     layers,
-                    std::vector<int64_t>{sol_.ncoeffs()}),
+                    std::vector<int64_t>{PdeDim*sol_.ncoeffs()}),
              activations),
         
         // Construct the optimizer
@@ -1123,23 +1130,30 @@ namespace iganet {
     /// faces. This behavior can be changed by overriding this virtual
     /// function in a derived class.
     virtual std::pair<std::array<torch::Tensor, parDim_>,
-                      std::array<std::array<torch::Tensor, parDim_>,Boundary_t::sides()>>
+                      typename std::conditional<parDim_ == 1,
+                                                std::array<torch::Tensor, Boundary_t::sides()>,
+                                                std::array<std::array<torch::Tensor, parDim_-1>,Boundary_t::sides()>>::type>
     get_samples() const
-    {
+    {      
       std::pair<std::array<torch::Tensor, parDim_>,
-                std::array<std::array<torch::Tensor, parDim_>,Boundary_t::sides()>> result;
-
+                typename std::conditional<parDim_ == 1,
+                                          std::array<torch::Tensor, Boundary_t::sides()>,
+                                          std::array<std::array<torch::Tensor, parDim_-1>,Boundary_t::sides()>>::type>
+        result;
+      
       // Get Greville abscissae inside the domain
       result.first = sol_.greville();
 
       // Get Greville abscissae at the boundary
       if constexpr (Boundary_t::sides() == side::east)
         {
+          // 1D
           result.second[0] = bdr_.template side<side::west>().greville();
           result.second[1] = bdr_.template side<side::east>().greville();
         }
       else if constexpr (Boundary_t::sides() == side::north)
         {
+          // 2D
           result.second[0] = bdr_.template side<side::west>().greville();
           result.second[1] = bdr_.template side<side::east>().greville();
           result.second[2] = bdr_.template side<side::south>().greville();
@@ -1147,6 +1161,7 @@ namespace iganet {
         }
       else if constexpr (Boundary_t::sides() == side::back)
         {
+          // 3D
           result.second[0] = bdr_.template side<side::west>().greville();
           result.second[1] = bdr_.template side<side::east>().greville();
           result.second[2] = bdr_.template side<side::south>().greville();
@@ -1156,6 +1171,7 @@ namespace iganet {
         }
       else if constexpr (Boundary_t::sides() == side::etime)
         {
+          // 4D
           result.second[0] = bdr_.template side<side::west>().greville();
           result.second[1] = bdr_.template side<side::east>().greville();
           result.second[2] = bdr_.template side<side::south>().greville();
@@ -1173,71 +1189,103 @@ namespace iganet {
       return result;
     }
 
+  private:
     /// @brief Updates the network inputs
-    virtual torch::Tensor get_inputs()
+    template<std::size_t... geoDimIs, std::size_t... pdeDimIs, std::size_t... bdrIs>
+    inline auto get_inputs(std::index_sequence<geoDimIs...>,
+                           std::index_sequence<pdeDimIs...>,
+                           std::index_sequence<bdrIs...>) const
+    {      
+      if constexpr (PdeDim == 1)
+        return torch::cat({
+            geo_.coeffs()[geoDimIs]...,
+            rhs_.coeffs()[pdeDimIs]...,
+            std::get<bdrIs>(bdr_.coeffs()).coeffs(0)...          
+          });
+      else if constexpr (PdeDim == 2)
+        return torch::cat({
+            geo_.coeffs()[geoDimIs]...,
+            rhs_.coeffs()[pdeDimIs]...,
+            std::get<bdrIs>(bdr_.coeffs()).coeffs(0)...,
+            std::get<bdrIs>(bdr_.coeffs()).coeffs(1)...          
+          });
+      else if constexpr (PdeDim == 3)
+        return torch::cat({
+            geo_.coeffs()[geoDimIs]...,
+            rhs_.coeffs()[pdeDimIs]...,
+            std::get<bdrIs>(bdr_.coeffs()).coeffs(0)...,
+            std::get<bdrIs>(bdr_.coeffs()).coeffs(1)...,
+            std::get<bdrIs>(bdr_.coeffs()).coeffs(2)...
+          });
+      else if constexpr (PdeDim == 4)
+        return torch::cat({
+            geo_.coeffs()[geoDimIs]...,
+            rhs_.coeffs()[pdeDimIs]...,
+            std::get<bdrIs>(bdr_.coeffs()).coeffs(0)...,
+            std::get<bdrIs>(bdr_.coeffs()).coeffs(1)...,
+            std::get<bdrIs>(bdr_.coeffs()).coeffs(2)...,
+            std::get<bdrIs>(bdr_.coeffs()).coeffs(3)...
+          });
+      else
+        throw std::runtime_error("Unsupported PDE dimension");
+    }
+
+  public:
+    /// @brief Updates the network inputs
+    virtual torch::Tensor get_inputs() const
     {
-      return torch::cat({
-          geo_.coeffs()[0].view({1,-1}).repeat({1,1}),
-          rhs_.coeffs()[0].view({1,-1}).repeat({1,1}),
-          bdr_.coeffs()[0].view({1,-1}).repeat({1,1}),
-          bdr_.coeffs()[1].view({1,-1}).repeat({1,1})
-        }, 1);
+      return get_inputs(std::make_index_sequence<GeoDim>(),
+                        std::make_index_sequence<PdeDim>(),
+                        std::make_index_sequence<Boundary_t::sides()>());     
     }
     
     /// @brief Updates object at the beginning of each epoch
     ///
     /// @note This functions is decleared pure virtual and needs to be
     /// overridden by the user in the derived problem-specific class
-    virtual IgaNetDataStatus get_epoch(int64_t epoch) const
+    virtual status get_epoch(int64_t epoch) const
     {
       return (epoch == 0
-              ? IgaNetDataStatus::bdr + IgaNetDataStatus::geo + IgaNetDataStatus::rhs
-              : IgaNetDataStatus(0));
+              ? status::bdr + status::geo + status::rhs
+              : status(0));
     }
-
-
     
     /// @brief Trains the IgANet
     virtual void train()
     {
+      // Get inputs
+      auto inputs = get_inputs();
+      
       // Get samples
       auto samples = get_samples();
 
       // Evaluate right-hand side
       auto rhs = rhs_.eval( samples.first );
       
-      // Get inputs
-      auto input = get_inputs();
-      
       for (int64_t epoch = 0; epoch != options_.max_epoch(); ++epoch)
         {
           // Update from user-defined callback function
-          get_epoch(epoch);
-
+          auto status = get_epoch(epoch);
+          
           // Reset gradients
           net_->zero_grad();    
 
-          // Execute the model on the input data
-          auto pred = net_->forward(input);
+          // Execute the model on the inputs
+          auto pred = net_->forward(inputs);
 
           // Evaluate solution
           auto out = out_.eval( samples.first );
-
-          //std::cout << pred << std::endl;
-          //std::cout << out << std::endl;
           
           // Compute the loss value
           auto loss_pde = torch::mse_loss( pred , rhs(0) );
-          std::cout << typeid(loss_pde).name() << std::endl;
-
           std::cout << "loss = " << loss_pde.template item<real_t>() << std::endl;
-
+          
           // Compute gradients of the loss w.r.t. the model parameters
           loss_pde.backward({}, true, false);
-
+          
           // Update the parameters based on the calculated gradients
           opt_.step();
-
+          
           if (loss_pde.template item<real_t>() < options_.min_loss())
             break;
         }
