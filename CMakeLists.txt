@@ -2,9 +2,9 @@
 # CMakeLists.txt
 #
 # Author: Matthias Moller
-# Copyright (C) 2021-2022 by the IgaNet authors
+# Copyright (C) 2021-2022 by the IgANet authors
 #
-# This file is part of the IgaNet project
+# This file is part of the IgANet project
 #
 # This Source Code Form is subject to the terms of the Mozilla Public
 # License, v. 2.0. If a copy of the MPL was not distributed with this
@@ -68,10 +68,10 @@ endif()
 
 ########################################################################
 #
-# Project: IgaNet
+# Project: IgANet
 #
 ########################################################################
-project(IgaNet)
+project(IgANet)
 
 if(${CMAKE_VERSION} VERSION_GREATER_EQUAL 3.24)
   cmake_policy(SET CMP0135 NEW)
