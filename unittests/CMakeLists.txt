@@ -57,10 +57,17 @@ foreach(unittest ${UNITTESTS})
   string(REPLACE ".cxx" "" name ${filename})
   add_executable(${name} ${filename})
   target_link_libraries(${name} PUBLIC "${TORCH_LIBRARIES}")
-  target_link_libraries(${name} PUBLIC Matplot++::matplot)
+
+  # SplineLib
   target_link_libraries(${name} PUBLIC pugixml)
   target_link_libraries(${name} PUBLIC splines)
+
+  # Google test
   target_link_libraries(${name} PUBLIC gtest_main)
+  
+  if (IGANET_WITH_MATPLOT)
+    target_link_libraries(${name} PUBLIC Matplot++::matplot)
+  endif()
   target_compile_definitions(${name} PUBLIC UNITTEST_DISABLE_SHORT_MACROS)
   add_test(${name} ${name})
 endforeach()

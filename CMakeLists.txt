@@ -17,8 +17,10 @@
 # IGANET_BUILD_PERFTESTS
 # IGANET_BUILD_PYBIND11
 # IGANET_BUILD_UNITTESTS
+# IGANET_BUILD_WEBAPPS
 #
 # IGANET_WITH_OPENMP
+# IGANET_WITH_MATPLOT
 #
 ########################################################################
 
@@ -90,13 +92,19 @@ option(IGANET_BUILD_EXAMPLES    "Build examples"            ON )
 option(IGANET_BUILD_PYBIND11    "Build Python bindings"     OFF)
 option(IGANET_BUILD_PERFTESTS   "Build perftests"           OFF)
 option(IGANET_BUILD_UNITTESTS   "Build unittests"           OFF)
+option(IGANET_BUILD_WEBAPPS     "Build WebApps"             OFF)
+option(IGANET_WITH_MATPLOT      "With Matplot"              ON )
 option(IGANET_WITH_OPENMP       "With OpenMP"               ON )
 
 ########################################################################
 # Prerequisites
 ########################################################################
-include(Matplot++)
 find_package(Torch REQUIRED)
+
+if (IGANET_WITH_MATPLOT)
+  include(Matplot++)
+  add_compile_definitions(WITH_MATPLOT)
+endif()
 
 ########################################################################
 # Enable OpenMP support
@@ -243,6 +251,7 @@ message("IGANET_BUILD_EXAMPLES..............: ${IGANET_BUILD_EXAMPLES}")
 message("IGANET_BUILD_PERFTESTS.............: ${IGANET_BUILD_PERFTESTS}")
 message("IGANET_BUILD_PYBIND11..............: ${IGANET_BUILD_PYBIND11}")
 message("IGANET_BUILD_UNITTESTS.............: ${IGANET_BUILD_UNITTESTS}")
+message("IGANET_BUILD_WEBAPPS...............: ${IGANET_BUILD_WEBAPPS}")
 
 message("")
 message("Features:")
@@ -282,4 +291,11 @@ endif()
 if (IGANET_BUILD_UNITTESTS)
   enable_testing()
   add_subdirectory(${PROJECT_SOURCE_DIR}/unittests)
+endif()
+
+########################################################################
+# Add WebApps (if enabled)
+########################################################################
+if (IGANET_BUILD_WEBAPPS)
+  add_subdirectory(${PROJECT_SOURCE_DIR}/webapps)
 endif()

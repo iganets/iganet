@@ -17,7 +17,10 @@
 #include <tuple>
 #include <vector>
 
+#ifdef WITH_MATPLOT
 #include <matplot/matplot.h>
+#endif
+
 #include <torch/torch.h>
 #include <torch/csrc/api/include/torch/types.h>
 

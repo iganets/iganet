@@ -24,4 +24,7 @@ FetchContent_MakeAvailable(pybind11)
 pybind11_add_module(pyiganet MODULE
   ${CMAKE_CURRENT_SOURCE_DIR}/bspline.cpp)
 target_link_libraries(pyiganet PUBLIC "${TORCH_LIBRARIES}")
-target_link_libraries(pyiganet PUBLIC Matplot++::matplot)
+  
+if (IGANET_WITH_MATPLOT)
+  target_link_libraries(${name} PUBLIC Matplot++::matplot)
+endif()
