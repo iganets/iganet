@@ -1,11 +1,11 @@
 /**
    @file examples/iganet.cxx
 
-   @brief Demonstration of the IgaNet class
+   @brief Demonstration of the IgANet class
 
    @author Matthias Moller
 
-   @copyright This file is part of the IgaNet project
+   @copyright This file is part of the IgANet project
 
    This Source Code Form is subject to the terms of the Mozilla Public
    License, v. 2.0. If a copy of the MPL was not distributed with this
@@ -15,6 +15,7 @@
 #include <iganet.hpp>
 #include <iostream>
 
+/// @brief IgANet for Poisson's equation
 template<typename real_t,
          typename optimizer_t,
          short_t GeoDim, short_t PdeDim,
@@ -25,10 +26,10 @@ class poisson : public iganet::IgANet<real_t, optimizer_t, GeoDim, PdeDim, bspli
 public:
   using iganet::IgANet<real_t, optimizer_t, GeoDim, PdeDim, bspline_t, Degrees...>::IgANet;
 
-  virtual iganet::IgaNetDataStatus get_epoch(int64_t epoch) const override
+  virtual iganet::status get_epoch(int64_t epoch) const override
   {
     std::cout << "Epoch " << std::to_string(epoch) << ": ";
-    return iganet::IgaNetDataStatus(0);
+    return iganet::status(0);
   }
 };
 
@@ -43,21 +44,23 @@ int main()
   iganet::verbose(std::cout);
   
   {
-    poisson<real_t, optimizer_t, 1, 1, iganet::UniformBSpline,
-            2> net({100,100}, // Number of neurons per layers
-                   {
-                     {iganet::activation::relu},
-                     {iganet::activation::relu},
-                     {iganet::activation::none}
-                   },         // Activation functions
-                   {5});      // Number of B-spline coefficients
+    poisson<real_t, optimizer_t,
+            /* geoDim*/ 2, /* pdeDim*/ 1,
+            iganet::UniformBSpline, 2, 2> net({100,100}, // Number of neurons per layers
+                     {
+                       {iganet::activation::relu},
+                       {iganet::activation::relu},
+                       {iganet::activation::none}
+                     },         // Activation functions
+                     {5,5});    // Number of B-spline coefficients
+    
+    // Set rhs to (x[0], x[1])
+    net.rhs().transform( [](const std::array<real_t,2> X){ return std::array<real_t,1>{ static_cast<real_t>( X[0] ) *
+                                                                                        static_cast<real_t>( X[1] )}; } );
 
-    // Set rhs to x
-    net.rhs().transform( [](const std::array<real_t,1> X){ return std::array<real_t,1>{ static_cast<real_t>( X[0] ) }; } );
-
-    // Set left boundary value to 0
-    net.bdr().coeffs()[0].accessor<real_t,1>()[0] = 0;
-    net.bdr().coeffs()[1].accessor<real_t,1>()[0] = 1;
+    // Set left boundary value to 0 and right boundary value to 1
+    //std::get<0>(net.bdr().coeffs()).coeffs(0).accessor<real_t,1>()[0] = 0;
+    //std::get<1>(net.bdr().coeffs()).coeffs(0).accessor<real_t,1>()[0] =  1;
 
     net.options().max_epoch(1000);
     net.options().min_loss(1e-8);
