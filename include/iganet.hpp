@@ -13,8 +13,8 @@
 */
 
 #include <boundary.hpp>
-#include <bspline.hpp>
 #include <creator.hpp>
+#include <functionspace.hpp>
 #include <layer.hpp>
 #include <zip.hpp>
 #include <any>
@@ -36,12 +36,6 @@ namespace iganet {
   {
     return status(static_cast<short_t>(lhs)+static_cast<short_t>(rhs));
   }
-
-  /// @brief Enumerator for the approximation spaces
-  enum class space
-    {
-      
-    };
   
   /// @brief IgANetOptions
   struct IgANetOptions
