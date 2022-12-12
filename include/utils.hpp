@@ -12,6 +12,8 @@
    file, You can obtain one at http://mozilla.org/MPL/2.0/.
 */
 
+#include <json.hpp>
+
 #pragma once
 
 namespace iganet {
@@ -405,5 +407,76 @@ namespace iganet {
                          to_tensor(list3, torch::IntArrayRef{-1}, options)});
   }
   /// @}
+
+  /// @brief Converts a torch::Tensor object to a
+  /// torch::TensorAccessor object
+  template<typename T, std::size_t N>
+  auto to_tensorAccessor(const torch::Tensor& tensor) {
+    return tensor.template accessor<T, N>();
+  }
+
+  namespace detail {
+    /// @brief Converts an std::array of torch::Tensor objects to an
+    /// array of torch::TensorAccessor objects
+    template<typename T, std::size_t N, std::size_t... Is>
+    auto to_tensorAccessor(const std::array<torch::Tensor, sizeof...(Is)>& tensors,
+                           std::index_sequence<Is...>) {
+      return std::array<torch::TensorAccessor<T, N>, sizeof...(Is)>{tensors[Is].template accessor<T, N>()...};
+    }
+  } // namespace detail
+  
+  /// @brief Converts an std::array of torch::Tensor objects to an
+  /// array of torch::TensorAccessor objects
+  template<typename T, std::size_t N, std::size_t M>
+  auto to_tensorAccessor(const std::array<torch::Tensor, M>& tensors) {
+    return detail::to_tensorAccessor<T, N>(tensors, std::make_index_sequence<M>());
+  }
+    
+  /// @brief Converts a torch::TensorAccessor object to a JSON object
+  template<typename T, std::size_t N>
+  auto to_json(const torch::TensorAccessor<T, N>& accessor)
+  {
+    auto json = nlohmann::json::array();
+
+    if constexpr (N == 1) {
+      for (int64_t i = 0; i < accessor.size(0); ++i)
+        json.push_back(accessor[i]);
+    } else if constexpr (N == 2) {
+      for (int64_t i = 0; i < accessor.size(0); ++i)
+        for (int64_t j = 0; j < accessor.size(1); ++j)
+          json.push_back(accessor[i][j]);
+    } else if constexpr (N == 3) {
+      for (int64_t i = 0; i < accessor.size(0); ++i)
+        for (int64_t j = 0; j < accessor.size(1); ++j)
+          for (int64_t k = 0; k < accessor.size(2); ++k)
+            json.push_back(accessor[i][j][k]);
+    } else if constexpr (N == 4) {
+      for (int64_t i = 0; i < accessor.size(0); ++i)
+        for (int64_t j = 0; j < accessor.size(1); ++j)
+          for (int64_t k = 0; k < accessor.size(2); ++k)
+            for (int64_t l = 0; l < accessor.size(3); ++l)
+              json.push_back(accessor[i][j][k][l]);
+    }
+    
+    return json;
+  }
+
+  /// @brief Converts a torch::Tensor object to a JSON object
+  template<typename T, std::size_t N>
+  auto to_json(const torch::Tensor& tensor) {
+    auto accessor = to_tensorAccessor<T, N>(tensor);       
+    return ::iganet::to_json(accessor);
+  }
+
+  /// @brief Converts an std::array of torch::Tensor objects to a JSON
+  /// object
+  template<typename T, std::size_t N, std::size_t M>
+  auto to_json(const std::array<torch::Tensor, M>& tensors) {
+    auto accessors = to_tensorAccessor<T, N>(tensors);
+    auto json = nlohmann::json::array();
+    for (std::size_t i = 0; i < M; ++i)
+      json.push_back(::iganet::to_json<T, N>(accessors[i]));
+    return json;
+  }
   
 } // namespace iganet
