@@ -375,23 +375,23 @@ namespace iganet {
     /// \f$\left(p_d\right)_{d=1}^{d_\text{par}}\f$
     static constexpr const std::array<short_t, parDim_> degrees_ = {Degrees...};
 
-    /// @brief Array storing the knot vectors
-    /// \f$\left(\left(t_{i_d}\right)_{i_d=1}^{n_d+p_d+1}\right)_{d=1}^{d_\text{par}}\f$
-    std::array<torch::Tensor, parDim_> knots_;
-
     /// @brief Array storing the sizes of the knot vectors
     /// \f$\left(n_d+p_d+1\right)_{d=1}^{d_\text{par}}\f$
     std::array<int64_t, parDim_> nknots_;
 
+    /// @brief Array storing the sizes of the coefficients of the
+    /// control net \f$\left(n_d\right)_{d=1}^{d_\text{par}}\f$
+    std::array<int64_t, parDim_> ncoeffs_;
+    
+    /// @brief Array storing the knot vectors
+    /// \f$\left(\left(t_{i_d}\right)_{i_d=1}^{n_d+p_d+1}\right)_{d=1}^{d_\text{par}}\f$
+    std::array<torch::Tensor, parDim_> knots_;
+   
     /// @brief Array storing the coefficients of the control net
     /// \f$\left(\mathbf{c}_{i_d}\right)_{i_d=1}^{n_d}\f$,
     /// \f$\mathbf{c}_{i_d}\in\mathbb{R}^{d_\text{geo}}\f$
     std::array<torch::Tensor, geoDim_> coeffs_;
-
-    /// @brief Array storing the sizes of the coefficients of the
-    /// control net \f$\left(n_d\right)_{d=1}^{d_\text{par}}\f$
-    std::array<int64_t, parDim_> ncoeffs_;
-
+    
   public:
     using value_type = real_t;
     
@@ -579,12 +579,12 @@ namespace iganet {
           for (short_t j = 0; j < parDim_; ++j) {
             if (i == j) {
               auto greville_ = torch::zeros(ncoeffs_[j], core<real_t>::options_);
-              auto greville = greville_.template accessor<real_t, 1>();
-              auto knots = knots_[j].template accessor<real_t, 1>();
+              auto greville_accessor = greville_.template accessor<real_t, 1>();
+              auto knots_accessor = knots_[j].template accessor<real_t, 1>();
               for (int64_t k = 0; k < ncoeffs_[j]; ++k) {
                 for (short_t l = 1; l <= degrees_[j]; ++l)
-                  greville[k] += knots[k + l];
-                greville[k] /= degrees_[j];
+                  greville_accessor[k] += knots_accessor[k + l];
+                greville_accessor[k] /= degrees_[j];
               }
               coeffs[i] = torch::kron(greville_, coeffs[i]);
             } else
@@ -1287,8 +1287,56 @@ namespace iganet {
       return *this;
     }
 
+    /// @brief Returns the B-spline object as JSON object
+    inline nlohmann::json to_json() const
+    {
+      nlohmann::json data;
+      data["degrees"] = degrees_;
+      data["geoDim"]  = geoDim_;
+      data["parDim"]  = parDim_;
+      data["ncoeffs"] = ncoeffs_;
+      data["nknots"]  = nknots_;      
+      data["knots"]   = ::iganet::to_json<real_t,1>(knots_);
+      
+      auto coeffs_json = nlohmann::json::array();      
+      for (short_t g = 0; g < geoDim_; ++g) {
+        auto coeffs_accessor = coeffs_[g].template accessor<real_t, 1>();
+
+        auto json = nlohmann::json::array();
+        if constexpr (parDim_ == 1) {
+          for (int64_t i = 0; i < ncoeffs(); ++i)
+            json.push_back(coeffs_accessor[i]);
+        } else if constexpr (parDim_ == 2) {
+          for (int64_t j = 0; j < ncoeffs_[1]; ++j)
+            for (int64_t i = 0; i < ncoeffs_[0]; ++i)
+              json.push_back(coeffs_accessor[i * ncoeffs_[1] + j]);
+        } else if constexpr (parDim_ == 3) {
+          for (int64_t k = 0; k < ncoeffs_[2]; ++k)
+            for (int64_t j = 0; j < ncoeffs_[1]; ++j)
+              for (int64_t i = 0; i < ncoeffs_[0]; ++i)
+                json.push_back(coeffs_accessor[i * ncoeffs_[1] * ncoeffs_[2] +
+                                               j * ncoeffs_[1] + k]);
+        } else if constexpr (parDim_ == 4) {
+          for (int64_t l = 0; l < ncoeffs_[3]; ++l)
+            for (int64_t k = 0; k < ncoeffs_[2]; ++k)
+              for (int64_t j = 0; j < ncoeffs_[1]; ++j)
+                for (int64_t i = 0; i < ncoeffs_[0]; ++i)
+                  json.push_back(coeffs_accessor[i * ncoeffs_[1] * ncoeffs_[2] * ncoeffs_[3] +
+                                                 j * ncoeffs_[1] * ncoeffs_[2] +
+                                                 k * ncoeffs_[1] + l]);
+        } else {
+          throw std::runtime_error("Unsupported parametric dimension");
+        }
+        
+        coeffs_json.push_back(json);
+      }
+      data["coeffs"] = coeffs_json;
+      
+      return data;
+    }
+    
     /// @brief Returns the B-spline object as XML string
-    std::string to_xml() const
+    inline std::string to_xml() const
     {
       std::stringstream ss;
 
@@ -1301,9 +1349,9 @@ namespace iganet {
         ss << " <Geometry type=\"BSpline\">\n"
            << "  <Basis type=\"BSplineBasis\">\n"
            << "   <KnotVector degree=\"" << degrees_[0] << "\">";
-        auto knots = knots_[0].template accessor<real_t, 1>();
+        auto knots_accessor = knots_[0].template accessor<real_t, 1>();
         for (int64_t i = 0; i < nknots_[0]; ++i)
-          ss << knots[i] << " ";
+          ss << knots_accessor[i] << " ";
         ss << "</KnotVector>\n"
            << "  </Basis>\n";
       }
@@ -1315,9 +1363,9 @@ namespace iganet {
         for (short_t i = 0; i < parDim_; ++i) {
           ss << "   <Basis type=\"BSplineBasis\" index=\"" << i << "\">\n"
              << "    <KnotVector degree=\"" << degrees_[i] << "\">";
-          auto knots = knots_[i].template accessor<real_t, 1>();
+          auto knots_accessor = knots_[i].template accessor<real_t, 1>();
           for (int64_t j = 0; j < nknots_[i]; ++j)
-            ss << knots[j] << " ";
+            ss << knots_accessor[j] << " ";
           ss << "</KnotVector>\n"
              << "   </Basis>\n";
         }
@@ -1327,100 +1375,49 @@ namespace iganet {
       // Write coefficients
       ss << "  <coefs geoDim=\"" << geoDim_ << "\">\n";
 
-      // 1D geometric dimension
-      if constexpr (geoDim_ == 1) {
-        auto coeffs0 = coeffs_[0].template accessor<real_t, 1>();
-        for (int64_t i = 0; i < ncoeffs(); ++i)
-          ss << "   " << coeffs() << "\n";
-      }
-
-        // 2D geometric dimension
-      else if constexpr (geoDim_ == 2) {
-        auto coeffs0 = coeffs_[0].template accessor<real_t, 1>();
-        auto coeffs1 = coeffs_[1].template accessor<real_t, 1>();
-        if constexpr (parDim_ == 1) {
-          for (int64_t i = 0; i < ncoeffs(); ++i)
-            ss << "   " << coeffs() << "\n";
-        } else if constexpr (parDim_ == 2) {
-          for (int64_t j = 0; j < ncoeffs_[1]; ++j)
-            for (int64_t i = 0; i < ncoeffs_[0]; ++i)
-              ss << "   " << coeffs0[i * ncoeffs_[1] + j]
-                 << " " << coeffs1[i * ncoeffs_[1] + j] << "\n";
-        } else if constexpr (parDim_ == 3) {
-          for (int64_t k = 0; k < ncoeffs_[2]; ++k)
-            for (int64_t j = 0; j < ncoeffs_[1]; ++j)
-              for (int64_t i = 0; i < ncoeffs_[0]; ++i)
-                ss << "   " << coeffs0[i * ncoeffs_[1] * ncoeffs_[2] + j * ncoeffs_[1] + k]
-                   << " " << coeffs1[i * ncoeffs_[1] * ncoeffs_[2] + j * ncoeffs_[1] + k] << "\n";
+      std::array<torch::TensorAccessor<real_t, 1>, geoDim_> coeffs_accessors = to_tensorAccessor<real_t,1>(coeffs_);
+      
+      if constexpr (parDim_ == 1) {
+        for (int64_t i = 0; i < ncoeffs(); ++i) {
+          ss << " " << coeffs() << "\n";
         }
-      }
-
-        // 3D geometric dimension
-      else if constexpr (geoDim_ == 3) {
-        auto coeffs0 = coeffs_[0].template accessor<real_t, 1>();
-        auto coeffs1 = coeffs_[1].template accessor<real_t, 1>();
-        auto coeffs2 = coeffs_[2].template accessor<real_t, 1>();
-        if constexpr (parDim_ == 1) {
-          for (int64_t i = 0; i < ncoeffs(); ++i)
-            ss << "   " << coeffs() << "\n";
-        } else if constexpr (parDim_ == 2) {
-          for (int64_t j = 0; j < ncoeffs_[1]; ++j)
-            for (int64_t i = 0; i < ncoeffs_[0]; ++i)
-              ss << "   " << coeffs0[i * ncoeffs_[1] + j]
-                 << " " << coeffs1[i * ncoeffs_[1] + j]
-                 << " " << coeffs2[i * ncoeffs_[1] + j] << "\n";
-        } else if constexpr (parDim_ == 3) {
-          for (int64_t k = 0; k < ncoeffs_[2]; ++k)
-            for (int64_t j = 0; j < ncoeffs_[1]; ++j)
-              for (int64_t i = 0; i < ncoeffs_[0]; ++i)
-                ss << "   " << coeffs0[i * ncoeffs_[1] * ncoeffs_[2] + j * ncoeffs_[1] + k]
-                   << " " << coeffs1[i * ncoeffs_[1] * ncoeffs_[2] + j * ncoeffs_[1] + k]
-                   << " " << coeffs2[i * ncoeffs_[1] * ncoeffs_[2] + j * ncoeffs_[1] + k] << "\n";
+      } else if constexpr (parDim_ == 2) {
+        for (int64_t j = 0; j < ncoeffs_[1]; ++j) {
+          for (int64_t i = 0; i < ncoeffs_[0]; ++i) {
+            for (short_t g = 0; g < geoDim_; ++g)
+              ss << "  " << coeffs_accessors[g][i * ncoeffs_[1] + j];
+            ss << "\n";
+          }
         }
-      }
-
-        // 4D geometric dimension
-      else if constexpr (geoDim_ == 4) {
-        auto coeffs0 = coeffs_[0].template accessor<real_t, 1>();
-        auto coeffs1 = coeffs_[1].template accessor<real_t, 1>();
-        auto coeffs2 = coeffs_[2].template accessor<real_t, 1>();
-        auto coeffs3 = coeffs_[3].template accessor<real_t, 1>();
-        if constexpr (parDim_ == 1) {
-          for (int64_t i = 0; i < ncoeffs(); ++i)
-            ss << "   " << coeffs() << "\n";
-        } else if constexpr (parDim_ == 2) {
-          for (int64_t j = 0; j < ncoeffs_[1]; ++j)
-            for (int64_t i = 0; i < ncoeffs_[0]; ++i)
-              ss << "   " << coeffs0[i * ncoeffs_[1] + j]
-                 << " " << coeffs1[i * ncoeffs_[1] + j]
-                 << " " << coeffs2[i * ncoeffs_[1] + j]
-                 << " " << coeffs3[i * ncoeffs_[1] + j] << "\n";
-        } else if constexpr (parDim_ == 3) {
-          for (int64_t k = 0; k < ncoeffs_[2]; ++k)
-            for (int64_t j = 0; j < ncoeffs_[1]; ++j)
-              for (int64_t i = 0; i < ncoeffs_[0]; ++i)
-                ss << "   " << coeffs0[i * ncoeffs_[1] * ncoeffs_[2] + j * ncoeffs_[1] + k]
-                   << " " << coeffs1[i * ncoeffs_[1] * ncoeffs_[2] + j * ncoeffs_[1] + k]
-                   << " " << coeffs2[i * ncoeffs_[1] * ncoeffs_[2] + j * ncoeffs_[1] + k]
-                   << " " << coeffs3[i * ncoeffs_[1] * ncoeffs_[2] + j * ncoeffs_[1] + k] << "\n";
-        } else if constexpr (parDim_ == 4) {
-          for (int64_t l = 0; l < ncoeffs_[3]; ++l)
-            for (int64_t k = 0; k < ncoeffs_[2]; ++k)
-              for (int64_t j = 0; j < ncoeffs_[1]; ++j)
-                for (int64_t i = 0; i < ncoeffs_[0]; ++i)
-                  ss << "   " << coeffs0[i * ncoeffs_[1] * ncoeffs_[2] * ncoeffs_[3] + j * ncoeffs_[1] * ncoeffs_[2] +
-                                         k * ncoeffs_[1] + l]
-                     << " " << coeffs1[i * ncoeffs_[1] * ncoeffs_[2] * ncoeffs_[3] + j * ncoeffs_[1] * ncoeffs_[2] +
-                                       k * ncoeffs_[1] + l]
-                     << " " << coeffs2[i * ncoeffs_[1] * ncoeffs_[2] * ncoeffs_[3] + j * ncoeffs_[1] * ncoeffs_[2] +
-                                       k * ncoeffs_[1] + l]
-                     << " " << coeffs3[i * ncoeffs_[1] * ncoeffs_[2] * ncoeffs_[3] + j * ncoeffs_[1] * ncoeffs_[2] +
-                                       k * ncoeffs_[1] + l] << "\n";
+      } else if constexpr (parDim_ == 3) {
+        for (int64_t k = 0; k < ncoeffs_[2]; ++k) {
+          for (int64_t j = 0; j < ncoeffs_[1]; ++j) {
+            for (int64_t i = 0; i < ncoeffs_[0]; ++i) {
+              for (short_t g = 0; g < geoDim_; ++g)
+                ss << " " << coeffs_accessors[g][i * ncoeffs_[1] * ncoeffs_[2] +
+                                                 j * ncoeffs_[1] + k];
+              ss << "\n";
+            }
+          }
+        }
+      } else if constexpr (parDim_ == 4) {
+        for (int64_t l = 0; l < ncoeffs_[3]; ++l) {
+          for (int64_t k = 0; k < ncoeffs_[2]; ++k) {
+            for (int64_t j = 0; j < ncoeffs_[1]; ++j) {
+              for (int64_t i = 0; i < ncoeffs_[0]; ++i) {
+                for (short_t g = 0; g < geoDim_; ++g)
+                  ss << "  " << coeffs_accessors[g][i * ncoeffs_[1] * ncoeffs_[2] * ncoeffs_[3] +
+                                                    j * ncoeffs_[1] * ncoeffs_[2] +
+                                                    k * ncoeffs_[1] + l];
+                ss << "\n";
+              }
+            }
+          }
         }
       } else {
         throw std::runtime_error("Unsupported parametric dimension");
       }
-
+      
       ss << "  </coefs>\n"
          << " </Geometry>\n"
          << "</xml>\n";
@@ -3184,17 +3181,18 @@ namespace iganet {
       return jac(xi, idx, coeff_idx) * G.jac(xi, idx_G, coeff_idx_G).ginv();
     }  
     
-    /// Plots the B-spline object using matplotlibcpp
+    /// Plots the B-spline object
     inline auto plot(int64_t res0=10, int64_t res1=10, int64_t res2=10) const
     {
       return plot(*this, res0, res1, res2);
     }
 
-    /// Plots the B-spline object using matplotlibcpp
+    /// Plots the B-spline object
     template<typename BSplineCore_t>
     inline auto plot(const BSplineCommon<real_t, BSplineCore_t>& color,
                      int64_t res0=10, int64_t res1=10, int64_t res2=10) const
     {
+#ifdef WITH_MATPLOT
       static_assert(BSplineCore::parDim() == BSplineCore_t::parDim(),
                     "Parametric dimensions must match");
 
@@ -3545,6 +3543,9 @@ namespace iganet {
 
       else
         throw std::runtime_error("Unsupported combination of parametric/geometric dimensions");
+#else
+      throw std::runtime_error("This functions must be compiled with -DWITH_MATPLOT turned on");
+#endif
     }
 
     /// Returns a string representation of the BSplineCommon object
@@ -3593,26 +3594,26 @@ namespace iganet {
   };
 
   /// Tensor-product uniform B-spline
-  template<typename real_t, short_t geoDim, short_t... Degrees>
-  using UniformBSpline = BSplineCommon<real_t, UniformBSplineCore<real_t, geoDim, Degrees...>>;
+  template<typename real_t, short_t GeoDim, short_t... Degrees>
+  using UniformBSpline = BSplineCommon<real_t, UniformBSplineCore<real_t, GeoDim, Degrees...>>;
 
   /// Print (as string) a UniformBSpline object
-  template<typename real_t, short_t geoDim, short_t... Degrees>
+  template<typename real_t, short_t GeoDim, short_t... Degrees>
   inline std::ostream& operator<<(std::ostream& os,
-                                  const UniformBSpline<real_t, geoDim, Degrees...>& obj)
+                                  const UniformBSpline<real_t, GeoDim, Degrees...>& obj)
   {
     obj.pretty_print(os);
     return os;
   }
 
   /// Tensor-product non-uniform B-spline
-  template<typename real_t, short_t geoDim, short_t... Degrees>
-  using NonUniformBSpline = BSplineCommon<real_t, NonUniformBSplineCore<real_t, geoDim, Degrees...>>;
+  template<typename real_t, short_t GeoDim, short_t... Degrees>
+  using NonUniformBSpline = BSplineCommon<real_t, NonUniformBSplineCore<real_t, GeoDim, Degrees...>>;
 
   /// Print (as string) a UniformBSpline object
-  template<typename real_t, short_t geoDim, short_t... Degrees>
+  template<typename real_t, short_t GeoDim, short_t... Degrees>
   inline std::ostream& operator<<(std::ostream& os,
-                                  const NonUniformBSpline<real_t, geoDim, Degrees...>& obj)
+                                  const NonUniformBSpline<real_t, GeoDim, Degrees...>& obj)
   {
     obj.pretty_print(os);
     return os;
