@@ -1,28 +1,36 @@
+/**
+   @file examples/demo.cxx
+
+   @brief Demonstrator application
+
+   @author Matthias Moller
+
+   @copyright This file is part of the IgANet project
+
+   This Source Code Form is subject to the terms of the Mozilla Public
+   License, v. 2.0. If a copy of the MPL was not distributed with this
+   file, You can obtain one at http://mozilla.org/MPL/2.0/.
+*/
+
+#include <iganet.hpp>
+#include <iostream>
+
+
 #include <iganet.hpp>
 #include <iostream>
 
 int main()
 {
-  std::cout << iganet::verbose;
+  //std::cout << iganet::verbose;
   using real_t = double;
   iganet::init();
 
-  std::array<torch::Tensor, 1> coeffs = {5*torch::ones({6})};
-  
-  // Univariate uniform B-spline of degree 2 with 6 control points in R^1
-  iganet::UniformBSpline<real_t,1,2> a({6}), b(std::move(a), std::array<torch::Tensor, 1>{5*torch::ones({6})} );
+  iganet::RT3<double, iganet::UniformBSpline, 2> S( {{10,10,10}}, {{15,15,15}}, {{5,5,5}}, {{10,10,10}} );
 
-  // Print information
-  std::cout << a << std::endl;
-  std::cout << b << std::endl;
-  
-  // Map control points to phyiscal coordinates
-  a.transform( [](const std::array<real_t,1> xi){ return std::array<real_t,1>{ xi[0]*xi[0] }; } );
-  b.transform( [](const std::array<real_t,1> xi){ return std::array<real_t,1>{ xi[0]*10 }; } );
-  
-  // Print information
-  std::cout << a << std::endl;
-  std::cout << b << std::endl;  
-  
+  std::cout << std::get<0>(S) << std::endl;
+  std::cout << std::get<1>(S) << std::endl;
+  std::cout << std::get<2>(S) << std::endl;
+  std::cout << std::get<3>(S) << std::endl;
+    
   return 0;
 }
