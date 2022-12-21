@@ -15,22 +15,35 @@
 #include <iganet.hpp>
 #include <iostream>
 
-
-#include <iganet.hpp>
-#include <iostream>
-
 int main()
 {
-  //std::cout << iganet::verbose;
+  std::cout << iganet::verbose;
   using real_t = double;
   iganet::init();
+  
+  //  iganet::FunctionSpace< iganet::UniformBSpline<real_t, 1, 2, 3, 1>,
+  //                         iganet::UniformBSpline<real_t, 1, 2, 3> > S( {{10,20, 15}}, {{10,20}} );
+  
+  //  std::cout << S << std::endl;
+  
+  iganet::UniformBSpline<real_t, 3, 2, 2> S({20,20});
 
-  iganet::RT3<double, iganet::UniformBSpline, 2> S( {{10,10,10}}, {{15,15,15}}, {{5,5,5}}, {{10,10,10}} );
+  // Map control points to phyiscal coordinates
+  S.transform( [](const std::array<real_t,2> xi){ return std::array<real_t,3>{ xi[0]*xi[0], xi[0], 2*xi[0] }; } );
 
-  std::cout << std::get<0>(S) << std::endl;
-  std::cout << std::get<1>(S) << std::endl;
-  std::cout << std::get<2>(S) << std::endl;
-  std::cout << std::get<3>(S) << std::endl;
-    
+  // Print B-spline
+  std::cout << S.eval( iganet::to_tensorArray<real_t>({0.0, 0.5, 1.0, 0.2},
+                                                      {0.0, 0.5, 0.5, 0.2}) ) << std::endl;
+  //std::cout << S << std::endl;
+
+  // Plot B-spline
+  //S.plot(50);
+
+  //S.insert_knots( iganet::to_tensorArray<real_t>({0.5, 0.1, 0.3}) );
+  //S.uniformRefine(3);
+
+  // Print B-spline
+  std::cout << S << std::endl;
+  
   return 0;
 }
