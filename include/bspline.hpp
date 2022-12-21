@@ -358,10 +358,10 @@ namespace iganet {
   /// matrices, and tensors are implemented as `torch::Tensor`
   /// objects and hence adopt Torch's local-to-global mapping. It is
   /// therefore imperative to always use Torch's indexing
-  /// functionality to extract sub-tensors.
-  
+  /// functionality to extract sub-tensors. 
   template<typename real_t, short_t GeoDim, short_t... Degrees>
-  class UniformBSplineCore : public core<real_t> {
+  class UniformBSplineCore : public core<real_t>
+  {
   protected:
     /// @brief Dimension of the parametric space
     /// \f$\hat\Omega=[0,1]^{d_\text{par}}\f$
@@ -393,11 +393,34 @@ namespace iganet {
     std::array<torch::Tensor, geoDim_> coeffs_;
     
   public:
+    /// @brief Value type
     using value_type = real_t;
+
+    /// @brief Deduces the type of the template template parameter `T`
+    /// when exposed to the class template parameters `real_t` and
+    /// `GeoDim`, and the `Degrees` parameter pack. The optional
+    /// template parameter `degree_elevate` can be used to
+    /// (de-)elevate the degrees by an additive constant
+    template<template<typename, short_t, short_t...> class T,
+             std::make_signed<short_t>::type degree_elevate = 0>
+    using deduce_type_t = T<real_t, GeoDim, (Degrees+degree_elevate)...>;
+    
+    /// @brief Deduces the self-type possibly degrees (de-)elevated by
+    /// the additive constant `degree_elevate`
+    template<std::make_signed<short_t>::type degree_elevate = 0>
+    using self_type_t = deduce_type_t<UniformBSplineCore, degree_elevate>;
+
+    /// @brief Deduces the derived self-type when exposed to different
+    /// class template parameters `real_t` and `GeoDim`, and the
+    /// `Degrees` parameter pack
+    template<typename real_t_, short_t GeoDim_, short_t... Degrees_>
+    using derived_self_type_t = UniformBSplineCore<real_t_, GeoDim_, Degrees_...>;
     
     /// @brief Default constructor
     UniformBSplineCore()
-        : core<real_t>() {}
+      : core<real_t>(),
+        nknots_({0}),
+        ncoeffs_({0}) {}
 
     /// @brief Constructor for equidistant knot vectors
     UniformBSplineCore(const std::array<int64_t, parDim_>& ncoeffs,
@@ -691,7 +714,7 @@ namespace iganet {
       if constexpr (parDim_ == 0)
         return coeffs_[0];
       else
-        return eval<deriv>(xi, eval_knot_indices(xi));
+        return eval<deriv>(xi, find_knot_indices(xi));
     }
     /// @}
     
@@ -1024,7 +1047,7 @@ namespace iganet {
     /// The indices are returned as `std::array<torch::Tensor,
     /// parDim_>` in the same order as provided in `xi`
     /// @{
-    inline auto eval_knot_indices(const TensorArray1& xi) const
+    inline auto find_knot_indices(const TensorArray1& xi) const
     {
       assert(parDim_ == 1);
       return TensorArray1({
@@ -1033,7 +1056,7 @@ namespace iganet {
         });
     }
       
-    inline auto eval_knot_indices(const TensorArray2& xi) const
+    inline auto find_knot_indices(const TensorArray2& xi) const
     {
       assert(parDim_ == 2);
       return TensorArray2({
@@ -1044,7 +1067,7 @@ namespace iganet {
         });
     }
 
-    inline auto eval_knot_indices(const TensorArray3& xi) const
+    inline auto find_knot_indices(const TensorArray3& xi) const
     {
       assert(parDim_ == 3);
       return TensorArray3({
@@ -1057,7 +1080,7 @@ namespace iganet {
         });
     }
 
-    inline auto eval_knot_indices(const TensorArray4& xi) const
+    inline auto find_knot_indices(const TensorArray4& xi) const
     {
       assert(parDim_ == 4);
       return TensorArray4({
@@ -1124,7 +1147,7 @@ namespace iganet {
       if constexpr (parDim_ == 0)
                      return torch::ones_like(coeffs_[0]);
       else
-        return eval_basfunc<deriv>(xi, eval_knot_indices(xi));
+        return eval_basfunc<deriv>(xi, find_knot_indices(xi));
     }
     
     template<deriv deriv = deriv::func>
@@ -1537,6 +1560,87 @@ namespace iganet {
       return !(*this==other); // Do not change this to (*this != other) is it does not work
     }
 
+    /// @brief Returns the B-spline object with uniformly refined knot
+    /// and coefficient vectors
+    ///
+    /// If `dim = -1`, new knot values are inserted uniformly in each
+    /// knot span in all spatial dimensions. Otherwise, i.e., `dim !=
+    /// -1` new knots are only inserted in the specified dimension.    
+    UniformBSplineCore& uniformRefine(int numRefine = 1, int dim = -1)
+    {
+      assert(numRefine > 0);
+      assert(dim == -1 || (dim >= 0 && dim < parDim_));
+      
+      // Update number of knots and coefficients
+      for (short_t refine = 0; refine < numRefine; ++refine) {       
+        if (dim == -1)
+          for (short_t i = 0; i < parDim_; ++i) {
+            ncoeffs_[i] += nknots_[i]-2*degrees_[i]-1; // must be done first
+            nknots_[i]  += nknots_[i]-2*degrees_[i]-1;
+          }
+        else {
+          ncoeffs_[dim] += nknots_[dim]-2*degrees_[dim]-1; // must be done first
+          nknots_[dim]  += nknots_[dim]-2*degrees_[dim]-1;
+        }
+      }
+
+      // Update knot vectors
+      std::array<torch::Tensor, parDim_> knots;
+      
+      if (dim == -1)
+        for (short_t i = 0; i < parDim_; ++i) {
+          std::vector<real_t> kv;
+          
+          for (int64_t j = 0; j < degrees_[i]; ++j)
+            kv.push_back(static_cast<real_t>(0));
+          
+          for (int64_t j = 0; j < ncoeffs_[i] - degrees_[i] + 1; ++j)
+            kv.push_back(static_cast<real_t>(j / real_t(ncoeffs_[i] - degrees_[i])));
+          
+          for (int64_t j = 0; j < degrees_[i]; ++j)
+            kv.push_back(static_cast<real_t>(1));
+          
+          if (core<real_t>::options_.device() == torch::kCPU)
+            knots[i] = torch::from_blob(static_cast<real_t *>(kv.data()),
+                                        kv.size(), core<real_t>::options_).clone();
+          else
+            knots[i] = torch::from_blob(static_cast<real_t *>(kv.data()),
+                                        kv.size(), core<real_t>::options_.device(torch::kCPU))
+              .to(core<real_t>::options_.device());
+        }
+      else {
+        std::vector<real_t> kv;
+        
+        for (int64_t j = 0; j < degrees_[dim]; ++j)
+          kv.push_back(static_cast<real_t>(0));
+        
+        for (int64_t j = 0; j < ncoeffs_[dim] - degrees_[dim] + 1; ++j)
+          kv.push_back(static_cast<real_t>(j / real_t(ncoeffs_[dim] - degrees_[dim])));
+        
+        for (int64_t j = 0; j < degrees_[dim]; ++j)
+          kv.push_back(static_cast<real_t>(1));
+        
+        if (core<real_t>::options_.device() == torch::kCPU)
+          knots[dim] = torch::from_blob(static_cast<real_t *>(kv.data()),
+                                        kv.size(), core<real_t>::options_).clone();
+        else
+          knots[dim] = torch::from_blob(static_cast<real_t *>(kv.data()),
+                                        kv.size(), core<real_t>::options_.device(torch::kCPU))
+            .to(core<real_t>::options_.device());
+      }
+
+      // Get indices of new knots relative to old knot vectors
+      auto idx = find_knot_indices(knots);
+      
+      // Swap old and new knot vectors
+      knots.swap(knots_);
+      
+      // Update coefficient vector
+      update_coeffs(knots, idx);
+      
+      return *this;
+    }
+    
   private:
     /// @brief Computes the prefactor \f$p_d!/(p_d-r_d)! = p_d \cdots (p_d-r_d+1)\f$
     template<int64_t degree, int64_t deriv, int64_t terminal=degree-deriv>
@@ -1642,6 +1746,16 @@ namespace iganet {
       }
     }
 
+    /// @brief Updates the B-spline coefficients after knot insertion
+    inline void update_coeffs(const TensorArray1& knots, const TensorArray1& idx) {
+
+      assert(parDim_ == 1 &&
+             knots[0].sizes() == idx[0].sizes());
+            
+      std::cout << knots << std::endl;
+      std::cout << idx << std::endl;
+    }
+    
     /// @brief Returns the vector of univariate B-spline basis
     /// functions (or their derivatives) evaluated in the point `xi`
     ///
@@ -1827,9 +1941,21 @@ namespace iganet {
   class NonUniformBSplineCore : public UniformBSplineCore<real_t, GeoDim, Degrees...>
   {
   private:
+    /// @brief Base type
     using Base = UniformBSplineCore<real_t, GeoDim, Degrees...>;    
     
   public:
+    /// @brief Deduces the self-type possibly degrees (de-)elevated by
+    /// the additive constant `degree_elevate`
+    template<std::make_signed<short_t>::type degree_elevate = 0>
+    using self_type_t = typename Base::template deduce_type_t<NonUniformBSplineCore, degree_elevate>;
+
+    /// @brief Deduces the derived self-type when exposed to different
+    /// class template parameters `real_t` and `GeoDim`, and the
+    /// `Degrees` parameter pack
+    template<typename real_t_, short_t GeoDim_, short_t... Degrees_>
+    using derived_self_type_t = NonUniformBSplineCore<real_t_, GeoDim_, Degrees_...>;
+    
     /// @brief Constructor for equidistant knot vectors
     using UniformBSplineCore<real_t, GeoDim, Degrees...>::UniformBSplineCore;
 
@@ -1877,7 +2003,7 @@ namespace iganet {
       if constexpr (Base::parDim_ == 0)
         return Base::coeffs_[0];
       else
-        return Base::template eval<deriv>(xi, eval_knot_indices(xi));
+        return Base::template eval<deriv>(xi, find_knot_indices(xi));
     }
 
     template<deriv deriv = deriv::func>
@@ -1914,7 +2040,7 @@ namespace iganet {
     ///
     /// The indices are returned as `std::array<torch::Tensor,
     /// parDim_>` in the same order as provided in `xi`
-    inline auto eval_knot_indices(const TensorArray1& xi) const
+    inline auto find_knot_indices(const TensorArray1& xi) const
     {
       assert(Base::parDim_ == 1);
       
@@ -1926,7 +2052,7 @@ namespace iganet {
     }
 
     /// @brief Returns the indices of knot spans containing `xi`    
-    inline auto eval_knot_indices(const TensorArray2& xi) const
+    inline auto find_knot_indices(const TensorArray2& xi) const
     {
       assert(Base::parDim_ == 2);
       
@@ -1941,7 +2067,7 @@ namespace iganet {
     }
 
     /// @brief Returns the indices of knot spans containing `xi`    
-    inline auto eval_knot_indices(const TensorArray3& xi) const
+    inline auto find_knot_indices(const TensorArray3& xi) const
     {
       assert(Base::parDim_ == 3);
       
@@ -1959,7 +2085,7 @@ namespace iganet {
     }
 
     /// @brief Returns the indices of knot spans containing `xi`    
-    inline auto eval_knot_indices(const TensorArray4& xi) const
+    inline auto find_knot_indices(const TensorArray4& xi) const
     {
       assert(Base::parDim_ == 4);
       
@@ -1978,6 +2104,19 @@ namespace iganet {
                                             Base::nknots_[3]-Base::degrees_[3]-1).view(xi[3].sizes())
                           });
     }
+
+    /// @brief Returns the B-spline object with refined knot and
+    /// coefficient vectors
+    NonUniformBSplineCore& insert_knots(const std::array<torch::Tensor, Base::parDim_>& knots)
+    {
+      for (short_t i = 0; i < Base::parDim_; ++i) {
+        Base::nknots_[i] += knots[i].numel();
+        Base::ncoeffs_[i] += knots[i].numel();
+        Base::knots_[i] = std::get<0>(torch::sort(torch::cat({Base::knots_[i], knots[i]})));        
+      }
+      
+      return *this;
+    }
   };
 
   /// @brief B-spline (common high-level functionality)
@@ -1993,12 +2132,33 @@ namespace iganet {
   /// templated functions, which is why we implement high-level common
   /// functionality here and 'inject' the core functionality by
   /// deriving from a particular base class.
-  template<typename real_t, typename BSplineCore>
+  template<typename BSplineCore>
   class BSplineCommon : public BSplineCore
   {
-  public:
+  public:    
+    /// @brief Constructors from the base class
     using BSplineCore::BSplineCore;
 
+    /// @brief Deduces the type of the template template parameter `T`
+    /// when exposed to the class template parameters `real_t` and
+    /// `GeoDim`, and the `Degrees` parameter pack. The optional
+    /// template parameter `degree_elevate` can be used to
+    /// (de-)elevate the degrees by an additive constant
+    template<template<typename, short_t, short_t...> class T,
+             std::make_signed<short_t>::type degree_elevate = 0>
+    using deduce_type_t = BSplineCommon<typename BSplineCore::template deduce_type_t<T, degree_elevate>>;
+
+    /// @brief Deduces the self-type possibly degrees (de-)elevated by
+    /// the additive constant `degree_elevate`
+    template<std::make_signed<short_t>::type degree_elevate = 0>
+    using self_type_t = BSplineCommon<typename BSplineCore::template self_type_t<degree_elevate>>;
+
+    /// @brief Deduces the derived self-type when exposed to different
+    /// class template parameters `real_t` and `GeoDim`, and the
+    /// `Degrees` parameter pack
+    template<typename real_t_, short_t GeoDim_, short_t... Degrees_>
+    using derived_self_type_t = BSplineCommon<typename BSplineCore::template derived_self_type_t<real_t_, GeoDim_, Degrees_...>>;
+    
     /// @brief Copy constructor
     BSplineCommon(const BSplineCommon&) = default;
 
@@ -2074,7 +2234,7 @@ namespace iganet {
     
     inline auto div(const std::array<torch::Tensor, BSplineCore::parDim_>& xi) const
     {
-      return div(xi, BSplineCore::eval_knot_indices(xi));
+      return div(xi, BSplineCore::find_knot_indices(xi));
     }
     /// @}
     
@@ -2232,7 +2392,7 @@ namespace iganet {
     inline auto idiv(const Geometry_t& G,
                      const std::array<torch::Tensor, BSplineCore::parDim_>& xi) const
     {
-      return idiv(G, xi, eval_knot_indices(xi), G.eval_knot_indices(xi));
+      return idiv(G, xi, find_knot_indices(xi), G.find_knot_indices(xi));
     }
     /// @}
 
@@ -2336,7 +2496,7 @@ namespace iganet {
     
     inline auto grad(const std::array<torch::Tensor, BSplineCore::parDim_>& xi) const
     {
-      return grad(xi, BSplineCore::eval_knot_indices(xi));
+      return grad(xi, BSplineCore::find_knot_indices(xi));
     }
     /// @}
     
@@ -2496,7 +2656,7 @@ namespace iganet {
     inline auto igrad(const Geometry_t& G,
                       const std::array<torch::Tensor, BSplineCore::parDim_>& xi) const
     {
-      return igrad(G, xi, BSplineCore::eval_knot_indices(xi), G.eval_knot_indices(xi));
+      return igrad(G, xi, BSplineCore::find_knot_indices(xi), G.find_knot_indices(xi));
     }
     /// @}
 
@@ -2608,7 +2768,7 @@ namespace iganet {
     
     inline auto hess(const std::array<torch::Tensor, BSplineCore::parDim_>& xi) const
     {
-      return hess(xi, BSplineCore::eval_knot_indices(xi));
+      return hess(xi, BSplineCore::find_knot_indices(xi));
     }
     /// @}
     
@@ -2803,7 +2963,7 @@ namespace iganet {
     inline auto ihess(const Geometry_t& G,
                       const std::array<torch::Tensor, BSplineCore::parDim_>& xi) const
     {
-      return ihess(G, xi, BSplineCore::eval_knot_indices(xi), G.eval_knot_indices(xi));
+      return ihess(G, xi, BSplineCore::find_knot_indices(xi), G.find_knot_indices(xi));
     }
     /// @}
 
@@ -2935,7 +3095,7 @@ namespace iganet {
   
     inline auto jac(const std::array<torch::Tensor, BSplineCore::parDim_>& xi) const
     {
-      return jac(xi, BSplineCore::eval_knot_indices(xi));
+      return jac(xi, BSplineCore::find_knot_indices(xi));
     }
     /// @}
 
@@ -3108,7 +3268,7 @@ namespace iganet {
     inline auto ijac(const Geometry_t& G,
                      const std::array<torch::Tensor, BSplineCore::parDim_>& xi) const
     {
-      return ijac(G, xi, BSplineCore::eval_knot_indices(xi), G.eval_knot_indices(xi));
+      return ijac(G, xi, BSplineCore::find_knot_indices(xi), G.find_knot_indices(xi));
     }
     /// @}
 
@@ -3189,7 +3349,7 @@ namespace iganet {
 
     /// Plots the B-spline object
     template<typename BSplineCore_t>
-    inline auto plot(const BSplineCommon<real_t, BSplineCore_t>& color,
+    inline auto plot(const BSplineCommon<BSplineCore_t>& color,
                      int64_t res0=10, int64_t res1=10, int64_t res2=10) const
     {
 #ifdef WITH_MATPLOT
@@ -3209,7 +3369,7 @@ namespace iganet {
         matplot::vector_1d Yfine(res0, 0.0);
 
         auto Coords = BSplineCore::eval(torch::linspace(0, 1, res0));
-        auto XAccessor = Coords(0).template accessor<real_t,1>();
+        auto XAccessor = Coords(0).template accessor<typename BSplineCore_t::value_type,1>();
         
 #pragma omp parallel for simd
         for (int64_t i=0; i<res0; ++i)
@@ -3218,7 +3378,7 @@ namespace iganet {
         if ((void*)this != (void*)&color) {
           if constexpr (BSplineCore_t::geoDim_==1) {
             auto Color = color.eval(torch::linspace(0, 1, res0));
-            auto CAccessor = Color(0).template accessor<real_t,1>();
+            auto CAccessor = Color(0).template accessor<typename BSplineCore::value_type,1>();
             
 #pragma omp parallel for simd
             for (int64_t i=0; i<res0; ++i)
@@ -3235,7 +3395,7 @@ namespace iganet {
           matplot::vector_1d X(BSplineCore::ncoeffs(0), 0.0);
           matplot::vector_1d Y(BSplineCore::ncoeffs(0), 0.0);
 
-          auto xAccessor = BSplineCore::coeffs(0).template accessor<real_t,1>();
+          auto xAccessor = BSplineCore::coeffs(0).template accessor<typename BSplineCore::value_type,1>();
 
 #pragma omp parallel for simd
           for (int64_t i=0; i<BSplineCore::ncoeffs(0); ++i) {
@@ -3268,11 +3428,11 @@ namespace iganet {
             matplot::vector_2d Zfine(1, matplot::vector_1d(res0, 0.0));
 
             auto Coords = BSplineCore::eval(torch::linspace(0, 1, res0));
-            auto XAccessor = Coords(0).template accessor<real_t,1>();
-            auto YAccessor = Coords(1).template accessor<real_t,1>();
+            auto XAccessor = Coords(0).template accessor<typename BSplineCore::value_type,1>();
+            auto YAccessor = Coords(1).template accessor<typename BSplineCore::value_type,1>();
 
             auto Color = color.eval(torch::linspace(0, 1, res0));
-            auto CAccessor = Color(0).template accessor<real_t,1>();
+            auto CAccessor = Color(0).template accessor<typename BSplineCore::value_type,1>();
             
 #pragma omp parallel for simd
             for (int64_t i=0; i<res0; ++i) {              
@@ -3288,8 +3448,8 @@ namespace iganet {
           matplot::vector_1d Yfine(res0, 0.0);
 
           auto Coords = BSplineCore::eval(torch::linspace(0, 1, res0));
-          auto XAccessor = Coords(0).template accessor<real_t,1>();
-          auto YAccessor = Coords(1).template accessor<real_t,1>();
+          auto XAccessor = Coords(0).template accessor<typename BSplineCore::value_type,1>();
+          auto YAccessor = Coords(1).template accessor<typename BSplineCore::value_type,1>();
           
 #pragma omp parallel for simd
           for (int64_t i=0; i<res0; ++i) {
@@ -3300,8 +3460,8 @@ namespace iganet {
           matplot::vector_1d X(BSplineCore::ncoeffs(0), 0.0);
           matplot::vector_1d Y(BSplineCore::ncoeffs(0), 0.0);
 
-          auto xAccessor = BSplineCore::coeffs(0).template accessor<real_t,1>();
-          auto yAccessor = BSplineCore::coeffs(1).template accessor<real_t,1>();
+          auto xAccessor = BSplineCore::coeffs(0).template accessor<typename BSplineCore::value_type,1>();
+          auto yAccessor = BSplineCore::coeffs(1).template accessor<typename BSplineCore::value_type,1>();
 
 #pragma omp parallel for simd
           for (int64_t i=0; i<BSplineCore::ncoeffs(0); ++i) {
@@ -3336,12 +3496,12 @@ namespace iganet {
             matplot::vector_2d Cfine(1, matplot::vector_1d(res0, 0.0));
 
             auto Coords = BSplineCore::eval(torch::linspace(0, 1, res0));
-            auto XAccessor = Coords(0).template accessor<real_t,1>();
-            auto YAccessor = Coords(1).template accessor<real_t,1>();
-            auto ZAccessor = Coords(2).template accessor<real_t,1>();
+            auto XAccessor = Coords(0).template accessor<typename BSplineCore::value_type,1>();
+            auto YAccessor = Coords(1).template accessor<typename BSplineCore::value_type,1>();
+            auto ZAccessor = Coords(2).template accessor<typename BSplineCore::value_type,1>();
 
             auto Color = color.eval(torch::linspace(0, 1, res0));
-            auto CAccessor = Color(0).template accessor<real_t,1>();
+            auto CAccessor = Color(0).template accessor<typename BSplineCore::value_type,1>();
             
 #pragma omp parallel for simd
             for (int64_t i=0; i<res0; ++i) {
@@ -3359,9 +3519,9 @@ namespace iganet {
           matplot::vector_1d Zfine(res0, 0.0);
 
           auto Coords = BSplineCore::eval(torch::linspace(0, 1, res0));
-          auto XAccessor = Coords(0).template accessor<real_t,1>();
-          auto YAccessor = Coords(1).template accessor<real_t,1>();
-          auto ZAccessor = Coords(2).template accessor<real_t,1>();
+          auto XAccessor = Coords(0).template accessor<typename BSplineCore::value_type,1>();
+          auto YAccessor = Coords(1).template accessor<typename BSplineCore::value_type,1>();
+          auto ZAccessor = Coords(2).template accessor<typename BSplineCore::value_type,1>();
           
 #pragma omp parallel for simd
           for (int64_t i=0; i<res0; ++i) {
@@ -3374,9 +3534,9 @@ namespace iganet {
           matplot::vector_1d Y(BSplineCore::ncoeffs(0), 0.0);
           matplot::vector_1d Z(BSplineCore::ncoeffs(0), 0.0);
 
-          auto xAccessor = BSplineCore::coeffs(0).template accessor<real_t,1>();
-          auto yAccessor = BSplineCore::coeffs(1).template accessor<real_t,1>();
-          auto zAccessor = BSplineCore::coeffs(2).template accessor<real_t,1>();
+          auto xAccessor = BSplineCore::coeffs(0).template accessor<typename BSplineCore::value_type,1>();
+          auto yAccessor = BSplineCore::coeffs(1).template accessor<typename BSplineCore::value_type,1>();
+          auto zAccessor = BSplineCore::coeffs(2).template accessor<typename BSplineCore::value_type,1>();
 
 #pragma omp parallel for simd
           for (int64_t i=0; i<BSplineCore::ncoeffs(0); ++i) {
@@ -3411,8 +3571,8 @@ namespace iganet {
         std::array<torch::Tensor,2> meshgrid = convert<2>(torch::meshgrid({torch::linspace(0, 1, res0),
                                                                            torch::linspace(0, 1, res1)}, "xy"));
         auto Coords = BSplineCore::eval(meshgrid);
-        auto XAccessor = Coords(0).template accessor<real_t,2>();
-        auto YAccessor = Coords(1).template accessor<real_t,2>();
+        auto XAccessor = Coords(0).template accessor<typename BSplineCore::value_type,2>();
+        auto YAccessor = Coords(1).template accessor<typename BSplineCore::value_type,2>();
 
 #pragma omp parallel for simd collapse(2)
         for (int64_t i=0; i<res0; ++i)
@@ -3424,7 +3584,7 @@ namespace iganet {
         if ((void*)this != (void*)&color) {
           if constexpr (BSplineCore_t::geoDim()==1) {            
             auto Color = color.eval(meshgrid);
-            auto CAccessor = Color(0).template accessor<real_t,2>();
+            auto CAccessor = Color(0).template accessor<typename BSplineCore::value_type,2>();
             
 #pragma omp parallel for simd collapse(2)
             for (int64_t i=0; i<res0; ++i)
@@ -3444,8 +3604,8 @@ namespace iganet {
           matplot::vector_2d Y(BSplineCore::ncoeffs(1), matplot::vector_1d(BSplineCore::ncoeffs(0), 0.0));
           matplot::vector_2d Z(BSplineCore::ncoeffs(1), matplot::vector_1d(BSplineCore::ncoeffs(0), 0.0));
 
-          auto xAccessor = BSplineCore::coeffs(0).template accessor<real_t,1>();
-          auto yAccessor = BSplineCore::coeffs(1).template accessor<real_t,1>();
+          auto xAccessor = BSplineCore::coeffs(0).template accessor<typename BSplineCore::value_type,1>();
+          auto yAccessor = BSplineCore::coeffs(1).template accessor<typename BSplineCore::value_type,1>();
 
 #pragma omp parallel for simd collapse(2)
           for (int64_t i=0; i<BSplineCore::ncoeffs(0); ++i)
@@ -3480,9 +3640,9 @@ namespace iganet {
         std::array<torch::Tensor,2> meshgrid = convert<2>(torch::meshgrid({torch::linspace(0, 1, res0),
                                                                            torch::linspace(0, 1, res1)}, "xy"));
         auto Coords = BSplineCore::eval(meshgrid);
-        auto XAccessor = Coords(0).template accessor<real_t,2>();
-        auto YAccessor = Coords(1).template accessor<real_t,2>();
-        auto ZAccessor = Coords(2).template accessor<real_t,2>();
+        auto XAccessor = Coords(0).template accessor<typename BSplineCore::value_type,2>();
+        auto YAccessor = Coords(1).template accessor<typename BSplineCore::value_type,2>();
+        auto ZAccessor = Coords(2).template accessor<typename BSplineCore::value_type,2>();
         
 #pragma omp parallel for simd collapse(2)
         for (int64_t i=0; i<res0; ++i)
@@ -3498,7 +3658,7 @@ namespace iganet {
             matplot::vector_2d Cfine(res1, matplot::vector_1d(res0, 0.0));
 
             auto Color = color.eval(meshgrid);
-            auto CAccessor = Color(0).template accessor<real_t,2>();
+            auto CAccessor = Color(0).template accessor<typename BSplineCore::value_type,2>();
             
 #pragma omp parallel for simd collapse(2)
             for (int64_t i=0; i<res0; ++i)
@@ -3514,9 +3674,9 @@ namespace iganet {
           matplot::vector_2d Y(BSplineCore::ncoeffs(1), matplot::vector_1d(BSplineCore::ncoeffs(0), 0.0));
           matplot::vector_2d Z(BSplineCore::ncoeffs(1), matplot::vector_1d(BSplineCore::ncoeffs(0), 0.0));
 
-          auto xAccessor = BSplineCore::coeffs(0).template accessor<real_t,1>();
-          auto yAccessor = BSplineCore::coeffs(1).template accessor<real_t,1>();
-          auto zAccessor = BSplineCore::coeffs(2).template accessor<real_t,1>();
+          auto xAccessor = BSplineCore::coeffs(0).template accessor<typename BSplineCore::value_type,1>();
+          auto yAccessor = BSplineCore::coeffs(1).template accessor<typename BSplineCore::value_type,1>();
+          auto zAccessor = BSplineCore::coeffs(2).template accessor<typename BSplineCore::value_type,1>();
 
 #pragma omp parallel for simd collapse(2)
           for (int64_t i=0; i<BSplineCore::ncoeffs(0); ++i)
@@ -3552,7 +3712,7 @@ namespace iganet {
     inline void pretty_print(std::ostream& os = std::cout) const
     {
       os << BSplineCore::name()
-         << "(\n  parDim=" << BSplineCore::parDim_
+         << "(\nparDim=" << BSplineCore::parDim_
          << ", geoDim=" << BSplineCore::geoDim_
 
          << ", degrees=";
@@ -3595,7 +3755,7 @@ namespace iganet {
 
   /// Tensor-product uniform B-spline
   template<typename real_t, short_t GeoDim, short_t... Degrees>
-  using UniformBSpline = BSplineCommon<real_t, UniformBSplineCore<real_t, GeoDim, Degrees...>>;
+  using UniformBSpline = BSplineCommon<UniformBSplineCore<real_t, GeoDim, Degrees...>>;
 
   /// Print (as string) a UniformBSpline object
   template<typename real_t, short_t GeoDim, short_t... Degrees>
@@ -3608,7 +3768,7 @@ namespace iganet {
 
   /// Tensor-product non-uniform B-spline
   template<typename real_t, short_t GeoDim, short_t... Degrees>
-  using NonUniformBSpline = BSplineCommon<real_t, NonUniformBSplineCore<real_t, GeoDim, Degrees...>>;
+  using NonUniformBSpline = BSplineCommon<NonUniformBSplineCore<real_t, GeoDim, Degrees...>>;
 
   /// Print (as string) a UniformBSpline object
   template<typename real_t, short_t GeoDim, short_t... Degrees>
