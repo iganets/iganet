@@ -105,7 +105,7 @@ void test_bspline_eval(BSpline_t& bspline, SplineLibBSpline_t splinelib_bspline,
   
   BSplineValue_t bspline_val;
   if constexpr (precompute) {
-    auto knot_idx  = bspline.eval_knot_indices(xi);
+    auto knot_idx  = bspline.find_knot_indices(xi);
     auto basfunc   = bspline.template eval_basfunc<deriv>(xi, knot_idx);
     auto coeff_idx = bspline.eval_coeff_indices(knot_idx);
     bspline_val = bspline.eval_from_precomputed(basfunc, coeff_idx, xi[0].numel(), xi[0].sizes());
@@ -248,7 +248,7 @@ void test_bspline_grad(BSpline_t& bspline, TensorArray_t& xi,
 {
   iganet::BlockTensor<torch::Tensor, 1, BSpline_t::parDim()> bspline_grad_val;
   if constexpr (precompute) {
-    auto knot_idx  = bspline.eval_knot_indices(xi);
+    auto knot_idx  = bspline.find_knot_indices(xi);
     auto coeff_idx = bspline.eval_coeff_indices(knot_idx);
     bspline_grad_val = bspline.grad(xi, knot_idx, coeff_idx);
   } else
@@ -301,7 +301,7 @@ void test_bspline_jac(BSpline_t& bspline, TensorArray_t& xi,
   iganet::BlockTensor<torch::Tensor, BSpline_t::geoDim(), BSpline_t::parDim()> bspline_jac_val;
   
   if constexpr (precompute) {
-    auto knot_idx  = bspline.eval_knot_indices(xi);
+    auto knot_idx  = bspline.find_knot_indices(xi);
     auto coeff_idx = bspline.eval_coeff_indices(knot_idx);
     bspline_jac_val = bspline.jac(xi, knot_idx, coeff_idx);
   } else
@@ -345,7 +345,7 @@ void test_bspline_hess(BSpline_t& bspline, TensorArray_t& xi,
                       BSpline_t::geoDim()> bspline_hess_val;
   
   if constexpr (precompute) {
-    auto knot_idx  = bspline.eval_knot_indices(xi);
+    auto knot_idx  = bspline.find_knot_indices(xi);
     auto coeff_idx = bspline.eval_coeff_indices(knot_idx);
     bspline_hess_val = bspline.hess(xi, knot_idx, coeff_idx);
   } else

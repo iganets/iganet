@@ -89,7 +89,7 @@ namespace unittest {
     auto t1 = std::chrono::high_resolution_clock::now();
     if constexpr (precompute)
     {
-      auto knot_idx  = bspline.eval_knot_indices(xi);
+      auto knot_idx  = bspline.find_knot_indices(xi);
       auto basfunc   = bspline.template eval_basfunc<deriv>(xi, knot_idx);
       auto coeff_idx = bspline.eval_coeff_indices(knot_idx);
       for (int i=0; i<10; i++)
@@ -150,7 +150,7 @@ namespace unittest {
     auto t1 = std::chrono::high_resolution_clock::now();
     if constexpr (precompute)
     {
-      auto knot_idx  = bspline.eval_knot_indices(xi);
+      auto knot_idx  = bspline.find_knot_indices(xi);
       auto basfunc   = bspline.template eval_basfunc<deriv>(xi, knot_idx);
       auto coeff_idx = bspline.eval_coeff_indices(knot_idx);
       for (int i=0; i<10; i++)
@@ -215,7 +215,7 @@ namespace unittest {
     auto t1 = std::chrono::high_resolution_clock::now();
     if constexpr (precompute)
     {
-      auto knot_idx  = bspline.eval_knot_indices(xi);
+      auto knot_idx  = bspline.find_knot_indices(xi);
       auto basfunc   = bspline.template eval_basfunc<deriv>(xi, knot_idx);
       auto coeff_idx = bspline.eval_coeff_indices(knot_idx);
       for (int i=0; i<10; i++)
@@ -284,7 +284,7 @@ namespace unittest {
     auto t1 = std::chrono::high_resolution_clock::now();
     if constexpr (precompute)
     {
-      auto knot_idx  = bspline.eval_knot_indices(xi);
+      auto knot_idx  = bspline.find_knot_indices(xi);
       auto basfunc   = bspline.template eval_basfunc<deriv>(xi, knot_idx);
       auto coeff_idx = bspline.eval_coeff_indices(knot_idx);
       for (int i=0; i<10; i++)
