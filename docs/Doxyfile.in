@@ -966,7 +966,8 @@ RECURSIVE              = YES
 # run.
 
 EXCLUDE                = @CMAKE_BINARY_DIR@ \
-                         @PROJECT_SOURCE_DIR@/include/matplotlibcpp.h
+                         @PROJECT_SOURCE_DIR@/include/json.hpp \
+                         @PROJECT_SOURCE_DIR@/include/matplotlibcpp.h  
 
 # The EXCLUDE_SYMLINKS tag can be used to select whether or not files or
 # directories that are symbolic links (a Unix file system feature) are excluded
