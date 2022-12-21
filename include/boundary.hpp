@@ -24,8 +24,7 @@ namespace iganet {
               left  = 1, right = 2, down  = 3, up    = 4, none  = 0 };
 
   /// @brief BoundaryCore
-  template<template<typename, short_t, short_t...> class bspline_t,
-           typename real_t, short_t GeoDim, short_t ParDim, short_t... Degrees>
+  template<typename BSpline_t, short_t>
   class BoundaryCore;
   
   /// @brief BoundaryCore (1d specialization)
@@ -33,26 +32,27 @@ namespace iganet {
   /// This specialization has 2 sides
   /// - west (u=0)
   /// - east (u=1)
-  template<template<typename, short_t, short_t...> class bspline_t,
-           typename real_t, short_t GeoDim, short_t... Degrees>
-  class BoundaryCore<bspline_t, real_t, GeoDim, 1, Degrees...>
-    : public core<real_t>
+  template<typename BSpline_t>
+  class BoundaryCore<BSpline_t, /* parDim */1>
+    : public core<typename BSpline_t::value_type>
   {
-  public:
-    /// @brief Default constructor
-    BoundaryCore()
-      : core<real_t>()
-    {}
+  private:
+    /// @brief Boundary B-spline type
+    using BoundaryBSpline_t = typename BSpline_t::template
+      derived_self_type_t<typename BSpline_t::value_type,
+                          BSpline_t::geoDim()>;
     
+    /// @brief Tuple of B-Splines
+    std::tuple<BoundaryBSpline_t,
+               BoundaryBSpline_t> bdr_;
+  public:
     /// @brief Constructor
-    template<typename T>
-    BoundaryCore(const std::array<T, 1>& ncoeffs,
-                 enum init init = init::zeros)
-      : core<real_t>() ,
+    BoundaryCore(...)
+      : core<typename BSpline_t::value_type>() ,
         bdr_(
              {
-               bspline_t<real_t, GeoDim>({}, init),
-               bspline_t<real_t, GeoDim>({}, init),
+               BoundaryBSpline_t({}),
+               BoundaryBSpline_t({}),
              }               
              )
     {}
@@ -106,22 +106,14 @@ namespace iganet {
     /// @brief Returns a string representation of the Boundary object
     inline void pretty_print(std::ostream& os = std::cout) const
     {
-      os << core<real_t>::name()
+      os << core<typename BSpline_t::value_type>::name()
          << "(\n"
          << "left  = " << std::get<west-1>(bdr_) << "\n"
          << "right = " << std::get<east-1>(bdr_)
          << "\n)";
     }
-    
-  private:
-    /// @brief Array storing the degrees
-    static constexpr const std::array<short_t, sizeof...(Degrees)> degrees_ = { Degrees... };
-
-    /// @brief Tuple of B-Splines
-    std::tuple<bspline_t<real_t, GeoDim>,
-               bspline_t<real_t, GeoDim>> bdr_;
   };
-
+  
   /// @brief BoundaryCore (2d specialization)
   ///
   /// This specialization has 4 sides
@@ -129,23 +121,39 @@ namespace iganet {
   /// - east  (u=1, v  )
   /// - south (u,   v=0)
   /// - north (u,   v=1)
-  template<template<typename, short_t, short_t...> class bspline_t,
-           typename real_t, short_t GeoDim, short_t... Degrees>
-  class BoundaryCore<bspline_t, real_t, GeoDim, 2, Degrees...>
-    : public core<real_t>
+  template<typename BSpline_t>
+  class BoundaryCore<BSpline_t, /* parDim */2>
+    : public core<typename BSpline_t::value_type>
   {
+  private:
+    /// @brief Boundary B-spline type
+    using BoundaryBSpline_t = std::tuple<
+    typename BSpline_t::template
+    derived_self_type_t<typename BSpline_t::value_type,
+                        BSpline_t::geoDim(),
+                        BSpline_t::degree(1)>,
+    typename BSpline_t::template
+    derived_self_type_t<typename BSpline_t::value_type,
+                        BSpline_t::geoDim(),
+                        BSpline_t::degree(0)>>;
+    
+    /// @brief Tuple of B-Splines
+    std::tuple<typename std::tuple_element_t<0,BoundaryBSpline_t>,
+               typename std::tuple_element_t<0,BoundaryBSpline_t>,
+               typename std::tuple_element_t<1,BoundaryBSpline_t>,
+               typename std::tuple_element_t<1,BoundaryBSpline_t>> bdr_;
+    
   public:
     /// @brief Constructor
-    template<typename T>
-    BoundaryCore(const std::array<T, 2>& ncoeffs,
+    BoundaryCore(const std::array<int64_t, 2>& ncoeffs,
                  enum init init = init::zeros)
-      : core<real_t>(),
+      : core<typename BSpline_t::value_type>(),
         bdr_(
              {
-               bspline_t<real_t, GeoDim, std::get<1>(degrees_)>(std::array<int64_t,1>({ncoeffs[1]}), init),
-               bspline_t<real_t, GeoDim, std::get<1>(degrees_)>(std::array<int64_t,1>({ncoeffs[1]}), init),
-               bspline_t<real_t, GeoDim, std::get<0>(degrees_)>(std::array<int64_t,1>({ncoeffs[0]}), init),
-               bspline_t<real_t, GeoDim, std::get<0>(degrees_)>(std::array<int64_t,1>({ncoeffs[0]}), init)
+               std::tuple_element_t<0,BoundaryBSpline_t>(std::array<int64_t,1>({ncoeffs[1]}), init),
+               std::tuple_element_t<0,BoundaryBSpline_t>(std::array<int64_t,1>({ncoeffs[1]}), init),
+               std::tuple_element_t<1,BoundaryBSpline_t>(std::array<int64_t,1>({ncoeffs[0]}), init),
+               std::tuple_element_t<1,BoundaryBSpline_t>(std::array<int64_t,1>({ncoeffs[0]}), init)
              }
              )
     {}
@@ -201,7 +209,7 @@ namespace iganet {
     /// @brief Returns a string representation of the Boundary object
     inline void pretty_print(std::ostream& os = std::cout) const
     {
-      os << core<real_t>::name()
+      os << core<typename BSpline_t::value_type>::name()
          << "(\n"
          << "west = "  << std::get<west-1>(bdr_) << "\n"
          << "east = "  << std::get<east-1>(bdr_) << "\n"
@@ -209,16 +217,6 @@ namespace iganet {
          << "north = " << std::get<north-1>(bdr_)
          << "\n)";
     }
-    
-  private:
-    /// @brief Array storing the degrees
-    static constexpr const std::array<short_t, sizeof...(Degrees)> degrees_ = { Degrees... };
-    
-    /// @brief Tuple of B-Splines
-    std::tuple<bspline_t<real_t, GeoDim, std::get<1>(degrees_)>,
-               bspline_t<real_t, GeoDim, std::get<1>(degrees_)>,
-               bspline_t<real_t, GeoDim, std::get<0>(degrees_)>,
-               bspline_t<real_t, GeoDim, std::get<0>(degrees_)>> bdr_;
   };
 
   /// @brief BoundaryCore (3d specialization)
@@ -230,25 +228,48 @@ namespace iganet {
   /// - north (u,   v=1, w)
   /// - front (u,   v,   w=0)
   /// - back  (u,   v,   w=1)
-  template<template<typename, short_t, short_t...> class bspline_t,
-           typename real_t, short_t GeoDim, short_t... Degrees>
-  class BoundaryCore<bspline_t, real_t, GeoDim, 3, Degrees...>
-    : public core<real_t>
+  template<typename BSpline_t>
+  class BoundaryCore<BSpline_t, /* parDim */3>
+    : public core<typename BSpline_t::value_type>
   {
+  private:
+    /// @brief Boundary B-spline type
+    using BoundaryBSpline_t = std::tuple<
+    typename BSpline_t::template
+    derived_self_type_t<typename BSpline_t::value_type,
+                        BSpline_t::geoDim(),
+                        BSpline_t::degree(1), BSpline_t::degree(2)>,
+    typename BSpline_t::template
+    derived_self_type_t<typename BSpline_t::value_type,
+                        BSpline_t::geoDim(),
+                        BSpline_t::degree(0), BSpline_t::degree(2)>,
+    typename BSpline_t::template
+    derived_self_type_t<typename BSpline_t::value_type,
+                        BSpline_t::geoDim(),
+                        BSpline_t::degree(0), BSpline_t::degree(1)>>;
+
+
+    /// @brief Tuple of B-Splines
+    std::tuple<typename std::tuple_element_t<0,BoundaryBSpline_t>,
+               typename std::tuple_element_t<0,BoundaryBSpline_t>,
+               typename std::tuple_element_t<1,BoundaryBSpline_t>,
+               typename std::tuple_element_t<1,BoundaryBSpline_t>,
+               typename std::tuple_element_t<2,BoundaryBSpline_t>,
+               typename std::tuple_element_t<2,BoundaryBSpline_t>> bdr_;
+    
   public:
     /// @brief Constructor
-    template<typename T>
-    BoundaryCore(const std::array<T, 3>& ncoeffs,
+    BoundaryCore(const std::array<int64_t, 3>& ncoeffs,
                  enum init init = init::zeros)
-      : core<real_t>(),
+      : core<typename BSpline_t::value_type>(),
         bdr_(
              {
-               bspline_t<real_t, GeoDim, std::get<1>(degrees_),std::get<2>(degrees_)>(std::array<int64_t,2>({ncoeffs[1],ncoeffs[2]}), init),
-               bspline_t<real_t, GeoDim, std::get<1>(degrees_),std::get<2>(degrees_)>(std::array<int64_t,2>({ncoeffs[1],ncoeffs[2]}), init),
-               bspline_t<real_t, GeoDim, std::get<0>(degrees_),std::get<2>(degrees_)>(std::array<int64_t,2>({ncoeffs[0],ncoeffs[2]}), init),
-               bspline_t<real_t, GeoDim, std::get<0>(degrees_),std::get<2>(degrees_)>(std::array<int64_t,2>({ncoeffs[0],ncoeffs[2]}), init),
-               bspline_t<real_t, GeoDim, std::get<0>(degrees_),std::get<1>(degrees_)>(std::array<int64_t,2>({ncoeffs[0],ncoeffs[1]}), init),
-               bspline_t<real_t, GeoDim, std::get<0>(degrees_),std::get<1>(degrees_)>(std::array<int64_t,2>({ncoeffs[0],ncoeffs[1]}), init)
+               std::tuple_element_t<0,BoundaryBSpline_t>(std::array<int64_t,2>({ncoeffs[1], ncoeffs[2]}), init),
+               std::tuple_element_t<0,BoundaryBSpline_t>(std::array<int64_t,2>({ncoeffs[1], ncoeffs[2]}), init),
+               std::tuple_element_t<1,BoundaryBSpline_t>(std::array<int64_t,2>({ncoeffs[0], ncoeffs[2]}), init),
+               std::tuple_element_t<1,BoundaryBSpline_t>(std::array<int64_t,2>({ncoeffs[0], ncoeffs[2]}), init),
+               std::tuple_element_t<2,BoundaryBSpline_t>(std::array<int64_t,2>({ncoeffs[0], ncoeffs[1]}), init),
+               std::tuple_element_t<2,BoundaryBSpline_t>(std::array<int64_t,2>({ncoeffs[0], ncoeffs[1]}), init)
              }
              )
     {}
@@ -306,7 +327,7 @@ namespace iganet {
     /// @brief Returns a string representation of the Boundary object
     inline void pretty_print(std::ostream& os = std::cout) const
     {
-      os << core<real_t>::name()
+      os << core<typename BSpline_t::value_type>::name()
          << "(\n"
          << "west = "  << std::get<west-1>(bdr_) << "\n"
          << "east = "  << std::get<east-1>(bdr_) << "\n"
@@ -315,19 +336,7 @@ namespace iganet {
          << "front = " << std::get<front-1>(bdr_) << "\n"
          << "back = "  << std::get<back-1>(bdr_)
          << "\n)";
-    }
-    
-  private:
-    /// @brief Array storing the degrees
-    static constexpr const std::array<short_t, sizeof...(Degrees)> degrees_ = { Degrees... };
-
-    /// @brief Tuple of B-Splines
-    std::tuple<bspline_t<real_t, GeoDim, std::get<1>(degrees_), std::get<2>(degrees_)>,
-               bspline_t<real_t, GeoDim, std::get<1>(degrees_), std::get<2>(degrees_)>,
-               bspline_t<real_t, GeoDim, std::get<0>(degrees_), std::get<2>(degrees_)>,
-               bspline_t<real_t, GeoDim, std::get<0>(degrees_), std::get<2>(degrees_)>,
-               bspline_t<real_t, GeoDim, std::get<0>(degrees_), std::get<1>(degrees_)>,
-               bspline_t<real_t, GeoDim, std::get<0>(degrees_), std::get<1>(degrees_)>> bdr_;
+    }   
   };
 
   /// @brief BoundaryCore (4d specialization)
@@ -341,27 +350,56 @@ namespace iganet {
   /// - back  (u,   v,   w=1, t)
   /// - stime (u,   v,   w,   t=0)
   /// - etime (u,   v,   w,   t=1)
-  template<template<typename, short_t, short_t...> class bspline_t,
-           typename real_t, short_t GeoDim, short_t... Degrees>
-  class BoundaryCore<bspline_t, real_t, GeoDim, 4, Degrees...>
-    : public core<real_t>
+  template<typename BSpline_t>
+  class BoundaryCore<BSpline_t, /* parDim */4>
+    : public core<typename BSpline_t::value_type>
   {
+  private:
+    /// @brief Array storing the degrees
+    using BoundaryBSpline_t = std::tuple<
+    typename BSpline_t::template
+    derived_self_type_t<typename BSpline_t::value_type,
+                        BSpline_t::geoDim(),
+                        BSpline_t::degree(1), BSpline_t::degree(2), BSpline_t::degree(2)>,
+    typename BSpline_t::template
+    derived_self_type_t<typename BSpline_t::value_type,
+                        BSpline_t::geoDim(),
+                        BSpline_t::degree(0), BSpline_t::degree(2), BSpline_t::degree(2)>,
+    typename BSpline_t::template
+    derived_self_type_t<typename BSpline_t::value_type,
+                        BSpline_t::geoDim(),
+                        BSpline_t::degree(0), BSpline_t::degree(1), BSpline_t::degree(3)>,
+    typename BSpline_t::template
+    derived_self_type_t<typename BSpline_t::value_type,
+                        BSpline_t::geoDim(),
+                        BSpline_t::degree(0), BSpline_t::degree(1), BSpline_t::degree(2)>>;
+    
+    
+    /// @brief Tuple of B-Splines
+    std::tuple<typename std::tuple_element_t<0,BoundaryBSpline_t>,
+               typename std::tuple_element_t<0,BoundaryBSpline_t>,
+               typename std::tuple_element_t<1,BoundaryBSpline_t>,
+               typename std::tuple_element_t<1,BoundaryBSpline_t>,
+               typename std::tuple_element_t<2,BoundaryBSpline_t>,
+               typename std::tuple_element_t<2,BoundaryBSpline_t>,
+               typename std::tuple_element_t<3,BoundaryBSpline_t>,
+               typename std::tuple_element_t<3,BoundaryBSpline_t>> bdr_;
+    
   public:
     /// @brief Constructor
-    template<typename T>
-    BoundaryCore(const std::array<T, 4>& ncoeffs,
+    BoundaryCore(const std::array<int64_t, 4>& ncoeffs,
                  enum init init = init::zeros)
-      : core<real_t>(),
+      : core<typename BSpline_t::value_type>(),
         bdr_(
              {
-               bspline_t<real_t, GeoDim, std::get<1>(degrees_),std::get<2>(degrees_),std::get<3>(degrees_)>(std::array<int64_t,3>({ncoeffs[1],ncoeffs[2],ncoeffs[3]}), init),
-               bspline_t<real_t, GeoDim, std::get<1>(degrees_),std::get<2>(degrees_),std::get<3>(degrees_)>(std::array<int64_t,3>({ncoeffs[1],ncoeffs[2],ncoeffs[3]}), init),
-               bspline_t<real_t, GeoDim, std::get<0>(degrees_),std::get<2>(degrees_),std::get<3>(degrees_)>(std::array<int64_t,3>({ncoeffs[0],ncoeffs[2],ncoeffs[3]}), init),
-               bspline_t<real_t, GeoDim, std::get<0>(degrees_),std::get<2>(degrees_),std::get<3>(degrees_)>(std::array<int64_t,3>({ncoeffs[0],ncoeffs[2],ncoeffs[3]}), init),
-               bspline_t<real_t, GeoDim, std::get<0>(degrees_),std::get<1>(degrees_),std::get<3>(degrees_)>(std::array<int64_t,3>({ncoeffs[0],ncoeffs[1],ncoeffs[3]}), init),
-               bspline_t<real_t, GeoDim, std::get<0>(degrees_),std::get<1>(degrees_),std::get<3>(degrees_)>(std::array<int64_t,3>({ncoeffs[0],ncoeffs[1],ncoeffs[3]}), init),
-               bspline_t<real_t, GeoDim, std::get<0>(degrees_),std::get<1>(degrees_),std::get<2>(degrees_)>(std::array<int64_t,3>({ncoeffs[0],ncoeffs[1],ncoeffs[2]}), init),
-               bspline_t<real_t, GeoDim, std::get<0>(degrees_),std::get<1>(degrees_),std::get<2>(degrees_)>(std::array<int64_t,3>({ncoeffs[0],ncoeffs[1],ncoeffs[2]}), init)
+               std::tuple_element_t<0,BoundaryBSpline_t>(std::array<int64_t,3>({ncoeffs[1], ncoeffs[2], ncoeffs[3]}), init),
+               std::tuple_element_t<0,BoundaryBSpline_t>(std::array<int64_t,3>({ncoeffs[1], ncoeffs[2], ncoeffs[3]}), init),
+               std::tuple_element_t<1,BoundaryBSpline_t>(std::array<int64_t,3>({ncoeffs[0], ncoeffs[2], ncoeffs[3]}), init),
+               std::tuple_element_t<1,BoundaryBSpline_t>(std::array<int64_t,3>({ncoeffs[0], ncoeffs[2], ncoeffs[3]}), init),
+               std::tuple_element_t<2,BoundaryBSpline_t>(std::array<int64_t,3>({ncoeffs[0], ncoeffs[1], ncoeffs[3]}), init),
+               std::tuple_element_t<2,BoundaryBSpline_t>(std::array<int64_t,3>({ncoeffs[0], ncoeffs[1], ncoeffs[3]}), init),
+               std::tuple_element_t<3,BoundaryBSpline_t>(std::array<int64_t,3>({ncoeffs[0], ncoeffs[1], ncoeffs[2]}), init),
+               std::tuple_element_t<3,BoundaryBSpline_t>(std::array<int64_t,3>({ncoeffs[0], ncoeffs[1], ncoeffs[2]}), init)
              }
              )
     {}
@@ -421,7 +459,7 @@ namespace iganet {
     /// @brief Returns a string representation of the Boundary object
     inline void pretty_print(std::ostream& os = std::cout) const
     {
-      os << core<real_t>::name()
+      os << core<typename BSpline_t::value_type>::name()
          << "(\n"
          << "west = "  << std::get<west-1>(bdr_) << "\n"
          << "east = "  << std::get<east-1>(bdr_) << "\n"
@@ -432,37 +470,21 @@ namespace iganet {
          << "stime = " << std::get<stime-1>(bdr_) << "\n"
          << "etime = " << std::get<etime-1>(bdr_)
          << "\n)";
-    }
-    
-  private:
-    /// @brief Array storing the degrees
-    static constexpr const std::array<short_t, sizeof...(Degrees)> degrees_ = { Degrees... };
-    
-    /// @brief Tuple of B-Splines
-    std::tuple<bspline_t<real_t, GeoDim, std::get<1>(degrees_), std::get<2>(degrees_), std::get<3>(degrees_)>,
-               bspline_t<real_t, GeoDim, std::get<1>(degrees_), std::get<2>(degrees_), std::get<3>(degrees_)>,
-               bspline_t<real_t, GeoDim, std::get<0>(degrees_), std::get<2>(degrees_), std::get<3>(degrees_)>,
-               bspline_t<real_t, GeoDim, std::get<0>(degrees_), std::get<2>(degrees_), std::get<3>(degrees_)>,
-               bspline_t<real_t, GeoDim, std::get<0>(degrees_), std::get<1>(degrees_), std::get<3>(degrees_)>,
-               bspline_t<real_t, GeoDim, std::get<0>(degrees_), std::get<1>(degrees_), std::get<3>(degrees_)>,
-               bspline_t<real_t, GeoDim, std::get<0>(degrees_), std::get<1>(degrees_), std::get<2>(degrees_)>,
-               bspline_t<real_t, GeoDim, std::get<0>(degrees_), std::get<1>(degrees_), std::get<2>(degrees_)>> bdr_;
+    }   
   };
   
   /// @brief Boundary
-  template<template<typename, short_t, short_t...> class bspline_t,
-           typename real_t, short_t GeoDim, short_t... Degrees>
-  class Boundary : public BoundaryCore<bspline_t, real_t, GeoDim, sizeof...(Degrees), Degrees...>
+  template<typename BSpline_t>
+  class Boundary : public BoundaryCore<BSpline_t, BSpline_t::parDim()>
   {
   public:
-    using BoundaryCore<bspline_t, real_t, GeoDim, sizeof...(Degrees), Degrees...>::BoundaryCore;
+    using BoundaryCore<BSpline_t, BSpline_t::parDim()>::BoundaryCore;
   };
   
   /// @brief Print (as string) a Boundary object
-template<template<typename, short_t, short_t...> class bspline_t,
-         typename real_t, short_t GeoDim, short_t... Degrees>
-inline std::ostream& operator<<(std::ostream& os,
-                                const Boundary<bspline_t, real_t, GeoDim, Degrees...>& obj)
+  template<typename BSpline_t>
+  inline std::ostream& operator<<(std::ostream& os,
+                                  const Boundary<BSpline_t>& obj)
   {
     obj.pretty_print(os);
     return os;

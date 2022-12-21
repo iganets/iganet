@@ -902,7 +902,7 @@ namespace iganet {
     using Variable_t = bspline_t<real_t, PdeDim, Degrees...>;
 
     /// @brief Type of the boundary B-spline object
-    using Boundary_t = Boundary<bspline_t,real_t, PdeDim, Degrees...>;
+    using Boundary_t = Boundary<Variable_t>;
     
     /// @brief B-spline representation of the geometry
     Geometry_t geo_;
