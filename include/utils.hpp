@@ -478,5 +478,36 @@ namespace iganet {
       json.push_back(::iganet::to_json<T, N>(accessors[i]));
     return json;
   }
+
+  namespace detail {
+    /// @brief Computes the power of integer `E` to the `N` at compile time
+    /// @{
+    template<int E, int N>
+    struct integer_pow {
+      enum { value = E * integer_pow<E, N - 1>::value };
+    };
+    
+    template <int E>
+    struct integer_pow<E, 0> {
+      enum { value = 1 };
+    };
+    /// @}
+  } // namespace detail
+
+  template<int E>
+  long long integer_pow(unsigned int n) {
+    static long long lookupTable[] = {
+      detail::integer_pow<E, 0>::value, detail::integer_pow<E, 1>::value,
+      detail::integer_pow<E, 2>::value, detail::integer_pow<E, 3>::value,
+      detail::integer_pow<E, 4>::value, detail::integer_pow<E, 5>::value,
+      detail::integer_pow<E, 6>::value, detail::integer_pow<E, 7>::value,
+      detail::integer_pow<E, 8>::value, detail::integer_pow<E, 9>::value,
+      detail::integer_pow<E,10>::value, detail::integer_pow<E,11>::value,
+      detail::integer_pow<E,12>::value, detail::integer_pow<E,13>::value,
+      detail::integer_pow<E,14>::value, detail::integer_pow<E,15>::value
+    };
+    
+    return lookupTable[n];
+  }
   
 } // namespace iganet
