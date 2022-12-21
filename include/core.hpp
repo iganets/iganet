@@ -165,12 +165,12 @@ namespace iganet {
   };
 
   /// @brief Initializes the library
-  inline void init(std::ostream& os = std::cout)
+  inline void init(std::ostream& os = std::clog)
   {
     os << "LibTorch version: "
        << TORCH_VERSION_MAJOR << "."
        << TORCH_VERSION_MINOR << "."
-       << TORCH_VERSION_PATCH << std::endl;
+       << TORCH_VERSION_PATCH << "\n";
     torch::manual_seed(1);
   }
 
@@ -178,7 +178,7 @@ namespace iganet {
 
 namespace std {
   
-  /// Print (as string) an array of torch::Tensor objects
+  /// Print (as string) an std::array of torch::Tensor objects
   template<std::size_t N>
   inline std::ostream& operator<<(std::ostream& os,
                                   const std::array<torch::Tensor, N>& obj)
@@ -196,13 +196,16 @@ namespace std {
 
     os << *name_ << "(\n";
     for (const auto& i : obj)
-      os << ((i.sizes().size() == 1) ? i.view({1,i.size(0)}) : i) << std::endl;
+      if (!i.numel())
+        os << "{}\n";
+      else
+        os << ((i.sizes().size() == 1) ? i.view({1,i.size(0)}) : i) << "\n";
     os << ")";
     
     return os;
   }
 
-  /// Print (as string) an array of generic objects
+  /// Print (as string) an std::array of generic objects
   template<typename T, std::size_t N>
   inline std::ostream& operator<<(std::ostream& os,
                                   const std::array<T, N>& obj)
@@ -226,6 +229,39 @@ namespace std {
     return os;
   }
 
-} // namespace std
+  namespace detail {
+    template<typename... Ts, std::size_t... Is>
+    inline std::ostream& output_tuple(std::ostream& os,
+                                      const std::tuple<Ts...>& obj,
+                                      std::index_sequence<Is...>)
+    {
+      (..., (os << std::get<Is>(obj) << "\n"));
+      return os;
+    }
+    
+  } // namespace detail
   
+  /// Print (as string) an std::tuple of generic objects
+  template<typename... Ts>
+  inline std::ostream& operator<<(std::ostream& os,
+                                  const std::tuple<Ts...>& obj)
+  {
+    at::optional<std::string> name_ = c10::demangle(typeid(obj).name());
 
+#if defined(_WIN32)
+    // Windows adds "struct" or "class" as a prefix.
+    if (name_->find("struct ") == 0) {
+      name_->erase(name_->begin(), name_->begin() + 7);
+    } else if (name_->find("class ") == 0) {
+      name_->erase(name_->begin(), name_->begin() + 6);
+    }
+#endif // defined(_WIN32)
+    
+    os << *name_ << "(\n";
+    detail::output_tuple(os, obj, std::make_index_sequence<sizeof...(Ts)>());
+    os << "\n)";
+    
+    return os;
+  }
+
+} // namespace std
