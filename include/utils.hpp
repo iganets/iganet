@@ -104,13 +104,21 @@ namespace iganet {
   /// @param[in] start_offset Starting value of the offset
   ///
   /// @param[in] stop_offset  Stopping value of the offset
+  template<bool transpose=false>
   inline auto VSlice(torch::Tensor index, int64_t start_offset, int64_t stop_offset)
   {
-    return index.repeat(stop_offset-start_offset)
-      +    torch::linspace(start_offset,
-                           stop_offset-1,
-                           stop_offset-start_offset,
-                           index.options()).repeat_interleave(index.numel());
+    if constexpr (transpose)
+      return index.repeat_interleave(stop_offset-start_offset)
+        +    torch::linspace(start_offset,
+                             stop_offset-1,
+                             stop_offset-start_offset,
+                             index.options()).repeat(index.numel());
+    else
+      return index.repeat(stop_offset-start_offset)
+        +    torch::linspace(start_offset,
+                             stop_offset-1,
+                             stop_offset-start_offset,
+                             index.options()).repeat_interleave(index.numel());
   }
 
   /// @brief Vectorized version of `torch::indexing::Slice` (see
@@ -123,6 +131,7 @@ namespace iganet {
   /// @param[in] stop_offset  2d array of stopping value of the offset
   ///
   /// @param[in] leading_dim  Leading dimension
+  template<bool transpose=false>
   inline auto VSlice(const std::array<torch::Tensor, 2>& index,
                      const std::array<int64_t, 2> start_offset,
                      const std::array<int64_t, 2> stop_offset,
@@ -133,19 +142,32 @@ namespace iganet {
     auto dist0   = stop_offset[0]-start_offset[0];
     auto dist1   = stop_offset[1]-start_offset[1];
     auto dist01  = dist0 * dist1;
-    
-    return
-      (index[1].repeat(dist01)
-       +
-       torch::linspace(start_offset[1], stop_offset[1]-1, dist1, index[0].options()
-                       ).repeat_interleave(index[0].numel()*dist0)
-       ) * leading_dim
-      +
-      (index[0].repeat(dist0)
-       +
-       torch::linspace(start_offset[0], stop_offset[0]-1,dist0, index[0].options()
-                       ).repeat_interleave(index[1].numel())
-       ).repeat({dist1});
+
+    if constexpr (transpose)
+      return
+        (index[1].repeat_interleave(dist01)
+         +
+         torch::linspace(start_offset[1], stop_offset[1]-1, dist1, index[0].options()
+                         ).repeat_interleave(dist0).repeat(index[0].numel())
+         ) * leading_dim
+        +
+        index[0].repeat_interleave(dist0).repeat_interleave(dist1)
+        +
+        torch::linspace(start_offset[0], stop_offset[0]-1,dist0, index[0].options()
+                        ).repeat(index[1].numel()).repeat(dist1);
+    else
+      return
+        (index[1].repeat(dist01)
+         +
+         torch::linspace(start_offset[1], stop_offset[1]-1, dist1, index[0].options()
+                         ).repeat_interleave(index[0].numel()*dist0)
+         ) * leading_dim
+        +
+        (index[0].repeat(dist0)
+         +
+         torch::linspace(start_offset[0], stop_offset[0]-1,dist0, index[0].options()
+                         ).repeat_interleave(index[1].numel())
+         ).repeat(dist1);
   }
 
   /// @brief Vectorized version of `torch::indexing::Slice` (see
@@ -158,6 +180,7 @@ namespace iganet {
   /// @param[in] stop_offset  3d array of stopping value of the offset
   ///
   /// @param[in] leading_dim  2d array of leading dimension
+  template<bool transpose=false>
   inline auto VSlice(const std::array<torch::Tensor, 3>& index,
                      const std::array<int64_t, 3> start_offset,
                      const std::array<int64_t, 3> stop_offset,
@@ -172,25 +195,44 @@ namespace iganet {
     auto dist01  = dist0 * dist1;
     auto dist12  = dist1 * dist2;
     auto dist012 = dist0 * dist12;
-    
-    return
-      (index[2].repeat(dist012)
-       +
-       torch::linspace(start_offset[2], stop_offset[2]-1, dist2, index[0].options()
-                       ).repeat_interleave(index[0].numel()*dist01)
-       ) * leading_dim[0] * leading_dim[1]
-      +
-      (index[1].repeat(dist01)
-       +
-       torch::linspace(start_offset[1], stop_offset[1]-1, dist1, index[0].options()
-                       ).repeat_interleave(index[0].numel()*dist0)
-       ).repeat({dist2}) * leading_dim[0]
-      +
-      (index[0].repeat(dist0)
-       +
-       torch::linspace(start_offset[0], stop_offset[0]-1, dist0, index[0].options()
-                       ).repeat_interleave(index[0].numel())
-       ).repeat({dist12});    
+
+    if constexpr (transpose)
+      return
+        (index[2].repeat_interleave(dist012)
+         +
+         torch::linspace(start_offset[2], stop_offset[2]-1, dist2, index[0].options()
+                         ).repeat_interleave(dist01).repeat(index[0].numel())
+         ) * leading_dim[0] * leading_dim[1]
+        +
+        (index[1].repeat_interleave(dist01).repeat_interleave(dist2)
+         +
+         torch::linspace(start_offset[1], stop_offset[1]-1, dist1, index[0].options()
+                         ).repeat_interleave(dist0).repeat(index[0].numel()).repeat(dist2)
+         ) * leading_dim[0]
+        +
+        index[0].repeat_interleave(dist0).repeat_interleave(dist12)
+        +
+        torch::linspace(start_offset[0], stop_offset[0]-1, dist0, index[0].options()
+                        ).repeat(index[0].numel()).repeat(dist12);
+    else
+      return
+        (index[2].repeat(dist012)
+         +
+         torch::linspace(start_offset[2], stop_offset[2]-1, dist2, index[0].options()
+                         ).repeat_interleave(index[0].numel()*dist01)
+         ) * leading_dim[0] * leading_dim[1]
+        +
+        (index[1].repeat(dist01)
+         +
+         torch::linspace(start_offset[1], stop_offset[1]-1, dist1, index[0].options()
+                         ).repeat_interleave(index[0].numel()*dist0)
+         ).repeat(dist2) * leading_dim[0]
+        +
+        (index[0].repeat(dist0)
+         +
+         torch::linspace(start_offset[0], stop_offset[0]-1, dist0, index[0].options()
+                         ).repeat_interleave(index[0].numel())
+         ).repeat(dist12);
   }
 
   /// @brief Vectorized version of `torch::indexing::Slice` (see
@@ -203,6 +245,7 @@ namespace iganet {
   /// @param[in] stop_offset  4d array of stopping value of the offset
   ///
   /// @param[in] leading_dim  3d array of leading dimension
+  template<bool transpose=false>
   inline auto VSlice(const std::array<torch::Tensor, 4>& index,
                      const std::array<int64_t, 4> start_offset,
                      const std::array<int64_t, 4> stop_offset,
@@ -223,30 +266,55 @@ namespace iganet {
     auto dist123  = dist1 * dist23;
     auto dist0123 = dist01 * dist23;
 
-    return
-      (index[3].repeat(dist0123)
-       +
-       torch::linspace(start_offset[3], stop_offset[3]-1, dist3, index[0].options()
-                       ).repeat_interleave(index[0].numel()*dist012)
-       ) * leading_dim[0] * leading_dim[1] * leading_dim[2]
-      +
-      (index[2].repeat(dist012)
-       +
-       torch::linspace(start_offset[2], stop_offset[2]-1, dist2, index[0].options()
-                       ).repeat_interleave(index[0].numel()*dist01)
-       ).repeat({dist3}) * leading_dim[0] * leading_dim[1]
-      +
-      (index[1].repeat(dist01)
-       +
-       torch::linspace(start_offset[1], stop_offset[1]-1, dist1, index[0].options()
-                       ).repeat_interleave(index[0].numel()*dist0)
-       ).repeat({dist23}) * leading_dim[0]
-      +
-      (index[0].repeat(dist0)
-       +
-       torch::linspace(start_offset[0], stop_offset[0]-1, dist0, index[0].options()
-                       ).repeat_interleave(index[0].numel())
-       ).repeat({dist123});    
+    if constexpr(transpose)
+      return
+        (index[3].repeat_interleave(dist0123)
+         +
+         torch::linspace(start_offset[3], stop_offset[3]-1, dist3, index[0].options()
+                         ).repeat_interleave(dist012).repeat(index[0].numel())
+         ) * leading_dim[0] * leading_dim[1] * leading_dim[2]
+        +
+        (index[2].repeat_interleave(dist012).repeat_interleave(dist3)
+         +
+         torch::linspace(start_offset[2], stop_offset[2]-1, dist2, index[0].options()
+                         ).repeat_interleave(dist01).repeat(index[0].numel()).repeat(dist3)
+         ) * leading_dim[0] * leading_dim[1]
+        +
+        (index[1].repeat_interleave(dist01).repeat_interleave(dist23)
+         +
+         torch::linspace(start_offset[1], stop_offset[1]-1, dist1, index[0].options()
+                         ).repeat_interleave(dist0).repeat(index[0].numel()).repeat(dist23)
+         ) * leading_dim[0]
+        +
+        index[0].repeat_interleave(dist0).repeat_interleave(dist123)
+        +
+        torch::linspace(start_offset[0], stop_offset[0]-1, dist0, index[0].options()
+                        ).repeat(index[0].numel()).repeat(dist123);
+    else
+      return
+        (index[3].repeat(dist0123)
+         +
+         torch::linspace(start_offset[3], stop_offset[3]-1, dist3, index[0].options()
+                         ).repeat_interleave(index[0].numel()*dist012)
+         ) * leading_dim[0] * leading_dim[1] * leading_dim[2]
+        +
+        (index[2].repeat(dist012)
+         +
+         torch::linspace(start_offset[2], stop_offset[2]-1, dist2, index[0].options()
+                         ).repeat_interleave(index[0].numel()*dist01)
+         ).repeat(dist3) * leading_dim[0] * leading_dim[1]
+        +
+        (index[1].repeat(dist01)
+         +
+         torch::linspace(start_offset[1], stop_offset[1]-1, dist1, index[0].options()
+                         ).repeat_interleave(index[0].numel()*dist0)
+         ).repeat(dist23) * leading_dim[0]
+        +
+        (index[0].repeat(dist0)
+         +
+         torch::linspace(start_offset[0], stop_offset[0]-1, dist0, index[0].options()
+                         ).repeat_interleave(index[0].numel())
+         ).repeat(dist123);
   }
 
   /// @brief Concatenates multiple std::vector objects
@@ -280,7 +348,7 @@ namespace iganet {
     std::move(vector.begin(), vector.end(), array.begin());
     return array;
   }
-  
+
   /// @brief Converts an std::array object into std::vector
   template<typename T, std::size_t N>
   inline std::vector<T> convert(std::array<T, N>&& array)
@@ -328,7 +396,7 @@ namespace iganet {
     return TensorArray1({to_tensor(list, torch::IntArrayRef{-1}, options)});
   }
   /// @}
-  
+
 
   /// @brief Converts two std::initializer_list's to TensorArray2
   /// @{
@@ -424,14 +492,14 @@ namespace iganet {
       return std::array<torch::TensorAccessor<T, N>, sizeof...(Is)>{tensors[Is].template accessor<T, N>()...};
     }
   } // namespace detail
-  
+
   /// @brief Converts an std::array of torch::Tensor objects to an
   /// array of torch::TensorAccessor objects
   template<typename T, std::size_t N, std::size_t M>
   auto to_tensorAccessor(const std::array<torch::Tensor, M>& tensors) {
     return detail::to_tensorAccessor<T, N>(tensors, std::make_index_sequence<M>());
   }
-    
+
   /// @brief Converts a torch::TensorAccessor object to a JSON object
   template<typename T, std::size_t N>
   auto to_json(const torch::TensorAccessor<T, N>& accessor)
@@ -457,14 +525,14 @@ namespace iganet {
             for (int64_t l = 0; l < accessor.size(3); ++l)
               json.push_back(accessor[i][j][k][l]);
     }
-    
+
     return json;
   }
 
   /// @brief Converts a torch::Tensor object to a JSON object
   template<typename T, std::size_t N>
   auto to_json(const torch::Tensor& tensor) {
-    auto accessor = to_tensorAccessor<T, N>(tensor);       
+    auto accessor = to_tensorAccessor<T, N>(tensor);
     return ::iganet::to_json(accessor);
   }
 
@@ -479,35 +547,17 @@ namespace iganet {
     return json;
   }
 
-  namespace detail {
-    /// @brief Computes the power of integer `E` to the `N` at compile time
-    /// @{
-    template<int E, int N>
-    struct integer_pow {
-      enum { value = E * integer_pow<E, N - 1>::value };
-    };
-    
-    template <int E>
-    struct integer_pow<E, 0> {
-      enum { value = 1 };
-    };
-    /// @}
-  } // namespace detail
+  /// @brief Computes the power of integer `E` to the `N` at compile time
+  /// @{
+  template<int E, int N>
+  struct integer_pow {
+    enum { value = E * integer_pow<E, N - 1>::value };
+  };
 
-  template<int E>
-  long long integer_pow(unsigned int n) {
-    static long long lookupTable[] = {
-      detail::integer_pow<E, 0>::value, detail::integer_pow<E, 1>::value,
-      detail::integer_pow<E, 2>::value, detail::integer_pow<E, 3>::value,
-      detail::integer_pow<E, 4>::value, detail::integer_pow<E, 5>::value,
-      detail::integer_pow<E, 6>::value, detail::integer_pow<E, 7>::value,
-      detail::integer_pow<E, 8>::value, detail::integer_pow<E, 9>::value,
-      detail::integer_pow<E,10>::value, detail::integer_pow<E,11>::value,
-      detail::integer_pow<E,12>::value, detail::integer_pow<E,13>::value,
-      detail::integer_pow<E,14>::value, detail::integer_pow<E,15>::value
-    };
-    
-    return lookupTable[n];
-  }
-  
+  template <int E>
+  struct integer_pow<E, 0> {
+    enum { value = 1 };
+  };
+  /// @}
+
 } // namespace iganet
