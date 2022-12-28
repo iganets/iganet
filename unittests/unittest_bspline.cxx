@@ -1628,7 +1628,7 @@ TEST(BSpline, NonUniformBSpline_eval_parDim2_geoDim3_degrees46_double)
   bspline.transform(trafo_parDim2_geoDim3_double);
   auto xi  = iganet::to_tensorArray<double>({0.0, 0.1, 0.2, 0.5, 0.75, 0.9, 1.0},
                                             {0.0, 0.1, 0.2, 0.5, 0.75, 0.9, 1.0}, bspline.options());
-  test_bspline_eval(bspline, xi, 1e-12);
+  test_bspline_eval(bspline, xi, 1e-11);
 }
 
 TEST(BSpline, NonUniformBSpline_eval_parDim2_geoDim3_degrees64_double)
@@ -1658,7 +1658,7 @@ TEST(BSpline, NonUniformBSpline_eval_parDim2_geoDim4_degrees46_double)
   bspline.transform(trafo_parDim2_geoDim4_double);
   auto xi  = iganet::to_tensorArray<double>({0.0, 0.1, 0.2, 0.5, 0.75, 0.9, 1.0},
                                             {0.0, 0.1, 0.2, 0.5, 0.75, 0.9, 1.0}, bspline.options());
-  test_bspline_eval(bspline, xi, 1e-12);
+  test_bspline_eval(bspline, xi, 1e-11);
 }
 
 TEST(BSpline, NonUniformBSpline_eval_parDim2_geoDim4_degrees64_double)
