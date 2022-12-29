@@ -20,10 +20,13 @@
 #include "../unittests/unittest_splinelib.hpp"
 #include <gtest/gtest.h>
 
+#include <c10/cuda/CUDACachingAllocator.h>
+
 #define SPLINELIB
 static constexpr iganet::deriv deriv = iganet::deriv::func;
-static constexpr bool precompute = true;
-static constexpr bool segregated = false;
+static constexpr bool precompute = false;
+static constexpr bool segregated = true;
+static constexpr bool memoryused = true;
 
 TEST(Performance, MatmulTensorLayout_double)
 {
@@ -102,6 +105,14 @@ namespace unittest {
       for (int i=0; i<10; i++)
         bspline.template eval<deriv, segregated>(xi);
     auto t2 = std::chrono::high_resolution_clock::now();
+    if constexpr (memoryused)
+    std::cout << std::right << std::setw(10)
+              << (c10::cuda::CUDACachingAllocator::getDeviceStats(0).reserved_bytes[0].current +
+                  c10::cuda::CUDACachingAllocator::getDeviceStats(0).reserved_bytes[1].current +
+                  c10::cuda::CUDACachingAllocator::getDeviceStats(0).reserved_bytes[2].current +
+                  c10::cuda::CUDACachingAllocator::getDeviceStats(0).reserved_bytes[3].current)/(1024*1024*1024) 
+              << " (GB)";
+    else
     std::cout << std::right << std::setw(10)
               << std::chrono::duration_cast<std::chrono::nanoseconds>(t2-t1).count() / double(nsamples*10)
               << " (ns/entry)";
@@ -164,6 +175,14 @@ namespace unittest {
       for (int i=0; i<10; i++)
         bspline.template eval<deriv, segregated>(xi);
     auto t2 = std::chrono::high_resolution_clock::now();
+    if constexpr (memoryused)
+    std::cout << std::right << std::setw(10)
+              << (c10::cuda::CUDACachingAllocator::getDeviceStats(0).reserved_bytes[0].current +
+                  c10::cuda::CUDACachingAllocator::getDeviceStats(0).reserved_bytes[1].current +
+                  c10::cuda::CUDACachingAllocator::getDeviceStats(0).reserved_bytes[2].current +
+                  c10::cuda::CUDACachingAllocator::getDeviceStats(0).reserved_bytes[3].current)/(1024*1024*1024) 
+              << " (GB)";
+    else
     std::cout << std::right << std::setw(10)
               << std::chrono::duration_cast<std::chrono::nanoseconds>(t2-t1).count() / double(nsamples*10)
               << " (ns/entry)";
@@ -230,6 +249,14 @@ namespace unittest {
       for (int i=0; i<10; i++)
         bspline.template eval<deriv, segregated>(xi);
     auto t2 = std::chrono::high_resolution_clock::now();
+    if constexpr (memoryused)
+    std::cout << std::right << std::setw(10)
+              << (c10::cuda::CUDACachingAllocator::getDeviceStats(0).reserved_bytes[0].current +
+                  c10::cuda::CUDACachingAllocator::getDeviceStats(0).reserved_bytes[1].current +
+                  c10::cuda::CUDACachingAllocator::getDeviceStats(0).reserved_bytes[2].current +
+                  c10::cuda::CUDACachingAllocator::getDeviceStats(0).reserved_bytes[3].current)/(1024*1024*1024) 
+              << " (GB)";
+    else
     std::cout << std::right << std::setw(10)
               << std::chrono::duration_cast<std::chrono::nanoseconds>(t2-t1).count() / double(nsamples*10)
               << " (ns/entry)";
@@ -300,6 +327,14 @@ namespace unittest {
       for (int i=0; i<10; i++)
         bspline.template eval<deriv, segregated>(xi);
     auto t2 = std::chrono::high_resolution_clock::now();
+    if constexpr (memoryused)
+    std::cout << std::right << std::setw(10)
+              << (c10::cuda::CUDACachingAllocator::getDeviceStats(0).reserved_bytes[0].current +
+                  c10::cuda::CUDACachingAllocator::getDeviceStats(0).reserved_bytes[1].current +
+                  c10::cuda::CUDACachingAllocator::getDeviceStats(0).reserved_bytes[2].current +
+                  c10::cuda::CUDACachingAllocator::getDeviceStats(0).reserved_bytes[3].current)/(1024*1024*1024) 
+              << " (GB)";
+    else
     std::cout << std::right << std::setw(10)
               << std::chrono::duration_cast<std::chrono::nanoseconds>(t2-t1).count() / double(nsamples*10)
               << " (ns/entry)";
