@@ -107,10 +107,10 @@ namespace unittest {
     auto t2 = std::chrono::high_resolution_clock::now();
     if constexpr (memoryused)
     std::cout << std::right << std::setw(10)
-              << (c10::cuda::CUDACachingAllocator::getDeviceStats(0).reserved_bytes[0].current +
-                  c10::cuda::CUDACachingAllocator::getDeviceStats(0).reserved_bytes[1].current +
-                  c10::cuda::CUDACachingAllocator::getDeviceStats(0).reserved_bytes[2].current +
-                  c10::cuda::CUDACachingAllocator::getDeviceStats(0).reserved_bytes[3].current)/(1024*1024*1024) 
+              << (c10::cuda::CUDACachingAllocator::getDeviceStats(c10::cuda::current_device()).reserved_bytes[0].current +
+                  c10::cuda::CUDACachingAllocator::getDeviceStats(c10::cuda::current_device()).reserved_bytes[1].current +
+                  c10::cuda::CUDACachingAllocator::getDeviceStats(c10::cuda::current_device()).reserved_bytes[2].current +
+                  c10::cuda::CUDACachingAllocator::getDeviceStats(c10::cuda::current_device()).reserved_bytes[3].current)/double(1024*1024*1024) 
               << " (GB)";
     else
     std::cout << std::right << std::setw(10)
@@ -177,10 +177,10 @@ namespace unittest {
     auto t2 = std::chrono::high_resolution_clock::now();
     if constexpr (memoryused)
     std::cout << std::right << std::setw(10)
-              << (c10::cuda::CUDACachingAllocator::getDeviceStats(0).reserved_bytes[0].current +
-                  c10::cuda::CUDACachingAllocator::getDeviceStats(0).reserved_bytes[1].current +
-                  c10::cuda::CUDACachingAllocator::getDeviceStats(0).reserved_bytes[2].current +
-                  c10::cuda::CUDACachingAllocator::getDeviceStats(0).reserved_bytes[3].current)/(1024*1024*1024) 
+              << (c10::cuda::CUDACachingAllocator::getDeviceStats(c10::cuda::current_device()).reserved_bytes[0].current +
+                  c10::cuda::CUDACachingAllocator::getDeviceStats(c10::cuda::current_device()).reserved_bytes[1].current +
+                  c10::cuda::CUDACachingAllocator::getDeviceStats(c10::cuda::current_device()).reserved_bytes[2].current +
+                  c10::cuda::CUDACachingAllocator::getDeviceStats(c10::cuda::current_device()).reserved_bytes[3].current)/double(1024*1024*1024) 
               << " (GB)";
     else
     std::cout << std::right << std::setw(10)
@@ -251,10 +251,10 @@ namespace unittest {
     auto t2 = std::chrono::high_resolution_clock::now();
     if constexpr (memoryused)
     std::cout << std::right << std::setw(10)
-              << (c10::cuda::CUDACachingAllocator::getDeviceStats(0).reserved_bytes[0].current +
-                  c10::cuda::CUDACachingAllocator::getDeviceStats(0).reserved_bytes[1].current +
-                  c10::cuda::CUDACachingAllocator::getDeviceStats(0).reserved_bytes[2].current +
-                  c10::cuda::CUDACachingAllocator::getDeviceStats(0).reserved_bytes[3].current)/(1024*1024*1024) 
+              << (c10::cuda::CUDACachingAllocator::getDeviceStats(c10::cuda::current_device()).reserved_bytes[0].current +
+                  c10::cuda::CUDACachingAllocator::getDeviceStats(c10::cuda::current_device()).reserved_bytes[1].current +
+                  c10::cuda::CUDACachingAllocator::getDeviceStats(c10::cuda::current_device()).reserved_bytes[2].current +
+                  c10::cuda::CUDACachingAllocator::getDeviceStats(c10::cuda::current_device()).reserved_bytes[3].current)/double(1024*1024*1024) 
               << " (GB)";
     else
     std::cout << std::right << std::setw(10)
@@ -329,10 +329,10 @@ namespace unittest {
     auto t2 = std::chrono::high_resolution_clock::now();
     if constexpr (memoryused)
     std::cout << std::right << std::setw(10)
-              << (c10::cuda::CUDACachingAllocator::getDeviceStats(0).reserved_bytes[0].current +
-                  c10::cuda::CUDACachingAllocator::getDeviceStats(0).reserved_bytes[1].current +
-                  c10::cuda::CUDACachingAllocator::getDeviceStats(0).reserved_bytes[2].current +
-                  c10::cuda::CUDACachingAllocator::getDeviceStats(0).reserved_bytes[3].current)/(1024*1024*1024) 
+              << (c10::cuda::CUDACachingAllocator::getDeviceStats(c10::cuda::current_device()).reserved_bytes[0].current +
+                  c10::cuda::CUDACachingAllocator::getDeviceStats(c10::cuda::current_device()).reserved_bytes[1].current +
+                  c10::cuda::CUDACachingAllocator::getDeviceStats(c10::cuda::current_device()).reserved_bytes[2].current +
+                  c10::cuda::CUDACachingAllocator::getDeviceStats(c10::cuda::current_device()).reserved_bytes[3].current)/double(1024*1024*1024) 
               << " (GB)";
     else
     std::cout << std::right << std::setw(10)
