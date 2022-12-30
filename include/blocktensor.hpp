@@ -35,12 +35,12 @@ namespace iganet {
 
   /// @brief Returns an std::shared_ptr<T> object from arg
   template<typename T>
-  inline auto make_shared(T arg)
+  inline auto make_shared(T&& arg)
   {
     if constexpr (is_shared_ptr<typename std::decay<T>::type>::value)
-      return std::forward<T>(arg);
+      return std::forward<T>(std::move(arg));
     else
-      return std::make_shared<typename std::decay<T>::type>(arg);
+      return std::make_shared<typename std::decay<T>::type>(std::move(arg));
   }
 
   /// @brief Forward declaration of BlockTensor
@@ -80,7 +80,7 @@ namespace iganet {
     /// @brief Constructor from variadic templates
     template<typename... Ts>
     BlockTensorCore(Ts&&... data)
-      : data_({make_shared<Ts>(data)...})
+      : data_({make_shared<Ts>(std::move(data))...})
     {}
 
     /// @brief Returns all dimensions as array
@@ -153,7 +153,7 @@ namespace iganet {
     inline T& set(short_t idx, D&& data)
     {
       assert(0 <= idx && idx < (Dims*...));
-      data_[idx] = make_shared<D>(data);
+      data_[idx] = make_shared<D>(std::move(data));
       return *data_[idx];
     }
     
