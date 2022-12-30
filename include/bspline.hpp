@@ -2252,7 +2252,7 @@ namespace iganet {
     using UniformBSplineCore<real_t, GeoDim, Degrees...>::UniformBSplineCore;
 
     /// @brief Constructor for non-equidistant knot vectors
-    NonUniformBSplineCore(std::array<std::vector<real_t>, Base::parDim_> kv,
+    NonUniformBSplineCore(std::array<std::vector<typename Base::value_type>, Base::parDim_> kv,
                           enum init init = init::zeros)
       : Base(std::array<int64_t, Base::parDim_>{Degrees...}, init)
     {
@@ -2263,10 +2263,10 @@ namespace iganet {
           throw std::runtime_error("Knot vector is too short for an open knot vector (n+p+1 > 2*(p+1))");
 
         if (core<real_t>::options_.device() == torch::kCPU)
-          Base::knots_[i] = torch::from_blob(static_cast<real_t*>(kv[i].data()),
+          Base::knots_[i] = torch::from_blob(static_cast<typename Base::value_type*>(kv[i].data()),
                                              kv[i].size(), core<real_t>::options_).clone();
         else
-          Base::knots_[i] = torch::from_blob(static_cast<real_t *>(kv[i].data()),
+          Base::knots_[i] = torch::from_blob(static_cast<typename Base::value_type*>(kv[i].data()),
                                              kv[i].size(), core<real_t>::options_.device(torch::kCPU))
             .to(core<real_t>::options_.device());
 
