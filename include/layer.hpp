@@ -13,7 +13,6 @@
 */
 
 #include <core.hpp>
-#include <any>
 
 #pragma once
 
