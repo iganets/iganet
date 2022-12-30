@@ -418,9 +418,10 @@ namespace iganet {
 
     /// @brief Default constructor
     UniformBSplineCore()
-      : core<real_t>(),
-        nknots_({0}),
-        ncoeffs_({0}) {}
+      : core<real_t>()//,
+        //nknots_({0}),
+        //ncoeffs_({0}) {}
+        {}
 
     /// @brief Constructor for equidistant knot vectors
     UniformBSplineCore(const std::array<int64_t, parDim_>& ncoeffs,

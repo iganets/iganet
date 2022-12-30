@@ -46,13 +46,16 @@ namespace iganet {
     std::tuple<BoundaryBSpline_t,
                BoundaryBSpline_t> bdr_;
   public:
+    BoundaryCore() = default;
+
     /// @brief Constructor
-    BoundaryCore(...)
+    BoundaryCore(const std::array<int64_t, 1>&,
+                 enum init = init::zeros)
       : core<typename BSpline_t::value_type>() ,
         bdr_(
              {
-               BoundaryBSpline_t({}),
-               BoundaryBSpline_t({}),
+               BoundaryBSpline_t(std::array<int64_t, 0>{}),
+               BoundaryBSpline_t(std::array<int64_t, 0>{}),
              }               
              )
     {}
