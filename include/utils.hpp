@@ -104,7 +104,7 @@ namespace iganet {
   /// @param[in] start_offset Starting value of the offset
   ///
   /// @param[in] stop_offset  Stopping value of the offset
-  template<bool transpose=false>
+  template<bool transpose = false>
   inline auto VSlice(torch::Tensor index, int64_t start_offset, int64_t stop_offset)
   {
     if constexpr (transpose)
@@ -131,7 +131,7 @@ namespace iganet {
   /// @param[in] stop_offset  2d array of stopping value of the offset
   ///
   /// @param[in] leading_dim  Leading dimension
-  template<bool transpose=false>
+  template<bool transpose = false>
   inline auto VSlice(const std::array<torch::Tensor, 2>& index,
                      const std::array<int64_t, 2> start_offset,
                      const std::array<int64_t, 2> stop_offset,
@@ -180,7 +180,7 @@ namespace iganet {
   /// @param[in] stop_offset  3d array of stopping value of the offset
   ///
   /// @param[in] leading_dim  2d array of leading dimension
-  template<bool transpose=false>
+  template<bool transpose = false>
   inline auto VSlice(const std::array<torch::Tensor, 3>& index,
                      const std::array<int64_t, 3> start_offset,
                      const std::array<int64_t, 3> stop_offset,
@@ -245,7 +245,7 @@ namespace iganet {
   /// @param[in] stop_offset  4d array of stopping value of the offset
   ///
   /// @param[in] leading_dim  3d array of leading dimension
-  template<bool transpose=false>
+  template<bool transpose = false>
   inline auto VSlice(const std::array<torch::Tensor, 4>& index,
                      const std::array<int64_t, 4> start_offset,
                      const std::array<int64_t, 4> stop_offset,
