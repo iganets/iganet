@@ -34,7 +34,7 @@ namespace iganet {
   using TensorArray2 = std::array<torch::Tensor,2>;
   using TensorArray3 = std::array<torch::Tensor,3>;
   using TensorArray4 = std::array<torch::Tensor,4>;
-  
+
   /// Determines the LibTorch dtype from template parameter
   ///
   /// @tparam T C++ type
@@ -66,14 +66,14 @@ namespace iganet {
   /// Stream manipulator
   /// @{
   inline int get_iomanip()
-  { 
+  {
     static int i = std::ios_base::xalloc();
     return i;
   }
-  
-  std::ostream& verbose(std::ostream& os) { os.iword(get_iomanip()) = 1; return os; } 
+
+  std::ostream& verbose(std::ostream& os) { os.iword(get_iomanip()) = 1; return os; }
   std::ostream& regular(std::ostream& os) { os.iword(get_iomanip()) = 0; return os; }
-  
+
   bool is_verbose(std::ostream& os) { return os.iword(get_iomanip()) != 0; }
   /// @}
 
@@ -112,13 +112,13 @@ namespace iganet {
     /// @brief String storing the full qualified name of the object
     mutable at::optional<std::string> name_;
   };
-  
+
   /// @brief LibTorch core object handles the automated determination
   /// of dtype from the template argument and the selection of the
   /// device
   ///
   /// @tparam real_t Type of real-valued data
-  template<typename real_t>
+  template<typename real_t, bool memory_optimized = false>
   class core : public fqn {
   public:
     /// Default constructor
@@ -152,16 +152,28 @@ namespace iganet {
                  .device(deviceType)
                  .requires_grad(requiresGrad))
     {}
-    
+
     /// @brief Returns constant reference to options
     const torch::TensorOptions options() const
     {
       return options_;
     }
-    
+
   protected:
+    /// @brief Data type
+    using value_type = real_t;
+
+    /// @brief Optimize for memory usage
+    static constexpr bool memory_optimized_ = memory_optimized;
+
     /// @brief Tensor options
     const torch::TensorOptions options_;
+  };
+
+  template<typename real_t, bool memory_optimized, bool memory_optimized_>
+  class core<core<real_t, memory_optimized>, memory_optimized_> : public core<real_t, memory_optimized>
+  {
+    using core<real_t, memory_optimized>::core;
   };
 
   /// @brief Initializes the library
@@ -177,7 +189,7 @@ namespace iganet {
 } // namespace iganet
 
 namespace std {
-  
+
   /// Print (as string) an std::array of torch::Tensor objects
   template<std::size_t N>
   inline std::ostream& operator<<(std::ostream& os,
@@ -201,7 +213,7 @@ namespace std {
       else
         os << ((i.sizes().size() == 1) ? i.view({1,i.size(0)}) : i) << "\n";
     os << ")";
-    
+
     return os;
   }
 
@@ -225,7 +237,7 @@ namespace std {
     for (const auto& i : obj)
       os << i << (&i==&(*obj.rbegin()) ? "" : ",");
     os << ")";
-    
+
     return os;
   }
 
@@ -238,9 +250,9 @@ namespace std {
       (..., (os << std::get<Is>(obj) << "\n"));
       return os;
     }
-    
+
   } // namespace detail
-  
+
   /// Print (as string) an std::tuple of generic objects
   template<typename... Ts>
   inline std::ostream& operator<<(std::ostream& os,
@@ -256,11 +268,11 @@ namespace std {
       name_->erase(name_->begin(), name_->begin() + 6);
     }
 #endif // defined(_WIN32)
-    
+
     os << *name_ << "(\n";
     detail::output_tuple(os, obj, std::make_index_sequence<sizeof...(Ts)>());
     os << "\n)";
-    
+
     return os;
   }
 
