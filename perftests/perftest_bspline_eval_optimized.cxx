@@ -33,7 +33,7 @@ namespace perftest {
   auto test_UniformBSpline(int64_t ncoeffs, int64_t nsamples)
   {
     iganet::core<real_t> core_(false);
-    iganet::UniformBSpline<real_t, GeoDim, Degree0> bspline({ncoeffs}, iganet::init::linear);
+    iganet::UniformBSpline<iganet::core<real_t, true>, GeoDim, Degree0> bspline({ncoeffs}, iganet::init::linear);
     iganet::TensorArray1 xi = {torch::rand(nsamples, core_.options())};
     
     auto t1 = std::chrono::high_resolution_clock::now();
@@ -92,8 +92,8 @@ namespace perftest {
   auto test_UniformBSpline(int64_t ncoeffs, int64_t nsamples)
   {
     iganet::core<real_t> core_(false);
-    iganet::UniformBSpline<real_t, GeoDim, Degree0, Degree1> bspline({ncoeffs,
-                                                                      ncoeffs}, iganet::init::linear);
+    iganet::UniformBSpline<iganet::core<real_t, true>, GeoDim, Degree0, Degree1> bspline({ncoeffs,
+                                                                                          ncoeffs}, iganet::init::linear);
     iganet::TensorArray2 xi = {torch::rand(nsamples, core_.options()),
                                torch::rand(nsamples, core_.options())};
     
@@ -155,9 +155,9 @@ namespace perftest {
   auto test_UniformBSpline(int64_t ncoeffs, int64_t nsamples)
   {
     iganet::core<real_t> core_(false);
-    iganet::UniformBSpline<real_t, GeoDim, Degree0, Degree1, Degree2> bspline({ncoeffs,
-                                                                               ncoeffs,
-                                                                               ncoeffs}, iganet::init::linear);
+    iganet::UniformBSpline<iganet::core<real_t, true>, GeoDim, Degree0, Degree1, Degree2> bspline({ncoeffs,
+                                                                                                   ncoeffs,
+                                                                                                   ncoeffs}, iganet::init::linear);
     iganet::TensorArray3 xi = {torch::rand(nsamples, core_.options()),
                                torch::rand(nsamples, core_.options()),
                                torch::rand(nsamples, core_.options())};
@@ -222,10 +222,10 @@ namespace perftest {
   auto test_UniformBSpline(int64_t ncoeffs, int64_t nsamples)
   {
     iganet::core<real_t> core_(false);
-    iganet::UniformBSpline<real_t, GeoDim, Degree0, Degree1, Degree2, Degree3> bspline({ncoeffs,
-                                                                                        ncoeffs,
-                                                                                        ncoeffs,
-                                                                                        ncoeffs}, iganet::init::linear);
+    iganet::UniformBSpline<iganet::core<real_t, true>, GeoDim, Degree0, Degree1, Degree2, Degree3> bspline({ncoeffs,
+                                                                                                            ncoeffs,
+                                                                                                            ncoeffs,
+                                                                                                            ncoeffs}, iganet::init::linear);
     iganet::TensorArray4 xi = {torch::rand(nsamples, core_.options()),
                                torch::rand(nsamples, core_.options()),
                                torch::rand(nsamples, core_.options()),
