@@ -20,13 +20,9 @@
 #include "../unittests/unittest_splinelib.hpp"
 #include <gtest/gtest.h>
 
-#include <c10/cuda/CUDACachingAllocator.h>
-
 #define SPLINELIB
 static constexpr iganet::deriv deriv = iganet::deriv::func;
 static constexpr bool precompute = false;
-static constexpr bool segregated = true;
-static constexpr bool memoryused = true;
 
 TEST(Performance, MatmulTensorLayout_double)
 {
@@ -84,8 +80,7 @@ namespace unittest {
   template<typename real_t, short_t GeoDim,
            short_t Degree0,
            iganet::deriv deriv,
-           bool precompute = false,
-           bool segregated = false>
+           bool precompute = false>
   auto test_UniformBSpline(int64_t ncoeffs, int64_t nsamples)
   {
     iganet::core<real_t> core_(false);
@@ -96,23 +91,15 @@ namespace unittest {
     if constexpr (precompute)
     {
       auto knot_idx  = bspline.find_knot_indices(xi);
-      auto basfunc   = bspline.template eval_basfunc<deriv, segregated>(xi, knot_idx);
+      auto basfunc   = bspline.template eval_basfunc<deriv>(xi, knot_idx);
       auto coeff_idx = bspline.eval_coeff_indices(knot_idx);
       for (int i=0; i<10; i++)
         auto bspline_val = bspline.eval_from_precomputed(basfunc, coeff_idx, xi[0].numel(), xi[0].sizes());
     }
     else
       for (int i=0; i<10; i++)
-        bspline.template eval<deriv, segregated>(xi);
+        bspline.template eval<deriv>(xi);
     auto t2 = std::chrono::high_resolution_clock::now();
-    if constexpr (memoryused)
-    std::cout << std::right << std::setw(10)
-              << (c10::cuda::CUDACachingAllocator::getDeviceStats(c10::cuda::current_device()).reserved_bytes[0].current +
-                  c10::cuda::CUDACachingAllocator::getDeviceStats(c10::cuda::current_device()).reserved_bytes[1].current +
-                  c10::cuda::CUDACachingAllocator::getDeviceStats(c10::cuda::current_device()).reserved_bytes[2].current +
-                  c10::cuda::CUDACachingAllocator::getDeviceStats(c10::cuda::current_device()).reserved_bytes[3].current)/double(1024*1024*1024) 
-              << " (GB)";
-    else
     std::cout << std::right << std::setw(10)
               << std::chrono::duration_cast<std::chrono::nanoseconds>(t2-t1).count() / double(nsamples*10)
               << " (ns/entry)";
@@ -152,8 +139,7 @@ namespace unittest {
   template<typename real_t, short_t GeoDim,
            short_t Degree0, short_t Degree1,
            iganet::deriv deriv,
-           bool precompute = false,
-           bool segregated = false>
+           bool precompute = false>
   auto test_UniformBSpline(int64_t ncoeffs, int64_t nsamples)
   {
     iganet::core<real_t> core_(false);
@@ -166,23 +152,15 @@ namespace unittest {
     if constexpr (precompute)
     {
       auto knot_idx  = bspline.find_knot_indices(xi);
-      auto basfunc   = bspline.template eval_basfunc<deriv, segregated>(xi, knot_idx);
+      auto basfunc   = bspline.template eval_basfunc<deriv>(xi, knot_idx);
       auto coeff_idx = bspline.eval_coeff_indices(knot_idx);
       for (int i=0; i<10; i++)
         auto bspline_val = bspline.eval_from_precomputed(basfunc, coeff_idx, xi[0].numel(), xi[0].sizes());
     }
     else
       for (int i=0; i<10; i++)
-        bspline.template eval<deriv, segregated>(xi);
+        bspline.template eval<deriv>(xi);
     auto t2 = std::chrono::high_resolution_clock::now();
-    if constexpr (memoryused)
-    std::cout << std::right << std::setw(10)
-              << (c10::cuda::CUDACachingAllocator::getDeviceStats(c10::cuda::current_device()).reserved_bytes[0].current +
-                  c10::cuda::CUDACachingAllocator::getDeviceStats(c10::cuda::current_device()).reserved_bytes[1].current +
-                  c10::cuda::CUDACachingAllocator::getDeviceStats(c10::cuda::current_device()).reserved_bytes[2].current +
-                  c10::cuda::CUDACachingAllocator::getDeviceStats(c10::cuda::current_device()).reserved_bytes[3].current)/double(1024*1024*1024) 
-              << " (GB)";
-    else
     std::cout << std::right << std::setw(10)
               << std::chrono::duration_cast<std::chrono::nanoseconds>(t2-t1).count() / double(nsamples*10)
               << " (ns/entry)";
@@ -224,8 +202,7 @@ namespace unittest {
   template<typename real_t, short_t GeoDim,
            short_t Degree0, short_t Degree1, short_t Degree2,
            iganet::deriv deriv,
-           bool precompute = false,
-           bool segregated = false>
+           bool precompute = false>
   auto test_UniformBSpline(int64_t ncoeffs, int64_t nsamples)
   {
     iganet::core<real_t> core_(false);
@@ -240,23 +217,15 @@ namespace unittest {
     if constexpr (precompute)
     {
       auto knot_idx  = bspline.find_knot_indices(xi);
-      auto basfunc   = bspline.template eval_basfunc<deriv, segregated>(xi, knot_idx);
+      auto basfunc   = bspline.template eval_basfunc<deriv>(xi, knot_idx);
       auto coeff_idx = bspline.eval_coeff_indices(knot_idx);
       for (int i=0; i<10; i++)
         auto bspline_val = bspline.eval_from_precomputed(basfunc, coeff_idx, xi[0].numel(), xi[0].sizes());
     }
     else
       for (int i=0; i<10; i++)
-        bspline.template eval<deriv, segregated>(xi);
+        bspline.template eval<deriv>(xi);
     auto t2 = std::chrono::high_resolution_clock::now();
-    if constexpr (memoryused)
-    std::cout << std::right << std::setw(10)
-              << (c10::cuda::CUDACachingAllocator::getDeviceStats(c10::cuda::current_device()).reserved_bytes[0].current +
-                  c10::cuda::CUDACachingAllocator::getDeviceStats(c10::cuda::current_device()).reserved_bytes[1].current +
-                  c10::cuda::CUDACachingAllocator::getDeviceStats(c10::cuda::current_device()).reserved_bytes[2].current +
-                  c10::cuda::CUDACachingAllocator::getDeviceStats(c10::cuda::current_device()).reserved_bytes[3].current)/double(1024*1024*1024) 
-              << " (GB)";
-    else
     std::cout << std::right << std::setw(10)
               << std::chrono::duration_cast<std::chrono::nanoseconds>(t2-t1).count() / double(nsamples*10)
               << " (ns/entry)";
@@ -300,8 +269,7 @@ namespace unittest {
   template<typename real_t, short_t GeoDim,
            short_t Degree0, short_t Degree1, short_t Degree2, short_t Degree3,
            iganet::deriv deriv,
-           bool precompute = false,
-           bool segregated = false>
+           bool precompute = false>
   auto test_UniformBSpline(int64_t ncoeffs, int64_t nsamples)
   {
     iganet::core<real_t> core_(false);
@@ -318,23 +286,15 @@ namespace unittest {
     if constexpr (precompute)
     {
       auto knot_idx  = bspline.find_knot_indices(xi);
-      auto basfunc   = bspline.template eval_basfunc<deriv, segregated>(xi, knot_idx);
+      auto basfunc   = bspline.template eval_basfunc<deriv>(xi, knot_idx);
       auto coeff_idx = bspline.eval_coeff_indices(knot_idx);
       for (int i=0; i<10; i++)
         auto bspline_val = bspline.eval_from_precomputed(basfunc, coeff_idx, xi[0].numel(), xi[0].sizes());
     }
     else
       for (int i=0; i<10; i++)
-        bspline.template eval<deriv, segregated>(xi);
+        bspline.template eval<deriv>(xi);
     auto t2 = std::chrono::high_resolution_clock::now();
-    if constexpr (memoryused)
-    std::cout << std::right << std::setw(10)
-              << (c10::cuda::CUDACachingAllocator::getDeviceStats(c10::cuda::current_device()).reserved_bytes[0].current +
-                  c10::cuda::CUDACachingAllocator::getDeviceStats(c10::cuda::current_device()).reserved_bytes[1].current +
-                  c10::cuda::CUDACachingAllocator::getDeviceStats(c10::cuda::current_device()).reserved_bytes[2].current +
-                  c10::cuda::CUDACachingAllocator::getDeviceStats(c10::cuda::current_device()).reserved_bytes[3].current)/double(1024*1024*1024) 
-              << " (GB)";
-    else
     std::cout << std::right << std::setw(10)
               << std::chrono::duration_cast<std::chrono::nanoseconds>(t2-t1).count() / double(nsamples*10)
               << " (ns/entry)";
@@ -388,11 +348,11 @@ TEST(Performance, UniformBSpline_parDim1_double)
       std::cout << "("
                 << std::right << std::setw(8) << ncoeffs << ","
                 << std::right << std::setw(8) << nsamples << ") ";
-      unittest::template test_UniformBSpline<double, 1, 1, deriv, precompute, segregated>(ncoeffs, nsamples);
-      unittest::template test_UniformBSpline<double, 1, 2, deriv, precompute, segregated>(ncoeffs, nsamples);
-      unittest::template test_UniformBSpline<double, 1, 3, deriv, precompute, segregated>(ncoeffs, nsamples);
-      unittest::template test_UniformBSpline<double, 1, 4, deriv, precompute, segregated>(ncoeffs, nsamples);
-      unittest::template test_UniformBSpline<double, 1, 5, deriv, precompute, segregated>(ncoeffs, nsamples);
+      unittest::template test_UniformBSpline<double, 1, 1, deriv, precompute>(ncoeffs, nsamples);
+      unittest::template test_UniformBSpline<double, 1, 2, deriv, precompute>(ncoeffs, nsamples);
+      unittest::template test_UniformBSpline<double, 1, 3, deriv, precompute>(ncoeffs, nsamples);
+      unittest::template test_UniformBSpline<double, 1, 4, deriv, precompute>(ncoeffs, nsamples);
+      unittest::template test_UniformBSpline<double, 1, 5, deriv, precompute>(ncoeffs, nsamples);
       std::cout << std::endl;
     }
   }
@@ -408,11 +368,11 @@ TEST(Performance, UniformBSpline_parDim2_double)
                 << std::right << std::setw(8) << ncoeffs << ","
                 << std::right << std::setw(8) << nsamples << ") ";
       
-      unittest::template test_UniformBSpline<double, 1, 1, 1, deriv, precompute, segregated>(ncoeffs, nsamples);
-      unittest::template test_UniformBSpline<double, 1, 2, 2, deriv, precompute, segregated>(ncoeffs, nsamples);
-      unittest::template test_UniformBSpline<double, 1, 3, 3, deriv, precompute, segregated>(ncoeffs, nsamples);
-      unittest::template test_UniformBSpline<double, 1, 4, 4, deriv, precompute, segregated>(ncoeffs, nsamples);
-      unittest::template test_UniformBSpline<double, 1, 5, 5, deriv, precompute, segregated>(ncoeffs, nsamples);
+      unittest::template test_UniformBSpline<double, 1, 1, 1, deriv, precompute>(ncoeffs, nsamples);
+      unittest::template test_UniformBSpline<double, 1, 2, 2, deriv, precompute>(ncoeffs, nsamples);
+      unittest::template test_UniformBSpline<double, 1, 3, 3, deriv, precompute>(ncoeffs, nsamples);
+      unittest::template test_UniformBSpline<double, 1, 4, 4, deriv, precompute>(ncoeffs, nsamples);
+      unittest::template test_UniformBSpline<double, 1, 5, 5, deriv, precompute>(ncoeffs, nsamples);
       std::cout << std::endl;
     }
   }
@@ -428,11 +388,11 @@ TEST(Performance, UniformBSpline_parDim3_double)
                 << std::right << std::setw(8) << ncoeffs << ","
                 << std::right << std::setw(8) << nsamples << ") ";
       
-      unittest::template test_UniformBSpline<double, 1, 1, 1, 1, deriv, precompute, segregated>(ncoeffs, nsamples);
-      unittest::template test_UniformBSpline<double, 1, 2, 2, 2, deriv, precompute, segregated>(ncoeffs, nsamples);
-      unittest::template test_UniformBSpline<double, 1, 3, 3, 3, deriv, precompute, segregated>(ncoeffs, nsamples);
-      unittest::template test_UniformBSpline<double, 1, 4, 4, 4, deriv, precompute, segregated>(ncoeffs, nsamples);
-      unittest::template test_UniformBSpline<double, 1, 5, 5, 5, deriv, precompute, segregated>(ncoeffs, nsamples);
+      unittest::template test_UniformBSpline<double, 1, 1, 1, 1, deriv, precompute>(ncoeffs, nsamples);
+      unittest::template test_UniformBSpline<double, 1, 2, 2, 2, deriv, precompute>(ncoeffs, nsamples);
+      unittest::template test_UniformBSpline<double, 1, 3, 3, 3, deriv, precompute>(ncoeffs, nsamples);
+      unittest::template test_UniformBSpline<double, 1, 4, 4, 4, deriv, precompute>(ncoeffs, nsamples);
+      unittest::template test_UniformBSpline<double, 1, 5, 5, 5, deriv, precompute>(ncoeffs, nsamples);
       std::cout << std::endl;
     }
   }
@@ -448,11 +408,11 @@ TEST(Performance, UniformBSpline_parDim4_double)
                 << std::right << std::setw(8) << ncoeffs << ","
                 << std::right << std::setw(8) << nsamples << ") ";
       
-      unittest::template test_UniformBSpline<double, 1, 1, 1, 1, 1, deriv, precompute, segregated>(ncoeffs, nsamples);
-      unittest::template test_UniformBSpline<double, 1, 2, 2, 2, 2, deriv, precompute, segregated>(ncoeffs, nsamples);
-      unittest::template test_UniformBSpline<double, 1, 3, 3, 3, 3, deriv, precompute, segregated>(ncoeffs, nsamples);
-      unittest::template test_UniformBSpline<double, 1, 4, 4, 4, 4, deriv, precompute, segregated>(ncoeffs, nsamples);
-      unittest::template test_UniformBSpline<double, 1, 5, 5, 5, 5, deriv, precompute, segregated>(ncoeffs, nsamples);
+      unittest::template test_UniformBSpline<double, 1, 1, 1, 1, 1, deriv, precompute>(ncoeffs, nsamples);
+      unittest::template test_UniformBSpline<double, 1, 2, 2, 2, 2, deriv, precompute>(ncoeffs, nsamples);
+      unittest::template test_UniformBSpline<double, 1, 3, 3, 3, 3, deriv, precompute>(ncoeffs, nsamples);
+      unittest::template test_UniformBSpline<double, 1, 4, 4, 4, 4, deriv, precompute>(ncoeffs, nsamples);
+      unittest::template test_UniformBSpline<double, 1, 5, 5, 5, 5, deriv, precompute>(ncoeffs, nsamples);
       std::cout << std::endl;
     }
   } 
