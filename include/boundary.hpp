@@ -360,11 +360,11 @@ namespace iganet {
     typename BSpline_t::template
     derived_self_type_t<typename BSpline_t::value_type,
                         BSpline_t::geoDim(),
-                        BSpline_t::degree(1), BSpline_t::degree(2), BSpline_t::degree(2)>,
+                        BSpline_t::degree(1), BSpline_t::degree(2), BSpline_t::degree(3)>,
     typename BSpline_t::template
     derived_self_type_t<typename BSpline_t::value_type,
                         BSpline_t::geoDim(),
-                        BSpline_t::degree(0), BSpline_t::degree(2), BSpline_t::degree(2)>,
+                        BSpline_t::degree(0), BSpline_t::degree(2), BSpline_t::degree(3)>,
     typename BSpline_t::template
     derived_self_type_t<typename BSpline_t::value_type,
                         BSpline_t::geoDim(),
