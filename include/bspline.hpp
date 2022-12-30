@@ -4018,7 +4018,7 @@ namespace iganet {
 #endif
     }
 
-    /// Returns a string representation of the BSplineCommon object
+    /// @brief Returns a string representation of the BSplineCommon object
     inline void pretty_print(std::ostream& os = std::cout) const
     {
       os << BSplineCore::name()
@@ -4063,11 +4063,11 @@ namespace iganet {
     }
   };
 
-  /// Tensor-product uniform B-spline
+  /// @brief Tensor-product uniform B-spline
   template<typename real_t, short_t GeoDim, short_t... Degrees>
   using UniformBSpline = BSplineCommon<UniformBSplineCore<real_t, GeoDim, Degrees...>>;
 
-  /// Print (as string) a UniformBSpline object
+  /// @brief Print (as string) a UniformBSpline object
   template<typename real_t, short_t GeoDim, short_t... Degrees>
   inline std::ostream& operator<<(std::ostream& os,
                                   const UniformBSpline<real_t, GeoDim, Degrees...>& obj)
@@ -4076,11 +4076,11 @@ namespace iganet {
     return os;
   }
 
-  /// Tensor-product non-uniform B-spline
+  /// @brief Tensor-product non-uniform B-spline
   template<typename real_t, short_t GeoDim, short_t... Degrees>
   using NonUniformBSpline = BSplineCommon<NonUniformBSplineCore<real_t, GeoDim, Degrees...>>;
 
-  /// Print (as string) a UniformBSpline object
+  /// @brief Print (as string) a UniformBSpline object
   template<typename real_t, short_t GeoDim, short_t... Degrees>
   inline std::ostream& operator<<(std::ostream& os,
                                   const NonUniformBSpline<real_t, GeoDim, Degrees...>& obj)
