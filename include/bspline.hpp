@@ -418,12 +418,14 @@ namespace iganet {
 
     /// @brief Default constructor
     UniformBSplineCore()
-      : core<real_t>()//,
-        //nknots_({0}),
-        //ncoeffs_({0}) {}
+      : core<real_t>()
         {}
 
     /// @brief Constructor for equidistant knot vectors
+    ///
+    /// @param[in] ncoeffs Number of coefficients per parametric dimension
+    ///
+    /// @param[in] init Type of initialization
     UniformBSplineCore(const std::array<int64_t, parDim_>& ncoeffs,
                        enum init init = init::zeros)
         : core<real_t>(),
@@ -464,18 +466,24 @@ namespace iganet {
     }
 
     /// @brief Returns the parametric dimension
+    ///
+    /// @result Number of parametric dimensions
     inline static constexpr short_t parDim()
     {
       return parDim_;
     }
 
     /// @brief Returns the geometric dimension
+    ///
+    /// @result Number of geometric dimensions
     inline static constexpr short_t geoDim()
     {
       return geoDim_;
     }
 
     /// @brief Returns a constant reference to the array of degrees
+    ///
+    /// @result Array of degrees for all parametric dimensions
     inline static constexpr const std::array<short_t, parDim_>& degrees()
     {
       return degrees_;
@@ -483,6 +491,10 @@ namespace iganet {
 
     /// @brief Returns a constant reference to the degree in the
     /// \f$i\f$-th dimension
+    ///
+    /// @param[in] i Parametric dimension
+    ///
+    /// @result Degree for the given parametric dimension
     inline static constexpr const short_t& degree(short_t i)
     {
       assert(i >= 0 && i < parDim_);
@@ -491,6 +503,8 @@ namespace iganet {
 
     /// @brief Returns a constant reference to the array of knot
     /// vectors
+    ///
+    /// @result Array of knot vectors
     inline const std::array<torch::Tensor, parDim_>& knots() const
     {
       return knots_;
@@ -498,6 +512,10 @@ namespace iganet {
 
     /// @brief Returns a constant reference to the knot vector in the
     /// \f$i\f$-th dimension
+    ///
+    /// @param[in] i Parametric dimension
+    ///
+    /// @result Knot vector for the given parametric dimension
     inline const torch::Tensor& knots(short_t i) const {
       assert(i >= 0 && i < parDim_);
       return knots_[i];
@@ -505,6 +523,8 @@ namespace iganet {
 
     /// @brief Returns a non-constant reference to the array of knot
     /// vectors
+    ///
+    /// @result Array of knot vectors
     inline std::array<torch::Tensor, parDim_>& knots()
     {
       return knots_;
@@ -512,6 +532,10 @@ namespace iganet {
 
     /// @brief Returns a non-constant reference to the knot vector in
     /// the \f$i\f$-th dimension
+    ///
+    /// @param[in] i Parametric dimension
+    ///
+    /// @result Knot vector for the given parametric dimension
     inline torch::Tensor& knots(short_t i)
     {
       assert(i >= 0 && i < parDim_);
@@ -520,6 +544,8 @@ namespace iganet {
 
     /// @brief Returns a constant reference to the array of knot
     /// vector dimensions
+    ///
+    /// @result Array of knot vector dimensions
     inline const std::array<int64_t, parDim_>& nknots() const
     {
       return nknots_;
@@ -527,6 +553,10 @@ namespace iganet {
 
     /// @brief Returns the dimension of the knot vector in the
     /// \f$i\f$-th dimension
+    ///
+    /// @param[in] i Parametric dimension
+    ///
+    /// @result Knot vector dimension for the given parametric dimension
     inline int64_t nknots(short_t i) const
     {
       assert(i >= 0 && i < parDim_);
@@ -534,14 +564,20 @@ namespace iganet {
     }
 
     /// @brief Returns a constant reference to the array of
-    /// coefficients.
+    /// coefficient vectors
+    ///
+    /// @result Array of coefficient vectors
     inline const auto& coeffs() const
     {
       return coeffs_;
     }
 
-    /// @brief Returns a constant reference to the coefficients in the
-    /// \f$i\f$-th dimension.
+    /// @brief Returns a constant reference to the coefficient vector
+    /// in the \f$i\f$-th dimension
+    ///
+    /// @param[in] i Geometric dimension
+    ///
+    /// @result Coefficient vector for the given geometric dimension[<35;29;43M]
     inline const auto& coeffs(short_t i) const
     {
       assert(i >= 0 && i < geoDim_);
@@ -549,14 +585,20 @@ namespace iganet {
     }
 
     /// @brief Returns a non-constant reference to the array of
-    /// coefficients
+    /// coefficient vectors
+    ///
+    /// @result Array of coefficient vectord
     inline auto& coeffs()
     {
       return coeffs_;
     }
 
-    /// @brief Returns a non-constant reference to the coefficients in
-    /// the \f$i\f$-th dimension
+    /// @brief Returns a non-constant reference to the coefficient
+    /// vector in the \f$i\f$-th dimension
+    ///
+    /// @param[in] i Geometric dimension
+    ///
+    /// @result Coefficient vector for the given geometric dimension[<35;29;43M]
     inline auto& coeffs(short_t i)
     {
       assert(i >= 0 && i < geoDim_);
@@ -564,6 +606,8 @@ namespace iganet {
     }
 
     /// @brief Returns the total number of coefficients
+    ///
+    /// @result Total number of coefficients
     inline int64_t ncoeffs() const
     {
       int64_t s = 1;
@@ -574,6 +618,10 @@ namespace iganet {
 
     /// @brief Returns the total number of coefficients in the
     /// \f$i\f$-th direction
+    ///
+    /// @param[in] i Parametric dimension
+    ///
+    /// @result Total number of coefficients in given parametric dimension
     inline int64_t ncoeffs(short_t i) const
     {
       assert(i >= 0 && i < parDim_);
@@ -587,6 +635,8 @@ namespace iganet {
     /// \f[
     ///   g_{i_d} = \frac{\xi_{i_d+1} + \xi_{i_d+2} + \dots + \xi_{i_d+p_d+1}}{p_d-1}
     /// \f]
+    ///
+    /// @result Array of Greville abscissae
     inline auto greville() const
     {
       if constexpr (parDim_ == 0)
@@ -647,14 +697,14 @@ namespace iganet {
         for (short_t i = 0; i < geoDim_; ++i)
           result.set(i,
                      dotproduct(basfunc,
-                                coeffs(i).index_select(0, coeff_idx).view({-1, numeval}),
-                                0).view(sizes));
+                                coeffs(i).index_select(0, coeff_idx).view({-1, numeval})
+                                ).view(sizes));
         return result;
       } else
         return
           BlockTensor<torch::Tensor, 1, 1>(dotproduct(basfunc,
-                                                      coeffs(0).index_select(0, coeff_idx).view({-1, numeval}),
-                                                      0).view(sizes));
+                                                      coeffs(0).index_select(0, coeff_idx).view({-1, numeval})
+                                                      ).view(sizes));
     }
 
     inline auto eval_from_precomputed(const TensorArray1& basfunc,
@@ -831,15 +881,15 @@ namespace iganet {
             result.set(i,
                        dotproduct(basfunc,
                                   coeffs(i).index_select(0,
-                                                         coeff_idx).view({-1, xi[0].numel()}),
-                                  0).view(xi[0].sizes()));
+                                                         coeff_idx).view({-1, xi[0].numel()})
+                                  ).view(xi[0].sizes()));
           return result;
         } else
           return
             BlockTensor<torch::Tensor, 1, 1>(dotproduct(eval_basfunc<deriv>(xi, idx),
                                                         coeffs(0).index_select(0,
-                                                                               eval_coeff_indices(idx)).view({-1, xi[0].numel()}),
-                                                        0).view(xi[0].sizes()));
+                                                                               eval_coeff_indices(idx)).view({-1, xi[0].numel()})
+                                                        ).view(xi[0].sizes()));
       }
     }
 
@@ -884,15 +934,15 @@ namespace iganet {
             result.set(i,
                        dotproduct(basfunc,
                                   coeffs(i).index_select(0,
-                                                         coeff_idx).view({-1, xi[0].numel()}),
-                                  0).view(xi[0].sizes()));
+                                                         coeff_idx).view({-1, xi[0].numel()})
+                                  ).view(xi[0].sizes()));
           return result;
         } else
           return
             BlockTensor<torch::Tensor, 1, 1>(dotproduct(eval_basfunc<deriv>(xi, idx),
                                                         coeffs(0).index_select(0,
-                                                                               coeff_idx).view({-1, xi[0].numel()}),
-                                                        0).view(xi[0].sizes()));
+                                                                               coeff_idx).view({-1, xi[0].numel()})
+                                                        ).view(xi[0].sizes()));
       }
     }
 
@@ -940,15 +990,15 @@ namespace iganet {
             result.set(i,
                        dotproduct(basfunc,
                                   coeffs(i).index_select(0,
-                                                         coeff_idx).view({-1, xi[0].numel()}),
-                                  0).view(xi[0].sizes()));
+                                                         coeff_idx).view({-1, xi[0].numel()})
+                                  ).view(xi[0].sizes()));
           return result;
         } else
           return
             BlockTensor<torch::Tensor, 1, 1>(dotproduct(eval_basfunc<deriv>(xi, idx),
                                                         coeffs(0).index_select(0,
-                                                                               eval_coeff_indices(idx)).view({-1, xi[0].numel()}),
-                                                        0).view(xi[0].sizes()));
+                                                                               eval_coeff_indices(idx)).view({-1, xi[0].numel()})
+                                                        ).view(xi[0].sizes()));
       }
     }
 
@@ -996,15 +1046,15 @@ namespace iganet {
           for (short_t i = 0; i < geoDim_; ++i)
             result.set(i,
                        dotproduct(basfunc,
-                                  coeffs(i).index_select(0, coeff_idx).view({-1, xi[0].numel()}),
-                                  0).view(xi[0].sizes()));
+                                  coeffs(i).index_select(0, coeff_idx).view({-1, xi[0].numel()})
+                                  ).view(xi[0].sizes()));
           return result;
         } else
           return
             BlockTensor<torch::Tensor, 1, 1>(dotproduct(eval_basfunc<deriv>(xi, idx),
                                                         coeffs(0).index_select(0,
-                                                                               coeff_idx).view({-1, xi[0].numel()}),
-                                                        0).view(xi[0].sizes()));
+                                                                               coeff_idx).view({-1, xi[0].numel()})
+                                                        ).view(xi[0].sizes()));
       }
     }
 
@@ -1056,15 +1106,15 @@ namespace iganet {
             result.set(i,
                        dotproduct(basfunc,
                                   coeffs(i).index_select(0,
-                                                         coeff_idx).view({-1, xi[0].numel()}),
-                                  0).view(xi[0].sizes()));
+                                                         coeff_idx).view({-1, xi[0].numel()})
+                                  ).view(xi[0].sizes()));
           return result;
         } else
           return
             BlockTensor<torch::Tensor, 1, 1>(dotproduct(eval_basfunc<deriv>(xi, idx),
                                                         coeffs(0).index_select(0,
-                                                                               eval_coeff_indices(idx)).view({-1, xi[0].numel()}),
-                                                        0).view(xi[0].sizes()));
+                                                                               eval_coeff_indices(idx)).view({-1, xi[0].numel()})
+                                                        ).view(xi[0].sizes()));
       }
     }
 
@@ -1118,15 +1168,15 @@ namespace iganet {
             result.set(i,
                        dotproduct(basfunc,
                                   coeffs(i).index_select(0,
-                                                         coeff_idx).view({-1, xi[0].numel()}),
-                                  0).view(xi[0].sizes()));
+                                                         coeff_idx).view({-1, xi[0].numel()})
+                                  ).view(xi[0].sizes()));
           return result;
         } else
           return
             BlockTensor<torch::Tensor, 1, 1>(dotproduct(eval_basfunc<deriv>(xi, idx),
                                                         coeffs(0).index_select(0,
-                                                                               coeff_idx).view({-1, xi[0].numel()}),
-                                                        0).view(xi[0].sizes()));
+                                                                               coeff_idx).view({-1, xi[0].numel()})
+                                                        ).view(xi[0].sizes()));
       }
     }
 
@@ -1182,15 +1232,15 @@ namespace iganet {
             result.set(i,
                        dotproduct(basfunc,
                                   coeffs(i).index_select(0,
-                                                         coeff_idx).view({-1, xi[0].numel()}),
-                                  0).view(xi[0].sizes()));
+                                                         coeff_idx).view({-1, xi[0].numel()})
+                                  ).view(xi[0].sizes()));
           return result;
         } else
           return
             BlockTensor<torch::Tensor, 1, 1>(dotproduct(eval_basfunc<deriv>(xi, idx),
                                                         coeffs(0).index_select(0,
-                                                                               eval_coeff_indices(idx)).view({-1, xi[0].numel()}),
-                                                        0).view(xi[0].sizes()));
+                                                                               eval_coeff_indices(idx)).view({-1, xi[0].numel()})
+                                                        ).view(xi[0].sizes()));
       }
     }
 
@@ -1247,15 +1297,15 @@ namespace iganet {
             result.set(i,
                        dotproduct(basfunc,
                                   coeffs(i).index_select(0,
-                                                         coeff_idx).view({-1, xi[0].numel()}),
-                                  0).view(xi[0].sizes()));
+                                                         coeff_idx).view({-1, xi[0].numel()})
+                                  ).view(xi[0].sizes()));
           return result;
         } else
           return
             BlockTensor<torch::Tensor, 1, 1>(dotproduct(eval_basfunc<deriv>(xi, idx),
                                                         coeffs(0).index_select(0,
-                                                                               coeff_idx).view({-1, xi[0].numel()}),
-                                                        0).view(xi[0].sizes()));
+                                                                               coeff_idx).view({-1, xi[0].numel()})
+                                                        ).view(xi[0].sizes()));
       }
     }
     
@@ -1427,8 +1477,7 @@ namespace iganet {
           kronproduct(eval_univariate<degrees_[1], 1, ((short_t)deriv/10)%10>( xi[1].flatten(),
                                                                                idx[1].flatten()),
                       eval_univariate<degrees_[0], 0,  (short_t)deriv    %10>( xi[0].flatten(),
-                                                                               idx[0].flatten()),
-                      0);
+                                                                               idx[0].flatten()));
     }
 
     template<deriv deriv = deriv::func>
@@ -1467,9 +1516,7 @@ namespace iganet {
                       kronproduct(eval_univariate<degrees_[1], 1, ((short_t)deriv/10)%10>( xi[1].flatten(),
                                                                                            idx[1].flatten()),
                                   eval_univariate<degrees_[0], 0,  (short_t)deriv    %10>( xi[0].flatten(),
-                                                                                           idx[0].flatten()),
-                                  0),
-                      0);
+                                                                                           idx[0].flatten())));
     }
 
     template<deriv deriv = deriv::func>
@@ -1513,14 +1560,11 @@ namespace iganet {
           kronproduct(kronproduct(eval_univariate<degrees_[3], 3, ((short_t)deriv/1000)%10>( xi[3].flatten(),
                                                                                              idx[3].flatten()),
                                   eval_univariate<degrees_[2], 2, ((short_t)deriv/ 100)%10>( xi[2].flatten(),
-                                                                                             idx[2].flatten()),
-                                  0),
+                                                                                             idx[2].flatten())),
                       kronproduct(eval_univariate<degrees_[1], 1, ((short_t)deriv/  10)%10>( xi[1].flatten(),
                                                                                              idx[1].flatten()),
                                   eval_univariate<degrees_[0], 0,  (short_t)deriv      %10>( xi[0].flatten(),
-                                                                                             idx[0].flatten()),
-                                  0),
-                      0);
+                                                                                             idx[0].flatten())));
     }
     /// @}
 
@@ -1865,72 +1909,65 @@ namespace iganet {
       assert(dim == -1 || (dim >= 0 && dim < parDim_));
 
       // Update number of knots and coefficients
+      std::array<int64_t, parDim_> nknots(nknots_);
+      std::array<int64_t, parDim_> ncoeffs(ncoeffs_);
+        
       for (short_t refine = 0; refine < numRefine; ++refine) {
         if (dim == -1)
           for (short_t i = 0; i < parDim_; ++i) {
-            ncoeffs_[i] += nknots_[i]-2*degrees_[i]-1; // must be done first
-            nknots_[i]  += nknots_[i]-2*degrees_[i]-1;
+            ncoeffs[i] += nknots[i]-2*degrees_[i]-1; // must be done first
+            nknots[i]  += nknots[i]-2*degrees_[i]-1;
           }
         else {
-          ncoeffs_[dim] += nknots_[dim]-2*degrees_[dim]-1; // must be done first
-          nknots_[dim]  += nknots_[dim]-2*degrees_[dim]-1;
+          ncoeffs[dim] += nknots[dim]-2*degrees_[dim]-1; // must be done first
+          nknots[dim]  += nknots[dim]-2*degrees_[dim]-1;
         }
       }
 
       // Update knot vectors
-      std::array<torch::Tensor, parDim_> knots;
+      std::array<torch::Tensor, parDim_> knots, knots_idx;
 
-      if (dim == -1)
-        for (short_t i = 0; i < parDim_; ++i) {
-          std::vector<value_type> kv;
-
-          for (int64_t j = 0; j < degrees_[i]; ++j)
-            kv.push_back(static_cast<value_type>(0));
-
-          for (int64_t j = 0; j < ncoeffs_[i] - degrees_[i] + 1; ++j)
-            kv.push_back(static_cast<value_type>(j / value_type(ncoeffs_[i] - degrees_[i])));
-
-          for (int64_t j = 0; j < degrees_[i]; ++j)
-            kv.push_back(static_cast<value_type>(1));
-
-          if (core<real_t>::options_.device() == torch::kCPU)
-            knots[i] = torch::from_blob(static_cast<value_type *>(kv.data()),
-                                        kv.size(), core<real_t>::options_).clone();
-          else
-            knots[i] = torch::from_blob(static_cast<value_type *>(kv.data()),
-                                        kv.size(), core<real_t>::options_.device(torch::kCPU))
-              .to(core<real_t>::options_.device());
-        }
-      else {
+      for (short_t i = 0; i < parDim_; ++i) {
         std::vector<value_type> kv;
-
-        for (int64_t j = 0; j < degrees_[dim]; ++j)
+        
+        for (int64_t j = 0; j < degrees_[i]; ++j)
           kv.push_back(static_cast<value_type>(0));
-
-        for (int64_t j = 0; j < ncoeffs_[dim] - degrees_[dim] + 1; ++j)
-          kv.push_back(static_cast<value_type>(j / value_type(ncoeffs_[dim] - degrees_[dim])));
-
-        for (int64_t j = 0; j < degrees_[dim]; ++j)
+        
+        for (int64_t j = 0; j < ncoeffs[i] - degrees_[i] + 1; ++j)
+          kv.push_back(static_cast<value_type>(j / value_type(ncoeffs[i] - degrees_[i])));
+        
+        for (int64_t j = 0; j < degrees_[i]; ++j)
           kv.push_back(static_cast<value_type>(1));
-
+        
         if (core<real_t>::options_.device() == torch::kCPU)
-          knots[dim] = torch::from_blob(static_cast<value_type *>(kv.data()),
-                                        kv.size(), core<real_t>::options_).clone();
+          knots[i] = torch::from_blob(static_cast<value_type *>(kv.data()),
+                                      kv.size(), core<real_t>::options_).clone();
         else
-          knots[dim] = torch::from_blob(static_cast<value_type *>(kv.data()),
-                                        kv.size(), core<real_t>::options_.device(torch::kCPU))
+          knots[i] = torch::from_blob(static_cast<value_type *>(kv.data()),
+                                      kv.size(), core<real_t>::options_.device(torch::kCPU))
             .to(core<real_t>::options_.device());
       }
-
-      // Get indices of new knots relative to old knot vectors
-      auto idx = find_knot_indices(knots);
-
-      // Swap old and new knot vectors
-      knots.swap(knots_);
-
+      
+      // The updated knot vectors have lengths \f$m_d+p_d+1\f$, where
+      // \f$m_d\f$ is the number of coefficients after the update. To
+      // update the coefficients using the Oslo algorithm (Algorithm
+      // 4.11 from \cite Lyche:2011) we need to neglect the last
+      // \f$p_d+1\f$ knots in what follows
+      for (short_t i = 0; i < parDim_; ++i)
+        knots_idx[i] = knots[i].index({torch::indexing::Slice(0, knots[i].numel()-degrees_[i]-1)});
+      
+      // Get indices of the first \f$m_d\f$ new knots relative to old
+      // knot vectors
+      auto idx = find_knot_indices(knots_idx);
+      
       // Update coefficient vector
       update_coeffs(knots, idx);
 
+      // Swap old and new data
+      knots.swap(knots_);
+      nknots.swap(nknots_);
+      ncoeffs.swap(ncoeffs_);
+      
       return *this;
     }
 
@@ -2040,14 +2077,104 @@ namespace iganet {
     }
 
     /// @brief Updates the B-spline coefficients after knot insertion
+    ///
+    // @{
     inline void update_coeffs(const TensorArray1& knots, const TensorArray1& idx) {
 
       assert(parDim_ == 1 &&
-             knots[0].sizes() == idx[0].sizes());
+             knots[0].numel() == idx[0].numel()+degrees_[0]+1);
 
-      std::cout << knots << std::endl;
-      std::cout << idx << std::endl;
+      auto basfunc = update_coeffs_univariate<degrees_[0], 0>(knots[0].flatten(),
+                                                              idx[0].flatten());
+      auto coeff_idx = eval_coeff_indices(idx);
+      for (short_t i = 0; i < geoDim_; ++i)
+        coeffs(i) = dotproduct(basfunc,
+                               coeffs(i).index_select(0,
+                                                      coeff_idx).view({-1, idx[0].numel()})
+                               ).view(idx[0].sizes());
     }
+
+    inline void update_coeffs(const TensorArray2& knots, const TensorArray2& idx) {
+
+      assert(parDim_ == 2 &&
+             knots[0].numel() == idx[0].numel()+degrees_[0]+1 &&
+             knots[1].numel() == idx[1].numel()+degrees_[1]+1);
+      
+      auto basfunc = torch::kron(update_coeffs_univariate<degrees_[1], 1>(knots[1].flatten(),
+                                                                          idx[1].flatten()),
+                                 update_coeffs_univariate<degrees_[0], 0>(knots[0].flatten(),
+                                                                          idx[0].flatten()));
+      
+      TensorArray2 idx_ = {idx[0].repeat(idx[1].numel()),
+                           idx[1].repeat_interleave(idx[0].numel(), 0)};
+      
+      auto coeff_idx = eval_coeff_indices(idx_);
+      
+      for (short_t i = 0; i < geoDim_; ++i)
+        coeffs(i) = dotproduct(basfunc,
+                               coeffs(i).index_select(0,
+                                                      coeff_idx).view({-1, idx_[0].numel()})
+                               ).view(idx_[0].sizes());
+    }
+
+    inline void update_coeffs(const TensorArray3& knots, const TensorArray3& idx) {
+
+      assert(parDim_ == 3 &&
+             knots[0].numel() == idx[0].numel()+degrees_[0]+1 &&
+             knots[1].numel() == idx[1].numel()+degrees_[1]+1 &&
+             knots[2].numel() == idx[2].numel()+degrees_[2]+1);
+      
+      auto basfunc = torch::kron(update_coeffs_univariate<degrees_[2], 2>(knots[2].flatten(),
+                                                                          idx[2].flatten()),
+                                 torch::kron(update_coeffs_univariate<degrees_[1], 1>(knots[1].flatten(),
+                                                                                      idx[1].flatten()),
+                                             update_coeffs_univariate<degrees_[0], 0>(knots[0].flatten(),
+                                                                                      idx[0].flatten())));
+      
+      TensorArray3 idx_ = {idx[0].repeat(idx[1].numel()*idx[2].numel()),
+                           idx[1].repeat_interleave(idx[0].numel(), 0).repeat(idx[2].numel()),
+                           idx[2].repeat_interleave(idx[0].numel()*idx[1].numel(), 0)};
+      
+      auto coeff_idx = eval_coeff_indices(idx_);
+      
+      for (short_t i = 0; i < geoDim_; ++i)
+        coeffs(i) = dotproduct(basfunc,
+                               coeffs(i).index_select(0,
+                                                      coeff_idx).view({-1, idx_[0].numel()})
+                               ).view(idx_[0].sizes());
+    }
+
+    inline void update_coeffs(const TensorArray4& knots, const TensorArray4& idx) {
+
+      assert(parDim_ == 4 &&
+             knots[0].numel() == idx[0].numel()+degrees_[0]+1 &&
+             knots[1].numel() == idx[1].numel()+degrees_[1]+1 &&
+             knots[2].numel() == idx[2].numel()+degrees_[2]+1 &&
+             knots[3].numel() == idx[3].numel()+degrees_[3]+1);
+      
+      auto basfunc = torch::kron(torch::kron(update_coeffs_univariate<degrees_[3], 3>(knots[3].flatten(),
+                                                                                      idx[3].flatten()),
+                                             update_coeffs_univariate<degrees_[2], 2>(knots[2].flatten(),
+                                                                                      idx[2].flatten())),
+                                 torch::kron(update_coeffs_univariate<degrees_[1], 1>(knots[1].flatten(),
+                                                                                      idx[1].flatten()),
+                                             update_coeffs_univariate<degrees_[0], 0>(knots[0].flatten(),
+                                                                                      idx[0].flatten())));
+      
+      TensorArray4 idx_ = {idx[0].repeat(idx[1].numel()*idx[2].numel()*idx[3].numel()),
+                           idx[1].repeat_interleave(idx[0].numel(), 0).repeat(idx[2].numel()*idx[3].numel()),
+                           idx[2].repeat_interleave(idx[0].numel()*idx[1].numel(), 0).repeat(idx[3].numel()),
+                           idx[3].repeat_interleave(idx[0].numel()*idx[1].numel()*idx[2].numel(), 0)};
+      
+      auto coeff_idx = eval_coeff_indices(idx_);
+      
+      for (short_t i = 0; i < geoDim_; ++i)
+        coeffs(i) = dotproduct(basfunc,
+                               coeffs(i).index_select(0,
+                                                      coeff_idx).view({-1, idx_[0].numel()})
+                               ).view(idx_[0].sizes());
+    }    
+    /// @}
 
     /// @brief Returns the vector of univariate B-spline basis
     /// functions (or their derivatives) evaluated in the point `xi`
@@ -2206,6 +2333,49 @@ namespace iganet {
 
         return b.view({degree+1, xi.numel()});
       }
+    }
+
+    /// @brief Returns the knot insertion matrix
+    ///
+    /// This functions implements the Oslo algorithm (Algorithm 4.11
+    /// in \cite Lyche:2011) to compute the univariate knot insertion
+    /// matrix from the given knot vector to the new knot vector
+    /// passed as argument `knots`.    
+    template<short_t degree, short_t dim>
+    inline auto update_coeffs_univariate(const torch::Tensor& knots,
+                                         const torch::Tensor& idx) const
+    {
+      // Algorithm 2.22 from \cite Lyche:2011 modified to implement
+      // the Oslo algorithm (Algorithm 4.11 from \cite Lyche:2011)
+      torch::Tensor b = torch::ones({idx.numel()}, core<real_t>::options_);
+      
+      // Calculate R_k, k = 1, ..., p_d
+      for (short_t k=1; k<= degree; ++k) {
+        
+        // Instead of calculating t1 and t2 we calculate t1 and t21=(t2-t1)
+        auto t1  = knots_[dim].index_select(0, VSlice(idx, -k+1,   1) );
+        auto t21 = knots_[dim].index_select(0, VSlice(idx,    1, k+1) ) - t1;
+
+        // We handle the special case 0/0:=0 by first creating a
+        // mask that is 1 if t2-t1 < eps and 0 otherwise. Note that
+        // we do not have to take the absolute value as t2 >= t1.
+        auto mask = (t21 < std::numeric_limits<value_type>::epsilon()).to(dtype<value_type>());
+        
+        // Instead of computing (xi-t1)/(t2-t1) which is prone to
+        // yielding 0/0 we compute (xi-t1-mask)/(t2-t1-mask) which
+        // equals the original expression if the mask is 0, i.e.,
+        // t2-t1 >= eps and 1 otherwise since t1 <= xi < t2.
+        auto w  = torch::div(knots.index({torch::indexing::Slice(k, idx.numel()+k)}).repeat(k)
+                             -t1-mask, t21-mask);
+        
+        // Calculate the vector of B-splines evaluated at xi
+        b = torch::cat({ torch::mul(torch::ones_like(w, core<real_t>::options_)-w, b),
+            torch::zeros_like(idx, core<real_t>::options_) }, 0)
+          + torch::cat({ torch::zeros_like(idx, core<real_t>::options_),
+              torch::mul(w, b) }, 0);
+      }
+
+      return b.view({degree+1, idx.numel()});
     }
   };
 
