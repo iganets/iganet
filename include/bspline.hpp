@@ -448,7 +448,7 @@ namespace iganet {
 
         for (int64_t j = 0; j < degrees_[i]; ++j)
           kv.push_back(static_cast<value_type>(1));
-
+        
         if (core<real_t>::options_.device() == torch::kCPU)
           knots_[i] = torch::from_blob(static_cast<value_type *>(kv.data()),
                                        kv.size(), core<real_t>::options_).clone();
@@ -458,7 +458,7 @@ namespace iganet {
             .to(core<real_t>::options_.device());
 
         // Store the size of the knot vector
-        nknots_[i] = knots_[i].size(0);
+        nknots_[i] = kv.size();
       }
 
       // Initialize coefficients
@@ -1903,7 +1903,7 @@ namespace iganet {
     /// If `dim = -1`, new knot values are inserted uniformly in each
     /// knot span in all spatial dimensions. Otherwise, i.e., `dim !=
     /// -1` new knots are only inserted in the specified dimension.
-    UniformBSplineCore& uniformRefine(int numRefine = 1, int dim = -1)
+    UniformBSplineCore& uniform_refine(int numRefine = 1, int dim = -1)
     {
       assert(numRefine > 0);
       assert(dim == -1 || (dim >= 0 && dim < parDim_));
@@ -2574,28 +2574,29 @@ namespace iganet {
     /// If `dim = -1`, new knot values are inserted uniformly in each
     /// knot span in all spatial dimensions. Otherwise, i.e., `dim !=
     /// -1` new knots are only inserted in the specified dimension.
-    NonUniformBSplineCore& uniformRefine(int numRefine = 1, int dim = -1)
+    NonUniformBSplineCore& uniform_refine(int numRefine = 1, int dim = -1)
     {
       assert(numRefine > 0);
       assert(dim == -1 || (dim >= 0 && dim < Base::parDim_));
 
-      // Update number of knots and coefficients
-      std::array<int64_t, Base::parDim_> nknots(Base::nknots_);
-      std::array<int64_t, Base::parDim_> ncoeffs(Base::ncoeffs_);
+      // // Update number of knots and coefficients
+      // std::array<int64_t, Base::parDim_> nknots(Base::nknots_);
+      // std::array<int64_t, Base::parDim_> ncoeffs(Base::ncoeffs_);
         
-      for (short_t refine = 0; refine < numRefine; ++refine) {
-        if (dim == -1)
-          for (short_t i = 0; i < Base::parDim_; ++i) {
-            ncoeffs[i] += nknots[i]-2*Base::degrees_[i]-1; // must be done first
-            nknots[i]  += nknots[i]-2*Base::degrees_[i]-1;
-          }
-        else {
-          ncoeffs[dim] += nknots[dim]-2*Base::degrees_[dim]-1; // must be done first
-          nknots[dim]  += nknots[dim]-2*Base::degrees_[dim]-1;
-        }
-      }
+      // for (short_t refine = 0; refine < numRefine; ++refine) {
+      //   if (dim == -1)
+      //     for (short_t i = 0; i < Base::parDim_; ++i) {
+      //       ncoeffs[i] += nknots[i]-2*Base::degrees_[i]-1; // must be done first
+      //       nknots[i]  += nknots[i]-2*Base::degrees_[i]-1;
+      //     }
+      //   else {
+      //     ncoeffs[dim] += nknots[dim]-2*Base::degrees_[dim]-1; // must be done first
+      //     nknots[dim]  += nknots[dim]-2*Base::degrees_[dim]-1;
+      //   }
+      // }
       
-      // Update knot vectors
+      // Update knot vectors, number of knots and coefficients
+      std::array<int64_t, Base::parDim_> nknots, ncoeffs;
       std::array<torch::Tensor, Base::parDim_> knots, knots_idx;
 
       for (short_t i = 0; i < Base::parDim_; ++i) {
@@ -2623,6 +2624,10 @@ namespace iganet {
           knots[i] = torch::from_blob(static_cast<typename Base::value_type *>(kv.data()),
                                       kv.size(), core<real_t>::options_.device(torch::kCPU))
             .to(core<real_t>::options_.device());
+
+        // Store the size of the updated knot and coefficient vector
+        nknots[i] = kv.size();
+        ncoeffs[i] = nknots[i]-Base::degrees_[i]-1;
       }           
       
       // The updated knot vectors have lengths \f$m_d+p_d+1\f$, where
@@ -2651,13 +2656,39 @@ namespace iganet {
     /// @brief Returns the B-spline object with refined knot and
     /// coefficient vectors
     NonUniformBSplineCore& insert_knots(const std::array<torch::Tensor, Base::parDim_>& knots)
-    {
+    {     
+      std::array<int64_t, Base::parDim_> nknots(Base::nknots_);
+      std::array<int64_t, Base::parDim_> ncoeffs(Base::ncoeffs_);
+      std::array<torch::Tensor, Base::parDim_> knots_, knots_idx;
+
+      // Update number of knots and coefficients and generate new knot
+      // vectors
       for (short_t i = 0; i < Base::parDim_; ++i) {
-        Base::nknots_[i] += knots[i].numel();
-        Base::ncoeffs_[i] += knots[i].numel();
-        Base::knots_[i] = std::get<0>(torch::sort(torch::cat({Base::knots_[i], knots[i]})));
+        nknots[i] += knots[i].numel();
+        ncoeffs[i] += knots[i].numel();
+        knots_[i] = std::get<0>(torch::sort(torch::cat({Base::knots_[i], knots[i]})));
       }
 
+      // The updated knot vectors have lengths \f$m_d+p_d+1\f$, where
+      // \f$m_d\f$ is the number of coefficients after the update. To
+      // update the coefficients using the Oslo algorithm (Algorithm
+      // 4.11 from \cite Lyche:2011) we need to neglect the last
+      // \f$p_d+1\f$ knots in what follows
+      for (short_t i = 0; i < Base::parDim_; ++i)
+        knots_idx[i] = knots_[i].index({torch::indexing::Slice(0, knots_[i].numel()-Base::degrees_[i]-1)});
+      
+      // Get indices of the first \f$m_d\f$ new knots relative to old
+      // knot vectors
+      auto idx = find_knot_indices(knots_idx);
+      
+      // Update coefficient vector
+      Base::update_coeffs(knots_, idx);
+
+      // Swap old and new data
+      knots_.swap(Base::knots_);
+      nknots.swap(Base::nknots_);
+      ncoeffs.swap(Base::ncoeffs_);
+      
       return *this;
     }
   };
