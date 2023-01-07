@@ -2579,28 +2579,13 @@ namespace iganet {
       assert(numRefine > 0);
       assert(dim == -1 || (dim >= 0 && dim < Base::parDim_));
 
-      // // Update number of knots and coefficients
-      // std::array<int64_t, Base::parDim_> nknots(Base::nknots_);
-      // std::array<int64_t, Base::parDim_> ncoeffs(Base::ncoeffs_);
-        
-      // for (short_t refine = 0; refine < numRefine; ++refine) {
-      //   if (dim == -1)
-      //     for (short_t i = 0; i < Base::parDim_; ++i) {
-      //       ncoeffs[i] += nknots[i]-2*Base::degrees_[i]-1; // must be done first
-      //       nknots[i]  += nknots[i]-2*Base::degrees_[i]-1;
-      //     }
-      //   else {
-      //     ncoeffs[dim] += nknots[dim]-2*Base::degrees_[dim]-1; // must be done first
-      //     nknots[dim]  += nknots[dim]-2*Base::degrees_[dim]-1;
-      //   }
-      // }
-      
       // Update knot vectors, number of knots and coefficients
       std::array<int64_t, Base::parDim_> nknots, ncoeffs;
       std::array<torch::Tensor, Base::parDim_> knots, knots_idx;
 
       for (short_t i = 0; i < Base::parDim_; ++i) {
-        auto kv_accessor = Base::knots_[i].template accessor<typename Base::value_type, 1>();
+        auto kv_cpu = Base::knots_[i].cpu();
+        auto kv_accessor = kv_cpu.template accessor<typename Base::value_type, 1>();
         
         std::vector<typename Base::value_type> kv; kv.reserve(nknots[i]);
         kv.push_back(kv_accessor[0]);
@@ -2656,11 +2641,12 @@ namespace iganet {
     /// @brief Returns the B-spline object with refined knot and
     /// coefficient vectors
     NonUniformBSplineCore& insert_knots(const std::array<torch::Tensor, Base::parDim_>& knots)
-    {     
+    { 
+      std::cout << "FIRST LINE\n";    
       std::array<int64_t, Base::parDim_> nknots(Base::nknots_);
       std::array<int64_t, Base::parDim_> ncoeffs(Base::ncoeffs_);
       std::array<torch::Tensor, Base::parDim_> knots_, knots_idx;
-
+std::cout << "BEFORE\n";
       // Update number of knots and coefficients and generate new knot
       // vectors
       for (short_t i = 0; i < Base::parDim_; ++i) {
@@ -2668,7 +2654,7 @@ namespace iganet {
         ncoeffs[i] += knots[i].numel();
         knots_[i] = std::get<0>(torch::sort(torch::cat({Base::knots_[i], knots[i]})));
       }
-
+std::cout << "AFTER\n";
       // The updated knot vectors have lengths \f$m_d+p_d+1\f$, where
       // \f$m_d\f$ is the number of coefficients after the update. To
       // update the coefficients using the Oslo algorithm (Algorithm
