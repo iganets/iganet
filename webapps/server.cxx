@@ -24,9 +24,10 @@ int main(int argc, char const* argv[])
     // in eta-direction with 5 x 6 control points in R^3
     iganet::UniformBSpline<double,3,3,4> geo;
     iganet::UniformBSpline<double,1,3,4> sol;
+    std::string uuid;
     
     PerSocketData()
-      : geo({5,6}), sol({5,6})
+      : geo({5,6}), sol({5,6}), uuid(iganet::uuid::create())
     {
       // Map control points of geometry
       geo.transform( [](const std::array<double,2> xi){ return std::array<double,3>{(xi[0]+1)*cos(M_PI*xi[1]),
