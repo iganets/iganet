@@ -461,17 +461,31 @@ namespace iganet {
                         torch::IntArrayRef sizes = torch::IntArrayRef{-1},
                         const torch::TensorOptions& options = iganet::core<T>{}.options())
   {
-    return torch::from_blob(const_cast<T*>(std::data(list)),
+	if (options.device() == torch::kCPU)
+          return torch::from_blob(const_cast<T*>(std::data(list)),
                             (sizes == torch::IntArrayRef{-1}) ? list.size() : sizes,
                             options).clone();
+        else
+          return torch::from_blob(const_cast<T*>(std::data(list)),
+                            (sizes == torch::IntArrayRef{-1}) ? list.size() : sizes,
+                            options.device(torch::kCPU))
+		  .to(options.device());
   }
 
   template<typename T>
   inline auto to_tensor(std::initializer_list<T> list,
                         const torch::TensorOptions& options)
   {
-    return torch::from_blob(const_cast<T*>(std::data(list)),
-                            list.size(), options).clone();
+
+	if (options.device() == torch::kCPU)
+          return torch::from_blob(const_cast<T*>(std::data(list)),
+                            list.size(),
+                            options).clone();
+        else
+          return torch::from_blob(const_cast<T*>(std::data(list)),
+                            list.size(),
+                            options.device(torch::kCPU))
+		  .to(options.device());
   }
   /// @}
 
@@ -482,6 +496,8 @@ namespace iganet {
                              torch::IntArrayRef sizes = torch::IntArrayRef{-1},
                              const torch::TensorOptions& options = iganet::core<T>{}.options())
   {
+	  std::cout << "Here\n";
+	  std::cout << options << std::endl;
     return TensorArray1({to_tensor(list, sizes, options)});
   }
 
