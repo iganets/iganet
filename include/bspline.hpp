@@ -1660,7 +1660,7 @@ namespace iganet {
 
       auto coeffs_json = nlohmann::json::array();
       for (short_t g = 0; g < geoDim_; ++g) {
-        auto coeffs_accessor = coeffs_[g].template accessor<value_type, 1>();
+        auto [coeffs_cpu, coeffs_accessor] = to_tensorAccessor<value_type, 1>(coeffs_[g], torch::kCPU);
 
         auto json = nlohmann::json::array();
         if constexpr (parDim_ == 1) {
@@ -1709,7 +1709,7 @@ namespace iganet {
         ss << " <Geometry type=\"BSpline\">\n"
            << "  <Basis type=\"BSplineBasis\">\n"
            << "   <KnotVector degree=\"" << degrees_[0] << "\">";
-        auto knots_accessor = knots_[0].template accessor<value_type, 1>();
+        auto [knots_cpu, knots_accessor] = to_tensorAccessor<value_type, 1>(knots_[0], torch::kCPU);
         for (int64_t i = 0; i < nknots_[0]; ++i)
           ss << knots_accessor[i] << " ";
         ss << "</KnotVector>\n"
@@ -1723,7 +1723,7 @@ namespace iganet {
         for (short_t i = 0; i < parDim_; ++i) {
           ss << "   <Basis type=\"BSplineBasis\" index=\"" << i << "\">\n"
              << "    <KnotVector degree=\"" << degrees_[i] << "\">";
-          auto knots_accessor = knots_[i].template accessor<value_type, 1>();
+          auto [knots_cpu, knots_accessor] = to_tensorAccessor<value_type, 1>(knots_[i], torch::kCPU);
           for (int64_t j = 0; j < nknots_[i]; ++j)
             ss << knots_accessor[j] << " ";
           ss << "</KnotVector>\n"
@@ -1735,7 +1735,7 @@ namespace iganet {
       // Write coefficients
       ss << "  <coefs geoDim=\"" << geoDim_ << "\">\n";
 
-      std::array<torch::TensorAccessor<value_type, 1>, geoDim_> coeffs_accessors = to_tensorAccessor<value_type,1>(coeffs_);
+      auto coeffs_accessors = to_tensorAccessor<value_type,1>(coeffs_);
 
       if constexpr (parDim_ == 1) {
         for (int64_t i = 0; i < ncoeffs(); ++i) {
@@ -2584,8 +2584,7 @@ namespace iganet {
       std::array<torch::Tensor, Base::parDim_> knots, knots_idx;
 
       for (short_t i = 0; i < Base::parDim_; ++i) {
-        auto kv_cpu = Base::knots_[i].cpu();
-        auto kv_accessor = kv_cpu.template accessor<typename Base::value_type, 1>();
+        auto [kv_cpu, kv_accessor] = to_tensorAccessor<typename Base::value_type, 1>(Base::knots_[i], torch::kCPU);
         
         std::vector<typename Base::value_type> kv; kv.reserve(nknots[i]);
         kv.push_back(kv_accessor[0]);
@@ -3929,7 +3928,12 @@ std::cout << "AFTER\n";
         matplot::vector_1d Yfine(res0, 0.0);
 
         auto Coords = BSplineCore::eval(torch::linspace(0, 1, res0));
-        auto XAccessor = Coords(0).template accessor<typename BSplineCore_t::value_type,1>();
+#ifdef __clang__
+        auto Coords_cpu = to_tensorAccessor<typename BSplineCore_t::value_type,1>(Coords, torch::kCPU);
+        auto XAccessor  = std::get<1>(Coords_cpu[0]);
+#else
+        auto [Coords_cpu, XAccessor] = to_tensorAccessor<typename BSplineCore_t::value_type,1>(Coords(0), torch::kCPU);
+#endif
 
 #pragma omp parallel for simd
         for (int64_t i=0; i<res0; ++i)
@@ -3938,7 +3942,12 @@ std::cout << "AFTER\n";
         if ((void*)this != (void*)&color) {
           if constexpr (BSplineCore_t::geoDim_==1) {
             auto Color = color.eval(torch::linspace(0, 1, res0));
-            auto CAccessor = Color(0).template accessor<typename BSplineCore::value_type,1>();
+#ifdef __clang__
+            auto Color_cpu = to_tensorAccessor<typename BSplineCore_t::value_type,1>(Color, torch::kCPU);
+            auto CAccessor = std::get<1>(Color_cpu[0]);
+#else
+            auto [Color_cpu, CAccessor] = to_tensorAccessor<typename BSplineCore_t::value_type,1>(Color(0), torch::kCPU);
+#endif
 
 #pragma omp parallel for simd
             for (int64_t i=0; i<res0; ++i)
@@ -3955,7 +3964,12 @@ std::cout << "AFTER\n";
           matplot::vector_1d X(BSplineCore::ncoeffs(0), 0.0);
           matplot::vector_1d Y(BSplineCore::ncoeffs(0), 0.0);
 
-          auto xAccessor = BSplineCore::coeffs(0).template accessor<typename BSplineCore::value_type,1>();
+#ifdef __clang__
+          auto coeffs_cpu = to_tensorAccessor<typename BSplineCore_t::value_type,1>(BSplineCore::coeffs, torch::kCPU);
+          auto xAccessor  = std::get<1>(coeffs_cpu[0]);
+#else
+          auto [coeffs_cpu, xAccessor] = to_tensorAccessor<typename BSplineCore_t::value_type,1>(BSplineCore::coeffs(0), torch::kCPU);
+#endif
 
 #pragma omp parallel for simd
           for (int64_t i=0; i<BSplineCore::ncoeffs(0); ++i) {
@@ -3988,11 +4002,18 @@ std::cout << "AFTER\n";
             matplot::vector_2d Zfine(1, matplot::vector_1d(res0, 0.0));
 
             auto Coords = BSplineCore::eval(torch::linspace(0, 1, res0));
-            auto XAccessor = Coords(0).template accessor<typename BSplineCore::value_type,1>();
-            auto YAccessor = Coords(1).template accessor<typename BSplineCore::value_type,1>();
-
-            auto Color = color.eval(torch::linspace(0, 1, res0));
-            auto CAccessor = Color(0).template accessor<typename BSplineCore::value_type,1>();
+            auto Color  = color.eval(torch::linspace(0, 1, res0));
+#ifdef __clang__
+            auto Coords_cpu = to_tensorAccessor<typename BSplineCore_t::value_type,1>(Coords, torch::kCPU);
+            auto Color_cpu  = to_tensorAccessor<typename BSplineCore_t::value_type,1>(Color, torch::kCPU);
+            auto XAccessor  = std::get<1>(Coords_cpu[0]);
+            auto YAccessor  = std::get<1>(Coords_cpu[1]);
+            auto CAccessor  = std::get<1>(Color_cpu[0]);
+#else
+            auto [Coords0_cpu, XAccessor] = to_tensorAccessor<typename BSplineCore_t::value_type,1>(Coords(0), torch::kCPU);
+            auto [Coords1_cpu, YAccessor] = to_tensorAccessor<typename BSplineCore_t::value_type,1>(Coords(1), torch::kCPU);
+            auto [Color_cpu,   CAccessor] = to_tensorAccessor<typename BSplineCore_t::value_type,1>(Color(0),  torch::kCPU);
+#endif
 
 #pragma omp parallel for simd
             for (int64_t i=0; i<res0; ++i) {
@@ -4008,8 +4029,14 @@ std::cout << "AFTER\n";
           matplot::vector_1d Yfine(res0, 0.0);
 
           auto Coords = BSplineCore::eval(torch::linspace(0, 1, res0));
-          auto XAccessor = Coords(0).template accessor<typename BSplineCore::value_type,1>();
-          auto YAccessor = Coords(1).template accessor<typename BSplineCore::value_type,1>();
+#ifdef __clang__
+          auto Coords_cpu = to_tensorAccessor<typename BSplineCore_t::value_type,1>(Coords, torch::kCPU);
+          auto XAccessor  = std::get<1>(Coords_cpu[0]);
+          auto YAccessor  = std::get<1>(Coords_cpu[1]);
+#else
+          auto [Coords0_cpu, XAccessor] = to_tensorAccessor<typename BSplineCore_t::value_type,1>(Coords(0), torch::kCPU);
+          auto [Coords1_cpu, YAccessor] = to_tensorAccessor<typename BSplineCore_t::value_type,1>(Coords(1), torch::kCPU);
+#endif    
 
 #pragma omp parallel for simd
           for (int64_t i=0; i<res0; ++i) {
@@ -4020,8 +4047,14 @@ std::cout << "AFTER\n";
           matplot::vector_1d X(BSplineCore::ncoeffs(0), 0.0);
           matplot::vector_1d Y(BSplineCore::ncoeffs(0), 0.0);
 
-          auto xAccessor = BSplineCore::coeffs(0).template accessor<typename BSplineCore::value_type,1>();
-          auto yAccessor = BSplineCore::coeffs(1).template accessor<typename BSplineCore::value_type,1>();
+#ifdef __clang__
+          auto coeffs_cpu = to_tensorAccessor<typename BSplineCore_t::value_type,1>(BSplineCore::coeffs, torch::kCPU);
+          auto xAccessor  = std::get<1>(coeffs_cpu[0]);
+          auto yAccessor  = std::get<1>(coeffs_cpu[1]);
+#else
+          auto [coeffs0_cpu, xAccessor] = to_tensorAccessor<typename BSplineCore_t::value_type,1>(BSplineCore::coeffs(0), torch::kCPU);
+          auto [coeffs1_cpu, yAccessor] = to_tensorAccessor<typename BSplineCore_t::value_type,1>(BSplineCore::coeffs(1), torch::kCPU);
+#endif
 
 #pragma omp parallel for simd
           for (int64_t i=0; i<BSplineCore::ncoeffs(0); ++i) {
@@ -4056,12 +4089,20 @@ std::cout << "AFTER\n";
             matplot::vector_2d Cfine(1, matplot::vector_1d(res0, 0.0));
 
             auto Coords = BSplineCore::eval(torch::linspace(0, 1, res0));
-            auto XAccessor = Coords(0).template accessor<typename BSplineCore::value_type,1>();
-            auto YAccessor = Coords(1).template accessor<typename BSplineCore::value_type,1>();
-            auto ZAccessor = Coords(2).template accessor<typename BSplineCore::value_type,1>();
-
-            auto Color = color.eval(torch::linspace(0, 1, res0));
-            auto CAccessor = Color(0).template accessor<typename BSplineCore::value_type,1>();
+            auto Color  = color.eval(torch::linspace(0, 1, res0));
+#ifdef __clang__
+            auto Coords_cpu = to_tensorAccessor<typename BSplineCore_t::value_type,1>(Coords, torch::kCPU);
+            auto Color_cpu  = to_tensorAccessor<typename BSplineCore_t::value_type,1>(Color,  torch::kCPU);
+            auto XAccessor  = std::get<1>(Coords_cpu[0]);
+            auto YAccessor  = std::get<1>(Coords_cpu[1]);
+            auto ZAccessor  = std::get<1>(Coords_cpu[2]);
+            auto CAccessor  = std::get<1>(Color_cpu[0]);
+#else
+            auto [Coords0_cpu, XAccessor] = to_tensorAccessor<typename BSplineCore_t::value_type,1>(Coords(0), torch::kCPU);
+            auto [Coords1_cpu, YAccessor] = to_tensorAccessor<typename BSplineCore_t::value_type,1>(Coords(1), torch::kCPU);
+            auto [Coords2_cpu, ZAccessor] = to_tensorAccessor<typename BSplineCore_t::value_type,1>(Coords(2), torch::kCPU);
+            auto [Color_cpu,   CAccessor] = to_tensorAccessor<typename BSplineCore_t::value_type,1>(Color(0),  torch::kCPU);
+#endif
 
 #pragma omp parallel for simd
             for (int64_t i=0; i<res0; ++i) {
@@ -4079,9 +4120,16 @@ std::cout << "AFTER\n";
           matplot::vector_1d Zfine(res0, 0.0);
 
           auto Coords = BSplineCore::eval(torch::linspace(0, 1, res0));
-          auto XAccessor = Coords(0).template accessor<typename BSplineCore::value_type,1>();
-          auto YAccessor = Coords(1).template accessor<typename BSplineCore::value_type,1>();
-          auto ZAccessor = Coords(2).template accessor<typename BSplineCore::value_type,1>();
+#ifdef __clang__
+          auto Coords_cpu = to_tensorAccessor<typename BSplineCore_t::value_type,1>(Coords, torch::kCPU);
+          auto XAccessor  = std::get<1>(Coords_cpu)[0];
+          auto YAccessor  = std::get<1>(Coords_cpu)[1];
+          auto ZAccessor  = std::get<1>(Coords_cpu)[2];
+#else
+          auto [Coords0_cpu, XAccessor] = to_tensorAccessor<typename BSplineCore_t::value_type,1>(Coords(0), torch::kCPU);
+          auto [Coords1_cpu, YAccessor] = to_tensorAccessor<typename BSplineCore_t::value_type,1>(Coords(1), torch::kCPU);
+          auto [Coords2_cpu, ZAccessor] = to_tensorAccessor<typename BSplineCore_t::value_type,1>(Coords(2), torch::kCPU);
+#endif
 
 #pragma omp parallel for simd
           for (int64_t i=0; i<res0; ++i) {
@@ -4094,9 +4142,16 @@ std::cout << "AFTER\n";
           matplot::vector_1d Y(BSplineCore::ncoeffs(0), 0.0);
           matplot::vector_1d Z(BSplineCore::ncoeffs(0), 0.0);
 
-          auto xAccessor = BSplineCore::coeffs(0).template accessor<typename BSplineCore::value_type,1>();
-          auto yAccessor = BSplineCore::coeffs(1).template accessor<typename BSplineCore::value_type,1>();
-          auto zAccessor = BSplineCore::coeffs(2).template accessor<typename BSplineCore::value_type,1>();
+#ifdef __clang__
+          auto coeffs_cpu = to_tensorAccessor<typename BSplineCore_t::value_type,1>(BSplineCore::coeffs(), torch::kCPU);
+          auto xAccessor  = std::get<1>(coeffs_cpu)[0];
+          auto yAccessor  = std::get<1>(coeffs_cpu)[1];
+          auto zAccessor  = std::get<1>(coeffs_cpu)[2];
+#else
+          auto [coeffs0_cpu, xAccessor] = to_tensorAccessor<typename BSplineCore_t::value_type,1>(BSplineCore::coeffs(0), torch::kCPU);
+          auto [coeffs1_cpu, yAccessor] = to_tensorAccessor<typename BSplineCore_t::value_type,1>(BSplineCore::coeffs(1), torch::kCPU);
+          auto [coeffs2_cpu, zAccessor] = to_tensorAccessor<typename BSplineCore_t::value_type,1>(BSplineCore::coeffs(2), torch::kCPU);
+#endif
 
 #pragma omp parallel for simd
           for (int64_t i=0; i<BSplineCore::ncoeffs(0); ++i) {
@@ -4131,8 +4186,14 @@ std::cout << "AFTER\n";
         std::array<torch::Tensor,2> meshgrid = convert<2>(torch::meshgrid({torch::linspace(0, 1, res0),
                                                                            torch::linspace(0, 1, res1)}, "xy"));
         auto Coords = BSplineCore::eval(meshgrid);
-        auto XAccessor = Coords(0).template accessor<typename BSplineCore::value_type,2>();
-        auto YAccessor = Coords(1).template accessor<typename BSplineCore::value_type,2>();
+#ifdef __clang__
+        auto Coords_cpu = to_tensorAccessor<typename BSplineCore_t::value_type,2>(Coords, torch::kCPU);
+        auto XAccessor  = std::get<1>(Coords_cpu)[0];
+        auto YAccessor  = std::get<1>(Coords_cpu)[1];
+#else
+        auto [Coords0_cpu, XAccessor] = to_tensorAccessor<typename BSplineCore_t::value_type,2>(Coords(0), torch::kCPU);
+        auto [Coords1_cpu, YAccessor] = to_tensorAccessor<typename BSplineCore_t::value_type,2>(Coords(1), torch::kCPU);
+#endif
 
 #pragma omp parallel for simd collapse(2)
         for (int64_t i=0; i<res0; ++i)
@@ -4144,7 +4205,12 @@ std::cout << "AFTER\n";
         if ((void*)this != (void*)&color) {
           if constexpr (BSplineCore_t::geoDim()==1) {
             auto Color = color.eval(meshgrid);
-            auto CAccessor = Color(0).template accessor<typename BSplineCore::value_type,2>();
+#ifdef __clang__
+            auto Color_cpu = to_tensorAccessor<typename BSplineCore_t::value_type,2>(Color, torch::kCPU);
+            auto CAccessor = std::get<1>(Color_cpu)[0];
+#else
+            auto [Color0_cpu, CAccessor] = to_tensorAccessor<typename BSplineCore_t::value_type,2>(Color(0), torch::kCPU);
+#endif
 
 #pragma omp parallel for simd collapse(2)
             for (int64_t i=0; i<res0; ++i)
@@ -4164,8 +4230,14 @@ std::cout << "AFTER\n";
           matplot::vector_2d Y(BSplineCore::ncoeffs(1), matplot::vector_1d(BSplineCore::ncoeffs(0), 0.0));
           matplot::vector_2d Z(BSplineCore::ncoeffs(1), matplot::vector_1d(BSplineCore::ncoeffs(0), 0.0));
 
-          auto xAccessor = BSplineCore::coeffs(0).template accessor<typename BSplineCore::value_type,1>();
-          auto yAccessor = BSplineCore::coeffs(1).template accessor<typename BSplineCore::value_type,1>();
+#ifdef __clang__
+          auto coeffs_cpu = to_tensorAccessor<typename BSplineCore_t::value_type,1>(BSplineCore::coeffs(), torch::kCPU);
+          auto xAccessor  = std::get<1>(coeffs_cpu)[0];
+          auto yAccessor  = std::get<1>(coeffs_cpu)[1];
+#else
+          auto [coeffs0_cpu, xAccessor] = to_tensorAccessor<typename BSplineCore_t::value_type,1>(BSplineCore::coeffs(0), torch::kCPU);
+          auto [coeffs1_cpu, yAccessor] = to_tensorAccessor<typename BSplineCore_t::value_type,1>(BSplineCore::coeffs(1), torch::kCPU);
+#endif
 
 #pragma omp parallel for simd collapse(2)
           for (int64_t i=0; i<BSplineCore::ncoeffs(0); ++i)
@@ -4200,9 +4272,16 @@ std::cout << "AFTER\n";
         std::array<torch::Tensor,2> meshgrid = convert<2>(torch::meshgrid({torch::linspace(0, 1, res0),
                                                                            torch::linspace(0, 1, res1)}, "xy"));
         auto Coords = BSplineCore::eval(meshgrid);
-        auto XAccessor = Coords(0).template accessor<typename BSplineCore::value_type,2>();
-        auto YAccessor = Coords(1).template accessor<typename BSplineCore::value_type,2>();
-        auto ZAccessor = Coords(2).template accessor<typename BSplineCore::value_type,2>();
+#ifdef __clang__
+        auto Coords_cpu = to_tensorAccessor<typename BSplineCore_t::value_type,2>(Coords, torch::kCPU);
+        auto XAccessor  = std::get<1>(Coords_cpu)[0];
+        auto YAccessor  = std::get<1>(Coords_cpu)[1];
+        auto ZAccessor  = std::get<1>(Coords_cpu)[2];
+#else
+        auto [Coords0_cpu, XAccessor] = to_tensorAccessor<typename BSplineCore_t::value_type,2>(Coords(0), torch::kCPU);
+        auto [Coords1_cpu, YAccessor] = to_tensorAccessor<typename BSplineCore_t::value_type,2>(Coords(1), torch::kCPU);
+        auto [Coords2_cpu, ZAccessor] = to_tensorAccessor<typename BSplineCore_t::value_type,2>(Coords(2), torch::kCPU);
+#endif        
 
 #pragma omp parallel for simd collapse(2)
         for (int64_t i=0; i<res0; ++i)
@@ -4218,7 +4297,12 @@ std::cout << "AFTER\n";
             matplot::vector_2d Cfine(res1, matplot::vector_1d(res0, 0.0));
 
             auto Color = color.eval(meshgrid);
-            auto CAccessor = Color(0).template accessor<typename BSplineCore::value_type,2>();
+#ifdef __clang__
+            auto Color_cpu = to_tensorAccessor<typename BSplineCore_t::value_type,2>(Color, torch::kCPU);
+            auto CAccessor = std::get<1>(Color_cpu)[0];
+#else
+            auto [Color_cpu, CAccessor] = to_tensorAccessor<typename BSplineCore_t::value_type,2>(Color(0), torch::kCPU);
+#endif
 
 #pragma omp parallel for simd collapse(2)
             for (int64_t i=0; i<res0; ++i)
@@ -4234,9 +4318,16 @@ std::cout << "AFTER\n";
           matplot::vector_2d Y(BSplineCore::ncoeffs(1), matplot::vector_1d(BSplineCore::ncoeffs(0), 0.0));
           matplot::vector_2d Z(BSplineCore::ncoeffs(1), matplot::vector_1d(BSplineCore::ncoeffs(0), 0.0));
 
-          auto xAccessor = BSplineCore::coeffs(0).template accessor<typename BSplineCore::value_type,1>();
-          auto yAccessor = BSplineCore::coeffs(1).template accessor<typename BSplineCore::value_type,1>();
-          auto zAccessor = BSplineCore::coeffs(2).template accessor<typename BSplineCore::value_type,1>();
+#ifdef __clang__
+          auto coeffs_cpu = to_tensorAccessor<typename BSplineCore_t::value_type,1>(BSplineCore::coeffs(), torch::kCPU);
+          auto xAccessor   = std::get<1>(coeffs_cpu)[0];
+          auto yAccessor   = std::get<1>(coeffs_cpu)[1];
+          auto zAccessor   = std::get<1>(coeffs_cpu)[2];
+#else
+          auto [coeffs0_cpu, xAccessor] = to_tensorAccessor<typename BSplineCore_t::value_type,1>(BSplineCore::coeffs(0), torch::kCPU);
+          auto [coeffs1_cpu, yAccessor] = to_tensorAccessor<typename BSplineCore_t::value_type,1>(BSplineCore::coeffs(1), torch::kCPU);
+          auto [coeffs2_cpu, zAccessor] = to_tensorAccessor<typename BSplineCore_t::value_type,1>(BSplineCore::coeffs(2), torch::kCPU);
+#endif
 
 #pragma omp parallel for simd collapse(2)
           for (int64_t i=0; i<BSplineCore::ncoeffs(0); ++i)

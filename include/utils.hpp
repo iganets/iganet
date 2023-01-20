@@ -13,7 +13,10 @@
 */
 
 #include <random>
+#include <tuple>
 #include <json.hpp>
+
+#include <blocktensor.hpp>
 
 #pragma once
 
@@ -275,8 +278,8 @@ namespace iganet {
   /// @param[in] leading_dim  Leading dimension
   template<bool transpose = false>
   inline auto VSlice(const std::array<torch::Tensor, 2>& index,
-                     const std::array<int64_t, 2> start_offset,
-                     const std::array<int64_t, 2> stop_offset,
+                     const std::array<int64_t, 2>& start_offset,
+                     const std::array<int64_t, 2>& stop_offset,
                      int64_t leading_dim=1)
   {
     assert(index[0].numel() == index[1].numel());
@@ -324,9 +327,9 @@ namespace iganet {
   /// @param[in] leading_dim  2d array of leading dimension
   template<bool transpose = false>
   inline auto VSlice(const std::array<torch::Tensor, 3>& index,
-                     const std::array<int64_t, 3> start_offset,
-                     const std::array<int64_t, 3> stop_offset,
-                     const std::array<int64_t, 2> leading_dim={1,1})
+                     const std::array<int64_t, 3>& start_offset,
+                     const std::array<int64_t, 3>& stop_offset,
+                     const std::array<int64_t, 2>& leading_dim={1,1})
   {
     assert(index[0].numel() == index[1].numel() &&
            index[1].numel() == index[2].numel());
@@ -389,9 +392,9 @@ namespace iganet {
   /// @param[in] leading_dim  3d array of leading dimension
   template<bool transpose = false>
   inline auto VSlice(const std::array<torch::Tensor, 4>& index,
-                     const std::array<int64_t, 4> start_offset,
-                     const std::array<int64_t, 4> stop_offset,
-                     const std::array<int64_t, 3> leading_dim={1,1,1})
+                     const std::array<int64_t, 4>& start_offset,
+                     const std::array<int64_t, 4>& stop_offset,
+                     const std::array<int64_t, 3>& leading_dim={1,1,1})
   {
     assert(index[0].numel() == index[1].numel() &&
            index[1].numel() == index[2].numel() &&
@@ -460,6 +463,7 @@ namespace iganet {
   }
 
   /// @brief Concatenates multiple std::vector objects
+  /// @{
   template<typename... Ts>
   inline auto concat(const std::vector<Ts>&... vectors)
   {
@@ -470,7 +474,20 @@ namespace iganet {
     return result;
   }
 
+  template<typename... Ts>
+  inline auto concat(std::vector<Ts>&&... vectors)
+  {
+    std::vector<typename std::tuple_element<0, std::tuple<Ts...> >::type> result;
+
+    (result.insert(result.end(), std::make_move_iterator(vectors.begin()),
+                                 std::make_move_iterator(vectors.end())), ...);
+
+    return result;
+  }
+  /// @}
+
   /// @brief Concatenates multiple std::array objects
+  /// @{
   template<typename T, std::size_t... N>
   inline auto concat(const std::array<T, N>&... arrays)
   {
@@ -482,6 +499,18 @@ namespace iganet {
     return result;
   }
 
+  template<typename T, std::size_t... N>
+  inline auto concat(std::array<T, N>&&... arrays)
+  {
+    std::array<T, (N + ...)> result;
+    std::size_t index{};
+
+    ((std::copy_n(std::make_move_iterator(arrays.begin()), N, result.begin() + index), index += N), ...);
+
+    return result;
+  }
+  /// @}
+  
   /// @brief Converts an std::vector object into std::array
   template<std::size_t N, typename T>
   inline std::array<T, N> convert(std::vector<T>&& vector)
@@ -519,7 +548,7 @@ namespace iganet {
   }
 
   template<typename T>
-  inline auto to_tensor(std::initializer_list<T> list,
+  inline auto to_tensor(std::initializer_list<T>&& list,
                         const torch::TensorOptions& options)
   {
     if (options.device() == torch::kCPU)
@@ -537,7 +566,7 @@ namespace iganet {
   /// @brief Converts an std::initializer_list to TensorArray1
   /// @{
   template<typename T>
-  inline auto to_tensorArray(std::initializer_list<T> list,
+  inline auto to_tensorArray(std::initializer_list<T>&& list,
                              torch::IntArrayRef sizes = torch::IntArrayRef{-1},
                              const torch::TensorOptions& options = iganet::core<T>{}.options())
   {
@@ -545,7 +574,7 @@ namespace iganet {
   }
 
   template<typename T>
-  inline auto to_tensorArray(std::initializer_list<T> list,
+  inline auto to_tensorArray(std::initializer_list<T>&& list,
                              const torch::TensorOptions& options)
   {
     return TensorArray1({to_tensor(list, torch::IntArrayRef{-1}, options)});
@@ -556,8 +585,8 @@ namespace iganet {
   /// @brief Converts two std::initializer_list's to TensorArray2
   /// @{
   template<typename T>
-  inline auto to_tensorArray(std::initializer_list<T> list0,
-                             std::initializer_list<T> list1,
+  inline auto to_tensorArray(std::initializer_list<T>&& list0,
+                             std::initializer_list<T>&& list1,
                              torch::IntArrayRef sizes = torch::IntArrayRef{-1},
                              const torch::TensorOptions& options = iganet::core<T>{}.options())
   {
@@ -566,8 +595,8 @@ namespace iganet {
   }
 
   template<typename T>
-  inline auto to_tensorArray(std::initializer_list<T> list0,
-                             std::initializer_list<T> list1,
+  inline auto to_tensorArray(std::initializer_list<T>&& list0,
+                             std::initializer_list<T>&& list1,
                              const torch::TensorOptions& options)
   {
     return TensorArray2({to_tensor(list0, torch::IntArrayRef{-1}, options),
@@ -578,9 +607,9 @@ namespace iganet {
   /// @brief Converts three std::initializer_list's to TensorArray3
   /// @{
   template<typename T>
-  inline auto to_tensorArray(std::initializer_list<T> list0,
-                             std::initializer_list<T> list1,
-                             std::initializer_list<T> list2,
+  inline auto to_tensorArray(std::initializer_list<T>&& list0,
+                             std::initializer_list<T>&& list1,
+                             std::initializer_list<T>&& list2,
                              torch::IntArrayRef sizes = torch::IntArrayRef{-1},
                              const torch::TensorOptions& options = iganet::core<T>{}.options())
   {
@@ -590,9 +619,9 @@ namespace iganet {
   }
 
   template<typename T>
-  inline auto to_tensorArray(std::initializer_list<T> list0,
-                             std::initializer_list<T> list1,
-                             std::initializer_list<T> list2,
+  inline auto to_tensorArray(std::initializer_list<T>&& list0,
+                             std::initializer_list<T>&& list1,
+                             std::initializer_list<T>&& list2,
                              const torch::TensorOptions& options)
   {
     return TensorArray3({to_tensor(list0, torch::IntArrayRef{-1}, options),
@@ -604,10 +633,10 @@ namespace iganet {
   /// @brief Converts four std::initializer_list's to TensorArray4
   /// @{
   template<typename T>
-  inline auto to_tensorArray(std::initializer_list<T> list0,
-                             std::initializer_list<T> list1,
-                             std::initializer_list<T> list2,
-                             std::initializer_list<T> list3,
+  inline auto to_tensorArray(std::initializer_list<T>&& list0,
+                             std::initializer_list<T>&& list1,
+                             std::initializer_list<T>&& list2,
+                             std::initializer_list<T>&& list3,
                              torch::IntArrayRef sizes = {-1},
                              const torch::TensorOptions& options = iganet::core<T>{}.options())
   {
@@ -618,10 +647,10 @@ namespace iganet {
   }
 
   template<typename T>
-  inline auto to_tensorArray(std::initializer_list<T> list0,
-                             std::initializer_list<T> list1,
-                             std::initializer_list<T> list2,
-                             std::initializer_list<T> list3,
+  inline auto to_tensorArray(std::initializer_list<T>&& list0,
+                             std::initializer_list<T>&& list1,
+                             std::initializer_list<T>&& list2,
+                             std::initializer_list<T>&& list3,
                              const torch::TensorOptions& options)
   {
     return TensorArray4({to_tensor(list0, torch::IntArrayRef{-1}, options),
@@ -633,27 +662,66 @@ namespace iganet {
 
   /// @brief Converts a torch::Tensor object to a
   /// torch::TensorAccessor object
+  /// @{
   template<typename T, std::size_t N>
   auto to_tensorAccessor(const torch::Tensor& tensor) {
     return tensor.template accessor<T, N>();
   }
 
+  template<typename T, std::size_t N>
+  auto to_tensorAccessor(const torch::Tensor& tensor, c10::DeviceType deviceType) {
+    auto tensor_device = tensor.to(deviceType);
+    auto accessor = tensor_device.template accessor<T, N>();
+    return std::tuple(tensor_device, accessor);
+  }
+  /// @}
+
   namespace detail {
     /// @brief Converts an std::array of torch::Tensor objects to an
     /// array of torch::TensorAccessor objects
+    /// @{
     template<typename T, std::size_t N, std::size_t... Is>
     auto to_tensorAccessor(const std::array<torch::Tensor, sizeof...(Is)>& tensors,
                            std::index_sequence<Is...>) {
       return std::array<torch::TensorAccessor<T, N>, sizeof...(Is)>{tensors[Is].template accessor<T, N>()...};
     }
+
+    template<typename T, std::size_t N, std::size_t... Is>
+    auto to_tensorAccessor(const std::array<torch::Tensor, sizeof...(Is)>& tensors,
+                           c10::DeviceType deviceType, std::index_sequence<Is...>) {
+      std::array<torch::TensorBase, sizeof...(Is)> tensors_device{tensors[Is].to(deviceType)...};
+      std::array<torch::TensorAccessor<T, N>, sizeof...(Is)> accessors{tensors_device[Is].template accessor<T, N>()...};
+      return std::tuple(tensors_device, accessors);
+    }
+
+    template<typename T, std::size_t N, size_t... Dims, std::size_t... Is>
+    auto to_tensorAccessor(const BlockTensor<torch::Tensor, Dims...>& blocktensor,
+                           c10::DeviceType deviceType, std::index_sequence<Is...>) {
+      std::array<torch::TensorBase, sizeof...(Is)> tensors_device{blocktensor[Is]->to(deviceType)...};
+      std::array<torch::TensorAccessor<T, N>, sizeof...(Is)> accessors{tensors_device[Is].template accessor<T, N>()...};
+      return std::tuple(tensors_device, accessors);
+    }
+    /// @}
   } // namespace detail
 
   /// @brief Converts an std::array of torch::Tensor objects to an
   /// array of torch::TensorAccessor objects
+  /// @{
   template<typename T, std::size_t N, std::size_t M>
   auto to_tensorAccessor(const std::array<torch::Tensor, M>& tensors) {
     return detail::to_tensorAccessor<T, N>(tensors, std::make_index_sequence<M>());
   }
+
+  template<typename T, std::size_t N, std::size_t M>
+  auto to_tensorAccessor(const std::array<torch::Tensor, M>& tensors, c10::DeviceType deviceType) {
+    return detail::to_tensorAccessor<T, N>(tensors, deviceType, std::make_index_sequence<M>());
+  }
+
+  template<typename T, std::size_t N, std::size_t... Dims>
+  auto to_tensorAccessor(const BlockTensor<torch::Tensor, Dims...>& blocktensor, c10::DeviceType deviceType) {
+    return detail::to_tensorAccessor<T, N, Dims...>(blocktensor, deviceType, std::make_index_sequence<(Dims*...)>());
+  }
+  /// @}
 
   /// @brief Converts a torch::TensorAccessor object to a JSON object
   template<typename T, std::size_t N>

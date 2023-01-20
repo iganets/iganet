@@ -44,11 +44,11 @@ namespace iganet {
   }
 
   /// @brief Forward declaration of BlockTensor
-  template<typename T, short_t... Dims>
+  template<typename T, std::size_t... Dims>
   class BlockTensor;
   
   /// @brief Compile-time block tensor core 
-  template<typename T, short_t... Dims>
+  template<typename T, std::size_t... Dims>
   class BlockTensorCore : public iganet::fqn {
 
   protected:
@@ -60,7 +60,7 @@ namespace iganet {
     BlockTensorCore() = default;
     
     /// @brief Constructur from BlockTensorCore objects
-    template<typename... Ts, short_t... dims>
+    template<typename... Ts, std::size_t... dims>
     BlockTensorCore(BlockTensorCore<Ts, dims...>&&... other)
     {      
       auto it = data_.begin();      
@@ -69,7 +69,7 @@ namespace iganet {
     }
 
     /// @brief Constructur from BlockTensor objects
-    template<typename... Ts, short_t... dims>
+    template<typename... Ts, std::size_t... dims>
     BlockTensorCore(BlockTensor<Ts, dims...>&&... other)
     {      
       auto it = data_.begin();      
@@ -86,24 +86,24 @@ namespace iganet {
     /// @brief Returns all dimensions as array
     inline static constexpr auto dims()
     {
-      return std::array<short_t, sizeof...(Dims)>({Dims...});
+      return std::array<std::size_t, sizeof...(Dims)>({Dims...});
     }
     
     /// @brief Returns the i-th dimension
-    template<short_t i>
-    inline static constexpr short_t dim()
+    template<std::size_t i>
+    inline static constexpr std::size_t dim()
     {
       return std::get<i>(Dims...);
     }
 
     /// @brief Returns the number of dimensions
-    inline static constexpr short_t size()
+    inline static constexpr std::size_t size()
     {
       return sizeof...(Dims);
     }
     
     /// @brief Returns the total number of entries
-    inline static constexpr short_t entries()
+    inline static constexpr std::size_t entries()
     {
       return (Dims*...);
     }
@@ -121,28 +121,28 @@ namespace iganet {
     }
 
     /// @brief Returns a constant shared pointer to entry (idx)
-    inline const std::shared_ptr<T>& operator[](short_t idx) const
+    inline const std::shared_ptr<T>& operator[](std::size_t idx) const
     {
       assert(0 <= idx && idx < (Dims*...));
       return data_[idx];
     }
 
     /// @brief Returns a non-constant shared pointer to entry (idx)
-    inline std::shared_ptr<T>& operator[](short_t idx)
+    inline std::shared_ptr<T>& operator[](std::size_t idx)
     {
       assert(0 <= idx && idx < (Dims*...));
       return data_[idx];
     }
     
     /// @brief Returns a constant reference to entry (idx)
-    inline const T& operator()(short_t idx) const
+    inline const T& operator()(std::size_t idx) const
     {
       assert(0 <= idx && idx < (Dims*...));
       return *data_[idx];
     }
 
     /// @brief Returns a non-constant reference to entry (idx)
-    inline T& operator()(short_t idx)
+    inline T& operator()(std::size_t idx)
     {
       assert(0 <= idx && idx < (Dims*...));
       return *data_[idx];
@@ -150,7 +150,7 @@ namespace iganet {
 
     /// @brief Stores the given data object at the given index
     template<typename D>
-    inline T& set(short_t idx, D&& data)
+    inline T& set(std::size_t idx, D&& data)
     {
       assert(0 <= idx && idx < (Dims*...));
       data_[idx] = make_shared<D>(std::move(data));
@@ -162,7 +162,7 @@ namespace iganet {
   };
 
   /// Print (as string) a compile-time block tensor object
-  template<typename T, short_t... Dims>
+  template<typename T, std::size_t... Dims>
   inline std::ostream& operator<<(std::ostream& os,
                                   const BlockTensorCore<T, Dims...>& obj)
   {
@@ -171,7 +171,7 @@ namespace iganet {
   }
 
   /// @brief Compile-time rank-1 block tensor (row vector)
-  template<typename T, short_t Rows>
+  template<typename T, std::size_t Rows>
   class BlockTensor<T, Rows> : public BlockTensorCore<T, Rows>
   {
   private:
@@ -181,7 +181,7 @@ namespace iganet {
     using BlockTensorCore<T, Rows>::BlockTensorCore;
 
     /// @brief Returns the number of rows
-    inline static constexpr short_t rows()
+    inline static constexpr std::size_t rows()
     {
       return Rows;
     }
@@ -190,7 +190,7 @@ namespace iganet {
     inline void pretty_print(std::ostream& os = std::cout) const
     {
       os << Base::name() << "\n";
-      for (short_t row = 0; row<Rows; ++row)
+      for (std::size_t row = 0; row<Rows; ++row)
         os << "[" << row << "] = \n"
            << *Base::data_[row] << "\n";
     }
@@ -201,7 +201,7 @@ namespace iganet {
   /// Data is store in row-major order, i.e. all entries of a row are
   /// stored contiguously in memory and the entries of the next row
   /// are stored with an offset of Cols
-  template<typename T, short_t Rows, short_t Cols>
+  template<typename T, std::size_t Rows, std::size_t Cols>
   class BlockTensor<T, Rows, Cols> : public BlockTensorCore<T, Rows, Cols>
   {
   private:
@@ -211,13 +211,13 @@ namespace iganet {
     using BlockTensorCore<T, Rows, Cols>::BlockTensorCore;
 
     /// @brief Returns the number of rows
-    inline static constexpr short_t rows()
+    inline static constexpr std::size_t rows()
     {
       return Rows;
     }
 
     /// @brief Returns the number of columns
-    inline static constexpr short_t cols()
+    inline static constexpr std::size_t cols()
     {
       return Cols;
     }
@@ -225,14 +225,14 @@ namespace iganet {
     using Base::operator();
     
     /// @brief Returns a constant reference to entry (row, col)
-    inline const T& operator()(short_t row, short_t col) const
+    inline const T& operator()(std::size_t row, std::size_t col) const
     {
       assert(0 <= row && row < Rows && 0 <= col && col < Cols);
       return *Base::data_[Cols*row+col];
     }
 
     /// @brief Returns a non-constant reference to entry (row, col)
-    inline T& operator()(short_t row, short_t col)
+    inline T& operator()(std::size_t row, std::size_t col)
     {
       assert(0 <= row && row < Rows && 0 <= col && col < Cols);
       return *Base::data_[Cols*row+col];
@@ -242,7 +242,7 @@ namespace iganet {
     
     /// @brief Stores the given data object at the given position
     template<typename D>
-    inline T& set(short_t row, short_t col, D&& data)
+    inline T& set(std::size_t row, std::size_t col, D&& data)
     {
       assert(0 <= row && row < Rows && 0 <= col && col < Cols);
       Base::data_[Cols*row+col] = make_shared<D>(data);
@@ -253,8 +253,8 @@ namespace iganet {
     inline auto tr() const
     {
       BlockTensor<T, Cols, Rows> result;
-      for (short_t row = 0; row<Rows; ++row)
-        for (short_t col = 0; col<Cols; ++col)
+      for (std::size_t row = 0; row<Rows; ++row)
+        for (std::size_t col = 0; col<Cols; ++col)
           result[Rows*col+row] = Base::data_[Cols*row+col];
       return result;
     }
@@ -427,8 +427,8 @@ namespace iganet {
     inline void pretty_print(std::ostream& os = std::cout) const
     {
       os << Base::name() << "\n";
-      for (short_t row = 0; row<Rows; ++row)
-        for (short_t col = 0; col<Cols; ++col)
+      for (std::size_t row = 0; row<Rows; ++row)
+        for (std::size_t col = 0; col<Cols; ++col)
           os << "[" << row << "," << col << "] = \n"
              << *Base::data_[Cols*row+col] << "\n";
     }
@@ -436,15 +436,15 @@ namespace iganet {
 
   /// @brief Multiplies one compile-time rank-2 block tensor with
   /// another compile-time rank-2 block tensor
-  template<typename T, typename U, short_t Rows, short_t Common, short_t Cols>
+  template<typename T, typename U, std::size_t Rows, std::size_t Common, std::size_t Cols>
   inline auto operator*(const BlockTensor<T, Rows, Common>& lhs,
                         const BlockTensor<U, Common, Cols>& rhs)
   {
     BlockTensor<typename std::common_type<T, U>::type, Rows, Cols> result;
-    for (short_t row = 0; row<Rows; ++row)
-      for (short_t col = 0; col<Cols; ++col) {
+    for (std::size_t row = 0; row<Rows; ++row)
+      for (std::size_t col = 0; col<Cols; ++col) {
         T tmp = torch::mul(*lhs[Common*row], *rhs[col]);
-          for (short_t idx = 1; idx<Common; ++idx)
+          for (std::size_t idx = 1; idx<Common; ++idx)
             tmp += torch::mul(*lhs[Common*row+idx], *rhs[Cols*idx+col]);
         result[Cols*row+col] = std::make_shared<T>(tmp);
       }
@@ -457,7 +457,7 @@ namespace iganet {
   /// stored contiguously in memory and the entries of the next row
   /// are stored with an offset of Cols. The entries of the next slice
   /// are store with an offset of Rows*Cols.
-  template<typename T, short_t Rows, short_t Cols, short_t Slices>
+  template<typename T, std::size_t Rows, std::size_t Cols, std::size_t Slices>
   class BlockTensor<T, Rows, Cols, Slices> : public BlockTensorCore<T, Rows, Cols, Slices>
   {
   private:
@@ -467,19 +467,19 @@ namespace iganet {
     using BlockTensorCore<T, Rows, Cols, Slices>::BlockTensorCore;
 
     /// @brief Returns the number of rows
-    inline static constexpr short_t rows()
+    inline static constexpr std::size_t rows()
     {
       return Rows;
     }
 
     /// @brief Returns the number of columns
-    inline static constexpr short_t cols()
+    inline static constexpr std::size_t cols()
     {
       return Cols;
     }
 
     /// @brief Returns the number of slices
-    inline static constexpr short_t slices()
+    inline static constexpr std::size_t slices()
     {
       return Slices;
     }
@@ -487,7 +487,7 @@ namespace iganet {
     using Base::operator();
     
     /// @brief Returns a constant reference to entry (row, col, slice)
-    inline const T& operator()(short_t row, short_t col, short_t slice) const
+    inline const T& operator()(std::size_t row, std::size_t col, std::size_t slice) const
     {
       assert(0 <= row && row < Rows && 0 <= col && col < Cols &&
              0 <= slice && slice < Slices);
@@ -495,7 +495,7 @@ namespace iganet {
     }
 
     /// @brief Returns a non-constant reference to entry (row, col, slice)
-    inline T& operator()(short_t row, short_t col, short_t slice)
+    inline T& operator()(std::size_t row, std::size_t col, std::size_t slice)
     {
       assert(0 <= row && row < Rows && 0 <= col && col < Cols &&
              0 <= slice && slice < Slices);
@@ -506,19 +506,19 @@ namespace iganet {
     
     /// @brief Stores the given data object at the given position
     template<typename D>
-    inline T& set(short_t row, short_t col, short_t slice, D&& data)
+    inline T& set(std::size_t row, std::size_t col, std::size_t slice, D&& data)
     {
       Base::data_[Rows*Cols*slice+Cols*row+col] = make_shared<D>(data);
       return *Base::data_[Rows*Cols*slice+Cols*row+col];
     }
 
     /// @brief Returns a rank-2 tensor of the k-th slice
-    inline auto slice(short_t slice) const
+    inline auto slice(std::size_t slice) const
     {
       assert(0 <= slice && slice < Slices);
       BlockTensor<T, Rows, Cols> result;
-      for (short_t row = 0; row<Rows; ++row)
-        for (short_t col = 0; col<Cols; ++col)
+      for (std::size_t row = 0; row<Rows; ++row)
+        for (std::size_t col = 0; col<Cols; ++col)
           result[Cols*row+col] = Base::data_[Rows*Cols*slice+Cols*row+col];
       return result;
     }
@@ -528,9 +528,9 @@ namespace iganet {
     inline auto reorder_ikj() const
     {
       BlockTensor<T, Rows, Slices, Cols> result;
-      for (short_t slice = 0; slice<Slices; ++slice)
-        for (short_t row = 0; row<Rows; ++row)
-          for (short_t col = 0; col<Cols; ++col)
+      for (std::size_t slice = 0; slice<Slices; ++slice)
+        for (std::size_t row = 0; row<Rows; ++row)
+          for (std::size_t col = 0; col<Cols; ++col)
             result[Rows*Slices*col+Slices*row+slice] = Base::data_[Rows*Cols*slice+Cols*row+col];
       return result;
     }
@@ -541,9 +541,9 @@ namespace iganet {
     inline auto reorder_jik() const
     {
       BlockTensor<T, Cols, Rows, Slices> result;
-      for (short_t slice = 0; slice<Slices; ++slice)
-        for (short_t row = 0; row<Rows; ++row)
-          for (short_t col = 0; col<Cols; ++col)
+      for (std::size_t slice = 0; slice<Slices; ++slice)
+        for (std::size_t row = 0; row<Rows; ++row)
+          for (std::size_t col = 0; col<Cols; ++col)
             result[Rows*Cols*slice+Rows*col+row] = Base::data_[Rows*Cols*slice+Cols*row+col];
       return result;
     }
@@ -553,9 +553,9 @@ namespace iganet {
     inline auto reorder_kji() const
     {
       BlockTensor<T, Slices, Cols, Rows> result;
-      for (short_t slice = 0; slice<Slices; ++slice)
-        for (short_t row = 0; row<Rows; ++row)
-          for (short_t col = 0; col<Cols; ++col)
+      for (std::size_t slice = 0; slice<Slices; ++slice)
+        for (std::size_t row = 0; row<Rows; ++row)
+          for (std::size_t col = 0; col<Cols; ++col)
             result[Slices*Cols*row+Cols*slice+col] = Base::data_[Rows*Cols*slice+Cols*row+col];
       return result;
     }
@@ -565,9 +565,9 @@ namespace iganet {
     inline auto reorder_kij() const
     {
       BlockTensor<T, Slices, Rows, Cols> result;
-      for (short_t slice = 0; slice<Slices; ++slice)
-        for (short_t row = 0; row<Rows; ++row)
-          for (short_t col = 0; col<Cols; ++col)
+      for (std::size_t slice = 0; slice<Slices; ++slice)
+        for (std::size_t row = 0; row<Rows; ++row)
+          for (std::size_t col = 0; col<Cols; ++col)
             result[Slices*Rows*col+Rows*slice+row] = Base::data_[Rows*Cols*slice+Cols*row+col];
       return result;
     }
@@ -576,9 +576,9 @@ namespace iganet {
     inline void pretty_print(std::ostream& os = std::cout) const
     {
       os << Base::name() << "\n";
-      for (short_t slice = 0; slice<Slices; ++slice)
-        for (short_t row = 0; row<Rows; ++row)
-          for (short_t col = 0; col<Cols; ++col)
+      for (std::size_t slice = 0; slice<Slices; ++slice)
+        for (std::size_t row = 0; row<Rows; ++row)
+          for (std::size_t col = 0; col<Cols; ++col)
             os << "[" << row << "," << col << "," << slice << "] = \n"
                << *Base::data_[Rows*Cols*slice+Cols*row+col] << "\n";
     }
@@ -586,16 +586,16 @@ namespace iganet {
 
   /// @brief Multiplies one compile-time rank-2 block tensor from the
   /// left with a compile-time rank-3 block tensor slice-by-slice
-  template<typename T, typename U, short_t Rows, short_t Common, short_t Cols, short_t Slices>
+  template<typename T, typename U, std::size_t Rows, std::size_t Common, std::size_t Cols, std::size_t Slices>
   inline auto operator*(const BlockTensor<T, Rows, Common>& lhs,
                         const BlockTensor<U, Common, Cols, Slices>& rhs)
   {
     BlockTensor<typename std::common_type<T, U>::type, Rows, Cols, Slices> result;
-    for (short_t slice = 0; slice<Slices; ++slice)
-      for (short_t row = 0; row<Rows; ++row)
-        for (short_t col = 0; col<Cols; ++col) {
+    for (std::size_t slice = 0; slice<Slices; ++slice)
+      for (std::size_t row = 0; row<Rows; ++row)
+        for (std::size_t col = 0; col<Cols; ++col) {
           T tmp = torch::mul(*lhs[Common*row], *rhs[Rows*Cols*slice+col]);
-          for (short_t idx = 1; idx<Common; ++idx)
+          for (std::size_t idx = 1; idx<Common; ++idx)
             tmp += torch::mul(*lhs[Common*row+idx], *rhs[Rows*Cols*slice+Cols*idx+col]);
           result[Rows*Cols*slice+Cols*row+col] = std::make_shared<T>(tmp);
         }
@@ -604,16 +604,16 @@ namespace iganet {
 
   /// @brief Multiplies one compile-time rank-3 block tensor from the
   /// left with a compile-time rank-2 block tensor slice-by-slice
-  template<typename T, typename U, short_t Rows, short_t Common, short_t Cols, short_t Slices>
+  template<typename T, typename U, std::size_t Rows, std::size_t Common, std::size_t Cols, std::size_t Slices>
   inline auto operator*(const BlockTensor<T, Rows, Common, Slices>& lhs,
                         const BlockTensor<U, Common, Cols>& rhs)
   {
     BlockTensor<typename std::common_type<T, U>::type, Rows, Cols, Slices> result;
-    for (short_t slice = 0; slice<Slices; ++slice)
-      for (short_t row = 0; row<Rows; ++row)
-        for (short_t col = 0; col<Cols; ++col) {
+    for (std::size_t slice = 0; slice<Slices; ++slice)
+      for (std::size_t row = 0; row<Rows; ++row)
+        for (std::size_t col = 0; col<Cols; ++col) {
           T tmp = torch::mul(*lhs[Rows*Cols*slice+Common*row], *rhs[col]);
-          for (short_t idx = 1; idx<Common; ++idx)
+          for (std::size_t idx = 1; idx<Common; ++idx)
             tmp += torch::mul(*lhs[Rows*Cols*slice+Common*row+idx], *rhs[Cols*idx+col]);
           result[Rows*Cols*slice+Cols*row+col] = std::make_shared<T>(tmp);
         }
@@ -621,44 +621,44 @@ namespace iganet {
   }
   
 #define unary_op(name)                                                  \
-  template<typename T, short_t... Dims>                                 \
+  template<typename T, std::size_t... Dims>                                 \
   inline auto name(const BlockTensor<T, Dims...>& input)                \
   {                                                                     \
     BlockTensor<T, Dims...> result;                                     \
-    for (short_t idx = 0; idx<(Dims*...); ++idx)                        \
+    for (std::size_t idx = 0; idx<(Dims*...); ++idx)                        \
       result[idx] = std::make_shared<T>(torch::name(*input[idx]));      \
     return result;                                                      \
   }
   
 #define unary_special_op(name)                                          \
-  template<typename T, short_t... Dims>                                 \
+  template<typename T, std::size_t... Dims>                                 \
   inline auto name(const BlockTensor<T, Dims...>& input)                \
   {                                                                     \
     BlockTensor<T, Dims...> result;                                     \
-    for (short_t idx = 0; idx<(Dims*...); ++idx)                        \
+    for (std::size_t idx = 0; idx<(Dims*...); ++idx)                        \
       result[idx] = std::make_shared<T>(torch::special::name(*input[idx])); \
     return result;                                                      \
   }
   
 #define binary_op(name)                                                 \
-  template<typename T, typename U, short_t... Dims>                     \
+  template<typename T, typename U, std::size_t... Dims>                     \
   inline auto name(const BlockTensor<T, Dims...>& input,                \
                    const BlockTensor<U, Dims...>& other)                \
   {                                                                     \
     BlockTensor<typename std::common_type<T,U>::type, Dims...> result;  \
-    for (short_t idx = 0; idx<(Dims*...); ++idx)                        \
+    for (std::size_t idx = 0; idx<(Dims*...); ++idx)                        \
       result[idx] = std::make_shared<T>(torch::name(*input[idx],        \
                                                     *other[idx]));      \
     return result;                                                      \
   }
   
 #define binary_special_op(name)                                         \
-  template<typename T, typename U, short_t... Dims>                     \
+  template<typename T, typename U, std::size_t... Dims>                     \
   inline auto name(const BlockTensor<T, Dims...>& input,                \
                    const BlockTensor<U, Dims...>& other)                \
   {                                                                     \
     BlockTensor<typename std::common_type<T,U>::type, Dims...> result;  \
-    for (short_t idx = 0; idx<(Dims*...); ++idx)                        \
+    for (std::size_t idx = 0; idx<(Dims*...); ++idx)                        \
       result[idx] = std::make_shared<T>(torch::special::name(*input[idx], \
                                                              *other[idx])); \
     return result;                                                      \
@@ -687,13 +687,13 @@ namespace iganet {
 
   /// @brief Returns a new block tensor with the elements of `other`,
   /// scaled by `alpha`, added to the elements of `input`
-  template<typename T, typename U, typename V, short_t... Dims>          
+  template<typename T, typename U, typename V, std::size_t... Dims>          
   inline auto add(const BlockTensor<T, Dims...>& input,                  
                   const BlockTensor<U, Dims...>& other,
                   V alpha = 1.0)                   
   {                                                                     
     BlockTensor<typename std::common_type<T,U>::type, Dims...> result;    
-    for (short_t idx = 0; idx<(Dims*...); ++idx)                         
+    for (std::size_t idx = 0; idx<(Dims*...); ++idx)                         
       result[idx] = std::make_shared<T>(torch::add(*input[idx],
                                                    *other[idx],
                                                    alpha)); 
@@ -702,13 +702,13 @@ namespace iganet {
 
   /// @brief Returns a new block tensor with the elements of `other`,
   /// scaled by `alpha`, added to the elements of `input`
-  template<typename T, typename U, typename V, short_t... Dims>          
+  template<typename T, typename U, typename V, std::size_t... Dims>          
   inline auto add(const BlockTensor<T, Dims...>& input,                  
                   U other,
                   V alpha = 1.0)                   
   {                                                                     
     BlockTensor<T, Dims...> result;    
-    for (short_t idx = 0; idx<(Dims*...); ++idx)                         
+    for (std::size_t idx = 0; idx<(Dims*...); ++idx)                         
       result[idx] = std::make_shared<T>(torch::add(*input[idx],
                                                    other,
                                                    alpha)); 
@@ -717,13 +717,13 @@ namespace iganet {
 
   /// @brief Returns a new block tensor with the elements of `other`,
   /// scaled by `alpha`, added to the elements of `input`
-  template<typename T, typename U, typename V, short_t... Dims>          
+  template<typename T, typename U, typename V, std::size_t... Dims>          
   inline auto add(T input,                  
                   const BlockTensor<U, Dims...>& other,
                   V alpha = 1.0)                   
   {                                                                     
     BlockTensor<U, Dims...> result;    
-    for (short_t idx = 0; idx<(Dims*...); ++idx)                         
+    for (std::size_t idx = 0; idx<(Dims*...); ++idx)                         
       result[idx] = std::make_shared<T>(torch::add(input,
                                                    *other[idx],
                                                    alpha)); 
@@ -733,14 +733,14 @@ namespace iganet {
   /// @brief Returns a new block tensor with the elements of `tensor1`
   /// divided by the elements of `tensor2`, with the result multiplied
   /// by the scalar `value` and added to the elements of `input`
-  template<typename T, typename U, typename V, typename W, short_t... Dims>          
+  template<typename T, typename U, typename V, typename W, std::size_t... Dims>          
   inline auto addcdiv(const BlockTensor<T, Dims...>& input,                  
                       const BlockTensor<U, Dims...>& tensor1,
                       const BlockTensor<V, Dims...>& tensor2,
                       W value = 1.0)                   
   {                                                                     
     BlockTensor<typename std::common_type<T,U,V>::type, Dims...> result;    
-    for (short_t idx = 0; idx<(Dims*...); ++idx)                         
+    for (std::size_t idx = 0; idx<(Dims*...); ++idx)                         
       result[idx] = std::make_shared<T>(torch::addcdiv(*input[idx],
                                                        *tensor1[idx],
                                                        *tensor2[idx],
@@ -752,14 +752,14 @@ namespace iganet {
   /// multiplied by the elements of `tensor2`, with the result
   /// multiplied by the scalar `value` and added to the elements of
   /// `input`
-  template<typename T, typename U, typename V, typename W, short_t... Dims>          
+  template<typename T, typename U, typename V, typename W, std::size_t... Dims>          
   inline auto addcmul(const BlockTensor<T, Dims...>& input,                  
                       const BlockTensor<U, Dims...>& tensor1,
                       const BlockTensor<V, Dims...>& tensor2,
                       W value = 1.0)                   
   {                                                                     
     BlockTensor<typename std::common_type<T,U,V>::type, Dims...> result;    
-    for (short_t idx = 0; idx<(Dims*...); ++idx)                         
+    for (std::size_t idx = 0; idx<(Dims*...); ++idx)                         
       result[idx] = std::make_shared<T>(torch::addcmul(*input[idx],
                                                        *tensor1[idx],
                                                        *tensor2[idx],
@@ -840,23 +840,23 @@ namespace iganet {
 
   /// @brief Returns a new block tensor with the elements of `input`
   /// clamped into the range [ min, max ]
-  template<typename T, typename U, short_t... Dims>          
+  template<typename T, typename U, std::size_t... Dims>          
   inline auto clamp(const BlockTensor<T, Dims...>& input,                  
                     U min, U max)                   
   {                                                                     
     BlockTensor<T, Dims...> result;    
-    for (short_t idx = 0; idx<(Dims*...); ++idx)                         
+    for (std::size_t idx = 0; idx<(Dims*...); ++idx)                         
       result[idx] = std::make_shared<T>(torch::clamp(*input[idx], min, max)); 
     return result;                                                      
   }
 
   /// @brief Alias for clamp()
-  template<typename T, typename U, short_t... Dims>          
+  template<typename T, typename U, std::size_t... Dims>          
   inline auto clip(const BlockTensor<T, Dims...>& input,                  
                    U min, U max)                   
   {                                                                     
     BlockTensor<T, Dims...> result;    
-    for (short_t idx = 0; idx<(Dims*...); ++idx)                         
+    for (std::size_t idx = 0; idx<(Dims*...); ++idx)                         
       result[idx] = std::make_shared<T>(torch::clip(*input[idx], min, max)); 
     return result;                                                      
   }
@@ -1106,13 +1106,13 @@ namespace iganet {
   unary_op(square);
 
   /// @brief Subtracts other, scaled by alpha, from input
-  template<typename T, typename U, typename V, short_t... Dims>          
+  template<typename T, typename U, typename V, std::size_t... Dims>          
   inline auto sub(const BlockTensor<T, Dims...>& input,                  
                   const BlockTensor<U, Dims...>& other,
                   V alpha = 1.0)                   
   {                                                                     
     BlockTensor<typename std::common_type<T,U>::type, Dims...> result;    
-    for (short_t idx = 0; idx<(Dims*...); ++idx)                         
+    for (std::size_t idx = 0; idx<(Dims*...); ++idx)                         
       result[idx] = std::make_shared<T>(torch::sub(*input[idx],
                                                    *other[idx],
                                                    alpha)); 
@@ -1120,13 +1120,13 @@ namespace iganet {
   }
 
   /// @brief Alias for sub()
-  template<typename T, typename U, typename V, short_t... Dims>          
+  template<typename T, typename U, typename V, std::size_t... Dims>          
   inline auto subtract(const BlockTensor<T, Dims...>& input,                  
                        const BlockTensor<U, Dims...>& other,
                        V alpha = 1.0)                   
   {                                                                     
     BlockTensor<typename std::common_type<T,U>::type, Dims...> result;    
-    for (short_t idx = 0; idx<(Dims*...); ++idx)                         
+    for (std::size_t idx = 0; idx<(Dims*...); ++idx)                         
       result[idx] = std::make_shared<T>(torch::sub(*input[idx],
                                                    *other[idx],
                                                    alpha)); 
@@ -1150,134 +1150,134 @@ namespace iganet {
   
   /// @brief Adds one compile-time block tensor to another and returns
   /// a new compile-time block tensor
-  template<typename T, typename U, short_t... Dims>
+  template<typename T, typename U, std::size_t... Dims>
   inline auto operator+(const BlockTensor<T, Dims...>& lhs,
                         const BlockTensor<U, Dims...>& rhs)
   {
     BlockTensor<typename std::common_type<T, U>::type, Dims...> result;
-    for (short_t idx = 0; idx<(Dims*...); ++idx)
+    for (std::size_t idx = 0; idx<(Dims*...); ++idx)
       result[idx] = std::make_shared<T>(*lhs[idx] + *rhs[idx]);
     return result;
   }
 
   /// @brief Adds a compile-time block tensor to a scalar and returns
   /// a new compile-time block tensor
-  template<typename T, typename U, short_t... Dims>
+  template<typename T, typename U, std::size_t... Dims>
   inline auto operator+(const BlockTensor<T, Dims...>& lhs, const U& rhs)
   {
     BlockTensor<T, Dims...> result;
-    for (short_t idx = 0; idx<(Dims*...); ++idx)
+    for (std::size_t idx = 0; idx<(Dims*...); ++idx)
       result[idx] = std::make_shared<T>(*lhs[idx] + rhs);
     return result;
   }
 
   /// @brief Adds a scalar to a compile-time block tensor and returns
   /// a new compile-time block tensor
-  template<typename T, typename U, short_t... Dims>
+  template<typename T, typename U, std::size_t... Dims>
   inline auto operator+(const T& lhs, const BlockTensor<U, Dims...>& rhs)
   {
     BlockTensor<U, Dims...> result;
-    for (short_t idx = 0; idx<(Dims*...); ++idx)
+    for (std::size_t idx = 0; idx<(Dims*...); ++idx)
       result[idx] = std::make_shared<U>(lhs + *rhs[idx]);
     return result;
   }
 
   /// @brief Increments one compile-time block tensor by another
-  template<typename T, typename U, short_t... Dims>
+  template<typename T, typename U, std::size_t... Dims>
   inline auto operator+=(BlockTensor<T, Dims...>& lhs,
                          const BlockTensor<U, Dims...>& rhs)
   {
-    for (short_t idx = 0; idx<(Dims*...); ++idx)
+    for (std::size_t idx = 0; idx<(Dims*...); ++idx)
       lhs[idx] = std::make_shared<T>(*lhs[idx] + *rhs[idx]);
     return lhs;
   }
 
   /// @brief Increments a compile-time block tensor by a scalar
-  template<typename T, typename U, short_t... Dims>
+  template<typename T, typename U, std::size_t... Dims>
   inline auto operator+=(BlockTensor<T, Dims...>& lhs, const U& rhs)
   {
-    for (short_t idx = 0; idx<(Dims*...); ++idx)
+    for (std::size_t idx = 0; idx<(Dims*...); ++idx)
       lhs[idx] = std::make_shared<T>(*lhs[idx] + rhs);
     return lhs;
   }
 
   /// @brief Subtracts one compile-time block tensor from another and
   /// returns a new compile-time block tensor
-  template<typename T, typename U, short_t... Dims>
+  template<typename T, typename U, std::size_t... Dims>
   inline auto operator-(const BlockTensor<T, Dims...>& lhs,
                         const BlockTensor<U, Dims...>& rhs)
   {
     BlockTensor<typename std::common_type<T, U>::type, Dims...> result;
-    for (short_t idx = 0; idx<(Dims*...); ++idx)
+    for (std::size_t idx = 0; idx<(Dims*...); ++idx)
       result[idx] = std::make_shared<T>(*lhs[idx] - *rhs[idx]);
     return result;
   }
 
   /// @brief Subtracts a scalar from a compile-time block tensor and returns
   /// a new compile-time block tensor
-  template<typename T, typename U, short_t... Dims>
+  template<typename T, typename U, std::size_t... Dims>
   inline auto operator-(const BlockTensor<T, Dims...>& lhs, const U& rhs)
   {
     BlockTensor<T, Dims...> result;
-    for (short_t idx = 0; idx<(Dims*...); ++idx)
+    for (std::size_t idx = 0; idx<(Dims*...); ++idx)
       result[idx] = std::make_shared<T>(*lhs[idx] - rhs);
     return result;
   }
 
   /// @brief Subtracts a compile-time block tensor from a scalar and
   /// returns a new compile-time block tensor
-  template<typename T, typename U, short_t... Dims>
+  template<typename T, typename U, std::size_t... Dims>
   inline auto operator-(const T& lhs, const BlockTensor<U, Dims...>& rhs)
   {
     BlockTensor<U, Dims...> result;
-    for (short_t idx = 0; idx<(Dims*...); ++idx)
+    for (std::size_t idx = 0; idx<(Dims*...); ++idx)
       result[idx] = std::make_shared<U>(lhs - *rhs[idx]);
     return result;
   }
   
   /// @brief Decrements one compile-time block tensor by another
-  template<typename T, typename U, short_t... Dims>
+  template<typename T, typename U, std::size_t... Dims>
   inline auto operator-=(BlockTensor<T, Dims...>& lhs,
                          const BlockTensor<U, Dims...>& rhs)
   {
-    for (short_t idx = 0; idx<(Dims*...); ++idx)
+    for (std::size_t idx = 0; idx<(Dims*...); ++idx)
       lhs[idx] = std::make_shared<T>(*lhs[idx] - *rhs[idx]);
     return lhs;
   }
 
   /// @brief Decrements a compile-time block tensor by a scalar
-  template<typename T, typename U, short_t... Dims>
+  template<typename T, typename U, std::size_t... Dims>
   inline auto operator-=(BlockTensor<T, Dims...>& lhs, const U& rhs)
   {
-    for (short_t idx = 0; idx<(Dims*...); ++idx)
+    for (std::size_t idx = 0; idx<(Dims*...); ++idx)
       lhs[idx] = std::make_shared<T>(*lhs[idx] - rhs);
     return lhs;
   }
   
   /// @brief Multiplies a compile-time block tensor with a scalar and
   /// returns a new compile-time block tensor
-  template<typename T, typename U, short_t... Dims>
+  template<typename T, typename U, std::size_t... Dims>
   inline auto operator*(const BlockTensor<T, Dims...>& lhs, const U& rhs)
   {
     BlockTensor<T, Dims...> result;
-    for (short_t idx = 0; idx<(Dims*...); ++idx)
+    for (std::size_t idx = 0; idx<(Dims*...); ++idx)
       result[idx] = std::make_shared<T>(*lhs[idx] + rhs);
     return result;
   }
   
   /// @brief Multiplies a scalar with a compile-time block tensor and
   /// returns a new compile-time block tensor
-  template<typename T, typename U, short_t... Dims>
+  template<typename T, typename U, std::size_t... Dims>
   inline auto operator*(const T& lhs, const BlockTensor<U, Dims...>& rhs)
   {
     BlockTensor<U, Dims...> result;
-    for (short_t idx = 0; idx<(Dims*...); ++idx)
+    for (std::size_t idx = 0; idx<(Dims*...); ++idx)
       result[idx] = std::make_shared<U>(lhs * *rhs[idx]);
     return result;
   }
 
   /// @brief Returns true if both compile-time block tensors are equal
-  template<typename T, typename U, short_t... TDims, short_t... UDims>
+  template<typename T, typename U, std::size_t... TDims, std::size_t... UDims>
   inline bool operator==(const BlockTensor<T, TDims...>& lhs,
                          const BlockTensor<U, UDims...>& rhs)
   {
@@ -1285,14 +1285,14 @@ namespace iganet {
       return false;
     
     bool result = true;
-    for (short_t idx = 0; idx<(TDims*...); ++idx)
+    for (std::size_t idx = 0; idx<(TDims*...); ++idx)
       result = result && torch::equal(*lhs[idx], *rhs[idx]);
 
     return result;
   }
 
   /// @brief Returns true if both compile-time block tensors are not equal
-  template<typename T, typename U, short_t... TDims, short_t... UDims>
+  template<typename T, typename U, std::size_t... TDims, std::size_t... UDims>
   inline bool operator!=(const BlockTensor<T, TDims...>& lhs,
                          const BlockTensor<U, UDims...>& rhs)
   {
