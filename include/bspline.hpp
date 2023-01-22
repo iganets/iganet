@@ -3927,7 +3927,7 @@ std::cout << "AFTER\n";
         matplot::vector_1d Xfine(res0, 0.0);
         matplot::vector_1d Yfine(res0, 0.0);
 
-        auto Coords = BSplineCore::eval(torch::linspace(0, 1, res0));
+        auto Coords = BSplineCore::eval(torch::linspace(0, 1, res0, core<typename BSplineCore_t::value_type>::options_));
 #ifdef __clang__
         auto Coords_cpu = to_tensorAccessor<typename BSplineCore_t::value_type,1>(Coords, torch::kCPU);
         auto XAccessor  = std::get<1>(Coords_cpu[0]);
@@ -3941,7 +3941,7 @@ std::cout << "AFTER\n";
 
         if ((void*)this != (void*)&color) {
           if constexpr (BSplineCore_t::geoDim_==1) {
-            auto Color = color.eval(torch::linspace(0, 1, res0));
+            auto Color = color.eval(torch::linspace(0, 1, res0, core<typename BSplineCore_t::value_type>::options_));
 #ifdef __clang__
             auto Color_cpu = to_tensorAccessor<typename BSplineCore_t::value_type,1>(Color, torch::kCPU);
             auto CAccessor = std::get<1>(Color_cpu[0]);
@@ -4001,8 +4001,8 @@ std::cout << "AFTER\n";
             matplot::vector_2d Yfine(1, matplot::vector_1d(res0, 0.0));
             matplot::vector_2d Zfine(1, matplot::vector_1d(res0, 0.0));
 
-            auto Coords = BSplineCore::eval(torch::linspace(0, 1, res0));
-            auto Color  = color.eval(torch::linspace(0, 1, res0));
+            auto Coords = BSplineCore::eval(torch::linspace(0, 1, res0, core<typename BSplineCore_t::value_type>::options_));
+            auto Color  = color.eval(torch::linspace(0, 1, res0, core<typename BSplineCore_t::value_type>::options_));
 #ifdef __clang__
             auto Coords_cpu = to_tensorAccessor<typename BSplineCore_t::value_type,1>(Coords, torch::kCPU);
             auto Color_cpu  = to_tensorAccessor<typename BSplineCore_t::value_type,1>(Color, torch::kCPU);
@@ -4028,7 +4028,7 @@ std::cout << "AFTER\n";
           matplot::vector_1d Xfine(res0, 0.0);
           matplot::vector_1d Yfine(res0, 0.0);
 
-          auto Coords = BSplineCore::eval(torch::linspace(0, 1, res0));
+          auto Coords = BSplineCore::eval(torch::linspace(0, 1, res0, core<typename BSplineCore_t::value_type>::options_));
 #ifdef __clang__
           auto Coords_cpu = to_tensorAccessor<typename BSplineCore_t::value_type,1>(Coords, torch::kCPU);
           auto XAccessor  = std::get<1>(Coords_cpu[0]);
@@ -4088,8 +4088,8 @@ std::cout << "AFTER\n";
             matplot::vector_2d Zfine(1, matplot::vector_1d(res0, 0.0));
             matplot::vector_2d Cfine(1, matplot::vector_1d(res0, 0.0));
 
-            auto Coords = BSplineCore::eval(torch::linspace(0, 1, res0));
-            auto Color  = color.eval(torch::linspace(0, 1, res0));
+            auto Coords = BSplineCore::eval(torch::linspace(0, 1, res0, core<typename BSplineCore_t::value_type>::options_));
+            auto Color  = color.eval(torch::linspace(0, 1, res0, core<typename BSplineCore_t::value_type>::options_));
 #ifdef __clang__
             auto Coords_cpu = to_tensorAccessor<typename BSplineCore_t::value_type,1>(Coords, torch::kCPU);
             auto Color_cpu  = to_tensorAccessor<typename BSplineCore_t::value_type,1>(Color,  torch::kCPU);
@@ -4119,7 +4119,7 @@ std::cout << "AFTER\n";
           matplot::vector_1d Yfine(res0, 0.0);
           matplot::vector_1d Zfine(res0, 0.0);
 
-          auto Coords = BSplineCore::eval(torch::linspace(0, 1, res0));
+          auto Coords = BSplineCore::eval(torch::linspace(0, 1, res0, core<typename BSplineCore_t::value_type>::options_));
 #ifdef __clang__
           auto Coords_cpu = to_tensorAccessor<typename BSplineCore_t::value_type,1>(Coords, torch::kCPU);
           auto XAccessor  = std::get<1>(Coords_cpu)[0];
@@ -4183,8 +4183,8 @@ std::cout << "AFTER\n";
         matplot::vector_2d Yfine(res1, matplot::vector_1d(res0, 0.0));
         matplot::vector_2d Zfine(res1, matplot::vector_1d(res0, 0.0));
 
-        std::array<torch::Tensor,2> meshgrid = convert<2>(torch::meshgrid({torch::linspace(0, 1, res0),
-                                                                           torch::linspace(0, 1, res1)}, "xy"));
+        std::array<torch::Tensor,2> meshgrid = convert<2>(torch::meshgrid({torch::linspace(0, 1, res0, core<typename BSplineCore_t::value_type>::options_),
+                                                                           torch::linspace(0, 1, res1, core<typename BSplineCore_t::value_type>::options_)}, "xy"));
         auto Coords = BSplineCore::eval(meshgrid);
 #ifdef __clang__
         auto Coords_cpu = to_tensorAccessor<typename BSplineCore_t::value_type,2>(Coords, torch::kCPU);
@@ -4269,8 +4269,8 @@ std::cout << "AFTER\n";
         matplot::vector_2d Yfine(res1, matplot::vector_1d(res0, 0.0));
         matplot::vector_2d Zfine(res1, matplot::vector_1d(res0, 0.0));
 
-        std::array<torch::Tensor,2> meshgrid = convert<2>(torch::meshgrid({torch::linspace(0, 1, res0),
-                                                                           torch::linspace(0, 1, res1)}, "xy"));
+        std::array<torch::Tensor,2> meshgrid = convert<2>(torch::meshgrid({torch::linspace(0, 1, res0, core<typename BSplineCore_t::value_type>::options_),
+                                                                           torch::linspace(0, 1, res1, core<typename BSplineCore_t::value_type>::options_)}, "xy"));
         auto Coords = BSplineCore::eval(meshgrid);
 #ifdef __clang__
         auto Coords_cpu = to_tensorAccessor<typename BSplineCore_t::value_type,2>(Coords, torch::kCPU);
