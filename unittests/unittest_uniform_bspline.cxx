@@ -388,6 +388,175 @@ TEST(BSpline, UniformBSpline_parDim4_geoDim4_degrees3421_double)
   EXPECT_EQ(bspline.ncoeffs(),120);
 }
 
+TEST(BSpline, UniformBSpline_init_double)
+{
+  {
+    iganet::UniformBSpline<double, 1, 1> bspline({5}, iganet::init::zeros);
+    EXPECT_TRUE(torch::allclose(bspline.coeffs(0), torch::zeros(5, bspline.options())));
+  }
+
+  {
+    iganet::UniformBSpline<double, 1, 1> bspline({5}, iganet::init::ones);
+    EXPECT_TRUE(torch::allclose(bspline.coeffs(0), torch::ones(5, bspline.options())));
+  }
+    
+  {
+    iganet::UniformBSpline<double, 1, 1> bspline({5}, iganet::init::linear);
+    EXPECT_TRUE(torch::allclose(bspline.coeffs(0), torch::linspace(0, 1, 5, bspline.options())));
+  }
+
+  {
+    std::cout << "DONE2\n";
+    iganet::UniformBSpline<double, 1, 1> bspline({5}, iganet::init::greville);
+    std::cout << "DONE3\n";
+    EXPECT_TRUE(torch::allclose(bspline.coeffs(0), torch::linspace(0, 1, 5, bspline.options())));
+  }
+
+  {
+    iganet::UniformBSpline<double, 1, 2> bspline({5}, iganet::init::greville);
+    EXPECT_FALSE(torch::allclose(bspline.coeffs(0), torch::linspace(0, 1, 5, bspline.options())));
+  }
+
+  {
+    iganet::UniformBSpline<double, 2, 1> bspline({5}, iganet::init::zeros);
+    EXPECT_TRUE(torch::allclose(bspline.coeffs(0), torch::zeros(5, bspline.options())));
+    EXPECT_TRUE(torch::allclose(bspline.coeffs(1), torch::zeros(5, bspline.options())));
+  }
+
+  {
+    iganet::UniformBSpline<double, 2, 1> bspline({5}, iganet::init::ones);
+    EXPECT_TRUE(torch::allclose(bspline.coeffs(0), torch::ones(5, bspline.options())));
+    EXPECT_TRUE(torch::allclose(bspline.coeffs(1), torch::ones(5, bspline.options())));
+  }
+
+  {
+    iganet::UniformBSpline<double, 2, 1> bspline({5}, iganet::init::linear);
+    EXPECT_TRUE(torch::allclose(bspline.coeffs(0), torch::linspace(0, 1, 5, bspline.options())));
+    EXPECT_TRUE(torch::allclose(bspline.coeffs(1), torch::ones(5, bspline.options())));
+  }
+
+  {
+    iganet::UniformBSpline<double, 2, 1> bspline({5}, iganet::init::greville);
+    EXPECT_TRUE(torch::allclose(bspline.coeffs(0), torch::linspace(0, 1, 5, bspline.options())));
+    EXPECT_TRUE(torch::allclose(bspline.coeffs(1), torch::ones(5, bspline.options())));
+  }
+
+  {
+    iganet::UniformBSpline<double, 2, 2> bspline({5}, iganet::init::greville);
+    EXPECT_FALSE(torch::allclose(bspline.coeffs(0), torch::linspace(0, 1, 5, bspline.options())));
+    EXPECT_TRUE(torch::allclose(bspline.coeffs(1), torch::ones(5, bspline.options())));
+  }
+  
+  {
+    iganet::UniformBSpline<double, 2, 2, 2> bspline({5, 8}, iganet::init::zeros);
+    EXPECT_TRUE(torch::allclose(bspline.coeffs(0), torch::zeros(40, bspline.options())));
+    EXPECT_TRUE(torch::allclose(bspline.coeffs(1), torch::zeros(40, bspline.options())));
+  }
+
+  {
+    iganet::UniformBSpline<double, 2, 2, 2> bspline({5, 8}, iganet::init::ones);
+    EXPECT_TRUE(torch::allclose(bspline.coeffs(0), torch::ones(40, bspline.options())));
+    EXPECT_TRUE(torch::allclose(bspline.coeffs(1), torch::ones(40, bspline.options())));
+  }
+
+  {
+    iganet::UniformBSpline<double, 2, 2, 2> bspline({5, 8}, iganet::init::linear);
+    EXPECT_TRUE(torch::allclose(bspline.coeffs(0),
+                                torch::linspace(0, 1, 5, bspline.options()).repeat(8)));
+    EXPECT_TRUE(torch::allclose(bspline.coeffs(1),
+                                torch::linspace(0, 1, 8, bspline.options()).repeat_interleave(5)));
+  }
+  
+  {
+    iganet::UniformBSpline<double, 2, 1, 1> bspline({5, 8}, iganet::init::greville);
+    EXPECT_TRUE(torch::allclose(bspline.coeffs(0),
+                                torch::linspace(0, 1, 5, bspline.options()).repeat(8)));
+    EXPECT_TRUE(torch::allclose(bspline.coeffs(1),
+                                torch::linspace(0, 1, 8, bspline.options()).repeat_interleave(5)));
+  }
+  
+  {
+    iganet::UniformBSpline<double, 3, 2, 2> bspline({5, 8}, iganet::init::zeros);
+    EXPECT_TRUE(torch::allclose(bspline.coeffs(0), torch::zeros(40, bspline.options())));
+    EXPECT_TRUE(torch::allclose(bspline.coeffs(1), torch::zeros(40, bspline.options())));
+    EXPECT_TRUE(torch::allclose(bspline.coeffs(2), torch::zeros(40, bspline.options())));
+  }
+
+  {
+    iganet::UniformBSpline<double, 3, 2, 2> bspline({5, 8}, iganet::init::ones);
+    EXPECT_TRUE(torch::allclose(bspline.coeffs(0), torch::ones(40, bspline.options())));
+    EXPECT_TRUE(torch::allclose(bspline.coeffs(1), torch::ones(40, bspline.options())));
+    EXPECT_TRUE(torch::allclose(bspline.coeffs(2), torch::ones(40, bspline.options())));
+  }
+
+  {
+    iganet::UniformBSpline<double, 3, 2, 2> bspline({5, 8}, iganet::init::linear);
+    EXPECT_TRUE(torch::allclose(bspline.coeffs(0),
+                                torch::linspace(0, 1, 5, bspline.options()).repeat(8)));
+    EXPECT_TRUE(torch::allclose(bspline.coeffs(1),
+                                torch::linspace(0, 1, 8, bspline.options()).repeat_interleave(5)));
+    EXPECT_TRUE(torch::allclose(bspline.coeffs(2), torch::ones(40, bspline.options())));
+  }
+  
+  {
+    iganet::UniformBSpline<double, 3, 1, 1> bspline({5, 8}, iganet::init::greville);
+    EXPECT_TRUE(torch::allclose(bspline.coeffs(0),
+                                torch::linspace(0, 1, 5, bspline.options()).repeat(8)));
+    EXPECT_TRUE(torch::allclose(bspline.coeffs(1),
+                                torch::linspace(0, 1, 8, bspline.options()).repeat_interleave(5)));
+    EXPECT_TRUE(torch::allclose(bspline.coeffs(2), torch::ones(40, bspline.options())));
+  }
+
+  {
+    iganet::UniformBSpline<double, 4, 2, 2> bspline({5, 8}, iganet::init::zeros);
+    EXPECT_TRUE(torch::allclose(bspline.coeffs(0), torch::zeros(40, bspline.options())));
+    EXPECT_TRUE(torch::allclose(bspline.coeffs(1), torch::zeros(40, bspline.options())));
+    EXPECT_TRUE(torch::allclose(bspline.coeffs(2), torch::zeros(40, bspline.options())));
+    EXPECT_TRUE(torch::allclose(bspline.coeffs(3), torch::zeros(40, bspline.options())));
+  }
+
+  {
+    iganet::UniformBSpline<double, 4, 2, 2> bspline({5, 8}, iganet::init::ones);
+    EXPECT_TRUE(torch::allclose(bspline.coeffs(0), torch::ones(40, bspline.options())));
+    EXPECT_TRUE(torch::allclose(bspline.coeffs(1), torch::ones(40, bspline.options())));
+    EXPECT_TRUE(torch::allclose(bspline.coeffs(2), torch::ones(40, bspline.options())));
+    EXPECT_TRUE(torch::allclose(bspline.coeffs(3), torch::ones(40, bspline.options())));
+  }
+
+  {
+    iganet::UniformBSpline<double, 4, 2, 2> bspline({5, 8}, iganet::init::linear);
+    EXPECT_TRUE(torch::allclose(bspline.coeffs(0),
+                                torch::linspace(0, 1, 5, bspline.options()).repeat(8)));
+    EXPECT_TRUE(torch::allclose(bspline.coeffs(1),
+                                torch::linspace(0, 1, 8, bspline.options()).repeat_interleave(5)));
+    EXPECT_TRUE(torch::allclose(bspline.coeffs(2), torch::ones(40, bspline.options())));
+    EXPECT_TRUE(torch::allclose(bspline.coeffs(3), torch::ones(40, bspline.options())));
+  }
+  
+  {
+    iganet::UniformBSpline<double, 4, 1, 1> bspline({5, 8}, iganet::init::greville);
+    EXPECT_TRUE(torch::allclose(bspline.coeffs(0),
+                                torch::linspace(0, 1, 5, bspline.options()).repeat(8)));
+    EXPECT_TRUE(torch::allclose(bspline.coeffs(1),
+                                torch::linspace(0, 1, 8, bspline.options()).repeat_interleave(5)));
+    EXPECT_TRUE(torch::allclose(bspline.coeffs(2), torch::ones(40, bspline.options())));
+    EXPECT_TRUE(torch::allclose(bspline.coeffs(3), torch::ones(40, bspline.options())));
+  } 
+}
+
+TEST(BSpline, UniformBSpline_read_write_double)
+{
+  std::filesystem::path filename = std::filesystem::temp_directory_path() / std::to_string(rand());
+  iganet::UniformBSpline<double, 3, 3, 4> bspline_out({2,3});
+  bspline_out.save(filename.c_str());
+  iganet::UniformBSpline<double, 3, 3, 4> bspline_in;
+  bspline_in.load(filename.c_str());
+  std::filesystem::remove(filename);
+
+  EXPECT_EQ( (bspline_in == bspline_out), true);
+  EXPECT_EQ( (bspline_in != bspline_out), false);
+}
+
 int main(int argc, char **argv) {
   ::testing::InitGoogleTest(&argc, argv);
   iganet::init();
