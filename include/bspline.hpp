@@ -18,6 +18,7 @@
 
 #include <core.hpp>
 #include <blocktensor.hpp>
+#include <bspline.cuh>
 #include <utils.hpp>
 
 #pragma once
@@ -286,7 +287,7 @@ namespace iganet {
   {
     return deriv( static_cast<short_t>(lhs)+static_cast<short_t>(rhs) );
   }
-
+  
   /// @brief Tensor-product uniform B-spline (core functionality)
   ///
   /// This class implements the core functionality of all B-spline
@@ -427,8 +428,9 @@ namespace iganet {
     ///
     /// @param[in] init Type of initialization
     UniformBSplineCore(const std::array<int64_t, parDim_>& ncoeffs,
-                       enum init init = init::zeros)
-        : core<real_t>(),
+                       enum init init = init::zeros,
+		       iganet::core<real_t> core = iganet::core<real_t>{})
+        : core<real_t>(core),
           ncoeffs_(ncoeffs)
     {
       for (short_t i = 0; i < parDim_; ++i) {
@@ -449,13 +451,13 @@ namespace iganet {
         for (int64_t j = 0; j < degrees_[i]; ++j)
           kv.push_back(static_cast<value_type>(1));
         
-        if (core<real_t>::options_.device() == torch::kCPU)
+        if (iganet::core<real_t>::options_.device() == torch::kCPU)
           knots_[i] = torch::from_blob(static_cast<value_type *>(kv.data()),
-                                       kv.size(), core<real_t>::options_).clone();
+                                       kv.size(), iganet::core<real_t>::options_).clone();
         else
           knots_[i] = torch::from_blob(static_cast<value_type *>(kv.data()),
-                                       kv.size(), core<real_t>::options_.device(torch::kCPU))
-            .to(core<real_t>::options_.device());
+                                       kv.size(), iganet::core<real_t>::options_.device(torch::kCPU))
+            .to(iganet::core<real_t>::options_.device());
 
         // Store the size of the knot vector
         nknots_[i] = kv.size();
@@ -653,13 +655,23 @@ namespace iganet {
           for (short_t j = 0; j < parDim_; ++j) {
             if (i == j) {
               auto greville_ = torch::zeros(ncoeffs_[j], core<real_t>::options_);
-              auto greville_accessor = greville_.template accessor<value_type, 1>();
-              auto knots_accessor = knots_[j].template accessor<value_type, 1>();
-              for (int64_t k = 0; k < ncoeffs_[j]; ++k) {
-                for (short_t l = 1; l <= degrees_[j]; ++l)
-                  greville_accessor[k] += knots_accessor[k + l];
-                greville_accessor[k] /= degrees_[j];
-              }
+	      if (greville_.is_cuda()) {
+#ifdef __CUDACC__
+		auto greville = greville_.template packed_accessor64<value_type, 1>();
+		auto knots = knots_[j].template packed_accessor64<value_type, 1>();
+		cuda::greville_cuda_kernel<real_t><<<32, 256>>>(greville, knots, ncoeffs_[j], degrees_[j]);
+#else
+		throw std::runtime_error("Code must be compiled with CUDA enabled");
+#endif
+	      } else {
+		auto greville_accessor = greville_.template accessor<value_type, 1>();
+		auto knots_accessor = knots_[j].template accessor<value_type, 1>();
+		for (int64_t k = 0; k < ncoeffs_[j]; ++k) {
+		  for (short_t l = 1; l <= degrees_[j]; ++l)
+		    greville_accessor[k] += knots_accessor[k + l];
+		  greville_accessor[k] /= degrees_[j];
+		}
+	      }
               coeffs[i] = torch::kron(greville_, coeffs[i]);
             } else
               coeffs[i] = torch::kron(torch::ones(ncoeffs_[j],
@@ -1982,7 +1994,7 @@ namespace iganet {
         return 1;
     }
 
-  protected:
+  protected:    
     /// @brief Initializes the B-spline coefficients
     inline void init_coeffs(enum init init)
     {
@@ -2055,13 +2067,23 @@ namespace iganet {
             for (short_t j = 0; j < parDim_; ++j) {
               if (i == j) {
                 auto greville_ = torch::zeros(ncoeffs_[j], core<real_t>::options_);
-                auto greville = greville_.template accessor<value_type, 1>();
-                auto knots = knots_[j].template accessor<value_type, 1>();
-                for (int64_t k = 0; k < ncoeffs_[j]; ++k) {
-                  for (short_t l = 1; l <= degrees_[j]; ++l)
-                    greville[k] += knots[k + l];
-                  greville[k] /= degrees_[j];
-                }
+		if (greville_.is_cuda()) {
+#ifdef __CUDACC__
+		  auto greville = greville_.template packed_accessor64<value_type, 1>();
+		  auto knots = knots_[j].template packed_accessor64<value_type, 1>();
+		  cuda::greville_cuda_kernel<real_t><<<32, 256>>>(greville, knots, ncoeffs_[j], degrees_[j]);
+#else
+		  throw std::runtime_error("Code must be compiled with CUDA enabled");
+#endif
+		} else {
+		  auto greville = greville_.template accessor<value_type, 1>();
+		  auto knots = knots_[j].template accessor<value_type, 1>();
+		  for (int64_t k = 0; k < ncoeffs_[j]; ++k) {
+		    for (short_t l = 1; l <= degrees_[j]; ++l)
+		      greville[k] += knots[k + l];
+		    greville[k] /= degrees_[j];
+		  }
+		}
                 coeffs_[i] = torch::kron(greville_, coeffs_[i]);
               } else
                 coeffs_[i] = torch::kron(torch::ones(ncoeffs_[j],
@@ -2378,7 +2400,7 @@ namespace iganet {
       return b.view({degree+1, idx.numel()});
     }
   };
-
+  
   /// @brief Serializes a B-spline object
   template<typename real_t, short_t GeoDim, short_t... Degrees>
   inline torch::serialize::OutputArchive& operator<<(torch::serialize::OutputArchive& archive,
@@ -2424,8 +2446,9 @@ namespace iganet {
 
     /// @brief Constructor for non-equidistant knot vectors
     NonUniformBSplineCore(std::array<std::vector<typename Base::value_type>, Base::parDim_> kv,
-                          enum init init = init::zeros)
-      : Base(std::array<int64_t, Base::parDim_>{Degrees...}, init)
+                          enum init init = init::zeros,
+			  iganet::core<real_t> core = iganet::core<real_t>{})
+      : Base(std::array<int64_t, Base::parDim_>{Degrees...}, init, core)
     {
       for (short_t i=0; i<Base::parDim_; ++i) {
 
@@ -2433,13 +2456,13 @@ namespace iganet {
         if (2*Base::degrees_[i]>kv[i].size()-2)
           throw std::runtime_error("Knot vector is too short for an open knot vector (n+p+1 > 2*(p+1))");
 
-        if (core<real_t>::options_.device() == torch::kCPU)
+        if (iganet::core<real_t>::options_.device() == torch::kCPU)
           Base::knots_[i] = torch::from_blob(static_cast<typename Base::value_type*>(kv[i].data()),
-                                             kv[i].size(), core<real_t>::options_).clone();
+                                             kv[i].size(), iganet::core<real_t>::options_).clone();
         else
           Base::knots_[i] = torch::from_blob(static_cast<typename Base::value_type*>(kv[i].data()),
-                                             kv[i].size(), core<real_t>::options_.device(torch::kCPU))
-            .to(core<real_t>::options_.device());
+                                             kv[i].size(), iganet::core<real_t>::options_.device(torch::kCPU))
+            .to(iganet::core<real_t>::options_.device());
 
         // Store the size of the knot vector
         Base::nknots_[i] = Base::knots_[i].size(0);

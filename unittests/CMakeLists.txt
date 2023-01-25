@@ -54,8 +54,13 @@ file(GLOB UNITTESTS *.cxx)
 
 foreach(unittest ${UNITTESTS})
   file(RELATIVE_PATH filename ${CMAKE_CURRENT_SOURCE_DIR} ${unittest})
+
+  if (CMAKE_CUDA_COMPILER)
+    set_source_files_properties(${filename} PROPERTIES LANGUAGE CUDA)
+  endif()
+  
   string(REPLACE ".cxx" "" name ${filename})
-  add_executable(${name} ${filename})
+  add_executable(${name} ${filename}) 
   target_link_libraries(${name} PUBLIC "${TORCH_LIBRARIES}")
 
   # SplineLib

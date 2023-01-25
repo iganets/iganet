@@ -54,6 +54,10 @@ file(GLOB PERFTESTS *.cxx)
 
 foreach(perftest ${PERFTESTS})
   file(RELATIVE_PATH filename ${CMAKE_CURRENT_SOURCE_DIR} ${perftest})
+  if (CMAKE_CUDA_COMPILER)
+    set_source_files_properties(${filename} PROPERTIES LANGUAGE CUDA)
+  endif()
+  
   string(REPLACE ".cxx" "" name ${filename})
   add_executable(${name} ${filename})
   target_link_libraries(${name} PUBLIC "${TORCH_LIBRARIES}")
