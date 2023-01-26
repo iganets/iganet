@@ -39,11 +39,29 @@ namespace iganet {
     Boundary_t boundary_;
 
   public:   
-    /// @brief Constructor    
+    /// @brief Constructor
     FunctionSpace(const std::array<int64_t, BSpline_t::parDim()>&... ncoeffs,
                   enum init init = init::zeros)
       : Base({ncoeffs, init}...),
         boundary_({ncoeffs, init}...)
+    {}
+
+    FunctionSpace(const std::array<std::vector<typename BSpline_t::value_type>, BSpline_t::parDim()>&... kv,
+                  enum init init = init::zeros)
+      : Base({kv, init}...),
+        boundary_({kv, init}...)
+    {}
+
+    template<typename... Args>
+    FunctionSpace(const Args&... args)
+      : Base({args}...),
+        boundary_({args}...)
+    {}
+
+    template<typename... Args>
+    FunctionSpace(enum init init, const Args&... args)
+      : Base({args, init}...),
+        boundary_({args, init}...)
     {}
   };
 
@@ -73,6 +91,14 @@ namespace iganet {
                   enum init init = init::zeros)
       : BSpline_t(ncoeffs, init),
         boundary_(ncoeffs, init)
+    {
+    }
+
+    /// @brief Constructor
+    FunctionSpace(const std::array<std::vector<typename BSpline_t::value_type>, domainDim_>& kv,
+                  enum init init = init::zeros)
+      : BSpline_t(kv, init),
+        boundary_(kv, init)
     {
     }
 
