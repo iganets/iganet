@@ -406,9 +406,7 @@ TEST(BSpline, UniformBSpline_init_double)
   }
 
   {
-    std::cout << "DONE2\n";
     iganet::UniformBSpline<double, 1, 1> bspline({5}, iganet::init::greville);
-    std::cout << "DONE3\n";
     EXPECT_TRUE(torch::allclose(bspline.coeffs(0), torch::linspace(0, 1, 5, bspline.options())));
   }
 
