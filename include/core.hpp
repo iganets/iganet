@@ -18,7 +18,13 @@
 #include <vector>
 
 #ifdef WITH_MATPLOT
+#ifdef __CUDACC__
+#pragma nv_diag_suppress 611
+#endif
 #include <matplot/matplot.h>
+#ifdef __CUDACC__
+#pragma nv_diag_default 611
+#endif
 #endif
 
 #include <torch/torch.h>
