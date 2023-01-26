@@ -22,8 +22,8 @@ namespace iganet {
        @brief Compute Greville abscissae
     */
     template<typename real_t>
-    __global__ void greville_cuda_kernel(torch::PackedTensorAccessor64<real_t, 1>& __restrict__ greville,	
-					 const torch::PackedTensorAccessor64<real_t, 1>& __restrict__ knots,
+    __global__ void greville_cuda_kernel(torch::PackedTensorAccessor64<real_t, 1>       greville,	
+					 const torch::PackedTensorAccessor64<real_t, 1> knots,
 					 int64_t ncoeffs, short_t degree)
     {
       for (int64_t k = blockIdx.x * blockDim.x + threadIdx.x;
@@ -31,7 +31,7 @@ namespace iganet {
 	   k += blockDim.x * gridDim.x) {
 	for (short_t l = 1; l <= degree; ++l)
 	  greville[k] += knots[k + l];
-	greville[k] /= degree;
+	greville[k] /= real_t(degree);
       }      
     }
     

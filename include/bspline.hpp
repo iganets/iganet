@@ -18,8 +18,12 @@
 
 #include <core.hpp>
 #include <blocktensor.hpp>
-#include <bspline.cuh>
 #include <utils.hpp>
+
+#ifdef __CUDACC__
+#include <ATen/cuda/CUDAContext.h>
+#include <bspline.cuh>
+#endif
 
 #pragma once
 
@@ -659,7 +663,8 @@ namespace iganet {
 #ifdef __CUDACC__
 		auto greville = greville_.template packed_accessor64<value_type, 1>();
 		auto knots = knots_[j].template packed_accessor64<value_type, 1>();
-		cuda::greville_cuda_kernel<real_t><<<32, 256>>>(greville, knots, ncoeffs_[j], degrees_[j]);
+		const int num_mp = at::cuda::getCurrentDeviceProperties()->multiProcessorCount;
+		cuda::greville_cuda_kernel<<<32*num_mp, 256>>>(greville, knots, ncoeffs_[j], degrees_[j]);
 #else
 		throw std::runtime_error("Code must be compiled with CUDA enabled");
 #endif
@@ -2071,7 +2076,8 @@ namespace iganet {
 #ifdef __CUDACC__
 		  auto greville = greville_.template packed_accessor64<value_type, 1>();
 		  auto knots = knots_[j].template packed_accessor64<value_type, 1>();
-		  cuda::greville_cuda_kernel<real_t><<<32, 256>>>(greville, knots, ncoeffs_[j], degrees_[j]);
+		  const int num_mp = at::cuda::getCurrentDeviceProperties()->multiProcessorCount;
+		  cuda::greville_cuda_kernel<<<32*num_mp, 256>>>(greville, knots, ncoeffs_[j], degrees_[j]);
 #else
 		  throw std::runtime_error("Code must be compiled with CUDA enabled");
 #endif
@@ -4389,6 +4395,9 @@ std::cout << "AFTER\n";
          << "(\nparDim=" << BSplineCore::parDim_
          << ", geoDim=" << BSplineCore::geoDim_
 
+#ifdef __CUDACC__
+#pragma nv_diag_suppress 514
+#endif	
          << ", degrees=";
       for (short_t i=0; i<BSplineCore::parDim_-1; ++i)
         os << BSplineCore::degree(i) << "x";
@@ -4404,7 +4413,7 @@ std::cout << "AFTER\n";
         os << BSplineCore::nknots(BSplineCore::parDim_-1);
       else
         os << 0;
-
+      
       os << ", coeffs=";
       for (short_t i=0; i<BSplineCore::parDim_-1; ++i)
         os << BSplineCore::ncoeffs(i) << "x";
@@ -4413,6 +4422,10 @@ std::cout << "AFTER\n";
       else
         os << 1;
 
+#ifdef __CUDACC__
+#pragma nv_diag_default 514
+#endif
+      
       if (is_verbose(os)) {
         os << "\nknots = ";
         if (BSplineCore::parDim_ > 0)
