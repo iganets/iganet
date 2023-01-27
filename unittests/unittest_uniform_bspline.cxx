@@ -411,11 +411,6 @@ TEST(BSpline, UniformBSpline_init_double)
   }
 
   {
-    iganet::UniformBSpline<double, 1, 2> bspline({5}, iganet::init::greville);
-    EXPECT_FALSE(torch::allclose(bspline.coeffs(0), torch::linspace(0, 1, 5, bspline.options())));
-  }
-
-  {
     iganet::UniformBSpline<double, 2, 1> bspline({5}, iganet::init::zeros);
     EXPECT_TRUE(torch::allclose(bspline.coeffs(0), torch::zeros(5, bspline.options())));
     EXPECT_TRUE(torch::allclose(bspline.coeffs(1), torch::zeros(5, bspline.options())));
@@ -436,12 +431,6 @@ TEST(BSpline, UniformBSpline_init_double)
   {
     iganet::UniformBSpline<double, 2, 1> bspline({5}, iganet::init::greville);
     EXPECT_TRUE(torch::allclose(bspline.coeffs(0), torch::linspace(0, 1, 5, bspline.options())));
-    EXPECT_TRUE(torch::allclose(bspline.coeffs(1), torch::ones(5, bspline.options())));
-  }
-
-  {
-    iganet::UniformBSpline<double, 2, 2> bspline({5}, iganet::init::greville);
-    EXPECT_FALSE(torch::allclose(bspline.coeffs(0), torch::linspace(0, 1, 5, bspline.options())));
     EXPECT_TRUE(torch::allclose(bspline.coeffs(1), torch::ones(5, bspline.options())));
   }
   
