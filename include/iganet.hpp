@@ -931,8 +931,9 @@ namespace iganet {
 
   public:
     /// @brief Default constructor
-    explicit IgANet(IgANetOptions defaults = {})
-      : core<real_t>(),
+    explicit IgANet(IgANetOptions defaults = {},
+		    iganet::core<real_t> core = iganet::core<real_t>{})
+      : core<real_t>(core),
         geo_(),
         rhs_(),
         sol_(),
@@ -946,9 +947,10 @@ namespace iganet {
     IgANet(const std::vector<int64_t>& layers,
            const std::vector<std::vector<std::any>>& activations,
            const std::array<int64_t,parDim_>& bspline_ncoeffs,
-           IgANetOptions defaults = {})
+           IgANetOptions defaults = {},
+	   iganet::core<real_t> core = iganet::core<real_t>{})
       : IgANet(layers, activations, bspline_ncoeffs,
-               bspline_ncoeffs, bspline_ncoeffs, defaults)
+               bspline_ncoeffs, bspline_ncoeffs, defaults, core)
     {
     }
 
@@ -958,8 +960,9 @@ namespace iganet {
            const std::array<int64_t,parDim_>& geo_bspline_ncoeffs,
            const std::array<int64_t,parDim_>& rhs_bspline_ncoeffs,
            const std::array<int64_t,parDim_>& sol_bspline_ncoeffs,
-           IgANetOptions defaults = {})
-      : core<real_t>(),
+           IgANetOptions defaults = {},
+	   iganet::core<real_t> core = iganet::core<real_t>{})
+      : core<real_t>(core),
 
         // Construct the different B-Spline objects individually
         geo_(geo_bspline_ncoeffs, init::greville),
@@ -989,8 +992,9 @@ namespace iganet {
     IgANet(const std::vector<int64_t>& layers,
            const std::vector<std::vector<std::any>>& activations,
            const std::array<std::vector<real_t>,parDim_>& bspline_kv,
-           IgANetOptions defaults = {})
-      : IgANet(layers, activations, bspline_kv, bspline_kv, bspline_kv, defaults)
+           IgANetOptions defaults = {},
+	   iganet::core<real_t> core = iganet::core<real_t>{})
+      : IgANet(layers, activations, bspline_kv, bspline_kv, bspline_kv, defaults, core)
     {
     }
 
@@ -1000,8 +1004,9 @@ namespace iganet {
            const std::array<std::vector<real_t>,parDim_>& geo_bspline_kv,
            const std::array<std::vector<real_t>,parDim_>& rhs_bspline_kv,
            const std::array<std::vector<real_t>,parDim_>& sol_bspline_kv,
-           IgANetOptions defaults = {})
-      : core<real_t>(),
+           IgANetOptions defaults = {},
+	   iganet::core<real_t> core = iganet::core<real_t>{})
+      : core<real_t>(core),
 
         // Construct the different B-Spline objects individually
         geo_(geo_bspline_kv, init::greville),
