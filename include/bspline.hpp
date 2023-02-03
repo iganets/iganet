@@ -423,7 +423,7 @@ namespace iganet {
 
     /// @brief Default constructor
     UniformBSplineCore()
-      : core<real_t>()
+      : iganet::core<real_t>()
         {}
 
     /// @brief Constructor for equidistant knot vectors
@@ -433,8 +433,8 @@ namespace iganet {
     /// @param[in] init Type of initialization
     UniformBSplineCore(const std::array<int64_t, parDim_>& ncoeffs,
                        enum init init = init::zeros,
-		       iganet::core<real_t> core = iganet::core<real_t>{})
-        : core<real_t>(core),
+                       iganet::core<real_t> core = iganet::core<real_t>{})
+      : iganet::core<real_t>(core),
           ncoeffs_(ncoeffs)
     {
       for (short_t i = 0; i < parDim_; ++i) {
@@ -659,24 +659,24 @@ namespace iganet {
           for (short_t j = 0; j < parDim_; ++j) {
             if (i == j) {
               auto greville_ = torch::zeros(ncoeffs_[j], core<real_t>::options_);
-	      if (greville_.is_cuda()) {
+              if (greville_.is_cuda()) {
 #ifdef __CUDACC__
-		auto greville = greville_.template packed_accessor64<value_type, 1>();
-		auto knots = knots_[j].template packed_accessor64<value_type, 1>();
-		const int num_mp = at::cuda::getCurrentDeviceProperties()->multiProcessorCount;
-		cuda::greville_cuda_kernel<<<32*num_mp, 256>>>(greville, knots, ncoeffs_[j], degrees_[j]);
+                auto greville = greville_.template packed_accessor64<value_type, 1>();
+                auto knots = knots_[j].template packed_accessor64<value_type, 1>();
+                const int num_mp = at::cuda::getCurrentDeviceProperties()->multiProcessorCount;
+                cuda::greville_cuda_kernel<<<32*num_mp, 256>>>(greville, knots, ncoeffs_[j], degrees_[j]);
 #else
-		throw std::runtime_error("Code must be compiled with CUDA enabled");
+                throw std::runtime_error("Code must be compiled with CUDA enabled");
 #endif
-	      } else {
-		auto greville_accessor = greville_.template accessor<value_type, 1>();
-		auto knots_accessor = knots_[j].template accessor<value_type, 1>();
-		for (int64_t k = 0; k < ncoeffs_[j]; ++k) {
-		  for (short_t l = 1; l <= degrees_[j]; ++l)
-		    greville_accessor[k] += knots_accessor[k + l];
-		  greville_accessor[k] /= degrees_[j];
-		}
-	      }
+              } else {
+                auto greville_accessor = greville_.template accessor<value_type, 1>();
+                auto knots_accessor = knots_[j].template accessor<value_type, 1>();
+                for (int64_t k = 0; k < ncoeffs_[j]; ++k) {
+                  for (short_t l = 1; l <= degrees_[j]; ++l)
+                    greville_accessor[k] += knots_accessor[k + l];
+                  greville_accessor[k] /= degrees_[j];
+                }
+              }
               coeffs[i] = torch::kron(greville_, coeffs[i]);
             } else
               coeffs[i] = torch::kron(torch::ones(ncoeffs_[j],
@@ -933,7 +933,7 @@ namespace iganet {
       assert(parDim_ == 1 &&
              xi[0].sizes() == idx[0].sizes());
 
-      if constexpr (core<real_t>::memory_optimized_) {
+      if constexpr (iganet::core<real_t>::memory_optimized_) {
         auto basfunc = eval_basfunc<deriv>(xi, idx);
         BlockTensor<torch::Tensor, 1, geoDim_> result;
         for (short_t i = 0; i < geoDim_; ++i)
@@ -2072,24 +2072,24 @@ namespace iganet {
             for (short_t j = 0; j < parDim_; ++j) {
               if (i == j) {
                 auto greville_ = torch::zeros(ncoeffs_[j], core<real_t>::options_);
-		if (greville_.is_cuda()) {
+                if (greville_.is_cuda()) {
 #ifdef __CUDACC__
-		  auto greville = greville_.template packed_accessor64<value_type, 1>();
-		  auto knots = knots_[j].template packed_accessor64<value_type, 1>();
-		  const int num_mp = at::cuda::getCurrentDeviceProperties()->multiProcessorCount;
-		  cuda::greville_cuda_kernel<<<32*num_mp, 256>>>(greville, knots, ncoeffs_[j], degrees_[j]);
+                  auto greville = greville_.template packed_accessor64<value_type, 1>();
+                  auto knots = knots_[j].template packed_accessor64<value_type, 1>();
+                  const int num_mp = at::cuda::getCurrentDeviceProperties()->multiProcessorCount;
+                  cuda::greville_cuda_kernel<<<32*num_mp, 256>>>(greville, knots, ncoeffs_[j], degrees_[j]);
 #else
-		  throw std::runtime_error("Code must be compiled with CUDA enabled");
+                  throw std::runtime_error("Code must be compiled with CUDA enabled");
 #endif
-		} else {
-		  auto greville = greville_.template accessor<value_type, 1>();
-		  auto knots = knots_[j].template accessor<value_type, 1>();
-		  for (int64_t k = 0; k < ncoeffs_[j]; ++k) {
-		    for (short_t l = 1; l <= degrees_[j]; ++l)
-		      greville[k] += knots[k + l];
-		    greville[k] /= degrees_[j];
-		  }
-		}
+                } else {
+                  auto greville = greville_.template accessor<value_type, 1>();
+                  auto knots = knots_[j].template accessor<value_type, 1>();
+                  for (int64_t k = 0; k < ncoeffs_[j]; ++k) {
+                    for (short_t l = 1; l <= degrees_[j]; ++l)
+                      greville[k] += knots[k + l];
+                    greville[k] /= degrees_[j];
+                  }
+                }
                 coeffs_[i] = torch::kron(greville_, coeffs_[i]);
               } else
                 coeffs_[i] = torch::kron(torch::ones(ncoeffs_[j],
@@ -2453,7 +2453,7 @@ namespace iganet {
     /// @brief Constructor for non-equidistant knot vectors
     NonUniformBSplineCore(std::array<std::vector<typename Base::value_type>, Base::parDim_> kv,
                           enum init init = init::zeros,
-			  iganet::core<real_t> core = iganet::core<real_t>{})
+                          iganet::core<real_t> core = iganet::core<real_t>{})
       : Base(std::array<int64_t, Base::parDim_>{Degrees...}, init, core)
     {
       for (short_t i=0; i<Base::parDim_; ++i) {
@@ -3958,8 +3958,8 @@ std::cout << "AFTER\n";
 
         auto Coords = BSplineCore::eval(torch::linspace(0, 1, res0, core<typename BSplineCore_t::value_type>::options_));
 #ifdef __clang__
-        auto Coords_cpu = to_tensorAccessor<typename BSplineCore_t::value_type,1>(Coords, torch::kCPU);
-        auto XAccessor  = std::get<1>(Coords_cpu[0]);
+        auto Coords_cpu = to_tensorAccessor<typename BSplineCore_t::value_type,1>(Coords(0), torch::kCPU);
+        auto XAccessor  = std::get<1>(Coords_cpu);
 #else
         auto [Coords_cpu, XAccessor] = to_tensorAccessor<typename BSplineCore_t::value_type,1>(Coords(0), torch::kCPU);
 #endif
@@ -3972,8 +3972,8 @@ std::cout << "AFTER\n";
           if constexpr (BSplineCore_t::geoDim_==1) {
             auto Color = color.eval(torch::linspace(0, 1, res0, core<typename BSplineCore_t::value_type>::options_));
 #ifdef __clang__
-            auto Color_cpu = to_tensorAccessor<typename BSplineCore_t::value_type,1>(Color, torch::kCPU);
-            auto CAccessor = std::get<1>(Color_cpu[0]);
+            auto Color_cpu = to_tensorAccessor<typename BSplineCore_t::value_type,1>(Color(0), torch::kCPU);
+            auto CAccessor = std::get<1>(Color_cpu);
 #else
             auto [Color_cpu, CAccessor] = to_tensorAccessor<typename BSplineCore_t::value_type,1>(Color(0), torch::kCPU);
 #endif
@@ -3994,8 +3994,8 @@ std::cout << "AFTER\n";
           matplot::vector_1d Y(BSplineCore::ncoeffs(0), 0.0);
 
 #ifdef __clang__
-          auto coeffs_cpu = to_tensorAccessor<typename BSplineCore_t::value_type,1>(BSplineCore::coeffs, torch::kCPU);
-          auto xAccessor  = std::get<1>(coeffs_cpu[0]);
+          auto coeffs_cpu = to_tensorAccessor<typename BSplineCore_t::value_type,1>(BSplineCore::coeffs(0), torch::kCPU);
+          auto xAccessor  = std::get<1>(coeffs_cpu);
 #else
           auto [coeffs_cpu, xAccessor] = to_tensorAccessor<typename BSplineCore_t::value_type,1>(BSplineCore::coeffs(0), torch::kCPU);
 #endif
@@ -4034,10 +4034,10 @@ std::cout << "AFTER\n";
             auto Color  = color.eval(torch::linspace(0, 1, res0, core<typename BSplineCore_t::value_type>::options_));
 #ifdef __clang__
             auto Coords_cpu = to_tensorAccessor<typename BSplineCore_t::value_type,1>(Coords, torch::kCPU);
-            auto Color_cpu  = to_tensorAccessor<typename BSplineCore_t::value_type,1>(Color, torch::kCPU);
-            auto XAccessor  = std::get<1>(Coords_cpu[0]);
-            auto YAccessor  = std::get<1>(Coords_cpu[1]);
-            auto CAccessor  = std::get<1>(Color_cpu[0]);
+            auto Color_cpu  = to_tensorAccessor<typename BSplineCore_t::value_type,1>(Color(0), torch::kCPU);
+            auto XAccessor  = std::get<1>(Coords_cpu)[0];
+            auto YAccessor  = std::get<1>(Coords_cpu)[1];
+            auto CAccessor  = std::get<1>(Color_cpu);
 #else
             auto [Coords0_cpu, XAccessor] = to_tensorAccessor<typename BSplineCore_t::value_type,1>(Coords(0), torch::kCPU);
             auto [Coords1_cpu, YAccessor] = to_tensorAccessor<typename BSplineCore_t::value_type,1>(Coords(1), torch::kCPU);
@@ -4060,8 +4060,8 @@ std::cout << "AFTER\n";
           auto Coords = BSplineCore::eval(torch::linspace(0, 1, res0, core<typename BSplineCore_t::value_type>::options_));
 #ifdef __clang__
           auto Coords_cpu = to_tensorAccessor<typename BSplineCore_t::value_type,1>(Coords, torch::kCPU);
-          auto XAccessor  = std::get<1>(Coords_cpu[0]);
-          auto YAccessor  = std::get<1>(Coords_cpu[1]);
+          auto XAccessor  = std::get<1>(Coords_cpu)[0];
+          auto YAccessor  = std::get<1>(Coords_cpu)[1];
 #else
           auto [Coords0_cpu, XAccessor] = to_tensorAccessor<typename BSplineCore_t::value_type,1>(Coords(0), torch::kCPU);
           auto [Coords1_cpu, YAccessor] = to_tensorAccessor<typename BSplineCore_t::value_type,1>(Coords(1), torch::kCPU);
@@ -4077,9 +4077,9 @@ std::cout << "AFTER\n";
           matplot::vector_1d Y(BSplineCore::ncoeffs(0), 0.0);
 
 #ifdef __clang__
-          auto coeffs_cpu = to_tensorAccessor<typename BSplineCore_t::value_type,1>(BSplineCore::coeffs, torch::kCPU);
-          auto xAccessor  = std::get<1>(coeffs_cpu[0]);
-          auto yAccessor  = std::get<1>(coeffs_cpu[1]);
+          auto coeffs_cpu = to_tensorAccessor<typename BSplineCore_t::value_type,1>(BSplineCore::coeffs(), torch::kCPU);
+          auto xAccessor  = std::get<1>(coeffs_cpu)[0];
+          auto yAccessor  = std::get<1>(coeffs_cpu)[1];
 #else
           auto [coeffs0_cpu, xAccessor] = to_tensorAccessor<typename BSplineCore_t::value_type,1>(BSplineCore::coeffs(0), torch::kCPU);
           auto [coeffs1_cpu, yAccessor] = to_tensorAccessor<typename BSplineCore_t::value_type,1>(BSplineCore::coeffs(1), torch::kCPU);
@@ -4121,11 +4121,11 @@ std::cout << "AFTER\n";
             auto Color  = color.eval(torch::linspace(0, 1, res0, core<typename BSplineCore_t::value_type>::options_));
 #ifdef __clang__
             auto Coords_cpu = to_tensorAccessor<typename BSplineCore_t::value_type,1>(Coords, torch::kCPU);
-            auto Color_cpu  = to_tensorAccessor<typename BSplineCore_t::value_type,1>(Color,  torch::kCPU);
-            auto XAccessor  = std::get<1>(Coords_cpu[0]);
-            auto YAccessor  = std::get<1>(Coords_cpu[1]);
-            auto ZAccessor  = std::get<1>(Coords_cpu[2]);
-            auto CAccessor  = std::get<1>(Color_cpu[0]);
+            auto Color_cpu  = to_tensorAccessor<typename BSplineCore_t::value_type,1>(Color(0),  torch::kCPU);
+            auto XAccessor  = std::get<1>(Coords_cpu)[0];
+            auto YAccessor  = std::get<1>(Coords_cpu)[1];
+            auto ZAccessor  = std::get<1>(Coords_cpu)[2];
+            auto CAccessor  = std::get<1>(Color_cpu);
 #else
             auto [Coords0_cpu, XAccessor] = to_tensorAccessor<typename BSplineCore_t::value_type,1>(Coords(0), torch::kCPU);
             auto [Coords1_cpu, YAccessor] = to_tensorAccessor<typename BSplineCore_t::value_type,1>(Coords(1), torch::kCPU);
