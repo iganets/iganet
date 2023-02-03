@@ -28,15 +28,15 @@ include_directories(${usockets_SOURCE_DIR}/src)
 
 file(GLOB usockets_SOURCE_FILES
   ${usockets_SOURCE_DIR}/src/*.c
-  ${usockets_SOURCE_DIR}/src/crypto/*.c
+  ${usockets_SOURCE_DIR}/src/crypto/*.c*
   ${usockets_SOURCE_DIR}/src/eventing/*.c)
 add_library(usockets ${usockets_SOURCE_FILES})
 
 # Compile with OpenSSL support
-find_package(OpenSSL QUIET)
+find_package(OpenSSL)
 if (OPENSSL_FOUND)
   target_compile_definitions(usockets PUBLIC LIBUS_USE_OPENSSL)
-  target_include_directories(usockets ${OPENSSL_INCLUDE_DIR})
+  target_include_directories(usockets PUBLIC ${OPENSSL_INCLUDE_DIR})
   target_link_libraries(usockets ${OPENSSL_LIBRARIES})
 else()
   target_compile_definitions(usockets PUBLIC LIBUS_NO_SSL)
