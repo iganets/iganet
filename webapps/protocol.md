@@ -9,7 +9,7 @@ _Client request_
 ```
 {
     "id"      : UUID
-    "request" : command[/session-id][/object-id][/subcommand]
+    "request" : command[/session-id][/object-id][/attribute]
   [ "data"    : {...} ]
 }
 ```
@@ -27,7 +27,7 @@ _Server response_
 
 *   `UUID` is chosen by the client for each new request and copied by the server in the reply. 
 
-*   `request` encodes the actual `command`, optionally followed by the `session-id`, the `object-id`, and a `subcommand`
+*   `request` encodes the actual `command`, optionally followed by the `session-id`, the `object-id`, and an `attribute`
 
 *   `status` is an integer from the following list of predefined integers:
     - 0 : `SUCCESS`
@@ -39,9 +39,27 @@ _Server response_
 
 In what follows, only the non-generic parts of the protocol are specified in more detail. 
 
-## Creation command - `create/`
+## 1 Session commands
 
-1) Creation of a new __session__
+### 1.1 Get a list of all active sessions
+
+   _Client request_
+   ```
+   "request" : get
+   ```
+
+   _Server response_
+   ```
+   "status"  : 0
+   "data"    : { "ids" : [<comma-separated list of session ids>] }
+   ```
+   or
+   ```
+   "status"  : 1
+   "reason"  : <string>
+   ```
+
+### 1.2 Create a new session
 
    _Client request_
    ```
@@ -59,7 +77,79 @@ In what follows, only the non-generic parts of the protocol are specified in mor
      "reason"  : <string>
    ```
 
-2) Creation of a new __object__
+### 1.3 Remove an existing session
+
+   _Client request_
+   ```
+   "request" : remove/session-id
+   ```
+
+   _Server response_
+   ```
+   "status"  : 0
+   ```
+   or
+   ```
+   "status"  : 1
+   "reason"  : <string>
+   ```
+
+### 1.4 Connect to an existing session
+
+   _Client request_
+   ```
+     "request" : connect/session-id
+   ```
+
+   _Server response_
+   ```
+     "status"  : 0
+   ```
+   or
+   ```
+     "status"  : 1
+     "reason"  : <string>
+   ```
+
+### 1.3 Disconnect from an existing session
+
+   _Client request_
+   ```
+   "request" : disconnect/session-id
+   ```
+
+   _Server response_
+   ```
+   "status"  : 0
+   ```
+   or
+   ```
+   "status"  : 1
+   "reason"  : <string>
+   ```
+
+
+## 2 Object commands
+
+### 2.1 Get a list of all objects of a specific session
+
+   _Client request_
+   ```
+   "request" : get/session-id
+   ```
+
+   _Server response_
+   ```
+   "status"  : 0
+   "data"    : { "ids" : [<comma-separated list of object ids>] }
+   ```
+   or
+   ```
+   "status"  : 1
+   "reason"  : <string>
+   ```
+
+### 2.2 Create a new object
 
    _Client request_
    ```
@@ -112,26 +202,7 @@ In what follows, only the non-generic parts of the protocol are specified in mor
      "reason"  : <string>
    ```
 
-## Removal commands - `remove/`
-
-1) Removal of an existing __session__
-
-   _Client request_
-   ```
-   "request" : remove/session-id
-   ```
-
-   _Server response_
-   ```
-   "status"  : 0
-   ```
-   or
-   ```
-   "status"  : 1
-   "reason"  : <string>
-   ```
-
-2) Removal of an existing __object__
+## 2.3 Remove an existing object
 
    _Client request_
    ```
@@ -148,45 +219,7 @@ In what follows, only the non-generic parts of the protocol are specified in mor
    "reason"  : <string>
    ```
 
-## Information retrieval commands - `get/`
-
-1) Get all __session-ids__
-
-   _Client request_
-   ```
-   "request" : get
-   ```
-
-   _Server response_
-   ```
-   "status"  : 0
-   "data"    : { "ids" : [<comma-separated list of session ids>] }
-   ```
-   or
-   ```
-   "status"  : 1
-   "reason"  : <string>
-   ```
-
-2) Get all __object-ids__ of a specific session
-
-   _Client request_
-   ```
-   "request" : get/session-id
-   ```
-
-   _Server response_
-   ```
-   "status"  : 0
-   "data"    : { "ids" : [<comma-separated list of object ids>] }
-   ```
-   or
-   ```
-   "status"  : 1
-   "reason"  : <string>
-   ```
-
-3) Get _all_ __attributes__ of a specific object
+### 2.4 Get all attributes of a specific object
 
    _Client request_
    ```
@@ -221,7 +254,7 @@ In what follows, only the non-generic parts of the protocol are specified in mor
 
    -   More object types will be added
 
-4) Get a _specific_ __attribute__ of a specific object
+### 2.5 Get a specific attribute of a specific object
 
    _Client request_
    ```
@@ -246,9 +279,7 @@ In what follows, only the non-generic parts of the protocol are specified in mor
    ```
    The __data__ will be formatted in the same format as in the _all_ __attribute__ case.
 
-## Information update commands - `put/`
-
-1) Update a _specific_ __attribute__ of a specific object
+### 2.6 Update a specific attribute of a specific object
 
    _Client request_
    ```
@@ -272,7 +303,7 @@ In what follows, only the non-generic parts of the protocol are specified in mor
    "reason"  : <string>
    ```
 
-## Specialized command - `eval/`
+### 2.7 Evaluate a specific object
 
    The __object-types__ `uniformBSpline` and `nonuniformBSpline` support the evaluation at discrete points in the parameter space
 
@@ -295,7 +326,7 @@ In what follows, only the non-generic parts of the protocol are specified in mor
    "reason"  : <string>
    ```
 
-   ## Specialized command - `refine/`
+### 2.8 Refine a specific object
 
    The __object-types__ `uniformBSpline` and `nonuniformBSpline` support regular refinement
 
