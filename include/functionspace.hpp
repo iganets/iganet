@@ -12,9 +12,9 @@
    file, You can obtain one at http://mozilla.org/MPL/2.0/.
 */
 
-#include <bspline.hpp>
-
 #pragma once
+
+#include <bspline.hpp>
 
 namespace iganet {
   
@@ -124,6 +124,12 @@ namespace iganet {
     inline auto& boundary()
     {
       return boundary_;
+    }
+
+    /// @brief Serialization to JSON
+    nlohmann::json to_json() const override
+    {
+      return "not yet implemented";
     }
   };
 

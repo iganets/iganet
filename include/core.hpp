@@ -12,6 +12,8 @@
    file, You can obtain one at http://mozilla.org/MPL/2.0/.
 */
 
+#pragma once
+
 #include <array>
 #include <initializer_list>
 #include <tuple>
@@ -27,10 +29,9 @@
 #endif
 #endif
 
+#include <json.hpp>
 #include <torch/torch.h>
 #include <torch/csrc/api/include/torch/types.h>
-
-#pragma once
 
 namespace iganet {
 
@@ -77,10 +78,10 @@ namespace iganet {
     return i;
   }
 
-  std::ostream& verbose(std::ostream& os) { os.iword(get_iomanip()) = 1; return os; }
-  std::ostream& regular(std::ostream& os) { os.iword(get_iomanip()) = 0; return os; }
+  inline std::ostream& verbose(std::ostream& os) { os.iword(get_iomanip()) = 1; return os; }
+  inline std::ostream& regular(std::ostream& os) { os.iword(get_iomanip()) = 0; return os; }
 
-  bool is_verbose(std::ostream& os) { return os.iword(get_iomanip()) != 0; }
+  inline bool is_verbose(std::ostream& os) { return os.iword(get_iomanip()) != 0; }
   /// @}
 
   /// @brief Full qualified name descriptor
@@ -159,16 +160,24 @@ namespace iganet {
                  .requires_grad(requiresGrad))
     {}
 
+    virtual ~core() {}
+    
     /// @brief Returns constant reference to options
     const torch::TensorOptions options() const
     {
       return options_;
     }
 
-  protected:
+    /// @brief Serialization to JSON
+    virtual nlohmann::json to_json() const
+    {
+      return "not implemented";
+    }
+
     /// @brief Data type
     using value_type = real_t;
 
+  protected:
     /// @brief Optimize for memory usage
     static constexpr bool memory_optimized_ = memory_optimized;
 

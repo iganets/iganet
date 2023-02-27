@@ -12,13 +12,12 @@
    file, You can obtain one at http://mozilla.org/MPL/2.0/.
 */
 
+#pragma once
+
 #include <random>
 #include <tuple>
-#include <json.hpp>
 
 #include <blocktensor.hpp>
-
-#pragma once
 
 namespace iganet {
 

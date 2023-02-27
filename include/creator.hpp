@@ -12,12 +12,12 @@
    file, You can obtain one at http://mozilla.org/MPL/2.0/.
 */
 
+#pragma once
+
 #include <cstdlib>
 #include <ctime>
 
 #include <bspline.hpp>
-
-#pragma once
 
 namespace iganet {
 

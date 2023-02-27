@@ -12,6 +12,8 @@
    file, You can obtain one at http://mozilla.org/MPL/2.0/.
 */
 
+#pragma once
+
 #include <exception>
 #include <filesystem>
 #include <functional>
@@ -24,8 +26,6 @@
 #include <ATen/cuda/CUDAContext.h>
 #include <bspline.cuh>
 #endif
-
-#pragma once
 
 namespace iganet {
   
@@ -1665,7 +1665,7 @@ namespace iganet {
     }
 
     /// @brief Returns the B-spline object as JSON object
-    inline nlohmann::json to_json() const
+    inline nlohmann::json to_json() const override
     {
       nlohmann::json data;
       data["degrees"] = degrees_;

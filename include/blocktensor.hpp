@@ -12,6 +12,8 @@
    file, You can obtain one at http://mozilla.org/MPL/2.0/.
 */
 
+#pragma once
+
 #include <array>
 #include <exception>
 #include <initializer_list>
@@ -19,8 +21,6 @@
 #include <type_traits>
 
 #include <core.hpp>
-
-#pragma once
 
 namespace iganet {
 
