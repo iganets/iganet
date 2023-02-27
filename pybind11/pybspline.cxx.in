@@ -1,0 +1,44 @@
+/**
+   @file pybind11/pybspline@GEODIM@d.cxx
+
+   @brief Pybind11 multivariate B-splines
+
+   @author Matthias Moller
+
+   @copyright This file is part of the IgANet project
+
+   This Source Code Form is subject to the terms of the Mozilla Public
+   License, v. 2.0. If a copy of the MPL was not distributed with this
+   file, You can obtain one at http://mozilla.org/MPL/2.0/.
+*/
+
+#include <pybind11/pybind11.h>
+#include <pybind11/stl.h>
+#include <torch/extension.h>
+
+#include <pyconfig.hpp>
+
+#include <bspline.hpp>
+
+namespace py = pybind11;
+
+void init_UniformBSpline@SUFFIX@(py::module_ &m) {
+  py::class_<iganet::UniformBSpline<iganet::pybind11::real_t, @GEODIM@, @PARDIM@>,
+             iganet::core<iganet::pybind11::real_t>>(m, "UniformBSpline@SUFFIX@")
+    
+    .def(py::init< std::array<int64_t,
+         static_cast<size_t>(iganet::UniformBSpline<iganet::pybind11::real_t, @GEODIM@, @PARDIM@>::parDim())>, enum iganet::init>())
+    
+    .def_static("parDim",  &iganet::UniformBSpline<iganet::pybind11::real_t, @GEODIM@, @PARDIM@>::parDim)
+    .def_static("geoDim",  &iganet::UniformBSpline<iganet::pybind11::real_t, @GEODIM@, @PARDIM@>::geoDim)
+    .def_static("degrees", &iganet::UniformBSpline<iganet::pybind11::real_t, @GEODIM@, @PARDIM@>::degrees)
+    .def_static("degree",  &iganet::UniformBSpline<iganet::pybind11::real_t, @GEODIM@, @PARDIM@>::degree)
+    
+    // .def("knots", static_cast
+    //      <std::array<torch::Tensor,1>&
+    //      (iganet::UniformBSpline<COEFF_TYPE,1,1>::*)
+    //      ()
+    //      >(&iganet::UniformBSpline<COEFF_TYPE,1,1>::knots)
+    //      )
+    ;
+}
