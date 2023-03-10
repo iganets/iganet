@@ -100,6 +100,7 @@ option(IGANET_WITH_OPENMP       "With OpenMP"               ON )
 # Prerequisites
 ########################################################################
 find_package(Torch REQUIRED)
+list(APPEND CMAKE_CXX_FLAGS ${TORCH_CXX_FLAGS})
 
 if (IGANET_WITH_MATPLOT)
   include(Matplot++)
@@ -262,6 +263,9 @@ message("")
 # Add kernel directory
 ########################################################################
 include_directories(${PROJECT_SOURCE_DIR}/include)
+include_directories(${PROJECT_BINARY_DIR}/include)
+configure_file(${PROJECT_SOURCE_DIR}/include/jit.hpp.in
+  ${PROJECT_BINARY_DIR}/include/jit.hpp @ONLY)
 
 ########################################################################
 # Add examples (if enabled)

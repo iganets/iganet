@@ -1,0 +1,221 @@
+/**
+   @file include/jit.hpp
+
+   @brief Just-in-time compiler
+
+   @author Matthias Moller
+
+   @copyright This file is part of the IgANet project
+
+   This Source Code Form is subject to the terms of the Mozilla Public
+   License, v. 2.0. If a copy of the MPL was not distributed with this
+   file, You can obtain one at http://mozilla.org/MPL/2.0/.
+*/
+
+#pragma once
+
+#include <filesystem>
+
+#if defined(_WIN32)
+#include <direct.h>
+#include <windows.h>
+#else
+#include <dlfcn.h>
+#include <sys/stat.h>
+#endif
+
+namespace iganet {
+
+  /// @brief Dynamic library
+  ///
+  /// This class stores a pointer to a dynamic library that can be
+  /// compiled and linked at runtime
+  class DynamicLibrary
+  {
+  public:
+    
+    /// @brief Default constructor deleted
+    DynamicLibrary() = delete;
+    
+    /// @brief Constructor from file
+    DynamicLibrary(const char* filename, int flag) {
+#if defined(_WIN32)
+      static_cast<void>(flag);
+      HMODULE dl = LoadLibrary(filename);
+      if (!dl)
+        throw std::runtime_error( "LoadLibrary - error: " + GetLastError() );
+      handle.reset(dl, FreeLibrary);
+#elif defined(__APPLE__) || defined(__linux__) || defined(__unix)        
+      void * dl = ::dlopen(filename, flag);
+      if (!dl)
+        throw std::runtime_error( ::dlerror() );
+      handle.reset(dl, ::dlclose);
+#else
+#error("Unsupported operating system")
+#endif
+    }
+        
+    /// @brief Gets symbol from dynamic library
+    template<class T>
+    T* getSymbol(const char* name) const
+    {
+      if (!handle)
+        throw std::runtime_error("An error occured while accessing the dynamic library");
+      
+      T *symbol = NULL;
+#if defined(_WIN32)
+      *(void **)(&symbol) = (void*)GetProcAddress(handle.get(), name );
+#elif defined(__APPLE__) || defined(__linux__) || defined(__unix)
+      *(void **)(&symbol) = ::dlsym( handle.get(), name );
+#endif
+      if (!symbol)
+        throw std::runtime_error("An error occured while getting symbol from the dynamic library");
+      
+      return symbol;
+    }
+    
+    /// @brief Checks if handle is assigned
+    operator bool() const { return (bool)handle; }
+    
+  private:
+    
+    /// @brief Handle to dynamic library object
+#if defined(_WIN32)
+    std::shared_ptr< std::remove_pointer<HMODULE>::type > handle;
+#elif defined(__APPLE__) || defined(__linux__) || defined(__unix)
+    std::shared_ptr<void> handle;
+#endif
+  };
+  
+  /// @brief Just-in-time compiler
+  ///
+  /// This class implements a just-in-time compiler framework to
+  /// compile source code into a dynamically loadable library.
+  class JITCompiler {
+  public:
+    
+    /// Default constructor
+    JITCompiler()
+      : kernel()
+    {}
+    
+    /// Inputs kernel source code from string
+    JITCompiler & operator<<(const std::string& source)
+    {
+      kernel << source;
+      return *this;
+    }
+    
+    /// Compiles kernel source code into dynamic library determining
+    /// the filename from hash of kernel source code automatically
+    DynamicLibrary build(bool force = false)
+    {
+      size_t h = std::hash<std::string>()(kernel.str()+compiler_cmd+compiler_flags);
+      return build(std::to_string(h), force);
+    }
+    
+    /// Compiles kernel source code into dynamic library using given
+    /// filename
+    DynamicLibrary build(const std::string &name, bool force = false)
+    {
+      // Prepare library name
+      std::stringstream libName;
+      
+#     if   defined(_WIN32)
+      libName << output_dir << "lib" << name << ".dll";
+#     elif defined(__APPLE__)
+      libName << output_dir << "lib" << name << ".dylib";
+#     elif defined(unix) || defined(__unix__) || defined(__unix)
+      libName << output_dir << "lib" << name << ".so";
+#     else
+#     error("Unsupported operating system")
+#     endif
+      
+      // Compile library (if required)
+      std::ifstream libfile(libName.str().c_str());
+      if(!libfile || force)
+        {
+          // Check if output directory exists
+          if (!std::filesystem::exists(std::filesystem::path(output_dir))) {
+#           if defined(_WIN32)
+            if (_mkdir(output_dir.c_str()) != 0)
+              throw std::runtime_error("An error occured while creating the output directory");
+#           else
+            if (mkdir(output_dir.c_str(), S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH) == -1)
+              throw std::runtime_error("An error occured while creating the output directory");
+#           endif
+          }
+          
+          // Write kernel source code to file
+          std::stringstream srcName;
+#         ifdef _WIN32          
+          srcName << output_dir << name << ".cxx";
+          std::ofstream file(srcName.str().c_str());
+          file << "#ifdef __cplusplus\n";
+          file << "#define EXPORT extern \"C\" __declspec(dllexport)\n";
+          file << "#endif\n";
+#         else
+          srcName << output_dir << name << ".cxx";
+          std::ofstream file(srcName.str().c_str());
+          file << "#ifdef __cplusplus\n";
+          file << "#define EXPORT extern \"C\"\n";
+          file << "#endif\n";
+#         endif
+          file << kernel.str() <<"\n";
+          file.close();
+          
+          // Compile kernel source code into library
+          std::stringstream systemcall;
+          
+#         ifdef _WIN32
+          // double quotes are better than single quotes..
+          systemcall << "\"\"" << compiler_cmd << "\" "
+                     << compiler_flags << " \""
+                     << srcName.str()     << "\" "
+                     << compiler_output << "\"" << libName.str() << "\"\"";
+#         else
+          systemcall << "\"" << compiler_cmd << "\" "
+                     << compiler_flags << " \""
+                     << srcName.str()     << "\" "
+                     << compiler_output << "\"" << libName.str() << "\"";
+#         endif
+
+          std::cout << systemcall.str() << std::endl;
+          
+          if(std::system(systemcall.str().c_str()) != 0)
+            throw std::runtime_error("An error occured while compiling the kernel source code");
+        }
+      
+#ifdef _WIN32
+      return DynamicLibrary( libName.str().c_str(), 0 );
+#else
+      return DynamicLibrary( libName.str().c_str(), RTLD_LAZY
+#ifdef RTLD_DEEPBIND
+                             | RTLD_DEEPBIND
+#endif
+                             );
+#endif
+    }   
+    
+  private:
+    /// Kernel source code
+    std::ostringstream kernel;
+
+    /// Compiler command
+    std::string compiler_cmd = "g++";
+
+    /// Compiler flags
+    std::string compiler_flags = "-fPIC -shared -std=c++17 -I@PROJECT_SOURCE_DIR@/include @TORCH_LIBRARIES@";
+
+    /// Compiler output flag
+#if defined(_WIN32)
+    std::string compiler_output = "/Fo"
+#else
+      std::string compiler_output = "-o ";
+#endif
+
+    /// Output directory
+    std::string output_dir = "@PROJECT_BINARY_DIR@/";
+  };
+  
+} // namespace iganet
