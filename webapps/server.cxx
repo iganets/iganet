@@ -338,7 +338,7 @@ int main(int argc, char const* argv[])
                 auto session = std::make_shared<iganet::webapp::Session<double>>();
                 std::string uuid = session->getUUID();
                 ws->getUserData()->sessions[uuid] = session; 
-                response["data"]["uuid"] = uuid;
+                response["data"]["id"] = uuid;
                 ws->send(response.dump(), uWS::OpCode::TEXT, true);                
               }
               
