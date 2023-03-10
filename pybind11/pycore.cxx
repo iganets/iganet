@@ -21,7 +21,7 @@
 
 namespace py = pybind11;
 
-void init_pycore(py::module_ &m) {
+void init_core(py::module_ &m) {
   py::class_<iganet::core<iganet::pybind11::real_t>>(m, "Core")
     
     // Constructors

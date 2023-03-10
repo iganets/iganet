@@ -39,26 +39,31 @@ message("PYIGANET_COEFF_TYPE................: ${PYIGANET_COEFF_TYPE}")
 ########################################################################
 
 # Config
-configure_file(${CMAKE_CURRENT_SOURCE_DIR}/pyconfig.hpp.in ${CMAKE_CURRENT_BINARY_DIR}/pyconfig.hpp)
+configure_file(${CMAKE_CURRENT_SOURCE_DIR}/pyconfig.hpp.in
+  ${CMAKE_CURRENT_BINARY_DIR}/pyconfig.hpp @ONLY)
 
 # Create list of PyBind11 init subroutines
 list(APPEND inits "init_core")
+list(APPEND inits "init_bspline")
 
 # Explicit instantiation of templated classes
 foreach(GEODIM RANGE 1 4)
-  foreach(PARDIM IN ITEMS
-      "1" "1,1" "1,1,1" "1,1,1,1"
-      "2" "2,2" "2,2,2" "2,2,2,2"
-      "3" "3,3" "3,3,3" "3,3,3,3"
-      "4" "4,4" "4,4,4" "4,4,4,4"
-      "5" "5,5" "5,5,5" "5,5,5,5")
+  foreach(DEGREES IN ITEMS
+      "1" "1,1" #"1,1,1" "1,1,1,1"
+      "2") #"2,2" "2,2,2" "2,2,2,2"
+    #  "3" "3,3" "3,3,3" "3,3,3,3"
+    #  "4" "4,4" "4,4,4" "4,4,4,4"
+    #  "5" "5,5" "5,5,5" "5,5,5,5")
+    
+    set(SUFFIX "${GEODIM}d_${DEGREES}")
+    string(REPLACE "," "_" SUFFIX ${SUFFIX})   
+    list(APPEND inits "init_UniformBSpline${SUFFIX}")
 
-    set(SUFFIX "${GEODIM}d_${PARDIM}")
-    string(REPLACE "," "_" SUFFIX ${SUFFIX})
-    #list(APPEND inits "init_UniformBSpline${SUFFIX}")
-
+    string(REPLACE "," ";" PARDIM ${DEGREES})
+    list(LENGTH PARDIM PARDIM)
+    
     configure_file(${CMAKE_CURRENT_SOURCE_DIR}/pybspline.cxx.in
-      ${CMAKE_CURRENT_BINARY_DIR}/pybspline${SUFFIX}.cxx)
+      ${CMAKE_CURRENT_BINARY_DIR}/pybspline${SUFFIX}.cxx @ONLY)
   endforeach()
 endforeach()
 
@@ -81,7 +86,7 @@ file(WRITE ${CMAKE_CURRENT_BINARY_DIR}/pyiganet.cxx
 
 #include <pyconfig.hpp>
 
-namespace py = pybind11;")
+namespace py = pybind11;\n\n")
 
 foreach(init IN LISTS inits)
   file(APPEND ${CMAKE_CURRENT_BINARY_DIR}/pyiganet.cxx
@@ -89,7 +94,7 @@ foreach(init IN LISTS inits)
 endforeach()
 
 file(APPEND ${CMAKE_CURRENT_BINARY_DIR}/pyiganet.cxx
-  "PYBIND11_MODULE(pyiganet, m) {\n")
+  "\nPYBIND11_MODULE(pyiganet, m) {\n")
 
 foreach(init IN LISTS inits)
   file(APPEND ${CMAKE_CURRENT_BINARY_DIR}/pyiganet.cxx
@@ -106,7 +111,8 @@ include_directories(${CMAKE_CURRENT_SOURCE_DIR})
 file(GLOB SRCS ${CMAKE_CURRENT_SOURCE_DIR}/*.cxx ${CMAKE_CURRENT_BINARY_DIR}/*.cxx)
 
 pybind11_add_module(pyiganet MODULE ${SRCS})
-target_link_libraries(pyiganet PUBLIC "${TORCH_LIBRARIES}")
+#target_link_libraries(pyiganet PUBLIC "${TORCH_LIBRARIES}")
+target_include_directories(pyiganet PUBLIC ${TORCH_INCLUDE_DIRS})
   
 if (IGANET_WITH_MATPLOT)
   target_link_libraries(pyiganet PUBLIC Matplot++::matplot)
