@@ -1,6 +1,6 @@
 before_script:
    - apt-get update -y
-   - apt-get install build-essential doxygen locales unzip wget -y
+   - apt-get install build-essential doxygen locales unzip wget zlib1g-dev libstdc++-11-dev -y
    - wget https://github.com/Kitware/CMake/releases/download/v3.24.3/cmake-3.24.3-linux-x86_64.tar.gz
    - tar xvzf cmake-3.24.3-linux-x86_64.tar.gz -C /
    - rm -f cmake-3.24.3-linux-x86_64.tar.gz
@@ -23,7 +23,7 @@ pages:
   script:
     - mkdir -p build
     - cd build
-    - CC=gcc CXX=g++ cmake .. -DIGANET_BUILD_DOCS=ON -DTorch_DIR=/libtorch/share/cmake/Torch
+    - CC=gcc CXX=g++ cmake .. -DIGANET_BUILD_DOCS=ON -DTorch_DIR=/libtorch/share/cmake/Torch -DCXX_FILESYSTEM_HAVE_FS=ON -DCXX_FILESYSTEM_HEADER=filesystem
     - make Doxygen
     - mv docs/doxygen/html ../public
     - mv docs/doxygen/*.xml ../public

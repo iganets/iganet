@@ -102,6 +102,8 @@ option(IGANET_WITH_OPENMP       "With OpenMP"               ON )
 find_package(Torch REQUIRED)
 list(APPEND CMAKE_CXX_FLAGS ${TORCH_CXX_FLAGS})
 
+find_package(ZLIB REQUIRED)
+
 if (IGANET_WITH_MATPLOT)
   include(Matplot++)
   add_compile_definitions(WITH_MATPLOT)
