@@ -511,20 +511,20 @@ int main(int argc, char const* argv[])
                 // Evaluate an existing object
                 if (auto spline = std::dynamic_pointer_cast<iganet::UniformBSpline<double,1,1,1>>(object)) {
                   switch (spline->parDim()) {
-                  case 1:
-                    iganet::TensorArray1 xi1 = {torch::linspace(0,1,100)};
-                    auto data1 = spline->eval(xi1);
-                    response["data"] = ::iganet::to_json<double,1>(*data1[0]);
-                    ws->send(response.dump(), uWS::OpCode::TEXT, true);
-                    break;
-                    
-                  // case 2:
-                  //   iganet::TensorArray2 xi2 = {torch::linspace(0,1,100),
-                  //                               torch::linspace(0,1,100)};
-                  //   auto data2 = spline->eval(xi2);
-                  //   response["data"] = ::iganet::to_json<double,1>(*data2[0]);
+                  // case 1:
+                  //   iganet::TensorArray1 xi1 = {torch::linspace(0,1,100)};
+                  //   auto data1 = spline->eval(xi1);
+                  //   response["data"] = ::iganet::to_json<double,1>(*data1[0]);
                   //   ws->send(response.dump(), uWS::OpCode::TEXT, true);
                   //   break;
+                    
+                  case 2:
+                    iganet::TensorArray2 xi2 = {torch::linspace(0,1,100),
+                                                torch::linspace(0,1,100)};
+                    auto data2 = spline->eval(xi2);
+                    response["data"] = ::iganet::to_json<double,1>(*data2[0]);
+                    ws->send(response.dump(), uWS::OpCode::TEXT, true);
+                    break;
 
                   // case 3:
                   //   iganet::TensorArray3 xi3 = {torch::linspace(0,1,100),
