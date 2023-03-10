@@ -217,7 +217,6 @@ int main(int argc, char const* argv[])
 
                 // Get session
                 auto session = ws->getUserData()->getSession(tokens[1]);
-                //session->authenticate(request["token"]);
 
                 // Get list of all active models in session
                 std::vector<int64_t> ids;
@@ -234,7 +233,6 @@ int main(int argc, char const* argv[])
 
                 // Get session
                 auto session = ws->getUserData()->getSession(tokens[1]);
-                //session->authenticate(request["token"]);
 
                 // Get model
                 auto model = session->getModel(stoi(tokens[2]));
@@ -251,7 +249,6 @@ int main(int argc, char const* argv[])
 
                 // Get session
                 auto session = ws->getUserData()->getSession(tokens[1]);
-                //session->authenticate(request["token"]);
 
                 // Get model
                 auto model = session->getModel(stoi(tokens[2]));
@@ -307,7 +304,6 @@ int main(int argc, char const* argv[])
 
                 // Get session
                 auto session = ws->getUserData()->getSession(tokens[1]);
-                //session->authenticate(request["token"]);
 
                 // Get model
                 auto model = session->getModel(stoi(tokens[2]));
@@ -349,7 +345,6 @@ int main(int argc, char const* argv[])
 
                 // Get session
                 auto session = ws->getUserData()->getSession(tokens[1]);
-                //session->authenticate(request["token"]);
                 
                 // Create new model
                 int64_t id = (session->models.size() > 0 ?
@@ -432,7 +427,6 @@ int main(int argc, char const* argv[])
 
                 // Get session
                 auto session = ws->getUserData()->getSession(tokens[1]);
-                //session->authenticate(request["token"]);
 
                 // Remove model
                 auto model = session->removeModel(stoi(tokens[2]));
@@ -459,7 +453,6 @@ int main(int argc, char const* argv[])
 
                 // Get session
                 auto session = ws->getUserData()->getSession(tokens[1]);
-                //session->authenticate(request["token"]);
 
                 // Connect to an existing session
 
@@ -485,7 +478,6 @@ int main(int argc, char const* argv[])
 
                 // Get session
                 auto session = ws->getUserData()->getSession(tokens[1]);
-                //session->authenticate(request["token"]);
 
                 // Disconnect from an existing session
 
@@ -511,7 +503,6 @@ int main(int argc, char const* argv[])
 
                 // Get session
                 auto session = ws->getUserData()->getSession(tokens[1]);
-                //session->authenticate(request["token"]);
 
                 // Get model
                 auto model = session->getModel(stoi(tokens[2]));
@@ -570,7 +561,6 @@ int main(int argc, char const* argv[])
 
                 // Get session
                 auto session = ws->getUserData()->getSession(tokens[1]);
-                //session->authenticate(request["token"]);
 
                 // Get model
                 auto model = session->getModel(stoi(tokens[2]));
