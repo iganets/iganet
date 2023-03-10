@@ -28,25 +28,18 @@ namespace iganet { namespace webapp {
         return "Invalid session id";  
       }
     };
-
-    /// @brief InvalidAuthentication exception
-    struct InvalidAuthenticationException : public std::exception {  
-      const char * what() const throw() {  
-        return "Invalid authentication token";  
-      }
-    };
     
-    /// @brief InvalidObjectId exception
-    struct InvalidObjectIdException : public std::exception {  
+    /// @brief InvalidModelId exception
+    struct InvalidModelIdException : public std::exception {  
       const char * what() const throw() {  
-        return "Invalid object id";  
+        return "Invalid model id";  
       }
     };
 
-    /// @brief InvalidObjectType exception
-    struct InvalidObjectTypeException : public std::exception {  
+    /// @brief InvalidModelType exception
+    struct InvalidModelTypeException : public std::exception {  
       const char * what() const throw() {  
-        return "Invalid object type";  
+        return "Invalid model type";  
       }
     }; 
     
@@ -62,62 +55,51 @@ namespace iganet { namespace webapp {
     template<typename T>
     struct Session {
     private:
-      /// @brief Session token
-      const std::string token;
+      /// @brief Session UUID
+      const std::string uuid;
             
     public:
       /// @brief Default constructor
-      Session() : token(iganet::uuid::create())
+      Session() : uuid(iganet::uuid::create())
       {}
 
-      /// @brief Returns the token
-      const std::string& getToken() const {
-        return token;
+      /// @brief Returns the UUID
+      const std::string& getUUID() const {
+        return uuid;
       }
       
-      /// @brief Returns true if the given token is valid
-      bool validToken(const std::string& token) const {        
-        return (token == this->token);
-      }
-
-      /// @brief Throws an exception of authentication is not valid
-      void authenticate(const std::string& token) const {
-        if (!validToken(token))
-          throw InvalidAuthenticationException();
-      }
-
-      /// Returns the requested object or throws an exception
-      std::shared_ptr<iganet::core<T>> getObject(int64_t id) {
-        auto it = objects.find(id);
-        if (it == objects.end())
-          throw InvalidObjectIdException();
+      /// Returns the requested model or throws an exception
+      std::shared_ptr<iganet::core<T>> getModel(int64_t id) {
+        auto it = models.find(id);
+        if (it == models.end())
+          throw InvalidModelIdException();
         else
           return it->second;
       }
 
-      /// Returns the object and removes it from the list of objects
-      std::shared_ptr<iganet::core<T>> removeObject(int64_t id) {
-        auto it = objects.find(id);
-        if (it == objects.end())
-          throw InvalidObjectIdException();
+      /// Returns the model and removes it from the list of models
+      std::shared_ptr<iganet::core<T>> removeModel(int64_t id) {
+        auto it = models.find(id);
+        if (it == models.end())
+          throw InvalidModelIdException();
         else {
-          auto object = it->second;
-          objects.erase(it);
-          return object;
+          auto model = it->second;
+          models.erase(it);
+          return model;
         }
       }
       
-      /// @brief List of objects
-      std::map<int64_t, std::shared_ptr<iganet::core<T>>> objects;
+      /// @brief List of models
+      std::map<int64_t, std::shared_ptr<iganet::core<T>>> models;
     };
     
     /// @brief Sessions structure
     template<typename T>
     struct Sessions {
     public:     
-      /// Returns the requested session object or throws an exception
-      std::shared_ptr<Session<T>> getSession(int64_t id) {
-        auto it = sessions.find(id);
+      /// Returns the requested session model or throws an exception
+      std::shared_ptr<Session<T>> getSession(std::string uuid) {
+        auto it = sessions.find(uuid);
         if (it == sessions.end())
           throw InvalidSessionIdException();
         else
@@ -125,20 +107,19 @@ namespace iganet { namespace webapp {
       }
 
       /// Returns the session and removes it from the list of sessions
-      std::shared_ptr<Session<T>> removeSession(int64_t id, const std::string& token) {
-        auto it = sessions.find(id);
+      std::shared_ptr<Session<T>> removeSession(std::string uuid) {
+        auto it = sessions.find(uuid);
         if (it == sessions.end())
           throw InvalidSessionIdException();
         else {
           auto session = it->second;
-          session->authenticate(token);
           sessions.erase(it);
           return session;
         }
       }
       
       /// Static list of sessions shared between all sockets
-      inline static std::map<int64_t, std::shared_ptr<Session<T>>> sessions;
+      inline static std::map<std::string, std::shared_ptr<Session<T>>> sessions;
     };
     
 }} // namespace iganet::webapp
@@ -150,7 +131,7 @@ int main(int argc, char const* argv[])
   // compiler << "#include <iganet.hpp>\n"
   //          << "namespace iganet {\n"
   //          << "EXPORT std::shared_ptr<iganet::core<double>> create()\n"
-  //          << "{ return std::make_shared<iganet::core<double>>(iganet::uniformBSpline<double,1,1>({5})); }"
+  //          << "{ return std::make_shared<iganet::core<double>>(iganet::UniformBSpline<double,1,1>({5})); }"
   //          << "} // namespace iganet\n";
 
   // try {
@@ -163,8 +144,10 @@ int main(int argc, char const* argv[])
   //     throw std::runtime_error("An error occured while loading the dynamic library");
   //   }      
   // } catch(...) {
-  //   throw std::runtime_error("An error occured while compiling the quantum expression");
+  //   throw std::runtime_error("An error occured while compiling the dynamic library");
   // }
+
+  // exit(0);
   
   using PerSocketData = iganet::webapp::Sessions<double>;
   
@@ -220,7 +203,7 @@ int main(int argc, char const* argv[])
                 //
                 
                 // Get list of all active sessions
-                std::vector<int64_t> ids;
+                std::vector<std::string> ids;
                 for (const auto& session : ws->getUserData()->sessions)
                   ids.push_back(session.first);
                 response["data"] = ids;
@@ -229,58 +212,84 @@ int main(int argc, char const* argv[])
 
               else if (tokens.size() == 2) {
                 //
-                // request: get/<session-id>
+                // request: get/<session-uuid>
                 //
 
                 // Get session
-                auto session = ws->getUserData()->getSession(stoi(tokens[1]));
-                session->authenticate(request["token"]);
+                auto session = ws->getUserData()->getSession(tokens[1]);
+                //session->authenticate(request["token"]);
 
-                // Get list of all active objects in session
+                // Get list of all active models in session
                 std::vector<int64_t> ids;
-                for (const auto& object : session->objects)
-                  ids.push_back(object.first);
+                for (const auto& model : session->models)
+                  ids.push_back(model.first);
                 response["data"] = ids;
                 ws->send(response.dump(), uWS::OpCode::TEXT, true);
               }
 
               else if (tokens.size() == 3) {
                 //
-                // request: get/<session-id>/<object-id>
+                // request: get/<session-uuid>/<model-id>
                 //
 
                 // Get session
-                auto session = ws->getUserData()->getSession(stoi(tokens[1]));
-                session->authenticate(request["token"]);
+                auto session = ws->getUserData()->getSession(tokens[1]);
+                //session->authenticate(request["token"]);
 
-                // Get object
-                auto object = session->getObject(stoi(tokens[2]));
+                // Get model
+                auto model = session->getModel(stoi(tokens[2]));
                 
-                // Serialize object to JSON
-                response["data"] = object->to_json();
+                // Serialize model to JSON
+                response["data"] = model->to_json();
                 ws->send(response.dump(), uWS::OpCode::TEXT, true);
               }
 
               else if (tokens.size() == 4) {
                 //
-                // request: get/<session-id>/<object-id>/<attribute>
+                // request: get/<session-uuid>/<model-id>/<attribute>
                 //
 
                 // Get session
-                auto session = ws->getUserData()->getSession(stoi(tokens[1]));
-                session->authenticate(request["token"]);
+                auto session = ws->getUserData()->getSession(tokens[1]);
+                //session->authenticate(request["token"]);
 
-                // Get object
-                auto object = session->getObject(stoi(tokens[2]));
-                
-                // Serialize object to JSON
-                response["data"] = "Not implemented yet (get/<session-id>/<object-id>/<attribute>)";
+                // Get model
+                auto model = session->getModel(stoi(tokens[2]));
+
+                // // Get attribute
+                // if (tokens[3] == "geoDim") {
+                //   data["geoDim"]  = model->geoDim();
+                // }
+                // else if (tokens[3] == "parDim") {
+                //   data["parDim"]  = model->parDim();
+                // }
+                // else if (tokens[3] == "degrees") {
+                //   data["degrees"] = model()->degrees();
+                // }
+                // else if (tokens[3] == "ncoeffs") {
+                //   data["ncoeffs"] = model->ncoeffs();
+                // }
+                // else if (tokens[3] == "nknots") {
+                //   data["nknots"]  = model->nknots();
+                // }
+                // else if (tokens[3] == "coeffs") {
+                // }
+                // else if (tokens[3] == "knots") {
+                // }
+                // else {
+                //   response["status"] = 1;
+                //   response["reason"] = "Invalid attribute. Valid attributes are \"geoDim\", \"parDim\", \"degrees\", \"ncoeffs\", \"ncoeffs\", \"nknots\", \"coeffs\", and \"knots\"";
+                // ws->send(response.dump(), uWS::OpCode::TEXT, true);                
+                // }
+                  
+                // Serialize model to JSON
+                response["data"] = "Not implemented yet (get/<session-uuid>/<model-id>/<attribute>)";
                 ws->send(response.dump(), uWS::OpCode::TEXT, true);
               }
 
               else {
                 response["status"] = 1;
-                response["reason"] = "Invalid get request. Valid requests are \"get\", \"get/<session-id>\", \"get/<session-id>/<object-id>\", and \"get/<session-id>/<object-id>/<attribute>\"";
+                response["reason"] = "Invalid get request. Valid requests are \"get\", \"get/<session-uuid>\", \"get/<session-uuid>/<model-id>\", and \"get/<session-uuid>/<model-id>/<attribute>\"";
                 ws->send(response.dump(), uWS::OpCode::TEXT, true);                
               }
                 
@@ -293,23 +302,23 @@ int main(int argc, char const* argv[])
 
               if (tokens.size() == 3) {
                 //
-                // request: put/<session-id>/<object-id>/<attribute>
+                // request: put/<session-uuid>/<model-id>/<attribute>
                 //
 
                 // Get session
-                auto session = ws->getUserData()->getSession(stoi(tokens[1]));
-                session->authenticate(request["token"]);
+                auto session = ws->getUserData()->getSession(tokens[1]);
+                //session->authenticate(request["token"]);
 
-                // Get object
-                auto object = session->getObject(stoi(tokens[2]));
+                // Get model
+                auto model = session->getModel(stoi(tokens[2]));
 
-                response["data"] = "Not implemented yet (put/<session-id>/<object-id>/<attribute>)";
+                response["data"] = "Not implemented yet (put/<session-uuid>/<model-id>/<attribute>)";
                 ws->send(response.dump(), uWS::OpCode::TEXT, true);
               }
               
               else {
                 response["status"] = 1;
-                response["reason"] = "Invalid put request. Valid requests are \"put/<session-id>/<object-id>/<attribute>\"";
+                response["reason"] = "Invalid put request. Valid requests are \"put/<session-uuid>/<model-id>/<attribute>\"";
                 ws->send(response.dump(), uWS::OpCode::TEXT, true);                
               }
               
@@ -326,30 +335,29 @@ int main(int argc, char const* argv[])
                 //
                 
                 // Create a new session
-                int64_t id = (ws->getUserData()->sessions.size() > 0 ?
-                              ws->getUserData()->sessions.crbegin()->first+1 : 0);
-                ws->getUserData()->sessions[id] = std::make_shared<iganet::webapp::Session<double>>();
-                response["data"]["id"] = std::to_string(id);
-                response["data"]["token"] = ws->getUserData()->sessions[id]->getToken();
+                auto session = std::make_shared<iganet::webapp::Session<double>>();
+                std::string uuid = session->getUUID();
+                ws->getUserData()->sessions[uuid] = session; 
+                response["data"]["uuid"] = uuid;
                 ws->send(response.dump(), uWS::OpCode::TEXT, true);                
               }
               
               else if (tokens.size() == 3) {
                 //
-                // request: create/<session-id>/<object-type>
+                // request: create/<session-uuid>/<model-type>
                 //
 
                 // Get session
-                auto session = ws->getUserData()->getSession(stoi(tokens[1]));
-                session->authenticate(request["token"]);
+                auto session = ws->getUserData()->getSession(tokens[1]);
+                //session->authenticate(request["token"]);
                 
-                // Create new object
-                int64_t id = (session->objects.size() > 0 ?
-                              session->objects.crbegin()->first+1 : 0);
+                // Create new model
+                int64_t id = (session->models.size() > 0 ?
+                              session->models.crbegin()->first+1 : 0);
                 
-                // Create a new object
+                // Create a new model
                 if (tokens[2] == "uniformBSpline") {
-                  // Create a new uniform B-Spline object
+                  // Create a new uniform B-Spline model
 
                   try {
                     // nlohmann::json data = request["data"];
@@ -358,7 +366,7 @@ int main(int argc, char const* argv[])
                     // std::vector<short_t> parDim  = data["parDim"];
                     // std::vector<int64_t> ncoeffs = data["ncoeffs"];
 
-                    session->objects[id] = std::make_shared<iganet::UniformBSpline<double,1,1,1>>(iganet::UniformBSpline<double,1,1,1>({5,6}));
+                    session->models[id] = std::make_shared<iganet::UniformBSpline<double,1,1,1>>(iganet::UniformBSpline<double,1,1,1>({5,6}));
                     response["data"]["id"] = std::to_string(id);
                     ws->send(response.dump(), uWS::OpCode::TEXT, true);
                     
@@ -369,7 +377,7 @@ int main(int argc, char const* argv[])
                   }
                 }
                 else if (tokens[2] == "nonuniformBSpline") {
-                  // Create a new non-uniform B-Spline object
+                  // Create a new non-uniform B-Spline model
 
                   try {
                     // nlohmann::json data = request["data"];
@@ -378,7 +386,7 @@ int main(int argc, char const* argv[])
                     // std::vector<short_t> parDim  = data["parDim"];
                     // std::vector<int64_t> ncoeffs = data["ncoeffs"];
                     
-                    session->objects[id] = std::make_shared<iganet::UniformBSpline<double,1,1,1>>(iganet::UniformBSpline<double,1,1,1>({5,6}));
+                    session->models[id] = std::make_shared<iganet::UniformBSpline<double,1,1,1>>(iganet::UniformBSpline<double,1,1,1>({5,6}));
                     response["data"]["id"] = std::to_string(id);
                     ws->send(response.dump(), uWS::OpCode::TEXT, true);
                     
@@ -390,14 +398,14 @@ int main(int argc, char const* argv[])
                 }
                 else {
                   response["status"] = 1;
-                  response["reason"] = "\"" + tokens[2] + "\" is not a valid object type";
+                  response["reason"] = "\"" + tokens[2] + "\" is not a valid model type";
                   ws->send(response.dump(), uWS::OpCode::TEXT, true);
                 }
               }
               
               else {
                 response["status"] = 1;
-                response["reason"] = "Invalid create request. Valid requests are \"create/session\" and \"create/<session-id>/<object-type>\"";
+                response["reason"] = "Invalid create request. Valid requests are \"create/session\" and \"create/<session-uuid>/<model-type>\"";
                 ws->send(response.dump(), uWS::OpCode::TEXT, true);
               }                             
             }
@@ -409,31 +417,31 @@ int main(int argc, char const* argv[])
 
               if (tokens.size() == 2) {
                 //
-                // request: remove/<session-id>
+                // request: remove/<session-uuid>
                 //
 
                 // Remove session
-                auto session = ws->getUserData()->removeSession(stoi(tokens[1]), request["token"]);
+                auto session = ws->getUserData()->removeSession(tokens[1]);
                 ws->send(response.dump(), uWS::OpCode::TEXT, true);
               }
 
               else if (tokens.size() == 3) {
                 //
-                // request: remove/<session-id>/<object-id>
+                // request: remove/<session-uuid>/<model-id>
                 //
 
                 // Get session
-                auto session = ws->getUserData()->getSession(stoi(tokens[1]));
-                session->authenticate(request["token"]);
+                auto session = ws->getUserData()->getSession(tokens[1]);
+                //session->authenticate(request["token"]);
 
-                // Remove object
-                auto object = session->removeObject(stoi(tokens[2]));
+                // Remove model
+                auto model = session->removeModel(stoi(tokens[2]));
                 ws->send(response.dump(), uWS::OpCode::TEXT, true);
               }
 
               else {
                 response["status"] = 1;
-                response["reason"] = "Invalid remove request. Valid requests are \"remove/<session-id>\" and \"remove/<session-id>/<object-id>\"";
+                response["reason"] = "Invalid remove request. Valid requests are \"remove/<session-uuid>\" and \"remove/<session-uuid>/<model-id>\"";
                 ws->send(response.dump(), uWS::OpCode::TEXT, true);
               }
                             
@@ -446,12 +454,12 @@ int main(int argc, char const* argv[])
 
               if (tokens.size() == 2) {
                 //
-                // request: connect/<session-id>
+                // request: connect/<session-uuid>
                 //
 
                 // Get session
-                auto session = ws->getUserData()->getSession(stoi(tokens[1]));
-                session->authenticate(request["token"]);
+                auto session = ws->getUserData()->getSession(tokens[1]);
+                //session->authenticate(request["token"]);
 
                 // Connect to an existing session
 
@@ -460,7 +468,7 @@ int main(int argc, char const* argv[])
 
               else {
                 response["status"] = 1;
-                response["reason"] = "Invalid connect request. Valid requests are \"connect/<session-id>\"";
+                response["reason"] = "Invalid connect request. Valid requests are \"connect/<session-uuid>\"";
                 ws->send(response.dump(), uWS::OpCode::TEXT, true);
               }              
             }
@@ -472,12 +480,12 @@ int main(int argc, char const* argv[])
 
               if (tokens.size() == 2) {
                 //
-                // request: diconnect/<session-id>
+                // request: diconnect/<session-uuid>
                 //
 
                 // Get session
-                auto session = ws->getUserData()->getSession(stoi(tokens[1]));
-                session->authenticate(request["token"]);
+                auto session = ws->getUserData()->getSession(tokens[1]);
+                //session->authenticate(request["token"]);
 
                 // Disconnect from an existing session
 
@@ -486,7 +494,7 @@ int main(int argc, char const* argv[])
 
               else {
                 response["status"] = 1;
-                response["reason"] = "Invalid disconnect request. Valid requests are \"diconnect/<session-id>\"";
+                response["reason"] = "Invalid disconnect request. Valid requests are \"diconnect/<session-uuid>\"";
                 ws->send(response.dump(), uWS::OpCode::TEXT, true);
               }              
             }
@@ -498,18 +506,18 @@ int main(int argc, char const* argv[])
 
               if (tokens.size() == 3) {
                 //
-                // request: eval/<session-id>/<object-id>
+                // request: eval/<session-uuid>/<model-id>
                 //
 
                 // Get session
-                auto session = ws->getUserData()->getSession(stoi(tokens[1]));
-                session->authenticate(request["token"]);
+                auto session = ws->getUserData()->getSession(tokens[1]);
+                //session->authenticate(request["token"]);
 
-                // Get object
-                auto object = session->getObject(stoi(tokens[2]));
+                // Get model
+                auto model = session->getModel(stoi(tokens[2]));
                 
-                // Evaluate an existing object
-                if (auto spline = std::dynamic_pointer_cast<iganet::UniformBSpline<double,1,1,1>>(object)) {
+                // Evaluate an existing model
+                if (auto spline = std::dynamic_pointer_cast<iganet::UniformBSpline<double,1,1,1>>(model)) {
                   switch (spline->parDim()) {
                   // case 1:
                   //   iganet::TensorArray1 xi1 = {torch::linspace(0,1,100)};
@@ -545,7 +553,7 @@ int main(int argc, char const* argv[])
               }
               else {
                 response["status"] = 1;
-                response["reason"] = "Invalid eval request. Valid requests are \"eval/<session-id>/<object-id>\"";
+                response["reason"] = "Invalid eval request. Valid requests are \"eval/<session-uuid>/<model-id>\"";
                 ws->send(response.dump(), uWS::OpCode::TEXT, true);
               }              
             }
@@ -557,24 +565,24 @@ int main(int argc, char const* argv[])
 
               if (tokens.size() == 3) {
                 //
-                // request: refine/<session-id>/<object-id>
+                // request: refine/<session-uuid>/<model-id>
                 //
 
                 // Get session
-                auto session = ws->getUserData()->getSession(stoi(tokens[1]));
-                session->authenticate(request["token"]);
+                auto session = ws->getUserData()->getSession(tokens[1]);
+                //session->authenticate(request["token"]);
 
-                // Get object
-                auto object = session->getObject(stoi(tokens[2]));
+                // Get model
+                auto model = session->getModel(stoi(tokens[2]));
 
-                // Refine an existing object
+                // Refine an existing model
 
                 // TODO
               }
 
               else {
                 response["status"] = 1;
-                response["reason"] = "Invalid refine request. Valid requests are \"refine/<session-id>/<object-id>\"";
+                response["reason"] = "Invalid refine request. Valid requests are \"refine/<session-uuid>/<model-id>\"";
                 ws->send(response.dump(), uWS::OpCode::TEXT, true);
               }              
             }
