@@ -1,6 +1,6 @@
 before_script:
    - apt-get update -y
-   - apt-get install build-essential doxygen locales unzip wget zlib1g-dev -y
+   - apt-get install build-essential doxygen locales unzip wget zlib1g-dev libstdc++-11-dev -y
    - wget https://github.com/Kitware/CMake/releases/download/v3.24.3/cmake-3.24.3-linux-x86_64.tar.gz
    - tar xvzf cmake-3.24.3-linux-x86_64.tar.gz -C /
    - rm -f cmake-3.24.3-linux-x86_64.tar.gz
