@@ -29,11 +29,11 @@ foreach(webapp ${WEBAPPS})
   file(RELATIVE_PATH filename ${CMAKE_CURRENT_SOURCE_DIR} ${webapp})
   string(REPLACE ".cxx" "" name ${filename})
   add_executable(${name} ${filename})
-  target_link_libraries(${name} PUBLIC "${TORCH_LIBRARIES}")
-  target_link_libraries(${name} PUBLIC usockets)
+  target_link_libraries(${name} PUBLIC ${TORCH_LIBRARIES})
   target_link_libraries(${name} PUBLIC ${ZLIB_LIBRARIES})
-  
-  if (IGANET_WITH_MATPLOT)
-    target_link_libraries(${name} PUBLIC Matplot++::matplot)
-  endif()
+  target_link_libraries(${name} PUBLIC usockets)
 endforeach()
+
+
+add_library(libtest SHARED test.cpp)
+target_link_libraries(libtest PUBLIC ${TORCH_LIBRARIES})
