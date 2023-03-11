@@ -106,7 +106,6 @@ find_package(ZLIB REQUIRED)
 
 if (IGANET_WITH_MATPLOT)
   include(Matplot++)
-  add_compile_definitions(WITH_MATPLOT)
 endif()
 
 ########################################################################
@@ -265,9 +264,6 @@ message("")
 # Add kernel directory
 ########################################################################
 include_directories(${PROJECT_SOURCE_DIR}/include)
-include_directories(${PROJECT_BINARY_DIR}/include)
-configure_file(${PROJECT_SOURCE_DIR}/include/jit.hpp.in
-  ${PROJECT_BINARY_DIR}/include/jit.hpp @ONLY)
 
 ########################################################################
 # Add examples (if enabled)
