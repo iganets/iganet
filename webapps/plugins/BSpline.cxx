@@ -1,5 +1,5 @@
 /**
-   @file plugin/BSpline.cpp
+   @file plugins/BSpline.cxx
 
    @brief BSpline test pluging
 
@@ -12,4 +12,16 @@
    file, You can obtain one at http://mozilla.org/MPL/2.0/.
 */
 
+#ifdef _WIN32
+#ifdef __cplusplus
+#define EXPORT extern "C" __declspec(dllexport)
+#endif
+#else
+#ifdef __cplusplus
+#define EXPORT extern "C"
+#endif
+#endif
 
+#include <iganet.hpp>
+
+static iganet::UniformBSpline<double,1,1,1> bspline({5,5});

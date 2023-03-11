@@ -13,24 +13,12 @@
 ########################################################################
 
 ########################################################################
-# Prerequisites
+# Plugins
 ########################################################################
-include(popl)
-include(websockets)
-
-########################################################################
-# WebApps
-########################################################################
-find_package(ZLIB REQUIRED)
-
-file(GLOB WEBAPPS *.cxx)
-foreach(webapp ${WEBAPPS})
-  file(RELATIVE_PATH filename ${CMAKE_CURRENT_SOURCE_DIR} ${webapp})
+file(GLOB PLUGINS *.cxx)
+foreach(plugin ${PLUGINS})
+  file(RELATIVE_PATH filename ${CMAKE_CURRENT_SOURCE_DIR} ${plugin})
   string(REPLACE ".cxx" "" name ${filename})
-  add_executable(${name} ${filename})
+  add_library(${name} SHARED ${filename})
   target_link_libraries(${name} PUBLIC ${TORCH_LIBRARIES})
-  target_link_libraries(${name} PUBLIC ${ZLIB_LIBRARIES})
-  target_link_libraries(${name} PUBLIC usockets)
 endforeach()
-
-add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/plugins)
