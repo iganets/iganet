@@ -14,7 +14,7 @@
 
 #include <App.h>
 #include <iganet.hpp>
-#include <jit.hpp>
+#include <pluginmanager.hpp>
 #include <popl.hpp>
 #include <iostream>
 #include <tuple>
@@ -69,7 +69,7 @@ namespace iganet { namespace webapp {
       }
       
       /// Returns the requested model or throws an exception
-      std::shared_ptr<iganet::core<T>> getModel(int64_t id) {
+      std::shared_ptr<iganet::Plugin> getModel(int64_t id) {
         auto it = models.find(id);
         if (it == models.end())
           throw InvalidModelIdException();
@@ -78,7 +78,7 @@ namespace iganet { namespace webapp {
       }
 
       /// Returns the model and removes it from the list of models
-      std::shared_ptr<iganet::core<T>> removeModel(int64_t id) {
+      std::shared_ptr<iganet::Plugin> removeModel(int64_t id) {
         auto it = models.find(id);
         if (it == models.end())
           throw InvalidModelIdException();
@@ -90,7 +90,7 @@ namespace iganet { namespace webapp {
       }
       
       /// @brief List of models
-      std::map<int64_t, std::shared_ptr<iganet::core<T>>> models;
+      std::map<int64_t, std::shared_ptr<iganet::Plugin>> models;
     };
     
     /// @brief Sessions structure
@@ -118,8 +118,11 @@ namespace iganet { namespace webapp {
         }
       }
       
-      /// Static list of sessions shared between all sockets
+      /// List of sessions shared between all sockets
       inline static std::map<std::string, std::shared_ptr<Session<T>>> sessions;
+
+      /// List of plugins
+      inline static iganet::PluginManager plugins = iganet::PluginManager("webapps/plugins");
     };
     
 }} // namespace iganet::webapp
@@ -127,28 +130,6 @@ namespace iganet { namespace webapp {
 
 int main(int argc, char const* argv[])
 {
-  // iganet::JITCompiler compiler;
-  // compiler << "#include <iganet.hpp>\n"
-  //          << "namespace iganet {\n"
-  //          << "EXPORT std::shared_ptr<iganet::core<double>> create()\n"
-  //          << "{ return std::make_shared<iganet::core<double>>(iganet::UniformBSpline<double,1,1>({5})); }"
-  //          << "} // namespace iganet\n";
-
-  // try {
-  //   iganet::DynamicLibrary dl = compiler.build();
-  //   try {
-  //     typedef std::shared_ptr<iganet::core<double>> (dl_expr)();
-  //     dl_expr * e = dl.getSymbol<dl_expr>("create");
-  //     std::cout << e() << std::endl;
-  //   } catch (...) {
-  //     throw std::runtime_error("An error occured while loading the dynamic library");
-  //   }      
-  // } catch(...) {
-  //   throw std::runtime_error("An error occured while compiling the dynamic library");
-  // }
-
-  // exit(0);
-  
   using PerSocketData = iganet::webapp::Sessions<double>;
   
   popl::OptionParser op("Allowed options");
@@ -165,7 +146,7 @@ int main(int argc, char const* argv[])
     std::cout << op.help(popl::Attribute::expert) << std::endl;  
   
   // Create WebSocket application
-  uWS::App().ws<PerSocketData>("/*", {
+  uWS::SSLApp().ws<PerSocketData>("/*", {
       /* Settings */
       .compression = uWS::CompressOptions(uWS::DEDICATED_COMPRESSOR_4KB |
                                           uWS::DEDICATED_DECOMPRESSOR),
@@ -253,31 +234,7 @@ int main(int argc, char const* argv[])
                 // Get model
                 auto model = session->getModel(stoi(tokens[2]));
 
-                // // Get attribute
-                // if (tokens[3] == "geoDim") {
-                //   data["geoDim"]  = model->geoDim();
-                // }
-                // else if (tokens[3] == "parDim") {
-                //   data["parDim"]  = model->parDim();
-                // }
-                // else if (tokens[3] == "degrees") {
-                //   data["degrees"] = model()->degrees();
-                // }
-                // else if (tokens[3] == "ncoeffs") {
-                //   data["ncoeffs"] = model->ncoeffs();
-                // }
-                // else if (tokens[3] == "nknots") {
-                //   data["nknots"]  = model->nknots();
-                // }
-                // else if (tokens[3] == "coeffs") {
-                // }
-                // else if (tokens[3] == "knots") {
-                // }
-                // else {
-                //   response["status"] = 1;
-                //   response["reason"] = "Invalid attribute. Valid attributes are \"geoDim\", \"parDim\", \"degrees\", \"ncoeffs\", \"ncoeffs\", \"nknots\", \"coeffs\", and \"knots\"";
-                // ws->send(response.dump(), uWS::OpCode::TEXT, true);                
-                // }
+                // Get attribute                
                   
                 // Serialize model to JSON
                 response["data"] = "Not implemented yet (get/<session-uuid>/<model-id>/<attribute>)";
@@ -335,6 +292,7 @@ int main(int argc, char const* argv[])
                 std::string uuid = session->getUUID();
                 ws->getUserData()->sessions[uuid] = session; 
                 response["data"]["id"] = uuid;
+                response["data"]["models"] = ws->getUserData()->plugins.getPlugins();
                 ws->send(response.dump(), uWS::OpCode::TEXT, true);                
               }
               
@@ -351,51 +309,16 @@ int main(int argc, char const* argv[])
                               session->models.crbegin()->first+1 : 0);
                 
                 // Create a new model
-                if (tokens[2] == "uniformBSpline") {
-                  // Create a new uniform B-Spline model
-
-                  try {
-                    // nlohmann::json data = request["data"];
-                    // short_t geoDim = data["geoDim"];
-                    // short_t init   = data["init"];
-                    // std::vector<short_t> parDim  = data["parDim"];
-                    // std::vector<int64_t> ncoeffs = data["ncoeffs"];
-
-                    session->models[id] = std::make_shared<iganet::UniformBSpline<double,1,1,1>>(iganet::UniformBSpline<double,1,1,1>({5,6}));
-                    response["data"]["id"] = std::to_string(id);
-                    ws->send(response.dump(), uWS::OpCode::TEXT, true);
-                    
-                  } catch(...) {
-                    response["status"] = 1;
-                    response["reason"] = "Malformed create request";
-                    ws->send(response.dump(), uWS::OpCode::TEXT, true);
-                  }
-                }
-                else if (tokens[2] == "nonuniformBSpline") {
-                  // Create a new non-uniform B-Spline model
-
-                  try {
-                    // nlohmann::json data = request["data"];
-                    // short_t geoDim = data["geoDim"];
-                    // short_t init   = data["init"];
-                    // std::vector<short_t> parDim  = data["parDim"];
-                    // std::vector<int64_t> ncoeffs = data["ncoeffs"];
-                    
-                    session->models[id] = std::make_shared<iganet::UniformBSpline<double,1,1,1>>(iganet::UniformBSpline<double,1,1,1>({5,6}));
-                    response["data"]["id"] = std::to_string(id);
-                    ws->send(response.dump(), uWS::OpCode::TEXT, true);
-                    
-                  } catch(...) {
-                    response["status"] = 1;
-                    response["reason"] = "Malformed create request";
-                    ws->send(response.dump(), uWS::OpCode::TEXT, true);
-                  }
-                }
-                else {
-                  response["status"] = 1;
-                  response["reason"] = "\"" + tokens[2] + "\" is not a valid model type";
+                try {
+                  session->models[id] = ws->getUserData()->plugins.create(tokens[2], request);
+                  response["data"]["id"] = std::to_string(id);
                   ws->send(response.dump(), uWS::OpCode::TEXT, true);
-                }
+                  
+                } catch(...) {
+                  response["status"] = 1;
+                  response["reason"] = "Malformed create request";
+                  ws->send(response.dump(), uWS::OpCode::TEXT, true);
+                }                
               }
               
               else {
@@ -508,39 +431,23 @@ int main(int argc, char const* argv[])
                 auto model = session->getModel(stoi(tokens[2]));
                 
                 // Evaluate an existing model
-                if (auto spline = std::dynamic_pointer_cast<iganet::UniformBSpline<double,1,1,1>>(model)) {
-                  switch (spline->parDim()) {
-                  // case 1:
-                  //   iganet::TensorArray1 xi1 = {torch::linspace(0,1,100)};
-                  //   auto data1 = spline->eval(xi1);
-                  //   response["data"] = ::iganet::to_json<double,1>(*data1[0]);
-                  //   ws->send(response.dump(), uWS::OpCode::TEXT, true);
-                  //   break;
-                    
-                  case 2:
-                    iganet::TensorArray2 xi2 = {torch::linspace(0,1,100),
-                                                torch::linspace(0,1,100)};
-                    auto data2 = spline->eval(xi2);
-                    response["data"] = ::iganet::to_json<double,1>(*data2[0]);
-                    ws->send(response.dump(), uWS::OpCode::TEXT, true);
-                    break;
-
-                  // case 3:
-                  //   iganet::TensorArray3 xi3 = {torch::linspace(0,1,100),
-                  //                               torch::linspace(0,1,100),
-                  //                               torch::linspace(0,1,100)};
-                  //   auto data3 = spline->eval(xi3);
-                  //   break;
-
-                  // case 4:
-                  //   iganet::TensorArray4 xi4 = {torch::linspace(0,1,100),
-                  //                               torch::linspace(0,1,100),
-                  //                               torch::linspace(0,1,100),
-                  //                               torch::linspace(0,1,100)};
-                  //   auto data4 = spline->eval(xi4);
-                  //   break;
-                  }
+                if (auto m = std::dynamic_pointer_cast<iganet::PluginEval<1,1>>(model))
+                  response["data"] = nlohmann::json::array()
+                    .emplace_back(::iganet::to_json<double,1>(*(m->eval(request))[0]));
+                else if (auto m = std::dynamic_pointer_cast<iganet::PluginEval<1,2>>(model))
+                  response["data"] = nlohmann::json::array()
+                    .emplace_back(::iganet::to_json<double,1>(*(m->eval(request))[0]));
+                else if (auto m = std::dynamic_pointer_cast<iganet::PluginEval<1,3>>(model))
+                  response["data"] = nlohmann::json::array()
+                    .emplace_back(::iganet::to_json<double,1>(*(m->eval(request))[0]));
+                else if (auto m = std::dynamic_pointer_cast<iganet::PluginEval<1,4>>(model))
+                  response["data"] = nlohmann::json::array()
+                    .emplace_back(::iganet::to_json<double,1>(*(m->eval(request))[0]));
+                else {
+                  response["status"] = 1;
+                  response["reason"] = "Invalid eval request. Valid requests are \"eval/<session-uuid>/<model-id>\"";
                 }
+                ws->send(response.dump(), uWS::OpCode::TEXT, true);
               }
               else {
                 response["status"] = 1;

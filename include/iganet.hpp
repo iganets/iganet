@@ -20,7 +20,6 @@
 #include <creator.hpp>
 #include <functionspace.hpp>
 #include <layer.hpp>
-#include <pluginloader.hpp>
 #include <zip.hpp>
 
 namespace iganet {
