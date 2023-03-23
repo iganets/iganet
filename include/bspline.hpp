@@ -440,7 +440,7 @@ namespace iganet {
       for (short_t i = 0; i < parDim_; ++i) {
 
         // Check that open knot vector can be created
-        if (degrees_[i] > ncoeffs_[i] + 1)
+        if ((degrees_[i] > ncoeffs_[i] + 1) || (ncoeffs_[i] < 2))
           throw std::runtime_error("Not enough coefficients to create open knot vector");
 
         // Create open uniform knot vector
@@ -1666,15 +1666,26 @@ namespace iganet {
 
     /// @brief Returns the B-spline object as JSON object
     inline nlohmann::json to_json() const override
-    {
+    {      
       nlohmann::json data;
       data["degrees"] = degrees_;
       data["geoDim"]  = geoDim_;
       data["parDim"]  = parDim_;
       data["ncoeffs"] = ncoeffs_;
       data["nknots"]  = nknots_;
-      data["knots"]   = ::iganet::to_json<value_type,1>(knots_);
+      data["knots"]   = knots_to_json();
+      data["coeffs"]  = coeffs_to_json();
 
+      return data;
+    }
+
+    /// @brief Returns the B-spline object's knots as JSON object
+    inline nlohmann::json knots_to_json() const {
+      return ::iganet::to_json<value_type,1>(knots_);      
+    }
+    
+    /// @brief Returns the B-spline object's coefficients as JSON object
+    inline nlohmann::json coeffs_to_json() const {
       auto coeffs_json = nlohmann::json::array();
       for (short_t g = 0; g < geoDim_; ++g) {
         auto [coeffs_cpu, coeffs_accessor] = to_tensorAccessor<value_type, 1>(coeffs_[g], torch::kCPU);
@@ -1707,9 +1718,7 @@ namespace iganet {
 
         coeffs_json.push_back(json);
       }
-      data["coeffs"] = coeffs_json;
-
-      return data;
+      return coeffs_json;
     }
 
     /// @brief Returns the B-spline object as XML string

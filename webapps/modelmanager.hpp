@@ -1,7 +1,7 @@
 /**
-   @file webapps/pluginmanager.hpp
+   @file webapps/modelmanager.hpp
 
-   @brief Plugin manager
+   @brief Model manager
 
    @author Matthias Moller
 
@@ -28,64 +28,64 @@
 
 namespace iganet {
 
-  /// @brief Plugin interface
-  class Plugin {
+  /// @brief Model interface
+  class Model {
   public:    
     /// @brief Destructor
-    virtual ~Plugin() {};
+    virtual ~Model() {};
     
-    /// @brief Returns the plugin's name
+    /// @brief Returns the model's name
     virtual std::string getName() const = 0;
 
-    /// @brief Returns the plugin's description
+    /// @brief Returns the model's description
     virtual std::string getDescription() const = 0;
 
-    /// @brief Returns the plugin's options
+    /// @brief Returns the model's options
     virtual std::string getOptions() const = 0;
 
-    /// @brief Returns the plugin's JSON serialization
-    virtual nlohmann::json getPlugin() const {
+    /// @brief Returns the model's JSON serialization
+    virtual nlohmann::json getModel() const {     
       return nlohmann::json::parse(std::string("{ \"name\" : \"") + getName() + "\"," +
                                    "\"description\" : \"" + getDescription() + "\"," +
                                    "\"options\" : " + getOptions() + " }");
     }
     
-    /// @brief Serializes the plugin to JSON
-    virtual nlohmann::json to_json() const = 0;    
+    /// @brief Serializes the model to JSON
+    virtual nlohmann::json to_json(const std::string& attribute = "") const = 0;    
   };
   
-  /// @brief InvalidPlugin exception
-  struct InvalidPluginException : public std::exception {  
+  /// @brief InvalidModel exception
+  struct InvalidModelException : public std::exception {  
     const char * what() const throw() {  
-      return "Invalid plugin name";  
+      return "Invalid model name";  
     }
   };
 
-  /// @brief Plugin evaluator
-  template<short_t geoDim_, short_t parDim_>
-  class PluginEval : public Plugin {
+  /// @brief Model evaluator
+  template<short_t GeoDim, short_t ParDim>
+  class ModelEval : public Model {
   public:
-    /// @brief Evaluate plugin
-    virtual BlockTensor<torch::Tensor, 1, geoDim_> eval(const nlohmann::json& config) const = 0;
+    /// @brief Evaluate model
+    virtual BlockTensor<torch::Tensor, 1, GeoDim> eval(const nlohmann::json& config) const = 0;
   };
   
-  /// @brief Plugin manager
+  /// @brief Model manager
   ///
-  /// This class implements the plugin manager
-  class PluginManager {
+  /// This class implements the model manager
+  class ModelManager {
   private:
     
-    /// @brief PluginHandler
-    class PluginHandler {
+    /// @brief ModelHandler
+    class ModelHandler {
     public:
       
       /// @brief Default constructor deleted
-      PluginHandler() = delete;
-      PluginHandler(PluginHandler&&) = delete;
-      PluginHandler(const PluginHandler&) = delete;
+      ModelHandler() = delete;
+      ModelHandler(ModelHandler&&) = delete;
+      ModelHandler(const ModelHandler&) = delete;
       
       /// @brief Constructor from file
-      PluginHandler(const char * filename, int flags = RTLD_NOW) {
+      ModelHandler(const char * filename, int flags = RTLD_NOW) {
 #if defined(_WIN32)
         static_cast<void>(flags);
         HMODULE dl = LoadLibrary(filename);
@@ -133,57 +133,57 @@ namespace iganet {
 #endif
     };
 
-    /// @brief List of plugins
-    std::map<std::string, std::shared_ptr<PluginHandler>> plugins;
+    /// @brief List of models
+    std::map<std::string, std::shared_ptr<ModelHandler>> models;
     
   public:
     /// @brief Default constructor deleted
-    PluginManager() = delete;
+    ModelManager() = delete;
     
     /// @brief Constructor from filesystem
     /// @{
-    PluginManager(const std::string& path)
-      : PluginManager(std::vector<std::string>({path}))
+    ModelManager(const std::string& path)
+      : ModelManager(std::vector<std::string>({path}))
     {}
     
-    PluginManager(const std::vector<std::string>& paths) {
+    ModelManager(const std::vector<std::string>& paths) {
       for (const auto& path : paths) {
         const std::filesystem::path fspath{path};
         for (const auto& entry : std::filesystem::directory_iterator{fspath}) {
           if (entry.path().extension() == ".dylib" ||
               entry.path().extension() == ".so") {
-            auto handler = std::make_shared<PluginHandler>(entry.path().c_str());
-            std::shared_ptr<Plugin> (*create)();
-            create = reinterpret_cast<std::shared_ptr<Plugin> (*)()> (handler->getSymbol("create"));
-            plugins[create()->getName()] = std::move(handler);
+            auto handler = std::make_shared<ModelHandler>(entry.path().c_str());
+            std::shared_ptr<Model> (*create)();
+            create = reinterpret_cast<std::shared_ptr<Model> (*)()> (handler->getSymbol("create"));
+            models[create()->getName()] = std::move(handler);
           }
         }
       }
     }    
     /// @}
 
-    /// @brief Returns a new instance of the requested plugin and
-    /// throws an exception if plugin cannot be found
-    std::shared_ptr<Plugin> create(const std::string& name,
+    /// @brief Returns a new instance of the requested model and
+    /// throws an exception if model cannot be found
+    std::shared_ptr<Model> create(const std::string& name,
                                    const nlohmann::json& config = NULL) const {
       try {
-        auto it = plugins.find(name);
-        if (it == plugins.end())
-          throw InvalidPluginException();
+        auto it = models.find(name);
+        if (it == models.end())
+          throw InvalidModelException();
         
-        std::shared_ptr<Plugin> (*create)(const nlohmann::json&);
-        create = reinterpret_cast<std::shared_ptr<Plugin> (*)(const nlohmann::json&)> (it->second->getSymbol("create"));
+        std::shared_ptr<Model> (*create)(const nlohmann::json&);
+        create = reinterpret_cast<std::shared_ptr<Model> (*)(const nlohmann::json&)> (it->second->getSymbol("create"));
         return create(config);
       } catch(...) {
-        throw InvalidPluginException();
+        throw InvalidModelException();
       }
     }
 
-    /// @brief Serializes the list of plugins to JSON
-    nlohmann::json getPlugins() const {
+    /// @brief Serializes the list of models to JSON
+    nlohmann::json getModels() const {
       auto data = nlohmann::json::array();
-      for (auto const& plugin : plugins)
-        data.push_back(create(plugin.first)->getPlugin());
+      for (auto const& model : models)
+        data.push_back(create(model.first)->getModel());
       return data;
     }
   };

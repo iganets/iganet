@@ -14,7 +14,7 @@
 
 #include <App.h>
 #include <iganet.hpp>
-#include <pluginmanager.hpp>
+#include <modelmanager.hpp>
 #include <popl.hpp>
 #include <iostream>
 #include <tuple>
@@ -69,7 +69,7 @@ namespace iganet { namespace webapp {
       }
       
       /// Returns the requested model or throws an exception
-      std::shared_ptr<iganet::Plugin> getModel(int64_t id) {
+      std::shared_ptr<iganet::Model> getModel(int64_t id) {
         auto it = models.find(id);
         if (it == models.end())
           throw InvalidModelIdException();
@@ -78,7 +78,7 @@ namespace iganet { namespace webapp {
       }
 
       /// Returns the model and removes it from the list of models
-      std::shared_ptr<iganet::Plugin> removeModel(int64_t id) {
+      std::shared_ptr<iganet::Model> removeModel(int64_t id) {
         auto it = models.find(id);
         if (it == models.end())
           throw InvalidModelIdException();
@@ -90,7 +90,7 @@ namespace iganet { namespace webapp {
       }
       
       /// @brief List of models
-      std::map<int64_t, std::shared_ptr<iganet::Plugin>> models;
+      std::map<int64_t, std::shared_ptr<iganet::Model>> models;
     };
     
     /// @brief Sessions structure
@@ -121,8 +121,8 @@ namespace iganet { namespace webapp {
       /// List of sessions shared between all sockets
       inline static std::map<std::string, std::shared_ptr<Session<T>>> sessions;
 
-      /// List of plugins
-      inline static iganet::PluginManager plugins = iganet::PluginManager("webapps/plugins");
+      /// List of models
+      inline static iganet::ModelManager models = iganet::ModelManager("webapps/models");
     };
     
 }} // namespace iganet::webapp
@@ -144,6 +144,9 @@ int main(int argc, char const* argv[])
     std::cout << op.help(popl::Attribute::advanced) << std::endl;
   else if (help_option->count() > 2)
     std::cout << op.help(popl::Attribute::expert) << std::endl;  
+
+  // Initialize backend
+  iganet::init();
   
   // Create WebSocket application
   uWS::SSLApp().ws<PerSocketData>("/*", {
@@ -233,11 +236,9 @@ int main(int argc, char const* argv[])
 
                 // Get model
                 auto model = session->getModel(stoi(tokens[2]));
-
-                // Get attribute                
                   
-                // Serialize model to JSON
-                response["data"] = "Not implemented yet (get/<session-uuid>/<model-id>/<attribute>)";
+                // Serialize model attribute to JSON
+                response["data"] = model->to_json(tokens[3]);
                 ws->send(response.dump(), uWS::OpCode::TEXT, true);
               }
 
@@ -292,7 +293,7 @@ int main(int argc, char const* argv[])
                 std::string uuid = session->getUUID();
                 ws->getUserData()->sessions[uuid] = session; 
                 response["data"]["id"] = uuid;
-                response["data"]["models"] = ws->getUserData()->plugins.getPlugins();
+                response["data"]["models"] = ws->getUserData()->models.getModels();
                 ws->send(response.dump(), uWS::OpCode::TEXT, true);                
               }
               
@@ -310,7 +311,7 @@ int main(int argc, char const* argv[])
                 
                 // Create a new model
                 try {
-                  session->models[id] = ws->getUserData()->plugins.create(tokens[2], request);
+                  session->models[id] = ws->getUserData()->models.create(tokens[2], request);
                   response["data"]["id"] = std::to_string(id);
                   ws->send(response.dump(), uWS::OpCode::TEXT, true);
                   
@@ -431,16 +432,16 @@ int main(int argc, char const* argv[])
                 auto model = session->getModel(stoi(tokens[2]));
                 
                 // Evaluate an existing model
-                if (auto m = std::dynamic_pointer_cast<iganet::PluginEval<1,1>>(model))
+                if (auto m = std::dynamic_pointer_cast<iganet::ModelEval<1,1>>(model))
                   response["data"] = nlohmann::json::array()
                     .emplace_back(::iganet::to_json<double,1>(*(m->eval(request))[0]));
-                else if (auto m = std::dynamic_pointer_cast<iganet::PluginEval<1,2>>(model))
+                else if (auto m = std::dynamic_pointer_cast<iganet::ModelEval<1,2>>(model))
                   response["data"] = nlohmann::json::array()
                     .emplace_back(::iganet::to_json<double,1>(*(m->eval(request))[0]));
-                else if (auto m = std::dynamic_pointer_cast<iganet::PluginEval<1,3>>(model))
+                else if (auto m = std::dynamic_pointer_cast<iganet::ModelEval<1,3>>(model))
                   response["data"] = nlohmann::json::array()
                     .emplace_back(::iganet::to_json<double,1>(*(m->eval(request))[0]));
-                else if (auto m = std::dynamic_pointer_cast<iganet::PluginEval<1,4>>(model))
+                else if (auto m = std::dynamic_pointer_cast<iganet::ModelEval<1,4>>(model))
                   response["data"] = nlohmann::json::array()
                     .emplace_back(::iganet::to_json<double,1>(*(m->eval(request))[0]));
                 else {

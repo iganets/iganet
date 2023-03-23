@@ -1,7 +1,7 @@
 /**
-   @file plugins/Poisson2d.cxx
+   @file models/Poisson2d.cxx
 
-   @brief Poisson equation in 2d pluging
+   @brief Poisson equation in 2d model
 
    @author Matthias Moller
 
@@ -13,37 +13,37 @@
 */
 
 #include <iganet.hpp>
-#include <pluginmanager.hpp>
+#include <modelmanager.hpp>
 
 namespace iganet {
 
-  /// @brief Poisson equation in 2d plugin
-  class Poisson2dPlugin : public Plugin,
-                          public UniformBSpline<double,1,1,1> {
+  /// @brief Poisson equation in 2d model
+  class Poisson2dModel : public Model,
+                         public UniformBSpline<double,1,1,1> {
   public:
     /// @brief Default constructor
-    Poisson2dPlugin() = default;
+    Poisson2dModel() = default;
     
     /// @brief Destructor
-    ~Poisson2dPlugin() {}
+    ~Poisson2dModel() {}
 
-    /// @brief Returns the plugin's name
+    /// @brief Returns the model's name
     std::string getName() const override {
       return "Poisson2d";
     }
     
-    /// @brief Returns the plugin's description
+    /// @brief Returns the model's description
     std::string getDescription() const override {
-      return "Poisson 2d pluging";
+      return "Poisson 2d model";
     }
 
-    /// @brief Returns the plugin's Options
+    /// @brief Returns the model's Options
     std::string getOptions() const override {
       return "{\"ncoeffs\" : \"int\"}";
     }
     
-    /// @brief Serializes the plugin to JSON
-    nlohmann::json to_json() const override {
+    /// @brief Serializes the model to JSON
+    nlohmann::json to_json(const std::string& attribute = "") const override {
       return UniformBSpline<double,1,1,1>::to_json();
     }
 
@@ -56,7 +56,7 @@ extern "C" __declspec(dllexport)
 extern "C"
 #endif
 {
-  std::shared_ptr<iganet::Plugin> create(const nlohmann::json& config) {
-    return std::make_shared<iganet::Poisson2dPlugin>();
+  std::shared_ptr<iganet::Model> create(const nlohmann::json& config) {
+    return std::make_shared<iganet::Poisson2dModel>();
   }
 }

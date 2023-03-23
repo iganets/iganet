@@ -13,11 +13,11 @@
 ########################################################################
 
 ########################################################################
-# Plugins
+# Modles
 ########################################################################
-file(GLOB PLUGINS *.cxx)
-foreach(plugin ${PLUGINS})
-  file(RELATIVE_PATH filename ${CMAKE_CURRENT_SOURCE_DIR} ${plugin})
+file(GLOB MODELS *.cxx)
+foreach(model ${MODELS})
+  file(RELATIVE_PATH filename ${CMAKE_CURRENT_SOURCE_DIR} ${model})
   string(REPLACE ".cxx" "" name ${filename})
   add_library(${name} SHARED ${filename})
   target_link_libraries(${name} PUBLIC ${TORCH_LIBRARIES})
