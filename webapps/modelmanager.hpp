@@ -160,9 +160,9 @@ namespace iganet {
           if (entry.path().extension() == ".dylib" ||
               entry.path().extension() == ".so") {
             auto handler = std::make_shared<ModelHandler>(entry.path().c_str());
-            std::shared_ptr<Model> (*create)();
-            create = reinterpret_cast<std::shared_ptr<Model> (*)()> (handler->getSymbol("create"));
-            models[create()->getName()] = std::move(handler);
+            std::shared_ptr<Model> (*create)(const nlohmann::json&);
+            create = reinterpret_cast<std::shared_ptr<Model> (*)(const nlohmann::json&)> (handler->getSymbol("create"));
+            models[create({})->getName()] = handler;
           }
         }
       }
