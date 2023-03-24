@@ -32,7 +32,9 @@ namespace iganet {
   
     /// @brief B-spline model
     template<class BSpline_t>
-    class BSplineModel : public ModelEval<BSpline_t::geoDim(), BSpline_t::parDim()>,
+    class BSplineModel : public Model,
+                         public ModelEval<BSpline_t::geoDim()>,
+                         public ModelRefine,
                          public BSpline_t {
     public:
       /// @brief Default constructor
@@ -185,7 +187,7 @@ namespace iganet {
             data["parDim"] = this->parDim();
           else if (attribute == "ncoeffs")
             data["ncoeffs"] = this->ncoeffs();
-          else if (attribute == "geoDim")
+          else if (attribute == "nknots")
             data["nknots"] = this->nknots();
           else if (attribute == "knots")
             data["knots"] = this->knots_to_json();
@@ -199,27 +201,56 @@ namespace iganet {
       /// @brief Evaluates the model
       BlockTensor<torch::Tensor, 1, 1> eval(const nlohmann::json& config = NULL) const override {
         if constexpr (BSpline_t::parDim() == 1) {
-          iganet::TensorArray1 xi = {torch::linspace(0,1,100)};
+
+          std::array<int64_t, 1> res({25});          
+          if (config.contains("data"))
+            if (config["data"].contains("resolution"))
+              res = config["data"]["resolution"].get<std::array<int64_t,1>>();
+          
+          iganet::TensorArray1 xi = {torch::linspace(0, 1, res[0])};
           return BSpline_t::eval(xi);
         }
         else if constexpr (BSpline_t::parDim() == 2) {
-          iganet::TensorArray2 xi = {torch::linspace(0,1,100),
-                                     torch::linspace(0,1,100)};
+
+          std::array<int64_t, 2> res({25, 25});          
+          if (config.contains("data"))
+            if (config["data"].contains("resolution"))
+              res = config["data"]["resolution"].get<std::array<int64_t,2>>();
+          
+          iganet::TensorArray2 xi = {torch::linspace(0, 1, res[0]),
+                                     torch::linspace(0, 1, res[1])};
           return BSpline_t::eval(xi);
         }
         else if constexpr (BSpline_t::parDim() == 3) {
-          iganet::TensorArray3 xi = {torch::linspace(0,1,100),
-                                     torch::linspace(0,1,100),
-                                     torch::linspace(0,1,100)};
+
+          std::array<int64_t, 3> res({25, 25, 25});          
+          if (config.contains("data"))
+            if (config["data"].contains("resolution"))
+              res = config["data"]["resolution"].get<std::array<int64_t,3>>();
+          
+          iganet::TensorArray3 xi = {torch::linspace(0, 1, res[0]),
+                                     torch::linspace(0, 1, res[1]),
+                                     torch::linspace(0, 1, res[2])};
           return BSpline_t::eval(xi);
         }
         else if constexpr (BSpline_t::parDim() == 4) {
-          iganet::TensorArray4 xi = {torch::linspace(0,1,100),
-                                     torch::linspace(0,1,100),
-                                     torch::linspace(0,1,100),
-                                     torch::linspace(0,1,100)};
+
+          std::array<int64_t, 4> res({25, 25, 25, 25});          
+          if (config.contains("data"))
+            if (config["data"].contains("resolution"))
+              res = config["data"]["resolution"].get<std::array<int64_t,4>>();
+          
+          iganet::TensorArray4 xi = {torch::linspace(0, 1, res[0]),
+                                     torch::linspace(0, 1, res[1]),
+                                     torch::linspace(0, 1, res[2]),
+                                     torch::linspace(0, 1, res[3])};
           return BSpline_t::eval(xi);
         }
+      }
+
+      /// @brief Refines the model
+      void refine(const nlohmann::json& config = NULL) const override {
+        
       }
     };    
 

@@ -23,30 +23,30 @@
 namespace iganet { namespace webapp {
 
     /// @brief InvalidSessionId exception
-    struct InvalidSessionIdException : public std::exception {  
-      const char * what() const throw() {  
-        return "Invalid session id";  
+    struct InvalidSessionIdException : public std::exception {
+      const char * what() const throw() {
+        return "Invalid session id";
       }
     };
-    
+
     /// @brief InvalidModelId exception
-    struct InvalidModelIdException : public std::exception {  
-      const char * what() const throw() {  
-        return "Invalid model id";  
+    struct InvalidModelIdException : public std::exception {
+      const char * what() const throw() {
+        return "Invalid model id";
       }
     };
 
     /// @brief InvalidModelType exception
-    struct InvalidModelTypeException : public std::exception {  
-      const char * what() const throw() {  
-        return "Invalid model type";  
+    struct InvalidModelTypeException : public std::exception {
+      const char * what() const throw() {
+        return "Invalid model type";
       }
-    }; 
-    
+    };
+
     /// @brief Tokenize the input string
     auto tokenize(std::string str) {
       std::vector<std::string> tokens;
-      for (auto i = strtok(&str[0], "/"); i != NULL; i = strtok(NULL, "/"))        
+      for (auto i = strtok(&str[0], "/"); i != NULL; i = strtok(NULL, "/"))
         tokens.push_back(i);
       return tokens;
     }
@@ -57,7 +57,7 @@ namespace iganet { namespace webapp {
     private:
       /// @brief Session UUID
       const std::string uuid;
-            
+
     public:
       /// @brief Default constructor
       Session() : uuid(iganet::uuid::create())
@@ -67,7 +67,7 @@ namespace iganet { namespace webapp {
       const std::string& getUUID() const {
         return uuid;
       }
-      
+
       /// Returns the requested model or throws an exception
       std::shared_ptr<iganet::Model> getModel(int64_t id) {
         auto it = models.find(id);
@@ -88,15 +88,15 @@ namespace iganet { namespace webapp {
           return model;
         }
       }
-      
+
       /// @brief List of models
       std::map<int64_t, std::shared_ptr<iganet::Model>> models;
     };
-    
+
     /// @brief Sessions structure
     template<typename T>
     struct Sessions {
-    public:     
+    public:
       /// Returns the requested session model or throws an exception
       std::shared_ptr<Session<T>> getSession(std::string uuid) {
         auto it = sessions.find(uuid);
@@ -117,21 +117,21 @@ namespace iganet { namespace webapp {
           return session;
         }
       }
-      
+
       /// List of sessions shared between all sockets
       inline static std::map<std::string, std::shared_ptr<Session<T>>> sessions;
 
       /// List of models
       inline static iganet::ModelManager models = iganet::ModelManager("webapps/models");
     };
-    
+
 }} // namespace iganet::webapp
 
 
 int main(int argc, char const* argv[])
 {
-  using PerSocketData = iganet::webapp::Sessions<double>;
-  
+  using PerSocketData = iganet::webapp::Sessions<float>;
+
   popl::OptionParser op("Allowed options");
   auto help_option = op.add<popl::Switch>("h", "help", "print help message");
   auto port_option = op.add<popl::Value<int>>("p", "port", "TCP port of the server", 3000);
@@ -143,11 +143,11 @@ int main(int argc, char const* argv[])
   else if (help_option->count() == 2)
     std::cout << op.help(popl::Attribute::advanced) << std::endl;
   else if (help_option->count() > 2)
-    std::cout << op.help(popl::Attribute::expert) << std::endl;  
+    std::cout << op.help(popl::Attribute::expert) << std::endl;
 
   // Initialize backend
   iganet::init();
-  
+
   // Create WebSocket application
   uWS::SSLApp().ws<PerSocketData>("/*", {
       /* Settings */
@@ -162,9 +162,8 @@ int main(int argc, char const* argv[])
         /* Handlers */
         .upgrade = nullptr,
         .open = [](auto *ws) {
-          std::clog << "Connection has been opened\n";          
         },
-        .message = [](auto *ws, std::string_view message, uWS::OpCode opCode) {          
+        .message = [](auto *ws, std::string_view message, uWS::OpCode opCode) {
           try {
             // Tokenize request
             auto request = nlohmann::json::parse(message);
@@ -180,12 +179,12 @@ int main(int argc, char const* argv[])
               //
               // request: get/*
               //
-              
+
               if (tokens.size() == 1) {
                 //
                 // request: get
                 //
-                
+
                 // Get list of all active sessions
                 std::vector<std::string> ids;
                 for (const auto& session : ws->getUserData()->sessions)
@@ -196,7 +195,7 @@ int main(int argc, char const* argv[])
 
               else if (tokens.size() == 2) {
                 //
-                // request: get/<session-uuid>
+                // request: get/<session-id>
                 //
 
                 // Get session
@@ -212,7 +211,7 @@ int main(int argc, char const* argv[])
 
               else if (tokens.size() == 3) {
                 //
-                // request: get/<session-uuid>/<model-id>
+                // request: get/<session-id>/<model-id>
                 //
 
                 // Get session
@@ -220,7 +219,7 @@ int main(int argc, char const* argv[])
 
                 // Get model
                 auto model = session->getModel(stoi(tokens[2]));
-                
+
                 // Serialize model to JSON
                 response["data"] = model->to_json();
                 ws->send(response.dump(), uWS::OpCode::TEXT, true);
@@ -228,7 +227,7 @@ int main(int argc, char const* argv[])
 
               else if (tokens.size() == 4) {
                 //
-                // request: get/<session-uuid>/<model-id>/<attribute>
+                // request: get/<session-id>/<model-id>/<attribute>
                 //
 
                 // Get session
@@ -236,7 +235,7 @@ int main(int argc, char const* argv[])
 
                 // Get model
                 auto model = session->getModel(stoi(tokens[2]));
-                  
+
                 // Serialize model attribute to JSON
                 response["data"] = model->to_json(tokens[3]);
                 ws->send(response.dump(), uWS::OpCode::TEXT, true);
@@ -244,12 +243,12 @@ int main(int argc, char const* argv[])
 
               else {
                 response["status"] = 1;
-                response["reason"] = "Invalid get request. Valid requests are \"get\", \"get/<session-uuid>\", \"get/<session-uuid>/<model-id>\", and \"get/<session-uuid>/<model-id>/<attribute>\"";
-                ws->send(response.dump(), uWS::OpCode::TEXT, true);                
+                response["reason"] = "Invalid get request. Valid requests are \"get\", \"get/<session-id>\", \"get/<session-id>/<model-id>\", and \"get/<session-id>/<model-id>/<attribute>\"";
+                ws->send(response.dump(), uWS::OpCode::TEXT, true);
               }
-                
+
             }
-            
+
             else if (tokens[0] == "put") {
               //
               // request: put/*
@@ -257,7 +256,7 @@ int main(int argc, char const* argv[])
 
               if (tokens.size() == 3) {
                 //
-                // request: put/<session-uuid>/<model-id>/<attribute>
+                // request: put/<session-id>/<model-id>/<attribute>
                 //
 
                 // Get session
@@ -266,69 +265,85 @@ int main(int argc, char const* argv[])
                 // Get model
                 auto model = session->getModel(stoi(tokens[2]));
 
-                response["data"] = "Not implemented yet (put/<session-uuid>/<model-id>/<attribute>)";
+                response["data"] = "Not implemented yet (put/<session-id>/<model-id>/<attribute>)";
                 ws->send(response.dump(), uWS::OpCode::TEXT, true);
+
+                // Broadcast update of model
+                nlohmann::json broadcast;
+                broadcast["id"] = session->getUUID();
+                broadcast["request"] = "update/model";
+                broadcast["data"]["id"] = stoi(tokens[2]);
+                ws->publish(session->getUUID(), broadcast.dump(), uWS::OpCode::TEXT);
               }
-              
+
               else {
                 response["status"] = 1;
-                response["reason"] = "Invalid put request. Valid requests are \"put/<session-uuid>/<model-id>/<attribute>\"";
-                ws->send(response.dump(), uWS::OpCode::TEXT, true);                
+                response["reason"] = "Invalid put request. Valid requests are \"put/<session-id>/<model-id>/<attribute>\"";
+                ws->send(response.dump(), uWS::OpCode::TEXT, true);
               }
-              
+
             }
-            
+
             else if (tokens[0] == "create") {
               //
               // request: create/*
               //
-              
+
               if (tokens.size() == 2 && tokens[1] == "session") {
                 //
                 // request: create/session
                 //
-                
+
                 // Create a new session
-                auto session = std::make_shared<iganet::webapp::Session<double>>();
+                auto session = std::make_shared<iganet::webapp::Session<float>>();
                 std::string uuid = session->getUUID();
-                ws->getUserData()->sessions[uuid] = session; 
+                ws->getUserData()->sessions[uuid] = session;
                 response["data"]["id"] = uuid;
                 response["data"]["models"] = ws->getUserData()->models.getModels();
-                ws->send(response.dump(), uWS::OpCode::TEXT, true);                
+                ws->send(response.dump(), uWS::OpCode::TEXT, true);
+
+                // Subscribe to new session
+                ws->subscribe(uuid);
               }
-              
+
               else if (tokens.size() == 3) {
                 //
-                // request: create/<session-uuid>/<model-type>
+                // request: create/<session-id>/<model-type>
                 //
 
                 // Get session
                 auto session = ws->getUserData()->getSession(tokens[1]);
-                
+
                 // Create new model
                 int64_t id = (session->models.size() > 0 ?
                               session->models.crbegin()->first+1 : 0);
-                
-                // Create a new model
+
                 try {
+                  // Create a new model
                   session->models[id] = ws->getUserData()->models.create(tokens[2], request);
                   response["data"]["id"] = std::to_string(id);
                   ws->send(response.dump(), uWS::OpCode::TEXT, true);
                   
+                  // Broadcast creation of a new model
+                  nlohmann::json broadcast;
+                  broadcast["id"] = session->getUUID();
+                  broadcast["request"] = "create/model";
+                  broadcast["data"]["id"] = id;                    
+                  ws->publish(session->getUUID(), broadcast.dump(), uWS::OpCode::TEXT);
                 } catch(...) {
                   response["status"] = 1;
                   response["reason"] = "Malformed create request";
                   ws->send(response.dump(), uWS::OpCode::TEXT, true);
-                }                
+                }
               }
-              
+
               else {
                 response["status"] = 1;
-                response["reason"] = "Invalid create request. Valid requests are \"create/session\" and \"create/<session-uuid>/<model-type>\"";
+                response["reason"] = "Invalid create request. Valid requests are \"create/session\" and \"create/<session-id>/<model-type>\"";
                 ws->send(response.dump(), uWS::OpCode::TEXT, true);
-              }                             
+              }
             }
-            
+
             else if (tokens[0] == "remove") {
               //
               // request: remove/*
@@ -336,17 +351,24 @@ int main(int argc, char const* argv[])
 
               if (tokens.size() == 2) {
                 //
-                // request: remove/<session-uuid>
+                // request: remove/<session-id>
                 //
 
                 // Remove session
                 auto session = ws->getUserData()->removeSession(tokens[1]);
                 ws->send(response.dump(), uWS::OpCode::TEXT, true);
+
+                // Broadcast removal of session
+                nlohmann::json broadcast;
+                broadcast["id"] = session->getUUID();
+                broadcast["request"] = "remove/session";
+                broadcast["data"]["id"] = session->getUUID();
+                ws->publish(session->getUUID(), broadcast.dump(), uWS::OpCode::TEXT);
               }
 
               else if (tokens.size() == 3) {
                 //
-                // request: remove/<session-uuid>/<model-id>
+                // request: remove/<session-id>/<model-id>
                 //
 
                 // Get session
@@ -355,16 +377,23 @@ int main(int argc, char const* argv[])
                 // Remove model
                 auto model = session->removeModel(stoi(tokens[2]));
                 ws->send(response.dump(), uWS::OpCode::TEXT, true);
+
+                // Broadcast removal of model
+                nlohmann::json broadcast;
+                broadcast["id"] = session->getUUID();
+                broadcast["request"] = "remove/model";
+                broadcast["data"]["id"] = stoi(tokens[2]);
+                ws->publish(session->getUUID(), broadcast.dump(), uWS::OpCode::TEXT);
               }
 
               else {
                 response["status"] = 1;
-                response["reason"] = "Invalid remove request. Valid requests are \"remove/<session-uuid>\" and \"remove/<session-uuid>/<model-id>\"";
+                response["reason"] = "Invalid remove request. Valid requests are \"remove/<session-id>\" and \"remove/<session-id>/<model-id>\"";
                 ws->send(response.dump(), uWS::OpCode::TEXT, true);
               }
-                            
+
             }
-            
+
             else if (tokens[0] == "connect") {
               //
               // request: connect/*
@@ -372,24 +401,23 @@ int main(int argc, char const* argv[])
 
               if (tokens.size() == 2) {
                 //
-                // request: connect/<session-uuid>
+                // request: connect/<session-id>
                 //
 
                 // Get session
                 auto session = ws->getUserData()->getSession(tokens[1]);
 
                 // Connect to an existing session
-
-                // TODO
+                ws->subscribe(session->getUUID());
               }
 
               else {
                 response["status"] = 1;
-                response["reason"] = "Invalid connect request. Valid requests are \"connect/<session-uuid>\"";
+                response["reason"] = "Invalid connect request. Valid requests are \"connect/<session-id>\"";
                 ws->send(response.dump(), uWS::OpCode::TEXT, true);
-              }              
+              }
             }
-            
+
             else if (tokens[0] == "disconnect") {
               //
               // request: diconnect/*
@@ -397,24 +425,23 @@ int main(int argc, char const* argv[])
 
               if (tokens.size() == 2) {
                 //
-                // request: diconnect/<session-uuid>
+                // request: diconnect/<session-id>
                 //
 
                 // Get session
                 auto session = ws->getUserData()->getSession(tokens[1]);
 
                 // Disconnect from an existing session
-
-                // TODO
+                ws->unsubscribe(session->getUUID());
               }
 
               else {
                 response["status"] = 1;
-                response["reason"] = "Invalid disconnect request. Valid requests are \"diconnect/<session-uuid>\"";
+                response["reason"] = "Invalid disconnect request. Valid requests are \"diconnect/<session-id>\"";
                 ws->send(response.dump(), uWS::OpCode::TEXT, true);
-              }              
+              }
             }
-            
+
             else if (tokens[0] == "eval") {
               //
               // request: eval/*
@@ -422,7 +449,7 @@ int main(int argc, char const* argv[])
 
               if (tokens.size() == 3) {
                 //
-                // request: eval/<session-uuid>/<model-id>
+                // request: eval/<session-id>/<model-id>
                 //
 
                 // Get session
@@ -430,33 +457,24 @@ int main(int argc, char const* argv[])
 
                 // Get model
                 auto model = session->getModel(stoi(tokens[2]));
-                
+
                 // Evaluate an existing model
-                if (auto m = std::dynamic_pointer_cast<iganet::ModelEval<1,1>>(model))
+                if (auto m = std::dynamic_pointer_cast<iganet::ModelEval<1>>(model))
                   response["data"] = nlohmann::json::array()
-                    .emplace_back(::iganet::to_json<double,1>(*(m->eval(request))[0]));
-                else if (auto m = std::dynamic_pointer_cast<iganet::ModelEval<1,2>>(model))
-                  response["data"] = nlohmann::json::array()
-                    .emplace_back(::iganet::to_json<double,1>(*(m->eval(request))[0]));
-                else if (auto m = std::dynamic_pointer_cast<iganet::ModelEval<1,3>>(model))
-                  response["data"] = nlohmann::json::array()
-                    .emplace_back(::iganet::to_json<double,1>(*(m->eval(request))[0]));
-                else if (auto m = std::dynamic_pointer_cast<iganet::ModelEval<1,4>>(model))
-                  response["data"] = nlohmann::json::array()
-                    .emplace_back(::iganet::to_json<double,1>(*(m->eval(request))[0]));
+                    .emplace_back(::iganet::to_json<float,1>(*(m->eval(request))[0]));
                 else {
                   response["status"] = 1;
-                  response["reason"] = "Invalid eval request. Valid requests are \"eval/<session-uuid>/<model-id>\"";
+                  response["reason"] = "Invalid eval request. Valid requests are \"eval/<session-id>/<model-id>\"";
                 }
                 ws->send(response.dump(), uWS::OpCode::TEXT, true);
               }
               else {
                 response["status"] = 1;
-                response["reason"] = "Invalid eval request. Valid requests are \"eval/<session-uuid>/<model-id>\"";
+                response["reason"] = "Invalid eval request. Valid requests are \"eval/<session-id>/<model-id>\"";
                 ws->send(response.dump(), uWS::OpCode::TEXT, true);
-              }              
+              }
             }
-            
+
             else if (tokens[0] == "refine") {
               //
               // request: refine/*
@@ -464,7 +482,7 @@ int main(int argc, char const* argv[])
 
               if (tokens.size() == 3) {
                 //
-                // request: refine/<session-uuid>/<model-id>
+                // request: refine/<session-id>/<model-id>
                 //
 
                 // Get session
@@ -474,22 +492,34 @@ int main(int argc, char const* argv[])
                 auto model = session->getModel(stoi(tokens[2]));
 
                 // Refine an existing model
+                if (auto m = std::dynamic_pointer_cast<iganet::ModelRefine>(model))
+                  m->refine(request);
+                else {
+                  response["status"] = 1;
+                  response["reason"] = "Invalid refine request. Valid requests are \"refine/<session-id>/<model-id>\"";
+                }
+                ws->send(response.dump(), uWS::OpCode::TEXT, true);
 
-                // TODO
+                // Broadcast refinement of model
+                nlohmann::json broadcast;
+                broadcast["id"] = session->getUUID();
+                broadcast["request"] = "refine/model";
+                broadcast["data"]["id"] = stoi(tokens[2]);
+                ws->publish(session->getUUID(), broadcast.dump(), uWS::OpCode::TEXT);
               }
 
               else {
                 response["status"] = 1;
-                response["reason"] = "Invalid refine request. Valid requests are \"refine/<session-uuid>/<model-id>\"";
+                response["reason"] = "Invalid refine request. Valid requests are \"refine/<session-id>/<model-id>\"";
                 ws->send(response.dump(), uWS::OpCode::TEXT, true);
-              }              
+              }
             }
 
             else {
                 response["status"] = 1;
                 response["reason"] = "Invalid request";
                 ws->send(response.dump(), uWS::OpCode::TEXT, true);
-            }             
+            }
           }
           catch (std::exception& e) {
             nlohmann::json response;
@@ -504,7 +534,7 @@ int main(int argc, char const* argv[])
               response["status"]  = 1;
               response["reason"]  = "Malformed request";
               ws->send(response.dump(), uWS::OpCode::TEXT, true);
-            }            
+            }
           }
         },
         .drain = [](auto *ws) {

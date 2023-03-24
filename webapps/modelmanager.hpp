@@ -62,11 +62,18 @@ namespace iganet {
   };
 
   /// @brief Model evaluator
-  template<short_t GeoDim, short_t ParDim>
-  class ModelEval : public Model {
+  template<short_t Dim>
+  class ModelEval {
   public:
     /// @brief Evaluate model
-    virtual BlockTensor<torch::Tensor, 1, GeoDim> eval(const nlohmann::json& config) const = 0;
+    virtual BlockTensor<torch::Tensor, 1, Dim> eval(const nlohmann::json& config) const = 0;
+  };
+
+  /// @brief Model refinement
+  class ModelRefine {
+  public:
+    /// @brief Refine model
+    virtual void refine(const nlohmann::json& config) const = 0;
   };
   
   /// @brief Model manager

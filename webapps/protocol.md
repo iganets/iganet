@@ -283,7 +283,11 @@ In what follows, only the non-generic parts of the protocol are specified in mor
    _Client request_
    ```
    "request" : eval/<session-id>/<model-id>
+   "data"    : {
+                 "resolution" : [<list of integers]
+               }
    ```
+   If the optional `data` and `resolution` are not present, the default resolution is 25 in each parametric dimension.
 
    _Server response_
    ```
