@@ -31,6 +31,7 @@ foreach(webapp ${WEBAPPS})
   add_executable(${name} ${filename})
   target_link_libraries(${name} PUBLIC ${TORCH_LIBRARIES})
   target_link_libraries(${name} PUBLIC ${ZLIB_LIBRARIES})
+  target_link_libraries(${name} PUBLIC ${CMAKE_DL_LIBS})
   target_link_libraries(${name} PUBLIC usockets)
 endforeach()
 
