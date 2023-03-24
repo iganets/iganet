@@ -23,108 +23,108 @@ TEST(BSpline, NonUniformBSpline_parDim1_geoDim1_degrees1_double)
 {
   EXPECT_THROW( (iganet::NonUniformBSpline<double, 1, 1>( {{{0.0, 0.0, 1.0}}} )), std::runtime_error);
   iganet::NonUniformBSpline<double, 1, 1> bspline( {{{0.0, 0.0, 0.5, 1.0, 1.0}}} );
-  EXPECT_EQ(bspline.parDim(),   1);
-  EXPECT_EQ(bspline.geoDim(),   1);
-  EXPECT_EQ(bspline.degree(0),  1);
-  EXPECT_EQ(bspline.nknots(0),  5);
-  EXPECT_EQ(bspline.ncoeffs(0), 3);
-  EXPECT_EQ(bspline.ncoeffs(),  3);
+  EXPECT_EQ(bspline.parDim(),     1);
+  EXPECT_EQ(bspline.geoDim(),     1);
+  EXPECT_EQ(bspline.degree(0),    1);
+  EXPECT_EQ(bspline.nknots(0),    5);
+  EXPECT_EQ(bspline.ncoeffs(0),   3);
+  EXPECT_EQ(bspline.ncumcoeffs(), 3);
 }
 
 TEST(BSpline, NonUniformBSpline_parDim1_geoDim2_degrees1_double)
 {
   EXPECT_THROW( (iganet::NonUniformBSpline<double, 2, 1>( {{{0.0, 0.0, 1.0}}} )), std::runtime_error);
   iganet::NonUniformBSpline<double, 2, 1> bspline( {{{0.0, 0.0, 0.5, 1.0, 1.0}}} );
-  EXPECT_EQ(bspline.parDim(),   1);
-  EXPECT_EQ(bspline.geoDim(),   2);
-  EXPECT_EQ(bspline.degree(0),  1);
-  EXPECT_EQ(bspline.nknots(0),  5);
-  EXPECT_EQ(bspline.ncoeffs(0), 3);
-  EXPECT_EQ(bspline.ncoeffs(),  3);
+  EXPECT_EQ(bspline.parDim(),     1);
+  EXPECT_EQ(bspline.geoDim(),     2);
+  EXPECT_EQ(bspline.degree(0),    1);
+  EXPECT_EQ(bspline.nknots(0),    5);
+  EXPECT_EQ(bspline.ncoeffs(0),   3);
+  EXPECT_EQ(bspline.ncumcoeffs(), 3);
 }
 
 TEST(BSpline, NonUniformBSpline_parDim1_geoDim3_degrees1_double)
 {
   EXPECT_THROW( (iganet::NonUniformBSpline<double, 3, 1>( {{{0.0, 0.0, 1.0}}} )), std::runtime_error);
   iganet::NonUniformBSpline<double, 3, 1> bspline( {{{0.0, 0.0, 0.5, 1.0, 1.0}}} );
-  EXPECT_EQ(bspline.parDim(),   1);
-  EXPECT_EQ(bspline.geoDim(),   3);
-  EXPECT_EQ(bspline.degree(0),  1);
-  EXPECT_EQ(bspline.nknots(0),  5);
-  EXPECT_EQ(bspline.ncoeffs(0), 3);
-  EXPECT_EQ(bspline.ncoeffs(),  3);
+  EXPECT_EQ(bspline.parDim(),     1);
+  EXPECT_EQ(bspline.geoDim(),     3);
+  EXPECT_EQ(bspline.degree(0),    1);
+  EXPECT_EQ(bspline.nknots(0),    5);
+  EXPECT_EQ(bspline.ncoeffs(0),   3);
+  EXPECT_EQ(bspline.ncumcoeffs(), 3);
 }
 
 TEST(BSpline, NonUniformBSpline_parDim1_geoDim4_degrees1_double)
 {
   EXPECT_THROW( (iganet::NonUniformBSpline<double, 4, 1>( {{{0.0, 0.0, 1.0}}} )), std::runtime_error);
   iganet::NonUniformBSpline<double, 4, 1> bspline( {{{0.0, 0.0, 0.5, 1.0, 1.0}}} );
-  EXPECT_EQ(bspline.parDim(),   1);
-  EXPECT_EQ(bspline.geoDim(),   4);
-  EXPECT_EQ(bspline.degree(0),  1);
-  EXPECT_EQ(bspline.nknots(0),  5);
-  EXPECT_EQ(bspline.ncoeffs(0), 3);
-  EXPECT_EQ(bspline.ncoeffs(),  3);
+  EXPECT_EQ(bspline.parDim(),     1);
+  EXPECT_EQ(bspline.geoDim(),     4);
+  EXPECT_EQ(bspline.degree(0),    1);
+  EXPECT_EQ(bspline.nknots(0),    5);
+  EXPECT_EQ(bspline.ncoeffs(0),   3);
+  EXPECT_EQ(bspline.ncumcoeffs(), 3);
 }
 
 TEST(BSpline, NonUniformBSpline_parDim2_geoDim1_degrees12_double)
 {
   iganet::NonUniformBSpline<double, 1, 1, 2> bspline( {{{0.0, 0.0, 0.5, 1.0, 1.0},
                                                         {0.0, 0.0, 0.0, 1.0, 1.0, 1.0}}} );
-  EXPECT_EQ(bspline.parDim(),   2);
-  EXPECT_EQ(bspline.geoDim(),   1);
-  EXPECT_EQ(bspline.degree(0),  1);
-  EXPECT_EQ(bspline.degree(1),  2);
-  EXPECT_EQ(bspline.nknots(0),  5);
-  EXPECT_EQ(bspline.nknots(1),  6);
-  EXPECT_EQ(bspline.ncoeffs(0), 3);
-  EXPECT_EQ(bspline.ncoeffs(1), 3);
-  EXPECT_EQ(bspline.ncoeffs(),  9);
+  EXPECT_EQ(bspline.parDim(),     2);
+  EXPECT_EQ(bspline.geoDim(),     1);
+  EXPECT_EQ(bspline.degree(0),    1);
+  EXPECT_EQ(bspline.degree(1),    2);
+  EXPECT_EQ(bspline.nknots(0),    5);
+  EXPECT_EQ(bspline.nknots(1),    6);
+  EXPECT_EQ(bspline.ncoeffs(0),   3);
+  EXPECT_EQ(bspline.ncoeffs(1),   3);
+  EXPECT_EQ(bspline.ncumcoeffs(), 9);
 }
 
 TEST(BSpline, NonUniformBSpline_parDim2_geoDim2_degrees12_double)
 {
   iganet::NonUniformBSpline<double, 2, 1, 2> bspline( {{{0.0, 0.0, 0.5, 1.0, 1.0},
                                                         {0.0, 0.0, 0.0, 1.0, 1.0, 1.0}}} );
-  EXPECT_EQ(bspline.parDim(),   2);
-  EXPECT_EQ(bspline.geoDim(),   2);
-  EXPECT_EQ(bspline.degree(0),  1);
-  EXPECT_EQ(bspline.degree(1),  2);
-  EXPECT_EQ(bspline.nknots(0),  5);
-  EXPECT_EQ(bspline.nknots(1),  6);
-  EXPECT_EQ(bspline.ncoeffs(0), 3);
-  EXPECT_EQ(bspline.ncoeffs(1), 3);
-  EXPECT_EQ(bspline.ncoeffs(),  9);
+  EXPECT_EQ(bspline.parDim(),     2);
+  EXPECT_EQ(bspline.geoDim(),     2);
+  EXPECT_EQ(bspline.degree(0),    1);
+  EXPECT_EQ(bspline.degree(1),    2);
+  EXPECT_EQ(bspline.nknots(0),    5);
+  EXPECT_EQ(bspline.nknots(1),    6);
+  EXPECT_EQ(bspline.ncoeffs(0),   3);
+  EXPECT_EQ(bspline.ncoeffs(1),   3);
+  EXPECT_EQ(bspline.ncumcoeffs(), 9);
 }
 
 TEST(BSpline, NonUniformBSpline_parDim2_geoDim3_degrees12_double)
 {
   iganet::NonUniformBSpline<double, 3, 1, 2> bspline( {{{0.0, 0.0, 0.5, 1.0, 1.0},
                                                         {0.0, 0.0, 0.0, 1.0, 1.0, 1.0}}} );
-  EXPECT_EQ(bspline.parDim(),   2);
-  EXPECT_EQ(bspline.geoDim(),   3);
-  EXPECT_EQ(bspline.degree(0),  1);
-  EXPECT_EQ(bspline.degree(1),  2);
-  EXPECT_EQ(bspline.nknots(0),  5);
-  EXPECT_EQ(bspline.nknots(1),  6);
-  EXPECT_EQ(bspline.ncoeffs(0), 3);
-  EXPECT_EQ(bspline.ncoeffs(1), 3);
-  EXPECT_EQ(bspline.ncoeffs(),  9);
+  EXPECT_EQ(bspline.parDim(),     2);
+  EXPECT_EQ(bspline.geoDim(),     3);
+  EXPECT_EQ(bspline.degree(0),    1);
+  EXPECT_EQ(bspline.degree(1),    2);
+  EXPECT_EQ(bspline.nknots(0),    5);
+  EXPECT_EQ(bspline.nknots(1),    6);
+  EXPECT_EQ(bspline.ncoeffs(0),   3);
+  EXPECT_EQ(bspline.ncoeffs(1),   3);
+  EXPECT_EQ(bspline.ncumcoeffs(), 9);
 }
 
 TEST(BSpline, NonUniformBSpline_parDim2_geoDim4_degrees12_double)
 {
   iganet::NonUniformBSpline<double, 4, 1, 2> bspline( {{{0.0, 0.0, 0.5, 1.0, 1.0},
                                                         {0.0, 0.0, 0.0, 1.0, 1.0, 1.0}}} );
-  EXPECT_EQ(bspline.parDim(),   2);
-  EXPECT_EQ(bspline.geoDim(),   4);
-  EXPECT_EQ(bspline.degree(0),  1);
-  EXPECT_EQ(bspline.degree(1),  2);
-  EXPECT_EQ(bspline.nknots(0),  5);
-  EXPECT_EQ(bspline.nknots(1),  6);
-  EXPECT_EQ(bspline.ncoeffs(0), 3);
-  EXPECT_EQ(bspline.ncoeffs(1), 3);
-  EXPECT_EQ(bspline.ncoeffs(),  9);
+  EXPECT_EQ(bspline.parDim(),     2);
+  EXPECT_EQ(bspline.geoDim(),     4);
+  EXPECT_EQ(bspline.degree(0),    1);
+  EXPECT_EQ(bspline.degree(1),    2);
+  EXPECT_EQ(bspline.nknots(0),    5);
+  EXPECT_EQ(bspline.nknots(1),    6);
+  EXPECT_EQ(bspline.ncoeffs(0),   3);
+  EXPECT_EQ(bspline.ncoeffs(1),   3);
+  EXPECT_EQ(bspline.ncumcoeffs(), 9);
 }
 
 TEST(BSpline, NonUniformBSpline_parDim3_geoDim1_degrees123_double)
@@ -132,18 +132,18 @@ TEST(BSpline, NonUniformBSpline_parDim3_geoDim1_degrees123_double)
   iganet::NonUniformBSpline<double, 1, 1, 2, 3> bspline( {{{0.0, 0.0, 0.5, 1.0, 1.0},
                                                            {0.0, 0.0, 0.0, 1.0, 1.0, 1.0},
                                                            {0.0, 0.0, 0.0, 0.0, 0.5, 1.0, 1.0, 1.0, 1.0}}} );
-  EXPECT_EQ(bspline.parDim(),   3);
-  EXPECT_EQ(bspline.geoDim(),   1);
-  EXPECT_EQ(bspline.degree(0),  1);
-  EXPECT_EQ(bspline.degree(1),  2);
-  EXPECT_EQ(bspline.degree(2),  3);
-  EXPECT_EQ(bspline.nknots(0),  5);
-  EXPECT_EQ(bspline.nknots(1),  6);
-  EXPECT_EQ(bspline.nknots(2),  9);
-  EXPECT_EQ(bspline.ncoeffs(0), 3);
-  EXPECT_EQ(bspline.ncoeffs(1), 3);
-  EXPECT_EQ(bspline.ncoeffs(2), 5);
-  EXPECT_EQ(bspline.ncoeffs(), 45);
+  EXPECT_EQ(bspline.parDim(),      3);
+  EXPECT_EQ(bspline.geoDim(),      1);
+  EXPECT_EQ(bspline.degree(0),     1);
+  EXPECT_EQ(bspline.degree(1),     2);
+  EXPECT_EQ(bspline.degree(2),     3);
+  EXPECT_EQ(bspline.nknots(0),     5);
+  EXPECT_EQ(bspline.nknots(1),     6);
+  EXPECT_EQ(bspline.nknots(2),     9);
+  EXPECT_EQ(bspline.ncoeffs(0),    3);
+  EXPECT_EQ(bspline.ncoeffs(1),    3);
+  EXPECT_EQ(bspline.ncoeffs(2),    5);
+  EXPECT_EQ(bspline.ncumcoeffs(), 45);
 }
 
 TEST(BSpline, NonUniformBSpline_parDim3_geoDim2_degrees123_double)
@@ -151,18 +151,18 @@ TEST(BSpline, NonUniformBSpline_parDim3_geoDim2_degrees123_double)
   iganet::NonUniformBSpline<double, 2, 1, 2, 3> bspline( {{{0.0, 0.0, 0.5, 1.0, 1.0},
                                                            {0.0, 0.0, 0.0, 1.0, 1.0, 1.0},
                                                            {0.0, 0.0, 0.0, 0.0, 0.5, 1.0, 1.0, 1.0, 1.0}}} );
-  EXPECT_EQ(bspline.parDim(),   3);
-  EXPECT_EQ(bspline.geoDim(),   2);
-  EXPECT_EQ(bspline.degree(0),  1);
-  EXPECT_EQ(bspline.degree(1),  2);
-  EXPECT_EQ(bspline.degree(2),  3);
-  EXPECT_EQ(bspline.nknots(0),  5);
-  EXPECT_EQ(bspline.nknots(1),  6);
-  EXPECT_EQ(bspline.nknots(2),  9);
-  EXPECT_EQ(bspline.ncoeffs(0), 3);
-  EXPECT_EQ(bspline.ncoeffs(1), 3);
-  EXPECT_EQ(bspline.ncoeffs(2), 5);
-  EXPECT_EQ(bspline.ncoeffs(), 45);
+  EXPECT_EQ(bspline.parDim(),      3);
+  EXPECT_EQ(bspline.geoDim(),      2);
+  EXPECT_EQ(bspline.degree(0),     1);
+  EXPECT_EQ(bspline.degree(1),     2);
+  EXPECT_EQ(bspline.degree(2),     3);
+  EXPECT_EQ(bspline.nknots(0),     5);
+  EXPECT_EQ(bspline.nknots(1),     6);
+  EXPECT_EQ(bspline.nknots(2),     9);
+  EXPECT_EQ(bspline.ncoeffs(0),    3);
+  EXPECT_EQ(bspline.ncoeffs(1),    3);
+  EXPECT_EQ(bspline.ncoeffs(2),    5);
+  EXPECT_EQ(bspline.ncumcoeffs(), 45);
 }
 
 TEST(BSpline, NonUniformBSpline_parDim3_geoDim3_degrees123_double)
@@ -170,18 +170,18 @@ TEST(BSpline, NonUniformBSpline_parDim3_geoDim3_degrees123_double)
   iganet::NonUniformBSpline<double, 3, 1, 2, 3> bspline( {{{0.0, 0.0, 0.5, 1.0, 1.0},
                                                            {0.0, 0.0, 0.0, 1.0, 1.0, 1.0},
                                                            {0.0, 0.0, 0.0, 0.0, 0.5, 1.0, 1.0, 1.0, 1.0}}} );
-  EXPECT_EQ(bspline.parDim(),   3);
-  EXPECT_EQ(bspline.geoDim(),   3);
-  EXPECT_EQ(bspline.degree(0),  1);
-  EXPECT_EQ(bspline.degree(1),  2);
-  EXPECT_EQ(bspline.degree(2),  3);
-  EXPECT_EQ(bspline.nknots(0),  5);
-  EXPECT_EQ(bspline.nknots(1),  6);
-  EXPECT_EQ(bspline.nknots(2),  9);
-  EXPECT_EQ(bspline.ncoeffs(0), 3);
-  EXPECT_EQ(bspline.ncoeffs(1), 3);
-  EXPECT_EQ(bspline.ncoeffs(2), 5);
-  EXPECT_EQ(bspline.ncoeffs(), 45);
+  EXPECT_EQ(bspline.parDim(),      3);
+  EXPECT_EQ(bspline.geoDim(),      3);
+  EXPECT_EQ(bspline.degree(0),     1);
+  EXPECT_EQ(bspline.degree(1),     2);
+  EXPECT_EQ(bspline.degree(2),     3);
+  EXPECT_EQ(bspline.nknots(0),     5);
+  EXPECT_EQ(bspline.nknots(1),     6);
+  EXPECT_EQ(bspline.nknots(2),     9);
+  EXPECT_EQ(bspline.ncoeffs(0),    3);
+  EXPECT_EQ(bspline.ncoeffs(1),    3);
+  EXPECT_EQ(bspline.ncoeffs(2),    5);
+  EXPECT_EQ(bspline.ncumcoeffs(), 45);
 }
 
 TEST(BSpline, NonUniformBSpline_parDim3_geoDim4_degrees123_double)
@@ -189,18 +189,18 @@ TEST(BSpline, NonUniformBSpline_parDim3_geoDim4_degrees123_double)
   iganet::NonUniformBSpline<double, 4, 1, 2, 3> bspline( {{{0.0, 0.0, 0.5, 1.0, 1.0},
                                                            {0.0, 0.0, 0.0, 1.0, 1.0, 1.0},
                                                            {0.0, 0.0, 0.0, 0.0, 0.5, 1.0, 1.0, 1.0, 1.0}}} );
-  EXPECT_EQ(bspline.parDim(),   3);
-  EXPECT_EQ(bspline.geoDim(),   4);
-  EXPECT_EQ(bspline.degree(0),  1);
-  EXPECT_EQ(bspline.degree(1),  2);
-  EXPECT_EQ(bspline.degree(2),  3);
-  EXPECT_EQ(bspline.nknots(0),  5);
-  EXPECT_EQ(bspline.nknots(1),  6);
-  EXPECT_EQ(bspline.nknots(2),  9);
-  EXPECT_EQ(bspline.ncoeffs(0), 3);
-  EXPECT_EQ(bspline.ncoeffs(1), 3);
-  EXPECT_EQ(bspline.ncoeffs(2), 5);
-  EXPECT_EQ(bspline.ncoeffs(), 45);
+  EXPECT_EQ(bspline.parDim(),      3);
+  EXPECT_EQ(bspline.geoDim(),      4);
+  EXPECT_EQ(bspline.degree(0),     1);
+  EXPECT_EQ(bspline.degree(1),     2);
+  EXPECT_EQ(bspline.degree(2),     3);
+  EXPECT_EQ(bspline.nknots(0),     5);
+  EXPECT_EQ(bspline.nknots(1),     6);
+  EXPECT_EQ(bspline.nknots(2),     9);
+  EXPECT_EQ(bspline.ncoeffs(0),    3);
+  EXPECT_EQ(bspline.ncoeffs(1),    3);
+  EXPECT_EQ(bspline.ncoeffs(2),    5);
+  EXPECT_EQ(bspline.ncumcoeffs(), 45);
 }
 
 TEST(BSpline, NonUniformBSpline_parDim4_geoDim1_degrees1234_double)
@@ -209,21 +209,21 @@ TEST(BSpline, NonUniformBSpline_parDim4_geoDim1_degrees1234_double)
                                                               {0.0, 0.0, 0.0, 1.0, 1.0, 1.0},
                                                               {0.0, 0.0, 0.0, 0.0, 0.5, 1.0, 1.0, 1.0, 1.0},
                                                               {0.0, 0.0, 0.0, 0.0, 0.0, 0.5, 1.0, 1.0, 1.0, 1.0, 1.0}}} );
-  EXPECT_EQ(bspline.parDim(),   4);
-  EXPECT_EQ(bspline.geoDim(),   1);
-  EXPECT_EQ(bspline.degree(0),  1);
-  EXPECT_EQ(bspline.degree(1),  2);
-  EXPECT_EQ(bspline.degree(2),  3);
-  EXPECT_EQ(bspline.degree(3),  4);
-  EXPECT_EQ(bspline.nknots(0),  5);
-  EXPECT_EQ(bspline.nknots(1),  6);
-  EXPECT_EQ(bspline.nknots(2),  9);
-  EXPECT_EQ(bspline.nknots(3), 11);
-  EXPECT_EQ(bspline.ncoeffs(0), 3);
-  EXPECT_EQ(bspline.ncoeffs(1), 3);
-  EXPECT_EQ(bspline.ncoeffs(2), 5);
-  EXPECT_EQ(bspline.ncoeffs(3), 6);
-  EXPECT_EQ(bspline.ncoeffs(),270);
+  EXPECT_EQ(bspline.parDim(),       4);
+  EXPECT_EQ(bspline.geoDim(),       1);
+  EXPECT_EQ(bspline.degree(0),      1);
+  EXPECT_EQ(bspline.degree(1),      2);
+  EXPECT_EQ(bspline.degree(2),      3);
+  EXPECT_EQ(bspline.degree(3),      4);
+  EXPECT_EQ(bspline.nknots(0),      5);
+  EXPECT_EQ(bspline.nknots(1),      6);
+  EXPECT_EQ(bspline.nknots(2),      9);
+  EXPECT_EQ(bspline.nknots(3),     11);
+  EXPECT_EQ(bspline.ncoeffs(0),     3);
+  EXPECT_EQ(bspline.ncoeffs(1),     3);
+  EXPECT_EQ(bspline.ncoeffs(2),     5);
+  EXPECT_EQ(bspline.ncoeffs(3),     6);
+  EXPECT_EQ(bspline.ncumcoeffs(), 270);
 }
 
 TEST(BSpline, NonUniformBSpline_parDim4_geoDim2_degrees1234_double)
@@ -232,21 +232,21 @@ TEST(BSpline, NonUniformBSpline_parDim4_geoDim2_degrees1234_double)
                                                               {0.0, 0.0, 0.0, 1.0, 1.0, 1.0},
                                                               {0.0, 0.0, 0.0, 0.0, 0.5, 1.0, 1.0, 1.0, 1.0},
                                                               {0.0, 0.0, 0.0, 0.0, 0.0, 0.5, 1.0, 1.0, 1.0, 1.0, 1.0}}} );
-  EXPECT_EQ(bspline.parDim(),   4);
-  EXPECT_EQ(bspline.geoDim(),   2);
-  EXPECT_EQ(bspline.degree(0),  1);
-  EXPECT_EQ(bspline.degree(1),  2);
-  EXPECT_EQ(bspline.degree(2),  3);
-  EXPECT_EQ(bspline.degree(3),  4);
-  EXPECT_EQ(bspline.nknots(0),  5);
-  EXPECT_EQ(bspline.nknots(1),  6);
-  EXPECT_EQ(bspline.nknots(2),  9);
-  EXPECT_EQ(bspline.nknots(3), 11);
-  EXPECT_EQ(bspline.ncoeffs(0), 3);
-  EXPECT_EQ(bspline.ncoeffs(1), 3);
-  EXPECT_EQ(bspline.ncoeffs(2), 5);
-  EXPECT_EQ(bspline.ncoeffs(3), 6);
-  EXPECT_EQ(bspline.ncoeffs(),270);
+  EXPECT_EQ(bspline.parDim(),       4);
+  EXPECT_EQ(bspline.geoDim(),       2);
+  EXPECT_EQ(bspline.degree(0),      1);
+  EXPECT_EQ(bspline.degree(1),      2);
+  EXPECT_EQ(bspline.degree(2),      3);
+  EXPECT_EQ(bspline.degree(3),      4);
+  EXPECT_EQ(bspline.nknots(0),      5);
+  EXPECT_EQ(bspline.nknots(1),      6);
+  EXPECT_EQ(bspline.nknots(2),      9);
+  EXPECT_EQ(bspline.nknots(3),     11);
+  EXPECT_EQ(bspline.ncoeffs(0),     3);
+  EXPECT_EQ(bspline.ncoeffs(1),     3);
+  EXPECT_EQ(bspline.ncoeffs(2),     5);
+  EXPECT_EQ(bspline.ncoeffs(3),     6);
+  EXPECT_EQ(bspline.ncumcoeffs(), 270);
 }
 
 TEST(BSpline, NonUniformBSpline_parDim4_geoDim3_degrees1234_double)
@@ -255,21 +255,21 @@ TEST(BSpline, NonUniformBSpline_parDim4_geoDim3_degrees1234_double)
                                                               {0.0, 0.0, 0.0, 1.0, 1.0, 1.0},
                                                               {0.0, 0.0, 0.0, 0.0, 0.5, 1.0, 1.0, 1.0, 1.0},
                                                               {0.0, 0.0, 0.0, 0.0, 0.0, 0.5, 1.0, 1.0, 1.0, 1.0, 1.0}}} );
-  EXPECT_EQ(bspline.parDim(),   4);
-  EXPECT_EQ(bspline.geoDim(),   3);
-  EXPECT_EQ(bspline.degree(0),  1);
-  EXPECT_EQ(bspline.degree(1),  2);
-  EXPECT_EQ(bspline.degree(2),  3);
-  EXPECT_EQ(bspline.degree(3),  4);
-  EXPECT_EQ(bspline.nknots(0),  5);
-  EXPECT_EQ(bspline.nknots(1),  6);
-  EXPECT_EQ(bspline.nknots(2),  9);
-  EXPECT_EQ(bspline.nknots(3), 11);
-  EXPECT_EQ(bspline.ncoeffs(0), 3);
-  EXPECT_EQ(bspline.ncoeffs(1), 3);
-  EXPECT_EQ(bspline.ncoeffs(2), 5);
-  EXPECT_EQ(bspline.ncoeffs(3), 6);
-  EXPECT_EQ(bspline.ncoeffs(),270);
+  EXPECT_EQ(bspline.parDim(),       4);
+  EXPECT_EQ(bspline.geoDim(),       3);
+  EXPECT_EQ(bspline.degree(0),      1);
+  EXPECT_EQ(bspline.degree(1),      2);
+  EXPECT_EQ(bspline.degree(2),      3);
+  EXPECT_EQ(bspline.degree(3),      4);
+  EXPECT_EQ(bspline.nknots(0),      5);
+  EXPECT_EQ(bspline.nknots(1),      6);
+  EXPECT_EQ(bspline.nknots(2),      9);
+  EXPECT_EQ(bspline.nknots(3),     11);
+  EXPECT_EQ(bspline.ncoeffs(0),     3);
+  EXPECT_EQ(bspline.ncoeffs(1),     3);
+  EXPECT_EQ(bspline.ncoeffs(2),     5);
+  EXPECT_EQ(bspline.ncoeffs(3),     6);
+  EXPECT_EQ(bspline.ncumcoeffs(), 270);
 }
 
 TEST(BSpline, NonUniformBSpline_parDim4_geoDim4_degrees1234_double)
@@ -278,21 +278,21 @@ TEST(BSpline, NonUniformBSpline_parDim4_geoDim4_degrees1234_double)
                                                               {0.0, 0.0, 0.0, 1.0, 1.0, 1.0},
                                                               {0.0, 0.0, 0.0, 0.0, 0.5, 1.0, 1.0, 1.0, 1.0},
                                                               {0.0, 0.0, 0.0, 0.0, 0.0, 0.5, 1.0, 1.0, 1.0, 1.0, 1.0}}} );
-  EXPECT_EQ(bspline.parDim(),   4);
-  EXPECT_EQ(bspline.geoDim(),   4);
-  EXPECT_EQ(bspline.degree(0),  1);
-  EXPECT_EQ(bspline.degree(1),  2);
-  EXPECT_EQ(bspline.degree(2),  3);
-  EXPECT_EQ(bspline.degree(3),  4);
-  EXPECT_EQ(bspline.nknots(0),  5);
-  EXPECT_EQ(bspline.nknots(1),  6);
-  EXPECT_EQ(bspline.nknots(2),  9);
-  EXPECT_EQ(bspline.nknots(3), 11);
-  EXPECT_EQ(bspline.ncoeffs(0), 3);
-  EXPECT_EQ(bspline.ncoeffs(1), 3);
-  EXPECT_EQ(bspline.ncoeffs(2), 5);
-  EXPECT_EQ(bspline.ncoeffs(3), 6);
-  EXPECT_EQ(bspline.ncoeffs(),270);
+  EXPECT_EQ(bspline.parDim(),       4);
+  EXPECT_EQ(bspline.geoDim(),       4);
+  EXPECT_EQ(bspline.degree(0),      1);
+  EXPECT_EQ(bspline.degree(1),      2);
+  EXPECT_EQ(bspline.degree(2),      3);
+  EXPECT_EQ(bspline.degree(3),      4);
+  EXPECT_EQ(bspline.nknots(0),      5);
+  EXPECT_EQ(bspline.nknots(1),      6);
+  EXPECT_EQ(bspline.nknots(2),      9);
+  EXPECT_EQ(bspline.nknots(3),     11);
+  EXPECT_EQ(bspline.ncoeffs(0),     3);
+  EXPECT_EQ(bspline.ncoeffs(1),     3);
+  EXPECT_EQ(bspline.ncoeffs(2),     5);
+  EXPECT_EQ(bspline.ncoeffs(3),     6);
+  EXPECT_EQ(bspline.ncumcoeffs(), 270);
 }
 
 TEST(BSpline, NonUniformBSpline_init_double)

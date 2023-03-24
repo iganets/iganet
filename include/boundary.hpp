@@ -109,11 +109,11 @@ namespace iganet {
     }
 
     /// @brief Returns the total number of coefficients
-    inline int64_t ncoeffs() const
+    inline int64_t ncumcoeffs() const
     {
       int64_t s=0;
-      s += std::get<west-1>(bdr_).ncoeffs();
-      s += std::get<east-1>(bdr_).ncoeffs();    
+      s += std::get<west-1>(bdr_).ncumcoeffs();
+      s += std::get<east-1>(bdr_).ncumcoeffs();    
       
       return s;
     }
@@ -224,13 +224,13 @@ namespace iganet {
     }
 
     /// @brief Returns the total number of coefficients
-    inline int64_t ncoeffs() const
+    inline int64_t ncumcoeffs() const
     {
       int64_t s=0;
-      s += std::get<west-1>(bdr_).ncoeffs();
-      s += std::get<east-1>(bdr_).ncoeffs();
-      s += std::get<south-1>(bdr_).ncoeffs();
-      s += std::get<north-1>(bdr_).ncoeffs();    
+      s += std::get<west-1>(bdr_).ncumcoeffs();
+      s += std::get<east-1>(bdr_).ncumcoeffs();
+      s += std::get<south-1>(bdr_).ncumcoeffs();
+      s += std::get<north-1>(bdr_).ncumcoeffs();    
       
       return s;
     }
@@ -356,15 +356,15 @@ namespace iganet {
     }
 
     /// @brief Returns the total number of coefficients
-    inline int64_t ncoeffs() const
+    inline int64_t ncumcoeffs() const
     {
       int64_t s=0;
-      s += std::get<west-1>(bdr_).ncoeffs();
-      s += std::get<east-1>(bdr_).ncoeffs();
-      s += std::get<south-1>(bdr_).ncoeffs();
-      s += std::get<north-1>(bdr_).ncoeffs();
-      s += std::get<front-1>(bdr_).ncoeffs();
-      s += std::get<back-1>(bdr_).ncoeffs();
+      s += std::get<west-1>(bdr_).ncumcoeffs();
+      s += std::get<east-1>(bdr_).ncumcoeffs();
+      s += std::get<south-1>(bdr_).ncumcoeffs();
+      s += std::get<north-1>(bdr_).ncumcoeffs();
+      s += std::get<front-1>(bdr_).ncumcoeffs();
+      s += std::get<back-1>(bdr_).ncumcoeffs();
       
       return s;
     }
@@ -504,17 +504,17 @@ namespace iganet {
     }
 
     /// @brief Returns the total number of coefficients
-    inline int64_t ncoeffs() const
+    inline int64_t ncumcoeffs() const
     {
       int64_t s=0;
-      s += std::get<west-1>(bdr_).ncoeffs();
-      s += std::get<east-1>(bdr_).ncoeffs();
-      s += std::get<south-1>(bdr_).ncoeffs();
-      s += std::get<north-1>(bdr_).ncoeffs();
-      s += std::get<front-1>(bdr_).ncoeffs();
-      s += std::get<back-1>(bdr_).ncoeffs();
-      s += std::get<stime-1>(bdr_).ncoeffs();
-      s += std::get<etime-1>(bdr_).ncoeffs();
+      s += std::get<west-1>(bdr_).ncumcoeffs();
+      s += std::get<east-1>(bdr_).ncumcoeffs();
+      s += std::get<south-1>(bdr_).ncumcoeffs();
+      s += std::get<north-1>(bdr_).ncumcoeffs();
+      s += std::get<front-1>(bdr_).ncumcoeffs();
+      s += std::get<back-1>(bdr_).ncumcoeffs();
+      s += std::get<stime-1>(bdr_).ncumcoeffs();
+      s += std::get<etime-1>(bdr_).ncumcoeffs();
       
       return s;
     }

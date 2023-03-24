@@ -614,12 +614,21 @@ namespace iganet {
     /// @brief Returns the total number of coefficients
     ///
     /// @result Total number of coefficients
-    inline int64_t ncoeffs() const
+    inline int64_t ncumcoeffs() const
     {
       int64_t s = 1;
       for (short_t i = 0; i < parDim_; ++i)
         s *= ncoeffs(i);
       return s;
+    }
+
+    /// @brief Returns a constant reference to the array of
+    /// coefficient vector dimensions
+    ///
+    /// @result Array of coefficient vector dimensions
+    inline const std::array<int64_t, parDim_>& ncoeffs() const
+    {      
+      return ncoeffs_;
     }
 
     /// @brief Returns the total number of coefficients in the
@@ -1692,7 +1701,7 @@ namespace iganet {
 
         auto json = nlohmann::json::array();
         if constexpr (parDim_ == 1) {
-          for (int64_t i = 0; i < ncoeffs(); ++i)
+          for (int64_t i = 0; i < ncumcoeffs(); ++i)
             json.push_back(coeffs_accessor[i]);
         } else if constexpr (parDim_ == 2) {
           for (int64_t j = 0; j < ncoeffs_[1]; ++j)
@@ -1764,7 +1773,7 @@ namespace iganet {
       auto coeffs_accessors = to_tensorAccessor<value_type,1>(coeffs_);
 
       if constexpr (parDim_ == 1) {
-        for (int64_t i = 0; i < ncoeffs(); ++i) {
+        for (int64_t i = 0; i < ncumcoeffs(); ++i) {
           ss << " " << coeffs() << "\n";
         }
       } else if constexpr (parDim_ == 2) {
@@ -2018,7 +2027,7 @@ namespace iganet {
 
           // Fill coefficients with zeros
           for (short_t i = 0; i < geoDim_; ++i) {
-            int64_t size = ncoeffs();
+            int64_t size = ncumcoeffs();
             coeffs_[i] = torch::zeros(size, core<real_t>::options_);
           }
           break;
@@ -2028,7 +2037,7 @@ namespace iganet {
 
           // Fill coefficients with ones
           for (short_t i = 0; i < geoDim_; ++i) {
-            int64_t size = ncoeffs();
+            int64_t size = ncumcoeffs();
             coeffs_[i] = torch::ones(size, core<real_t>::options_);
           }
           break;

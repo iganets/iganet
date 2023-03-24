@@ -974,9 +974,9 @@ namespace iganet {
         // Construct the deep neural network with the large tensor as
         // input and the coefficient vector of the solution's BSpline
         // object as output
-        net_(concat(std::vector<int64_t>{GeoDim*geo_.ncoeffs()+PdeDim*rhs_.ncoeffs()+PdeDim*bdr_.ncoeffs()},
+        net_(concat(std::vector<int64_t>{GeoDim*geo_.ncumcoeffs()+PdeDim*rhs_.ncumcoeffs()+PdeDim*bdr_.ncumcoeffs()},
                     layers,
-                    std::vector<int64_t>{PdeDim*sol_.ncoeffs()}
+                    std::vector<int64_t>{PdeDim*sol_.ncumcoeffs()}
                     ),
              activations),
 
@@ -1018,9 +1018,9 @@ namespace iganet {
         // Construct the deep neural network with the large tensor as
         // input and the coefficient vector of the solution's BSpline
         // object as output
-        net_(concat(std::vector<int64_t>{GeoDim*geo_.ncoeffs()+PdeDim*rhs_.ncoeffs()+PdeDim*bdr_.ncoeffs()},
+        net_(concat(std::vector<int64_t>{GeoDim*geo_.ncumcoeffs()+PdeDim*rhs_.ncumcoeffs()+PdeDim*bdr_.ncumcoeffs()},
                     layers,
-                    std::vector<int64_t>{PdeDim*sol_.ncoeffs()}),
+                    std::vector<int64_t>{PdeDim*sol_.ncumcoeffs()}),
              activations),
         
         // Construct the optimizer

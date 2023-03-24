@@ -63,7 +63,7 @@ auto to_splinelib_bspline(BSpline_t& bspline)
 
   // Create coordinate vector(s)
   Coordinates coordinates;
-  for (int64_t i=0; i<bspline.ncoeffs(); ++i)
+  for (int64_t i=0; i<bspline.ncumcoeffs(); ++i)
     if constexpr (BSpline_t::geoDim() == 1)
       coordinates.emplace_back(Coordinate{ScalarCoordinate{bspline.coeffs(0)[i].template item<typename BSpline_t::value_type>()}} );
     else if constexpr (BSpline_t::geoDim() == 2)
