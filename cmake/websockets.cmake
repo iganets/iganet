@@ -19,7 +19,7 @@
 include(FetchContent)
 FetchContent_Declare(
   usockets
-  URL https://github.com/uNetworking/uSockets/archive/refs/tags/v0.8.3.zip
+  URL https://github.com/uNetworking/uSockets/archive/refs/tags/v0.8.5.zip
   )
 
 FetchContent_MakeAvailable(usockets)
@@ -33,7 +33,7 @@ file(GLOB usockets_SOURCE_FILES
 add_library(usockets ${usockets_SOURCE_FILES})
 
 # Compile with OpenSSL support
-find_package(OpenSSL)
+find_package(OpenSSL QUIET)
 if (OPENSSL_FOUND)
   target_compile_definitions(usockets PUBLIC LIBUS_USE_OPENSSL)
   target_include_directories(usockets PUBLIC ${OPENSSL_INCLUDE_DIR})
@@ -57,7 +57,7 @@ endif()
 include(FetchContent)
 FetchContent_Declare(
   uwebsockets
-  URL https://github.com/uNetworking/uWebSockets/archive/refs/tags/v20.31.0.zip
+  URL https://github.com/uNetworking/uWebSockets/archive/refs/tags/v20.37.0.zip
   )
 
 FetchContent_MakeAvailable(uwebsockets)
