@@ -16,9 +16,6 @@
 #include <iganet.hpp>
 #include <modelmanager.hpp>
 #include <popl.hpp>
-#include <iostream>
-#include <tuple>
-#include <vector>
 
 namespace iganet { namespace webapp {
 
@@ -135,6 +132,9 @@ int main(int argc, char const* argv[])
   popl::OptionParser op("Allowed options");
   auto help_option = op.add<popl::Switch>("h", "help", "print help message");
   auto port_option = op.add<popl::Value<int>>("p", "port", "TCP port of the server", 3000);
+  auto key_file_option = op.add<popl::Value<std::string>>("k", "keyfile", "key file for SSL encryption", "key.pem");
+  auto cert_file_option = op.add<popl::Value<std::string>>("c", "certfile", "certificate file for SSL encryption", "cert.pem");
+  auto passphrase_option = op.add<popl::Value<std::string>>("a", "passphrase", "passphrase for SSL encryption", "");
   op.parse(argc, argv);
 
   // Print auto-generated help message
@@ -149,10 +149,14 @@ int main(int argc, char const* argv[])
   iganet::init();
 
   // Create WebSocket application
-  uWS::SSLApp().ws<PerSocketData>("/*", {
-      /* Settings */
-      .compression = uWS::CompressOptions(uWS::DEDICATED_COMPRESSOR_4KB |
-                                          uWS::DEDICATED_DECOMPRESSOR),
+  uWS::SSLApp({
+        .key_file_name  = key_file_option->value().c_str(),
+        .cert_file_name = cert_file_option->value().c_str(),
+        .passphrase     = passphrase_option->value().c_str()
+        }).ws<PerSocketData>("/*", {
+        /* Settings */        
+        .compression = uWS::CompressOptions(uWS::DEDICATED_COMPRESSOR_4KB |
+                                            uWS::DEDICATED_DECOMPRESSOR),
         .maxPayloadLength = 100 * 1024 * 1024,
         .idleTimeout = 16,
         .maxBackpressure = 100 * 1024 * 1024,
