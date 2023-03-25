@@ -23,7 +23,7 @@ pages:
   script:
     - mkdir -p build
     - cd build
-    - CC=gcc CXX=g++ cmake .. -DIGANET_BUILD_DOCS=ON -DTorch_DIR=/libtorch/share/cmake/Torch -DCXX_FILESYSTEM_HAVE_FS=ON -DCXX_FILESYSTEM_HEADER=filesystem
+    - CC=gcc CXX=g++ cmake .. -DIGANET_BUILD_DOCS=ON -DTorch_DIR=/libtorch/share/cmake/Torch -DIGANET_WITH_MATPLOT=OFF
     - make Doxygen
     - mv docs/doxygen/html ../public
     - mv docs/doxygen/*.xml ../public
@@ -37,6 +37,7 @@ pages:
       - perftests/*
       - pybind11/*
       - unittests/*
+      - server/*
   artifacts:
     paths:
       - public
@@ -50,7 +51,7 @@ unittests-gcc:
   script:
     - mkdir -p build
     - cd build
-    - CC=gcc CXX=g++  cmake .. -DIGANET_BUILD_UNITTESTS=ON -DTorch_DIR=/libtorch/share/cmake/Torch -DCXX_FILESYSTEM_HAVE_FS=ON -DCXX_FILESYSTEM_HEADER=filesystem
+    - CC=gcc CXX=g++ cmake .. -DIGANET_BUILD_UNITTESTS=ON -DTorch_DIR=/libtorch/share/cmake/Torch -DIGANET_WITH_MATPLOT=OFF
     - make
     - make test
   only:
@@ -62,3 +63,4 @@ unittests-gcc:
       - perftests/*
       - pybind11/*
       - unittests/*
+      - server/*
