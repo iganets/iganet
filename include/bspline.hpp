@@ -431,6 +431,8 @@ namespace iganet {
     /// @param[in] ncoeffs Number of coefficients per parametric dimension
     ///
     /// @param[in] init Type of initialization
+    ///
+    /// @param[in] core Core configuration
     UniformBSplineCore(const std::array<int64_t, parDim_>& ncoeffs,
                        enum init init = init::zeros,
                        iganet::core<real_t> core = iganet::core<real_t>{})
@@ -705,7 +707,7 @@ namespace iganet {
     /// @param[in] basfunc Value(s) of the multivariate B-spline basis
     ///                    functions evaluated at the point(s) `xi`
     ///
-    /// @param[in] idx Indices where to evaluate the coefficients
+    /// @param[in] coeff_idx Indices where to evaluate the coefficients
     ///
     /// @param[in] numeval Number of evaluation points
     ///
@@ -2124,7 +2126,7 @@ namespace iganet {
 
     /// @brief Updates the B-spline coefficients after knot insertion
     ///
-    // @{
+    /// @{
     inline void update_coeffs(const TensorArray1& knots, const TensorArray1& idx) {
 
       assert(parDim_ == 1 &&

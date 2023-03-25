@@ -69,6 +69,8 @@ namespace iganet {
   /// @brief Computes the directional dot-product between two tensors
   /// with summation along the given dimension
   ///
+  /// @tparam dim Dimension along which the sum is computed
+  ///
   /// @tparam T0 Type of the first argument
   ///
   /// @tparam T1 Type of the second argument
@@ -76,8 +78,6 @@ namespace iganet {
   /// @param[in] t0  First argument
   ///
   /// @param[in] t1  Second argument
-  ///
-  /// @param[in] dim Dimension along which the sum is computed
   ///
   /// @result Tensor containing the directional dot-product
   template<short_t dim = 0, typename T0, typename T1>
@@ -89,6 +89,8 @@ namespace iganet {
   /// @brief Computes the directional Kronecker-product between two
   /// tensors along the given dimension
   ///
+  /// @tparam dim Dimension along which the Kronecker-product is computed
+  ///
   /// @tparam T0 Type of the first argument
   ///
   /// @tparam T1 Type of the second argument
@@ -96,8 +98,6 @@ namespace iganet {
   /// @param[in] t0  First argument
   ///
   /// @param[in] t1  Second argument
-  ///
-  /// @param[in] dim Dimension along which the Kronecker-product is computed
   ///
   /// @result Tensor containing the dimensional Kronecker-product
   ///
