@@ -73,7 +73,7 @@ namespace iganet {
   class ModelRefine {
   public:
     /// @brief Refine model
-    virtual void refine(const nlohmann::json& config) const = 0;
+    virtual void refine(const nlohmann::json& config) = 0;
   };
   
   /// @brief Model manager

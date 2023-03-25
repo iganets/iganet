@@ -249,8 +249,18 @@ namespace iganet {
       }
 
       /// @brief Refines the model
-      void refine(const nlohmann::json& config = NULL) const override {
-        
+      void refine(const nlohmann::json& config = NULL) override {
+        int numRefine = 1, dim = -1;
+
+        if (config.contains("data")) {
+          if (config["data"].contains("numRefine"))
+            numRefine = config["data"]["numRefine"].get<int>();
+          
+          if (config["data"].contains("dim"))
+            dim = config["data"]["dim"].get<int>();
+        }
+
+        BSpline_t::uniform_refine(numRefine, dim);        
       }
     };    
 
