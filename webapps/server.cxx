@@ -131,7 +131,7 @@ int main(int argc, char const* argv[])
 
   popl::OptionParser op("Allowed options");
   auto help_option = op.add<popl::Switch>("h", "help", "print help message");
-  auto port_option = op.add<popl::Value<int>>("p", "port", "TCP port of the server", 3000);
+  auto port_option = op.add<popl::Value<int>>("p", "port", "TCP port of the server", 9001);
   auto key_file_option = op.add<popl::Value<std::string>>("k", "keyfile", "key file for SSL encryption", "key.pem");
   auto cert_file_option = op.add<popl::Value<std::string>>("c", "certfile", "certificate file for SSL encryption", "cert.pem");
   auto passphrase_option = op.add<popl::Value<std::string>>("a", "passphrase", "passphrase for SSL encryption", "");
