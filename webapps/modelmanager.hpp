@@ -30,10 +30,10 @@ namespace iganet {
 
   /// @brief Model interface
   class Model {
-  public:    
+  public:
     /// @brief Destructor
     virtual ~Model() {};
-    
+
     /// @brief Returns the model's name
     virtual std::string getName() const = 0;
 
@@ -44,20 +44,31 @@ namespace iganet {
     virtual std::string getOptions() const = 0;
 
     /// @brief Returns the model's JSON serialization
-    virtual nlohmann::json getModel() const {     
+    virtual nlohmann::json getModel() const {
       return nlohmann::json::parse(std::string("{ \"name\" : \"") + getName() + "\"," +
                                    "\"description\" : \"" + getDescription() + "\"," +
                                    "\"options\" : " + getOptions() + " }");
     }
-    
+
     /// @brief Serializes the model to JSON
-    virtual nlohmann::json to_json(const std::string& attribute = "") const = 0;    
+    virtual nlohmann::json to_json(const std::string& attribute = "") const = 0;
+
+    /// @brief Updates the attributes of the model
+    virtual nlohmann::json updateAttribute(const std::string& attribute,
+                                           const nlohmann::json& json) = 0;
   };
-  
+
   /// @brief InvalidModel exception
-  struct InvalidModelException : public std::exception {  
-    const char * what() const throw() {  
-      return "Invalid model name";  
+  struct InvalidModelException : public std::exception {
+    const char * what() const throw() {
+      return "Invalid model name";
+    }
+  };
+
+  /// @brief InvalidModelAttribute exception
+  struct InvalidModelAttributeException : public std::exception {
+    const char * what() const throw() {
+      return "Invalid model attribute";
     }
   };
 
@@ -66,31 +77,31 @@ namespace iganet {
   class ModelEval {
   public:
     /// @brief Evaluate model
-    virtual BlockTensor<torch::Tensor, 1, Dim> eval(const nlohmann::json& config) const = 0;
+    virtual BlockTensor<torch::Tensor, 1, Dim> eval(const nlohmann::json& json) const = 0;
   };
 
   /// @brief Model refinement
   class ModelRefine {
   public:
     /// @brief Refine model
-    virtual void refine(const nlohmann::json& config) = 0;
+    virtual void refine(const nlohmann::json& json) = 0;
   };
-  
+
   /// @brief Model manager
   ///
   /// This class implements the model manager
   class ModelManager {
   private:
-    
+
     /// @brief ModelHandler
     class ModelHandler {
     public:
-      
+
       /// @brief Default constructor deleted
       ModelHandler() = delete;
       ModelHandler(ModelHandler&&) = delete;
       ModelHandler(const ModelHandler&) = delete;
-      
+
       /// @brief Constructor from file
       ModelHandler(const char * filename, int flags = RTLD_NOW) {
 #if defined(_WIN32)
@@ -99,7 +110,7 @@ namespace iganet {
         if (!dl)
           throw std::runtime_error( "LoadLibrary - error: " + GetLastError() );
         handle.reset(dl, FreeLibrary);
-#elif defined(__APPLE__) || defined(__linux__) || defined(__unix)      
+#elif defined(__APPLE__) || defined(__linux__) || defined(__unix)
         void * dl = ::dlopen(filename, flags);
         if (!dl)
           throw std::runtime_error( ::dlerror() );
@@ -114,7 +125,7 @@ namespace iganet {
       {
         if (!handle)
           throw std::runtime_error("An error occured while accessing the dynamic library");
-        
+
         void *symbol = NULL;
 #if defined(_WIN32)
         *(void **)(&symbol) = (void*)GetProcAddress(handle.get(), name );
@@ -123,15 +134,15 @@ namespace iganet {
 #endif
         if (!symbol)
           throw std::runtime_error("An error occured while getting the symbol from the dynamic library");
-        
+
         return symbol;
       }
-      
+
       /// @brief Checks if handle is assigned
       operator bool() const { return (bool)handle; }
-      
+
     private:
-      
+
       /// @brief Handle to dynamic library object
 #if defined(_WIN32)
       std::shared_ptr< std::remove_pointer<HMODULE>::type > handle;
@@ -142,17 +153,17 @@ namespace iganet {
 
     /// @brief List of models
     std::map<std::string, std::shared_ptr<ModelHandler>> models;
-    
+
   public:
     /// @brief Default constructor deleted
     ModelManager() = delete;
-    
+
     /// @brief Constructor from filesystem
     /// @{
     ModelManager(const std::string& path)
       : ModelManager(std::vector<std::string>({path}))
     {}
-    
+
     ModelManager(const std::vector<std::string>& paths) {
       for (const auto& path : paths) {
         const std::filesystem::path fspath{path};
@@ -166,21 +177,21 @@ namespace iganet {
           }
         }
       }
-    }    
+    }
     /// @}
 
     /// @brief Returns a new instance of the requested model and
     /// throws an exception if model cannot be found
     std::shared_ptr<Model> create(const std::string& name,
-                                   const nlohmann::json& config = NULL) const {
+                                   const nlohmann::json& json = NULL) const {
       try {
         auto it = models.find(name);
         if (it == models.end())
           throw InvalidModelException();
-        
+
         std::shared_ptr<Model> (*create)(const nlohmann::json&);
         create = reinterpret_cast<std::shared_ptr<Model> (*)(const nlohmann::json&)> (it->second->getSymbol("create"));
-        return create(config);
+        return create(json);
       } catch(...) {
         throw InvalidModelException();
       }
@@ -196,4 +207,4 @@ namespace iganet {
   };
 
 } // namespace iganet
-    
+

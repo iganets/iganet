@@ -198,14 +198,96 @@ namespace iganet {
           return BSpline_t::to_json();
       }
 
+      /// @brief Updates the attrbutes of the model
+      nlohmann::json updateAttribute(const std::string& attribute,
+                                     const nlohmann::json& json) override {
+
+        std::cout << "attribute: " << attribute << std::endl;
+        std::cout << json.dump() << std::endl;
+        
+        if (attribute == "coeffs") {
+          if (!json.contains("data"))
+            throw InvalidModelAttributeException();
+          if (!json["data"].contains("indices") ||
+              !json["data"].contains("coords"))
+            throw InvalidModelAttributeException();
+
+          auto indices    = json["data"]["indeces"].get<std::vector<int64_t>>();
+          auto coeffs_cpu = to_tensorAccessor<typename BSpline_t::value_type,1>(BSpline_t::coeffs(), torch::kCPU);
+
+          std::cout << indices << std::endl;
+          
+          switch (BSpline_t::geoDim()) {
+          case (1): {
+            auto coords    = json["data"]["coords"].get<std::vector<std::tuple<typename BSpline_t::value_type>>>();
+            auto xAccessor = std::get<1>(coeffs_cpu)[0];
+
+            for (const auto& [index, coord] : iganet::zip(indices, coords))
+              xAccessor[index] = std::get<0>(coord);
+            break;
+          }
+          case (2): {
+            auto coords    = json["data"]["coords"].get<std::vector<std::tuple<typename BSpline_t::value_type,
+                                                                               typename BSpline_t::value_type>>>();
+            auto xAccessor = std::get<1>(coeffs_cpu)[0];
+            auto yAccessor = std::get<1>(coeffs_cpu)[1];
+
+            for (const auto& [index, coord] : iganet::zip(indices, coords)) {
+              xAccessor[index] = std::get<0>(coord);
+              yAccessor[index] = std::get<1>(coord);
+            }
+            break;
+          }
+          case (3): {
+            auto coords    = json["data"]["coords"].get<std::vector<std::tuple<typename BSpline_t::value_type,
+                                                                               typename BSpline_t::value_type,
+                                                                               typename BSpline_t::value_type>>>();
+            auto xAccessor = std::get<1>(coeffs_cpu)[0];
+            auto yAccessor = std::get<1>(coeffs_cpu)[1];
+            auto zAccessor = std::get<1>(coeffs_cpu)[2];
+
+            for (const auto& [index, coord] : iganet::zip(indices, coords)) {
+              xAccessor[index] = std::get<0>(coord);
+              yAccessor[index] = std::get<1>(coord);
+              zAccessor[index] = std::get<2>(coord);
+            }
+            break;
+          }
+          case (4): {
+            auto coords    = json["data"]["coords"].get<std::vector<std::tuple<typename BSpline_t::value_type,
+                                                                               typename BSpline_t::value_type,
+                                                                               typename BSpline_t::value_type,
+                                                                               typename BSpline_t::value_type>>>();
+            auto xAccessor = std::get<1>(coeffs_cpu)[0];
+            auto yAccessor = std::get<1>(coeffs_cpu)[1];
+            auto zAccessor = std::get<1>(coeffs_cpu)[2];
+            auto tAccessor = std::get<1>(coeffs_cpu)[3];
+
+            for (const auto& [index, coord] : iganet::zip(indices, coords)) {
+              xAccessor[index] = std::get<0>(coord);
+              yAccessor[index] = std::get<1>(coord);
+              zAccessor[index] = std::get<2>(coord);
+              tAccessor[index] = std::get<3>(coord);
+            }
+            break;
+          }
+          default:
+            throw InvalidModelAttributeException();
+          }
+          return to_json("coeffs");
+        }
+        else
+          return "{ INVALID REQUEST }";
+      }
+      
       /// @brief Evaluates the model
-      BlockTensor<torch::Tensor, 1, 1> eval(const nlohmann::json& config = NULL) const override {
+      BlockTensor<torch::Tensor, 1, 1> eval(const nlohmann::json& json = NULL) const override {
         if constexpr (BSpline_t::parDim() == 1) {
 
           std::array<int64_t, 1> res({25});          
-          if (config.contains("data"))
-            if (config["data"].contains("resolution"))
-              res = config["data"]["resolution"].get<std::array<int64_t,1>>();
+          if (json.contains("data"))
+            if (json["data"].contains("resolution"))
+              res = json["data"]["resolution"].get<std::array<int64_t,1>>();
           
           iganet::TensorArray1 xi = {torch::linspace(0, 1, res[0])};
           return BSpline_t::eval(xi);
@@ -213,9 +295,9 @@ namespace iganet {
         else if constexpr (BSpline_t::parDim() == 2) {
 
           std::array<int64_t, 2> res({25, 25});          
-          if (config.contains("data"))
-            if (config["data"].contains("resolution"))
-              res = config["data"]["resolution"].get<std::array<int64_t,2>>();
+          if (json.contains("data"))
+            if (json["data"].contains("resolution"))
+              res = json["data"]["resolution"].get<std::array<int64_t,2>>();
           
           iganet::TensorArray2 xi = {torch::linspace(0, 1, res[0]),
                                      torch::linspace(0, 1, res[1])};
@@ -224,9 +306,9 @@ namespace iganet {
         else if constexpr (BSpline_t::parDim() == 3) {
 
           std::array<int64_t, 3> res({25, 25, 25});          
-          if (config.contains("data"))
-            if (config["data"].contains("resolution"))
-              res = config["data"]["resolution"].get<std::array<int64_t,3>>();
+          if (json.contains("data"))
+            if (json["data"].contains("resolution"))
+              res = json["data"]["resolution"].get<std::array<int64_t,3>>();
           
           iganet::TensorArray3 xi = {torch::linspace(0, 1, res[0]),
                                      torch::linspace(0, 1, res[1]),
@@ -236,9 +318,9 @@ namespace iganet {
         else if constexpr (BSpline_t::parDim() == 4) {
 
           std::array<int64_t, 4> res({25, 25, 25, 25});          
-          if (config.contains("data"))
-            if (config["data"].contains("resolution"))
-              res = config["data"]["resolution"].get<std::array<int64_t,4>>();
+          if (json.contains("data"))
+            if (json["data"].contains("resolution"))
+              res = json["data"]["resolution"].get<std::array<int64_t,4>>();
           
           iganet::TensorArray4 xi = {torch::linspace(0, 1, res[0]),
                                      torch::linspace(0, 1, res[1]),
@@ -249,15 +331,15 @@ namespace iganet {
       }
 
       /// @brief Refines the model
-      void refine(const nlohmann::json& config = NULL) override {
+      void refine(const nlohmann::json& json = NULL) override {
         int numRefine = 1, dim = -1;
 
-        if (config.contains("data")) {
-          if (config["data"].contains("numRefine"))
-            numRefine = config["data"]["numRefine"].get<int>();
+        if (json.contains("data")) {
+          if (json["data"].contains("numRefine"))
+            numRefine = json["data"]["numRefine"].get<int>();
           
-          if (config["data"].contains("dim"))
-            dim = config["data"]["dim"].get<int>();
+          if (json["data"].contains("dim"))
+            dim = json["data"]["dim"].get<int>();
         }
 
         BSpline_t::uniform_refine(numRefine, dim);        

@@ -690,8 +690,8 @@ namespace iganet {
     torch::Tensor forward(torch::Tensor x)
     {            
       // Standard feed-forward neural network
-      for (auto layer : zip(layers_, activations_))
-        x = std::get<1>(layer)->apply(std::get<0>(layer)->forward(x));
+      for (auto [layer, activation] : zip(layers_, activations_))
+        x = activation->apply(layer->forward(x));
       return x;
     }
 

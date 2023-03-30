@@ -47,6 +47,12 @@ namespace iganet {
       return UniformBSpline<double,1,1,1>::to_json();
     }
 
+    /// @brief Updates the attrbutes of the model
+    nlohmann::json updateAttribute(const std::string& attribute,
+                                   const nlohmann::json& json) override {
+      return "\"reason\" : \"Not implemented yet\"";
+    }
+
   };
 } // namespace iganet
   
@@ -56,7 +62,7 @@ extern "C" __declspec(dllexport)
 extern "C"
 #endif
 {
-  std::shared_ptr<iganet::Model> create(const nlohmann::json& config) {
+  std::shared_ptr<iganet::Model> create(const nlohmann::json& json) {
     return std::make_shared<iganet::Poisson2dModel>();
   }
 }

@@ -127,6 +127,35 @@ namespace iganet { namespace webapp {
 
 int main(int argc, char const* argv[])
 {
+  // std::vector<int> indices;
+  // indices.push_back(1);
+  // indices.push_back(4);
+  // indices.push_back(8);
+
+  // std::vector<std::tuple<float,float>> coords;
+  // coords.push_back({0.0f, 3.0f});
+  // coords.push_back({0.2f, 1.4f});
+  // coords.push_back({0.4f, 3.2f});
+    
+  // nlohmann::json json;
+
+  // json["id"] = 100;
+  // json["data"]["indeces"] = indices;
+  // json["data"]["coords"]  = coords;
+
+  // std::cout << json.dump() << std::endl;
+
+  // indices.clear();
+  // coords.clear();
+
+  // indices = json["data"]["indeces"].get<std::vector<int>>();
+  // coords  = json["data"]["coords"].get<std::vector<std::tuple<float,float>>>();
+
+  // for (auto [i, c] : iganet::zip(indices, coords))
+  //   std::cout << i << c << std::endl;
+  
+  // return 0;
+  
   using PerSocketData = iganet::webapp::Sessions<float>;
 
   popl::OptionParser op("Allowed options");
@@ -258,7 +287,7 @@ int main(int argc, char const* argv[])
               // request: put/*
               //
 
-              if (tokens.size() == 3) {
+              if (tokens.size() == 4) {
                 //
                 // request: put/<session-id>/<model-id>/<attribute>
                 //
@@ -269,7 +298,8 @@ int main(int argc, char const* argv[])
                 // Get model
                 auto model = session->getModel(stoi(tokens[2]));
 
-                response["data"] = "Not implemented yet (put/<session-id>/<model-id>/<attribute>)";
+                // Update model attribute
+                response["data"] = model->updateAttribute(tokens[3], request);
                 ws->send(response.dump(), uWS::OpCode::TEXT, true);
 
                 // Broadcast update of model
@@ -277,6 +307,7 @@ int main(int argc, char const* argv[])
                 broadcast["id"] = session->getUUID();
                 broadcast["request"] = "update/model";
                 broadcast["data"]["id"] = stoi(tokens[2]);
+                broadcast["data"]["attribute"] = tokens[3];
                 ws->publish(session->getUUID(), broadcast.dump(), uWS::OpCode::TEXT);
               }
 
@@ -412,6 +443,11 @@ int main(int argc, char const* argv[])
                 auto session = ws->getUserData()->getSession(tokens[1]);
 
                 // Connect to an existing session
+                response["data"]["id"] = session->getUUID();
+                response["data"]["models"] = ws->getUserData()->models.getModels();
+                ws->send(response.dump(), uWS::OpCode::TEXT, true);
+                
+                // Subscribe to existing session
                 ws->subscribe(session->getUUID());
               }
 
