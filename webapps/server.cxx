@@ -142,35 +142,6 @@ namespace iganet { namespace webapp {
 
 int main(int argc, char const* argv[])
 {
-  // std::vector<int> indices;
-  // indices.push_back(1);
-  // indices.push_back(4);
-  // indices.push_back(8);
-
-  // std::vector<std::tuple<float,float>> coords;
-  // coords.push_back({0.0f, 3.0f});
-  // coords.push_back({0.2f, 1.4f});
-  // coords.push_back({0.4f, 3.2f});
-    
-  // nlohmann::json json;
-
-  // json["id"] = 100;
-  // json["data"]["indeces"] = indices;
-  // json["data"]["coords"]  = coords;
-
-  // std::cout << json.dump() << std::endl;
-
-  // indices.clear();
-  // coords.clear();
-
-  // indices = json["data"]["indeces"].get<std::vector<int>>();
-  // coords  = json["data"]["coords"].get<std::vector<std::tuple<float,float>>>();
-
-  // for (auto [i, c] : iganet::zip(indices, coords))
-  //   std::cout << i << c << std::endl;
-  
-  // return 0;
-  
   using PerSocketData = iganet::webapp::Sessions<float>;
 
   popl::OptionParser op("Allowed options");
@@ -193,7 +164,8 @@ int main(int argc, char const* argv[])
   iganet::init();
 
   // Create WebSocket application
-  uWS::SSLApp({
+  try {
+    uWS::SSLApp({
         .key_file_name  = key_file_option->value().c_str(),
         .cert_file_name = cert_file_option->value().c_str(),
         .passphrase     = passphrase_option->value().c_str()
@@ -609,5 +581,10 @@ int main(int argc, char const* argv[])
         if (listen_socket) {
           std::clog << "Listening on port " << port_option->value() << std::endl;
         }
-    }).run();
+       }).run();
+  } catch (std::exception& e) {
+    std::cerr << e.what();
+  }
+  
+  return 0;
 }
