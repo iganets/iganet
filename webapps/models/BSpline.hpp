@@ -209,37 +209,41 @@ namespace iganet {
           if (!json.contains("data"))
             throw InvalidModelAttributeException();
           if (!json["data"].contains("indices") ||
-              !json["data"].contains("coords"))
+              !json["data"].contains("coeffs"))
             throw InvalidModelAttributeException();
-
-          auto indices    = json["data"]["indeces"].get<std::vector<int64_t>>();
+          
+          auto indices    = json["data"]["indices"].get<std::vector<int64_t>>();
           auto coeffs_cpu = to_tensorAccessor<typename BSpline_t::value_type,1>(BSpline_t::coeffs(), torch::kCPU);
-
-          std::cout << indices << std::endl;
           
           switch (BSpline_t::geoDim()) {
           case (1): {
-            auto coords    = json["data"]["coords"].get<std::vector<std::tuple<typename BSpline_t::value_type>>>();
+            auto coords    = json["data"]["coeffs"].get<std::vector<std::tuple<typename BSpline_t::value_type>>>();
             auto xAccessor = std::get<1>(coeffs_cpu)[0];
 
-            for (const auto& [index, coord] : iganet::zip(indices, coords))
+            for (const auto& [index, coord] : iganet::zip(indices, coords)) {
+              if (index < 0 || index >= BSpline_t::ncumcoeffs())
+                throw IndexOutOfBoundsException();
               xAccessor[index] = std::get<0>(coord);
+            }
             break;
           }
           case (2): {
-            auto coords    = json["data"]["coords"].get<std::vector<std::tuple<typename BSpline_t::value_type,
+            auto coords    = json["data"]["coeffs"].get<std::vector<std::tuple<typename BSpline_t::value_type,
                                                                                typename BSpline_t::value_type>>>();
             auto xAccessor = std::get<1>(coeffs_cpu)[0];
             auto yAccessor = std::get<1>(coeffs_cpu)[1];
 
             for (const auto& [index, coord] : iganet::zip(indices, coords)) {
+              if (index < 0 || index >= BSpline_t::ncumcoeffs())
+                throw IndexOutOfBoundsException();
+              
               xAccessor[index] = std::get<0>(coord);
               yAccessor[index] = std::get<1>(coord);
             }
             break;
           }
           case (3): {
-            auto coords    = json["data"]["coords"].get<std::vector<std::tuple<typename BSpline_t::value_type,
+            auto coords    = json["data"]["coeffs"].get<std::vector<std::tuple<typename BSpline_t::value_type,
                                                                                typename BSpline_t::value_type,
                                                                                typename BSpline_t::value_type>>>();
             auto xAccessor = std::get<1>(coeffs_cpu)[0];
@@ -247,6 +251,9 @@ namespace iganet {
             auto zAccessor = std::get<1>(coeffs_cpu)[2];
 
             for (const auto& [index, coord] : iganet::zip(indices, coords)) {
+              if (index < 0 || index >= BSpline_t::ncumcoeffs())
+                throw IndexOutOfBoundsException();
+              
               xAccessor[index] = std::get<0>(coord);
               yAccessor[index] = std::get<1>(coord);
               zAccessor[index] = std::get<2>(coord);
@@ -254,7 +261,7 @@ namespace iganet {
             break;
           }
           case (4): {
-            auto coords    = json["data"]["coords"].get<std::vector<std::tuple<typename BSpline_t::value_type,
+            auto coords    = json["data"]["coeffs"].get<std::vector<std::tuple<typename BSpline_t::value_type,
                                                                                typename BSpline_t::value_type,
                                                                                typename BSpline_t::value_type,
                                                                                typename BSpline_t::value_type>>>();
@@ -264,6 +271,9 @@ namespace iganet {
             auto tAccessor = std::get<1>(coeffs_cpu)[3];
 
             for (const auto& [index, coord] : iganet::zip(indices, coords)) {
+              if (index < 0 || index >= BSpline_t::ncumcoeffs())
+                throw IndexOutOfBoundsException();
+              
               xAccessor[index] = std::get<0>(coord);
               yAccessor[index] = std::get<1>(coord);
               zAccessor[index] = std::get<2>(coord);

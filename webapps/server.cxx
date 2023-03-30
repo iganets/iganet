@@ -19,6 +19,21 @@
 
 namespace iganet { namespace webapp {
 
+    /// @brief Enumerator for specifying the status
+    enum class status : short_t
+      {
+        success                  =  0, /*!<  request was handled successfully */        
+        invalidRequest           =  1, /*!<  invalid request                  */
+        invalidCreateRequest     =  2, /*!<  invalid create request           */
+        invalidRemoveRequest     =  3, /*!<  invalid remove request           */
+        invalidConnectRequest    =  4, /*!<  invalid connect request          */
+        invalidDisconnectRequest =  5, /*!<  invalid disconnect request       */
+        invalidGetRequest        =  6, /*!<  invalid get request              */
+        invalidPutRequest        =  7, /*!<  invalid put request              */
+        invalidEvalRequest       =  8, /*!<  invalid eval request             */
+        invalidRefineRequest     =  9  /*!<  invalid refine request           */
+      };
+    
     /// @brief InvalidSessionId exception
     struct InvalidSessionIdException : public std::exception {
       const char * what() const throw() {
@@ -205,7 +220,7 @@ int main(int argc, char const* argv[])
             // Prepare response
             nlohmann::json response;
             response["request"] = request["id"];
-            response["status"]  = 0;
+            response["status"]  = iganet::webapp::status::success;
 
             // Dispatch request
             if (tokens[0] == "get") {
@@ -275,7 +290,7 @@ int main(int argc, char const* argv[])
               }
 
               else {
-                response["status"] = 1;
+                response["status"] = iganet::webapp::status::invalidGetRequest;
                 response["reason"] = "Invalid get request. Valid requests are \"get\", \"get/<session-id>\", \"get/<session-id>/<model-id>\", and \"get/<session-id>/<model-id>/<attribute>\"";
                 ws->send(response.dump(), uWS::OpCode::TEXT, true);
               }
@@ -312,7 +327,7 @@ int main(int argc, char const* argv[])
               }
 
               else {
-                response["status"] = 1;
+                response["status"] = iganet::webapp::status::invalidPutRequest;
                 response["reason"] = "Invalid put request. Valid requests are \"put/<session-id>/<model-id>/<attribute>\"";
                 ws->send(response.dump(), uWS::OpCode::TEXT, true);
               }
@@ -366,14 +381,14 @@ int main(int argc, char const* argv[])
                   broadcast["data"]["id"] = id;                    
                   ws->publish(session->getUUID(), broadcast.dump(), uWS::OpCode::TEXT);
                 } catch(...) {
-                  response["status"] = 1;
-                  response["reason"] = "Malformed create request";
+                  response["status"] = iganet::webapp::status::invalidCreateRequest;
+                  response["reason"] = "Invalid create request. Valid requests are \"create/session\" and \"create/<session-id>/<model-type>\"";
                   ws->send(response.dump(), uWS::OpCode::TEXT, true);
                 }
               }
 
               else {
-                response["status"] = 1;
+                response["status"] = iganet::webapp::status::invalidCreateRequest;
                 response["reason"] = "Invalid create request. Valid requests are \"create/session\" and \"create/<session-id>/<model-type>\"";
                 ws->send(response.dump(), uWS::OpCode::TEXT, true);
               }
@@ -422,7 +437,7 @@ int main(int argc, char const* argv[])
               }
 
               else {
-                response["status"] = 1;
+                response["status"] = iganet::webapp::status::invalidRemoveRequest;
                 response["reason"] = "Invalid remove request. Valid requests are \"remove/<session-id>\" and \"remove/<session-id>/<model-id>\"";
                 ws->send(response.dump(), uWS::OpCode::TEXT, true);
               }
@@ -452,7 +467,7 @@ int main(int argc, char const* argv[])
               }
 
               else {
-                response["status"] = 1;
+                response["status"] = iganet::webapp::status::invalidConnectRequest;
                 response["reason"] = "Invalid connect request. Valid requests are \"connect/<session-id>\"";
                 ws->send(response.dump(), uWS::OpCode::TEXT, true);
               }
@@ -476,7 +491,7 @@ int main(int argc, char const* argv[])
               }
 
               else {
-                response["status"] = 1;
+                response["status"] = iganet::webapp::status::invalidDisconnectRequest;
                 response["reason"] = "Invalid disconnect request. Valid requests are \"diconnect/<session-id>\"";
                 ws->send(response.dump(), uWS::OpCode::TEXT, true);
               }
@@ -503,13 +518,13 @@ int main(int argc, char const* argv[])
                   response["data"] = nlohmann::json::array()
                     .emplace_back(::iganet::to_json<float,1>(*(m->eval(request))[0]));
                 else {
-                  response["status"] = 1;
+                  response["status"] = iganet::webapp::status::invalidEvalRequest;
                   response["reason"] = "Invalid eval request. Valid requests are \"eval/<session-id>/<model-id>\"";
                 }
                 ws->send(response.dump(), uWS::OpCode::TEXT, true);
               }
               else {
-                response["status"] = 1;
+                response["status"] = iganet::webapp::status::invalidEvalRequest;
                 response["reason"] = "Invalid eval request. Valid requests are \"eval/<session-id>/<model-id>\"";
                 ws->send(response.dump(), uWS::OpCode::TEXT, true);
               }
@@ -535,7 +550,7 @@ int main(int argc, char const* argv[])
                 if (auto m = std::dynamic_pointer_cast<iganet::ModelRefine>(model))
                   m->refine(request);
                 else {
-                  response["status"] = 1;
+                  response["status"] = iganet::webapp::status::invalidRefineRequest;
                   response["reason"] = "Invalid refine request. Valid requests are \"refine/<session-id>/<model-id>\"";
                 }
                 ws->send(response.dump(), uWS::OpCode::TEXT, true);
@@ -549,14 +564,14 @@ int main(int argc, char const* argv[])
               }
 
               else {
-                response["status"] = 1;
+                response["status"] = iganet::webapp::status::invalidRefineRequest;
                 response["reason"] = "Invalid refine request. Valid requests are \"refine/<session-id>/<model-id>\"";
                 ws->send(response.dump(), uWS::OpCode::TEXT, true);
               }
             }
 
             else {
-                response["status"] = 1;
+              response["status"] = iganet::webapp::status::invalidRequest;
                 response["reason"] = "Invalid request";
                 ws->send(response.dump(), uWS::OpCode::TEXT, true);
             }
@@ -566,13 +581,13 @@ int main(int argc, char const* argv[])
             try {
               auto request = nlohmann::json::parse(message);
               response["request"] = request["id"];
-              response["status"]  = 1;
+              response["status"]  = iganet::webapp::status::invalidRequest;
               response["reason"]  = e.what();
               ws->send(response.dump(), uWS::OpCode::TEXT, true);
             } catch(...) {
               response["request"] = "unknown";
-              response["status"]  = 1;
-              response["reason"]  = "Malformed request";
+              response["status"]  = iganet::webapp::status::invalidRequest;
+              response["reason"]  = "Invalid request";
               ws->send(response.dump(), uWS::OpCode::TEXT, true);
             }
           }

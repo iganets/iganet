@@ -58,6 +58,13 @@ namespace iganet {
                                            const nlohmann::json& json) = 0;
   };
 
+  /// @brief IndexOutOfBounds exception
+  struct IndexOutOfBoundsException : public std::exception {
+    const char * what() const throw() {
+      return "Index is out of bounds";
+    }
+  };
+
   /// @brief InvalidModel exception
   struct InvalidModelException : public std::exception {
     const char * what() const throw() {
