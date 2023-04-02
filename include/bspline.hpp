@@ -28,7 +28,7 @@
 #endif
 
 namespace iganet {
-  
+
   /// @brief Enumerator for specifying the initialization of B-spline coefficients
   enum class init : short_t
     {
@@ -291,7 +291,7 @@ namespace iganet {
   {
     return deriv( static_cast<short_t>(lhs)+static_cast<short_t>(rhs) );
   }
-  
+
   /// @brief Tensor-product uniform B-spline (core functionality)
   ///
   /// This class implements the core functionality of all B-spline
@@ -456,7 +456,7 @@ namespace iganet {
 
         for (int64_t j = 0; j < degrees_[i]; ++j)
           kv.push_back(static_cast<value_type>(1));
-        
+
         if (iganet::core<real_t>::options_.device() == torch::kCPU)
           knots_[i] = torch::from_blob(static_cast<value_type *>(kv.data()),
                                        kv.size(), iganet::core<real_t>::options_).clone();
@@ -629,7 +629,7 @@ namespace iganet {
     ///
     /// @result Array of coefficient vector dimensions
     inline const std::array<int64_t, parDim_>& ncoeffs() const
-    {      
+    {
       return ncoeffs_;
     }
 
@@ -1336,7 +1336,7 @@ namespace iganet {
                                                         ).view(xi[0].sizes()));
       }
     }
-    
+
     /// @brief Returns the indices of knot spans containing `xi`
     ///
     /// This function returns the indices
@@ -1677,7 +1677,7 @@ namespace iganet {
 
     /// @brief Returns the B-spline object as JSON object
     inline nlohmann::json to_json() const override
-    {      
+    {
       nlohmann::json data;
       data["degrees"] = degrees_;
       data["geoDim"]  = geoDim_;
@@ -1692,9 +1692,9 @@ namespace iganet {
 
     /// @brief Returns the B-spline object's knots as JSON object
     inline nlohmann::json knots_to_json() const {
-      return ::iganet::to_json<value_type,1>(knots_);      
+      return ::iganet::to_json<value_type,1>(knots_);
     }
-    
+
     /// @brief Returns the B-spline object's coefficients as JSON object
     inline nlohmann::json coeffs_to_json() const {
       auto coeffs_json = nlohmann::json::array();
@@ -1948,7 +1948,7 @@ namespace iganet {
       // Update number of knots and coefficients
       std::array<int64_t, parDim_> nknots(nknots_);
       std::array<int64_t, parDim_> ncoeffs(ncoeffs_);
-        
+
       for (short_t refine = 0; refine < numRefine; ++refine) {
         if (dim == -1)
           for (short_t i = 0; i < parDim_; ++i) {
@@ -1966,16 +1966,16 @@ namespace iganet {
 
       for (short_t i = 0; i < parDim_; ++i) {
         std::vector<value_type> kv; kv.reserve(nknots[i]);
-        
+
         for (int64_t j = 0; j < degrees_[i]; ++j)
           kv.push_back(static_cast<value_type>(0));
-        
+
         for (int64_t j = 0; j < ncoeffs[i] - degrees_[i] + 1; ++j)
           kv.push_back(static_cast<value_type>(j) / static_cast<value_type>(ncoeffs[i] - degrees_[i]));
-        
+
         for (int64_t j = 0; j < degrees_[i]; ++j)
           kv.push_back(static_cast<value_type>(1));
-        
+
         if (core<real_t>::options_.device() == torch::kCPU)
           knots[i] = torch::from_blob(static_cast<value_type *>(kv.data()),
                                       kv.size(), core<real_t>::options_).clone();
@@ -1984,7 +1984,7 @@ namespace iganet {
                                       kv.size(), core<real_t>::options_.device(torch::kCPU))
             .to(core<real_t>::options_.device());
       }
-      
+
       // The updated knot vectors have lengths \f$m_d+p_d+1\f$, where
       // \f$m_d\f$ is the number of coefficients after the update. To
       // update the coefficients using the Oslo algorithm (Algorithm
@@ -1992,11 +1992,11 @@ namespace iganet {
       // \f$p_d+1\f$ knots in what follows
       for (short_t i = 0; i < parDim_; ++i)
         knots_idx[i] = knots[i].index({torch::indexing::Slice(0, knots[i].numel()-degrees_[i]-1)});
-      
+
       // Get indices of the first \f$m_d\f$ new knots relative to old
       // knot vectors
       auto idx = find_knot_indices(knots_idx);
-      
+
       // Update coefficient vector
       update_coeffs(knots, idx);
 
@@ -2004,7 +2004,7 @@ namespace iganet {
       knots.swap(knots_);
       nknots.swap(nknots_);
       ncoeffs.swap(ncoeffs_);
-      
+
       return *this;
     }
 
@@ -2019,7 +2019,7 @@ namespace iganet {
         return 1;
     }
 
-  protected:    
+  protected:
     /// @brief Initializes the B-spline coefficients
     inline void init_coeffs(enum init init)
     {
@@ -2147,17 +2147,17 @@ namespace iganet {
       assert(parDim_ == 2 &&
              knots[0].numel() == idx[0].numel()+degrees_[0]+1 &&
              knots[1].numel() == idx[1].numel()+degrees_[1]+1);
-      
+
       auto basfunc = torch::kron(update_coeffs_univariate<degrees_[1], 1>(knots[1].flatten(),
                                                                           idx[1].flatten()),
                                  update_coeffs_univariate<degrees_[0], 0>(knots[0].flatten(),
                                                                           idx[0].flatten()));
-      
+
       TensorArray2 idx_ = {idx[0].repeat(idx[1].numel()),
                            idx[1].repeat_interleave(idx[0].numel(), 0)};
-      
+
       auto coeff_idx = eval_coeff_indices(idx_);
-      
+
       for (short_t i = 0; i < geoDim_; ++i)
         coeffs(i) = dotproduct(basfunc,
                                coeffs(i).index_select(0,
@@ -2171,20 +2171,20 @@ namespace iganet {
              knots[0].numel() == idx[0].numel()+degrees_[0]+1 &&
              knots[1].numel() == idx[1].numel()+degrees_[1]+1 &&
              knots[2].numel() == idx[2].numel()+degrees_[2]+1);
-      
+
       auto basfunc = torch::kron(update_coeffs_univariate<degrees_[2], 2>(knots[2].flatten(),
                                                                           idx[2].flatten()),
                                  torch::kron(update_coeffs_univariate<degrees_[1], 1>(knots[1].flatten(),
                                                                                       idx[1].flatten()),
                                              update_coeffs_univariate<degrees_[0], 0>(knots[0].flatten(),
                                                                                       idx[0].flatten())));
-      
+
       TensorArray3 idx_ = {idx[0].repeat(idx[1].numel()*idx[2].numel()),
                            idx[1].repeat_interleave(idx[0].numel(), 0).repeat(idx[2].numel()),
                            idx[2].repeat_interleave(idx[0].numel()*idx[1].numel(), 0)};
-      
+
       auto coeff_idx = eval_coeff_indices(idx_);
-      
+
       for (short_t i = 0; i < geoDim_; ++i)
         coeffs(i) = dotproduct(basfunc,
                                coeffs(i).index_select(0,
@@ -2199,7 +2199,7 @@ namespace iganet {
              knots[1].numel() == idx[1].numel()+degrees_[1]+1 &&
              knots[2].numel() == idx[2].numel()+degrees_[2]+1 &&
              knots[3].numel() == idx[3].numel()+degrees_[3]+1);
-      
+
       auto basfunc = torch::kron(torch::kron(update_coeffs_univariate<degrees_[3], 3>(knots[3].flatten(),
                                                                                       idx[3].flatten()),
                                              update_coeffs_univariate<degrees_[2], 2>(knots[2].flatten(),
@@ -2208,20 +2208,20 @@ namespace iganet {
                                                                                       idx[1].flatten()),
                                              update_coeffs_univariate<degrees_[0], 0>(knots[0].flatten(),
                                                                                       idx[0].flatten())));
-      
+
       TensorArray4 idx_ = {idx[0].repeat(idx[1].numel()*idx[2].numel()*idx[3].numel()),
                            idx[1].repeat_interleave(idx[0].numel(), 0).repeat(idx[2].numel()*idx[3].numel()),
                            idx[2].repeat_interleave(idx[0].numel()*idx[1].numel(), 0).repeat(idx[3].numel()),
                            idx[3].repeat_interleave(idx[0].numel()*idx[1].numel()*idx[2].numel(), 0)};
-      
+
       auto coeff_idx = eval_coeff_indices(idx_);
-      
+
       for (short_t i = 0; i < geoDim_; ++i)
         coeffs(i) = dotproduct(basfunc,
                                coeffs(i).index_select(0,
                                                       coeff_idx).view({-1, idx_[0].numel()})
                                ).view(idx_[0].sizes());
-    }    
+    }
     /// @}
 
     /// @brief Returns the vector of univariate B-spline basis
@@ -2388,7 +2388,7 @@ namespace iganet {
     /// This functions implements the Oslo algorithm (Algorithm 4.11
     /// in \cite Lyche:2011) to compute the univariate knot insertion
     /// matrix from the given knot vector to the new knot vector
-    /// passed as argument `knots`.    
+    /// passed as argument `knots`.
     template<short_t degree, short_t dim>
     inline auto update_coeffs_univariate(const torch::Tensor& knots,
                                          const torch::Tensor& idx) const
@@ -2396,10 +2396,10 @@ namespace iganet {
       // Algorithm 2.22 from \cite Lyche:2011 modified to implement
       // the Oslo algorithm (Algorithm 4.11 from \cite Lyche:2011)
       torch::Tensor b = torch::ones({idx.numel()}, core<real_t>::options_);
-      
+
       // Calculate R_k, k = 1, ..., p_d
       for (short_t k=1; k<= degree; ++k) {
-        
+
         // Instead of calculating t1 and t2 we calculate t1 and t21=(t2-t1)
         auto t1  = knots_[dim].index_select(0, VSlice(idx, -k+1,   1) );
         auto t21 = knots_[dim].index_select(0, VSlice(idx,    1, k+1) ) - t1;
@@ -2408,14 +2408,14 @@ namespace iganet {
         // mask that is 1 if t2-t1 < eps and 0 otherwise. Note that
         // we do not have to take the absolute value as t2 >= t1.
         auto mask = (t21 < std::numeric_limits<value_type>::epsilon()).to(dtype<value_type>());
-        
+
         // Instead of computing (xi-t1)/(t2-t1) which is prone to
         // yielding 0/0 we compute (xi-t1-mask)/(t2-t1-mask) which
         // equals the original expression if the mask is 0, i.e.,
         // t2-t1 >= eps and 1 otherwise since t1 <= xi < t2.
         auto w  = torch::div(knots.index({torch::indexing::Slice(k, idx.numel()+k)}).repeat(k)
                              -t1-mask, t21-mask);
-        
+
         // Calculate the vector of B-splines evaluated at xi
         b = torch::cat({ torch::mul(torch::ones_like(w, core<real_t>::options_)-w, b),
             torch::zeros_like(idx, core<real_t>::options_) }, 0)
@@ -2426,7 +2426,7 @@ namespace iganet {
       return b.view({degree+1, idx.numel()});
     }
   };
-  
+
   /// @brief Serializes a B-spline object
   template<typename real_t, short_t GeoDim, short_t... Degrees>
   inline torch::serialize::OutputArchive& operator<<(torch::serialize::OutputArchive& archive,
@@ -2474,7 +2474,7 @@ namespace iganet {
     NonUniformBSplineCore(std::array<std::vector<typename Base::value_type>, Base::parDim_> kv,
                           enum init init = init::zeros,
                           iganet::core<real_t> core = iganet::core<real_t>{})
-      : Base(std::array<int64_t, Base::parDim_>{Degrees...}, init, core)
+      : Base(std::array<int64_t, Base::parDim_>{2*Degrees...}, init, core)
     {
       for (short_t i=0; i<Base::parDim_; ++i) {
 
@@ -2634,10 +2634,10 @@ namespace iganet {
 
       for (short_t i = 0; i < Base::parDim_; ++i) {
         auto [kv_cpu, kv_accessor] = to_tensorAccessor<typename Base::value_type, 1>(Base::knots_[i], torch::kCPU);
-        
+
         std::vector<typename Base::value_type> kv; kv.reserve(nknots[i]);
         kv.push_back(kv_accessor[0]);
-        
+
         for (int64_t j = 1; j < kv_accessor.size(0); ++j) {
 
           if ((dim == -1 || dim == i) && (kv_accessor[j-1] < kv_accessor[j]))
@@ -2646,10 +2646,10 @@ namespace iganet {
                            static_cast<typename Base::value_type>(refine) /
                            static_cast<typename Base::value_type>(2<<(numRefine-1)) *
                            (kv_accessor[j] - kv_accessor[j-1]));
-          
-          kv.push_back(kv_accessor[j]);          
+
+          kv.push_back(kv_accessor[j]);
         }
-        
+
         if (core<real_t>::options_.device() == torch::kCPU)
           knots[i] = torch::from_blob(static_cast<typename Base::value_type *>(kv.data()),
                                       kv.size(), core<real_t>::options_).clone();
@@ -2661,8 +2661,8 @@ namespace iganet {
         // Store the size of the updated knot and coefficient vector
         nknots[i] = kv.size();
         ncoeffs[i] = nknots[i]-Base::degrees_[i]-1;
-      }           
-      
+      }
+
       // The updated knot vectors have lengths \f$m_d+p_d+1\f$, where
       // \f$m_d\f$ is the number of coefficients after the update. To
       // update the coefficients using the Oslo algorithm (Algorithm
@@ -2670,11 +2670,11 @@ namespace iganet {
       // \f$p_d+1\f$ knots in what follows
       for (short_t i = 0; i < Base::parDim_; ++i)
         knots_idx[i] = knots[i].index({torch::indexing::Slice(0, knots[i].numel()-Base::degrees_[i]-1)});
-      
+
       // Get indices of the first \f$m_d\f$ new knots relative to old
       // knot vectors
       auto idx = find_knot_indices(knots_idx);
-      
+
       // Update coefficient vector
       Base::update_coeffs(knots, idx);
 
@@ -2682,15 +2682,15 @@ namespace iganet {
       knots.swap(Base::knots_);
       nknots.swap(Base::nknots_);
       ncoeffs.swap(Base::ncoeffs_);
-      
+
       return *this;
     }
-    
+
     /// @brief Returns the B-spline object with refined knot and
     /// coefficient vectors
     NonUniformBSplineCore& insert_knots(const std::array<torch::Tensor, Base::parDim_>& knots)
-    { 
-      std::cout << "FIRST LINE\n";    
+    {
+      std::cout << "FIRST LINE\n";
       std::array<int64_t, Base::parDim_> nknots(Base::nknots_);
       std::array<int64_t, Base::parDim_> ncoeffs(Base::ncoeffs_);
       std::array<torch::Tensor, Base::parDim_> knots_, knots_idx;
@@ -2710,11 +2710,11 @@ std::cout << "AFTER\n";
       // \f$p_d+1\f$ knots in what follows
       for (short_t i = 0; i < Base::parDim_; ++i)
         knots_idx[i] = knots_[i].index({torch::indexing::Slice(0, knots_[i].numel()-Base::degrees_[i]-1)});
-      
+
       // Get indices of the first \f$m_d\f$ new knots relative to old
       // knot vectors
       auto idx = find_knot_indices(knots_idx);
-      
+
       // Update coefficient vector
       Base::update_coeffs(knots_, idx);
 
@@ -2722,7 +2722,7 @@ std::cout << "AFTER\n";
       knots_.swap(Base::knots_);
       nknots.swap(Base::nknots_);
       ncoeffs.swap(Base::ncoeffs_);
-      
+
       return *this;
     }
   };
@@ -4085,7 +4085,7 @@ std::cout << "AFTER\n";
 #else
           auto [Coords0_cpu, XAccessor] = to_tensorAccessor<typename BSplineCore_t::value_type,1>(Coords(0), torch::kCPU);
           auto [Coords1_cpu, YAccessor] = to_tensorAccessor<typename BSplineCore_t::value_type,1>(Coords(1), torch::kCPU);
-#endif    
+#endif
 
 #pragma omp parallel for simd
           for (int64_t i=0; i<res0; ++i) {
@@ -4330,7 +4330,7 @@ std::cout << "AFTER\n";
         auto [Coords0_cpu, XAccessor] = to_tensorAccessor<typename BSplineCore_t::value_type,2>(Coords(0), torch::kCPU);
         auto [Coords1_cpu, YAccessor] = to_tensorAccessor<typename BSplineCore_t::value_type,2>(Coords(1), torch::kCPU);
         auto [Coords2_cpu, ZAccessor] = to_tensorAccessor<typename BSplineCore_t::value_type,2>(Coords(2), torch::kCPU);
-#endif        
+#endif
 
 #pragma omp parallel for simd collapse(2)
         for (int64_t i=0; i<res0; ++i)
@@ -4417,7 +4417,7 @@ std::cout << "AFTER\n";
 
 #ifdef __CUDACC__
 #pragma nv_diag_suppress 514
-#endif	
+#endif
          << ", degrees=";
       for (short_t i=0; i<BSplineCore::parDim_-1; ++i)
         os << BSplineCore::degree(i) << "x";
@@ -4433,7 +4433,7 @@ std::cout << "AFTER\n";
         os << BSplineCore::nknots(BSplineCore::parDim_-1);
       else
         os << 0;
-      
+
       os << ", coeffs=";
       for (short_t i=0; i<BSplineCore::parDim_-1; ++i)
         os << BSplineCore::ncoeffs(i) << "x";
@@ -4445,7 +4445,7 @@ std::cout << "AFTER\n";
 #ifdef __CUDACC__
 #pragma nv_diag_default 514
 #endif
-      
+
       if (is_verbose(os)) {
         os << "\nknots = ";
         if (BSplineCore::parDim_ > 0)
