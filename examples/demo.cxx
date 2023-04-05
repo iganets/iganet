@@ -20,20 +20,28 @@ int main()
   std::cout << iganet::verbose;
   using real_t = double;
   iganet::init();
-  
-  iganet::NonUniformBSpline<real_t, 3, 2> S({{{0.0, 0.0, 0.0, 0.1, 0.5, 0.8, 1.0, 1.0, 1.0}}});
 
-  // Map control points to physical coordinates
-  S.transform( [](const std::array<real_t,1> xi){ return std::array<real_t,3>{ xi[0], xi[0]*xi[0], 3*xi[0]*xi[0] }; } );
+  using namespace iganet::literals;
   
-  std::cout << "\n----\n" << S << "\n----\n";
-  S.plot();
+  using UniformBSpline_t    = iganet::UniformBSpline<real_t, 3, 1>;
+  using NonUniformBSpline_t = iganet::NonUniformBSpline<real_t, 3, 1, 1>;
+  using FunctionSpace_t     = iganet::FunctionSpace<UniformBSpline_t,
+                                                    NonUniformBSpline_t,
+                                                    UniformBSpline_t>;
+   
+  // FunctionSpace_t space(iganet::init::greville,
+  //                       iganet::to_array(8, 6_i64),
+  //                       iganet::to_array(iganet::to_vector(0.0,0.0,0.5,1.0,1.0),
+  //                                        iganet::to_vector(0.0,0.0,0.5,1.0,1.0)),
+  //                       iganet::to_array(13, 2_i64)
+  //                       );
+
+  iganet::TH1<UniformBSpline_t> s(iganet::to_array(5_i64));
   
-  S.insert_knots( iganet::to_tensorArray<real_t>({0.4, 0.4}) );
-  S.uniform_refine(2);
-  
-  std::cout << "\n----\n" << S << "\n----\n";
-  S.plot();
+  std::cout << s << std::endl;
   
   return 0;
 }
+
+
+// TH1, TH2, TH3, TH4
