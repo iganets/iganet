@@ -410,10 +410,10 @@ The following B-spline models are implemented:
 
     __Example:__
     ```
-    "request" : put/<session-id>/<model-id>/<attribute>
+    "request" : put/<session-id>/<model-id>/coeffs
     "data"    : {
                   "indices" : [0, 6, 9],
-                  "coords"  : [[0.5, 0.2], [0.3, 0.6], [0.9, 1.2]]
+                  "coeffs"  : [[0.5, 0.2], [0.3, 0.6], [0.9, 1.2]]
                 }
     ```
     This will update the coordinates of the two-dimensional coefficients with global indices `0`, `6`, and `9` to the values `[0.5, 0.2]`, `[0.3, 0.6]`, and `[0.9, 1.2]`. It is not assumed that the indices and coordinates are numbered.
@@ -427,3 +427,8 @@ The following B-spline models are implemented:
     ```
 
     Currently, the float values are stored as plain JSON string but it is planned to change to binary base64 encoding in the future.
+
+---
+
+1. load serialized model from file on client side
+2. global translate and rotate parameter
