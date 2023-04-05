@@ -81,7 +81,7 @@ namespace iganet { namespace webapp {
       }
 
       /// Returns the requested model or throws an exception
-      std::shared_ptr<iganet::Model> getModel(int64_t id) {
+      std::shared_ptr<Model> getModel(int64_t id) {
         auto it = models.find(id);
         if (it == models.end())
           throw InvalidModelIdException();
@@ -90,7 +90,7 @@ namespace iganet { namespace webapp {
       }
 
       /// Returns the model and removes it from the list of models
-      std::shared_ptr<iganet::Model> removeModel(int64_t id) {
+      std::shared_ptr<Model> removeModel(int64_t id) {
         auto it = models.find(id);
         if (it == models.end())
           throw InvalidModelIdException();
@@ -102,7 +102,7 @@ namespace iganet { namespace webapp {
       }
 
       /// @brief List of models
-      std::map<int64_t, std::shared_ptr<iganet::Model>> models;
+      std::map<int64_t, std::shared_ptr<Model>> models;
     };
 
     /// @brief Sessions structure
@@ -134,7 +134,7 @@ namespace iganet { namespace webapp {
       inline static std::map<std::string, std::shared_ptr<Session<T>>> sessions;
 
       /// List of models
-      inline static iganet::ModelManager models = iganet::ModelManager("webapps/models");
+      inline static ModelManager models = ModelManager("webapps/models");
     };
 
 }} // namespace iganet::webapp

@@ -28,6 +28,21 @@
 
 namespace iganet {
 
+  /// @brief Enumerator for specifying the capabilities
+  enum class capability
+    {
+      eval   = 0, /*!< evaluation */
+      refine = 1  /*!< refinement */
+    };
+
+  /// @brief Enumerator for specifying the output type
+  enum class output
+    {
+      scalar      = 0, /*!< scalar value */
+      scalarfield = 1, /*!< scalar field */
+      vectorfield = 2  /*!< vector field */
+    };
+  
   /// @brief Model interface
   class Model {
   public:

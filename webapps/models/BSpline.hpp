@@ -17,10 +17,10 @@
 
 namespace iganet {
 
-  namespace model {
+  namespace webapp {
 
     /// @brief Enumerator for specifying the degree of B-splines
-    enum class degree : short_t
+    enum class degree
       {
         constant  = 0, /*!<  constant B-Spline basis functions */
         linear    = 1, /*!<    linear B-Spline basis functions */
@@ -356,5 +356,5 @@ namespace iganet {
       }
     };    
 
-  } // namespace model    
+  } // namespace wepapp
 } // namespace iganet
