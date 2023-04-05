@@ -37,6 +37,10 @@ namespace iganet {
 
 #define short_t unsigned short int
 
+  namespace literals {
+    inline int64_t operator""_i64(unsigned long long value) { return value; };
+  }
+  
   using TensorArray1 = std::array<torch::Tensor,1>;
   using TensorArray2 = std::array<torch::Tensor,2>;
   using TensorArray3 = std::array<torch::Tensor,3>;
