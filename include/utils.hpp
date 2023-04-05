@@ -528,6 +528,21 @@ namespace iganet {
     return vector;
   }
 
+  /// @brief Converts a list of arguments into std::array
+  template<typename...Args>
+  auto to_array(Args&&... args)
+  {
+    return std::array<typename std::common_type<Args...>::type,
+                      sizeof...(Args)>{std::move(args)...};
+  }
+
+  /// @brief Converts a list of arguments into std::vector
+  template<typename...Args>
+  auto to_vector(Args&&... args)
+  {
+    return std::vector<typename std::common_type<Args...>::type>{std::move(args)...};
+  }
+  
   /// @brief Converts an std::initializer_list to torch::Tensor
   /// @{
   template<typename T>
