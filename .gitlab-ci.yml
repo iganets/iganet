@@ -1,13 +1,15 @@
 before_script:
    - apt-get update -y
    - apt-get install build-essential doxygen locales unzip wget zlib1g-dev libstdc++-11-dev -y
-   - wget https://github.com/Kitware/CMake/releases/download/v3.24.3/cmake-3.24.3-linux-x86_64.tar.gz
-   - tar xvzf cmake-3.24.3-linux-x86_64.tar.gz -C /
-   - rm -f cmake-3.24.3-linux-x86_64.tar.gz
+   - wget https://github.com/Kitware/CMake/releases/download/v3.26.3/cmake-3.26.3-linux-x86_64.tar.gz
+   - tar xvzf cmake-3.26.3-linux-x86_64.tar.gz -C /opt
+   - rm -f cmake-3.26.3-linux-x86_64.tar.gz
    - wget https://download.pytorch.org/libtorch/cpu/libtorch-cxx11-abi-shared-with-deps-1.13.0%2Bcpu.zip -O libtorch.zip
-   - unzip libtorch.zip -d /
+   - unzip libtorch.zip -d /opt
    - rm -f libtorch.zip
-   - export PATH=$PATH:/cmake-3.24.3-linux-x86_64/bin
+   - export PATH=$PATH:/opt/cmake-3.26.3-linux-x86_64/bin
+   - locale-gen --purge en_US.UTF-8
+   - echo -e 'LANG="en_US.UTF-8"\nLANGUAGE="en_US:en"\n' > /etc/default/locale
    - export LANG=en_US.UTF-8
    - export LC_ALL=en_US.UTF-8
 
@@ -23,12 +25,13 @@ pages:
   script:
     - mkdir -p build
     - cd build
-    - CC=gcc CXX=g++ cmake .. -DIGANET_BUILD_DOCS=ON -DTorch_DIR=/libtorch/share/cmake/Torch -DIGANET_WITH_MATPLOT=OFF
+    - CC=gcc CXX=g++ cmake .. -DIGANET_BUILD_DOCS=ON -DTorch_DIR=/opt/libtorch/share/cmake/Torch -DIGANET_WITH_MATPLOT=OFF
     - make Doxygen
     - mv docs/doxygen/html ../public
     - mv docs/doxygen/*.xml ../public
   only:
     changes:
+      - .gitlab-ci.yml
       - CMakeLists.txt
       - cmake/*
       - docs/*
@@ -51,7 +54,7 @@ unittests-gcc:
   script:
     - mkdir -p build
     - cd build
-    - CC=gcc CXX=g++ cmake .. -DIGANET_BUILD_UNITTESTS=ON -DTorch_DIR=/libtorch/share/cmake/Torch -DIGANET_WITH_MATPLOT=OFF
+    - CC=gcc CXX=g++ cmake .. -DIGANET_BUILD_UNITTESTS=ON -DTorch_DIR=/opt/libtorch/share/cmake/Torch -DIGANET_WITH_MATPLOT=OFF
     - make
     - make test
   only:
