@@ -64,11 +64,11 @@ namespace iganet {
       std::srand(std::time(0));
     }
     
-    template<typename bspline_t>
-    auto& next(bspline_t& obj) const
+    template<typename spline_t>
+    auto& next(spline_t& obj) const
     {
-      static_assert(bspline_t::parDim() == 1 &&
-                    bspline_t::geoDim() == 1,
+      static_assert(spline_t::parDim() == 1 &&
+                    spline_t::geoDim() == 1,
                     "Interval creator requires parDim=1 and geoDim=1");
 
       T x0 = x0min_ + (x0max_-x0min_) * T(std::rand()) / T(RAND_MAX);
@@ -127,11 +127,11 @@ namespace iganet {
       std::srand(std::time(0));
     }
     
-    template<typename bspline_t>
-    auto& next(bspline_t& obj) const
+    template<typename spline_t>
+    auto& next(spline_t& obj) const
     {
-      static_assert(bspline_t::parDim() == 2 &&
-                    bspline_t::geoDim() == 2,
+      static_assert(spline_t::parDim() == 2 &&
+                    spline_t::geoDim() == 2,
                     "Interval creator requires parDim=2 and geoDim=2");
 
       T x0 = x0min_ + (x0max_-x0min_) * T(std::rand()) / T(RAND_MAX);
