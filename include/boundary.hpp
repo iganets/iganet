@@ -24,7 +24,7 @@ namespace iganet {
               left  = 1, right = 2, down  = 3, up    = 4, none  = 0 };
 
   /// @brief BoundaryCore
-  template<typename BSpline_t, short_t>
+  template<typename spline_t, short_t>
   class BoundaryCore;
   
   /// @brief BoundaryCore (1d specialization)
@@ -32,42 +32,42 @@ namespace iganet {
   /// This specialization has 2 sides
   /// - west (u=0)
   /// - east (u=1)
-  template<typename BSpline_t>
-  class BoundaryCore<BSpline_t, /* parDim */1>
-    : public core<typename BSpline_t::value_type>
+  template<typename spline_t>
+  class BoundaryCore<spline_t, /* parDim */1>
+    : public core<typename spline_t::value_type>
   {
   private:
-    /// @brief Boundary B-spline type
-    using BoundaryBSpline_t = typename BSpline_t::template
-      derived_self_type_t<typename BSpline_t::value_type,
-                          BSpline_t::geoDim()>;
+    /// @brief Boundary spline type
+    using boundaryspline_t = typename spline_t::template
+      derived_self_type_t<typename spline_t::value_type,
+                          spline_t::geoDim()>;
     
-    /// @brief Tuple of B-Splines
-    std::tuple<BoundaryBSpline_t,
-               BoundaryBSpline_t> bdr_;
+    /// @brief Tuple of splines
+    std::tuple<boundaryspline_t,
+               boundaryspline_t> bdr_;
   public:
     BoundaryCore() = default;
 
     /// @brief Constructor
     BoundaryCore(const std::array<int64_t, 1>&,
                  enum init = init::zeros)
-      : core<typename BSpline_t::value_type>() ,
+      : core<typename spline_t::value_type>() ,
         bdr_(
              {
-               BoundaryBSpline_t(std::array<int64_t, 0>{}),
-               BoundaryBSpline_t(std::array<int64_t, 0>{}),
+               boundaryspline_t(std::array<int64_t, 0>{}),
+               boundaryspline_t(std::array<int64_t, 0>{}),
              }               
              )
     {}
 
     /// @brief Constructor
-    BoundaryCore(const std::array<std::vector<typename BSpline_t::value_type>, 1>&,
+    BoundaryCore(const std::array<std::vector<typename spline_t::value_type>, 1>&,
                  enum init = init::zeros)
-      : core<typename BSpline_t::value_type>() ,
+      : core<typename spline_t::value_type>() ,
         bdr_(
              {
-               BoundaryBSpline_t(std::array<int64_t, 0>{}),
-               BoundaryBSpline_t(std::array<int64_t, 0>{}),
+               boundaryspline_t(std::array<int64_t, 0>{}),
+               boundaryspline_t(std::array<int64_t, 0>{}),
              }               
              )
     {}
@@ -78,7 +78,7 @@ namespace iganet {
       return side::east;
     }
 
-    /// @brief Returns constant reference to side-th B-Spline
+    /// @brief Returns constant reference to side-th Spline
     template<short_t s>
     inline constexpr auto& side() const
     {
@@ -86,7 +86,7 @@ namespace iganet {
       return std::get<s-1>(bdr_);
     }
 
-    /// @brief Returns non-constant reference to side-th B-Spline
+    /// @brief Returns non-constant reference to side-th Spline
     template<short_t s>
     inline constexpr auto& side()
     {
@@ -121,7 +121,7 @@ namespace iganet {
     /// @brief Returns a string representation of the Boundary object
     inline void pretty_print(std::ostream& os = std::cout) const
     {
-      os << core<typename BSpline_t::value_type>::name()
+      os << core<typename spline_t::value_type>::name()
          << "(\n"
          << "left  = " << std::get<west-1>(bdr_) << "\n"
          << "right = " << std::get<east-1>(bdr_)
@@ -136,53 +136,53 @@ namespace iganet {
   /// - east  (u=1, v  )
   /// - south (u,   v=0)
   /// - north (u,   v=1)
-  template<typename BSpline_t>
-  class BoundaryCore<BSpline_t, /* parDim */2>
-    : public core<typename BSpline_t::value_type>
+  template<typename spline_t>
+  class BoundaryCore<spline_t, /* parDim */2>
+    : public core<typename spline_t::value_type>
   {
   private:
-    /// @brief Boundary B-spline type
-    using BoundaryBSpline_t = std::tuple<
-    typename BSpline_t::template
-    derived_self_type_t<typename BSpline_t::value_type,
-                        BSpline_t::geoDim(),
-                        BSpline_t::degree(1)>,
-    typename BSpline_t::template
-    derived_self_type_t<typename BSpline_t::value_type,
-                        BSpline_t::geoDim(),
-                        BSpline_t::degree(0)>>;
+    /// @brief Boundary spline type
+    using boundaryspline_t = std::tuple<
+    typename spline_t::template
+    derived_self_type_t<typename spline_t::value_type,
+                        spline_t::geoDim(),
+                        spline_t::degree(1)>,
+    typename spline_t::template
+    derived_self_type_t<typename spline_t::value_type,
+                        spline_t::geoDim(),
+                        spline_t::degree(0)>>;
     
-    /// @brief Tuple of B-Splines
-    std::tuple<typename std::tuple_element_t<0,BoundaryBSpline_t>,
-               typename std::tuple_element_t<0,BoundaryBSpline_t>,
-               typename std::tuple_element_t<1,BoundaryBSpline_t>,
-               typename std::tuple_element_t<1,BoundaryBSpline_t>> bdr_;
+    /// @brief Tuple of splines
+    std::tuple<typename std::tuple_element_t<0,boundaryspline_t>,
+               typename std::tuple_element_t<0,boundaryspline_t>,
+               typename std::tuple_element_t<1,boundaryspline_t>,
+               typename std::tuple_element_t<1,boundaryspline_t>> bdr_;
     
   public:
     /// @brief Constructor
     BoundaryCore(const std::array<int64_t, 2>& ncoeffs,
                  enum init init = init::zeros)
-      : core<typename BSpline_t::value_type>(),
+      : core<typename spline_t::value_type>(),
         bdr_(
              {
-               std::tuple_element_t<0,BoundaryBSpline_t>(std::array<int64_t,1>({ncoeffs[1]}), init),
-               std::tuple_element_t<0,BoundaryBSpline_t>(std::array<int64_t,1>({ncoeffs[1]}), init),
-               std::tuple_element_t<1,BoundaryBSpline_t>(std::array<int64_t,1>({ncoeffs[0]}), init),
-               std::tuple_element_t<1,BoundaryBSpline_t>(std::array<int64_t,1>({ncoeffs[0]}), init)
+               std::tuple_element_t<0,boundaryspline_t>(std::array<int64_t,1>({ncoeffs[1]}), init),
+               std::tuple_element_t<0,boundaryspline_t>(std::array<int64_t,1>({ncoeffs[1]}), init),
+               std::tuple_element_t<1,boundaryspline_t>(std::array<int64_t,1>({ncoeffs[0]}), init),
+               std::tuple_element_t<1,boundaryspline_t>(std::array<int64_t,1>({ncoeffs[0]}), init)
              }
              )
     {}
 
     /// @brief Constructor
-    BoundaryCore(const std::array<std::vector<typename BSpline_t::value_type>, 2>& kv,
+    BoundaryCore(const std::array<std::vector<typename spline_t::value_type>, 2>& kv,
                  enum init init = init::zeros)
-      : core<typename BSpline_t::value_type>(),
+      : core<typename spline_t::value_type>(),
         bdr_(
              {
-               std::tuple_element_t<0,BoundaryBSpline_t>(std::array<std::vector<typename BSpline_t::value_type>,1>({kv[1]}), init),
-               std::tuple_element_t<0,BoundaryBSpline_t>(std::array<std::vector<typename BSpline_t::value_type>,1>({kv[1]}), init),
-               std::tuple_element_t<1,BoundaryBSpline_t>(std::array<std::vector<typename BSpline_t::value_type>,1>({kv[0]}), init),
-               std::tuple_element_t<1,BoundaryBSpline_t>(std::array<std::vector<typename BSpline_t::value_type>,1>({kv[0]}), init)
+               std::tuple_element_t<0,boundaryspline_t>(std::array<std::vector<typename spline_t::value_type>,1>({kv[1]}), init),
+               std::tuple_element_t<0,boundaryspline_t>(std::array<std::vector<typename spline_t::value_type>,1>({kv[1]}), init),
+               std::tuple_element_t<1,boundaryspline_t>(std::array<std::vector<typename spline_t::value_type>,1>({kv[0]}), init),
+               std::tuple_element_t<1,boundaryspline_t>(std::array<std::vector<typename spline_t::value_type>,1>({kv[0]}), init)
              }
              )
     {}
@@ -193,7 +193,7 @@ namespace iganet {
       return side::north;
     }
 
-    /// @brief Returns constant reference to side-th B-Spline
+    /// @brief Returns constant reference to side-th spline
     template<short_t s>
     inline constexpr auto& side() const
     {
@@ -201,7 +201,7 @@ namespace iganet {
       return std::get<s-1>(bdr_);
     }
 
-    /// @brief Returns non-constant reference to side-th B-Spline
+    /// @brief Returns non-constant reference to side-th spline
     template<short_t s>
     inline constexpr auto& side()
     {
@@ -238,7 +238,7 @@ namespace iganet {
     /// @brief Returns a string representation of the Boundary object
     inline void pretty_print(std::ostream& os = std::cout) const
     {
-      os << core<typename BSpline_t::value_type>::name()
+      os << core<typename spline_t::value_type>::name()
          << "(\n"
          << "west = "  << std::get<west-1>(bdr_) << "\n"
          << "east = "  << std::get<east-1>(bdr_) << "\n"
@@ -257,69 +257,69 @@ namespace iganet {
   /// - north (u,   v=1, w)
   /// - front (u,   v,   w=0)
   /// - back  (u,   v,   w=1)
-  template<typename BSpline_t>
-  class BoundaryCore<BSpline_t, /* parDim */3>
-    : public core<typename BSpline_t::value_type>
+  template<typename spline_t>
+  class BoundaryCore<spline_t, /* parDim */3>
+    : public core<typename spline_t::value_type>
   {
   private:
-    /// @brief Boundary B-spline type
-    using BoundaryBSpline_t = std::tuple<
-    typename BSpline_t::template
-    derived_self_type_t<typename BSpline_t::value_type,
-                        BSpline_t::geoDim(),
-                        BSpline_t::degree(1), BSpline_t::degree(2)>,
-    typename BSpline_t::template
-    derived_self_type_t<typename BSpline_t::value_type,
-                        BSpline_t::geoDim(),
-                        BSpline_t::degree(0), BSpline_t::degree(2)>,
-    typename BSpline_t::template
-    derived_self_type_t<typename BSpline_t::value_type,
-                        BSpline_t::geoDim(),
-                        BSpline_t::degree(0), BSpline_t::degree(1)>>;
+    /// @brief Boundary spline type
+    using boundaryspline_t = std::tuple<
+    typename spline_t::template
+    derived_self_type_t<typename spline_t::value_type,
+                        spline_t::geoDim(),
+                        spline_t::degree(1), spline_t::degree(2)>,
+    typename spline_t::template
+    derived_self_type_t<typename spline_t::value_type,
+                        spline_t::geoDim(),
+                        spline_t::degree(0), spline_t::degree(2)>,
+    typename spline_t::template
+    derived_self_type_t<typename spline_t::value_type,
+                        spline_t::geoDim(),
+                        spline_t::degree(0), spline_t::degree(1)>>;
 
 
-    /// @brief Tuple of B-Splines
-    std::tuple<typename std::tuple_element_t<0,BoundaryBSpline_t>,
-               typename std::tuple_element_t<0,BoundaryBSpline_t>,
-               typename std::tuple_element_t<1,BoundaryBSpline_t>,
-               typename std::tuple_element_t<1,BoundaryBSpline_t>,
-               typename std::tuple_element_t<2,BoundaryBSpline_t>,
-               typename std::tuple_element_t<2,BoundaryBSpline_t>> bdr_;
+    /// @brief Tuple of splines
+    std::tuple<typename std::tuple_element_t<0,boundaryspline_t>,
+               typename std::tuple_element_t<0,boundaryspline_t>,
+               typename std::tuple_element_t<1,boundaryspline_t>,
+               typename std::tuple_element_t<1,boundaryspline_t>,
+               typename std::tuple_element_t<2,boundaryspline_t>,
+               typename std::tuple_element_t<2,boundaryspline_t>> bdr_;
     
   public:
     /// @brief Constructor
     BoundaryCore(const std::array<int64_t, 3>& ncoeffs,
                  enum init init = init::zeros)
-      : core<typename BSpline_t::value_type>(),
+      : core<typename spline_t::value_type>(),
         bdr_(
              {
-               std::tuple_element_t<0,BoundaryBSpline_t>(std::array<int64_t,2>({ncoeffs[1], ncoeffs[2]}), init),
-               std::tuple_element_t<0,BoundaryBSpline_t>(std::array<int64_t,2>({ncoeffs[1], ncoeffs[2]}), init),
-               std::tuple_element_t<1,BoundaryBSpline_t>(std::array<int64_t,2>({ncoeffs[0], ncoeffs[2]}), init),
-               std::tuple_element_t<1,BoundaryBSpline_t>(std::array<int64_t,2>({ncoeffs[0], ncoeffs[2]}), init),
-               std::tuple_element_t<2,BoundaryBSpline_t>(std::array<int64_t,2>({ncoeffs[0], ncoeffs[1]}), init),
-               std::tuple_element_t<2,BoundaryBSpline_t>(std::array<int64_t,2>({ncoeffs[0], ncoeffs[1]}), init)
+               std::tuple_element_t<0,boundaryspline_t>(std::array<int64_t,2>({ncoeffs[1], ncoeffs[2]}), init),
+               std::tuple_element_t<0,boundaryspline_t>(std::array<int64_t,2>({ncoeffs[1], ncoeffs[2]}), init),
+               std::tuple_element_t<1,boundaryspline_t>(std::array<int64_t,2>({ncoeffs[0], ncoeffs[2]}), init),
+               std::tuple_element_t<1,boundaryspline_t>(std::array<int64_t,2>({ncoeffs[0], ncoeffs[2]}), init),
+               std::tuple_element_t<2,boundaryspline_t>(std::array<int64_t,2>({ncoeffs[0], ncoeffs[1]}), init),
+               std::tuple_element_t<2,boundaryspline_t>(std::array<int64_t,2>({ncoeffs[0], ncoeffs[1]}), init)
              }
              )
     {}
 
     /// @brief Constructor
-    BoundaryCore(const std::array<std::vector<typename BSpline_t::value_type>, 3>& kv,
+    BoundaryCore(const std::array<std::vector<typename spline_t::value_type>, 3>& kv,
                  enum init init = init::zeros)
-      : core<typename BSpline_t::value_type>(),
+      : core<typename spline_t::value_type>(),
         bdr_(
              {
-               std::tuple_element_t<0,BoundaryBSpline_t>(std::array<std::vector<typename BSpline_t::value_type>,2>({kv[1], kv[2]}), init),
-               std::tuple_element_t<0,BoundaryBSpline_t>(std::array<std::vector<typename BSpline_t::value_type>,2>({kv[1], kv[2]}), init),
-               std::tuple_element_t<1,BoundaryBSpline_t>(std::array<std::vector<typename BSpline_t::value_type>,2>({kv[0], kv[2]}), init),
-               std::tuple_element_t<1,BoundaryBSpline_t>(std::array<std::vector<typename BSpline_t::value_type>,2>({kv[0], kv[2]}), init),
-               std::tuple_element_t<2,BoundaryBSpline_t>(std::array<std::vector<typename BSpline_t::value_type>,2>({kv[0], kv[1]}), init),
-               std::tuple_element_t<2,BoundaryBSpline_t>(std::array<std::vector<typename BSpline_t::value_type>,2>({kv[0], kv[1]}), init)
+               std::tuple_element_t<0,boundaryspline_t>(std::array<std::vector<typename spline_t::value_type>,2>({kv[1], kv[2]}), init),
+               std::tuple_element_t<0,boundaryspline_t>(std::array<std::vector<typename spline_t::value_type>,2>({kv[1], kv[2]}), init),
+               std::tuple_element_t<1,boundaryspline_t>(std::array<std::vector<typename spline_t::value_type>,2>({kv[0], kv[2]}), init),
+               std::tuple_element_t<1,boundaryspline_t>(std::array<std::vector<typename spline_t::value_type>,2>({kv[0], kv[2]}), init),
+               std::tuple_element_t<2,boundaryspline_t>(std::array<std::vector<typename spline_t::value_type>,2>({kv[0], kv[1]}), init),
+               std::tuple_element_t<2,boundaryspline_t>(std::array<std::vector<typename spline_t::value_type>,2>({kv[0], kv[1]}), init)
              }
              )
     {}
 
-    /// @brief Returns constant reference to side-th B-Spline
+    /// @brief Returns constant reference to side-th spline
     template<short_t s>
     inline constexpr auto& side() const
     {
@@ -327,7 +327,7 @@ namespace iganet {
       return std::get<s-1>(bdr_);
     }
 
-    /// @brief Returns non-constant reference to side-th B-Spline
+    /// @brief Returns non-constant reference to side-th spline
     template<short_t s>
     inline constexpr auto& side()
     {
@@ -372,7 +372,7 @@ namespace iganet {
     /// @brief Returns a string representation of the Boundary object
     inline void pretty_print(std::ostream& os = std::cout) const
     {
-      os << core<typename BSpline_t::value_type>::name()
+      os << core<typename spline_t::value_type>::name()
          << "(\n"
          << "west = "  << std::get<west-1>(bdr_) << "\n"
          << "east = "  << std::get<east-1>(bdr_) << "\n"
@@ -395,74 +395,74 @@ namespace iganet {
   /// - back  (u,   v,   w=1, t)
   /// - stime (u,   v,   w,   t=0)
   /// - etime (u,   v,   w,   t=1)
-  template<typename BSpline_t>
-  class BoundaryCore<BSpline_t, /* parDim */4>
-    : public core<typename BSpline_t::value_type>
+  template<typename spline_t>
+  class BoundaryCore<spline_t, /* parDim */4>
+    : public core<typename spline_t::value_type>
   {
   private:
     /// @brief Array storing the degrees
-    using BoundaryBSpline_t = std::tuple<
-    typename BSpline_t::template
-    derived_self_type_t<typename BSpline_t::value_type,
-                        BSpline_t::geoDim(),
-                        BSpline_t::degree(1), BSpline_t::degree(2), BSpline_t::degree(3)>,
-    typename BSpline_t::template
-    derived_self_type_t<typename BSpline_t::value_type,
-                        BSpline_t::geoDim(),
-                        BSpline_t::degree(0), BSpline_t::degree(2), BSpline_t::degree(3)>,
-    typename BSpline_t::template
-    derived_self_type_t<typename BSpline_t::value_type,
-                        BSpline_t::geoDim(),
-                        BSpline_t::degree(0), BSpline_t::degree(1), BSpline_t::degree(3)>,
-    typename BSpline_t::template
-    derived_self_type_t<typename BSpline_t::value_type,
-                        BSpline_t::geoDim(),
-                        BSpline_t::degree(0), BSpline_t::degree(1), BSpline_t::degree(2)>>;
+    using boundaryspline_t = std::tuple<
+    typename spline_t::template
+    derived_self_type_t<typename spline_t::value_type,
+                        spline_t::geoDim(),
+                        spline_t::degree(1), spline_t::degree(2), spline_t::degree(3)>,
+    typename spline_t::template
+    derived_self_type_t<typename spline_t::value_type,
+                        spline_t::geoDim(),
+                        spline_t::degree(0), spline_t::degree(2), spline_t::degree(3)>,
+    typename spline_t::template
+    derived_self_type_t<typename spline_t::value_type,
+                        spline_t::geoDim(),
+                        spline_t::degree(0), spline_t::degree(1), spline_t::degree(3)>,
+    typename spline_t::template
+    derived_self_type_t<typename spline_t::value_type,
+                        spline_t::geoDim(),
+                        spline_t::degree(0), spline_t::degree(1), spline_t::degree(2)>>;
     
     
-    /// @brief Tuple of B-Splines
-    std::tuple<typename std::tuple_element_t<0,BoundaryBSpline_t>,
-               typename std::tuple_element_t<0,BoundaryBSpline_t>,
-               typename std::tuple_element_t<1,BoundaryBSpline_t>,
-               typename std::tuple_element_t<1,BoundaryBSpline_t>,
-               typename std::tuple_element_t<2,BoundaryBSpline_t>,
-               typename std::tuple_element_t<2,BoundaryBSpline_t>,
-               typename std::tuple_element_t<3,BoundaryBSpline_t>,
-               typename std::tuple_element_t<3,BoundaryBSpline_t>> bdr_;
+    /// @brief Tuple of splines
+    std::tuple<typename std::tuple_element_t<0,boundaryspline_t>,
+               typename std::tuple_element_t<0,boundaryspline_t>,
+               typename std::tuple_element_t<1,boundaryspline_t>,
+               typename std::tuple_element_t<1,boundaryspline_t>,
+               typename std::tuple_element_t<2,boundaryspline_t>,
+               typename std::tuple_element_t<2,boundaryspline_t>,
+               typename std::tuple_element_t<3,boundaryspline_t>,
+               typename std::tuple_element_t<3,boundaryspline_t>> bdr_;
     
   public:
     /// @brief Constructor
     BoundaryCore(const std::array<int64_t, 4>& ncoeffs,
                  enum init init = init::zeros)
-      : core<typename BSpline_t::value_type>(),
+      : core<typename spline_t::value_type>(),
         bdr_(
              {
-               std::tuple_element_t<0,BoundaryBSpline_t>(std::array<int64_t,3>({ncoeffs[1], ncoeffs[2], ncoeffs[3]}), init),
-               std::tuple_element_t<0,BoundaryBSpline_t>(std::array<int64_t,3>({ncoeffs[1], ncoeffs[2], ncoeffs[3]}), init),
-               std::tuple_element_t<1,BoundaryBSpline_t>(std::array<int64_t,3>({ncoeffs[0], ncoeffs[2], ncoeffs[3]}), init),
-               std::tuple_element_t<1,BoundaryBSpline_t>(std::array<int64_t,3>({ncoeffs[0], ncoeffs[2], ncoeffs[3]}), init),
-               std::tuple_element_t<2,BoundaryBSpline_t>(std::array<int64_t,3>({ncoeffs[0], ncoeffs[1], ncoeffs[3]}), init),
-               std::tuple_element_t<2,BoundaryBSpline_t>(std::array<int64_t,3>({ncoeffs[0], ncoeffs[1], ncoeffs[3]}), init),
-               std::tuple_element_t<3,BoundaryBSpline_t>(std::array<int64_t,3>({ncoeffs[0], ncoeffs[1], ncoeffs[2]}), init),
-               std::tuple_element_t<3,BoundaryBSpline_t>(std::array<int64_t,3>({ncoeffs[0], ncoeffs[1], ncoeffs[2]}), init)
+               std::tuple_element_t<0,boundaryspline_t>(std::array<int64_t,3>({ncoeffs[1], ncoeffs[2], ncoeffs[3]}), init),
+               std::tuple_element_t<0,boundaryspline_t>(std::array<int64_t,3>({ncoeffs[1], ncoeffs[2], ncoeffs[3]}), init),
+               std::tuple_element_t<1,boundaryspline_t>(std::array<int64_t,3>({ncoeffs[0], ncoeffs[2], ncoeffs[3]}), init),
+               std::tuple_element_t<1,boundaryspline_t>(std::array<int64_t,3>({ncoeffs[0], ncoeffs[2], ncoeffs[3]}), init),
+               std::tuple_element_t<2,boundaryspline_t>(std::array<int64_t,3>({ncoeffs[0], ncoeffs[1], ncoeffs[3]}), init),
+               std::tuple_element_t<2,boundaryspline_t>(std::array<int64_t,3>({ncoeffs[0], ncoeffs[1], ncoeffs[3]}), init),
+               std::tuple_element_t<3,boundaryspline_t>(std::array<int64_t,3>({ncoeffs[0], ncoeffs[1], ncoeffs[2]}), init),
+               std::tuple_element_t<3,boundaryspline_t>(std::array<int64_t,3>({ncoeffs[0], ncoeffs[1], ncoeffs[2]}), init)
              }
              )
     {}
 
     /// @brief Constructor
-    BoundaryCore(const std::array<std::vector<typename BSpline_t::value_type>, 4>& kv,
+    BoundaryCore(const std::array<std::vector<typename spline_t::value_type>, 4>& kv,
                  enum init init = init::zeros)
-      : core<typename BSpline_t::value_type>(),
+      : core<typename spline_t::value_type>(),
         bdr_(
              {
-               std::tuple_element_t<0,BoundaryBSpline_t>(std::array<std::vector<typename BSpline_t::value_type>,3>({kv[1], kv[2], kv[3]}), init),
-               std::tuple_element_t<0,BoundaryBSpline_t>(std::array<std::vector<typename BSpline_t::value_type>,3>({kv[1], kv[2], kv[3]}), init),
-               std::tuple_element_t<1,BoundaryBSpline_t>(std::array<std::vector<typename BSpline_t::value_type>,3>({kv[0], kv[2], kv[3]}), init),
-               std::tuple_element_t<1,BoundaryBSpline_t>(std::array<std::vector<typename BSpline_t::value_type>,3>({kv[0], kv[2], kv[3]}), init),
-               std::tuple_element_t<2,BoundaryBSpline_t>(std::array<std::vector<typename BSpline_t::value_type>,3>({kv[0], kv[1], kv[3]}), init),
-               std::tuple_element_t<2,BoundaryBSpline_t>(std::array<std::vector<typename BSpline_t::value_type>,3>({kv[0], kv[1], kv[3]}), init),
-               std::tuple_element_t<3,BoundaryBSpline_t>(std::array<std::vector<typename BSpline_t::value_type>,3>({kv[0], kv[1], kv[2]}), init),
-               std::tuple_element_t<3,BoundaryBSpline_t>(std::array<std::vector<typename BSpline_t::value_type>,3>({kv[0], kv[1], kv[2]}), init)
+               std::tuple_element_t<0,boundaryspline_t>(std::array<std::vector<typename spline_t::value_type>,3>({kv[1], kv[2], kv[3]}), init),
+               std::tuple_element_t<0,boundaryspline_t>(std::array<std::vector<typename spline_t::value_type>,3>({kv[1], kv[2], kv[3]}), init),
+               std::tuple_element_t<1,boundaryspline_t>(std::array<std::vector<typename spline_t::value_type>,3>({kv[0], kv[2], kv[3]}), init),
+               std::tuple_element_t<1,boundaryspline_t>(std::array<std::vector<typename spline_t::value_type>,3>({kv[0], kv[2], kv[3]}), init),
+               std::tuple_element_t<2,boundaryspline_t>(std::array<std::vector<typename spline_t::value_type>,3>({kv[0], kv[1], kv[3]}), init),
+               std::tuple_element_t<2,boundaryspline_t>(std::array<std::vector<typename spline_t::value_type>,3>({kv[0], kv[1], kv[3]}), init),
+               std::tuple_element_t<3,boundaryspline_t>(std::array<std::vector<typename spline_t::value_type>,3>({kv[0], kv[1], kv[2]}), init),
+               std::tuple_element_t<3,boundaryspline_t>(std::array<std::vector<typename spline_t::value_type>,3>({kv[0], kv[1], kv[2]}), init)
              }
              )
     {}
@@ -473,7 +473,7 @@ namespace iganet {
       return side::etime;
     }
 
-    /// @brief Returns constant reference to side-th B-Spline
+    /// @brief Returns constant reference to side-th spline
     template<short_t s>
     inline constexpr auto& side() const
     {
@@ -481,7 +481,7 @@ namespace iganet {
       return std::get<s-1>(bdr_);
     }
 
-    /// @brief Returns non-constant reference to side-th B-Spline
+    /// @brief Returns non-constant reference to side-th spline
     template<short_t s>
     inline constexpr auto& side()
     {
@@ -522,7 +522,7 @@ namespace iganet {
     /// @brief Returns a string representation of the Boundary object
     inline void pretty_print(std::ostream& os = std::cout) const
     {
-      os << core<typename BSpline_t::value_type>::name()
+      os << core<typename spline_t::value_type>::name()
          << "(\n"
          << "west = "  << std::get<west-1>(bdr_) << "\n"
          << "east = "  << std::get<east-1>(bdr_) << "\n"
@@ -537,17 +537,17 @@ namespace iganet {
   };
   
   /// @brief Boundary
-  template<typename BSpline_t>
-  class Boundary : public BoundaryCore<BSpline_t, BSpline_t::parDim()>
+  template<typename spline_t>
+  class Boundary : public BoundaryCore<spline_t, spline_t::parDim()>
   {
   public:
-    using BoundaryCore<BSpline_t, BSpline_t::parDim()>::BoundaryCore;
+    using BoundaryCore<spline_t, spline_t::parDim()>::BoundaryCore;
   };
   
   /// @brief Print (as string) a Boundary object
-  template<typename BSpline_t>
+  template<typename spline_t>
   inline std::ostream& operator<<(std::ostream& os,
-                                  const Boundary<BSpline_t>& obj)
+                                  const Boundary<spline_t>& obj)
   {
     obj.pretty_print(os);
     return os;
