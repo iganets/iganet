@@ -2019,7 +2019,7 @@ namespace iganet {
         return 1;
     }
 
-  protected:
+  public:
     /// @brief Initializes the B-spline coefficients
     inline void init_coeffs(enum init init)
     {
@@ -2124,6 +2124,7 @@ namespace iganet {
       }
     }
 
+  protected:
     /// @brief Updates the B-spline coefficients after knot insertion
     ///
     /// @{
