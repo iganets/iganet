@@ -50,24 +50,26 @@ namespace iganet {
 
     /// @brief Constructor
     BoundaryCore(const std::array<int64_t, 1>&,
-                 enum init = init::zeros)
-      : core<typename spline_t::value_type>() ,
+                 enum init init = init::zeros,
+                 core<typename spline_t::value_type> core = iganet::core<typename spline_t::value_type>{})
+      : iganet::core<typename spline_t::value_type>(core),
         bdr_(
              {
-               boundaryspline_t(std::array<int64_t, 0>{}),
-               boundaryspline_t(std::array<int64_t, 0>{}),
+               boundaryspline_t(std::array<int64_t, 0>{}, init, core),
+               boundaryspline_t(std::array<int64_t, 0>{}, init, core),
              }               
              )
     {}
 
     /// @brief Constructor
     BoundaryCore(const std::array<std::vector<typename spline_t::value_type>, 1>&,
-                 enum init = init::zeros)
-      : core<typename spline_t::value_type>() ,
+                 enum init init = init::zeros,
+                 core<typename spline_t::value_type> core = iganet::core<typename spline_t::value_type>{})
+      : iganet::core<typename spline_t::value_type>(core),
         bdr_(
              {
-               boundaryspline_t(std::array<int64_t, 0>{}),
-               boundaryspline_t(std::array<int64_t, 0>{}),
+               boundaryspline_t(std::array<int64_t, 0>{}, init, core),
+               boundaryspline_t(std::array<int64_t, 0>{}, init, core),
              }               
              )
     {}
@@ -161,28 +163,30 @@ namespace iganet {
   public:
     /// @brief Constructor
     BoundaryCore(const std::array<int64_t, 2>& ncoeffs,
-                 enum init init = init::zeros)
-      : core<typename spline_t::value_type>(),
+                 enum init init = init::zeros,
+                 core<typename spline_t::value_type> core = iganet::core<typename spline_t::value_type>{})
+      : iganet::core<typename spline_t::value_type>(core),
         bdr_(
              {
-               std::tuple_element_t<0,boundaryspline_t>(std::array<int64_t,1>({ncoeffs[1]}), init),
-               std::tuple_element_t<0,boundaryspline_t>(std::array<int64_t,1>({ncoeffs[1]}), init),
-               std::tuple_element_t<1,boundaryspline_t>(std::array<int64_t,1>({ncoeffs[0]}), init),
-               std::tuple_element_t<1,boundaryspline_t>(std::array<int64_t,1>({ncoeffs[0]}), init)
+               std::tuple_element_t<0,boundaryspline_t>(std::array<int64_t,1>({ncoeffs[1]}), init, core),
+               std::tuple_element_t<0,boundaryspline_t>(std::array<int64_t,1>({ncoeffs[1]}), init, core),
+               std::tuple_element_t<1,boundaryspline_t>(std::array<int64_t,1>({ncoeffs[0]}), init, core),
+               std::tuple_element_t<1,boundaryspline_t>(std::array<int64_t,1>({ncoeffs[0]}), init, core)
              }
              )
     {}
 
     /// @brief Constructor
     BoundaryCore(const std::array<std::vector<typename spline_t::value_type>, 2>& kv,
-                 enum init init = init::zeros)
-      : core<typename spline_t::value_type>(),
+                 enum init init = init::zeros,
+                 core<typename spline_t::value_type> core = iganet::core<typename spline_t::value_type>{})
+      : iganet::core<typename spline_t::value_type>(core),
         bdr_(
              {
-               std::tuple_element_t<0,boundaryspline_t>(std::array<std::vector<typename spline_t::value_type>,1>({kv[1]}), init),
-               std::tuple_element_t<0,boundaryspline_t>(std::array<std::vector<typename spline_t::value_type>,1>({kv[1]}), init),
-               std::tuple_element_t<1,boundaryspline_t>(std::array<std::vector<typename spline_t::value_type>,1>({kv[0]}), init),
-               std::tuple_element_t<1,boundaryspline_t>(std::array<std::vector<typename spline_t::value_type>,1>({kv[0]}), init)
+               std::tuple_element_t<0,boundaryspline_t>(std::array<std::vector<typename spline_t::value_type>,1>({kv[1]}), init, core),
+               std::tuple_element_t<0,boundaryspline_t>(std::array<std::vector<typename spline_t::value_type>,1>({kv[1]}), init, core),
+               std::tuple_element_t<1,boundaryspline_t>(std::array<std::vector<typename spline_t::value_type>,1>({kv[0]}), init, core),
+               std::tuple_element_t<1,boundaryspline_t>(std::array<std::vector<typename spline_t::value_type>,1>({kv[0]}), init, core)
              }
              )
     {}
@@ -289,32 +293,34 @@ namespace iganet {
   public:
     /// @brief Constructor
     BoundaryCore(const std::array<int64_t, 3>& ncoeffs,
-                 enum init init = init::zeros)
-      : core<typename spline_t::value_type>(),
+                 enum init init = init::zeros,
+                 core<typename spline_t::value_type> core = iganet::core<typename spline_t::value_type>{})
+      : iganet::core<typename spline_t::value_type>(core),
         bdr_(
              {
-               std::tuple_element_t<0,boundaryspline_t>(std::array<int64_t,2>({ncoeffs[1], ncoeffs[2]}), init),
-               std::tuple_element_t<0,boundaryspline_t>(std::array<int64_t,2>({ncoeffs[1], ncoeffs[2]}), init),
-               std::tuple_element_t<1,boundaryspline_t>(std::array<int64_t,2>({ncoeffs[0], ncoeffs[2]}), init),
-               std::tuple_element_t<1,boundaryspline_t>(std::array<int64_t,2>({ncoeffs[0], ncoeffs[2]}), init),
-               std::tuple_element_t<2,boundaryspline_t>(std::array<int64_t,2>({ncoeffs[0], ncoeffs[1]}), init),
-               std::tuple_element_t<2,boundaryspline_t>(std::array<int64_t,2>({ncoeffs[0], ncoeffs[1]}), init)
+               std::tuple_element_t<0,boundaryspline_t>(std::array<int64_t,2>({ncoeffs[1], ncoeffs[2]}), init, core),
+               std::tuple_element_t<0,boundaryspline_t>(std::array<int64_t,2>({ncoeffs[1], ncoeffs[2]}), init, core),
+               std::tuple_element_t<1,boundaryspline_t>(std::array<int64_t,2>({ncoeffs[0], ncoeffs[2]}), init, core),
+               std::tuple_element_t<1,boundaryspline_t>(std::array<int64_t,2>({ncoeffs[0], ncoeffs[2]}), init, core),
+               std::tuple_element_t<2,boundaryspline_t>(std::array<int64_t,2>({ncoeffs[0], ncoeffs[1]}), init, core),
+               std::tuple_element_t<2,boundaryspline_t>(std::array<int64_t,2>({ncoeffs[0], ncoeffs[1]}), init, core)
              }
              )
     {}
 
     /// @brief Constructor
     BoundaryCore(const std::array<std::vector<typename spline_t::value_type>, 3>& kv,
-                 enum init init = init::zeros)
-      : core<typename spline_t::value_type>(),
+                 enum init init = init::zeros,
+                 core<typename spline_t::value_type> core = iganet::core<typename spline_t::value_type>{})
+      : iganet::core<typename spline_t::value_type>(core),
         bdr_(
              {
-               std::tuple_element_t<0,boundaryspline_t>(std::array<std::vector<typename spline_t::value_type>,2>({kv[1], kv[2]}), init),
-               std::tuple_element_t<0,boundaryspline_t>(std::array<std::vector<typename spline_t::value_type>,2>({kv[1], kv[2]}), init),
-               std::tuple_element_t<1,boundaryspline_t>(std::array<std::vector<typename spline_t::value_type>,2>({kv[0], kv[2]}), init),
-               std::tuple_element_t<1,boundaryspline_t>(std::array<std::vector<typename spline_t::value_type>,2>({kv[0], kv[2]}), init),
-               std::tuple_element_t<2,boundaryspline_t>(std::array<std::vector<typename spline_t::value_type>,2>({kv[0], kv[1]}), init),
-               std::tuple_element_t<2,boundaryspline_t>(std::array<std::vector<typename spline_t::value_type>,2>({kv[0], kv[1]}), init)
+               std::tuple_element_t<0,boundaryspline_t>(std::array<std::vector<typename spline_t::value_type>,2>({kv[1], kv[2]}), init, core),
+               std::tuple_element_t<0,boundaryspline_t>(std::array<std::vector<typename spline_t::value_type>,2>({kv[1], kv[2]}), init, core),
+               std::tuple_element_t<1,boundaryspline_t>(std::array<std::vector<typename spline_t::value_type>,2>({kv[0], kv[2]}), init, core),
+               std::tuple_element_t<1,boundaryspline_t>(std::array<std::vector<typename spline_t::value_type>,2>({kv[0], kv[2]}), init, core),
+               std::tuple_element_t<2,boundaryspline_t>(std::array<std::vector<typename spline_t::value_type>,2>({kv[0], kv[1]}), init, core),
+               std::tuple_element_t<2,boundaryspline_t>(std::array<std::vector<typename spline_t::value_type>,2>({kv[0], kv[1]}), init, core)
              }
              )
     {}
@@ -433,36 +439,38 @@ namespace iganet {
   public:
     /// @brief Constructor
     BoundaryCore(const std::array<int64_t, 4>& ncoeffs,
-                 enum init init = init::zeros)
-      : core<typename spline_t::value_type>(),
+                 enum init init = init::zeros,
+                 core<typename spline_t::value_type> core = iganet::core<typename spline_t::value_type>{})
+      : iganet::core<typename spline_t::value_type>(core),
         bdr_(
              {
-               std::tuple_element_t<0,boundaryspline_t>(std::array<int64_t,3>({ncoeffs[1], ncoeffs[2], ncoeffs[3]}), init),
-               std::tuple_element_t<0,boundaryspline_t>(std::array<int64_t,3>({ncoeffs[1], ncoeffs[2], ncoeffs[3]}), init),
-               std::tuple_element_t<1,boundaryspline_t>(std::array<int64_t,3>({ncoeffs[0], ncoeffs[2], ncoeffs[3]}), init),
-               std::tuple_element_t<1,boundaryspline_t>(std::array<int64_t,3>({ncoeffs[0], ncoeffs[2], ncoeffs[3]}), init),
-               std::tuple_element_t<2,boundaryspline_t>(std::array<int64_t,3>({ncoeffs[0], ncoeffs[1], ncoeffs[3]}), init),
-               std::tuple_element_t<2,boundaryspline_t>(std::array<int64_t,3>({ncoeffs[0], ncoeffs[1], ncoeffs[3]}), init),
-               std::tuple_element_t<3,boundaryspline_t>(std::array<int64_t,3>({ncoeffs[0], ncoeffs[1], ncoeffs[2]}), init),
-               std::tuple_element_t<3,boundaryspline_t>(std::array<int64_t,3>({ncoeffs[0], ncoeffs[1], ncoeffs[2]}), init)
+               std::tuple_element_t<0,boundaryspline_t>(std::array<int64_t,3>({ncoeffs[1], ncoeffs[2], ncoeffs[3]}), init, core),
+               std::tuple_element_t<0,boundaryspline_t>(std::array<int64_t,3>({ncoeffs[1], ncoeffs[2], ncoeffs[3]}), init, core),
+               std::tuple_element_t<1,boundaryspline_t>(std::array<int64_t,3>({ncoeffs[0], ncoeffs[2], ncoeffs[3]}), init, core),
+               std::tuple_element_t<1,boundaryspline_t>(std::array<int64_t,3>({ncoeffs[0], ncoeffs[2], ncoeffs[3]}), init, core),
+               std::tuple_element_t<2,boundaryspline_t>(std::array<int64_t,3>({ncoeffs[0], ncoeffs[1], ncoeffs[3]}), init, core),
+               std::tuple_element_t<2,boundaryspline_t>(std::array<int64_t,3>({ncoeffs[0], ncoeffs[1], ncoeffs[3]}), init, core),
+               std::tuple_element_t<3,boundaryspline_t>(std::array<int64_t,3>({ncoeffs[0], ncoeffs[1], ncoeffs[2]}), init, core),
+               std::tuple_element_t<3,boundaryspline_t>(std::array<int64_t,3>({ncoeffs[0], ncoeffs[1], ncoeffs[2]}), init, core)
              }
              )
     {}
 
     /// @brief Constructor
     BoundaryCore(const std::array<std::vector<typename spline_t::value_type>, 4>& kv,
-                 enum init init = init::zeros)
-      : core<typename spline_t::value_type>(),
+                 enum init init = init::zeros,
+                 core<typename spline_t::value_type> core = iganet::core<typename spline_t::value_type>{})
+      : iganet::core<typename spline_t::value_type>(core),
         bdr_(
              {
-               std::tuple_element_t<0,boundaryspline_t>(std::array<std::vector<typename spline_t::value_type>,3>({kv[1], kv[2], kv[3]}), init),
-               std::tuple_element_t<0,boundaryspline_t>(std::array<std::vector<typename spline_t::value_type>,3>({kv[1], kv[2], kv[3]}), init),
-               std::tuple_element_t<1,boundaryspline_t>(std::array<std::vector<typename spline_t::value_type>,3>({kv[0], kv[2], kv[3]}), init),
-               std::tuple_element_t<1,boundaryspline_t>(std::array<std::vector<typename spline_t::value_type>,3>({kv[0], kv[2], kv[3]}), init),
-               std::tuple_element_t<2,boundaryspline_t>(std::array<std::vector<typename spline_t::value_type>,3>({kv[0], kv[1], kv[3]}), init),
-               std::tuple_element_t<2,boundaryspline_t>(std::array<std::vector<typename spline_t::value_type>,3>({kv[0], kv[1], kv[3]}), init),
-               std::tuple_element_t<3,boundaryspline_t>(std::array<std::vector<typename spline_t::value_type>,3>({kv[0], kv[1], kv[2]}), init),
-               std::tuple_element_t<3,boundaryspline_t>(std::array<std::vector<typename spline_t::value_type>,3>({kv[0], kv[1], kv[2]}), init)
+               std::tuple_element_t<0,boundaryspline_t>(std::array<std::vector<typename spline_t::value_type>,3>({kv[1], kv[2], kv[3]}), init, core),
+               std::tuple_element_t<0,boundaryspline_t>(std::array<std::vector<typename spline_t::value_type>,3>({kv[1], kv[2], kv[3]}), init, core),
+               std::tuple_element_t<1,boundaryspline_t>(std::array<std::vector<typename spline_t::value_type>,3>({kv[0], kv[2], kv[3]}), init, core),
+               std::tuple_element_t<1,boundaryspline_t>(std::array<std::vector<typename spline_t::value_type>,3>({kv[0], kv[2], kv[3]}), init, core),
+               std::tuple_element_t<2,boundaryspline_t>(std::array<std::vector<typename spline_t::value_type>,3>({kv[0], kv[1], kv[3]}), init, core),
+               std::tuple_element_t<2,boundaryspline_t>(std::array<std::vector<typename spline_t::value_type>,3>({kv[0], kv[1], kv[3]}), init, core),
+               std::tuple_element_t<3,boundaryspline_t>(std::array<std::vector<typename spline_t::value_type>,3>({kv[0], kv[1], kv[2]}), init, core),
+               std::tuple_element_t<3,boundaryspline_t>(std::array<std::vector<typename spline_t::value_type>,3>({kv[0], kv[1], kv[2]}), init, core)
              }
              )
     {}
