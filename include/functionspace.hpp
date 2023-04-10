@@ -15,6 +15,7 @@
 #pragma once
 
 #include <bspline.hpp>
+#include <zip.hpp>
 
 namespace iganet {
 
@@ -80,10 +81,10 @@ namespace iganet {
     {
     protected:
       /// @brief Dimension of the parametric domain
-      static constexpr std::array<short_t, sizeof...(spline_t)> domainDim_ = {spline_t::parDim()...};
+      static constexpr std::array<short_t, sizeof...(spline_t)> parDim_ = {spline_t::parDim()...};
 
       /// @brief Dimension of the physical domain
-      static constexpr std::array<short_t, sizeof...(spline_t)> targetDim_ = {spline_t::geoDim()...};
+      static constexpr std::array<short_t, sizeof...(spline_t)> geoDim_ = {spline_t::geoDim()...};
 
       /// @brief Type of the boundary spline objects
       using Boundary_t = std::tuple<Boundary<spline_t>...>;
@@ -122,9 +123,33 @@ namespace iganet {
                     core<value_type> core = iganet::core<value_type>{})
         : Base({kv, init, core}...),
           boundary_({kv, init, core}...)
-      {}
+      {}      
       /// @}
 
+      /// @brief Returns the parametric dimension
+      inline static constexpr auto parDim()
+      {
+        return parDim_;
+      }
+
+      /// @brief Returns the geometric dimension
+      inline static constexpr auto geoDim()
+      {
+        return geoDim_;
+      }
+
+      /// @brief Returns a constant reference to the boundary spline object
+      inline const auto& boundary() const
+      {
+        return boundary_;
+      }
+
+      /// @brief Returns a non-constant reference to the boundary spline object
+      inline auto& boundary()
+      {
+        return boundary_;
+      }
+      
     private:
       /// @brief Returns the dimension of all bases
       template<size_t... Is>
@@ -140,7 +165,27 @@ namespace iganet {
         return (std::get<Is>(boundary_).ncumcoeffs() + ...);
       }
 
-    public:
+      /// @brief Serialization to JSON
+      template<size_t... Is>
+      nlohmann::json to_json_(std::index_sequence<Is...>) const
+      {
+        auto json_this = nlohmann::json::array();
+        auto json_boundary = nlohmann::json::array();
+        (json_this.push_back(std::get<Is>(*this).to_json()), ...);
+        (json_boundary.push_back(std::get<Is>(boundary_).to_json()), ...);
+
+        auto json = nlohmann::json::array();
+        for (auto [t,b] : zip(json_this, json_boundary)) {
+          auto json_inner = nlohmann::json::array();
+          json_inner.push_back(t);
+          json_inner.push_back(b);
+          json.push_back(json_inner);
+        }        
+        
+        return json;
+      }
+      
+    public:      
       /// @brief Returns the dimension of all bases
       int64_t basisDim() const
       {
@@ -151,6 +196,12 @@ namespace iganet {
       int64_t boundaryBasisDim() const
       {
         return boundaryBasisDim_(std::make_index_sequence<sizeof...(spline_t)>{});
+      }
+
+      /// @brief Serialization to JSON
+      nlohmann::json to_json() const
+      {
+        return to_json_(std::make_index_sequence<sizeof...(spline_t)>{});
       }
     };
 
@@ -164,10 +215,10 @@ namespace iganet {
     {
     protected:
       /// @brief Dimension of the parametric domain
-      static constexpr short_t domainDim_ = spline_t::parDim();
+      static constexpr short_t parDim_ = spline_t::parDim();
 
       /// @brief Dimension of the physical domain
-      static constexpr short_t targetDim_ = spline_t::geoDim();
+      static constexpr short_t geoDim_ = spline_t::geoDim();
 
       /// @brief Type of the boundary spline objects
       using Boundary_t = Boundary<spline_t>;
@@ -193,7 +244,7 @@ namespace iganet {
 
       /// @brief Constructor
       /// @{
-      FunctionSpace(const std::array<int64_t, domainDim_>& ncoeffs,
+      FunctionSpace(const std::array<int64_t, parDim_>& ncoeffs,
                     enum init init = init::zeros,
                     core<value_type> core = iganet::core<value_type>{})
         : Base(ncoeffs, init, core),
@@ -210,15 +261,15 @@ namespace iganet {
       /// @}
 
       /// @brief Returns the parametric dimension
-      inline static constexpr short_t domainDim()
+      inline static constexpr short_t parDim()
       {
-        return domainDim_;
+        return parDim_;
       }
 
-      /// @brief Returns the target dimension
-      inline static constexpr short_t targetDim()
+      /// @brief Returns the geometric dimension
+      inline static constexpr short_t geoDim()
       {
-        return targetDim_;
+        return geoDim_;
       }
 
       /// @brief Returns a constant reference to the boundary spline object
@@ -233,12 +284,6 @@ namespace iganet {
         return boundary_;
       }
 
-      /// @brief Serialization to JSON
-      nlohmann::json to_json() const override
-      {
-        return Base::to_json();
-      }
-
       /// @brief Returns the dimension of the basis at the boundary
       int64_t boundaryBasisDim() const
       {
@@ -249,6 +294,15 @@ namespace iganet {
       int64_t basisDim() const
       {
         return spline_t::ncumcoeffs();
+      }
+
+      /// @brief Serialization to JSON
+      nlohmann::json to_json() const override
+      {
+        auto json = nlohmann::json::array();
+        json.push_back(Base::to_json());
+        json.push_back(boundary_.to_json());
+        return json;
       }
     };
   } // namespace detail
