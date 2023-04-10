@@ -437,7 +437,7 @@ namespace iganet {
                        enum init init = init::zeros,
                        iganet::core<real_t> core = iganet::core<real_t>{})
       : iganet::core<real_t>(core),
-          ncoeffs_(ncoeffs)
+        ncoeffs_(ncoeffs)
     {
       for (short_t i = 0; i < parDim_; ++i) {
 
