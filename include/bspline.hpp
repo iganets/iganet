@@ -1678,16 +1678,16 @@ namespace iganet {
     /// @brief Returns the B-spline object as JSON object
     inline nlohmann::json to_json() const override
     {
-      nlohmann::json data;
-      data["degrees"] = degrees_;
-      data["geoDim"]  = geoDim_;
-      data["parDim"]  = parDim_;
-      data["ncoeffs"] = ncoeffs_;
-      data["nknots"]  = nknots_;
-      data["knots"]   = knots_to_json();
-      data["coeffs"]  = coeffs_to_json();
+      nlohmann::json json;
+      json["degrees"] = degrees_;
+      json["geoDim"]  = geoDim_;
+      json["parDim"]  = parDim_;
+      json["ncoeffs"] = ncoeffs_;
+      json["nknots"]  = nknots_;
+      json["knots"]   = knots_to_json();
+      json["coeffs"]  = coeffs_to_json();
 
-      return data;
+      return json;
     }
 
     /// @brief Returns the B-spline object's knots as JSON object
