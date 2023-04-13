@@ -19,6 +19,13 @@
 
 namespace iganet {
 
+  /// @brief Enumerator for the function space component
+  enum class functionspace : short_t
+    {
+      interior = 0, /*!< interior component */
+      boundary = 1  /*!< boundary component */
+    };
+  
 #define TUPLE_WRAPPER(FunctionSpace)                                    \
   namespace detail {                                                    \
     template<typename T>                                                \
@@ -80,17 +87,22 @@ namespace iganet {
     class FunctionSpace : public std::tuple<spline_t...>
     {
     protected:
-      /// @brief Dimension of the parametric domain
+      /// @brief Dimensions of the parametric spaces
       static constexpr std::array<short_t, sizeof...(spline_t)> parDim_ = {spline_t::parDim()...};
 
-      /// @brief Dimension of the physical domain
+      /// @brief Dimensions of the physical spaces
       static constexpr std::array<short_t, sizeof...(spline_t)> geoDim_ = {spline_t::geoDim()...};
 
-      /// @brief Type of the boundary spline objects
-      using Boundary_t = std::tuple<Boundary<spline_t>...>;
+    public:
+      /// @brief Boundary spline objects type
+      using boundary_t = std::tuple<Boundary<spline_t>...>;
 
+      /// @brief Boundary spline objects evaluation type
+      using boundary_eval_t = std::tuple<typename Boundary<spline_t>::eval_t...>;
+      
+    protected:
       /// @brief Boundary spline objects
-      Boundary_t boundary_;
+      boundary_t boundary_;
 
     public:
       /// @brief Base class
@@ -99,6 +111,9 @@ namespace iganet {
       /// @brief Value type
       using value_type = typename std::common_type<typename spline_t::value_type...>::type;
 
+      /// @brief Evaluation type
+      using eval_t = std::tuple<std::array<torch::Tensor, spline_t::parDim()>...>;
+      
       /// @brief Default constructor
       FunctionSpace() = default;
 
@@ -126,6 +141,12 @@ namespace iganet {
       {}      
       /// @}
 
+      /// @brief Returns the dimension
+      inline static constexpr short_t dim()
+      {
+        return sizeof...(spline_t);
+      }
+      
       /// @brief Returns the parametric dimension
       inline static constexpr auto parDim()
       {
@@ -152,17 +173,14 @@ namespace iganet {
       
     private:
       /// @brief Returns the dimension of all bases
-      template<size_t... Is>
+      template<functionspace comp = functionspace::interior,
+               size_t... Is>
       int64_t basisDim_(std::index_sequence<Is...>) const
       {
-        return (std::get<Is>(*this).ncumcoeffs() + ...);
-      }
-
-      /// @brief Returns the dimension of all bases at the boundary
-      template<size_t... Is>
-      int64_t boundaryBasisDim_(std::index_sequence<Is...>) const
-      {
-        return (std::get<Is>(boundary_).ncumcoeffs() + ...);
+        if constexpr (comp == functionspace::interior)
+          return (std::get<Is>(*this).ncumcoeffs() + ...);
+        else if constexpr (comp == functionspace::boundary)
+          return (std::get<Is>(boundary_).ncumcoeffs() + ...);
       }
 
       /// @brief Serialization to JSON
@@ -184,24 +202,272 @@ namespace iganet {
         
         return json;
       }
+        
+      /// @brief Returns the values of the spline objects in the points `xi`
+      /// @{
+      template<functionspace comp = functionspace::interior,
+               deriv deriv = deriv::func, size_t... Is, typename... Xi>
+      inline auto eval_(std::index_sequence<Is...>,
+                        const std::tuple<Xi...>& xi) const
+      {
+        if constexpr (comp == functionspace::interior)
+          return std::tuple(std::get<Is>(*this).template eval<deriv>(std::get<Is>(xi))...);
+        else if constexpr (comp == functionspace::boundary)
+          return std::tuple(std::get<Is>(boundary_).template eval<deriv>(std::get<Is>(xi))...);
+      }
+
+      template<functionspace comp = functionspace::interior,
+               deriv deriv = deriv::func,
+               size_t... Is, typename... Xi, typename... Idx>
+      inline auto eval_(std::index_sequence<Is...>,
+                        const std::tuple<Xi...>& xi,
+                        const std::tuple<Idx...>& idx) const
+      {
+        if constexpr (comp == functionspace::interior)
+          return std::tuple(std::get<Is>(*this).template eval<deriv>(std::get<Is>(xi),
+                                                                     std::get<Is>(idx))...);
+        else if constexpr (comp == functionspace::boundary)
+          return std::tuple(std::get<Is>(boundary_).template eval<deriv>(std::get<Is>(xi),
+                                                                         std::get<Is>(idx))...);
+      }
+
+      template<functionspace comp = functionspace::interior,
+               deriv deriv = deriv::func,
+               size_t... Is, typename... Xi, typename... Idx, typename... Coeff_Idx>
+      inline auto eval_(std::index_sequence<Is...>,
+                        const std::tuple<Xi...>& xi,
+                        const std::tuple<Idx...>& idx,
+                        const std::tuple<Coeff_Idx...>& coeff_idx) const
+      {
+        if constexpr (comp == functionspace::interior)
+          return std::tuple(std::get<Is>(*this).template eval<deriv>(std::get<Is>(xi),
+                                                                     std::get<Is>(idx),
+                                                                     std::get<Is>(coeff_idx))...);
+        else if constexpr (comp == functionspace::boundary)
+          return std::tuple(std::get<Is>(boundary_).template eval<deriv>(std::get<Is>(xi),
+                                                                         std::get<Is>(idx),
+                                                                         std::get<Is>(coeff_idx))...);
+      }
+      /// @}
+
+      /// @brief Returns the value of the spline objects from
+      /// precomputed basis function
+      template<functionspace comp = functionspace::interior,
+               size_t... Is,
+               typename... Basfunc, typename... Coeff_Idx,
+               typename... Numeval, typename... Sizes>
+      inline auto eval_from_precomputed_(std::index_sequence<Is...>,
+                                         const std::tuple<Basfunc...>& basfunc,
+                                         const std::tuple<Coeff_Idx...>& coeff_idx,
+                                         const std::tuple<Numeval...>& numeval,
+                                         const std::tuple<Sizes...>& sizes) const
+      {
+        if constexpr (comp == functionspace::interior)
+          return std::tuple(std::get<Is>(*this).eval_from_precomputed(std::get<Is>(basfunc),
+                                                                      std::get<Is>(coeff_idx),
+                                                                      std::get<Is>(numeval),
+                                                                      std::get<Is>(sizes))...);
+        else if constexpr (comp == functionspace::boundary)
+          return std::tuple(std::get<Is>(boundary_).eval_from_precomputed(std::get<Is>(basfunc),
+                                                                          std::get<Is>(coeff_idx),
+                                                                          std::get<Is>(numeval),
+                                                                          std::get<Is>(sizes))...);
+      }
+
+      template<functionspace comp = functionspace::interior,
+               size_t... Is,
+               typename... Basfunc, typename... Coeff_Idx, typename... Xi>
+      inline auto eval_from_precomputed_(std::index_sequence<Is...>,
+                                         const std::tuple<Basfunc...>& basfunc,
+                                         const std::tuple<Coeff_Idx...>& coeff_idx,
+                                         const std::tuple<Xi...>& xi) const
+      {
+        if constexpr (comp == functionspace::interior)        
+          return std::tuple(std::get<Is>(*this).eval_from_precomputed(std::get<Is>(basfunc),
+                                                                      std::get<Is>(coeff_idx),
+                                                                      std::get<Is>(xi)[0].numel(),
+                                                                      std::get<Is>(xi)[0].sizes())...);
+        else if constexpr (comp == functionspace::boundary)
+          return std::tuple(std::get<Is>(boundary_).eval_from_precomputed(std::get<Is>(basfunc),
+                                                                          std::get<Is>(coeff_idx),
+                                                                          std::get<Is>(xi))...);
+      }
+      /// @}
+
+      /// @brief Returns the knot indicies of knot spans containing `xi`
+      template<functionspace comp = functionspace::interior,
+               size_t... Is, typename... Xi>
+      inline auto find_knot_indices_(std::index_sequence<Is...>,
+                                     const std::tuple<Xi...>& xi) const
+      {
+        if constexpr (comp == functionspace::interior)
+          return std::tuple(std::get<Is>(*this).find_knot_indices(std::get<Is>(xi))...);
+        else if constexpr (comp == functionspace::boundary)
+          return std::tuple(std::get<Is>(boundary_).find_knot_indices(std::get<Is>(xi))...);
+      }
+
+      /// @brief Returns the values of the spline objects' basis functions in the points `xi`
+      /// @{
+      template<functionspace comp = functionspace::interior,
+               deriv deriv = deriv::func, size_t... Is, typename... Xi>
+      inline auto eval_basfunc_(std::index_sequence<Is...>,
+                                const std::tuple<Xi...>& xi) const
+      {
+        if constexpr (comp == functionspace::interior)
+          return std::tuple(std::get<Is>(*this).template eval_basfunc<deriv>(std::get<Is>(xi))...);
+        else if constexpr (comp == functionspace::boundary)
+          return std::tuple(std::get<Is>(boundary_).template eval_basfunc<deriv>(std::get<Is>(xi))...);
+      }
+      
+      template<functionspace comp = functionspace::interior,
+               deriv deriv = deriv::func,
+               size_t... Is, typename... Xi, typename... Idx>
+      inline auto eval_basfunc_(std::index_sequence<Is...>,
+                                const std::tuple<Xi...>& xi,
+                                const std::tuple<Idx...>& idx) const
+      {
+        if constexpr (comp == functionspace::interior)
+          return std::tuple(std::get<Is>(*this).template eval_basfunc<deriv>(std::get<Is>(xi),
+                                                                             std::get<Is>(idx))...);
+        else if constexpr (comp == functionspace::boundary)
+          return std::tuple(std::get<Is>(boundary_).template eval_basfunc<deriv>(std::get<Is>(xi),
+                                                                                 std::get<Is>(idx))...);
+      }
+      /// @}
+
+      /// @brief Returns the indices of the spline objects'
+      /// coefficients corresponding to the knot indices `idx`
+      template<functionspace comp = functionspace::interior,
+               size_t... Is, typename... Idx>
+      inline auto eval_coeff_indices_(std::index_sequence<Is...>,
+                                      const std::tuple<Idx...>& idx) const
+      {
+        if constexpr (comp == functionspace::interior)
+          return std::tuple(std::get<Is>(*this).eval_coeff_indices(std::get<Is>(idx))...);
+        else if constexpr (comp == functionspace::boundary)
+          return std::tuple(std::get<Is>(boundary_).eval_coeff_indices(std::get<Is>(idx))...);
+      }
+      
+      /// @brief Returns the spline objects with uniformly refined
+      /// knot and coefficient vectors
+      template<size_t... Is>
+      inline auto& uniform_refine_(std::index_sequence<Is...>,
+                                  int numRefine = 1, int dim = -1)
+      {
+        (std::get<Is>(*this).uniform_refine(numRefine, dim), ...);
+        (std::get<Is>(boundary_).uniform_refine(numRefine, dim), ...);
+        return *this;
+      }
       
     public:      
       /// @brief Returns the dimension of all bases
+      template<functionspace comp = functionspace::interior>
       int64_t basisDim() const
       {
-        return basisDim_(std::make_index_sequence<sizeof...(spline_t)>{});
-      }
-
-      /// @brief Returns the dimension of all bases at the boundary
-      int64_t boundaryBasisDim() const
-      {
-        return boundaryBasisDim_(std::make_index_sequence<sizeof...(spline_t)>{});
+        return basisDim_<comp>(std::make_index_sequence<sizeof...(spline_t)>{});
       }
 
       /// @brief Serialization to JSON
       nlohmann::json to_json() const
       {
         return to_json_(std::make_index_sequence<sizeof...(spline_t)>{});
+      }
+
+      /// @brief Returns the values of the spline objects in the points `xi`
+      /// @{
+      template<functionspace comp = functionspace::interior,
+               deriv deriv = deriv::func, typename... Xi>
+      inline auto eval(const std::tuple<Xi...>& xi) const
+      {
+        return eval_<comp, deriv>(std::make_index_sequence<sizeof...(spline_t)>{}, xi);
+      }
+
+      template<functionspace comp = functionspace::interior,
+               deriv deriv = deriv::func,
+               typename... Xi, typename... Idx>
+      inline auto eval(const std::tuple<Xi...>& xi,
+                       const std::tuple<Idx...>& idx) const
+      {
+        return eval_<comp,deriv>(std::make_index_sequence<sizeof...(spline_t)>{}, xi, idx);
+      }
+
+      template<functionspace comp = functionspace::interior,
+               deriv deriv = deriv::func,
+               typename... Xi, typename... Idx, typename... Coeff_Idx>
+      inline auto eval(const std::tuple<Xi...>& xi,
+                       const std::tuple<Idx...>& idx,
+                       const std::tuple<Coeff_Idx...>& coeff_idx) const
+      {
+        return eval_<comp,deriv>(std::make_index_sequence<sizeof...(spline_t)>{}, xi, idx, coeff_idx);
+      }
+      /// @}
+
+      /// @brief Returns the value of the spline objects from
+      /// precomputed basis function
+      template<functionspace comp = functionspace::interior,
+               typename... Basfunc, typename... Coeff_Idx,
+               typename... Numeval, typename... Sizes>
+      inline auto eval_from_precomputed(const std::tuple<Basfunc...>& basfunc,
+                                        const std::tuple<Coeff_Idx...>& coeff_idx,
+                                        const std::tuple<Numeval...>& numeval,
+                                        const std::tuple<Sizes...>& sizes) const
+      {
+        return eval_from_precomputed_<comp>(std::make_index_sequence<sizeof...(spline_t)>{},
+                                            basfunc, coeff_idx, numeval, sizes);
+      }
+
+      template<functionspace comp = functionspace::interior,
+               typename... Basfunc, typename... Coeff_Idx, typename... Xi>
+      inline auto eval_from_precomputed(const std::tuple<Basfunc...>& basfunc,
+                                        const std::tuple<Coeff_Idx...>& coeff_idx,
+                                        const std::tuple<Xi...>& xi) const
+      {
+        return eval_from_precomputed_<comp>(std::make_index_sequence<sizeof...(spline_t)>{},
+                                      basfunc, coeff_idx, xi);
+      }
+      /// @}
+
+      /// @brief Returns the knot indicies of knot spans containing `xi`
+      template<functionspace comp = functionspace::interior,
+               typename... Xi>
+      inline auto find_knot_indices(const std::tuple<Xi...>& xi) const
+      {
+        return find_knot_indices_<comp>(std::make_index_sequence<sizeof...(spline_t)>{}, xi);
+      }
+
+      /// @brief Returns the values of the spline objects' basis
+      /// functions in the points `xi` @{
+      template<functionspace comp = functionspace::interior,
+               deriv deriv = deriv::func, typename... Xi>
+      inline auto eval_basfunc(const std::tuple<Xi...>& xi) const
+      {
+        return eval_basfunc_<comp>(std::make_index_sequence<sizeof...(spline_t)>{}, xi);
+      }
+
+      template<functionspace comp = functionspace::interior,
+               deriv deriv = deriv::func, typename... Xi, typename... Idx>
+      inline auto eval_basfunc(const std::tuple<Xi...>& xi,
+                               const std::tuple<Idx...>& idx) const
+      {
+        return eval_basfunc_<comp>(std::make_index_sequence<sizeof...(spline_t)>{}, xi, idx);
+      }
+      /// @}
+
+      /// @brief Returns the indices of the spline objects'
+      /// coefficients corresponding to the knot indices `idx`
+      template<functionspace comp = functionspace::interior,
+               typename... Idx>
+      inline auto eval_coeff_indices(const std::tuple<Idx...>& idx) const
+      {
+        return eval_coeff_indices_<comp>(std::make_index_sequence<sizeof...(spline_t)>{}, idx);
+      }
+
+      /// @brief Returns the spline objects with uniformly refined
+      /// knot and coefficient vectors
+      inline auto& uniform_refine(int numRefine = 1, int dim = -1)
+      {
+        uniform_refine_(std::make_index_sequence<sizeof...(spline_t)>{});
+        return *this;
       }
     };
 
@@ -214,17 +480,22 @@ namespace iganet {
     class FunctionSpace<spline_t> : public spline_t
     {
     protected:
-      /// @brief Dimension of the parametric domain
+      /// @brief Dimension of the parametric space
       static constexpr short_t parDim_ = spline_t::parDim();
 
-      /// @brief Dimension of the physical domain
+      /// @brief Dimension of the physical space
       static constexpr short_t geoDim_ = spline_t::geoDim();
 
-      /// @brief Type of the boundary spline objects
-      using Boundary_t = Boundary<spline_t>;
+    public:
+      /// @brief Boundary spline objects type
+      using boundary_t = Boundary<spline_t>;
 
+      /// @brief Boundary spline objects evaluation type
+      using boundary_eval_t = typename Boundary<spline_t>::eval_t;
+      
+    protected:
       /// @brief Boundary spline objects
-      Boundary_t boundary_;
+      boundary_t boundary_;
 
     public:
       /// @brief Base class
@@ -233,6 +504,9 @@ namespace iganet {
       /// @brief Value type
       using value_type = typename spline_t::value_type;
 
+      /// @brief Evaluation type
+      using eval_t = std::array<torch::Tensor, spline_t::parDim()>;
+      
       /// @brief Default constructor
       FunctionSpace() = default;
 
@@ -259,7 +533,13 @@ namespace iganet {
           boundary_(kv, init, core)
       {}
       /// @}
-
+      
+      /// @brief Returns the dimension
+      inline static constexpr short_t dim()
+      {
+        return 1;
+      }
+      
       /// @brief Returns the parametric dimension
       inline static constexpr short_t parDim()
       {
@@ -416,22 +696,6 @@ namespace iganet {
       } else
         static_assert(sizeof...(Cs) == 0, "Dimensions mismatch");
     }
-    /// @brief Returns the parametric dimension
-    ///
-    /// @result Number of parametric dimensions
-    inline static constexpr short_t parDim()
-    {
-      return spline_t::parDim();
-    }
-
-    /// @brief Returns the geometric dimension
-    ///
-    /// @result Number of geometric dimensions
-    inline static constexpr short_t geoDim()
-    {
-      return spline_t::geoDim();
-    }
-
   /// @}
   };
 

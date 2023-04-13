@@ -884,44 +884,37 @@ namespace iganet {
   };
 
   /// @brief IgANet
-  template<typename real_t,
-           typename optimizer_t,
-           short_t GeoDim,
-           short_t PdeDim,
-           template<typename, short_t, short_t...> class bspline_t,
-           short_t... Degrees>
-  class IgANet : public core<real_t>
+  template<typename optimizer_t,
+           typename geometry_t,
+           typename variable_t>
+  class IgANet : public core<typename std::common_type<typename geometry_t::value_type,
+                                                       typename variable_t::value_type>::type>
   {
   protected:
-    /// @brief Number of parametric dimensions
-    static constexpr const short_t parDim_ = sizeof...(Degrees);
-
-    /// @brief Type of the geometry B-spline object
-    using Geometry_t = bspline_t<real_t, GeoDim, Degrees...>;
-
-    /// @brief Type of the variable B-spline object
-    using Variable_t = bspline_t<real_t, PdeDim, Degrees...>;
-
-    /// @brief Type of the boundary B-spline object
-    using Boundary_t = Boundary<Variable_t>;
+    /// @brief Value type
+    using value_type = typename std::common_type<typename geometry_t::value_type,
+                                                 typename variable_t::value_type>::type;
     
-    /// @brief B-spline representation of the geometry
-    Geometry_t geo_;
-
-    /// @brief B-spline representation of the right-hand side
-    Variable_t rhs_;
-
-    /// @brief B-spline representation of the solution
-    Variable_t sol_;
-
-    /// @brief B-spline representation of the network output
-    Variable_t out_;
+    /// @brief Type of the boundary spline object
+    using boundary_t = typename variable_t::boundary_t;
     
-    /// @brief B-spline representation of the boundary conditions
-    Boundary_t bdr_;
+    /// @brief spline representation of the geometry
+    geometry_t geo_;
+
+    /// @brief spline representation of the right-hand side
+    variable_t rhs_;
+
+    /// @brief spline representation of the solution
+    variable_t sol_;
+
+    /// @brief spline representation of the network output
+    variable_t out_;
+    
+    /// @brief spline representation of the boundary conditions
+    boundary_t bdr_;
 
     /// @brief IgANet generator
-    IgANetGenerator<real_t> net_;
+    IgANetGenerator<value_type> net_;
 
     /// @brief Optimizer
     optimizer_t opt_;
@@ -929,11 +922,57 @@ namespace iganet {
     /// @brief Options
     IgANetOptions options_;
 
+    /// @brief Dimensions of the parametric spaces
+    static constexpr const auto parDim_ = variable_t::parDim();
+
+    /// @brief Dimensions of the geometric spaces
+    static constexpr const auto geoDim_ = variable_t::geoDim();
+    
+    /// @brief Constructor: number of layers, activation functions,
+    /// and number of spline coefficients (different for geometry_t
+    /// and variable_t types)
+    template<typename... geometry_spline_t, size_t... Is,
+             typename... variable_spline_t, size_t... Js>
+    IgANet(const std::vector<int64_t>&                layers,
+           const std::vector<std::vector<std::any>>&  activations,
+           std::tuple<geometry_spline_t...>           geometry_splines,
+           std::index_sequence<Is...>,
+           std::tuple<variable_spline_t...>           variable_splines,
+           std::index_sequence<Js...>,
+           IgANetOptions                              defaults = {},
+           iganet::core<value_type>                   core = iganet::core<value_type>{})
+    : iganet::core<value_type>(core),
+      
+      // Construct the different spline objects individually
+      geo_(std::get<Is>(geometry_splines)..., init::greville, core),
+      rhs_(std::get<Js>(variable_splines)..., init::zeros,    core),
+      sol_(std::get<Js>(variable_splines)..., init::random,   core),
+      bdr_(sol_.boundary()),
+      
+      out_(std::get<Js>(variable_splines)..., init::random,   core),
+
+      
+      // Construct the deep neural network with the large tensor as
+      // input and the coefficient vector of the solution's spline
+      // object as output
+      net_(concat(std::vector<int64_t>{geo_.basisDim()+rhs_.basisDim()+sol_.template basisDim<functionspace::boundary>()},
+                  layers,
+                  std::vector<int64_t>{sol_.basisDim()}
+                  ),
+           activations),
+
+      // Construct the optimizer
+      opt_(net_->parameters()),
+
+      // Set options
+      options_(defaults)
+    {}
+    
   public:
     /// @brief Default constructor
     explicit IgANet(IgANetOptions defaults = {},
-                    iganet::core<real_t> core = iganet::core<real_t>{})
-      : iganet::core<real_t>(core),
+                    iganet::core<value_type> core = iganet::core<value_type>{})
+      : iganet::core<value_type>(core),
         geo_(),
         rhs_(),
         sol_(),
@@ -942,103 +981,56 @@ namespace iganet {
         opt_(net_->parameters()),
         options_(defaults)
     {}
-
-    /// @brief Constructor: layers + bspline (same for all)
-    IgANet(const std::vector<int64_t>& layers,
+    
+    /// @brief Constructor: number of layers, activation functions,
+    /// and number of spline coefficients (same for geometry_t and
+    /// variable_t types)
+    template<typename... spline_t>
+    IgANet(const std::vector<int64_t>&               layers,
            const std::vector<std::vector<std::any>>& activations,
-           const std::array<int64_t,parDim_>& bspline_ncoeffs,
-           IgANetOptions defaults = {},
-           iganet::core<real_t> core = iganet::core<real_t>{})
-      : IgANet(layers, activations, bspline_ncoeffs,
-               bspline_ncoeffs, bspline_ncoeffs, defaults, core)
-    {
-    }
+           std::tuple<spline_t...>                   splines,
+           IgANetOptions                             defaults = {},
+           iganet::core<value_type>                  core = iganet::core<value_type>{})
+      : IgANet(layers, activations, splines, splines, defaults, core)
+    {}
 
-    /// @brief Constructor: layers + geo-bspline + rhs-bspline + sol-bspline
-    IgANet(const std::vector<int64_t>& layers,
+    /// @brief Constructor: number of layers, activation functions,
+    /// and number of spline coefficients (different for geometry_t
+    /// and variable_t types)
+    template<typename... geometry_splines_t,
+             typename... variable_splines_t>
+    IgANet(const std::vector<int64_t>&               layers,
            const std::vector<std::vector<std::any>>& activations,
-           const std::array<int64_t,parDim_>& geo_bspline_ncoeffs,
-           const std::array<int64_t,parDim_>& rhs_bspline_ncoeffs,
-           const std::array<int64_t,parDim_>& sol_bspline_ncoeffs,
-           IgANetOptions defaults = {},
-           iganet::core<real_t> core = iganet::core<real_t>{})
-      : iganet::core<real_t>(core),
+           std::tuple<geometry_splines_t...>         geometry_splines,
+           std::tuple<variable_splines_t...>         variable_splines,
+           IgANetOptions                             defaults = {},
+           iganet::core<value_type>                  core = iganet::core<value_type>{})
+      : IgANet(layers, activations,
+               geometry_splines, std::make_index_sequence<sizeof...(geometry_splines_t)>{},
+               variable_splines, std::make_index_sequence<sizeof...(variable_splines_t)>{},
+               defaults, core)
+    {}
 
-        // Construct the different B-Spline objects individually
-        geo_(geo_bspline_ncoeffs, init::greville),
-        rhs_(rhs_bspline_ncoeffs, init::zeros),
-        bdr_(sol_bspline_ncoeffs, init::zeros),
-        sol_(sol_bspline_ncoeffs, init::random),
-        out_(sol_bspline_ncoeffs, init::random),
-
-        // Construct the deep neural network with the large tensor as
-        // input and the coefficient vector of the solution's BSpline
-        // object as output
-        net_(concat(std::vector<int64_t>{GeoDim*geo_.ncumcoeffs()+PdeDim*rhs_.ncumcoeffs()+PdeDim*bdr_.ncumcoeffs()},
-                    layers,
-                    std::vector<int64_t>{PdeDim*sol_.ncumcoeffs()}
-                    ),
-             activations),
-
-        // Construct the optimizer
-        opt_(net_->parameters()),
-
-        // Set options
-        options_(defaults)
+    /// @brief Returns the parametric dimensions
+    inline static constexpr auto parDim()
     {
+      return parDim_;
     }
-
-    /// @brief Constructor: layers + bspline (same for all)
-    IgANet(const std::vector<int64_t>& layers,
-           const std::vector<std::vector<std::any>>& activations,
-           const std::array<std::vector<real_t>,parDim_>& bspline_kv,
-           IgANetOptions defaults = {},
-           iganet::core<real_t> core = iganet::core<real_t>{})
-      : IgANet(layers, activations, bspline_kv, bspline_kv, bspline_kv, defaults, core)
+    
+    /// @brief Returns the geometric dimensions
+    inline static constexpr auto geoDim()
     {
+      return geoDim_;
     }
-
-    /// @brief Constructor: layers + geo-bspline + rhs-bspline + sol-bspline
-    IgANet(const std::vector<int64_t>& layers,
-           const std::vector<std::vector<std::any>>& activations,
-           const std::array<std::vector<real_t>,parDim_>& geo_bspline_kv,
-           const std::array<std::vector<real_t>,parDim_>& rhs_bspline_kv,
-           const std::array<std::vector<real_t>,parDim_>& sol_bspline_kv,
-           IgANetOptions defaults = {},
-           iganet::core<real_t> core = iganet::core<real_t>{})
-      : iganet::core<real_t>(core),
-
-        // Construct the different B-Spline objects individually
-        geo_(geo_bspline_kv, init::greville),
-        rhs_(rhs_bspline_kv, init::zeros),
-        bdr_(sol_bspline_kv, init::zeros),
-        sol_(sol_bspline_kv, init::random),
-        out_(sol_bspline_kv, init::random),
-
-        // Construct the deep neural network with the large tensor as
-        // input and the coefficient vector of the solution's BSpline
-        // object as output
-        net_(concat(std::vector<int64_t>{GeoDim*geo_.ncumcoeffs()+PdeDim*rhs_.ncumcoeffs()+PdeDim*bdr_.ncumcoeffs()},
-                    layers,
-                    std::vector<int64_t>{PdeDim*sol_.ncumcoeffs()}),
-             activations),
-        
-        // Construct the optimizer
-        opt_(net_->parameters()),
-        
-        // Set options
-        options_(defaults)
-    {
-    }
-
+    
     /// @brief Returns a constant reference to the IgANet generator
-    inline const IgANetGenerator<real_t>& net() const
+    inline const IgANetGenerator<value_type>& net() const
     {
       return net_;
     }
 
     /// @brief Returns a non-constant reference to the IgANet generator
-    inline IgANetGenerator<real_t>& net()
+    inline IgANetGenerator<value_type>& net()
     {
       return net_;
     }
@@ -1055,58 +1047,58 @@ namespace iganet {
       return opt_;
     }
     
-    /// @brief Returns a constant reference to the B-spline
+    /// @brief Returns a constant reference to the spline
     /// representation of the geometry
-    inline const Geometry_t& geo() const
+    inline const geometry_t& geo() const
     {
       return geo_;
     }
 
-    /// @brief Returns a non-constant reference to the B-spline
+    /// @brief Returns a non-constant reference to the spline
     /// representation of the geometry
-    inline Geometry_t& geo()
+    inline geometry_t& geo()
     {
       return geo_;
     }
 
-    /// @brief Returns a constant reference to the B-spline
+    /// @brief Returns a constant reference to the spline
     /// representation of the right-hand side
-    inline const Variable_t& rhs() const
+    inline const variable_t& rhs() const
     {
       return rhs_;
     }
 
-    /// @brief Returns a non-constant reference to the B-spline
+    /// @brief Returns a non-constant reference to the spline
     /// representation of the right-hand side
-    inline Variable_t& rhs()
+    inline variable_t& rhs()
     {
       return rhs_;
     }
 
-    /// @brief Returns a constant reference to the B-spline
+    /// @brief Returns a constant reference to the spline
     /// representation of the solution
-    inline const Variable_t& sol() const
+    inline const variable_t& sol() const
     {
       return sol_;
     }
 
-    /// @brief Returns a non-constant reference to the B-spline
+    /// @brief Returns a non-constant reference to the spline
     /// representation of the solution
-    inline Variable_t& sol()
+    inline variable_t& sol()
     {
       return sol_;
     }
 
-    /// @brief Returns a constant reference to the B-spline
+    /// @brief Returns a constant reference to the spline
     /// representation of the boundary contitions
-    inline const auto& bdr() const
+    inline const boundary_t& bdr() const
     {
       return bdr_;      
     }
 
-    /// @brief Returns a non-constant reference to the B-spline
+    /// @brief Returns a non-constant reference to the spline
     /// representation of the boundary conditions
-    inline auto& bdr()
+    inline boundary_t& bdr()
     {
       return bdr_;      
     }
@@ -1123,72 +1115,48 @@ namespace iganet {
       return options_;
     }
 
+  private:
     /// @brief Updates the samples
     ///
     /// In the default implementation the samples are the Greville
     /// abscissae in the interior of the domain and on the boundary
     /// faces. This behavior can be changed by overriding this virtual
     /// function in a derived class.
-    virtual std::pair<std::array<torch::Tensor, parDim_>,
-                      typename std::conditional<parDim_ == 1,
-                                                std::array<torch::Tensor, Boundary_t::sides()>,
-                                                std::array<std::array<torch::Tensor, parDim_-1>,Boundary_t::sides()>>::type>
-    get_samples() const
+    template<size_t... Is>
+    std::pair<typename variable_t::eval_t,
+              typename variable_t::boundary_eval_t>
+    get_samples(std::index_sequence<Is...>) const
     {      
-      std::pair<std::array<torch::Tensor, parDim_>,
-                typename std::conditional<parDim_ == 1,
-                                          std::array<torch::Tensor, Boundary_t::sides()>,
-                                          std::array<std::array<torch::Tensor, parDim_-1>,Boundary_t::sides()>>::type>
-        result;
+      std::pair<typename variable_t::eval_t,
+                typename variable_t::boundary_eval_t> result;
       
       // Get Greville abscissae inside the domain
-      result.first = sol_.greville();
-
-      // Get Greville abscissae at the boundary
-      if constexpr (Boundary_t::sides() == side::east)
-        {
-          // 1D
-          result.second[0] = bdr_.template side<side::west>().greville();
-          result.second[1] = bdr_.template side<side::east>().greville();
-        }
-      else if constexpr (Boundary_t::sides() == side::north)
-        {
-          // 2D
-          result.second[0] = bdr_.template side<side::west>().greville();
-          result.second[1] = bdr_.template side<side::east>().greville();
-          result.second[2] = bdr_.template side<side::south>().greville();
-          result.second[3] = bdr_.template side<side::north>().greville();
-        }
-      else if constexpr (Boundary_t::sides() == side::back)
-        {
-          // 3D
-          result.second[0] = bdr_.template side<side::west>().greville();
-          result.second[1] = bdr_.template side<side::east>().greville();
-          result.second[2] = bdr_.template side<side::south>().greville();
-          result.second[3] = bdr_.template side<side::north>().greville();
-          result.second[4] = bdr_.template side<side::front>().greville();
-          result.second[5] = bdr_.template side<side::back>().greville();
-        }
-      else if constexpr (Boundary_t::sides() == side::etime)
-        {
-          // 4D
-          result.second[0] = bdr_.template side<side::west>().greville();
-          result.second[1] = bdr_.template side<side::east>().greville();
-          result.second[2] = bdr_.template side<side::south>().greville();
-          result.second[3] = bdr_.template side<side::north>().greville();
-          result.second[4] = bdr_.template side<side::front>().greville();
-          result.second[5] = bdr_.template side<side::back>().greville();
-          result.second[6] = bdr_.template side<side::stime>().greville();
-          result.second[7] = bdr_.template side<side::etime>().greville();
-        }
-      else
-        {
-          throw std::runtime_error("Unsupported boundary");
-        }
+      ((std::get<Is>(result.first) = std::get<Is>(sol_).greville()), ...);
+      
+      // Get Greville abscissae at the domain
+      ((std::get<Is>(result.second) = std::get<Is>(bdr_).greville()), ...);
       
       return result;
     }
 
+  public:
+    /// @brief Updates the samples
+    ///
+    /// In the default implementation the samples are the Greville
+    /// abscissae in the interior of the domain and on the boundary
+    /// faces. This behavior can be changed by overriding this virtual
+    /// function in a derived class.
+    virtual std::pair<typename variable_t::eval_t,
+                      typename variable_t::boundary_eval_t>
+    get_samples() const
+    {
+      if constexpr (variable_t::dim() == 1)
+        return {sol_.greville(), bdr_.greville()};
+      else
+        return get_samples(std::make_index_sequence<variable_t::dim()>{});
+    }
+    
+#if 0
   private:
     /// @brief Updates the network inputs
     template<std::size_t... geoDimIs, std::size_t... pdeDimIs, std::size_t... bdrIs>
@@ -1230,19 +1198,19 @@ namespace iganet {
         throw std::runtime_error("Unsupported PDE dimension");
     }
 
+#endif
+    
   public:
     /// @brief Updates the network inputs
     virtual torch::Tensor get_inputs() const
     {
-      return get_inputs(std::make_index_sequence<GeoDim>(),
-                        std::make_index_sequence<PdeDim>(),
-                        std::make_index_sequence<Boundary_t::sides()>());     
+      return torch::zeros(100);
+      // return get_inputs(std::make_index_sequence<GeoDim>(),
+      //                        std::make_index_sequence<PdeDim>(),
+      //                        std::make_index_sequence<boundary_t::sides()>());     
     }
     
     /// @brief Updates object at the beginning of each epoch
-    ///
-    /// @note This functions is decleared pure virtual and needs to be
-    /// overridden by the user in the derived problem-specific class
     virtual status get_epoch(int64_t epoch) const
     {
       return (epoch == 0
@@ -1253,19 +1221,36 @@ namespace iganet {
     /// @brief Trains the IgANet
     virtual void train()
     {
-      // Get inputs
+      // Get inputs for zeroth epoch
       auto inputs = get_inputs();
       
       // Get samples
       auto samples = get_samples();
-
-      // Evaluate right-hand side
-      auto rhs = rhs_.eval( samples.first );
       
+      // Evaluate constant right-hand side
+      auto knot_idx  = rhs_.find_knot_indices(samples.first);
+      auto basfunc   = rhs_.eval_basfunc(samples.first, knot_idx);
+      auto coeff_idx = rhs_.eval_coeff_indices(knot_idx);
+
+      auto rhs = rhs_.eval_from_precomputed(basfunc, coeff_idx, samples.first);
+
+      // Evaluate boundary values
+      auto bdr_knot_idx  = rhs_.template find_knot_indices<functionspace::boundary>(samples.second);
+      auto bdr_basfunc   = rhs_.template eval_basfunc<functionspace::boundary>(samples.second, bdr_knot_idx);
+      auto bdr_coeff_idx = rhs_.template eval_coeff_indices<functionspace::boundary>(bdr_knot_idx);
+            
+      auto rhs_bdr = rhs_.template eval_from_precomputed<functionspace::boundary>(bdr_basfunc, bdr_coeff_idx, samples.second);
+      
+      
+      exit(0);
+
+      // Loop over epochs
       for (int64_t epoch = 0; epoch != options_.max_epoch(); ++epoch)
         {
           // Update from user-defined callback function
           auto status = get_epoch(epoch);
+
+          // TODO: react on status
           
           // Reset gradients
           net_->zero_grad();    
@@ -1277,8 +1262,8 @@ namespace iganet {
           auto out = out_.eval( samples.first );
           
           // Compute the loss value
-          auto loss_pde = torch::mse_loss( pred , rhs(0) );
-          std::cout << "loss = " << loss_pde.template item<real_t>() << std::endl;
+          auto loss_pde = torch::mse_loss( pred , pred /*rhs(0)*/ );
+          std::cout << "loss = " << loss_pde.template item<value_type>() << std::endl;
           
           // Compute gradients of the loss w.r.t. the model parameters
           loss_pde.backward({}, true, false);
@@ -1286,15 +1271,15 @@ namespace iganet {
           // Update the parameters based on the calculated gradients
           opt_.step();
           
-          if (loss_pde.template item<real_t>() < options_.min_loss())
+          if (loss_pde.template item<value_type>() < options_.min_loss())
             break;
         }
     }
-    
+
     /// @brief Returns a string representation of the IgANet object
     inline void pretty_print(std::ostream& os = std::cout) const
     {
-      os << core<real_t>::name()
+      os << core<value_type>::name()
          << "(\n"
          << "net = " << net_ << "\n"
          << "geo = " << geo_ << "\n"
@@ -1304,19 +1289,19 @@ namespace iganet {
          << "\n)";
     }
 
-    /// @brief Plots the B-Spline geometry
+    /// @brief Plots the spline geometry
     inline auto plot_geo(int64_t xres=10, int64_t yres=10, int64_t zres=10) const
     {
       return geo_.plot(xres, yres, zres);
     }
 
-    /// @brief Plots the B-Spline right-hand side
+    /// @brief Plots the spline right-hand side
     inline auto plot_rhs(int64_t xres=10, int64_t yres=10, int64_t zres=10) const
     {
       return rhs_.plot(rhs_, xres, yres, zres);
     }
 
-    /// @brief Plots the B-Spline solution
+    /// @brief Plots the spline solution
     inline auto plot_sol(int64_t xres=10, int64_t yres=10, int64_t zres=10) const
     {
       return rhs_.plot(sol_, xres, yres, zres);
@@ -1343,8 +1328,8 @@ namespace iganet {
     inline torch::serialize::OutputArchive& write(torch::serialize::OutputArchive& archive,
                                                   const std::string& key="iganet") const
     {
-      archive.write(key+".GeoDim", torch::full({1}, GeoDim));
-      archive.write(key+".PdeDim", torch::full({1}, PdeDim));
+      //archive.write(key+".GeoDim", torch::full({1}, GeoDim));
+      //archive.write(key+".PdeDim", torch::full({1}, PdeDim));
 
       geo_.write(archive, key+".geo");
       rhs_.write(archive, key+".rhs");
@@ -1368,13 +1353,13 @@ namespace iganet {
     {
       torch::Tensor tensor;
 
-      archive.read(key+".GeoDim", tensor);
-      if (tensor.item<int64_t>() != GeoDim)
-        throw std::runtime_error("GeoDim mismatch");
+      //archive.read(key+".GeoDim", tensor);
+      //if (tensor.item<int64_t>() != GeoDim)
+      //  throw std::runtime_error("GeoDim mismatch");
 
-      archive.read(key+".PdeDim", tensor);
-      if (tensor.item<int64_t>() != PdeDim)
-        throw std::runtime_error("PdeDim mismatch");
+      //archive.read(key+".PdeDim", tensor);
+      //if (tensor.item<int64_t>() != PdeDim)
+      //  throw std::runtime_error("PdeDim mismatch");
 
       geo_.read(archive, key+".geo");
       rhs_.read(archive, key+".rhs");
@@ -1412,18 +1397,15 @@ namespace iganet {
     {
       return *this != other;
     }
+
   };
 
   /// @brief Print (as string) a IgANet object
-  template<typename real_t,
-           typename optimizer_t,
-           short_t GeoDim,
-           short_t PdeDim,
-           template<typename, short_t, short_t...> class bspline_t,
-           short_t... Degrees>
+  template<typename optimizer_t,
+           typename geometry_t,
+           typename variable_t>
   inline std::ostream& operator<<(std::ostream& os,
-                                  const IgANet<real_t, optimizer_t, GeoDim, PdeDim,
-                                               bspline_t, Degrees...>& obj)
+                                  const IgANet<optimizer_t, geometry_t, variable_t>& obj)
   {
     obj.pretty_print(os);
     return os;

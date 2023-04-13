@@ -698,7 +698,8 @@ namespace iganet {
       }
     }
 
-    /// @brief Returns the value of the B-spline object in the points `xi`
+    /// @brief Returns the value of the B-spline object from
+    /// precomputed basis function
     ///
     /// This function implements steps 2-3 of algorithm \ref
     /// BSplineEvaluation for univariate B-splines
