@@ -892,7 +892,7 @@ namespace iganet {
 
       if constexpr (core<real_t>::memory_optimized_) {
         auto basfunc = eval_basfunc<deriv>(xi, idx);
-        auto coeff_idx = eval_coeff_indices(idx);
+        auto coeff_idx = find_coeff_indices(idx);
         BlockTensor<torch::Tensor, 1, geoDim_> result;
         for (short_t i = 0; i < geoDim_; ++i)
           result.set(i,
@@ -904,7 +904,7 @@ namespace iganet {
       } else {
         if constexpr (geoDim_ > 1) {
           auto basfunc = eval_basfunc<deriv>(xi, idx);
-          auto coeff_idx = eval_coeff_indices(idx);
+          auto coeff_idx = find_coeff_indices(idx);
           BlockTensor<torch::Tensor, 1, geoDim_> result;
           for (short_t i = 0; i < geoDim_; ++i)
             result.set(i,
@@ -917,7 +917,7 @@ namespace iganet {
           return
             BlockTensor<torch::Tensor, 1, 1>(dotproduct(eval_basfunc<deriv>(xi, idx),
                                                         coeffs(0).index_select(0,
-                                                                               eval_coeff_indices(idx)).view({-1, xi[0].numel()})
+                                                                               find_coeff_indices(idx)).view({-1, xi[0].numel()})
                                                         ).view(xi[0].sizes()));
       }
     }
@@ -999,7 +999,7 @@ namespace iganet {
 
       if constexpr (core<real_t>::memory_optimized_) {
         auto basfunc = eval_basfunc<deriv>(xi, idx);
-        auto coeff_idx = eval_coeff_indices(idx);
+        auto coeff_idx = find_coeff_indices(idx);
         BlockTensor<torch::Tensor, 1, geoDim_> result;
         for (short_t i = 0; i < geoDim_; ++i)
           result.set(i,
@@ -1013,7 +1013,7 @@ namespace iganet {
       } else {
         if constexpr (geoDim_ > 1) {
           auto basfunc = eval_basfunc<deriv>(xi, idx);
-          auto coeff_idx = eval_coeff_indices(idx);
+          auto coeff_idx = find_coeff_indices(idx);
           BlockTensor<torch::Tensor, 1, geoDim_> result;
           for (short_t i = 0; i < geoDim_; ++i)
             result.set(i,
@@ -1026,7 +1026,7 @@ namespace iganet {
           return
             BlockTensor<torch::Tensor, 1, 1>(dotproduct(eval_basfunc<deriv>(xi, idx),
                                                         coeffs(0).index_select(0,
-                                                                               eval_coeff_indices(idx)).view({-1, xi[0].numel()})
+                                                                               find_coeff_indices(idx)).view({-1, xi[0].numel()})
                                                         ).view(xi[0].sizes()));
       }
     }
@@ -1113,7 +1113,7 @@ namespace iganet {
 
       if constexpr (core<real_t>::memory_optimized_) {
         auto basfunc = eval_basfunc<deriv>(xi, idx);
-        auto coeff_idx = eval_coeff_indices(idx);
+        auto coeff_idx = find_coeff_indices(idx);
         BlockTensor<torch::Tensor, 1, geoDim_> result;
         for (short_t i = 0; i < geoDim_; ++i)
           result.set(i,
@@ -1129,7 +1129,7 @@ namespace iganet {
       } else {
         if constexpr (geoDim_ > 1) {
           auto basfunc = eval_basfunc<deriv>(xi, idx);
-          auto coeff_idx = eval_coeff_indices(idx);
+          auto coeff_idx = find_coeff_indices(idx);
           BlockTensor<torch::Tensor, 1, geoDim_> result;
           for (short_t i = 0; i < geoDim_; ++i)
             result.set(i,
@@ -1142,7 +1142,7 @@ namespace iganet {
           return
             BlockTensor<torch::Tensor, 1, 1>(dotproduct(eval_basfunc<deriv>(xi, idx),
                                                         coeffs(0).index_select(0,
-                                                                               eval_coeff_indices(idx)).view({-1, xi[0].numel()})
+                                                                               find_coeff_indices(idx)).view({-1, xi[0].numel()})
                                                         ).view(xi[0].sizes()));
       }
     }
@@ -1176,7 +1176,7 @@ namespace iganet {
 
       if constexpr (core<real_t>::memory_optimized_) {
         auto basfunc = eval_basfunc<deriv>(xi, idx);
-        auto coeff_idx = eval_coeff_indices(idx);
+        auto coeff_idx = find_coeff_indices(idx);
         BlockTensor<torch::Tensor, 1, geoDim_> result;
         for (short_t i = 0; i < geoDim_; ++i)
           result.set(i,
@@ -1237,7 +1237,7 @@ namespace iganet {
 
       if constexpr (core<real_t>::memory_optimized_) {
         auto basfunc = eval_basfunc<deriv>(xi, idx);
-        auto coeff_idx = eval_coeff_indices(idx);
+        auto coeff_idx = find_coeff_indices(idx);
         BlockTensor<torch::Tensor, 1, geoDim_> result;
         for (short_t i = 0; i < geoDim_; ++i)
           result.set(i,
@@ -1255,7 +1255,7 @@ namespace iganet {
       } else {
         if constexpr (geoDim_ > 1) {
           auto basfunc = eval_basfunc<deriv>(xi, idx);
-          auto coeff_idx = eval_coeff_indices(idx);
+          auto coeff_idx = find_coeff_indices(idx);
           BlockTensor<torch::Tensor, 1, geoDim_> result;
           for (short_t i = 0; i < geoDim_; ++i)
             result.set(i,
@@ -1268,7 +1268,7 @@ namespace iganet {
           return
             BlockTensor<torch::Tensor, 1, 1>(dotproduct(eval_basfunc<deriv>(xi, idx),
                                                         coeffs(0).index_select(0,
-                                                                               eval_coeff_indices(idx)).view({-1, xi[0].numel()})
+                                                                               find_coeff_indices(idx)).view({-1, xi[0].numel()})
                                                         ).view(xi[0].sizes()));
       }
     }
@@ -1402,14 +1402,14 @@ namespace iganet {
 
     /// @brief Returns the indices of the coefficients corresponding to the knot indices `idx`
     /// @{
-    inline auto eval_coeff_indices(const TensorArray1& idx) const
+    inline auto find_coeff_indices(const TensorArray1& idx) const
     {
       assert(parDim_ == 1);
       return
         VSlice<core<real_t>::memory_optimized_>(idx[0].flatten(), -degrees_[0], 1);
     }
 
-    inline auto eval_coeff_indices(const TensorArray2& idx) const
+    inline auto find_coeff_indices(const TensorArray2& idx) const
     {
       assert(parDim_ == 2);
       return
@@ -1419,7 +1419,7 @@ namespace iganet {
                                                 ncoeffs(0));
     }
 
-    inline auto eval_coeff_indices(const TensorArray3& idx) const
+    inline auto find_coeff_indices(const TensorArray3& idx) const
     {
       assert(parDim_ == 3);
       return
@@ -1429,7 +1429,7 @@ namespace iganet {
                                                 std::array<int64_t, 2>{ncoeffs(0), ncoeffs(1)});
     }
 
-    inline auto eval_coeff_indices(const TensorArray4& idx) const
+    inline auto find_coeff_indices(const TensorArray4& idx) const
     {
       assert(parDim_ == 4);
       return
@@ -2136,7 +2136,7 @@ namespace iganet {
 
       auto basfunc = update_coeffs_univariate<degrees_[0], 0>(knots[0].flatten(),
                                                               idx[0].flatten());
-      auto coeff_idx = eval_coeff_indices(idx);
+      auto coeff_idx = find_coeff_indices(idx);
       for (short_t i = 0; i < geoDim_; ++i)
         coeffs(i) = dotproduct(basfunc,
                                coeffs(i).index_select(0,
@@ -2158,7 +2158,7 @@ namespace iganet {
       TensorArray2 idx_ = {idx[0].repeat(idx[1].numel()),
                            idx[1].repeat_interleave(idx[0].numel(), 0)};
 
-      auto coeff_idx = eval_coeff_indices(idx_);
+      auto coeff_idx = find_coeff_indices(idx_);
 
       for (short_t i = 0; i < geoDim_; ++i)
         coeffs(i) = dotproduct(basfunc,
@@ -2185,7 +2185,7 @@ namespace iganet {
                            idx[1].repeat_interleave(idx[0].numel(), 0).repeat(idx[2].numel()),
                            idx[2].repeat_interleave(idx[0].numel()*idx[1].numel(), 0)};
 
-      auto coeff_idx = eval_coeff_indices(idx_);
+      auto coeff_idx = find_coeff_indices(idx_);
 
       for (short_t i = 0; i < geoDim_; ++i)
         coeffs(i) = dotproduct(basfunc,
@@ -2216,7 +2216,7 @@ namespace iganet {
                            idx[2].repeat_interleave(idx[0].numel()*idx[1].numel(), 0).repeat(idx[3].numel()),
                            idx[3].repeat_interleave(idx[0].numel()*idx[1].numel()*idx[2].numel(), 0)};
 
-      auto coeff_idx = eval_coeff_indices(idx_);
+      auto coeff_idx = find_coeff_indices(idx_);
 
       for (short_t i = 0; i < geoDim_; ++i)
         coeffs(i) = dotproduct(basfunc,
@@ -2873,7 +2873,7 @@ std::cout << "AFTER\n";
     inline auto div(const std::array<torch::Tensor, BSplineCore::parDim_>& xi,
                     const std::array<torch::Tensor, BSplineCore::parDim_>& idx) const
     {
-      return div(xi, idx, BSplineCore::eval_coeff_indices(idx));
+      return div(xi, idx, BSplineCore::find_coeff_indices(idx));
     }
 
     /// @brief Returns a block-tensor with the divergence of the
@@ -3036,8 +3036,8 @@ std::cout << "AFTER\n";
                      const std::array<torch::Tensor, BSplineCore::parDim_>& idx,
                      const std::array<torch::Tensor, Geometry_t::parDim()>& idx_G) const
     {
-      return idiv(G, xi, idx, eval_coeff_indices(idx),
-                  idx_G, G.eval_coeff_indices(idx_G));
+      return idiv(G, xi, idx, find_coeff_indices(idx),
+                  idx_G, G.find_coeff_indices(idx_G));
     }
 
     /// @brief Returns a block-tensor with the divergence of the
@@ -3133,7 +3133,7 @@ std::cout << "AFTER\n";
     inline auto grad(const std::array<torch::Tensor, BSplineCore::parDim_>& xi,
                      const std::array<torch::Tensor, BSplineCore::parDim_>& idx) const
     {
-      return grad(xi, idx, BSplineCore::eval_coeff_indices(idx));
+      return grad(xi, idx, BSplineCore::find_coeff_indices(idx));
     }
 
     /// @brief Returns a block-tensor with the gradient of the
@@ -3298,8 +3298,8 @@ std::cout << "AFTER\n";
                       const std::array<torch::Tensor, BSplineCore::parDim_>& idx,
                       const std::array<torch::Tensor, Geometry_t::parDim()>& idx_G) const
     {
-      return igrad(G, xi, idx, BSplineCore::eval_coeff_indices(idx),
-                   idx_G, G.eval_coeff_indices(idx_G));
+      return igrad(G, xi, idx, BSplineCore::find_coeff_indices(idx),
+                   idx_G, G.find_coeff_indices(idx_G));
     }
 
     /// @brief Returns a block-tensor with the gradient of the B-spline
@@ -3417,7 +3417,7 @@ std::cout << "AFTER\n";
     inline auto hess(const std::array<torch::Tensor, BSplineCore::parDim_>& xi,
                      const std::array<torch::Tensor, BSplineCore::parDim_>& idx) const
     {
-      return hess(xi, idx, BSplineCore::eval_coeff_indices(idx));
+      return hess(xi, idx, BSplineCore::find_coeff_indices(idx));
     }
 
     /// @brief Returns a block-tensor with the Hessian of the
@@ -3611,8 +3611,8 @@ std::cout << "AFTER\n";
                       const std::array<torch::Tensor, BSplineCore::parDim_>& idx,
                       const std::array<torch::Tensor, Geometry_t::parDim()>& idx_G) const
     {
-      return ihess(G, xi, idx, BSplineCore::eval_coeff_indices(idx),
-                   idx_G, G.eval_coeff_indices(idx_G));
+      return ihess(G, xi, idx, BSplineCore::find_coeff_indices(idx),
+                   idx_G, G.find_coeff_indices(idx_G));
     }
 
     /// @brief Returns a block-tensor with the Hessian of the B-spline
@@ -3740,7 +3740,7 @@ std::cout << "AFTER\n";
     inline auto jac(const std::array<torch::Tensor, BSplineCore::parDim_>& xi,
                     const std::array<torch::Tensor, BSplineCore::parDim_>& idx) const
     {
-      return jac(xi, idx, BSplineCore::eval_coeff_indices(idx));
+      return jac(xi, idx, BSplineCore::find_coeff_indices(idx));
     }
 
     /// @brief Returns a block-tensor with the Jacobian of the B-spline
@@ -3910,8 +3910,8 @@ std::cout << "AFTER\n";
                      const std::array<torch::Tensor, BSplineCore::parDim_>& idx,
                      const std::array<torch::Tensor, Geometry_t::parDim()>& idx_G) const
     {
-      return ijac(G, xi, idx, BSplineCore::eval_coeff_indices(idx),
-                  idx_G, G.eval_coeff_indices(idx_G));
+      return ijac(G, xi, idx, BSplineCore::find_coeff_indices(idx),
+                  idx_G, G.find_coeff_indices(idx_G));
     }
 
     /// @brief Returns a block-tensor with the Jacobian of the B-spline

@@ -339,24 +339,48 @@ namespace iganet {
       /// coefficients corresponding to the knot indices `idx`
       template<functionspace comp = functionspace::interior,
                size_t... Is, typename... Idx>
-      inline auto eval_coeff_indices_(std::index_sequence<Is...>,
+      inline auto find_coeff_indices_(std::index_sequence<Is...>,
                                       const std::tuple<Idx...>& idx) const
       {
         if constexpr (comp == functionspace::interior)
-          return std::tuple(std::get<Is>(*this).eval_coeff_indices(std::get<Is>(idx))...);
+          return std::tuple(std::get<Is>(*this).find_coeff_indices(std::get<Is>(idx))...);
         else if constexpr (comp == functionspace::boundary)
-          return std::tuple(std::get<Is>(boundary_).eval_coeff_indices(std::get<Is>(idx))...);
+          return std::tuple(std::get<Is>(boundary_).find_coeff_indices(std::get<Is>(idx))...);
       }
       
       /// @brief Returns the spline objects with uniformly refined
       /// knot and coefficient vectors
       template<size_t... Is>
       inline auto& uniform_refine_(std::index_sequence<Is...>,
-                                  int numRefine = 1, int dim = -1)
+                                   int numRefine = 1, int dim = -1)
       {
         (std::get<Is>(*this).uniform_refine(numRefine, dim), ...);
         (std::get<Is>(boundary_).uniform_refine(numRefine, dim), ...);
         return *this;
+      }
+      
+      /// @brief Writes the function space object into a
+      /// torch::serialize::OutputArchive object
+      template<size_t... Is>
+      inline torch::serialize::OutputArchive& write_(std::index_sequence<Is...>,
+                                                     torch::serialize::OutputArchive& archive,
+                                                     const std::string& key="functionspace") const
+      {
+        (std::get<Is>(*this).write(archive, key+".fspace["+std::to_string(Is)+"].interior"), ...);
+        (std::get<Is>(boundary_).write(archive, key+".fspace["+std::to_string(Is)+"].boundary"), ...);
+        return archive;
+      }
+      
+      /// @brief Loads the function space object from a
+      /// torch::serialize::InputArchive object
+      template<size_t... Is>
+      inline torch::serialize::InputArchive& read_(std::index_sequence<Is...>,
+                                                   torch::serialize::InputArchive& archive,
+                                                   const std::string& key="functionspace")
+      {
+        (std::get<Is>(*this).read(archive, key+".fspace["+std::to_string(Is)+"].interior"), ...);
+        (std::get<Is>(boundary_).read(archive, key+".fspace["+std::to_string(Is)+"].boundary"), ...);
+        return archive;
       }
       
     public:      
@@ -457,17 +481,35 @@ namespace iganet {
       /// coefficients corresponding to the knot indices `idx`
       template<functionspace comp = functionspace::interior,
                typename... Idx>
-      inline auto eval_coeff_indices(const std::tuple<Idx...>& idx) const
+      inline auto find_coeff_indices(const std::tuple<Idx...>& idx) const
       {
-        return eval_coeff_indices_<comp>(std::make_index_sequence<sizeof...(spline_t)>{}, idx);
+        return find_coeff_indices_<comp>(std::make_index_sequence<sizeof...(spline_t)>{}, idx);
       }
 
       /// @brief Returns the spline objects with uniformly refined
       /// knot and coefficient vectors
       inline auto& uniform_refine(int numRefine = 1, int dim = -1)
       {
-        uniform_refine_(std::make_index_sequence<sizeof...(spline_t)>{});
+        uniform_refine_(std::make_index_sequence<sizeof...(spline_t)>{}, numRefine, dim);
         return *this;
+      }
+
+      /// @brief Writes the function space object into a
+      /// torch::serialize::OutputArchive object
+      inline torch::serialize::OutputArchive& write(torch::serialize::OutputArchive& archive,
+                                                    const std::string& key="functionspace") const
+      {
+        write_(std::make_index_sequence<sizeof...(spline_t)>{}, archive, key);
+        return archive;
+      }
+      
+      /// @brief Loads the function space object from a
+      /// torch::serialize::InputArchive object
+      inline torch::serialize::InputArchive& read(torch::serialize::InputArchive& archive,
+                                                  const std::string& key="functionspace")
+      {
+        read_(std::make_index_sequence<sizeof...(spline_t)>{}, archive, key);
+        return archive;
       }
     };
 
@@ -564,16 +606,14 @@ namespace iganet {
         return boundary_;
       }
 
-      /// @brief Returns the dimension of the basis at the boundary
-      int64_t boundaryBasisDim() const
-      {
-        return boundary_.ncumcoeffs();
-      }
-
       /// @brief Returns the dimension of the basis
+      template<functionspace comp = functionspace::interior>
       int64_t basisDim() const
       {
-        return spline_t::ncumcoeffs();
+        if constexpr (comp == functionspace::interior)
+          return spline_t::ncumcoeffs();
+        else if constexpr (comp == functionspace::boundary)
+          return boundary_.ncumcoeffs();
       }
 
       /// @brief Serialization to JSON
@@ -583,6 +623,149 @@ namespace iganet {
         json.push_back(Base::to_json());
         json.push_back(boundary_.to_json());
         return json;
+      }
+
+      /// @brief Returns the values of the spline object in the points `xi`
+      /// @{
+      template<functionspace comp = functionspace::interior,
+               deriv deriv = deriv::func, typename Xi>
+      inline auto eval(const Xi& xi) const
+      {
+        if constexpr (comp == functionspace::interior)
+          return spline_t::template eval<deriv>(xi);
+        else if constexpr (comp == functionspace::boundary)
+          return boundary_.template eval<deriv>(xi);
+      }
+
+      template<functionspace comp = functionspace::interior,
+               deriv deriv = deriv::func,
+               typename Xi, typename Idx>
+      inline auto eval(const Xi& xi,
+                       const Idx& idx) const
+      {
+        if constexpr (comp == functionspace::interior)
+          return spline_t::template eval<deriv>(xi, idx);
+        else if constexpr (comp == functionspace::boundary)
+          return boundary_.template eval<deriv>(xi, idx);
+      }
+
+      template<functionspace comp = functionspace::interior,
+               deriv deriv = deriv::func,
+               typename Xi, typename Idx, typename Coeff_Idx>
+      inline auto eval(const Xi& xi,
+                       const Idx& idx,
+                       const Coeff_Idx& coeff_idx) const
+      {
+        if constexpr (comp == functionspace::interior)
+          return spline_t::template eval<deriv>(xi, idx, coeff_idx);
+        else if constexpr (comp == functionspace::boundary)
+          return boundary_.template eval<deriv>(xi, idx, coeff_idx);
+      }
+      /// @}
+
+      /// @brief Returns the value of the spline object from
+      /// precomputed basis function
+      template<functionspace comp = functionspace::interior,
+               typename Basfunc, typename Coeff_Idx,
+               typename Numeval, typename Sizes>
+      inline auto eval_from_precomputed(const Basfunc& basfunc,
+                                        const Coeff_Idx& coeff_idx,
+                                        const Numeval& numeval,
+                                        const Sizes& sizes) const
+      {
+        if constexpr (comp == functionspace::interior)
+          return spline_t::eval_from_precomputed(basfunc, coeff_idx, numeval, sizes);
+        else if constexpr (comp == functionspace::boundary)
+          return boundary_.eval_from_precomputed(basfunc, coeff_idx, numeval, sizes);
+      }
+
+      template<functionspace comp = functionspace::interior,
+               typename Basfunc, typename Coeff_Idx, typename Xi>
+      inline auto eval_from_precomputed(const Basfunc& basfunc,
+                                        const Coeff_Idx& coeff_idx,
+                                        const Xi& xi) const
+      {
+        if constexpr (comp == functionspace::interior)
+          return spline_t::eval_from_precomputed(basfunc, coeff_idx,
+                                                 xi[0].numel(),
+                                                 xi[0].sizes());
+        else if constexpr (comp == functionspace::boundary)
+          return boundary_.eval_from_precomputed(basfunc, coeff_idx, xi);
+      }
+      /// @}
+
+      /// @brief Returns the knot indicies of knot spans containing `xi`
+      template<functionspace comp = functionspace::interior, typename Xi>
+      inline auto find_knot_indices(const Xi& xi) const
+      {
+        if constexpr (comp == functionspace::interior)
+          return spline_t::find_knot_indices(xi);
+        else if constexpr (comp == functionspace::boundary)
+          return boundary_.find_knot_indices(xi);
+      }
+
+      /// @brief Returns the values of the spline objects' basis
+      /// functions in the points `xi` @{
+      template<functionspace comp = functionspace::interior,
+               deriv deriv = deriv::func, typename Xi>
+      inline auto eval_basfunc(const Xi& xi) const
+      {
+        if constexpr (comp == functionspace::interior)
+          return spline_t::eval_basfunc(xi);
+        else if constexpr (comp == functionspace::boundary)
+          return boundary_.eval_basfunc(xi);
+      }
+
+      template<functionspace comp = functionspace::interior,
+               deriv deriv = deriv::func, typename Xi, typename Idx>
+      inline auto eval_basfunc(const Xi& xi, const Idx& idx) const
+      {
+        if constexpr (comp == functionspace::interior)
+          return spline_t::eval_basfunc(xi, idx);
+        else if constexpr (comp == functionspace::boundary)
+          return boundary_.eval_basfunc(xi, idx);
+      }
+      /// @}
+
+      /// @brief Returns the indices of the spline objects'
+      /// coefficients corresponding to the knot indices `idx`
+      template<functionspace comp = functionspace::interior,
+               typename Idx>
+      inline auto find_coeff_indices(const Idx& idx) const
+      {
+        if constexpr (comp == functionspace::interior)
+          return spline_t::find_coeff_indices(idx);
+        else if constexpr (comp == functionspace::boundary)
+          return boundary_.find_coeff_indices(idx);
+      }
+
+      /// @brief Returns the spline objects with uniformly refined
+      /// knot and coefficient vectors
+      inline auto& uniform_refine(int numRefine = 1, int dim = -1)
+      {
+        spline_t::uniform_refine(numRefine, dim);
+        boundary_.uniform_refine(numRefine, dim);
+        return *this;
+      }
+
+      /// @brief Writes the function space object into a
+      /// torch::serialize::OutputArchive object
+      inline torch::serialize::OutputArchive& write(torch::serialize::OutputArchive& archive,
+                                                    const std::string& key="functionspace") const
+      {
+        spline_t::write(archive, key);
+        boundary_.write(archive, key);
+        return archive;
+      }
+      
+      /// @brief Loads the function space object from a
+      /// torch::serialize::InputArchive object
+      inline torch::serialize::InputArchive& read(torch::serialize::InputArchive& archive,
+                                                  const std::string& key="functionspace")
+      {
+        spline_t::read(archive, key);
+        boundary_.read(archive, key);
+        return archive;
       }
     };
   } // namespace detail
