@@ -21,25 +21,28 @@
 
 TEST(BSpline, UniformBSpline_parDim1_geoDim1_degrees1_double)
 {
-  iganet::UniformBSpline<double, 1, 1> bspline({0});
+  EXPECT_THROW( (iganet::UniformBSpline<double, 1, 1>({0})), std::runtime_error);
+  EXPECT_THROW( (iganet::UniformBSpline<double, 1, 1>({1})), std::runtime_error);
+  iganet::UniformBSpline<double, 1, 1> bspline({2});
   EXPECT_EQ(bspline.parDim(),     1);
   EXPECT_EQ(bspline.geoDim(),     1);
   EXPECT_EQ(bspline.degree(0),    1);
-  EXPECT_EQ(bspline.nknots(0),    2);
-  EXPECT_EQ(bspline.ncoeffs(0),   0);
-  EXPECT_EQ(bspline.ncumcoeffs(), 0);
+  EXPECT_EQ(bspline.nknots(0),    4);
+  EXPECT_EQ(bspline.ncoeffs(0),   2);
+  EXPECT_EQ(bspline.ncumcoeffs(), 2);
 }
 
 TEST(BSpline, UniformBSpline_parDim1_geoDim1_degrees2_double)
 {
   EXPECT_THROW( (iganet::UniformBSpline<double, 1, 2>({0})), std::runtime_error);
-  iganet::UniformBSpline<double, 1, 2> bspline({1});
+  EXPECT_THROW( (iganet::UniformBSpline<double, 1, 2>({1})), std::runtime_error);
+  iganet::UniformBSpline<double, 1, 2> bspline({2});
   EXPECT_EQ(bspline.parDim(),     1);
   EXPECT_EQ(bspline.geoDim(),     1);
   EXPECT_EQ(bspline.degree(0),    2);
-  EXPECT_EQ(bspline.nknots(0),    4);
-  EXPECT_EQ(bspline.ncoeffs(0),   1);
-  EXPECT_EQ(bspline.ncumcoeffs(), 1);
+  EXPECT_EQ(bspline.nknots(0),    5);
+  EXPECT_EQ(bspline.ncoeffs(0),   2);
+  EXPECT_EQ(bspline.ncumcoeffs(), 2);
 }
 
 TEST(BSpline, UniformBSpline_parDim1_geoDim1_degrees3_double)
