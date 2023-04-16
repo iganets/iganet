@@ -158,7 +158,7 @@ namespace iganet {
     }
     
     /// Returns a string representation of the BlockTensorCore object
-    virtual void pretty_print(std::ostream& os = std::cout) const = 0;
+    inline virtual void pretty_print(std::ostream& os = std::cout) const = 0;
   };
 
   /// Print (as string) a compile-time block tensor object
@@ -187,7 +187,7 @@ namespace iganet {
     }
     
     /// Returns a string representation of the BlockTensor object
-    inline void pretty_print(std::ostream& os = std::cout) const
+    inline virtual void pretty_print(std::ostream& os = std::cout) const
     {
       os << Base::name() << "\n";
       for (std::size_t row = 0; row<Rows; ++row)
@@ -424,7 +424,7 @@ namespace iganet {
     }
     
     /// Returns a string representation of the BSplineCommon object
-    inline void pretty_print(std::ostream& os = std::cout) const
+    inline virtual void pretty_print(std::ostream& os = std::cout) const
     {
       os << Base::name() << "\n";
       for (std::size_t row = 0; row<Rows; ++row)
@@ -573,7 +573,7 @@ namespace iganet {
     }
 
     /// Returns a string representation of the BSplineCommon object
-    inline void pretty_print(std::ostream& os = std::cout) const
+    inline virtual void pretty_print(std::ostream& os = std::cout) const
     {
       os << Base::name() << "\n";
       for (std::size_t slice = 0; slice<Slices; ++slice)

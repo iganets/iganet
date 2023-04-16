@@ -708,7 +708,7 @@ namespace iganet {
     /// @param[in] basfunc Value(s) of the multivariate B-spline basis
     ///                    functions evaluated at the point(s) `xi`
     ///
-    /// @param[in] coeff_idx Indices where to evaluate the coefficients
+    /// @param[in] coeff_indices Indices where to evaluate the coefficients
     ///
     /// @param[in] numeval Number of evaluation points
     ///
@@ -718,7 +718,7 @@ namespace iganet {
     ///
     /// @{
     inline auto eval_from_precomputed(const torch::Tensor& basfunc,
-                                      const torch::Tensor& coeff_idx,
+                                      const torch::Tensor& coeff_indices,
                                       int64_t numeval, torch::IntArrayRef sizes) const
     {
       if constexpr (geoDim_ > 1) {
@@ -726,32 +726,32 @@ namespace iganet {
         for (short_t i = 0; i < geoDim_; ++i)
           result.set(i,
                      dotproduct(basfunc,
-                                coeffs(i).index_select(0, coeff_idx).view({-1, numeval})
+                                coeffs(i).index_select(0, coeff_indices).view({-1, numeval})
                                 ).view(sizes));
         return result;
       } else
         return
           BlockTensor<torch::Tensor, 1, 1>(dotproduct(basfunc,
-                                                      coeffs(0).index_select(0, coeff_idx).view({-1, numeval})
+                                                      coeffs(0).index_select(0, coeff_indices).view({-1, numeval})
                                                       ).view(sizes));
     }
 
     inline auto eval_from_precomputed(const TensorArray1& basfunc,
-                                      const torch::Tensor& coeff_idx,
+                                      const torch::Tensor& coeff_indices,
                                       int64_t numeval, torch::IntArrayRef sizes) const
     {
       BlockTensor<torch::Tensor, 1, geoDim_> result;
       for (short_t i = 0; i < geoDim_; ++i)
         result.set(i,
                    torch::matmul(coeffs(i).index_select(0,
-                                                        coeff_idx).view({numeval, 1, -1}),
+                                                        coeff_indices).view({numeval, 1, -1}),
                                  basfunc[0].view({numeval, -1, 1})
                                  ).view(sizes));
       return result;
     }
 
     inline auto eval_from_precomputed(const TensorArray2& basfunc,
-                                      const torch::Tensor& coeff_idx,
+                                      const torch::Tensor& coeff_indices,
                                       int64_t numeval, torch::IntArrayRef sizes) const
     {
       BlockTensor<torch::Tensor, 1, geoDim_> result;
@@ -759,7 +759,7 @@ namespace iganet {
         result.set(i,
                    torch::matmul(basfunc[1].view({numeval, 1, -1}),
                                  torch::matmul(coeffs(i).index_select(0,
-                                                                      coeff_idx).view({numeval, -1, degrees_[0]+1}),
+                                                                      coeff_indices).view({numeval, -1, degrees_[0]+1}),
                                                basfunc[0].view({numeval, -1, 1})
                                                )
                                  ).view(sizes));
@@ -767,7 +767,7 @@ namespace iganet {
     }
 
     inline auto eval_from_precomputed(const TensorArray3& basfunc,
-                                      const torch::Tensor& coeff_idx,
+                                      const torch::Tensor& coeff_indices,
                                       int64_t numeval, torch::IntArrayRef sizes) const
     {
       BlockTensor<torch::Tensor, 1, geoDim_> result;
@@ -775,7 +775,7 @@ namespace iganet {
         result.set(i,
                    torch::matmul(basfunc[2].view({numeval, 1, -1}),
                                  torch::matmul(torch::matmul(coeffs(i).index_select(0,
-                                                                                    coeff_idx).view({numeval,
+                                                                                    coeff_indices).view({numeval,
                                                                                         -1, degrees_[0]+1}),
                                                              basfunc[0].view({numeval, -1, 1})
                                                              ).view({numeval, -1, degrees_[1]+1}),
@@ -785,7 +785,7 @@ namespace iganet {
     }
 
     inline auto eval_from_precomputed(const TensorArray4& basfunc,
-                                      const torch::Tensor& coeff_idx,
+                                      const torch::Tensor& coeff_indices,
                                       int64_t numeval, torch::IntArrayRef sizes) const
     {
       BlockTensor<torch::Tensor, 1, geoDim_> result;
@@ -793,7 +793,7 @@ namespace iganet {
         result.set(i,
                    torch::matmul(basfunc[3].view({numeval, 1, -1}),
                                  torch::matmul(torch::matmul(torch::matmul(coeffs(i).index_select(0,
-                                                                                                  coeff_idx).view({numeval,
+                                                                                                  coeff_indices).view({numeval,
                                                                                                       -1, degrees_[0]+1}),
                                                                            basfunc[0].view({numeval, -1, 1})
                                                                            ).view({numeval, -1, degrees_[1]+1}),
@@ -881,43 +881,43 @@ namespace iganet {
     ///
     /// @param[in] xi Point(s) where to evaluate the univariate B-spline object
     ///
-    /// @param[in] idx Knot indices where to evaluate the univariate B-spline object
+    /// @param[in] indices Knot indices where to evaluate the univariate B-spline object
     ///
     /// @result Value(s) of the univariate B-spline evaluated at the point(s) `xi`
     template<deriv deriv = deriv::func>
-    inline auto eval(const TensorArray1& xi, const TensorArray1& idx) const
+    inline auto eval(const TensorArray1& xi, const TensorArray1& indices) const
     {
       assert(parDim_ == 1 &&
-             xi[0].sizes() == idx[0].sizes());
+             xi[0].sizes() == indices[0].sizes());
 
       if constexpr (core<real_t>::memory_optimized_) {
-        auto basfunc = eval_basfunc<deriv>(xi, idx);
-        auto coeff_idx = find_coeff_indices(idx);
+        auto basfunc = eval_basfunc<deriv>(xi, indices);
+        auto coeff_indices = find_coeff_indices(indices);
         BlockTensor<torch::Tensor, 1, geoDim_> result;
         for (short_t i = 0; i < geoDim_; ++i)
           result.set(i,
                      torch::matmul(coeffs(i).index_select(0,
-                                                          coeff_idx).view({xi[0].numel(), 1, -1}),
+                                                          coeff_indices).view({xi[0].numel(), 1, -1}),
                                    basfunc[0].view({xi[0].numel(), -1, 1})
                                    ).view(xi[0].sizes()));
         return result;
       } else {
         if constexpr (geoDim_ > 1) {
-          auto basfunc = eval_basfunc<deriv>(xi, idx);
-          auto coeff_idx = find_coeff_indices(idx);
+          auto basfunc = eval_basfunc<deriv>(xi, indices);
+          auto coeff_indices = find_coeff_indices(indices);
           BlockTensor<torch::Tensor, 1, geoDim_> result;
           for (short_t i = 0; i < geoDim_; ++i)
             result.set(i,
                        dotproduct(basfunc,
                                   coeffs(i).index_select(0,
-                                                         coeff_idx).view({-1, xi[0].numel()})
+                                                         coeff_indices).view({-1, xi[0].numel()})
                                   ).view(xi[0].sizes()));
           return result;
         } else
           return
-            BlockTensor<torch::Tensor, 1, 1>(dotproduct(eval_basfunc<deriv>(xi, idx),
+            BlockTensor<torch::Tensor, 1, 1>(dotproduct(eval_basfunc<deriv>(xi, indices),
                                                         coeffs(0).index_select(0,
-                                                                               find_coeff_indices(idx)).view({-1, xi[0].numel()})
+                                                                               find_coeff_indices(indices)).view({-1, xi[0].numel()})
                                                         ).view(xi[0].sizes()));
       }
     }
@@ -933,44 +933,44 @@ namespace iganet {
     ///
     /// @param[in] xi Point(s) where to evaluate the univariate B-spline object
     ///
-    /// @param[in] idx Knot indices where to evaluate the univariate B-spline object
+    /// @param[in] indices Knot indices where to evaluate the univariate B-spline object
     ///
-    /// @param[in] coeff_idx Coefficient indices where to evaluate the univariate B-spline object
+    /// @param[in] coeff_indices Coefficient indices where to evaluate the univariate B-spline object
     ///
     /// @result Value(s) of the univariate B-spline evaluated at the point(s) `xi`
     template<deriv deriv = deriv::func>
-    inline auto eval(const TensorArray1& xi, const TensorArray1& idx,
-                     const torch::Tensor& coeff_idx) const
+    inline auto eval(const TensorArray1& xi, const TensorArray1& indices,
+                     const torch::Tensor& coeff_indices) const
     {
       assert(parDim_ == 1 &&
-             xi[0].sizes() == idx[0].sizes());
+             xi[0].sizes() == indices[0].sizes());
 
       if constexpr (iganet::core<real_t>::memory_optimized_) {
-        auto basfunc = eval_basfunc<deriv>(xi, idx);
+        auto basfunc = eval_basfunc<deriv>(xi, indices);
         BlockTensor<torch::Tensor, 1, geoDim_> result;
         for (short_t i = 0; i < geoDim_; ++i)
           result.set(i,
                      torch::matmul(coeffs(i).index_select(0,
-                                                          coeff_idx).view({xi[0].numel(), 1, -1}),
+                                                          coeff_indices).view({xi[0].numel(), 1, -1}),
                                    basfunc[0].view({xi[0].numel(), -1, 1})
                                    ).view(xi[0].sizes()));
         return result;
       } else {
         if constexpr (geoDim_ > 1) {
-          auto basfunc = eval_basfunc<deriv>(xi, idx);
+          auto basfunc = eval_basfunc<deriv>(xi, indices);
           BlockTensor<torch::Tensor, 1, geoDim_> result;
           for (short_t i = 0; i < geoDim_; ++i)
             result.set(i,
                        dotproduct(basfunc,
                                   coeffs(i).index_select(0,
-                                                         coeff_idx).view({-1, xi[0].numel()})
+                                                         coeff_indices).view({-1, xi[0].numel()})
                                   ).view(xi[0].sizes()));
           return result;
         } else
           return
-            BlockTensor<torch::Tensor, 1, 1>(dotproduct(eval_basfunc<deriv>(xi, idx),
+            BlockTensor<torch::Tensor, 1, 1>(dotproduct(eval_basfunc<deriv>(xi, indices),
                                                         coeffs(0).index_select(0,
-                                                                               coeff_idx).view({-1, xi[0].numel()})
+                                                                               coeff_indices).view({-1, xi[0].numel()})
                                                         ).view(xi[0].sizes()));
       }
     }
@@ -986,47 +986,47 @@ namespace iganet {
     ///
     /// @param[in] xi Point(s) where to evaluate the bivariate B-spline object
     ///
-    /// @param[in] idx Knot indices where to evaluate the bivariate B-spline object
+    /// @param[in] indices Knot indices where to evaluate the bivariate B-spline object
     ///
     /// @result Value(s) of the bivariate B-spline evaluated at the point(s) `xi`
     template<deriv deriv = deriv::func>
-    inline auto eval(const TensorArray2& xi, const TensorArray2& idx) const
+    inline auto eval(const TensorArray2& xi, const TensorArray2& indices) const
     {
       assert(parDim_ == 2 &&
-             xi[0].sizes() == idx[0].sizes() &&
-             xi[1].sizes() == idx[1].sizes() &&
+             xi[0].sizes() == indices[0].sizes() &&
+             xi[1].sizes() == indices[1].sizes() &&
              xi[0].sizes() ==  xi[1].sizes());
 
       if constexpr (core<real_t>::memory_optimized_) {
-        auto basfunc = eval_basfunc<deriv>(xi, idx);
-        auto coeff_idx = find_coeff_indices(idx);
+        auto basfunc = eval_basfunc<deriv>(xi, indices);
+        auto coeff_indices = find_coeff_indices(indices);
         BlockTensor<torch::Tensor, 1, geoDim_> result;
         for (short_t i = 0; i < geoDim_; ++i)
           result.set(i,
                      torch::matmul(basfunc[1].view({xi[0].numel(), 1, -1}),
                                    torch::matmul(coeffs(i).index_select(0,
-                                                                        coeff_idx).view({xi[0].numel(), -1, degrees_[0]+1}),
+                                                                        coeff_indices).view({xi[0].numel(), -1, degrees_[0]+1}),
                                                  basfunc[0].view({xi[0].numel(), -1, 1})
                                                  )
                                    ).view(xi[0].sizes()));
         return result;
       } else {
         if constexpr (geoDim_ > 1) {
-          auto basfunc = eval_basfunc<deriv>(xi, idx);
-          auto coeff_idx = find_coeff_indices(idx);
+          auto basfunc = eval_basfunc<deriv>(xi, indices);
+          auto coeff_indices = find_coeff_indices(indices);
           BlockTensor<torch::Tensor, 1, geoDim_> result;
           for (short_t i = 0; i < geoDim_; ++i)
             result.set(i,
                        dotproduct(basfunc,
                                   coeffs(i).index_select(0,
-                                                         coeff_idx).view({-1, xi[0].numel()})
+                                                         coeff_indices).view({-1, xi[0].numel()})
                                   ).view(xi[0].sizes()));
           return result;
         } else
           return
-            BlockTensor<torch::Tensor, 1, 1>(dotproduct(eval_basfunc<deriv>(xi, idx),
+            BlockTensor<torch::Tensor, 1, 1>(dotproduct(eval_basfunc<deriv>(xi, indices),
                                                         coeffs(0).index_select(0,
-                                                                               find_coeff_indices(idx)).view({-1, xi[0].numel()})
+                                                                               find_coeff_indices(indices)).view({-1, xi[0].numel()})
                                                         ).view(xi[0].sizes()));
       }
     }
@@ -1042,47 +1042,47 @@ namespace iganet {
     ///
     /// @param[in] xi Point(s) where to evaluate the bivariate B-spline object
     ///
-    /// @param[in] idx Knot indices where to evaluate the bivariate B-spline object
+    /// @param[in] indices Knot indices where to evaluate the bivariate B-spline object
     ///
-    /// @param[in] coeff_idx Coefficient indices where to evaluate the bivariate B-spline object
+    /// @param[in] coeff_indices Coefficient indices where to evaluate the bivariate B-spline object
     ///
     /// @result Value(s) of the bivariate B-spline evaluated at the point(s) `xi`
     template<deriv deriv = deriv::func>
-    inline auto eval(const TensorArray2& xi, const TensorArray2& idx,
-                     const torch::Tensor& coeff_idx) const
+    inline auto eval(const TensorArray2& xi, const TensorArray2& indices,
+                     const torch::Tensor& coeff_indices) const
     {
       assert(parDim_ == 2 &&
-             xi[0].sizes() == idx[0].sizes() &&
-             xi[1].sizes() == idx[1].sizes() &&
+             xi[0].sizes() == indices[0].sizes() &&
+             xi[1].sizes() == indices[1].sizes() &&
              xi[0].sizes() ==  xi[1].sizes());
 
       if constexpr (core<real_t>::memory_optimized_) {
-        auto basfunc = eval_basfunc<deriv>(xi, idx);
+        auto basfunc = eval_basfunc<deriv>(xi, indices);
         BlockTensor<torch::Tensor, 1, geoDim_> result;
         for (short_t i = 0; i < geoDim_; ++i)
           result.set(i,
                      torch::matmul(basfunc[1].view({xi[0].numel(), 1, -1}),
                                    torch::matmul(coeffs(i).index_select(0,
-                                                                        coeff_idx).view({xi[0].numel(), -1, degrees_[0]+1}),
+                                                                        coeff_indices).view({xi[0].numel(), -1, degrees_[0]+1}),
                                                  basfunc[0].view({xi[0].numel(), -1, 1})
                                                  )
                                    ).view(xi[0].sizes()));
         return result;
       } else {
         if constexpr (geoDim_ > 1) {
-          auto basfunc = eval_basfunc<deriv>(xi, idx);
+          auto basfunc = eval_basfunc<deriv>(xi, indices);
           BlockTensor<torch::Tensor, 1, geoDim_> result;
           for (short_t i = 0; i < geoDim_; ++i)
             result.set(i,
                        dotproduct(basfunc,
-                                  coeffs(i).index_select(0, coeff_idx).view({-1, xi[0].numel()})
+                                  coeffs(i).index_select(0, coeff_indices).view({-1, xi[0].numel()})
                                   ).view(xi[0].sizes()));
           return result;
         } else
           return
-            BlockTensor<torch::Tensor, 1, 1>(dotproduct(eval_basfunc<deriv>(xi, idx),
+            BlockTensor<torch::Tensor, 1, 1>(dotproduct(eval_basfunc<deriv>(xi, indices),
                                                         coeffs(0).index_select(0,
-                                                                               coeff_idx).view({-1, xi[0].numel()})
+                                                                               coeff_indices).view({-1, xi[0].numel()})
                                                         ).view(xi[0].sizes()));
       }
     }
@@ -1098,28 +1098,28 @@ namespace iganet {
     ///
     /// @param[in] xi Point(s) where to evaluate the trivariate B-spline object
     ///
-    /// @param[in] idx Knot indices where to evaluate the trivariate B-spline object
+    /// @param[in] indices Knot indices where to evaluate the trivariate B-spline object
     ///
     /// @result Value(s) of the trivariate B-spline evaluated at the point(s) `xi`
     template<deriv deriv = deriv::func>
-    inline auto eval(const TensorArray3& xi, const TensorArray3& idx) const
+    inline auto eval(const TensorArray3& xi, const TensorArray3& indices) const
     {
       assert(parDim_ == 3 &&
-             xi[0].sizes() == idx[0].sizes() &&
-             xi[1].sizes() == idx[1].sizes() &&
-             xi[2].sizes() == idx[2].sizes() &&
+             xi[0].sizes() == indices[0].sizes() &&
+             xi[1].sizes() == indices[1].sizes() &&
+             xi[2].sizes() == indices[2].sizes() &&
              xi[0].sizes() ==  xi[1].sizes() &&
              xi[1].sizes() ==  xi[2].sizes());
 
       if constexpr (core<real_t>::memory_optimized_) {
-        auto basfunc = eval_basfunc<deriv>(xi, idx);
-        auto coeff_idx = find_coeff_indices(idx);
+        auto basfunc = eval_basfunc<deriv>(xi, indices);
+        auto coeff_indices = find_coeff_indices(indices);
         BlockTensor<torch::Tensor, 1, geoDim_> result;
         for (short_t i = 0; i < geoDim_; ++i)
           result.set(i,
                      torch::matmul(basfunc[2].view({xi[0].numel(), 1, -1}),
                                    torch::matmul(torch::matmul(coeffs(i).index_select(0,
-                                                                                      coeff_idx).view({xi[0].numel(),
+                                                                                      coeff_indices).view({xi[0].numel(),
                                                                                           -1, degrees_[0]+1}),
                                                                basfunc[0].view({xi[0].numel(), -1, 1})
                                                                ).view({xi[0].numel(), -1, degrees_[1]+1}),
@@ -1128,21 +1128,21 @@ namespace iganet {
         return result;
       } else {
         if constexpr (geoDim_ > 1) {
-          auto basfunc = eval_basfunc<deriv>(xi, idx);
-          auto coeff_idx = find_coeff_indices(idx);
+          auto basfunc = eval_basfunc<deriv>(xi, indices);
+          auto coeff_indices = find_coeff_indices(indices);
           BlockTensor<torch::Tensor, 1, geoDim_> result;
           for (short_t i = 0; i < geoDim_; ++i)
             result.set(i,
                        dotproduct(basfunc,
                                   coeffs(i).index_select(0,
-                                                         coeff_idx).view({-1, xi[0].numel()})
+                                                         coeff_indices).view({-1, xi[0].numel()})
                                   ).view(xi[0].sizes()));
           return result;
         } else
           return
-            BlockTensor<torch::Tensor, 1, 1>(dotproduct(eval_basfunc<deriv>(xi, idx),
+            BlockTensor<torch::Tensor, 1, 1>(dotproduct(eval_basfunc<deriv>(xi, indices),
                                                         coeffs(0).index_select(0,
-                                                                               find_coeff_indices(idx)).view({-1, xi[0].numel()})
+                                                                               find_coeff_indices(indices)).view({-1, xi[0].numel()})
                                                         ).view(xi[0].sizes()));
       }
     }
@@ -1158,31 +1158,31 @@ namespace iganet {
     ///
     /// @param[in] xi Point(s) where to evaluate the trivariate B-spline object
     ///
-    /// @param[in] idx Knot indices where to evaluate the trivariate B-spline object
+    /// @param[in] indices Knot indices where to evaluate the trivariate B-spline object
     ///
-    /// @param[in] coeff_idx Coefficient indices where to evaluate the trivariate B-spline object
+    /// @param[in] coeff_indices Coefficient indices where to evaluate the trivariate B-spline object
     ///
     /// @result Value(s) of the trivariate B-spline evaluated at the point(s) `xi`
     template<deriv deriv = deriv::func>
-    inline auto eval(const TensorArray3& xi, const TensorArray3& idx,
-                     const torch::Tensor& coeff_idx) const
+    inline auto eval(const TensorArray3& xi, const TensorArray3& indices,
+                     const torch::Tensor& coeff_indices) const
     {
       assert(parDim_ == 3 &&
-             xi[0].sizes() == idx[0].sizes() &&
-             xi[1].sizes() == idx[1].sizes() &&
-             xi[2].sizes() == idx[2].sizes() &&
+             xi[0].sizes() == indices[0].sizes() &&
+             xi[1].sizes() == indices[1].sizes() &&
+             xi[2].sizes() == indices[2].sizes() &&
              xi[0].sizes() ==  xi[1].sizes() &&
              xi[1].sizes() ==  xi[2].sizes());
 
       if constexpr (core<real_t>::memory_optimized_) {
-        auto basfunc = eval_basfunc<deriv>(xi, idx);
-        auto coeff_idx = find_coeff_indices(idx);
+        auto basfunc = eval_basfunc<deriv>(xi, indices);
+        auto coeff_indices = find_coeff_indices(indices);
         BlockTensor<torch::Tensor, 1, geoDim_> result;
         for (short_t i = 0; i < geoDim_; ++i)
           result.set(i,
                      torch::matmul(basfunc[2].view({xi[0].numel(), 1, -1}),
                                    torch::matmul(torch::matmul(coeffs(i).index_select(0,
-                                                                                      coeff_idx).view({xi[0].numel(),
+                                                                                      coeff_indices).view({xi[0].numel(),
                                                                                           -1, degrees_[0]+1}),
                                                                basfunc[0].view({xi[0].numel(), -1, 1})
                                                                ).view({xi[0].numel(), -1, degrees_[1]+1}),
@@ -1191,20 +1191,20 @@ namespace iganet {
         return result;
       } else {
         if constexpr (geoDim_ > 1) {
-          auto basfunc = eval_basfunc<deriv>(xi, idx);
+          auto basfunc = eval_basfunc<deriv>(xi, indices);
           BlockTensor<torch::Tensor, 1, geoDim_> result;
           for (short_t i = 0; i < geoDim_; ++i)
             result.set(i,
                        dotproduct(basfunc,
                                   coeffs(i).index_select(0,
-                                                         coeff_idx).view({-1, xi[0].numel()})
+                                                         coeff_indices).view({-1, xi[0].numel()})
                                   ).view(xi[0].sizes()));
           return result;
         } else
           return
-            BlockTensor<torch::Tensor, 1, 1>(dotproduct(eval_basfunc<deriv>(xi, idx),
+            BlockTensor<torch::Tensor, 1, 1>(dotproduct(eval_basfunc<deriv>(xi, indices),
                                                         coeffs(0).index_select(0,
-                                                                               coeff_idx).view({-1, xi[0].numel()})
+                                                                               coeff_indices).view({-1, xi[0].numel()})
                                                         ).view(xi[0].sizes()));
       }
     }
@@ -1220,30 +1220,30 @@ namespace iganet {
     ///
     /// @param[in] xi Point(s) where to evaluate the quartvariate B-spline object
     ///
-    /// @param[in] idx Knot indices where to evaluate the quartvariate B-spline object
+    /// @param[in] indices Knot indices where to evaluate the quartvariate B-spline object
     ///
     /// @result Value(s) of the quartvariate B-spline evaluated at the point(s) `xi`
     template<deriv deriv = deriv::func>
-    inline auto eval(const TensorArray4& xi, const TensorArray4& idx) const
+    inline auto eval(const TensorArray4& xi, const TensorArray4& indices) const
     {
       assert(parDim_ == 4 &&
-             xi[0].sizes() == idx[0].sizes() &&
-             xi[1].sizes() == idx[1].sizes() &&
-             xi[2].sizes() == idx[2].sizes() &&
-             xi[3].sizes() == idx[3].sizes() &&
+             xi[0].sizes() == indices[0].sizes() &&
+             xi[1].sizes() == indices[1].sizes() &&
+             xi[2].sizes() == indices[2].sizes() &&
+             xi[3].sizes() == indices[3].sizes() &&
              xi[0].sizes() ==  xi[1].sizes() &&
              xi[1].sizes() ==  xi[2].sizes() &&
              xi[2].sizes() ==  xi[3].sizes());
 
       if constexpr (core<real_t>::memory_optimized_) {
-        auto basfunc = eval_basfunc<deriv>(xi, idx);
-        auto coeff_idx = find_coeff_indices(idx);
+        auto basfunc = eval_basfunc<deriv>(xi, indices);
+        auto coeff_indices = find_coeff_indices(indices);
         BlockTensor<torch::Tensor, 1, geoDim_> result;
         for (short_t i = 0; i < geoDim_; ++i)
           result.set(i,
                      torch::matmul(basfunc[3].view({xi[0].numel(), 1, -1}),
                                    torch::matmul(torch::matmul(torch::matmul(coeffs(i).index_select(0,
-                                                                                                    coeff_idx).view({xi[0].numel(),
+                                                                                                    coeff_indices).view({xi[0].numel(),
                                                                                                         -1, degrees_[0]+1}),
                                                                              basfunc[0].view({xi[0].numel(), -1, 1})
                                                                              ).view({xi[0].numel(), -1, degrees_[1]+1}),
@@ -1254,21 +1254,21 @@ namespace iganet {
         return result;
       } else {
         if constexpr (geoDim_ > 1) {
-          auto basfunc = eval_basfunc<deriv>(xi, idx);
-          auto coeff_idx = find_coeff_indices(idx);
+          auto basfunc = eval_basfunc<deriv>(xi, indices);
+          auto coeff_indices = find_coeff_indices(indices);
           BlockTensor<torch::Tensor, 1, geoDim_> result;
           for (short_t i = 0; i < geoDim_; ++i)
             result.set(i,
                        dotproduct(basfunc,
                                   coeffs(i).index_select(0,
-                                                         coeff_idx).view({-1, xi[0].numel()})
+                                                         coeff_indices).view({-1, xi[0].numel()})
                                   ).view(xi[0].sizes()));
           return result;
         } else
           return
-            BlockTensor<torch::Tensor, 1, 1>(dotproduct(eval_basfunc<deriv>(xi, idx),
+            BlockTensor<torch::Tensor, 1, 1>(dotproduct(eval_basfunc<deriv>(xi, indices),
                                                         coeffs(0).index_select(0,
-                                                                               find_coeff_indices(idx)).view({-1, xi[0].numel()})
+                                                                               find_coeff_indices(indices)).view({-1, xi[0].numel()})
                                                         ).view(xi[0].sizes()));
       }
     }
@@ -1284,32 +1284,32 @@ namespace iganet {
     ///
     /// @param[in] xi Point(s) where to evaluate the quartvariate B-spline object
     ///
-    /// @param[in] idx Knot indices where to evaluate the quartvariate B-spline object
+    /// @param[in] indices Knot indices where to evaluate the quartvariate B-spline object
     ///
-    /// @param[in] coeff_idx Coefficient indices where to evaluate the quartvariate B-spline object
+    /// @param[in] coeff_indices Coefficient indices where to evaluate the quartvariate B-spline object
     ///
     /// @result Value(s) of the quartvariate B-spline evaluated at the point(s) `xi`
     template<deriv deriv = deriv::func>
-    inline auto eval(const TensorArray4& xi, const TensorArray4& idx,
-                     const torch::Tensor& coeff_idx) const
+    inline auto eval(const TensorArray4& xi, const TensorArray4& indices,
+                     const torch::Tensor& coeff_indices) const
     {
       assert(parDim_ == 4 &&
-             xi[0].sizes() == idx[0].sizes() &&
-             xi[1].sizes() == idx[1].sizes() &&
-             xi[2].sizes() == idx[2].sizes() &&
-             xi[3].sizes() == idx[3].sizes() &&
+             xi[0].sizes() == indices[0].sizes() &&
+             xi[1].sizes() == indices[1].sizes() &&
+             xi[2].sizes() == indices[2].sizes() &&
+             xi[3].sizes() == indices[3].sizes() &&
              xi[0].sizes() ==  xi[1].sizes() &&
              xi[1].sizes() ==  xi[2].sizes() &&
              xi[2].sizes() ==  xi[3].sizes());
 
       if constexpr (core<real_t>::memory_optimized_) {
-        auto basfunc = eval_basfunc<deriv>(xi, idx);
+        auto basfunc = eval_basfunc<deriv>(xi, indices);
         BlockTensor<torch::Tensor, 1, geoDim_> result;
         for (short_t i = 0; i < geoDim_; ++i)
           result.set(i,
                      torch::matmul(basfunc[3].view({xi[0].numel(), 1, -1}),
                                    torch::matmul(torch::matmul(torch::matmul(coeffs(i).index_select(0,
-                                                                                                    coeff_idx).view({xi[0].numel(),
+                                                                                                    coeff_indices).view({xi[0].numel(),
                                                                                                         -1, degrees_[0]+1}),
                                                                              basfunc[0].view({xi[0].numel(), -1, 1})
                                                                              ).view({xi[0].numel(), -1, degrees_[1]+1}),
@@ -1320,20 +1320,20 @@ namespace iganet {
         return result;
       } else {
         if constexpr (geoDim_ > 1) {
-          auto basfunc = eval_basfunc<deriv>(xi, idx);
+          auto basfunc = eval_basfunc<deriv>(xi, indices);
           BlockTensor<torch::Tensor, 1, geoDim_> result;
           for (short_t i = 0; i < geoDim_; ++i)
             result.set(i,
                        dotproduct(basfunc,
                                   coeffs(i).index_select(0,
-                                                         coeff_idx).view({-1, xi[0].numel()})
+                                                         coeff_indices).view({-1, xi[0].numel()})
                                   ).view(xi[0].sizes()));
           return result;
         } else
           return
-            BlockTensor<torch::Tensor, 1, 1>(dotproduct(eval_basfunc<deriv>(xi, idx),
+            BlockTensor<torch::Tensor, 1, 1>(dotproduct(eval_basfunc<deriv>(xi, indices),
                                                         coeffs(0).index_select(0,
-                                                                               coeff_idx).view({-1, xi[0].numel()})
+                                                                               coeff_indices).view({-1, xi[0].numel()})
                                                         ).view(xi[0].sizes()));
       }
     }
@@ -1351,9 +1351,17 @@ namespace iganet {
     /// The indices are returned as `std::array<torch::Tensor,
     /// parDim_>` in the same order as provided in `xi`
     /// @{
+    inline auto find_knot_indices(const torch::Tensor& xi) const
+    {
+      if constexpr (parDim_ == 0)
+        return torch::zeros_like(coeffs_[0]).to(torch::kInt64);
+      else
+        return find_knot_indices(TensorArray1({xi}));
+    }
+    
     inline auto find_knot_indices(const TensorArray1& xi) const
     {
-      assert(parDim_ == 1);
+      static_assert(parDim_ == 1);
       return TensorArray1({
           torch::min(torch::full_like(xi[0], ncoeffs_[0]-1, core<real_t>::options_),
                      torch::floor(xi[0] * (ncoeffs_[0] - degrees_[0]) + degrees_[0])).to(torch::kInt64)
@@ -1362,7 +1370,7 @@ namespace iganet {
 
     inline auto find_knot_indices(const TensorArray2& xi) const
     {
-      assert(parDim_ == 2);
+      static_assert(parDim_ == 2);
       return TensorArray2({
           torch::min(torch::full_like(xi[0], ncoeffs_[0]-1, core<real_t>::options_),
                      torch::floor(xi[0] * (ncoeffs_[0] - degrees_[0]) + degrees_[0])).to(torch::kInt64),
@@ -1373,7 +1381,7 @@ namespace iganet {
 
     inline auto find_knot_indices(const TensorArray3& xi) const
     {
-      assert(parDim_ == 3);
+      static_assert(parDim_ == 3);
       return TensorArray3({
           torch::min(torch::full_like(xi[0], ncoeffs_[0]-1, core<real_t>::options_),
                      torch::floor(xi[0] * (ncoeffs_[0] - degrees_[0]) + degrees_[0])).to(torch::kInt64),
@@ -1386,7 +1394,7 @@ namespace iganet {
 
     inline auto find_knot_indices(const TensorArray4& xi) const
     {
-      assert(parDim_ == 4);
+      static_assert(parDim_ == 4);
       return TensorArray4({
           torch::min(torch::full_like(xi[0], ncoeffs_[0]-1, core<real_t>::options_),
                      torch::floor(xi[0] * (ncoeffs_[0] - degrees_[0]) + degrees_[0])).to(torch::kInt64),
@@ -1400,40 +1408,48 @@ namespace iganet {
     }
     /// @}
 
-    /// @brief Returns the indices of the coefficients corresponding to the knot indices `idx`
+    /// @brief Returns the indices of the coefficients corresponding to the knot indices `indices`
     /// @{
-    inline auto find_coeff_indices(const TensorArray1& idx) const
+    inline auto find_coeff_indices(const torch::Tensor& indices) const
+    {
+      if constexpr (parDim_ == 0)
+        return torch::zeros_like(coeffs_[0]).to(torch::kInt64);
+      else
+        return find_coeff_indices(TensorArray1({indices}));  
+    }
+    
+    inline auto find_coeff_indices(const TensorArray1& indices) const
     {
       assert(parDim_ == 1);
       return
-        VSlice<core<real_t>::memory_optimized_>(idx[0].flatten(), -degrees_[0], 1);
+        VSlice<core<real_t>::memory_optimized_>(indices[0].flatten(), -degrees_[0], 1);
     }
 
-    inline auto find_coeff_indices(const TensorArray2& idx) const
+    inline auto find_coeff_indices(const TensorArray2& indices) const
     {
       assert(parDim_ == 2);
       return
-        VSlice<core<real_t>::memory_optimized_>(TensorArray2({idx[0].flatten(), idx[1].flatten()}),
+        VSlice<core<real_t>::memory_optimized_>(TensorArray2({indices[0].flatten(), indices[1].flatten()}),
                                                 std::array<int64_t, 2>{-degrees_[0], -degrees_[1]},
                                                 std::array<int64_t, 2>{1, 1},
                                                 ncoeffs(0));
     }
 
-    inline auto find_coeff_indices(const TensorArray3& idx) const
+    inline auto find_coeff_indices(const TensorArray3& indices) const
     {
       assert(parDim_ == 3);
       return
-        VSlice<core<real_t>::memory_optimized_>(TensorArray3({idx[0].flatten(), idx[1].flatten(), idx[2].flatten()}),
+        VSlice<core<real_t>::memory_optimized_>(TensorArray3({indices[0].flatten(), indices[1].flatten(), indices[2].flatten()}),
                                                 std::array<int64_t, 3>{-degrees_[0], -degrees_[1], -degrees_[2]},
                                                 std::array<int64_t, 3>{1, 1, 1},
                                                 std::array<int64_t, 2>{ncoeffs(0), ncoeffs(1)});
     }
 
-    inline auto find_coeff_indices(const TensorArray4& idx) const
+    inline auto find_coeff_indices(const TensorArray4& indices) const
     {
       assert(parDim_ == 4);
       return
-        VSlice<core<real_t>::memory_optimized_>(TensorArray4({idx[0].flatten(), idx[1].flatten(), idx[2].flatten(), idx[3].flatten()}),
+        VSlice<core<real_t>::memory_optimized_>(TensorArray4({indices[0].flatten(), indices[1].flatten(), indices[2].flatten(), indices[3].flatten()}),
                                                 std::array<int64_t, 4>{-degrees_[0], -degrees_[1], -degrees_[2], -degrees_[3]},
                                                 std::array<int64_t, 4>{1, 1, 1, 1},
                                                 std::array<int64_t, 3>{ncoeffs(0), ncoeffs(1), ncoeffs(2)});
@@ -1446,7 +1462,19 @@ namespace iganet {
     template<deriv deriv = deriv::func>
     inline auto eval_basfunc(const torch::Tensor& xi) const
     {
-      return eval_basfunc<deriv>(TensorArray1({xi}));
+      if constexpr (parDim_ == 0)
+        return torch::ones_like(coeffs_[0]);
+      else
+        return eval_basfunc<deriv>(TensorArray1({xi}));
+    }
+
+    template<deriv deriv = deriv::func>
+    inline auto eval_basfunc(const torch::Tensor& xi, const torch::Tensor& indices) const
+    {
+      if constexpr (parDim_ == 0)
+        return torch::ones_like(coeffs_[0]);
+      else
+        return eval_basfunc<deriv>(TensorArray1({xi}), TensorArray1({indices}));
     }
 
     template<deriv deriv = deriv::func>
@@ -1459,16 +1487,16 @@ namespace iganet {
     }
 
     template<deriv deriv = deriv::func>
-    inline auto eval_basfunc(const TensorArray1& xi, const TensorArray1& idx) const
+    inline auto eval_basfunc(const TensorArray1& xi, const TensorArray1& indices) const
     {
       assert(parDim_ == 1 &&
-             xi[0].sizes() == idx[0].sizes());
+             xi[0].sizes() == indices[0].sizes());
 
       if constexpr (core<real_t>::memory_optimized_) {
         TensorArray1 basfunc;
         basfunc[0] = eval_prefactor<degrees_[0], (short_t) deriv/integer_pow<10,0>::value % 10>() *
                  eval_univariate<degrees_[0], 0, (short_t) deriv/integer_pow<10,0>::value % 10>( xi[0].flatten(),
-                                                                                                 idx[0].flatten() )
+                                                                                                 indices[0].flatten() )
           .transpose(0,1);
         return basfunc;
       }
@@ -1476,26 +1504,26 @@ namespace iganet {
         return
           eval_prefactor<degrees_[0], (short_t) deriv % 10>() *
           eval_univariate<degrees_[0], 0, (short_t) deriv % 10>( xi[0].flatten(),
-                                                                 idx[0].flatten());
+                                                                 indices[0].flatten());
     }
 
     template<deriv deriv = deriv::func>
-    inline auto eval_basfunc(const TensorArray2& xi, const TensorArray2& idx) const
+    inline auto eval_basfunc(const TensorArray2& xi, const TensorArray2& indices) const
     {
       assert(parDim_ == 2 &&
-             xi[0].sizes() == idx[0].sizes() &&
-             xi[1].sizes() == idx[1].sizes() &&
+             xi[0].sizes() == indices[0].sizes() &&
+             xi[1].sizes() == indices[1].sizes() &&
              xi[0].sizes() ==  xi[1].sizes());
 
       if constexpr (core<real_t>::memory_optimized_) {
         TensorArray2 basfunc;
         basfunc[0] = eval_prefactor<degrees_[0], (short_t) deriv/integer_pow<10,0>::value % 10>() *
                  eval_univariate<degrees_[0], 0, (short_t) deriv/integer_pow<10,0>::value % 10>( xi[0].flatten(),
-                                                                                                 idx[0].flatten() )
+                                                                                                 indices[0].flatten() )
           .transpose(0,1);
         basfunc[1] = eval_prefactor<degrees_[1], (short_t) deriv/integer_pow<10,1>::value % 10>() *
           eval_univariate<degrees_[1], 1, (short_t) deriv/integer_pow<10,1>::value % 10>( xi[1].flatten(),
-                                                                                          idx[1].flatten() )
+                                                                                          indices[1].flatten() )
           .transpose(0,1);
         return basfunc;
       }
@@ -1504,18 +1532,18 @@ namespace iganet {
           eval_prefactor<degrees_[0],  (short_t)deriv    %10>() *
           eval_prefactor<degrees_[1], ((short_t)deriv/10)%10>() *
           kronproduct(eval_univariate<degrees_[1], 1, ((short_t)deriv/10)%10>( xi[1].flatten(),
-                                                                               idx[1].flatten()),
+                                                                               indices[1].flatten()),
                       eval_univariate<degrees_[0], 0,  (short_t)deriv    %10>( xi[0].flatten(),
-                                                                               idx[0].flatten()));
+                                                                               indices[0].flatten()));
     }
 
     template<deriv deriv = deriv::func>
-    inline auto eval_basfunc(const TensorArray3& xi, const TensorArray3& idx) const
+    inline auto eval_basfunc(const TensorArray3& xi, const TensorArray3& indices) const
     {
       assert(parDim_ == 3 &&
-             xi[0].sizes() == idx[0].sizes() &&
-             xi[1].sizes() == idx[1].sizes() &&
-             xi[2].sizes() == idx[2].sizes() &&
+             xi[0].sizes() == indices[0].sizes() &&
+             xi[1].sizes() == indices[1].sizes() &&
+             xi[2].sizes() == indices[2].sizes() &&
              xi[0].sizes() ==  xi[1].sizes() &&
              xi[1].sizes() ==  xi[2].sizes());
 
@@ -1523,15 +1551,15 @@ namespace iganet {
         TensorArray3 basfunc;
         basfunc[0] = eval_prefactor<degrees_[0], (short_t) deriv/integer_pow<10,0>::value % 10>() *
                  eval_univariate<degrees_[0], 0, (short_t) deriv/integer_pow<10,0>::value % 10>( xi[0].flatten(),
-                                                                                                 idx[0].flatten() )
+                                                                                                 indices[0].flatten() )
           .transpose(0,1);
         basfunc[1] = eval_prefactor<degrees_[1], (short_t) deriv/integer_pow<10,1>::value % 10>() *
                  eval_univariate<degrees_[1], 1, (short_t) deriv/integer_pow<10,1>::value % 10>( xi[1].flatten(),
-                                                                                                 idx[1].flatten() )
+                                                                                                 indices[1].flatten() )
           .transpose(0,1);
         basfunc[2] = eval_prefactor<degrees_[2], (short_t) deriv/integer_pow<10,2>::value % 10>() *
                  eval_univariate<degrees_[2], 2, (short_t) deriv/integer_pow<10,2>::value % 10>( xi[2].flatten(),
-                                                                                                 idx[2].flatten() )
+                                                                                                 indices[2].flatten() )
           .transpose(0,1);
         return basfunc;
       }
@@ -1541,21 +1569,21 @@ namespace iganet {
           eval_prefactor<degrees_[1], ((short_t)deriv/ 10)%10>() *
           eval_prefactor<degrees_[2], ((short_t)deriv/100)%10>() *
           kronproduct(eval_univariate<degrees_[2], 2, ((short_t)deriv/100)%10>( xi[2].flatten(),
-                                                                                idx[2].flatten()),
+                                                                                indices[2].flatten()),
                       kronproduct(eval_univariate<degrees_[1], 1, ((short_t)deriv/10)%10>( xi[1].flatten(),
-                                                                                           idx[1].flatten()),
+                                                                                           indices[1].flatten()),
                                   eval_univariate<degrees_[0], 0,  (short_t)deriv    %10>( xi[0].flatten(),
-                                                                                           idx[0].flatten())));
+                                                                                           indices[0].flatten())));
     }
 
     template<deriv deriv = deriv::func>
-    inline auto eval_basfunc(const TensorArray4& xi, const TensorArray4& idx) const
+    inline auto eval_basfunc(const TensorArray4& xi, const TensorArray4& indices) const
     {
       assert(parDim_ == 4 &&
-             xi[0].sizes() == idx[0].sizes() &&
-             xi[1].sizes() == idx[1].sizes() &&
-             xi[2].sizes() == idx[2].sizes() &&
-             xi[3].sizes() == idx[3].sizes() &&
+             xi[0].sizes() == indices[0].sizes() &&
+             xi[1].sizes() == indices[1].sizes() &&
+             xi[2].sizes() == indices[2].sizes() &&
+             xi[3].sizes() == indices[3].sizes() &&
              xi[0].sizes() ==  xi[1].sizes() &&
              xi[1].sizes() ==  xi[2].sizes() &&
              xi[2].sizes() ==  xi[3].sizes());
@@ -1564,19 +1592,19 @@ namespace iganet {
         TensorArray4 basfunc;
         basfunc[0] = eval_prefactor<degrees_[0], (short_t) deriv/integer_pow<10,0>::value % 10>() *
                  eval_univariate<degrees_[0], 0, (short_t) deriv/integer_pow<10,0>::value % 10>( xi[0].flatten(),
-                                                                                                 idx[0].flatten() )
+                                                                                                 indices[0].flatten() )
           .transpose(0,1);
         basfunc[1] = eval_prefactor<degrees_[1], (short_t) deriv/integer_pow<10,1>::value % 10>() *
                  eval_univariate<degrees_[1], 1, (short_t) deriv/integer_pow<10,1>::value % 10>( xi[1].flatten(),
-                                                                                                 idx[1].flatten() )
+                                                                                                 indices[1].flatten() )
           .transpose(0,1);
         basfunc[2] = eval_prefactor<degrees_[2], (short_t) deriv/integer_pow<10,2>::value % 10>() *
                  eval_univariate<degrees_[2], 2, (short_t) deriv/integer_pow<10,2>::value % 10>( xi[2].flatten(),
-                                                                                                 idx[2].flatten() )
+                                                                                                 indices[2].flatten() )
           .transpose(0,1);
         basfunc[3] = eval_prefactor<degrees_[3], (short_t) deriv/integer_pow<10,3>::value % 10>() *
                  eval_univariate<degrees_[3], 3, (short_t) deriv/integer_pow<10,3>::value % 10>( xi[3].flatten(),
-                                                                                                 idx[3].flatten() )
+                                                                                                 indices[3].flatten() )
           .transpose(0,1);
         return basfunc;
       }
@@ -1587,13 +1615,13 @@ namespace iganet {
           eval_prefactor<degrees_[2], ((short_t)deriv/ 100)%10>() *
           eval_prefactor<degrees_[3], ((short_t)deriv/1000)%10>() *
           kronproduct(kronproduct(eval_univariate<degrees_[3], 3, ((short_t)deriv/1000)%10>( xi[3].flatten(),
-                                                                                             idx[3].flatten()),
+                                                                                             indices[3].flatten()),
                                   eval_univariate<degrees_[2], 2, ((short_t)deriv/ 100)%10>( xi[2].flatten(),
-                                                                                             idx[2].flatten())),
+                                                                                             indices[2].flatten())),
                       kronproduct(eval_univariate<degrees_[1], 1, ((short_t)deriv/  10)%10>( xi[1].flatten(),
-                                                                                             idx[1].flatten()),
+                                                                                             indices[1].flatten()),
                                   eval_univariate<degrees_[0], 0,  (short_t)deriv      %10>( xi[0].flatten(),
-                                                                                             idx[0].flatten())));
+                                                                                             indices[0].flatten())));
     }
     /// @}
 
@@ -1963,7 +1991,7 @@ namespace iganet {
       }
 
       // Update knot vectors
-      std::array<torch::Tensor, parDim_> knots, knots_idx;
+      std::array<torch::Tensor, parDim_> knots, knots_indices;
 
       for (short_t i = 0; i < parDim_; ++i) {
         std::vector<value_type> kv; kv.reserve(nknots[i]);
@@ -1992,14 +2020,14 @@ namespace iganet {
       // 4.11 from \cite Lyche:2011) we need to neglect the last
       // \f$p_d+1\f$ knots in what follows
       for (short_t i = 0; i < parDim_; ++i)
-        knots_idx[i] = knots[i].index({torch::indexing::Slice(0, knots[i].numel()-degrees_[i]-1)});
+        knots_indices[i] = knots[i].index({torch::indexing::Slice(0, knots[i].numel()-degrees_[i]-1)});
 
       // Get indices of the first \f$m_d\f$ new knots relative to old
       // knot vectors
-      auto idx = find_knot_indices(knots_idx);
+      auto indices = find_knot_indices(knots_indices);
 
       // Update coefficient vector
-      update_coeffs(knots, idx);
+      update_coeffs(knots, indices);
 
       // Swap old and new data
       knots.swap(knots_);
@@ -2129,100 +2157,100 @@ namespace iganet {
     /// @brief Updates the B-spline coefficients after knot insertion
     ///
     /// @{
-    inline void update_coeffs(const TensorArray1& knots, const TensorArray1& idx) {
+    inline void update_coeffs(const TensorArray1& knots, const TensorArray1& indices) {
 
       assert(parDim_ == 1 &&
-             knots[0].numel() == idx[0].numel()+degrees_[0]+1);
+             knots[0].numel() == indices[0].numel()+degrees_[0]+1);
 
       auto basfunc = update_coeffs_univariate<degrees_[0], 0>(knots[0].flatten(),
-                                                              idx[0].flatten());
-      auto coeff_idx = find_coeff_indices(idx);
+                                                              indices[0].flatten());
+      auto coeff_indices = find_coeff_indices(indices);
       for (short_t i = 0; i < geoDim_; ++i)
         coeffs(i) = dotproduct(basfunc,
                                coeffs(i).index_select(0,
-                                                      coeff_idx).view({-1, idx[0].numel()})
-                               ).view(idx[0].sizes());
+                                                      coeff_indices).view({-1, indices[0].numel()})
+                               ).view(indices[0].sizes());
     }
 
-    inline void update_coeffs(const TensorArray2& knots, const TensorArray2& idx) {
+    inline void update_coeffs(const TensorArray2& knots, const TensorArray2& indices) {
 
       assert(parDim_ == 2 &&
-             knots[0].numel() == idx[0].numel()+degrees_[0]+1 &&
-             knots[1].numel() == idx[1].numel()+degrees_[1]+1);
+             knots[0].numel() == indices[0].numel()+degrees_[0]+1 &&
+             knots[1].numel() == indices[1].numel()+degrees_[1]+1);
 
       auto basfunc = torch::kron(update_coeffs_univariate<degrees_[1], 1>(knots[1].flatten(),
-                                                                          idx[1].flatten()),
+                                                                          indices[1].flatten()),
                                  update_coeffs_univariate<degrees_[0], 0>(knots[0].flatten(),
-                                                                          idx[0].flatten()));
+                                                                          indices[0].flatten()));
 
-      TensorArray2 idx_ = {idx[0].repeat(idx[1].numel()),
-                           idx[1].repeat_interleave(idx[0].numel(), 0)};
+      TensorArray2 indices_ = {indices[0].repeat(indices[1].numel()),
+                           indices[1].repeat_interleave(indices[0].numel(), 0)};
 
-      auto coeff_idx = find_coeff_indices(idx_);
+      auto coeff_indices = find_coeff_indices(indices_);
 
       for (short_t i = 0; i < geoDim_; ++i)
         coeffs(i) = dotproduct(basfunc,
                                coeffs(i).index_select(0,
-                                                      coeff_idx).view({-1, idx_[0].numel()})
-                               ).view(idx_[0].sizes());
+                                                      coeff_indices).view({-1, indices_[0].numel()})
+                               ).view(indices_[0].sizes());
     }
 
-    inline void update_coeffs(const TensorArray3& knots, const TensorArray3& idx) {
+    inline void update_coeffs(const TensorArray3& knots, const TensorArray3& indices) {
 
       assert(parDim_ == 3 &&
-             knots[0].numel() == idx[0].numel()+degrees_[0]+1 &&
-             knots[1].numel() == idx[1].numel()+degrees_[1]+1 &&
-             knots[2].numel() == idx[2].numel()+degrees_[2]+1);
+             knots[0].numel() == indices[0].numel()+degrees_[0]+1 &&
+             knots[1].numel() == indices[1].numel()+degrees_[1]+1 &&
+             knots[2].numel() == indices[2].numel()+degrees_[2]+1);
 
       auto basfunc = torch::kron(update_coeffs_univariate<degrees_[2], 2>(knots[2].flatten(),
-                                                                          idx[2].flatten()),
+                                                                          indices[2].flatten()),
                                  torch::kron(update_coeffs_univariate<degrees_[1], 1>(knots[1].flatten(),
-                                                                                      idx[1].flatten()),
+                                                                                      indices[1].flatten()),
                                              update_coeffs_univariate<degrees_[0], 0>(knots[0].flatten(),
-                                                                                      idx[0].flatten())));
+                                                                                      indices[0].flatten())));
 
-      TensorArray3 idx_ = {idx[0].repeat(idx[1].numel()*idx[2].numel()),
-                           idx[1].repeat_interleave(idx[0].numel(), 0).repeat(idx[2].numel()),
-                           idx[2].repeat_interleave(idx[0].numel()*idx[1].numel(), 0)};
+      TensorArray3 indices_ = {indices[0].repeat(indices[1].numel()*indices[2].numel()),
+                           indices[1].repeat_interleave(indices[0].numel(), 0).repeat(indices[2].numel()),
+                           indices[2].repeat_interleave(indices[0].numel()*indices[1].numel(), 0)};
 
-      auto coeff_idx = find_coeff_indices(idx_);
+      auto coeff_indices = find_coeff_indices(indices_);
 
       for (short_t i = 0; i < geoDim_; ++i)
         coeffs(i) = dotproduct(basfunc,
                                coeffs(i).index_select(0,
-                                                      coeff_idx).view({-1, idx_[0].numel()})
-                               ).view(idx_[0].sizes());
+                                                      coeff_indices).view({-1, indices_[0].numel()})
+                               ).view(indices_[0].sizes());
     }
 
-    inline void update_coeffs(const TensorArray4& knots, const TensorArray4& idx) {
+    inline void update_coeffs(const TensorArray4& knots, const TensorArray4& indices) {
 
       assert(parDim_ == 4 &&
-             knots[0].numel() == idx[0].numel()+degrees_[0]+1 &&
-             knots[1].numel() == idx[1].numel()+degrees_[1]+1 &&
-             knots[2].numel() == idx[2].numel()+degrees_[2]+1 &&
-             knots[3].numel() == idx[3].numel()+degrees_[3]+1);
+             knots[0].numel() == indices[0].numel()+degrees_[0]+1 &&
+             knots[1].numel() == indices[1].numel()+degrees_[1]+1 &&
+             knots[2].numel() == indices[2].numel()+degrees_[2]+1 &&
+             knots[3].numel() == indices[3].numel()+degrees_[3]+1);
 
       auto basfunc = torch::kron(torch::kron(update_coeffs_univariate<degrees_[3], 3>(knots[3].flatten(),
-                                                                                      idx[3].flatten()),
+                                                                                      indices[3].flatten()),
                                              update_coeffs_univariate<degrees_[2], 2>(knots[2].flatten(),
-                                                                                      idx[2].flatten())),
+                                                                                      indices[2].flatten())),
                                  torch::kron(update_coeffs_univariate<degrees_[1], 1>(knots[1].flatten(),
-                                                                                      idx[1].flatten()),
+                                                                                      indices[1].flatten()),
                                              update_coeffs_univariate<degrees_[0], 0>(knots[0].flatten(),
-                                                                                      idx[0].flatten())));
+                                                                                      indices[0].flatten())));
 
-      TensorArray4 idx_ = {idx[0].repeat(idx[1].numel()*idx[2].numel()*idx[3].numel()),
-                           idx[1].repeat_interleave(idx[0].numel(), 0).repeat(idx[2].numel()*idx[3].numel()),
-                           idx[2].repeat_interleave(idx[0].numel()*idx[1].numel(), 0).repeat(idx[3].numel()),
-                           idx[3].repeat_interleave(idx[0].numel()*idx[1].numel()*idx[2].numel(), 0)};
+      TensorArray4 indices_ = {indices[0].repeat(indices[1].numel()*indices[2].numel()*indices[3].numel()),
+                           indices[1].repeat_interleave(indices[0].numel(), 0).repeat(indices[2].numel()*indices[3].numel()),
+                           indices[2].repeat_interleave(indices[0].numel()*indices[1].numel(), 0).repeat(indices[3].numel()),
+                           indices[3].repeat_interleave(indices[0].numel()*indices[1].numel()*indices[2].numel(), 0)};
 
-      auto coeff_idx = find_coeff_indices(idx_);
+      auto coeff_indices = find_coeff_indices(indices_);
 
       for (short_t i = 0; i < geoDim_; ++i)
         coeffs(i) = dotproduct(basfunc,
                                coeffs(i).index_select(0,
-                                                      coeff_idx).view({-1, idx_[0].numel()})
-                               ).view(idx_[0].sizes());
+                                                      coeff_indices).view({-1, indices_[0].numel()})
+                               ).view(indices_[0].sizes());
     }
     /// @}
 
@@ -2320,9 +2348,9 @@ namespace iganet {
     /// where \f$\div\f$ and \f$\odot\f$ denote the element-wise
     /// division and multiplication of vectors, respectively.
     template<short_t degree, short_t dim, short_t deriv>
-    inline auto eval_univariate(const torch::Tensor& xi, const torch::Tensor& idx) const
+    inline auto eval_univariate(const torch::Tensor& xi, const torch::Tensor& indices) const
     {
-      assert(xi.sizes() == idx.sizes());
+      assert(xi.sizes() == indices.sizes());
 
       if constexpr (deriv > degree) {
           return torch::zeros({degree+1, xi.numel()}, core<real_t>::options_);
@@ -2335,8 +2363,8 @@ namespace iganet {
         for (short_t k=1; k<= degree-deriv; ++k) {
 
           // Instead of calculating t1 and t2 we calculate t1 and t21=(t2-t1)
-          auto t1  = knots_[dim].index_select(0, VSlice(idx, -k+1,   1) );
-          auto t21 = knots_[dim].index_select(0, VSlice(idx,    1, k+1) ) - t1;
+          auto t1  = knots_[dim].index_select(0, VSlice(indices, -k+1,   1) );
+          auto t21 = knots_[dim].index_select(0, VSlice(indices,    1, k+1) ) - t1;
 
           // We handle the special case 0/0:=0 by first creating a
           // mask that is 1 if t2-t1 < eps and 0 otherwise. Note that
@@ -2360,8 +2388,8 @@ namespace iganet {
         for (short_t k=degree-deriv+1; k<=degree; ++k) {
 
           // Instead of calculating t1 and t2 we calculate t1 and t21=(t2-t1)
-          auto t21 = knots_[dim].index_select(0, VSlice(idx,    1, k+1) )
-            -        knots_[dim].index_select(0, VSlice(idx, -k+1,   1) );
+          auto t21 = knots_[dim].index_select(0, VSlice(indices,    1, k+1) )
+            -        knots_[dim].index_select(0, VSlice(indices, -k+1,   1) );
 
           // We handle the special case 0/0:=0 by first creating a
           // mask that is 1 if t2-t1 < eps and 0 otherwise. Note that
@@ -2393,18 +2421,18 @@ namespace iganet {
     /// passed as argument `knots`.
     template<short_t degree, short_t dim>
     inline auto update_coeffs_univariate(const torch::Tensor& knots,
-                                         const torch::Tensor& idx) const
+                                         const torch::Tensor& indices) const
     {
       // Algorithm 2.22 from \cite Lyche:2011 modified to implement
       // the Oslo algorithm (Algorithm 4.11 from \cite Lyche:2011)
-      torch::Tensor b = torch::ones({idx.numel()}, core<real_t>::options_);
+      torch::Tensor b = torch::ones({indices.numel()}, core<real_t>::options_);
 
       // Calculate R_k, k = 1, ..., p_d
       for (short_t k=1; k<= degree; ++k) {
 
         // Instead of calculating t1 and t2 we calculate t1 and t21=(t2-t1)
-        auto t1  = knots_[dim].index_select(0, VSlice(idx, -k+1,   1) );
-        auto t21 = knots_[dim].index_select(0, VSlice(idx,    1, k+1) ) - t1;
+        auto t1  = knots_[dim].index_select(0, VSlice(indices, -k+1,   1) );
+        auto t21 = knots_[dim].index_select(0, VSlice(indices,    1, k+1) ) - t1;
 
         // We handle the special case 0/0:=0 by first creating a
         // mask that is 1 if t2-t1 < eps and 0 otherwise. Note that
@@ -2415,17 +2443,17 @@ namespace iganet {
         // yielding 0/0 we compute (xi-t1-mask)/(t2-t1-mask) which
         // equals the original expression if the mask is 0, i.e.,
         // t2-t1 >= eps and 1 otherwise since t1 <= xi < t2.
-        auto w  = torch::div(knots.index({torch::indexing::Slice(k, idx.numel()+k)}).repeat(k)
+        auto w  = torch::div(knots.index({torch::indexing::Slice(k, indices.numel()+k)}).repeat(k)
                              -t1-mask, t21-mask);
 
         // Calculate the vector of B-splines evaluated at xi
         b = torch::cat({ torch::mul(torch::ones_like(w, core<real_t>::options_)-w, b),
-            torch::zeros_like(idx, core<real_t>::options_) }, 0)
-          + torch::cat({ torch::zeros_like(idx, core<real_t>::options_),
+            torch::zeros_like(indices, core<real_t>::options_) }, 0)
+          + torch::cat({ torch::zeros_like(indices, core<real_t>::options_),
               torch::mul(w, b) }, 0);
       }
 
-      return b.view({degree+1, idx.numel()});
+      return b.view({degree+1, indices.numel()});
     }
   };
 
@@ -2522,23 +2550,23 @@ namespace iganet {
 
     template<deriv deriv = deriv::func>
     inline auto eval(const std::array<torch::Tensor, Base::parDim_>& xi,
-                     const std::array<torch::Tensor, Base::parDim_>& idx) const
+                     const std::array<torch::Tensor, Base::parDim_>& indices) const
     {
       if constexpr (Base::parDim_ == 0)
         return Base::coeffs_[0];
       else
-        return Base::template eval<deriv>(xi, idx);
+        return Base::template eval<deriv>(xi, indices);
     }
 
     template<deriv deriv = deriv::func>
     inline auto eval(const std::array<torch::Tensor, Base::parDim_>& xi,
-                     const std::array<torch::Tensor, Base::parDim_>& idx,
-                     const torch::Tensor& coeff_idx) const
+                     const std::array<torch::Tensor, Base::parDim_>& indices,
+                     const torch::Tensor& coeff_indices) const
     {
       if constexpr (Base::parDim_ == 0)
         return Base::coeffs_[0];
       else
-        return Base::template eval<deriv>(xi, idx, coeff_idx);
+        return Base::template eval<deriv>(xi, indices, coeff_indices);
     }
     /// @}
 
@@ -2554,6 +2582,15 @@ namespace iganet {
     ///
     /// The indices are returned as `std::array<torch::Tensor,
     /// parDim_>` in the same order as provided in `xi`
+    /// @{
+    inline auto find_knot_indices(const torch::Tensor& xi) const
+    {
+      if constexpr (Base::parDim_ == 0)
+        return torch::zeros_like(Base::coeffs_[0]).to(torch::kInt64);
+      else
+        return find_knot_indices(TensorArray1({xi}));
+    }
+    
     inline auto find_knot_indices(const TensorArray1& xi) const
     {
       assert(Base::parDim_ == 1);
@@ -2565,7 +2602,6 @@ namespace iganet {
                           });
     }
 
-    /// @brief Returns the indices of knot spans containing `xi`
     inline auto find_knot_indices(const TensorArray2& xi) const
     {
       assert(Base::parDim_ == 2);
@@ -2580,7 +2616,6 @@ namespace iganet {
                           });
     }
 
-    /// @brief Returns the indices of knot spans containing `xi`
     inline auto find_knot_indices(const TensorArray3& xi) const
     {
       assert(Base::parDim_ == 3);
@@ -2598,7 +2633,6 @@ namespace iganet {
                           });
     }
 
-    /// @brief Returns the indices of knot spans containing `xi`
     inline auto find_knot_indices(const TensorArray4& xi) const
     {
       assert(Base::parDim_ == 4);
@@ -2618,6 +2652,7 @@ namespace iganet {
                                             Base::nknots_[3]-Base::degrees_[3]-1).view(xi[3].sizes())
                           });
     }
+    /// @}
 
     /// @brief Returns the B-spline object with uniformly refined knot
     /// and coefficient vectors
@@ -2632,7 +2667,7 @@ namespace iganet {
 
       // Update knot vectors, number of knots and coefficients
       std::array<int64_t, Base::parDim_> nknots, ncoeffs;
-      std::array<torch::Tensor, Base::parDim_> knots, knots_idx;
+      std::array<torch::Tensor, Base::parDim_> knots, knots_indices;
 
       for (short_t i = 0; i < Base::parDim_; ++i) {
         auto [kv_cpu, kv_accessor] = to_tensorAccessor<typename Base::value_type, 1>(Base::knots_[i], torch::kCPU);
@@ -2671,14 +2706,14 @@ namespace iganet {
       // 4.11 from \cite Lyche:2011) we need to neglect the last
       // \f$p_d+1\f$ knots in what follows
       for (short_t i = 0; i < Base::parDim_; ++i)
-        knots_idx[i] = knots[i].index({torch::indexing::Slice(0, knots[i].numel()-Base::degrees_[i]-1)});
+        knots_indices[i] = knots[i].index({torch::indexing::Slice(0, knots[i].numel()-Base::degrees_[i]-1)});
 
       // Get indices of the first \f$m_d\f$ new knots relative to old
       // knot vectors
-      auto idx = find_knot_indices(knots_idx);
+      auto indices = find_knot_indices(knots_indices);
 
       // Update coefficient vector
-      Base::update_coeffs(knots, idx);
+      Base::update_coeffs(knots, indices);
 
       // Swap old and new data
       knots.swap(Base::knots_);
@@ -2695,7 +2730,7 @@ namespace iganet {
       std::cout << "FIRST LINE\n";
       std::array<int64_t, Base::parDim_> nknots(Base::nknots_);
       std::array<int64_t, Base::parDim_> ncoeffs(Base::ncoeffs_);
-      std::array<torch::Tensor, Base::parDim_> knots_, knots_idx;
+      std::array<torch::Tensor, Base::parDim_> knots_, knots_indices;
 std::cout << "BEFORE\n";
       // Update number of knots and coefficients and generate new knot
       // vectors
@@ -2711,14 +2746,14 @@ std::cout << "AFTER\n";
       // 4.11 from \cite Lyche:2011) we need to neglect the last
       // \f$p_d+1\f$ knots in what follows
       for (short_t i = 0; i < Base::parDim_; ++i)
-        knots_idx[i] = knots_[i].index({torch::indexing::Slice(0, knots_[i].numel()-Base::degrees_[i]-1)});
+        knots_indices[i] = knots_[i].index({torch::indexing::Slice(0, knots_[i].numel()-Base::degrees_[i]-1)});
 
       // Get indices of the first \f$m_d\f$ new knots relative to old
       // knot vectors
-      auto idx = find_knot_indices(knots_idx);
+      auto indices = find_knot_indices(knots_indices);
 
       // Update coefficient vector
-      Base::update_coeffs(knots_, idx);
+      Base::update_coeffs(knots_, indices);
 
       // Swap old and new data
       knots_.swap(Base::knots_);
@@ -2853,7 +2888,7 @@ std::cout << "AFTER\n";
     ///
     /// @param[in] xi Point(s) where to evaluate the divergence
     ///
-    /// @param[in] idx Knot indices where to evaluate the divergence
+    /// @param[in] indices Knot indices where to evaluate the divergence
     ///
     /// @result Block-tensor with the divergence with respect to
     /// the parametric variables
@@ -2871,9 +2906,9 @@ std::cout << "AFTER\n";
     /// @note This function can only be applied to B-spline objects with
     /// equal parametric and geometric multiplicity.
     inline auto div(const std::array<torch::Tensor, BSplineCore::parDim_>& xi,
-                    const std::array<torch::Tensor, BSplineCore::parDim_>& idx) const
+                    const std::array<torch::Tensor, BSplineCore::parDim_>& indices) const
     {
-      return div(xi, idx, BSplineCore::find_coeff_indices(idx));
+      return div(xi, indices, BSplineCore::find_coeff_indices(indices));
     }
 
     /// @brief Returns a block-tensor with the divergence of the
@@ -2881,9 +2916,9 @@ std::cout << "AFTER\n";
     ///
     /// @param[in] xi Point(s) where to evaluate the divergence
     ///
-    /// @param[in] idx Knot indices where to evaluate the divergence
+    /// @param[in] indices Knot indices where to evaluate the divergence
     ///
-    /// @param[in] coeff_idx Coefficient indices where to evaluate the divergence
+    /// @param[in] coeff_indices Coefficient indices where to evaluate the divergence
     ///
     /// @result Block-tensor with the divergence of with respect to
     /// the parametric variables
@@ -2902,68 +2937,68 @@ std::cout << "AFTER\n";
     /// equal parametric and geometric multiplicity.
     ///
     /// @{
-    inline auto div(const TensorArray1& xi, const TensorArray1& idx,
-                    const torch::Tensor& coeff_idx) const
+    inline auto div(const TensorArray1& xi, const TensorArray1& indices,
+                    const torch::Tensor& coeff_indices) const
     {
-      assert(xi[0].sizes() == idx[0].sizes());
+      assert(xi[0].sizes() == indices[0].sizes());
       if constexpr (BSplineCore::parDim_ == 1)
 
         return BlockTensor<torch::Tensor, 1, 1>
-          (BSplineCore::template eval<deriv::dx>(xi, idx, coeff_idx)[0]);
+          (BSplineCore::template eval<deriv::dx>(xi, indices, coeff_indices)[0]);
 
       else
         throw std::runtime_error("Unsupported parametric dimension");
     }
 
-    inline auto div(const TensorArray2& xi, const TensorArray2& idx,
-                    const torch::Tensor& coeff_idx) const
+    inline auto div(const TensorArray2& xi, const TensorArray2& indices,
+                    const torch::Tensor& coeff_indices) const
     {
-      assert(xi[0].sizes() == idx[0].sizes() &&
-             xi[1].sizes() == idx[1].sizes());
+      assert(xi[0].sizes() == indices[0].sizes() &&
+             xi[1].sizes() == indices[1].sizes());
 
       if constexpr (BSplineCore::parDim_ == 2)
 
         return BlockTensor<torch::Tensor, 1, 1>
-          (BSplineCore::template eval<deriv::dx>(xi, idx, coeff_idx)[0] +
-           BSplineCore::template eval<deriv::dy>(xi, idx, coeff_idx)[1]);
+          (BSplineCore::template eval<deriv::dx>(xi, indices, coeff_indices)[0] +
+           BSplineCore::template eval<deriv::dy>(xi, indices, coeff_indices)[1]);
 
       else
         throw std::runtime_error("Unsupported parametric dimension");
     }
 
-    inline auto div(const TensorArray3& xi, const TensorArray3& idx,
-                    const torch::Tensor& coeff_idx) const
+    inline auto div(const TensorArray3& xi, const TensorArray3& indices,
+                    const torch::Tensor& coeff_indices) const
     {
-      assert(xi[0].sizes() == idx[0].sizes() &&
-             xi[1].sizes() == idx[1].sizes() &&
-             xi[2].sizes() == idx[2].sizes());
+      assert(xi[0].sizes() == indices[0].sizes() &&
+             xi[1].sizes() == indices[1].sizes() &&
+             xi[2].sizes() == indices[2].sizes());
 
       if constexpr (BSplineCore::parDim_ == 3)
 
         return BlockTensor<torch::Tensor, 1, 1>
-          (BSplineCore::template eval<deriv::dx>(xi, idx, coeff_idx)[0] +
-           BSplineCore::template eval<deriv::dy>(xi, idx, coeff_idx)[1] +
-           BSplineCore::template eval<deriv::dz>(xi, idx, coeff_idx)[2]);
+          (BSplineCore::template eval<deriv::dx>(xi, indices, coeff_indices)[0] +
+           BSplineCore::template eval<deriv::dy>(xi, indices, coeff_indices)[1] +
+           BSplineCore::template eval<deriv::dz>(xi, indices, coeff_indices)[2]);
 
       else
         throw std::runtime_error("Unsupported parametric dimension");
     }
 
-    inline auto div(const TensorArray4& xi, const TensorArray4& idx,
-                    const torch::Tensor& coeff_idx) const
+    inline auto div(const TensorArray4& xi, const TensorArray4& indices,
+                    const torch::Tensor& coeff_indices) const
     {
-      assert(xi[0].sizes() == idx[0].sizes() &&
-             xi[1].sizes() == idx[1].sizes() &&
-             xi[2].sizes() == idx[2].sizes() &&
-             xi[3].sizes() == idx[3].sizes());
+      assert(xi[0].sizes() == indices[0].sizes() &&
+             xi[1].sizes() == indices[1].sizes() &&
+             xi[2].sizes() == indices[2].sizes() &&
+             xi[3].sizes() == indices[3].sizes());
 
       if constexpr (BSplineCore::parDim_ == 4)
 
         return BlockTensor<torch::Tensor, 1, 1>
-          (BSplineCore::template eval<deriv::dx>(xi, idx, coeff_idx)[0] +
-           BSplineCore::template eval<deriv::dy>(xi, idx, coeff_idx)[1] +
-           BSplineCore::template eval<deriv::dz>(xi, idx, coeff_idx)[2] +
-           BSplineCore::template eval<deriv::dt>(xi, idx, coeff_idx)[3]);
+          (BSplineCore::template eval<deriv::dx>(xi, indices, coeff_indices)[0] +
+           BSplineCore::template eval<deriv::dy>(xi, indices, coeff_indices)[1] +
+           BSplineCore::template eval<deriv::dz>(xi, indices, coeff_indices)[2] +
+           BSplineCore::template eval<deriv::dt>(xi, indices, coeff_indices)[3]);
 
       else
         throw std::runtime_error("Unsupported parametric dimension");
@@ -3015,9 +3050,9 @@ std::cout << "AFTER\n";
     ///
     /// @param[in] xi Point(s) where to evaluate the divergence
     ///
-    /// @param[in] idx Knot indices where to evaluate the divergence
+    /// @param[in] indices Knot indices where to evaluate the divergence
     ///
-    /// @param[in] idx_G Knot indices where to evaluate the Jacobian of `G`
+    /// @param[in] indices_G Knot indices where to evaluate the Jacobian of `G`
     ///
     /// @result Block-tensor with the divergence with respect to the
     /// physical variables
@@ -3033,11 +3068,11 @@ std::cout << "AFTER\n";
     template<typename Geometry_t>
     inline auto idiv(const Geometry_t G,
                      const std::array<torch::Tensor, BSplineCore::parDim_>& xi,
-                     const std::array<torch::Tensor, BSplineCore::parDim_>& idx,
-                     const std::array<torch::Tensor, Geometry_t::parDim()>& idx_G) const
+                     const std::array<torch::Tensor, BSplineCore::parDim_>& indices,
+                     const std::array<torch::Tensor, Geometry_t::parDim()>& indices_G) const
     {
-      return idiv(G, xi, idx, find_coeff_indices(idx),
-                  idx_G, G.find_coeff_indices(idx_G));
+      return idiv(G, xi, indices, find_coeff_indices(indices),
+                  indices_G, G.find_coeff_indices(indices_G));
     }
 
     /// @brief Returns a block-tensor with the divergence of the
@@ -3049,13 +3084,13 @@ std::cout << "AFTER\n";
     ///
     /// @param[in] xi Point(s) where to evaluate the divergence
     ///
-    /// @param[in] idx Knot indices where to evaluate the divergence
+    /// @param[in] indices Knot indices where to evaluate the divergence
     ///
-    /// @param[in] idx_G Knot indices where to evaluate the Jacobian of `G`
+    /// @param[in] indices_G Knot indices where to evaluate the Jacobian of `G`
     ///
-    /// @param[in] coeff_idx Coefficient indices where to evaluate the divergence
+    /// @param[in] coeff_indices Coefficient indices where to evaluate the divergence
     ///
-    /// @param[in] coeff_idx_G Coefficient indices where to evaluate the Jacobian of `G`
+    /// @param[in] coeff_indices_G Coefficient indices where to evaluate the Jacobian of `G`
     ///
     /// @result Block-tensor with the divergence with respect to the
     /// physical variables
@@ -3071,12 +3106,12 @@ std::cout << "AFTER\n";
     template<typename Geometry_t>
     inline auto idiv(const Geometry_t& G,
                      const std::array<torch::Tensor, BSplineCore::parDim_>& xi,
-                     const std::array<torch::Tensor, BSplineCore::parDim_>& idx,
-                     const torch::Tensor& coeff_idx,
-                     const std::array<torch::Tensor, Geometry_t::parDim()>& idx_G,
-                     const torch::Tensor& coeff_idx_G) const
+                     const std::array<torch::Tensor, BSplineCore::parDim_>& indices,
+                     const torch::Tensor& coeff_indices,
+                     const std::array<torch::Tensor, Geometry_t::parDim()>& indices_G,
+                     const torch::Tensor& coeff_indices_G) const
     {
-      return BSplineCore::ijac(xi, idx, coeff_idx, idx_G, coeff_idx_G).trace();
+      return BSplineCore::ijac(xi, indices, coeff_indices, indices_G, coeff_indices_G).trace();
     }
 
     /// @brief Returns a block-tensor with the gradient of the B-spline
@@ -3115,7 +3150,7 @@ std::cout << "AFTER\n";
     ///
     /// @param[in] xi Point(s) where to evaluate the gradient
     ///
-    /// @param[in] idx Knot indices where to evaluate the gradient
+    /// @param[in] indices Knot indices where to evaluate the gradient
     ///
     /// @result Block-tensor with the gradient with respect to
     /// the parametric variables
@@ -3131,9 +3166,9 @@ std::cout << "AFTER\n";
     /// @note This function can only be applied to B-spline objects with
     /// geometric multiplicity 1, i.e. scalar fields.
     inline auto grad(const std::array<torch::Tensor, BSplineCore::parDim_>& xi,
-                     const std::array<torch::Tensor, BSplineCore::parDim_>& idx) const
+                     const std::array<torch::Tensor, BSplineCore::parDim_>& indices) const
     {
-      return grad(xi, idx, BSplineCore::find_coeff_indices(idx));
+      return grad(xi, indices, BSplineCore::find_coeff_indices(indices));
     }
 
     /// @brief Returns a block-tensor with the gradient of the
@@ -3141,9 +3176,9 @@ std::cout << "AFTER\n";
     ///
     /// @param[in] xi Point(s) where to evaluate the gradient
     ///
-    /// @param[in] idx Knot indices where to evaluate the gradient
+    /// @param[in] indices Knot indices where to evaluate the gradient
     ///
-    /// @param[in] coeff_idx Coefficient indices where to evaluate the gradient
+    /// @param[in] coeff_indices Coefficient indices where to evaluate the gradient
     ///
     /// @result Block-tensor with the gradient with respect to the
     /// parametric variables
@@ -3160,76 +3195,76 @@ std::cout << "AFTER\n";
     /// geometric multiplicity 1, i.e. scalar fields.
     ///
     /// @{
-    inline auto grad(const TensorArray1& xi, const TensorArray1& idx,
-                     const torch::Tensor& coeff_idx) const
+    inline auto grad(const TensorArray1& xi, const TensorArray1& indices,
+                     const torch::Tensor& coeff_indices) const
     {
       static_assert(BSplineCore::geoDim_ == 1,
                     "grad(.) requires 1D variable, use jac(.) instead");
-      assert(xi[0].sizes() == idx[0].sizes());
+      assert(xi[0].sizes() == indices[0].sizes());
       if constexpr (BSplineCore::parDim_ == 1)
 
         return BlockTensor<torch::Tensor, 1, 1>
-          (BSplineCore::template eval<deriv::dx>(xi, idx, coeff_idx));
+          (BSplineCore::template eval<deriv::dx>(xi, indices, coeff_indices));
 
       else
         throw std::runtime_error("Unsupported parametric dimension");
     }
 
-    inline auto grad(const TensorArray2& xi, const TensorArray2& idx,
-                     const torch::Tensor& coeff_idx) const
+    inline auto grad(const TensorArray2& xi, const TensorArray2& indices,
+                     const torch::Tensor& coeff_indices) const
     {
       static_assert(BSplineCore::geoDim_ == 1,
                     "grad(.) requires 1D variable, use jac(.) instead");
-      assert(xi[0].sizes() == idx[0].sizes() &&
-             xi[1].sizes() == idx[1].sizes());
+      assert(xi[0].sizes() == indices[0].sizes() &&
+             xi[1].sizes() == indices[1].sizes());
 
       if constexpr (BSplineCore::parDim_ == 2)
 
         return BlockTensor<torch::Tensor, 1, 2>
-          (BSplineCore::template eval<deriv::dx>(xi, idx, coeff_idx),
-           BSplineCore::template eval<deriv::dy>(xi, idx, coeff_idx));
+          (BSplineCore::template eval<deriv::dx>(xi, indices, coeff_indices),
+           BSplineCore::template eval<deriv::dy>(xi, indices, coeff_indices));
 
       else
         throw std::runtime_error("Unsupported parametric dimension");
     }
 
-    inline auto grad(const TensorArray3& xi, const TensorArray3& idx,
-                     const torch::Tensor& coeff_idx) const
+    inline auto grad(const TensorArray3& xi, const TensorArray3& indices,
+                     const torch::Tensor& coeff_indices) const
     {
       static_assert(BSplineCore::geoDim_ == 1,
                     "grad(.) requires 1D variable, use jac(.) instead");
-      assert(xi[0].sizes() == idx[0].sizes() &&
-             xi[1].sizes() == idx[1].sizes() &&
-             xi[2].sizes() == idx[2].sizes());
+      assert(xi[0].sizes() == indices[0].sizes() &&
+             xi[1].sizes() == indices[1].sizes() &&
+             xi[2].sizes() == indices[2].sizes());
 
       if constexpr (BSplineCore::parDim_ == 3)
 
         return BlockTensor<torch::Tensor, 1, 3>
-          (BSplineCore::template eval<deriv::dx>(xi, idx, coeff_idx),
-           BSplineCore::template eval<deriv::dy>(xi, idx, coeff_idx),
-           BSplineCore::template eval<deriv::dz>(xi, idx, coeff_idx));
+          (BSplineCore::template eval<deriv::dx>(xi, indices, coeff_indices),
+           BSplineCore::template eval<deriv::dy>(xi, indices, coeff_indices),
+           BSplineCore::template eval<deriv::dz>(xi, indices, coeff_indices));
 
       else
         throw std::runtime_error("Unsupported parametric dimension");
     }
 
-    inline auto grad(const TensorArray4& xi, const TensorArray4& idx,
-                     const torch::Tensor& coeff_idx) const
+    inline auto grad(const TensorArray4& xi, const TensorArray4& indices,
+                     const torch::Tensor& coeff_indices) const
     {
       static_assert(BSplineCore::geoDim_ == 1,
                     "grad(.) requires 1D variable, use jac(.) instead");
-      assert(xi[0].sizes() == idx[0].sizes() &&
-             xi[1].sizes() == idx[1].sizes() &&
-             xi[2].sizes() == idx[2].sizes() &&
-             xi[3].sizes() == idx[3].sizes());
+      assert(xi[0].sizes() == indices[0].sizes() &&
+             xi[1].sizes() == indices[1].sizes() &&
+             xi[2].sizes() == indices[2].sizes() &&
+             xi[3].sizes() == indices[3].sizes());
 
       if constexpr (BSplineCore::parDim_ == 4)
 
         return BlockTensor<torch::Tensor, 1, 4>
-          (BSplineCore::template eval<deriv::dx>(xi, idx, coeff_idx),
-           BSplineCore::template eval<deriv::dy>(xi, idx, coeff_idx),
-           BSplineCore::template eval<deriv::dz>(xi, idx, coeff_idx),
-           BSplineCore::template eval<deriv::dt>(xi, idx, coeff_idx));
+          (BSplineCore::template eval<deriv::dx>(xi, indices, coeff_indices),
+           BSplineCore::template eval<deriv::dy>(xi, indices, coeff_indices),
+           BSplineCore::template eval<deriv::dz>(xi, indices, coeff_indices),
+           BSplineCore::template eval<deriv::dt>(xi, indices, coeff_indices));
 
       else
         throw std::runtime_error("Unsupported parametric dimension");
@@ -3279,9 +3314,9 @@ std::cout << "AFTER\n";
     ///
     /// @param[in] xi Point(s) where to evaluate the gradient
     ///
-    /// @param[in] idx Knot indices where to evaluate the gradient
+    /// @param[in] indices Knot indices where to evaluate the gradient
     ///
-    /// @param[in] idx_G Knot indices where to evaluate Jacobian of `G`
+    /// @param[in] indices_G Knot indices where to evaluate Jacobian of `G`
     ///
     /// @result Block-tensor with the gradient with respect to the
     /// physical variables
@@ -3295,11 +3330,11 @@ std::cout << "AFTER\n";
     template<typename Geometry_t>
     inline auto igrad(const Geometry_t G,
                       const std::array<torch::Tensor, BSplineCore::parDim_>& xi,
-                      const std::array<torch::Tensor, BSplineCore::parDim_>& idx,
-                      const std::array<torch::Tensor, Geometry_t::parDim()>& idx_G) const
+                      const std::array<torch::Tensor, BSplineCore::parDim_>& indices,
+                      const std::array<torch::Tensor, Geometry_t::parDim()>& indices_G) const
     {
-      return igrad(G, xi, idx, BSplineCore::find_coeff_indices(idx),
-                   idx_G, G.find_coeff_indices(idx_G));
+      return igrad(G, xi, indices, BSplineCore::find_coeff_indices(indices),
+                   indices_G, G.find_coeff_indices(indices_G));
     }
 
     /// @brief Returns a block-tensor with the gradient of the B-spline
@@ -3311,13 +3346,13 @@ std::cout << "AFTER\n";
     ///
     /// @param[in] xi Point(s) where to evaluate the gradient
     ///
-    /// @param[in] idx Knot indices where to evaluate the gradient
+    /// @param[in] indices Knot indices where to evaluate the gradient
     ///
-    /// @param[in] idx_G Knot indices where to evaluate the Jacobian of `G`
+    /// @param[in] indices_G Knot indices where to evaluate the Jacobian of `G`
     ///
-    /// @param[in] coeff_idx Coefficient indices where to evaluate the gradient
+    /// @param[in] coeff_indices Coefficient indices where to evaluate the gradient
     ///
-    /// @param[in] coeff_idx_G Coefficient indices where to evaluate the Jacobian of `G`
+    /// @param[in] coeff_indices_G Coefficient indices where to evaluate the Jacobian of `G`
     ///
     /// @result Block-tensor with the gradient with respect to the
     /// physical variables
@@ -3331,12 +3366,12 @@ std::cout << "AFTER\n";
     template<typename Geometry_t>
     inline auto igrad(const Geometry_t& G,
                       const std::array<torch::Tensor, BSplineCore::parDim_>& xi,
-                      const std::array<torch::Tensor, BSplineCore::parDim_>& idx,
-                      const torch::Tensor& coeff_idx,
-                      const std::array<torch::Tensor, Geometry_t::parDim()>& idx_G,
-                      const torch::Tensor& coeff_idx_G) const
+                      const std::array<torch::Tensor, BSplineCore::parDim_>& indices,
+                      const torch::Tensor& coeff_indices,
+                      const std::array<torch::Tensor, Geometry_t::parDim()>& indices_G,
+                      const torch::Tensor& coeff_indices_G) const
     {
-      return grad(xi, idx, coeff_idx) * G.jac(xi, idx_G, coeff_idx_G).ginv();
+      return grad(xi, indices, coeff_indices) * G.jac(xi, indices_G, coeff_indices_G).ginv();
     }
 
     /// @brief Returns a block-tensor with the Hessian of the B-spline
@@ -3387,7 +3422,7 @@ std::cout << "AFTER\n";
     ///
     /// @param[in] xi Point(s) where to evaluate the gradient
     ///
-    /// @param[in] idx Knot indices where to evaluate the Hessian
+    /// @param[in] indices Knot indices where to evaluate the Hessian
     ///
     /// @result Block-tensor with the Hessian with respect to
     /// the parametric variables
@@ -3415,9 +3450,9 @@ std::cout << "AFTER\n";
     /// then one then all Hessian matrices are returned as slices of a
     /// rank-3 tensor.
     inline auto hess(const std::array<torch::Tensor, BSplineCore::parDim_>& xi,
-                     const std::array<torch::Tensor, BSplineCore::parDim_>& idx) const
+                     const std::array<torch::Tensor, BSplineCore::parDim_>& indices) const
     {
-      return hess(xi, idx, BSplineCore::find_coeff_indices(idx));
+      return hess(xi, indices, BSplineCore::find_coeff_indices(indices));
     }
 
     /// @brief Returns a block-tensor with the Hessian of the
@@ -3425,9 +3460,9 @@ std::cout << "AFTER\n";
     ///
     /// @param[in] xi Point(s) where to evaluate the Hessian
     ///
-    /// @param[in] idx Knot indices where to evaluate the Hessian
+    /// @param[in] indices Knot indices where to evaluate the Hessian
     ///
-    /// @param[in] coeff_idx Coefficient indices where to evaluate the Hessian
+    /// @param[in] coeff_indices Coefficient indices where to evaluate the Hessian
     ///
     /// @result Block-tensor with the Hessian with respect to the
     /// parametric variables
@@ -3457,81 +3492,81 @@ std::cout << "AFTER\n";
     /// rank-3 tensor.
     ///
     /// @{
-    inline auto hess(const TensorArray1& xi, const TensorArray1& idx,
-                     const torch::Tensor& coeff_idx) const
+    inline auto hess(const TensorArray1& xi, const TensorArray1& indices,
+                     const torch::Tensor& coeff_indices) const
     {
-      assert(xi[0].sizes() == idx[0].sizes());
+      assert(xi[0].sizes() == indices[0].sizes());
       if constexpr (BSplineCore::parDim_ == 1)
         return BlockTensor<torch::Tensor, 1, 1, BSplineCore::geoDim_>
-          (BSplineCore::template eval<deriv::dx2>(xi, idx, coeff_idx));
+          (BSplineCore::template eval<deriv::dx2>(xi, indices, coeff_indices));
       else
         throw std::runtime_error("Unsupported parametric dimension");
     }
 
-    inline auto hess(const TensorArray2& xi, const TensorArray2& idx,
-                     const torch::Tensor& coeff_idx) const
+    inline auto hess(const TensorArray2& xi, const TensorArray2& indices,
+                     const torch::Tensor& coeff_indices) const
     {
-      assert(xi[0].sizes() == idx[0].sizes() &&
-             xi[1].sizes() == idx[1].sizes());
+      assert(xi[0].sizes() == indices[0].sizes() &&
+             xi[1].sizes() == indices[1].sizes());
 
       if constexpr (BSplineCore::parDim_ == 2)
         return BlockTensor<torch::Tensor, 2, BSplineCore::geoDim_, 2>
-          (BSplineCore::template eval<deriv::dx2 >(xi, idx, coeff_idx),
-           BSplineCore::template eval<deriv::dxdy>(xi, idx, coeff_idx),
-           BSplineCore::template eval<deriv::dydx>(xi, idx, coeff_idx),
-           BSplineCore::template eval<deriv::dy2 >(xi, idx, coeff_idx)).reorder_ikj();
+          (BSplineCore::template eval<deriv::dx2 >(xi, indices, coeff_indices),
+           BSplineCore::template eval<deriv::dxdy>(xi, indices, coeff_indices),
+           BSplineCore::template eval<deriv::dydx>(xi, indices, coeff_indices),
+           BSplineCore::template eval<deriv::dy2 >(xi, indices, coeff_indices)).reorder_ikj();
       else
         throw std::runtime_error("Unsupported parametric dimension");
     }
 
-    inline auto hess(const TensorArray3& xi, const TensorArray3& idx,
-                     const torch::Tensor& coeff_idx) const
+    inline auto hess(const TensorArray3& xi, const TensorArray3& indices,
+                     const torch::Tensor& coeff_indices) const
     {
-      assert(xi[0].sizes() == idx[0].sizes() &&
-             xi[1].sizes() == idx[1].sizes() &&
-             xi[2].sizes() == idx[2].sizes());
+      assert(xi[0].sizes() == indices[0].sizes() &&
+             xi[1].sizes() == indices[1].sizes() &&
+             xi[2].sizes() == indices[2].sizes());
 
       if constexpr (BSplineCore::parDim_ == 3)
         return BlockTensor<torch::Tensor, 3, BSplineCore::geoDim_, 3>
-          (BSplineCore::template eval<deriv::dx2 >(xi, idx, coeff_idx),
-           BSplineCore::template eval<deriv::dxdy>(xi, idx, coeff_idx),
-           BSplineCore::template eval<deriv::dxdz>(xi, idx, coeff_idx),
-           BSplineCore::template eval<deriv::dydx>(xi, idx, coeff_idx),
-           BSplineCore::template eval<deriv::dy2> (xi, idx, coeff_idx),
-           BSplineCore::template eval<deriv::dydz>(xi, idx, coeff_idx),
-           BSplineCore::template eval<deriv::dzdx>(xi, idx, coeff_idx),
-           BSplineCore::template eval<deriv::dzdy>(xi, idx, coeff_idx),
-           BSplineCore::template eval<deriv::dz2 >(xi, idx, coeff_idx)).reorder_ikj();
+          (BSplineCore::template eval<deriv::dx2 >(xi, indices, coeff_indices),
+           BSplineCore::template eval<deriv::dxdy>(xi, indices, coeff_indices),
+           BSplineCore::template eval<deriv::dxdz>(xi, indices, coeff_indices),
+           BSplineCore::template eval<deriv::dydx>(xi, indices, coeff_indices),
+           BSplineCore::template eval<deriv::dy2> (xi, indices, coeff_indices),
+           BSplineCore::template eval<deriv::dydz>(xi, indices, coeff_indices),
+           BSplineCore::template eval<deriv::dzdx>(xi, indices, coeff_indices),
+           BSplineCore::template eval<deriv::dzdy>(xi, indices, coeff_indices),
+           BSplineCore::template eval<deriv::dz2 >(xi, indices, coeff_indices)).reorder_ikj();
       else
         throw std::runtime_error("Unsupported parametric dimension");
     }
 
-    inline auto hess(const TensorArray4& xi, const TensorArray4& idx,
-                     const torch::Tensor& coeff_idx) const
+    inline auto hess(const TensorArray4& xi, const TensorArray4& indices,
+                     const torch::Tensor& coeff_indices) const
     {
-      assert(xi[0].sizes() == idx[0].sizes() &&
-             xi[1].sizes() == idx[1].sizes() &&
-             xi[2].sizes() == idx[2].sizes() &&
-             xi[3].sizes() == idx[3].sizes());
+      assert(xi[0].sizes() == indices[0].sizes() &&
+             xi[1].sizes() == indices[1].sizes() &&
+             xi[2].sizes() == indices[2].sizes() &&
+             xi[3].sizes() == indices[3].sizes());
 
       if constexpr (BSplineCore::parDim_ == 4)
         return BlockTensor<torch::Tensor, 4, BSplineCore::geoDim_, 4>
-          (BSplineCore::template eval<deriv::dx2 >(xi, idx, coeff_idx),
-           BSplineCore::template eval<deriv::dxdy>(xi, idx, coeff_idx),
-           BSplineCore::template eval<deriv::dxdz>(xi, idx, coeff_idx),
-           BSplineCore::template eval<deriv::dxdt>(xi, idx, coeff_idx),
-           BSplineCore::template eval<deriv::dydx>(xi, idx, coeff_idx),
-           BSplineCore::template eval<deriv::dy2 >(xi, idx, coeff_idx),
-           BSplineCore::template eval<deriv::dydz>(xi, idx, coeff_idx),
-           BSplineCore::template eval<deriv::dydt>(xi, idx, coeff_idx),
-           BSplineCore::template eval<deriv::dzdx>(xi, idx, coeff_idx),
-           BSplineCore::template eval<deriv::dzdy>(xi, idx, coeff_idx),
-           BSplineCore::template eval<deriv::dz2 >(xi, idx, coeff_idx),
-           BSplineCore::template eval<deriv::dzdt>(xi, idx, coeff_idx),
-           BSplineCore::template eval<deriv::dtdx>(xi, idx, coeff_idx),
-           BSplineCore::template eval<deriv::dtdy>(xi, idx, coeff_idx),
-           BSplineCore::template eval<deriv::dtdz>(xi, idx, coeff_idx),
-           BSplineCore::template eval<deriv::dt2 >(xi, idx, coeff_idx)).reorder_ikj();
+          (BSplineCore::template eval<deriv::dx2 >(xi, indices, coeff_indices),
+           BSplineCore::template eval<deriv::dxdy>(xi, indices, coeff_indices),
+           BSplineCore::template eval<deriv::dxdz>(xi, indices, coeff_indices),
+           BSplineCore::template eval<deriv::dxdt>(xi, indices, coeff_indices),
+           BSplineCore::template eval<deriv::dydx>(xi, indices, coeff_indices),
+           BSplineCore::template eval<deriv::dy2 >(xi, indices, coeff_indices),
+           BSplineCore::template eval<deriv::dydz>(xi, indices, coeff_indices),
+           BSplineCore::template eval<deriv::dydt>(xi, indices, coeff_indices),
+           BSplineCore::template eval<deriv::dzdx>(xi, indices, coeff_indices),
+           BSplineCore::template eval<deriv::dzdy>(xi, indices, coeff_indices),
+           BSplineCore::template eval<deriv::dz2 >(xi, indices, coeff_indices),
+           BSplineCore::template eval<deriv::dzdt>(xi, indices, coeff_indices),
+           BSplineCore::template eval<deriv::dtdx>(xi, indices, coeff_indices),
+           BSplineCore::template eval<deriv::dtdy>(xi, indices, coeff_indices),
+           BSplineCore::template eval<deriv::dtdz>(xi, indices, coeff_indices),
+           BSplineCore::template eval<deriv::dt2 >(xi, indices, coeff_indices)).reorder_ikj();
       else
         throw std::runtime_error("Unsupported parametric dimension");
     }
@@ -3586,9 +3621,9 @@ std::cout << "AFTER\n";
     ///
     /// @param[in] xi Point(s) where to evaluate the Hessian
     ///
-    /// @param[in] idx Knot indices where to evaluate the Hessian
+    /// @param[in] indices Knot indices where to evaluate the Hessian
     ///
-    /// @param[in] idx_G Knot indices where to evaluate Jacobian of `G`
+    /// @param[in] indices_G Knot indices where to evaluate Jacobian of `G`
     ///
     /// @result Block-tensor with the Hessian with respect to the
     /// physical variables
@@ -3608,11 +3643,11 @@ std::cout << "AFTER\n";
     template<typename Geometry_t>
     inline auto ihess(const Geometry_t G,
                       const std::array<torch::Tensor, BSplineCore::parDim_>& xi,
-                      const std::array<torch::Tensor, BSplineCore::parDim_>& idx,
-                      const std::array<torch::Tensor, Geometry_t::parDim()>& idx_G) const
+                      const std::array<torch::Tensor, BSplineCore::parDim_>& indices,
+                      const std::array<torch::Tensor, Geometry_t::parDim()>& indices_G) const
     {
-      return ihess(G, xi, idx, BSplineCore::find_coeff_indices(idx),
-                   idx_G, G.find_coeff_indices(idx_G));
+      return ihess(G, xi, indices, BSplineCore::find_coeff_indices(indices),
+                   indices_G, G.find_coeff_indices(indices_G));
     }
 
     /// @brief Returns a block-tensor with the Hessian of the B-spline
@@ -3624,13 +3659,13 @@ std::cout << "AFTER\n";
     ///
     /// @param[in] xi Point(s) where to evaluate the Hessian
     ///
-    /// @param[in] idx Knot indices where to evaluate the Hessian
+    /// @param[in] indices Knot indices where to evaluate the Hessian
     ///
-    /// @param[in] idx_G Knot indices where to evaluate the Jacobian of `G`
+    /// @param[in] indices_G Knot indices where to evaluate the Jacobian of `G`
     ///
-    /// @param[in] coeff_idx Coefficient indices where to evaluate the Hessian
+    /// @param[in] coeff_indices Coefficient indices where to evaluate the Hessian
     ///
-    /// @param[in] coeff_idx_G Coefficient indices where to evaluate the Jacobian of `G`
+    /// @param[in] coeff_indices_G Coefficient indices where to evaluate the Jacobian of `G`
     ///
     /// @result Block-tensor with the Hessian with respect to the
     /// physical variables
@@ -3650,23 +3685,23 @@ std::cout << "AFTER\n";
     template<typename Geometry_t>
     inline auto ihess(const Geometry_t& G,
                       const std::array<torch::Tensor, BSplineCore::parDim_>& xi,
-                      const std::array<torch::Tensor, BSplineCore::parDim_>& idx,
-                      const torch::Tensor& coeff_idx,
-                      const std::array<torch::Tensor, Geometry_t::parDim()>& idx_G,
-                      const torch::Tensor& coeff_idx_G) const
+                      const std::array<torch::Tensor, BSplineCore::parDim_>& indices,
+                      const torch::Tensor& coeff_indices,
+                      const std::array<torch::Tensor, Geometry_t::parDim()>& indices_G,
+                      const torch::Tensor& coeff_indices_G) const
     {
 
-      auto hessu  = hess(xi, idx, coeff_idx).slice(0);
+      auto hessu  = hess(xi, indices, coeff_indices).slice(0);
 
       {
-        auto igradG = igrad(G, xi, idx, coeff_idx, idx_G, coeff_idx_G);
-        auto hessG  = G.hess(xi, idx_G, coeff_idx_G);
+        auto igradG = igrad(G, xi, indices, coeff_indices, indices_G, coeff_indices_G);
+        auto hessG  = G.hess(xi, indices_G, coeff_indices_G);
         assert(igradG.cols() == hessG.slices());
         for (short_t k=0; k<hessG.slices(); ++k)
           hessu -= igradG(0,k)*hessG.slice(k);
       }
 
-      auto jacInv = G.jac(xi, idx_G, coeff_idx_G).ginv();
+      auto jacInv = G.jac(xi, indices_G, coeff_indices_G).ginv();
       return jacInv.tr() * hessu * jacInv;
     }
 
@@ -3714,7 +3749,7 @@ std::cout << "AFTER\n";
     ///
     /// @param[in] xi Point(s) where to evaluate the Jacobian
     ///
-    /// @param[in] idx Knot indices where to evaluate the Jacobian
+    /// @param[in] indices Knot indices where to evaluate the Jacobian
     ///
     /// @result Block-tensor with the Jacobian with respect to the
     /// parametric variables
@@ -3738,9 +3773,9 @@ std::cout << "AFTER\n";
     ///     \end{bmatrix}
     /// \f]
     inline auto jac(const std::array<torch::Tensor, BSplineCore::parDim_>& xi,
-                    const std::array<torch::Tensor, BSplineCore::parDim_>& idx) const
+                    const std::array<torch::Tensor, BSplineCore::parDim_>& indices) const
     {
-      return jac(xi, idx, BSplineCore::find_coeff_indices(idx));
+      return jac(xi, indices, BSplineCore::find_coeff_indices(indices));
     }
 
     /// @brief Returns a block-tensor with the Jacobian of the B-spline
@@ -3748,9 +3783,9 @@ std::cout << "AFTER\n";
     ///
     /// @param[in] xi Point(s) where to evaluate the Jacobian
     ///
-    /// @param[in] idx Knot indices where to evaluate the Jacobian
+    /// @param[in] indices Knot indices where to evaluate the Jacobian
     ///
-    /// @param[in] coeff_idx Coefficient indices where to evaluate the Jacobian
+    /// @param[in] coeff_indices Coefficient indices where to evaluate the Jacobian
     ///
     /// @result Block-tensor with the Jacobian with respect to the
     /// parametric variables
@@ -3779,69 +3814,69 @@ std::cout << "AFTER\n";
     /// compute the transpose of the Jacobian and return its
     /// tranposed, hence, the Jacobian.
     /// @{
-    inline auto jac(const TensorArray1& xi, const TensorArray1& idx,
-                    const torch::Tensor& coeff_idx) const
+    inline auto jac(const TensorArray1& xi, const TensorArray1& indices,
+                    const torch::Tensor& coeff_indices) const
     {
-      assert(xi[0].sizes() == idx[0].sizes());
+      assert(xi[0].sizes() == indices[0].sizes());
 
       if constexpr (BSplineCore::parDim_ == 1)
 
         return BlockTensor<torch::Tensor, 1, BSplineCore::geoDim_>
-          (BSplineCore::template eval<deriv::dx>(xi, idx, coeff_idx)).tr();
+          (BSplineCore::template eval<deriv::dx>(xi, indices, coeff_indices)).tr();
 
       else
         throw std::runtime_error("Unsupported parametric dimension");
     }
 
-    inline auto jac(const TensorArray2& xi, const TensorArray2& idx,
-                    const torch::Tensor& coeff_idx) const
+    inline auto jac(const TensorArray2& xi, const TensorArray2& indices,
+                    const torch::Tensor& coeff_indices) const
     {
-      assert(xi[0].sizes() == idx[0].sizes() &&
-             xi[1].sizes() == idx[1].sizes());
+      assert(xi[0].sizes() == indices[0].sizes() &&
+             xi[1].sizes() == indices[1].sizes());
 
       if constexpr (BSplineCore::parDim_ == 2)
 
         return BlockTensor<torch::Tensor, 2, BSplineCore::geoDim_>
-          (BSplineCore::template eval<deriv::dx>(xi, idx, coeff_idx),
-           BSplineCore::template eval<deriv::dy>(xi, idx, coeff_idx)).tr();
+          (BSplineCore::template eval<deriv::dx>(xi, indices, coeff_indices),
+           BSplineCore::template eval<deriv::dy>(xi, indices, coeff_indices)).tr();
 
       else
         throw std::runtime_error("Unsupported parametric dimension");
     }
 
-    inline auto jac(const TensorArray3& xi, const TensorArray3& idx,
-                    const torch::Tensor& coeff_idx) const
+    inline auto jac(const TensorArray3& xi, const TensorArray3& indices,
+                    const torch::Tensor& coeff_indices) const
     {
-      assert(xi[0].sizes() == idx[0].sizes() &&
-             xi[1].sizes() == idx[1].sizes() &&
-             xi[2].sizes() == idx[2].sizes());
+      assert(xi[0].sizes() == indices[0].sizes() &&
+             xi[1].sizes() == indices[1].sizes() &&
+             xi[2].sizes() == indices[2].sizes());
 
       if constexpr (BSplineCore::parDim_ == 3)
 
         return BlockTensor<torch::Tensor, 3, BSplineCore::geoDim_>
-          (BSplineCore::template eval<deriv::dx>(xi, idx, coeff_idx),
-           BSplineCore::template eval<deriv::dy>(xi, idx, coeff_idx),
-           BSplineCore::template eval<deriv::dz>(xi, idx, coeff_idx)).tr();
+          (BSplineCore::template eval<deriv::dx>(xi, indices, coeff_indices),
+           BSplineCore::template eval<deriv::dy>(xi, indices, coeff_indices),
+           BSplineCore::template eval<deriv::dz>(xi, indices, coeff_indices)).tr();
 
       else
         throw std::runtime_error("Unsupported parametric dimension");
     }
 
-    inline auto jac(const TensorArray4& xi, const TensorArray4& idx,
-                    const torch::Tensor& coeff_idx) const
+    inline auto jac(const TensorArray4& xi, const TensorArray4& indices,
+                    const torch::Tensor& coeff_indices) const
     {
-      assert(xi[0].sizes() == idx[0].sizes() &&
-             xi[1].sizes() == idx[1].sizes() &&
-             xi[2].sizes() == idx[2].sizes() &&
-             xi[3].sizes() == idx[3].sizes());
+      assert(xi[0].sizes() == indices[0].sizes() &&
+             xi[1].sizes() == indices[1].sizes() &&
+             xi[2].sizes() == indices[2].sizes() &&
+             xi[3].sizes() == indices[3].sizes());
 
       if constexpr (BSplineCore::parDim_ == 4)
 
         return BlockTensor<torch::Tensor, 4, BSplineCore::geoDim_>
-          (BSplineCore::template eval<deriv::dx>(xi, idx, coeff_idx),
-           BSplineCore::template eval<deriv::dy>(xi, idx, coeff_idx),
-           BSplineCore::template eval<deriv::dz>(xi, idx, coeff_idx),
-           BSplineCore::template eval<deriv::dt>(xi, idx, coeff_idx)).tr();
+          (BSplineCore::template eval<deriv::dx>(xi, indices, coeff_indices),
+           BSplineCore::template eval<deriv::dy>(xi, indices, coeff_indices),
+           BSplineCore::template eval<deriv::dz>(xi, indices, coeff_indices),
+           BSplineCore::template eval<deriv::dt>(xi, indices, coeff_indices)).tr();
 
       else
         throw std::runtime_error("Unsupported parametric dimension");
@@ -3891,9 +3926,9 @@ std::cout << "AFTER\n";
     ///
     /// @param[in] xi Point(s) where to evaluate the Jacobian
     ///
-    /// @param[in] idx Knot indices where to evaluate the Jacobian
+    /// @param[in] indices Knot indices where to evaluate the Jacobian
     ///
-    /// @param[in] idx_G Knot indices where to evaluate the Jacobian of `G`
+    /// @param[in] indices_G Knot indices where to evaluate the Jacobian of `G`
     ///
     /// @result Block-tensor with the Jacobian with respect to the
     /// physical variables
@@ -3907,11 +3942,11 @@ std::cout << "AFTER\n";
     template<typename Geometry_t>
     inline auto ijac(const Geometry_t G,
                      const std::array<torch::Tensor, BSplineCore::parDim_>& xi,
-                     const std::array<torch::Tensor, BSplineCore::parDim_>& idx,
-                     const std::array<torch::Tensor, Geometry_t::parDim()>& idx_G) const
+                     const std::array<torch::Tensor, BSplineCore::parDim_>& indices,
+                     const std::array<torch::Tensor, Geometry_t::parDim()>& indices_G) const
     {
-      return ijac(G, xi, idx, BSplineCore::find_coeff_indices(idx),
-                  idx_G, G.find_coeff_indices(idx_G));
+      return ijac(G, xi, indices, BSplineCore::find_coeff_indices(indices),
+                  indices_G, G.find_coeff_indices(indices_G));
     }
 
     /// @brief Returns a block-tensor with the Jacobian of the B-spline
@@ -3923,13 +3958,13 @@ std::cout << "AFTER\n";
     ///
     /// @param[in] xi Point(s) where to evaluate the Jacobian
     ///
-    /// @param[in] idx Knot indices where to evaluate the Jacobain
+    /// @param[in] indices Knot indices where to evaluate the Jacobain
     ///
-    /// @param[in] idx_G Knot indices where to evaluate the Jacobian of `G`
+    /// @param[in] indices_G Knot indices where to evaluate the Jacobian of `G`
     ///
-    /// @param[in] coeff_idx Coefficient indices where to evaluate the Jacobian
+    /// @param[in] coeff_indices Coefficient indices where to evaluate the Jacobian
     ///
-    /// @param[in] coeff_idx_G Coefficient indices where to evaluate the Jacobian of `G`
+    /// @param[in] coeff_indices_G Coefficient indices where to evaluate the Jacobian of `G`
     ///
     /// @result Block-tensor with the Jacobian with respect to the
     /// physical variables
@@ -3943,12 +3978,12 @@ std::cout << "AFTER\n";
     template<typename Geometry_t>
     inline auto ijac(const Geometry_t& G,
                      const std::array<torch::Tensor, BSplineCore::parDim_>& xi,
-                     const std::array<torch::Tensor, BSplineCore::parDim_>& idx,
-                     const torch::Tensor& coeff_idx,
-                     const std::array<torch::Tensor, Geometry_t::parDim()>& idx_G,
-                     const torch::Tensor& coeff_idx_G) const
+                     const std::array<torch::Tensor, BSplineCore::parDim_>& indices,
+                     const torch::Tensor& coeff_indices,
+                     const std::array<torch::Tensor, Geometry_t::parDim()>& indices_G,
+                     const torch::Tensor& coeff_indices_G) const
     {
-      return jac(xi, idx, coeff_idx) * G.jac(xi, idx_G, coeff_idx_G).ginv();
+      return jac(xi, indices, coeff_indices) * G.jac(xi, indices_G, coeff_indices_G).ginv();
     }
 
     /// Plots the B-spline object
@@ -4411,16 +4446,16 @@ std::cout << "AFTER\n";
     }
 
     /// @brief Returns a string representation of the BSplineCommon object
-    inline void pretty_print(std::ostream& os = std::cout) const
+    inline virtual void pretty_print(std::ostream& os = std::cout) const
     {
       os << BSplineCore::name()
-         << "(\nparDim=" << BSplineCore::parDim_
-         << ", geoDim=" << BSplineCore::geoDim_
+         << "(\nparDim = " << BSplineCore::parDim_
+         << ", geoDim = " << BSplineCore::geoDim_
 
 #ifdef __CUDACC__
 #pragma nv_diag_suppress 514
 #endif
-         << ", degrees=";
+         << ", degrees = ";
       for (short_t i=0; i<BSplineCore::parDim_-1; ++i)
         os << BSplineCore::degree(i) << "x";
       if (BSplineCore::parDim_ > 0)
@@ -4428,7 +4463,7 @@ std::cout << "AFTER\n";
       else
         os << 0;
 
-      os << ", knots=";
+      os << ", knots = ";
       for (short_t i=0; i<BSplineCore::parDim_-1; ++i)
         os << BSplineCore::nknots(i) << "x";
       if (BSplineCore::parDim_ > 0)
@@ -4436,7 +4471,7 @@ std::cout << "AFTER\n";
       else
         os << 0;
 
-      os << ", coeffs=";
+      os << ", coeffs = ";
       for (short_t i=0; i<BSplineCore::parDim_-1; ++i)
         os << BSplineCore::ncoeffs(i) << "x";
       if (BSplineCore::parDim_ > 0)

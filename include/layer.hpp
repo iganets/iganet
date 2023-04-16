@@ -98,7 +98,7 @@ namespace iganet {
     }
 
     /// @brief Returns a string representation of the activation function
-    inline void pretty_print(std::ostream& os) const override
+    inline virtual void pretty_print(std::ostream& os) const override
     {
       os << "none";
     }
@@ -201,7 +201,7 @@ namespace iganet {
     }
 
     /// @brief Returns a string representation of the activation function
-    inline void pretty_print(std::ostream& os = std::cout) const override
+    inline virtual void pretty_print(std::ostream& os = std::cout) const override
     {
       os << "BatchNorm"
          << "(\n  eps=" << options_.eps()
@@ -297,7 +297,7 @@ namespace iganet {
     }
 
     /// @brief Returns a string representation of the activation function
-    inline void pretty_print(std::ostream& os = std::cout) const override
+    inline virtual void pretty_print(std::ostream& os = std::cout) const override
     {
       os << "CELU"
          << "(\n  alpha=" << options_.alpha()
@@ -376,7 +376,7 @@ namespace iganet {
     }
 
     /// @brief Returns a string representation of the activation function
-    inline void pretty_print(std::ostream& os = std::cout) const override
+    inline virtual void pretty_print(std::ostream& os = std::cout) const override
     {
       os << "ELU"
          << "(\n  alpha=" << options_.alpha()
@@ -437,7 +437,7 @@ namespace iganet {
     }
 
     /// @brief Returns a string representation of the activation function
-    inline void pretty_print(std::ostream& os = std::cout) const override
+    inline virtual void pretty_print(std::ostream& os = std::cout) const override
     {
       os << "GELU";
     }
@@ -505,7 +505,7 @@ namespace iganet {
     }
 
     /// @brief Returns a string representation of the activation function
-    inline void pretty_print(std::ostream& os = std::cout) const override
+    inline virtual void pretty_print(std::ostream& os = std::cout) const override
     {
       os << "GLU"
          << "(\n  dim=" << options_.dim()
@@ -582,7 +582,7 @@ namespace iganet {
     }
 
     /// @brief Returns a string representation of the activation function
-    inline void pretty_print(std::ostream& os = std::cout) const override
+    inline virtual void pretty_print(std::ostream& os = std::cout) const override
     {
       os << "GroupNorm"
          << "(\n  eps=" << options_.eps();
@@ -661,7 +661,7 @@ namespace iganet {
     }
 
     /// @brief Returns a string representation of the activation function
-    inline void pretty_print(std::ostream& os = std::cout) const override
+    inline virtual void pretty_print(std::ostream& os = std::cout) const override
     {
       os << "GumbelSoftmax"
          << "(\n  tau=" << options_.tau()
@@ -734,7 +734,7 @@ namespace iganet {
     }
 
     /// @brief Returns a string representation of the activation function
-    inline void pretty_print(std::ostream& os = std::cout) const override
+    inline virtual void pretty_print(std::ostream& os = std::cout) const override
     {
       os << "Hardshrink"
          << "(\n  lambda=" << options_.lambda()
@@ -793,7 +793,7 @@ namespace iganet {
     }
 
     /// @brief Returns a string representation of the activation function
-    inline void pretty_print(std::ostream& os = std::cout) const override
+    inline virtual void pretty_print(std::ostream& os = std::cout) const override
     {
       os << "Hardsigmoid";
     }
@@ -845,7 +845,7 @@ namespace iganet {
     }
 
     /// @brief Returns a string representation of the activation function
-    inline void pretty_print(std::ostream& os = std::cout) const override
+    inline virtual void pretty_print(std::ostream& os = std::cout) const override
     {
       os << "Hardswish";
     }
@@ -916,7 +916,7 @@ namespace iganet {
     }
 
     /// @brief Returns a string representation of the activation function
-    inline void pretty_print(std::ostream& os = std::cout) const override
+    inline virtual void pretty_print(std::ostream& os = std::cout) const override
     {
       os << "Hardtanh"
          << "(\n  min_val=" << options_.min_val()
@@ -1004,7 +1004,7 @@ namespace iganet {
     }
 
     /// @brief Returns a string representation of the activation function
-    inline void pretty_print(std::ostream& os = std::cout) const override
+    inline virtual void pretty_print(std::ostream& os = std::cout) const override
     {
       os << "InstanceNorm"
          << "(\n  eps=" << options_.eps()
@@ -1104,7 +1104,7 @@ namespace iganet {
     }
 
     /// @brief Returns a string representation of the activation function
-    inline void pretty_print(std::ostream& os = std::cout) const override
+    inline virtual void pretty_print(std::ostream& os = std::cout) const override
     {
       os << "LayerNorm"
          << "(\n  eps=" << options_.eps();
@@ -1192,7 +1192,7 @@ namespace iganet {
     }
 
     /// @brief Returns a string representation of the activation function
-    inline void pretty_print(std::ostream& os = std::cout) const override
+    inline virtual void pretty_print(std::ostream& os = std::cout) const override
     {
       os << "LeakyReLU"
          << "(\n  negative_slope=" << options_.negative_slope()
@@ -1270,7 +1270,7 @@ namespace iganet {
     }
 
     /// @brief Returns a string representation of the activation function
-    inline void pretty_print(std::ostream& os = std::cout) const override
+    inline virtual void pretty_print(std::ostream& os = std::cout) const override
     {
       os << "LocalResponseNorm"
          << "(\n  size=" << options_.size()
@@ -1335,7 +1335,7 @@ namespace iganet {
     }
 
     /// @brief Returns a string representation of the activation function
-    inline void pretty_print(std::ostream& os = std::cout) const override
+    inline virtual void pretty_print(std::ostream& os = std::cout) const override
     {
       os << "LogSigmoid";
     }
@@ -1400,7 +1400,7 @@ namespace iganet {
     }
 
     /// @brief Returns a string representation of the activation function
-    inline void pretty_print(std::ostream& os = std::cout) const override
+    inline virtual void pretty_print(std::ostream& os = std::cout) const override
     {
       os << "LogSoftmax"
          << "(\n  dim=" << options_.dim()
@@ -1452,7 +1452,7 @@ namespace iganet {
     }
 
     /// @brief Returns a string representation of the activation function
-    inline void pretty_print(std::ostream& os = std::cout) const override
+    inline virtual void pretty_print(std::ostream& os = std::cout) const override
     {
       os << "Mish";
     }
@@ -1514,7 +1514,7 @@ namespace iganet {
     }
 
     /// @brief Returns a string representation of the activation function
-    inline void pretty_print(std::ostream& os = std::cout) const override
+    inline virtual void pretty_print(std::ostream& os = std::cout) const override
     {
       os << "Normalize"
          << "(\n  eps=" << options_.eps()
@@ -1584,7 +1584,7 @@ namespace iganet {
     }
 
     /// @brief Returns a string representation of the activation function
-    inline void pretty_print(std::ostream& os = std::cout) const override
+    inline virtual void pretty_print(std::ostream& os = std::cout) const override
     {
       os << "PReLU";
       
@@ -1656,7 +1656,7 @@ namespace iganet {
     }
 
     /// @brief Returns a string representation of the activation function
-    inline void pretty_print(std::ostream& os = std::cout) const override
+    inline virtual void pretty_print(std::ostream& os = std::cout) const override
     {
       os << "ReLU"
          << "(\n  inplace=" << options_.inplace()
@@ -1727,7 +1727,7 @@ namespace iganet {
     }
 
     /// @brief Returns a string representation of the activation function
-    inline void pretty_print(std::ostream& os = std::cout) const override
+    inline virtual void pretty_print(std::ostream& os = std::cout) const override
     {
       os << "ReLU6"
          << "(\n  inplace=" << options_.inplace()
@@ -1804,7 +1804,7 @@ namespace iganet {
     }
 
     /// @brief Returns a string representation of the activation function
-    inline void pretty_print(std::ostream& os = std::cout) const override
+    inline virtual void pretty_print(std::ostream& os = std::cout) const override
     {
       os << "PReLU"
          << "(\n  lower=" << options_.lower()
@@ -1884,7 +1884,7 @@ namespace iganet {
     }
 
     /// @brief Returns a string representation of the activation function
-    inline void pretty_print(std::ostream& os = std::cout) const override
+    inline virtual void pretty_print(std::ostream& os = std::cout) const override
     {
       os << "SELU"
         << "(\n  inplace=" << options_.inplace()
@@ -1935,7 +1935,7 @@ namespace iganet {
     }
 
     /// @brief Returns a string representation of the activation function
-    inline void pretty_print(std::ostream& os = std::cout) const override
+    inline virtual void pretty_print(std::ostream& os = std::cout) const override
     {
       os << "Sigmoid";
     }
@@ -1978,7 +1978,7 @@ namespace iganet {
     }
 
     /// @brief Returns a string representation of the activation function
-    inline void pretty_print(std::ostream& os = std::cout) const override
+    inline virtual void pretty_print(std::ostream& os = std::cout) const override
     {
       os << "SiLU";
     }
@@ -2043,7 +2043,7 @@ namespace iganet {
     }
 
     /// @brief Returns a string representation of the activation function
-    inline void pretty_print(std::ostream& os = std::cout) const override
+    inline virtual void pretty_print(std::ostream& os = std::cout) const override
     {
       os << "Softmax"
          << "(\n  dim=" << options_.dim()
@@ -2114,7 +2114,7 @@ namespace iganet {
     }
 
     /// @brief Returns a string representation of the activation function
-    inline void pretty_print(std::ostream& os = std::cout) const override
+    inline virtual void pretty_print(std::ostream& os = std::cout) const override
     {
       os << "Softmin"
          << "(\n  dim=" << options_.dim()
@@ -2187,7 +2187,7 @@ namespace iganet {
     }
 
     /// @brief Returns a string representation of the activation function
-    inline void pretty_print(std::ostream& os = std::cout) const override
+    inline virtual void pretty_print(std::ostream& os = std::cout) const override
     {
       os << "Softplus"
          << "(\n  beta=" << options_.beta()
@@ -2267,7 +2267,7 @@ namespace iganet {
     }
 
     /// @brief Returns a string representation of the activation function
-    inline void pretty_print(std::ostream& os = std::cout) const override
+    inline virtual void pretty_print(std::ostream& os = std::cout) const override
     {
       os << "Softshrink"
          << "(\n  lambda=" << options_.lambda()
@@ -2317,7 +2317,7 @@ namespace iganet {
     }
 
     /// @brief Returns a string representation of the activation function
-    inline void pretty_print(std::ostream& os = std::cout) const override
+    inline virtual void pretty_print(std::ostream& os = std::cout) const override
     {
       os << "Softsign";
     }
@@ -2360,7 +2360,7 @@ namespace iganet {
     }
 
     /// @brief Returns a string representation of the activation function
-    inline void pretty_print(std::ostream& os = std::cout) const override
+    inline virtual void pretty_print(std::ostream& os = std::cout) const override
     {
       os << "Tanh";
     }
@@ -2403,7 +2403,7 @@ namespace iganet {
     }
 
     /// @brief Returns a string representation of the activation function
-    inline void pretty_print(std::ostream& os = std::cout) const override
+    inline virtual void pretty_print(std::ostream& os = std::cout) const override
     {
       os << "Tanhshrink";
     }
@@ -2471,7 +2471,7 @@ namespace iganet {
     }
 
     /// @brief Returns a string representation of the activation function
-    inline void pretty_print(std::ostream& os = std::cout) const override
+    inline virtual void pretty_print(std::ostream& os = std::cout) const override
     {
       os << "Threshold"
          << "(\n  threshold=" << options_.threshold()

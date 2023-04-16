@@ -126,7 +126,7 @@ namespace iganet {
     }
     
     /// @brief Returns a string representation of the Boundary object
-    inline void pretty_print(std::ostream& os = std::cout) const
+    inline virtual void pretty_print(std::ostream& os = std::cout) const
     {
       os << core<typename spline_t::value_type>::name()
          << "(\n"
@@ -271,7 +271,7 @@ namespace iganet {
     }
     
     /// @brief Returns a string representation of the Boundary object
-    inline void pretty_print(std::ostream& os = std::cout) const
+    inline virtual void pretty_print(std::ostream& os = std::cout) const
     {
       os << core<typename spline_t::value_type>::name()
          << "(\n"
@@ -345,7 +345,6 @@ namespace iganet {
   public:
     /// @brief Evaluation type
     using eval_t = std::tuple<std::array<torch::Tensor, 2>,
-                              std::array<torch::Tensor, 2>,
                               std::array<torch::Tensor, 2>,
                               std::array<torch::Tensor, 2>,
                               std::array<torch::Tensor, 2>,
@@ -440,7 +439,7 @@ namespace iganet {
     }
     
     /// @brief Returns a string representation of the Boundary object
-    inline void pretty_print(std::ostream& os = std::cout) const
+    inline virtual void pretty_print(std::ostream& os = std::cout) const
     {
       os << core<typename spline_t::value_type>::name()
          << "(\n"
@@ -630,7 +629,7 @@ namespace iganet {
     }
     
     /// @brief Returns a string representation of the Boundary object
-    inline void pretty_print(std::ostream& os = std::cout) const
+    inline virtual void pretty_print(std::ostream& os = std::cout) const
     {
       os << core<typename spline_t::value_type>::name()
          << "(\n"
@@ -697,54 +696,54 @@ namespace iganet {
     }
     
     template<deriv deriv = deriv::func,
-             size_t... Is, typename... Xi, typename... Idx>
+             size_t... Is, typename... Xi, typename... Indices>
     inline auto eval_(std::index_sequence<Is...>,
                       const std::tuple<Xi...>& xi,
-                      const std::tuple<Idx...>& idx) const
+                      const std::tuple<Indices...>& indices) const
     {
       return std::tuple(std::get<Is>(BoundaryCore::bdr_).template eval<deriv>(std::get<Is>(xi),
-                                                                              std::get<Is>(idx))...);
+                                                                              std::get<Is>(indices))...);
     }
     
     template<deriv deriv = deriv::func,
-             size_t... Is, typename... Xi, typename... Idx, typename... Coeff_Idx>
+             size_t... Is, typename... Xi, typename... Indices, typename... Coeff_Indices>
     inline auto eval_(std::index_sequence<Is...>,
                       const std::tuple<Xi...>& xi,
-                      const std::tuple<Idx...>& idx,
-                      const std::tuple<Coeff_Idx...>& coeff_idx) const
+                      const std::tuple<Indices...>& indices,
+                      const std::tuple<Coeff_Indices...>& coeff_indices) const
     {
       return std::tuple(std::get<Is>(BoundaryCore::bdr_).template eval<deriv>(std::get<Is>(xi),
-                                                                              std::get<Is>(idx),
-                                                                              std::get<Is>(coeff_idx))...);
+                                                                              std::get<Is>(indices),
+                                                                              std::get<Is>(coeff_indices))...);
     }
     /// @}
 
     /// @brief Returns the value of the boundary spline objects from
     /// precomputed basis function
     template<size_t... Is,
-             typename... Basfunc, typename... Coeff_Idx,
+             typename... Basfunc, typename... Coeff_Indices,
              typename... Numeval, typename... Sizes>
     inline auto eval_from_precomputed_(std::index_sequence<Is...>,
                                        const std::tuple<Basfunc...>& basfunc,
-                                       const std::tuple<Coeff_Idx...>& coeff_idx,
+                                       const std::tuple<Coeff_Indices...>& coeff_indices,
                                        const std::tuple<Numeval...>& numeval,
                                        const std::tuple<Sizes...>& sizes) const
     {
       return std::tuple(std::get<Is>(BoundaryCore::bdr_).eval_from_precomputed(std::get<Is>(basfunc),
-                                                                               std::get<Is>(coeff_idx),
+                                                                               std::get<Is>(coeff_indices),
                                                                                std::get<Is>(numeval),
                                                                                std::get<Is>(sizes))...);
     }
 
     template<size_t... Is,
-             typename... Basfunc, typename... Coeff_Idx, typename... Xi>
+             typename... Basfunc, typename... Coeff_Indices, typename... Xi>
     inline auto eval_from_precomputed_(std::index_sequence<Is...>,
                                        const std::tuple<Basfunc...>& basfunc,
-                                       const std::tuple<Coeff_Idx...>& coeff_idx,
+                                       const std::tuple<Coeff_Indices...>& coeff_indices,
                                        const std::tuple<Xi...>& xi) const
     {
       return std::tuple(std::get<Is>(BoundaryCore::bdr_).eval_from_precomputed(std::get<Is>(basfunc),
-                                                                               std::get<Is>(coeff_idx),
+                                                                               std::get<Is>(coeff_indices),
                                                                                std::get<Is>(xi)[0].numel(),
                                                                                std::get<Is>(xi)[0].sizes())...);
     }
@@ -769,22 +768,22 @@ namespace iganet {
     }
 
     template<deriv deriv = deriv::func,
-             size_t... Is, typename... Xi, typename... Idx>
+             size_t... Is, typename... Xi, typename... Indices>
     inline auto eval_basfunc_(std::index_sequence<Is...>,
                               const std::tuple<Xi...>& xi,
-                              const std::tuple<Idx...>& idx) const
+                              const std::tuple<Indices...>& indices) const
     {
-      return std::tuple(std::get<Is>(BoundaryCore::bdr_).eval_basfunc(std::get<Is>(xi), std::get<Is>(idx))...);
+      return std::tuple(std::get<Is>(BoundaryCore::bdr_).eval_basfunc(std::get<Is>(xi), std::get<Is>(indices))...);
     }
     /// @}
 
     /// @brief Returns the indices of the boundary spline object's
-    /// coefficients corresponding to the knot indices `idx`
-    template<size_t... Is, typename... Idx>
+    /// coefficients corresponding to the knot indices `indices`
+    template<size_t... Is, typename... Indices>
     inline auto find_coeff_indices_(std::index_sequence<Is...>,
-                                    const std::tuple<Idx...>& idx) const
+                                    const std::tuple<Indices...>& indices) const
     {
-      return std::tuple(std::get<Is>(BoundaryCore::bdr_).find_coeff_indices(std::get<Is>(idx))...);
+      return std::tuple(std::get<Is>(BoundaryCore::bdr_).find_coeff_indices(std::get<Is>(indices))...);
     }
 
     /// @brief Returns the boundary spline object with uniformly
@@ -838,43 +837,43 @@ namespace iganet {
     }
     
     template<deriv deriv = deriv::func,
-             typename... Xi, typename... Idx>
+             typename... Xi, typename... Indices>
     inline auto eval(const std::tuple<Xi...>& xi,
-                     const std::tuple<Idx...>& idx) const
+                     const std::tuple<Indices...>& indices) const
     {
-      return eval_<deriv>(std::make_index_sequence<BoundaryCore::sides()>{}, xi, idx);
+      return eval_<deriv>(std::make_index_sequence<BoundaryCore::sides()>{}, xi, indices);
     }
     
     template<deriv deriv = deriv::func,
-             typename... Xi, typename... Idx, typename... Coeff_Idx>
+             typename... Xi, typename... Indices, typename... Coeff_Indices>
     inline auto eval(const std::tuple<Xi...>& xi,
-                     const std::tuple<Idx...>& idx,
-                     const std::tuple<Coeff_Idx...>& coeff_idx) const
+                     const std::tuple<Indices...>& indices,
+                     const std::tuple<Coeff_Indices...>& coeff_indices) const
     {
-      return eval_<deriv>(std::make_index_sequence<BoundaryCore::sides()>{}, xi, idx, coeff_idx);
+      return eval_<deriv>(std::make_index_sequence<BoundaryCore::sides()>{}, xi, indices, coeff_indices);
     }
     /// @}
     
     /// @brief Returns the value of the spline objects from
     /// precomputed basis function
-    template<typename... Basfunc, typename... Coeff_Idx,
+    template<typename... Basfunc, typename... Coeff_Indices,
              typename... Numeval, typename... Sizes>
     inline auto eval_from_precomputed(const std::tuple<Basfunc...>& basfunc,
-                                      const std::tuple<Coeff_Idx...>& coeff_idx,
+                                      const std::tuple<Coeff_Indices...>& coeff_indices,
                                       const std::tuple<Numeval...>& numeval,
                                       const std::tuple<Sizes...>& sizes) const
     {
       return eval_from_precomputed_(std::make_index_sequence<BoundaryCore::sides()>{},
-                                    basfunc, coeff_idx, numeval, sizes);
+                                    basfunc, coeff_indices, numeval, sizes);
     }
 
-    template<typename... Basfunc, typename... Coeff_Idx, typename... Xi>
+    template<typename... Basfunc, typename... Coeff_Indices, typename... Xi>
     inline auto eval_from_precomputed(const std::tuple<Basfunc...>& basfunc,
-                                      const std::tuple<Coeff_Idx...>& coeff_idx,
+                                      const std::tuple<Coeff_Indices...>& coeff_indices,
                                       const std::tuple<Xi...>& xi) const
     {
       return eval_from_precomputed_(std::make_index_sequence<BoundaryCore::sides()>{},
-                                    basfunc, coeff_idx, xi);
+                                    basfunc, coeff_indices, xi);
     }
     /// @}
 
@@ -893,20 +892,20 @@ namespace iganet {
       return eval_basfunc_(std::make_index_sequence<BoundaryCore::sides()>{}, xi);
     }
 
-    template<deriv deriv = deriv::func, typename... Xi, typename... Idx>
+    template<deriv deriv = deriv::func, typename... Xi, typename... Indices>
     inline auto eval_basfunc(const std::tuple<Xi...>& xi,
-                             const std::tuple<Idx...>& idx) const
+                             const std::tuple<Indices...>& indices) const
     {
-      return eval_basfunc_(std::make_index_sequence<BoundaryCore::sides()>{}, xi, idx);
+      return eval_basfunc_(std::make_index_sequence<BoundaryCore::sides()>{}, xi, indices);
     }
     /// @}
 
     /// @brief Returns the indices of the spline objects'
-    /// coefficients corresponding to the knot indices `idx`
-    template<typename... Idx>
-    inline auto find_coeff_indices(const std::tuple<Idx...>& idx) const
+    /// coefficients corresponding to the knot indices `indices`
+    template<typename... Indices>
+    inline auto find_coeff_indices(const std::tuple<Indices...>& indices) const
     {
-      return find_coeff_indices_(std::make_index_sequence<BoundaryCore::sides()>{}, idx);
+      return find_coeff_indices_(std::make_index_sequence<BoundaryCore::sides()>{}, indices);
     }
 
     /// @brief Returns the spline objects with uniformly refined
