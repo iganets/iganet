@@ -27,9 +27,8 @@ namespace iganet {
   /// @brief Enumerator for the status of the various data
   enum class status : short_t
     {
-      bdr  = 1<<0, /*!< boundary data needs update */
-      geo  = 1<<1, /*!< geometry data needs update */
-      rhs  = 1<<2  /*!< right-hand side data needs update */
+      geo  = 1<<0, /*!< geometry data needs update */
+      ref  = 1<<1  /*!< reference data needs update */
     };
 
   /// @brief Returns the sum of two status objects
@@ -569,7 +568,7 @@ namespace iganet {
               try {
                 activations_.emplace_back( new Softmax{ std::any_cast<torch::nn::functional::SoftmaxFuncOptions>(a[1]) } );
               } catch(...) {
-                activations_.emplace_back( new Softmax{ std::any_cast<bool>(a[1]) } );
+                activations_.emplace_back( new Softmax{ std::any_cast<int64_t>(a[1]) } );
               }
               break;
             default:
@@ -584,7 +583,7 @@ namespace iganet {
               try {
                 activations_.emplace_back( new Softmin{ std::any_cast<torch::nn::functional::SoftminFuncOptions>(a[1]) } );
               } catch(...) {
-                activations_.emplace_back( new Softmin{ std::any_cast<bool>(a[1]) } );
+                activations_.emplace_back( new Softmin{ std::any_cast<int64_t>(a[1]) } );
               }
               break;
             default:
@@ -733,7 +732,7 @@ namespace iganet {
                                                                                         out_features.item<int64_t>()
                                                                                         ).bias(bias.item<bool>())
                                                                )));
-        
+
         archive.read(key+".layer["+std::to_string(i)+"].activation.type", activation);
         switch (static_cast<enum activation>(activation.item<int64_t>())) {
         case activation::none:
@@ -844,14 +843,12 @@ namespace iganet {
         default:
           throw std::runtime_error("Invalid activation function");
         }
-
         activations_.back()->read(archive, key+".layer["+std::to_string(i)+"].activation");
-        
       }
       return archive;
     }
 
-    inline void pretty_print(std::ostream& os = std::cout) const override final
+    inline virtual void pretty_print(std::ostream& os = std::cout) const override final
     {
       os << "(\n";
 
@@ -898,21 +895,18 @@ namespace iganet {
     /// @brief Type of the boundary spline object
     using boundary_t = typename variable_t::boundary_t;
     
-    /// @brief spline representation of the geometry
+    /// @brief Spline representation of the geometry
     geometry_t geo_;
 
-    /// @brief spline representation of the right-hand side
-    variable_t rhs_;
+    /// @brief Spline representation of the reference data
+    variable_t ref_;
 
-    /// @brief spline representation of the solution
-    variable_t sol_;
-
-    /// @brief spline representation of the network output
+    /// @brief Spline representation of the boundary conditions
+    boundary_t bdr_;
+    
+    /// @brief Spline representation of the network output
     variable_t out_;
     
-    /// @brief spline representation of the boundary conditions
-    boundary_t bdr_;
-
     /// @brief IgANet generator
     IgANetGenerator<value_type> net_;
 
@@ -945,19 +939,29 @@ namespace iganet {
       
       // Construct the different spline objects individually
       geo_(std::get<Is>(geometry_splines)..., init::greville, core),
-      rhs_(std::get<Js>(variable_splines)..., init::zeros,    core),
-      sol_(std::get<Js>(variable_splines)..., init::random,   core),
-      bdr_(sol_.boundary()),
+      ref_(std::get<Js>(variable_splines)..., init::zeros,    core),
+      bdr_(ref_.boundary()),
       
       out_(std::get<Js>(variable_splines)..., init::random,   core),
 
       
-      // Construct the deep neural network with the large tensor as
-      // input and the coefficient vector of the solution's spline
-      // object as output
-      net_(concat(std::vector<int64_t>{geo_.basisDim()+rhs_.basisDim()+sol_.template basisDim<functionspace::boundary>()},
+      // Construct the deep neural network
+      net_(concat(std::vector<int64_t>
+                  { geo_.geoDim() *
+                    geo_.basisDim() +
+                      //                    ref_.geoDim() *
+                    ref_.template basisDim<functionspace::interior>() +
+                      //                    ref_.geoDim() *
+                    ref_.template basisDim<functionspace::boundary>()
+                  },
                   layers,
-                  std::vector<int64_t>{sol_.basisDim()}
+                  std::vector<int64_t>
+                  {
+                    //                    out_.geoDim() *
+                    out_.template basisDim<functionspace::interior>() +
+                      //                    out_.geoDim() *
+                    out_.template basisDim<functionspace::boundary>()
+                  }
                   ),
            activations),
 
@@ -974,10 +978,9 @@ namespace iganet {
                     iganet::core<value_type> core = iganet::core<value_type>{})
       : iganet::core<value_type>(core),
         geo_(),
-        rhs_(),
-        sol_(),
-        out_(),
+        ref_(),
         bdr_(),
+        out_(),
         opt_(net_->parameters()),
         options_(defaults)
     {}
@@ -1062,31 +1065,17 @@ namespace iganet {
     }
 
     /// @brief Returns a constant reference to the spline
-    /// representation of the right-hand side
-    inline const variable_t& rhs() const
+    /// representation of the reference data
+    inline const variable_t& ref() const
     {
-      return rhs_;
+      return ref_;
     }
 
     /// @brief Returns a non-constant reference to the spline
-    /// representation of the right-hand side
-    inline variable_t& rhs()
+    /// representation of the reference data
+    inline variable_t& ref()
     {
-      return rhs_;
-    }
-
-    /// @brief Returns a constant reference to the spline
-    /// representation of the solution
-    inline const variable_t& sol() const
-    {
-      return sol_;
-    }
-
-    /// @brief Returns a non-constant reference to the spline
-    /// representation of the solution
-    inline variable_t& sol()
-    {
-      return sol_;
+      return ref_;
     }
 
     /// @brief Returns a constant reference to the spline
@@ -1101,6 +1090,20 @@ namespace iganet {
     inline boundary_t& bdr()
     {
       return bdr_;      
+    }
+
+    /// @brief Returns a constant reference to the spline
+    /// representation of the network's output
+    inline const variable_t& out() const
+    {
+      return out_;
+    }
+
+    /// @brief Returns a non-constant reference to the spline
+    /// representation of the network's output
+    inline variable_t& out()
+    {
+      return out_;
     }
 
     /// @brief Returns a constant reference to the options structure
@@ -1131,7 +1134,7 @@ namespace iganet {
                 typename variable_t::boundary_eval_t> result;
       
       // Get Greville abscissae inside the domain
-      ((std::get<Is>(result.first) = std::get<Is>(sol_).greville()), ...);
+      ((std::get<Is>(result.first) = std::get<Is>(ref_).greville()), ...);
       
       // Get Greville abscissae at the domain
       ((std::get<Is>(result.second) = std::get<Is>(bdr_).greville()), ...);
@@ -1151,12 +1154,11 @@ namespace iganet {
     get_samples() const
     {
       if constexpr (variable_t::dim() == 1)
-        return {sol_.greville(), bdr_.greville()};
+        return {ref_.greville(), bdr_.greville()};
       else
         return get_samples(std::make_index_sequence<variable_t::dim()>{});
     }
     
-#if 0
   private:
     /// @brief Updates the network inputs
     template<std::size_t... geoDimIs, std::size_t... pdeDimIs, std::size_t... bdrIs>
@@ -1164,31 +1166,31 @@ namespace iganet {
                            std::index_sequence<pdeDimIs...>,
                            std::index_sequence<bdrIs...>) const
     {      
-      if constexpr (PdeDim == 1)
+      if constexpr (sizeof...(pdeDimIs) == 1)
         return torch::cat({
             geo_.coeffs()[geoDimIs]...,
-            rhs_.coeffs()[pdeDimIs]...,
+            ref_.coeffs()[pdeDimIs]...,
             std::get<bdrIs>(bdr_.coeffs()).coeffs(0)...          
           });
-      else if constexpr (PdeDim == 2)
+      else if constexpr (sizeof...(pdeDimIs) == 2)
         return torch::cat({
             geo_.coeffs()[geoDimIs]...,
-            rhs_.coeffs()[pdeDimIs]...,
+            ref_.coeffs()[pdeDimIs]...,
             std::get<bdrIs>(bdr_.coeffs()).coeffs(0)...,
             std::get<bdrIs>(bdr_.coeffs()).coeffs(1)...          
           });
-      else if constexpr (PdeDim == 3)
+      else if constexpr (sizeof...(pdeDimIs) == 3)
         return torch::cat({
             geo_.coeffs()[geoDimIs]...,
-            rhs_.coeffs()[pdeDimIs]...,
+            ref_.coeffs()[pdeDimIs]...,
             std::get<bdrIs>(bdr_.coeffs()).coeffs(0)...,
             std::get<bdrIs>(bdr_.coeffs()).coeffs(1)...,
             std::get<bdrIs>(bdr_.coeffs()).coeffs(2)...
           });
-      else if constexpr (PdeDim == 4)
+      else if constexpr (sizeof...(pdeDimIs) == 4)
         return torch::cat({
             geo_.coeffs()[geoDimIs]...,
-            rhs_.coeffs()[pdeDimIs]...,
+            ref_.coeffs()[pdeDimIs]...,
             std::get<bdrIs>(bdr_.coeffs()).coeffs(0)...,
             std::get<bdrIs>(bdr_.coeffs()).coeffs(1)...,
             std::get<bdrIs>(bdr_.coeffs()).coeffs(2)...,
@@ -1197,16 +1199,14 @@ namespace iganet {
       else
         throw std::runtime_error("Unsupported PDE dimension");
     }
-
-#endif
     
   public:
     /// @brief Updates the network inputs
     virtual torch::Tensor get_inputs() const
     {
-      return torch::zeros(100);
-      // return get_inputs(std::make_index_sequence<GeoDim>(),
-      //                        std::make_index_sequence<PdeDim>(),
+      return torch::Tensor{};
+      //      return get_inputs(std::make_index_sequence<geometry_t::geoDim()>(),
+      //                        std::make_index_sequence<variable_t::geoDim()>(),
       //                        std::make_index_sequence<boundary_t::sides()>());     
     }
     
@@ -1214,35 +1214,18 @@ namespace iganet {
     virtual status get_epoch(int64_t epoch) const
     {
       return (epoch == 0
-              ? status::bdr + status::geo + status::rhs
+              ? status::geo + status::ref
               : status(0));
     }
     
     /// @brief Trains the IgANet
     virtual void train()
-    {
+    {      
       // Get inputs for zeroth epoch
       auto inputs = get_inputs();
       
       // Get samples
-      auto samples = get_samples();
-      
-      // Evaluate constant right-hand side
-      auto knot_idx  = rhs_.find_knot_indices(samples.first);
-      auto basfunc   = rhs_.eval_basfunc(samples.first, knot_idx);
-      auto coeff_idx = rhs_.eval_coeff_indices(knot_idx);
-
-      auto rhs = rhs_.eval_from_precomputed(basfunc, coeff_idx, samples.first);
-
-      // Evaluate boundary values
-      auto bdr_knot_idx  = rhs_.template find_knot_indices<functionspace::boundary>(samples.second);
-      auto bdr_basfunc   = rhs_.template eval_basfunc<functionspace::boundary>(samples.second, bdr_knot_idx);
-      auto bdr_coeff_idx = rhs_.template eval_coeff_indices<functionspace::boundary>(bdr_knot_idx);
-            
-      auto rhs_bdr = rhs_.template eval_from_precomputed<functionspace::boundary>(bdr_basfunc, bdr_coeff_idx, samples.second);
-      
-      
-      exit(0);
+      auto samples = get_samples();     
 
       // Loop over epochs
       for (int64_t epoch = 0; epoch != options_.max_epoch(); ++epoch)
@@ -1277,34 +1260,34 @@ namespace iganet {
     }
 
     /// @brief Returns a string representation of the IgANet object
-    inline void pretty_print(std::ostream& os = std::cout) const
+    inline virtual void pretty_print(std::ostream& os = std::cout) const
     {
       os << core<value_type>::name()
          << "(\n"
          << "net = " << net_ << "\n"
          << "geo = " << geo_ << "\n"
-         << "rhs = " << rhs_ << "\n"
+         << "ref = " << ref_ << "\n"
          << "bdr = " << bdr_ << "\n"
-         << "sol = " << sol_
+         << "out = " << out_
          << "\n)";
     }
 
-    /// @brief Plots the spline geometry
+    /// @brief Plots the spline representation of the geometry
     inline auto plot_geo(int64_t xres=10, int64_t yres=10, int64_t zres=10) const
     {
       return geo_.plot(xres, yres, zres);
     }
 
-    /// @brief Plots the spline right-hand side
-    inline auto plot_rhs(int64_t xres=10, int64_t yres=10, int64_t zres=10) const
+    /// @brief Plots the spline representation of the reference data
+    inline auto plot_ref(int64_t xres=10, int64_t yres=10, int64_t zres=10) const
     {
-      return rhs_.plot(rhs_, xres, yres, zres);
+      return ref_.plot(geo_, xres, yres, zres);
     }
 
-    /// @brief Plots the spline solution
-    inline auto plot_sol(int64_t xres=10, int64_t yres=10, int64_t zres=10) const
+    /// @brief Plots the spline representation of the network's output
+    inline auto plot_out(int64_t xres=10, int64_t yres=10, int64_t zres=10) const
     {
-      return rhs_.plot(sol_, xres, yres, zres);
+      return out_.plot(geo_, xres, yres, zres);
     }
 
     /// @brief Saves the IgANet to file
@@ -1328,12 +1311,9 @@ namespace iganet {
     inline torch::serialize::OutputArchive& write(torch::serialize::OutputArchive& archive,
                                                   const std::string& key="iganet") const
     {
-      //archive.write(key+".GeoDim", torch::full({1}, GeoDim));
-      //archive.write(key+".PdeDim", torch::full({1}, PdeDim));
-
       geo_.write(archive, key+".geo");
-      rhs_.write(archive, key+".rhs");
-      sol_.write(archive, key+".sol");
+      ref_.write(archive, key+".ref");
+      out_.write(archive, key+".out");
       
       net_->write(archive, key+".net");      
       torch::serialize::OutputArchive archive_net;
@@ -1350,32 +1330,20 @@ namespace iganet {
     /// @brief Loads the IgANet from a torch::serialize::InputArchive object
     inline torch::serialize::InputArchive& read(torch::serialize::InputArchive& archive,
                                                 const std::string& key="iganet")
-    {
-      torch::Tensor tensor;
-
-      //archive.read(key+".GeoDim", tensor);
-      //if (tensor.item<int64_t>() != GeoDim)
-      //  throw std::runtime_error("GeoDim mismatch");
-
-      //archive.read(key+".PdeDim", tensor);
-      //if (tensor.item<int64_t>() != PdeDim)
-      //  throw std::runtime_error("PdeDim mismatch");
-
+    {      
       geo_.read(archive, key+".geo");
-      rhs_.read(archive, key+".rhs");
-      sol_.read(archive, key+".sol");
+      ref_.read(archive, key+".ref");
+      out_.read(archive, key+".out");
 
       net_->read(archive, key+".net");      
-      torch::serialize::InputArchive archive_net;
+      torch::serialize::InputArchive archive_net;      
       archive.read(key+".net.data", archive_net);
       net_->load(archive_net);
-      
+
+      opt_.add_parameters(net_->parameters());      
       torch::serialize::InputArchive archive_opt;
       archive.read(key+".opt", archive_opt);            
       opt_.load(archive_opt);
-
-      for (const auto& k : archive_opt.keys())
-        std::cout << k << std::endl;
       
       return archive;
     }
@@ -1386,8 +1354,9 @@ namespace iganet {
       bool result(true);
 
       result *= (geo_ == other.geo());
-      result *= (rhs_ == other.rhs());
-      result *= (sol_ == other.sol());
+      result *= (ref_ == other.ref());
+      result *= (bdr_ == other.bdr());
+      result *= (out_ == other.out());
 
       return result;
     }
@@ -1397,7 +1366,6 @@ namespace iganet {
     {
       return *this != other;
     }
-
   };
 
   /// @brief Print (as string) a IgANet object
