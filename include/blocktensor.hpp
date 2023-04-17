@@ -804,7 +804,8 @@ namespace iganet {
   /// quadrant
   binary_op(atan2);
 
-#if TORCH_VERSION_MAJOR >= 1 && TORCH_VERSION_MINOR >= 11
+#if TORCH_VERSION_MAJOR >= 1 && TORCH_VERSION_MINOR >= 11 ||    \
+    TORCH_VERSION_MAJOR >= 2
   /// @brief Alias for atan2()
   binary_op(arctan2);
 #endif
