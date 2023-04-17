@@ -291,7 +291,7 @@ namespace iganet {
       }
       
       /// @brief Evaluates the model
-      BlockTensor<torch::Tensor, 1, 1> eval(const nlohmann::json& json = NULL) const override {
+      BlockTensor<torch::Tensor, 1, 3> eval(const nlohmann::json& json = NULL) const override {
         if constexpr (BSpline_t::parDim() == 1) {
 
           std::array<int64_t, 1> res({25});          

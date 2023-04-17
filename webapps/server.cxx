@@ -486,7 +486,7 @@ int main(int argc, char const* argv[])
                 auto model = session->getModel(stoi(tokens[2]));
 
                 // Evaluate an existing model
-                if (auto m = std::dynamic_pointer_cast<iganet::ModelEval<1>>(model))
+                if (auto m = std::dynamic_pointer_cast<iganet::ModelEval<3>>(model))
                   response["data"] = nlohmann::json::array()
                     .emplace_back(::iganet::to_json<float,1>(*(m->eval(request))[0]));
                 else {
