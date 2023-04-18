@@ -915,12 +915,6 @@ namespace iganet {
 
     /// @brief Options
     IgANetOptions options_;
-
-    /// @brief Dimensions of the parametric spaces
-    static constexpr const auto parDim_ = variable_t::parDim();
-
-    /// @brief Dimensions of the geometric spaces
-    static constexpr const auto geoDim_ = variable_t::geoDim();
     
     /// @brief Constructor: number of layers, activation functions,
     /// and number of spline coefficients (different for geometry_t
@@ -947,12 +941,7 @@ namespace iganet {
       
       // Construct the deep neural network
       net_(concat(std::vector<int64_t>
-                  { geo_.geoDim() *
-                    geo_.basisDim() +
-                      //                    ref_.geoDim() *
-                    ref_.template basisDim<functionspace::interior>() +
-                      //                    ref_.geoDim() *
-                    ref_.template basisDim<functionspace::boundary>()
+                  { get_inputs().size(0)
                   },
                   layers,
                   std::vector<int64_t>
@@ -1013,18 +1002,6 @@ namespace iganet {
                variable_splines, std::make_index_sequence<sizeof...(variable_splines_t)>{},
                defaults, core)
     {}
-
-    /// @brief Returns the parametric dimensions
-    inline static constexpr auto parDim()
-    {
-      return parDim_;
-    }
-    
-    /// @brief Returns the geometric dimensions
-    inline static constexpr auto geoDim()
-    {
-      return geoDim_;
-    }
     
     /// @brief Returns a constant reference to the IgANet generator
     inline const IgANetGenerator<value_type>& net() const
@@ -1159,55 +1136,10 @@ namespace iganet {
         return get_samples(std::make_index_sequence<variable_t::dim()>{});
     }
     
-  private:
-    /// @brief Updates the network inputs
-    template<std::size_t... geoDimIs, std::size_t... pdeDimIs, std::size_t... bdrIs>
-    inline auto get_inputs(std::index_sequence<geoDimIs...>,
-                           std::index_sequence<pdeDimIs...>,
-                           std::index_sequence<bdrIs...>) const
-    {      
-      if constexpr (sizeof...(pdeDimIs) == 1)
-        return torch::cat({
-            geo_.coeffs()[geoDimIs]...,
-            ref_.coeffs()[pdeDimIs]...,
-            std::get<bdrIs>(bdr_.coeffs()).coeffs(0)...          
-          });
-      else if constexpr (sizeof...(pdeDimIs) == 2)
-        return torch::cat({
-            geo_.coeffs()[geoDimIs]...,
-            ref_.coeffs()[pdeDimIs]...,
-            std::get<bdrIs>(bdr_.coeffs()).coeffs(0)...,
-            std::get<bdrIs>(bdr_.coeffs()).coeffs(1)...          
-          });
-      else if constexpr (sizeof...(pdeDimIs) == 3)
-        return torch::cat({
-            geo_.coeffs()[geoDimIs]...,
-            ref_.coeffs()[pdeDimIs]...,
-            std::get<bdrIs>(bdr_.coeffs()).coeffs(0)...,
-            std::get<bdrIs>(bdr_.coeffs()).coeffs(1)...,
-            std::get<bdrIs>(bdr_.coeffs()).coeffs(2)...
-          });
-      else if constexpr (sizeof...(pdeDimIs) == 4)
-        return torch::cat({
-            geo_.coeffs()[geoDimIs]...,
-            ref_.coeffs()[pdeDimIs]...,
-            std::get<bdrIs>(bdr_.coeffs()).coeffs(0)...,
-            std::get<bdrIs>(bdr_.coeffs()).coeffs(1)...,
-            std::get<bdrIs>(bdr_.coeffs()).coeffs(2)...,
-            std::get<bdrIs>(bdr_.coeffs()).coeffs(3)...
-          });
-      else
-        throw std::runtime_error("Unsupported PDE dimension");
-    }
-    
-  public:
     /// @brief Updates the network inputs
     virtual torch::Tensor get_inputs() const
     {
-      return torch::Tensor{};
-      //      return get_inputs(std::make_index_sequence<geometry_t::geoDim()>(),
-      //                        std::make_index_sequence<variable_t::geoDim()>(),
-      //                        std::make_index_sequence<boundary_t::sides()>());     
+      return torch::cat({geo_.as_tensor(), ref_.as_tensor()});
     }
     
     /// @brief Updates object at the beginning of each epoch

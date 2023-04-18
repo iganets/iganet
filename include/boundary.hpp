@@ -685,6 +685,27 @@ namespace iganet {
     using BoundaryCore::BoundaryCore;
 
   private:
+    /// @brief Returns all coefficients of all spline objects as a
+    /// single tensor
+    ///
+    /// @result Tensor of coefficients
+    template<std::size_t... Is>
+    inline torch::Tensor as_tensor(std::index_sequence<Is...>) const
+    {
+      return torch::cat({std::get<Is>(BoundaryCore::bdr_).as_tensor()...});
+    }
+
+  public:    
+    /// @brief Returns all coefficients of all spline objects as a
+    /// single tensor
+    ///
+    /// @result Tensor of coefficients
+    inline torch::Tensor as_tensor() const
+    {
+      return as_tensor(std::make_index_sequence<BoundaryCore::sides()>{});
+    }
+    
+  private:
     /// @brief Returns the values of the boundary spline objects in
     /// the points `xi` @{
     template<deriv deriv = deriv::func,

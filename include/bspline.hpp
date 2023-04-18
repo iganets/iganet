@@ -645,6 +645,25 @@ namespace iganet {
       return ncoeffs_[i];
     }
 
+  private:
+    /// @brief Returns all coefficients as a single tensor
+    ///
+    /// @result Tensor of coefficients
+    template<std::size_t... Is>
+    inline torch::Tensor as_tensor(std::index_sequence<Is...>) const
+    {
+      return torch::cat({coeffs_[Is]...});
+    }
+    
+  public:    
+    /// @brief Returns all coefficients as a single tensor
+    ///
+    /// @result Tensor of coefficients
+    inline torch::Tensor as_tensor() const
+    {
+      return as_tensor(std::make_index_sequence<geoDim_>{});
+    }
+   
     /// @brief Returns the Greville abscissae
     ///
     /// The Greville abscissae are defined as

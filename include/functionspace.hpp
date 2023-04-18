@@ -86,13 +86,6 @@ namespace iganet {
     template<typename... spline_t>
     class FunctionSpace : public std::tuple<spline_t...>
     {
-    protected:
-      /// @brief Dimensions of the parametric spaces
-      static constexpr std::array<short_t, sizeof...(spline_t)> parDim_ = {spline_t::parDim()...};
-
-      /// @brief Dimensions of the physical spaces
-      static constexpr std::array<short_t, sizeof...(spline_t)> geoDim_ = {spline_t::geoDim()...};
-
     public:
       /// @brief Boundary spline objects type
       using boundary_t = std::tuple<Boundary<spline_t>...>;
@@ -147,18 +140,22 @@ namespace iganet {
         return sizeof...(spline_t);
       }
       
-      /// @brief Returns the parametric dimension
-      inline static constexpr auto parDim()
+    private:
+      /// @brief Returns the coefficients of all spaces as a single tensor
+      template<size_t... Is, size_t... Js>
+      inline torch::Tensor as_tensor(std::index_sequence<Is...>) const
       {
-        return parDim_;
+        return torch::cat({std::get<Is>(*this).as_tensor()...,
+                           std::get<Is>(boundary_).as_tensor()...});
       }
-
-      /// @brief Returns the geometric dimension
-      inline static constexpr auto geoDim()
+      
+    public:
+      /// @brief Returns the coefficients of all spaces as a single tensor
+      inline torch::Tensor as_tensor() const
       {
-        return geoDim_;
+        return as_tensor(std::make_index_sequence<sizeof...(spline_t)>{});
       }
-
+      
       /// @brief Returns a constant reference to the boundary spline object
       inline const auto& boundary() const
       {
@@ -527,13 +524,6 @@ namespace iganet {
     template<typename spline_t>
     class FunctionSpace<spline_t> : public spline_t
     {
-    protected:
-      /// @brief Dimension of the parametric space
-      static constexpr short_t parDim_ = spline_t::parDim();
-
-      /// @brief Dimension of the physical space
-      static constexpr short_t geoDim_ = spline_t::geoDim();
-
     public:
       /// @brief Boundary spline objects type
       using boundary_t = Boundary<spline_t>;
@@ -566,7 +556,7 @@ namespace iganet {
 
       /// @brief Constructor
       /// @{
-      FunctionSpace(const std::array<int64_t, parDim_>& ncoeffs,
+      FunctionSpace(const std::array<int64_t, spline_t::parDim()>& ncoeffs,
                     enum init init = init::zeros,
                     core<value_type> core = iganet::core<value_type>{})
         : Base(ncoeffs, init, core),
@@ -586,18 +576,12 @@ namespace iganet {
       inline static constexpr short_t dim()
       {
         return 1;
-      }
-      
-      /// @brief Returns the parametric dimension
-      inline static constexpr short_t parDim()
-      {
-        return parDim_;
-      }
+      }     
 
-      /// @brief Returns the geometric dimension
-      inline static constexpr short_t geoDim()
+      /// @brief Returns the coefficients of all spaces as a single tensor
+      inline torch::Tensor as_tensor() const
       {
-        return geoDim_;
+        return torch::cat({Base::as_tensor(), boundary_.as_tensor()});
       }
 
       /// @brief Returns a constant reference to the boundary spline object
