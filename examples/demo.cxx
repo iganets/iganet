@@ -122,7 +122,7 @@ int main()
   using real_t = double;
   
   using geometry_t  = iganet::S2<iganet::UniformBSpline<real_t, 2, 3, 2>>;
-  using variable_t  = iganet::S2<iganet::UniformBSpline<real_t, 1, 3, 2>>;
+  using variable_t  = iganet::S2<iganet::UniformBSpline<real_t, 2, 3, 2>>;
   
   poisson<optimizer_t, geometry_t, variable_t> net(// Number of neurons per layers
                                                    {100,100},
