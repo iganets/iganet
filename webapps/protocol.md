@@ -1,6 +1,6 @@
 # WebApp protocol
 
-_Version: 0.4 (23-03-2023)_
+_Version: 0.5 (19-04-2023)_
 
 All WebApps implement the following [WebSocket](https://en.wikipedia.org/wiki/WebSocket)-based client-server protocol. All communication is initiated by the client and responded by the server. Only broadcasts are initiated by the server and responded by all clients, e.g., when a client request leads to a state change of the server, then an update is broadcasted to all clients connected to the same session.
 
@@ -86,7 +86,8 @@ In what follows, only the non-generic parts of the protocol are specified in mor
        { "name"        : <string>,
          "description" : <string>,
          "type"        : <type descriptor>,
-         "value"       : <initial value>,
+         "value"       : <values>,
+         "default"     : <default value>
          "uiid"        : <integer specifying the position in the UI> }
        ```
 
@@ -96,7 +97,17 @@ In what follows, only the non-generic parts of the protocol are specified in mor
          "description" : "Number of coefficients",
          "type"        : [int,int],
          "value"       : [5,5],
+         "default"     : [5,5],
          "uiid"        : 0 }
+       ```
+       or
+       ```
+       { "name"        : "init",
+         "description" : "Initialization of the coefficients",
+         "type"        : "select",
+         "value"       : ["zeros", "ones", "linear", "random", "greville"],
+         "default"     : 2,
+         "uiid"        : 1 }
        ```
 
        This information can be used to generate UI elements dynamically based on the capabilities of the server. The model's `name` must be used for creating a specific type. More details are given in Section 3.
@@ -430,5 +441,7 @@ The following B-spline models are implemented:
 
 ---
 
-1. load serialized model from file on client side
+# TODO
+
+1. load/save serialized model from/to file on client side
 2. global translate and rotate parameter
