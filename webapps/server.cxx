@@ -488,7 +488,7 @@ int main(int argc, char const* argv[])
                 // Evaluate an existing model
                 if (auto m = std::dynamic_pointer_cast<iganet::ModelEval<3>>(model))
                   response["data"] = nlohmann::json::array()
-                    .emplace_back(::iganet::to_json<float,1>(*(m->eval(request))[0]));
+                    .emplace_back(::iganet::to_json<float,2>(*(m->eval(request))[0]));
                 else {
                   response["status"] = iganet::webapp::status::invalidEvalRequest;
                   response["reason"] = "Invalid eval request. Valid requests are \"eval/<session-id>/<model-id>\"";
