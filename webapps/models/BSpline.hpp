@@ -309,8 +309,12 @@ namespace iganet {
             if (json["data"].contains("resolution"))
               res = json["data"]["resolution"].get<std::array<int64_t,2>>();
           
-          iganet::TensorArray2 xi = {torch::linspace(0, 1, res[0]),
-                                     torch::linspace(0, 1, res[1])};
+          iganet::TensorArray2 xi = convert<2>(torch::meshgrid({
+                torch::linspace(0, 1, res[0],
+                                core<typename BSpline_t::value_type>::options_),                
+                torch::linspace(0, 1, res[1],
+                                core<typename BSpline_t::value_type>::options_)}, "xy"));
+          
           return BSpline_t::eval(xi);
         }
         else if constexpr (BSpline_t::parDim() == 3) {
@@ -319,10 +323,15 @@ namespace iganet {
           if (json.contains("data"))
             if (json["data"].contains("resolution"))
               res = json["data"]["resolution"].get<std::array<int64_t,3>>();
+
+          iganet::TensorArray3 xi = convert<3>(torch::meshgrid({
+                torch::linspace(0, 1, res[0],
+                                core<typename BSpline_t::value_type>::options_),                
+                torch::linspace(0, 1, res[1],
+                                core<typename BSpline_t::value_type>::options_),
+                torch::linspace(0, 1, res[2],
+                                core<typename BSpline_t::value_type>::options_)}, "xy"));
           
-          iganet::TensorArray3 xi = {torch::linspace(0, 1, res[0]),
-                                     torch::linspace(0, 1, res[1]),
-                                     torch::linspace(0, 1, res[2])};
           return BSpline_t::eval(xi);
         }
         else if constexpr (BSpline_t::parDim() == 4) {
@@ -331,11 +340,17 @@ namespace iganet {
           if (json.contains("data"))
             if (json["data"].contains("resolution"))
               res = json["data"]["resolution"].get<std::array<int64_t,4>>();
+
+          iganet::TensorArray4 xi = convert<4>(torch::meshgrid({
+                torch::linspace(0, 1, res[0],
+                                core<typename BSpline_t::value_type>::options_),                
+                torch::linspace(0, 1, res[1],
+                                core<typename BSpline_t::value_type>::options_),
+                torch::linspace(0, 1, res[2],
+                                core<typename BSpline_t::value_type>::options_),
+                torch::linspace(0, 1, res[3],
+                                core<typename BSpline_t::value_type>::options_)}, "xy"));
           
-          iganet::TensorArray4 xi = {torch::linspace(0, 1, res[0]),
-                                     torch::linspace(0, 1, res[1]),
-                                     torch::linspace(0, 1, res[2]),
-                                     torch::linspace(0, 1, res[3])};
           return BSpline_t::eval(xi);
         }
       }
