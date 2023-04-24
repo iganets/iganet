@@ -2827,6 +2827,14 @@ std::cout << "AFTER\n";
     BSplineCommon(const BSplineCommon&) = default;
 
     /// @brief Copy constructor with external coefficients
+    /// @{
+    explicit BSplineCommon(const BSplineCommon& other,
+                           const torch::Tensor& coeffs)
+      : BSplineCommon(other)
+    {
+      BSplineCore::coeffs_[0] = coeffs.clone();
+    }
+    
     explicit BSplineCommon(const BSplineCommon& other,
                            const std::array<torch::Tensor, BSplineCore::geoDim_>& coeffs)
       : BSplineCommon(other)
@@ -2834,18 +2842,28 @@ std::cout << "AFTER\n";
       for (short_t i=0; i< BSplineCore::geoDim_; ++i)
         BSplineCore::coeffs_[i] = coeffs[i].clone();
     }
+    /// @}
 
     /// @brief Move constructor
     BSplineCommon(BSplineCommon&&) = default;
 
     /// @brief Move constructor with external coefficients
+    /// @{
+    explicit BSplineCommon(BSplineCommon&& other,
+                           torch::Tensor&& coeffs)
+      : BSplineCommon(std::move(other))
+    {
+      BSplineCore::coeffs_[0] = std::move(coeffs);
+    }
+          
     explicit BSplineCommon(BSplineCommon&& other,
                            std::array<torch::Tensor, BSplineCore::geoDim_>&& coeffs)
-      : BSplineCommon(other)
+      : BSplineCommon(std::move(other))
     {
       for (short_t i=0; i< BSplineCore::geoDim_; ++i)
         BSplineCore::coeffs_[i] = std::move(coeffs[i]);
     }
+    /// @}
 
     /// @brief Copy assignment operator
     BSplineCommon& operator=(const BSplineCommon&) = default;
