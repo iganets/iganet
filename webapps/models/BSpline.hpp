@@ -217,10 +217,6 @@ namespace iganet {
       /// @brief Updates the attrbutes of the model
       nlohmann::json updateAttribute(const std::string& attribute,
                                      const nlohmann::json& json) override {
-
-        std::cout << "attribute: " << attribute << std::endl;
-        std::cout << json.dump() << std::endl;
-        
         if (attribute == "coeffs") {
           if (!json.contains("data"))
             throw InvalidModelAttributeException();
