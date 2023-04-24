@@ -27,14 +27,21 @@ namespace iganet {
   /// @brief Enumerator for the status of the various data
   enum class status : short_t
     {
-      geo  = 1<<0, /*!< geometry data needs update */
-      ref  = 1<<1  /*!< reference data needs update */
+      inputs  = 1<<0,          /*!< inputs need update  */
+      geometry_samples = 1<<1, /*!< geometry samples need update */
+      variable_samples = 1<<2  /*!< variable samples need update */
     };
 
   /// @brief Returns the sum of two status objects
-  status operator+(status lhs, status rhs)
+  status operator+(enum status lhs, enum status rhs)
   {
     return status(static_cast<short_t>(lhs)+static_cast<short_t>(rhs));
+  }
+
+  /// @brief Returns true if flag is set in the given status
+  bool operator&(enum status status, enum status flag)
+  {
+    return bool(static_cast<short_t>(status) & static_cast<short_t>(flag));
   }
   
   /// @brief IgANetOptions
@@ -55,8 +62,7 @@ namespace iganet {
   ///
   /// https://pytorch.org/tutorials/advanced/cpp_frontend.html#the-generator-module  
   template<typename real_t>
-  class IgANetGeneratorImpl :
-    public torch::nn::Module
+  class IgANetGeneratorImpl : public torch::nn::Module
   {
   public:
     /// @brief Default constructor
@@ -73,6 +79,7 @@ namespace iganet {
         {
           layers_.emplace_back(register_module("layer["+std::to_string(i)+"]",
                                                torch::nn::Linear(layers[i], layers[i+1])));
+          layers_.back()->to(dtype<real_t>());
         }
 
       // Generate vector of activation functions
@@ -687,7 +694,7 @@ namespace iganet {
     
     /// @brief Forward evaluation
     torch::Tensor forward(torch::Tensor x)
-    {            
+    {
       // Standard feed-forward neural network
       for (auto [layer, activation] : zip(layers_, activations_))
         x = activation->apply(layer->forward(x));
@@ -704,8 +711,8 @@ namespace iganet {
       for (std::size_t i=0; i<layers_.size(); ++i) {
         archive.write(key+".layer["+std::to_string(i)+"].in_features",
                       torch::full({1}, (int64_t)layers_[i]->options.in_features()));
-        archive.write(key+".layer["+std::to_string(i)+"].out_features",
-                      torch::full({1}, (int64_t)layers_[i]->options.out_features()));
+        archive.write(key+".layer["+std::to_string(i)+"].outputs_features",
+                      torch::full({1}, (int64_t)layers_[i]->options.outputs_features()));
         archive.write(key+".layer["+std::to_string(i)+"].bias",
                       torch::full({1}, (int64_t)layers_[i]->options.bias()));
         
@@ -719,17 +726,17 @@ namespace iganet {
     inline torch::serialize::InputArchive& read(torch::serialize::InputArchive& archive,
                                                 const std::string& key="iganet")
     {
-      torch::Tensor layers, in_features, out_features, bias, activation;
+      torch::Tensor layers, in_features, outputs_features, bias, activation;
       
       archive.read(key+".layers", layers);
       for (int64_t i=0; i<layers.item<int64_t>(); ++i) {
         archive.read(key+".layer["+std::to_string(i)+"].in_features", in_features);
-        archive.read(key+".layer["+std::to_string(i)+"].out_features", out_features);
+        archive.read(key+".layer["+std::to_string(i)+"].outputs_features", outputs_features);
         archive.read(key+".layer["+std::to_string(i)+"].bias", bias);
         layers_.emplace_back(register_module("layer["+std::to_string(i)+"]",
                                              torch::nn::Linear(
                                                                torch::nn::LinearOptions(in_features.item<int64_t>(),
-                                                                                        out_features.item<int64_t>()
+                                                                                        outputs_features.item<int64_t>()
                                                                                         ).bias(bias.item<bool>())
                                                                )));
 
@@ -881,31 +888,36 @@ namespace iganet {
   };
 
   /// @brief IgANet
+  ///
+  /// This class implements the core functionality of IgANets
   template<typename optimizer_t,
            typename geometry_t,
            typename variable_t>
   class IgANet : public core<typename std::common_type<typename geometry_t::value_type,
                                                        typename variable_t::value_type>::type>
   {
-  protected:
+  public:
     /// @brief Value type
     using value_type = typename std::common_type<typename geometry_t::value_type,
                                                  typename variable_t::value_type>::type;
+
+    /// @brief Type of the geometry samples spline objects
+    using geometry_samples_t = std::pair<typename geometry_t::eval_t,
+                                         typename geometry_t::boundary_eval_t>;
     
-    /// @brief Type of the boundary spline object
-    using boundary_t = typename variable_t::boundary_t;
-    
+    /// @brief Type of the variable samples spline objects
+    using variable_samples_t = std::pair<typename variable_t::eval_t,
+                                         typename variable_t::boundary_eval_t>;
+
+  protected:
     /// @brief Spline representation of the geometry
-    geometry_t geo_;
+    geometry_t geometry_;
 
     /// @brief Spline representation of the reference data
-    variable_t ref_;
-
-    /// @brief Spline representation of the boundary conditions
-    boundary_t bdr_;
+    variable_t variable_;
     
     /// @brief Spline representation of the network output
-    variable_t out_;
+    variable_t outputs_;
     
     /// @brief IgANet generator
     IgANetGenerator<value_type> net_;
@@ -932,26 +944,16 @@ namespace iganet {
     : iganet::core<value_type>(core),
       
       // Construct the different spline objects individually
-      geo_(std::get<Is>(geometry_splines)..., init::greville, core),
-      ref_(std::get<Js>(variable_splines)..., init::zeros,    core),
-      bdr_(ref_.boundary()),
+      geometry_(std::get<Is>(geometry_splines)..., init::greville, core),
+      variable_(std::get<Js>(variable_splines)..., init::zeros,    core),
       
-      out_(std::get<Js>(variable_splines)..., init::random,   core),
+      outputs_(std::get<Js>(variable_splines)..., init::random,   core),
 
       
       // Construct the deep neural network
-      net_(concat(std::vector<int64_t>
-                  { get_inputs().size(0)
-                  },
+      net_(concat(std::vector<int64_t>{inputs(0).size(0)},
                   layers,
-                  std::vector<int64_t>
-                  {
-                    //                    out_.geoDim() *
-                    out_.template basisDim<functionspace::interior>() +
-                      //                    out_.geoDim() *
-                    out_.template basisDim<functionspace::boundary>()
-                  }
-                  ),
+                  std::vector<int64_t>{outputs_.as_tensor().size(0)}),
            activations),
 
       // Construct the optimizer
@@ -966,10 +968,9 @@ namespace iganet {
     explicit IgANet(IgANetOptions defaults = {},
                     iganet::core<value_type> core = iganet::core<value_type>{})
       : iganet::core<value_type>(core),
-        geo_(),
-        ref_(),
-        bdr_(),
-        out_(),
+        geometry_(),
+        variable_(),
+        outputs_(),
         opt_(net_->parameters()),
         options_(defaults)
     {}
@@ -1031,56 +1032,42 @@ namespace iganet {
     /// representation of the geometry
     inline const geometry_t& geo() const
     {
-      return geo_;
+      return geometry_;
     }
 
     /// @brief Returns a non-constant reference to the spline
     /// representation of the geometry
     inline geometry_t& geo()
     {
-      return geo_;
+      return geometry_;
     }
 
     /// @brief Returns a constant reference to the spline
-    /// representation of the reference data
-    inline const variable_t& ref() const
+    /// representation of the variables
+    inline const variable_t& variable() const
     {
-      return ref_;
+      return variable_;
     }
 
     /// @brief Returns a non-constant reference to the spline
-    /// representation of the reference data
-    inline variable_t& ref()
+    /// representation of the variables
+    inline variable_t& variable()
     {
-      return ref_;
-    }
-
-    /// @brief Returns a constant reference to the spline
-    /// representation of the boundary contitions
-    inline const boundary_t& bdr() const
-    {
-      return bdr_;      
-    }
-
-    /// @brief Returns a non-constant reference to the spline
-    /// representation of the boundary conditions
-    inline boundary_t& bdr()
-    {
-      return bdr_;      
+      return variable_;
     }
 
     /// @brief Returns a constant reference to the spline
     /// representation of the network's output
-    inline const variable_t& out() const
+    inline const variable_t& outputs() const
     {
-      return out_;
+      return outputs_;
     }
 
     /// @brief Returns a non-constant reference to the spline
     /// representation of the network's output
-    inline variable_t& out()
+    inline variable_t& outputs()
     {
-      return out_;
+      return outputs_;
     }
 
     /// @brief Returns a constant reference to the options structure
@@ -1096,97 +1083,134 @@ namespace iganet {
     }
 
   private:
-    /// @brief Updates the samples
+    /// @brief Returns the geometry samples
     ///
     /// In the default implementation the samples are the Greville
     /// abscissae in the interior of the domain and on the boundary
     /// faces. This behavior can be changed by overriding this virtual
     /// function in a derived class.
     template<size_t... Is>
-    std::pair<typename variable_t::eval_t,
-              typename variable_t::boundary_eval_t>
-    get_samples(std::index_sequence<Is...>) const
+    geometry_samples_t geometry_samples(std::index_sequence<Is...>) const
     {      
-      std::pair<typename variable_t::eval_t,
-                typename variable_t::boundary_eval_t> result;
+      geometry_samples_t samples_;
       
       // Get Greville abscissae inside the domain
-      ((std::get<Is>(result.first) = std::get<Is>(ref_).greville()), ...);
+      ((std::get<Is>(samples_.first) = std::get<Is>(geometry_).greville()), ...);
       
       // Get Greville abscissae at the domain
-      ((std::get<Is>(result.second) = std::get<Is>(bdr_).greville()), ...);
+      ((std::get<Is>(samples_.second) = std::get<Is>(geometry_.boundary()).greville()), ...);
       
-      return result;
+      return samples_;
     }
 
-  public:
-    /// @brief Updates the samples
+    /// @brief Returns the variable samples
     ///
     /// In the default implementation the samples are the Greville
     /// abscissae in the interior of the domain and on the boundary
     /// faces. This behavior can be changed by overriding this virtual
     /// function in a derived class.
-    virtual std::pair<typename variable_t::eval_t,
-                      typename variable_t::boundary_eval_t>
-    get_samples() const
+    template<size_t... Is>
+    variable_samples_t variable_samples(std::index_sequence<Is...>) const
+    {      
+      variable_samples_t samples_;
+      
+      // Get Greville abscissae inside the domain
+      ((std::get<Is>(samples_.first) = std::get<Is>(variable_).greville()), ...);
+      
+      // Get Greville abscissae at the domain
+      ((std::get<Is>(samples_.second) = std::get<Is>(variable_.boundary()).greville()), ...);
+      
+      return samples_;
+    }
+
+  public:
+    /// @brief Returns the geometry samples
+    ///
+    /// In the default implementation the samples are the Greville
+    /// abscissae in the interior of the domain and on the boundary
+    /// faces. This behavior can be changed by overriding this virtual
+    /// function in a derived class.
+    virtual geometry_samples_t geometry_samples(int64_t epoch) const
+    {
+      if constexpr (geometry_t::dim() == 1)
+        return {geometry_.greville(), geometry_.boundary().greville()};
+      else
+        return geometry_samples(std::make_index_sequence<geometry_t::dim()>{});
+    }
+
+    /// @brief Returns the variable samples
+    ///
+    /// In the default implementation the samples are the Greville
+    /// abscissae in the interior of the domain and on the boundary
+    /// faces. This behavior can be changed by overriding this virtual
+    /// function in a derived class.
+    virtual variable_samples_t variable_samples(int64_t epoch) const
     {
       if constexpr (variable_t::dim() == 1)
-        return {ref_.greville(), bdr_.greville()};
+        return {variable_.greville(), variable_.boundary().greville()};
       else
-        return get_samples(std::make_index_sequence<variable_t::dim()>{});
+        return variable_samples(std::make_index_sequence<variable_t::dim()>{});
     }
     
-    /// @brief Updates the network inputs
-    virtual torch::Tensor get_inputs() const
+    /// @brief Returns the network inputs
+    ///
+    /// In the default implementation the inputs are the controll
+    /// points of the geometry and the reference spline objects. This
+    /// behavior can be changed by overriding this virtual function in
+    /// a derived class.
+    virtual torch::Tensor inputs(int64_t epoch) const
     {
-      return torch::cat({geo_.as_tensor(), ref_.as_tensor()});
+      return torch::cat({geometry_.as_tensor(), variable_.as_tensor()});
     }
     
-    /// @brief Updates object at the beginning of each epoch
-    virtual status get_epoch(int64_t epoch) const
-    {
-      return (epoch == 0
-              ? status::geo + status::ref
-              : status(0));
-    }
+    /// @brief Initializes epoch
+    virtual enum status epoch(int64_t) = 0;
+
+    /// @brief Computes the loss function
+    virtual torch::Tensor loss(const torch::Tensor&,
+                               const geometry_samples_t&,
+                               const variable_samples_t&,
+                               int64_t, enum status) = 0;
     
     /// @brief Trains the IgANet
     virtual void train()
-    {      
-      // Get inputs for zeroth epoch
-      auto inputs = get_inputs();
+    {
+      torch::Tensor inputs, outputs, loss;
+      geometry_samples_t geometry_samples;
+      variable_samples_t variable_samples;
+      status status;
       
-      // Get samples
-      auto samples = get_samples();     
-
       // Loop over epochs
       for (int64_t epoch = 0; epoch != options_.max_epoch(); ++epoch)
         {
           // Update from user-defined callback function
-          auto status = get_epoch(epoch);
+          status = this->epoch(epoch);
+          
+          if (status & status::inputs)
+            inputs = this->inputs(epoch);
+          
+          if (status & status::geometry_samples)
+            geometry_samples = this->geometry_samples(epoch);
 
-          // TODO: react on status
+          if (status & status::variable_samples)
+            variable_samples = this->variable_samples(epoch);
           
           // Reset gradients
           net_->zero_grad();    
-
+          
           // Execute the model on the inputs
-          auto pred = net_->forward(inputs);
-
-          // Evaluate solution
-          auto out = out_.eval( samples.first );
+          outputs = net_->forward(inputs);
           
           // Compute the loss value
-          auto loss_pde = torch::mse_loss( pred , pred /*rhs(0)*/ );
-          std::cout << "loss = " << loss_pde.template item<value_type>() << std::endl;
+          loss = this->loss(outputs, geometry_samples, variable_samples, epoch, status);
           
           // Compute gradients of the loss w.r.t. the model parameters
-          loss_pde.backward({}, true, false);
+          loss.backward({}, true, false);
           
           // Update the parameters based on the calculated gradients
           opt_.step();
           
-          if (loss_pde.template item<value_type>() < options_.min_loss())
+          if (loss.template item<value_type>() < options_.min_loss())
             break;
         }
     }
@@ -1197,31 +1221,12 @@ namespace iganet {
       os << core<value_type>::name()
          << "(\n"
          << "net = " << net_ << "\n"
-         << "geo = " << geo_ << "\n"
-         << "ref = " << ref_ << "\n"
-         << "bdr = " << bdr_ << "\n"
-         << "out = " << out_
+         << "geo = " << geometry_ << "\n"
+         << "ref = " << variable_ << "\n"
+         << "out = " << outputs_
          << "\n)";
     }
-
-    /// @brief Plots the spline representation of the geometry
-    inline auto plot_geo(int64_t xres=10, int64_t yres=10, int64_t zres=10) const
-    {
-      return geo_.plot(xres, yres, zres);
-    }
-
-    /// @brief Plots the spline representation of the reference data
-    inline auto plot_ref(int64_t xres=10, int64_t yres=10, int64_t zres=10) const
-    {
-      return ref_.plot(geo_, xres, yres, zres);
-    }
-
-    /// @brief Plots the spline representation of the network's output
-    inline auto plot_out(int64_t xres=10, int64_t yres=10, int64_t zres=10) const
-    {
-      return out_.plot(geo_, xres, yres, zres);
-    }
-
+    
     /// @brief Saves the IgANet to file
     inline void save(const std::string& filename,
                      const std::string& key="iganet") const
@@ -1243,9 +1248,9 @@ namespace iganet {
     inline torch::serialize::OutputArchive& write(torch::serialize::OutputArchive& archive,
                                                   const std::string& key="iganet") const
     {
-      geo_.write(archive, key+".geo");
-      ref_.write(archive, key+".ref");
-      out_.write(archive, key+".out");
+      geometry_.write(archive, key+".geo");
+      variable_.write(archive, key+".ref");
+      outputs_.write(archive, key+".out");
       
       net_->write(archive, key+".net");      
       torch::serialize::OutputArchive archive_net;
@@ -1263,9 +1268,9 @@ namespace iganet {
     inline torch::serialize::InputArchive& read(torch::serialize::InputArchive& archive,
                                                 const std::string& key="iganet")
     {      
-      geo_.read(archive, key+".geo");
-      ref_.read(archive, key+".ref");
-      out_.read(archive, key+".out");
+      geometry_.read(archive, key+".geo");
+      variable_.read(archive, key+".ref");
+      outputs_.read(archive, key+".out");
 
       net_->read(archive, key+".net");      
       torch::serialize::InputArchive archive_net;      
@@ -1285,10 +1290,9 @@ namespace iganet {
     {
       bool result(true);
 
-      result *= (geo_ == other.geo());
-      result *= (ref_ == other.ref());
-      result *= (bdr_ == other.bdr());
-      result *= (out_ == other.out());
+      result *= (geometry_ == other.geometry());
+      result *= (variable_ == other.variable());
+      result *= (outputs_  == other.outputs());
 
       return result;
     }
@@ -1311,4 +1315,75 @@ namespace iganet {
     return os;
   }
 
+  /// @brief IgANetCustomizable
+  ///
+  /// This class implements a customizable variant of IgANets that
+  /// provides types and attributes for precomputing indices and basis
+  /// functions
+  template<typename optimizer_t,
+           typename geometry_t,
+           typename variable_t>
+  class IgANetCustomizable
+  {    
+  public:
+    /// @brief Type of the knot indices of geometry_t type in the interior
+    using geometry_interior_knot_indices_t =
+      decltype(std::declval<geometry_t>().template find_knot_indices<functionspace::interior>(std::declval<typename geometry_t::eval_t>()));
+
+    /// @brief Type of the knot indices of geometry_t type at the boundary
+    using geometry_boundary_knot_indices_t =
+      decltype(std::declval<geometry_t>().template find_knot_indices<functionspace::boundary>(std::declval<typename geometry_t::boundary_eval_t>()));
+  
+    /// @brief Type of the knot indices of variable_t type in the interior
+    using variable_interior_knot_indices_t =
+      decltype(std::declval<variable_t>().template find_knot_indices<functionspace::interior>(std::declval<typename variable_t::eval_t>()));
+  
+    /// @brief Type of the knot indices of boundary_t type at the boundary
+    using variable_boundary_knot_indices_t =
+      decltype(std::declval<variable_t>().template find_knot_indices<functionspace::boundary>(std::declval<typename variable_t::boundary_eval_t>()));
+
+  protected:
+    /// @brief Knot indices of geometry_t type in the interior
+    geometry_interior_knot_indices_t geometry_interior_knot_indices_;
+
+    /// @brief Knot indices of geometry_t type at the boundary
+    geometry_boundary_knot_indices_t geometry_boundary_knot_indices_;
+  
+    /// @brief Knot indices of variable_t type in the interior
+    variable_interior_knot_indices_t variable_interior_knot_indices_;
+
+    /// @brief Knot indices of variable_t type at the boundary
+    variable_boundary_knot_indices_t variable_boundary_knot_indices_;
+
+  public:
+    /// @brief Type of the coefficient indices of geometry_t type in the interior
+    using geometry_interior_coeff_indices_t =
+      decltype(std::declval<geometry_t>().template find_coeff_indices<functionspace::interior>(std::declval<typename geometry_t::eval_t>()));
+
+    /// @brief Type of the coefficient indices of geometry_t type at the boundary
+    using geometry_boundary_coeff_indices_t =
+      decltype(std::declval<geometry_t>().template find_coeff_indices<functionspace::boundary>(std::declval<typename geometry_t::boundary_eval_t>()));
+  
+    /// @brief Type of the coefficient indices of variable_t type in the interior
+    using variable_interior_coeff_indices_t =
+      decltype(std::declval<variable_t>().template find_coeff_indices<functionspace::interior>(std::declval<typename variable_t::eval_t>()));
+  
+    /// @brief Type of the coefficient indices of variable_t type at the boundary
+    using variable_boundary_coeff_indices_t =
+      decltype(std::declval<variable_t>().template find_coeff_indices<functionspace::boundary>(std::declval<typename variable_t::boundary_eval_t>()));
+
+  protected:
+    /// @brief Coefficient indices of geometry_t type in the interior
+    geometry_interior_coeff_indices_t geometry_interior_coeff_indices_;
+
+    /// @brief Coefficient indices of geometry_t type at the vboundary
+    geometry_boundary_coeff_indices_t geometry_boundary_coeff_indices_;
+  
+    /// @brief Coefficient indices of variable_t type in the interior
+    variable_interior_coeff_indices_t variable_interior_coeff_indices_;
+
+    /// @brief Coefficient indices of variable_t type at the boundary
+    variable_boundary_coeff_indices_t variable_boundary_coeff_indices_;
+  };
+  
 } // namespace iganet
