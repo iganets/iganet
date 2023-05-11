@@ -695,6 +695,25 @@ namespace iganet {
       return torch::cat({std::get<Is>(BoundaryCore::bdr_).as_tensor()...});
     }
 
+    /// @brief Sets all coefficients of all spline objects from a
+    /// single tensor
+    ///
+    /// @result Updates spline object
+    template<std::size_t... Is>
+    inline auto& from_tensor(std::index_sequence<Is...>,
+                             const torch::Tensor& coeffs)
+    {
+      std::size_t counter(0);
+      auto lambda = [&counter](std::size_t increment){ return counter+=increment; };
+
+      (std::get<Is>(BoundaryCore::bdr_).from_tensor( coeffs.index({torch::indexing::Slice(counter,
+                                                                                          lambda(std::get<Is>(BoundaryCore::bdr_).ncumcoeffs() *
+                                                                                                 std::get<Is>(BoundaryCore::bdr_).geoDim()))}) )
+        , ...);
+      
+      return *this;
+    }
+
   public:    
     /// @brief Returns all coefficients of all spline objects as a
     /// single tensor
@@ -703,6 +722,15 @@ namespace iganet {
     inline torch::Tensor as_tensor() const
     {
       return as_tensor(std::make_index_sequence<BoundaryCore::sides()>{});
+    }
+
+    /// @brief Sets all coefficients of all spline objects from a
+    /// single tensor
+    ///
+    /// @result Updated spline objects
+    inline auto& from_tensor(const torch::Tensor& coeffs)
+    {
+      return from_tensor(std::make_index_sequence<BoundaryCore::sides()>{}, coeffs);
     }
     
   private:

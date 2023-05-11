@@ -654,6 +654,18 @@ namespace iganet {
     {
       return torch::cat({coeffs_[Is]...});
     }
+
+    /// @brief Sets all coefficients from a single tensor
+    ///
+    /// @result Updates spline object
+    template<std::size_t... Is>
+    inline auto& from_tensor(std::index_sequence<Is...>,
+                             const torch::Tensor& coeffs)
+    {
+      ((coeffs_[Is] = coeffs.index({torch::indexing::Slice(Is*ncumcoeffs(),
+                                                           (Is+1)*ncumcoeffs())})), ...);
+      return *this;
+    }
     
   public:    
     /// @brief Returns all coefficients as a single tensor
@@ -662,6 +674,15 @@ namespace iganet {
     inline torch::Tensor as_tensor() const
     {
       return as_tensor(std::make_index_sequence<geoDim_>{});
+    }
+
+
+    /// @brief Sets all coefficients from a single tensor
+    ///
+    /// @result Updated spline object
+    inline auto& from_tensor(const torch::Tensor& coeffs)
+    {
+      return from_tensor(std::make_index_sequence<geoDim_>{}, coeffs);
     }
    
     /// @brief Returns the Greville abscissae

@@ -148,12 +148,26 @@ namespace iganet {
         return torch::cat({std::get<Is>(*this).as_tensor()...,
                            std::get<Is>(boundary_).as_tensor()...});
       }
+
+      /// @brief Sets the coefficients of all spaces from a single tensor
+      template<size_t... Is, size_t... Js>
+      inline auto& from_tensor(std::index_sequence<Is...>,
+                               const torch::Tensor& coeffs)
+      {
+        return *this;
+      }
       
     public:
       /// @brief Returns the coefficients of all spaces as a single tensor
       inline torch::Tensor as_tensor() const
       {
         return as_tensor(std::make_index_sequence<sizeof...(spline_t)>{});
+      }
+
+      /// @brief Sets the coefficients of all spaces from a single tensor
+      inline auto& from_tensor(const torch::Tensor& coeffs)
+      {
+        return as_tensor(std::make_index_sequence<sizeof...(spline_t)>{}, coeffs);
       }
       
       /// @brief Returns a constant reference to the boundary spline object
@@ -582,6 +596,14 @@ namespace iganet {
       inline torch::Tensor as_tensor() const
       {
         return torch::cat({Base::as_tensor(), boundary_.as_tensor()});
+      }
+
+      /// @brief Sets the coefficients of all spaces from a single tensor
+      inline auto& from_tensor(const torch::Tensor& coeffs)
+      {
+        Base::from_tensor(coeffs.index({torch::indexing::Slice(0, Base::geoDim()*Base::ncumcoeffs())}));
+        boundary_.from_tensor(coeffs.index({torch::indexing::Slice(Base::geoDim()*Base::ncumcoeffs(), torch::indexing::None)}));       
+        return *this;
       }
 
       /// @brief Returns a constant reference to the boundary spline object
