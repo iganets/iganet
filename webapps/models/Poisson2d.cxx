@@ -37,9 +37,19 @@ namespace iganet {
       return "Poisson 2d model";
     }
 
-    /// @brief Returns the model's Options
+    /// @brief Returns the model's options
     std::string getOptions() const override {
-      return "{\"ncoeffs\" : \"int\"}";
+      return "[]";
+    }
+
+    /// @brief Returns the model's inputs
+    std::string getInputs() const override {
+      return "[]";
+    }
+
+    /// @brief Returns the model's outputs
+    std::string getOutputs() const override {
+      return "[]";
     }
     
     /// @brief Serializes the model to JSON
