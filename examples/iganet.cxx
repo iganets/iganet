@@ -21,14 +21,29 @@ template<typename optimizer_t,
          typename variable_t>
 class poisson : public iganet::IgANet<optimizer_t, geometry_t, variable_t>
 {
+private:
+  /// @brief Type of the base class
+  using Base = iganet::IgANet<optimizer_t, geometry_t, variable_t>;
+  
 public:
+  /// @brief Constructors from the base class
   using iganet::IgANet<optimizer_t, geometry_t, variable_t>::IgANet;
 
-  iganet::status get_epoch(int64_t epoch) const override
+  /// @brief Initializes the epoch
+  iganet::status epoch(int64_t epoch) override
   {
     std::cout << "Epoch " << std::to_string(epoch) << ": ";
     return iganet::status(0);
   }
+
+  /// @brief Computes the loss function
+  torch::Tensor loss(const torch::Tensor& outputs,
+                     const typename Base::geometry_samples_t& geometry_samples,
+                     const typename Base::variable_samples_t& variable_samples,
+                     int64_t epoch, iganet::status status) override
+  {
+    return torch::zeros({1});
+  }  
 };
 
 int main()

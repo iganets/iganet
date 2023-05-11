@@ -19,97 +19,85 @@
 template<typename optimizer_t,
          typename geometry_t,
          typename variable_t>
-class poisson : public iganet::IgANet<optimizer_t, geometry_t, variable_t>
+class poisson : public iganet::IgANet<optimizer_t, geometry_t, variable_t>,
+  public iganet::IgANetCustomizable<optimizer_t, geometry_t, variable_t>
 {
-private:
-#if 0
-    /// @brief Type of the knot indices of geometry_t type
-    using geometry_knot_indices_t =
-      decltype(std::declval<geometry_t>().find_knot_indices(std::declval<typename geometry_t::eval_t>()));
-    
-    /// @brief Type of the knot indices of variable_t type
-    using variable_knot_indices_t =
-      decltype(std::declval<variable_t>().find_knot_indices(std::declval<typename variable_t::eval_t>()));
-
-    /// @brief Type of the knot indices of boundary_t type
-    using boundary_knot_indices_t =
-      decltype(std::declval<variable_t>().template find_knot_indices<functionspace::boundary>(std::declval<typename variable_t::boundary_eval_t>()));
-
-    /// @brief Type of the basis functions of geometry_t type
-    using geometry_basfunc_t =
-      decltype(std::declval<geometry_t>().eval_basfunc(std::declval<typename geometry_t::eval_t>()));
-    
-    /// @brief Type of the basis functions of variable_t type
-    using variable_basfunc_t =
-      decltype(std::declval<variable_t>().eval_basfunc(std::declval<typename variable_t::eval_t>()));
-
-    /// @brief Type of the basis functions of boundary_t type
-    using boundary_basfunc_t =
-      decltype(std::declval<variable_t>().template eval_basfunc<functionspace::boundary>(std::declval<typename variable_t::boundary_eval_t>()));
-
-    /// @brief Type of the coefficient indices of geometry_t type
-    using geometry_coeff_indices_t =
-      decltype(std::declval<geometry_t>().find_coeff_indices(std::declval<typename geometry_t::eval_t>()));
-    
-    /// @brief Type of the coefficient indices of variable_t type
-    using variable_coeff_indices_t =
-      decltype(std::declval<variable_t>().find_coeff_indices(std::declval<typename variable_t::eval_t>()));
-
-    /// @brief Type of the coefficient indices of boundary_t type
-    using boundary_coeff_indices_t =
-      decltype(std::declval<variable_t>().template find_coeff_indices<functionspace::boundary>(std::declval<typename variable_t::boundary_eval_t>()));
-
-    /// @brief Knot indices of geometry_t type
-    geometry_knot_indices_t geo_knot_indices_;
-
-    /// @brief Knot indices of variable_t type
-    variable_knot_indices_t ref_knot_indices_;
-
-    /// @brief Knot indices of boundary_t type
-    boundary_knot_indices_t bdr_knot_indices_;
-
-    /// @brief Basis functions of geometry_t type
-    geometry_basfunc_t geo_basfunc_;
-
-    /// @brief Basis functions of variable_t type
-    variable_basfunc_t ref_basfunc_;
-
-    /// @brief Basis functions of boundary_t type
-    boundary_basfunc_t bdr_basfunc_;
-
-    /// @brief Coefficient indices of geometry_t type
-    geometry_coeff_indices_t geo_coeff_indices_;
-
-    /// @brief Coefficient indices of variable_t type
-    variable_coeff_indices_t ref_coeff_indices_;
-
-    /// @brief Coefficient indices of boundary_t type
-    boundary_coeff_indices_t bdr_coeff_indices_;
-#endif  
 public:
-  using iganet::IgANet<optimizer_t, geometry_t, variable_t>::IgANet;
+  bool pde;
+  
+private:
+  /// @brief Type of the base class
+  using Base = iganet::IgANet<optimizer_t, geometry_t, variable_t>;
 
-  iganet::status get_epoch(int64_t epoch) const override
-  {
+  /// @brief Type of the customizable class
+  using Customizable = iganet::IgANetCustomizable<optimizer_t, geometry_t, variable_t>;
+  
+public:  
+  /// @brief Constructors from the base class
+  using iganet::IgANet<optimizer_t, geometry_t, variable_t>::IgANet;
+  
+  /// @brief Initializes the epoch
+  iganet::status epoch(int64_t epoch) override
+  {    
     std::cout << "Epoch " << std::to_string(epoch) << ": ";
-    return iganet::status(0);
+    
+    return (epoch == 0
+            ? iganet::status::inputs + iganet::status::geometry_samples + iganet::status::variable_samples
+            : iganet::status::inputs);    
   }
 
-#if 0
-   // Evaluate constant right-hand side
-      auto knot_indices  = ref_.template find_knot_indices<functionspace::interior>(samples.first);
-      auto basfunc       = ref_.template eval_basfunc<functionspace::interior>(samples.first, knot_indices);
-      auto coeff_indices = ref_.template find_coeff_indices<functionspace::interior>(knot_indices);
+  /// @brief Computes the loss function
+  torch::Tensor loss(const torch::Tensor& outputs,
+                     const typename Base::geometry_samples_t& geometry_samples,
+                     const typename Base::variable_samples_t& variable_samples,
+                     int64_t epoch, iganet::status status) override
+  {
+    // Update indices and precompute basis functions for geometry
+    if (status & iganet::status::geometry_samples) {
+      Customizable::geometry_interior_knot_indices_  =
+        Base::geometry_.template find_knot_indices<iganet::functionspace::interior>(geometry_samples.first);
+      Customizable::geometry_interior_coeff_indices_ =
+        Base::geometry_.template find_coeff_indices<iganet::functionspace::interior>(Customizable::geometry_interior_knot_indices_);
 
-      auto rhs = ref_.eval_from_precomputed(basfunc, coeff_indices, samples.first);
+      Customizable::geometry_boundary_knot_indices_  =
+        Base::geometry_.template find_knot_indices<iganet::functionspace::boundary>(geometry_samples.second);
+      Customizable::geometry_boundary_coeff_indices_ =
+        Base::geometry_.template find_coeff_indices<iganet::functionspace::boundary>(Customizable::geometry_boundary_knot_indices_);      
+    }
 
-      // Evaluate boundary values
-      auto bdr_knot_indices  = ref_.template find_knot_indices<functionspace::boundary>(samples.second);
-      auto bdr_basfunc       = ref_.template eval_basfunc<functionspace::boundary>(samples.second, bdr_knot_indices);
-      auto bdr_coeff_indices = ref_.template find_coeff_indices<functionspace::boundary>(bdr_knot_indices);
-            
-      auto rhs_bdr = ref_.template eval_from_precomputed<functionspace::boundary>(bdr_basfunc, bdr_coeff_indices, samples.second);
-#endif
+    // Update indices and precompute basis functions for variable
+    if (status & iganet::status::variable_samples) {
+      Customizable::variable_interior_knot_indices_  =
+        Base::variable_.template find_knot_indices<iganet::functionspace::interior>(variable_samples.first);
+      Customizable::variable_interior_coeff_indices_ =
+        Base::variable_.template find_coeff_indices<iganet::functionspace::interior>(Customizable::variable_interior_knot_indices_);
+
+      Customizable::variable_boundary_knot_indices_  =
+        Base::variable_.template find_knot_indices<iganet::functionspace::boundary>(variable_samples.second);
+      Customizable::variable_boundary_coeff_indices_ =
+        Base::variable_.template find_coeff_indices<iganet::functionspace::boundary>(Customizable::variable_boundary_knot_indices_);      
+    }
+
+    Base::outputs_.from_tensor(outputs);
+    auto rhs = Base::variable_.eval(variable_samples.first);
+    
+    // Evaluate loss function
+    if (!pde)
+      return torch::mse_loss(*Base::outputs_.eval(variable_samples.first)[0], *rhs[0]);
+    
+    auto sol_ilaplace = Base::outputs_.ihess(Base::geometry_, variable_samples.first);
+    auto sol_boundary = Base::outputs_.template eval<iganet::functionspace::boundary>(variable_samples.second);    
+    auto bdr          = Base::variable_.template eval<iganet::functionspace::boundary>(variable_samples.second);
+
+    auto loss_pde  = torch::mse_loss(*sol_ilaplace[0] + *sol_ilaplace[3], *rhs[0]);
+    auto loss_bdr0 = torch::mse_loss(*std::get<0>(sol_boundary)[0], *std::get<0>(bdr)[0]);
+    auto loss_bdr1 = torch::mse_loss(*std::get<1>(sol_boundary)[0], *std::get<1>(bdr)[0]);
+    auto loss_bdr2 = torch::mse_loss(*std::get<2>(sol_boundary)[0], *std::get<2>(bdr)[0]);
+    auto loss_bdr3 = torch::mse_loss(*std::get<3>(sol_boundary)[0], *std::get<3>(bdr)[0]);
+
+    //std::cout << loss_pde << ", " << loss_bdr0 << ", " << loss_bdr1 << ", " << loss_bdr2 << ", " << loss_bdr3 << std::endl;
+    return loss_pde + 100*(loss_bdr0 + loss_bdr1 + loss_bdr2 + loss_bdr3);
+  }
 };
 
 int main()
@@ -121,24 +109,65 @@ int main()
   using optimizer_t = torch::optim::Adam;
   using real_t = double;
   
-  using geometry_t  = iganet::S2<iganet::UniformBSpline<real_t, 2, 3, 2>>;
-  using variable_t  = iganet::S2<iganet::UniformBSpline<real_t, 2, 3, 2>>;
+  using geometry_t  = iganet::S2<iganet::UniformBSpline<real_t, 2, 3, 3>>;
+  using variable_t  = iganet::S2<iganet::UniformBSpline<real_t, 1, 3, 3>>;
   
   poisson<optimizer_t, geometry_t, variable_t> net(// Number of neurons per layers
-                                                   {100,100},
+                                                   {50,50,50,50,50,50,50},
                                                    // Activation functions
                                                    {
+                                                     {iganet::activation::relu},
+                                                     {iganet::activation::relu},
+                                                     {iganet::activation::relu},
+                                                     {iganet::activation::relu},
+                                                     {iganet::activation::relu},
                                                      {iganet::activation::relu},
                                                      {iganet::activation::relu},
                                                      {iganet::activation::none}
                                                    },
                                                    // Number of B-spline coefficients
-                                                   std::tuple(iganet::to_array(5_i64, 4_i64)));
+                                                   std::tuple(iganet::to_array(7_i64, 7_i64)));
 
-  net.options().max_epoch(1000);
+  net.variable().transform( [](const std::array<real_t,2> xi)
+  {
+    return std::array<real_t,1>{ sin(M_PI*xi[0]) * sin(M_PI*xi[1]) + 1};      
+  } );
+  
+  net.options().max_epoch(100);
   net.options().min_loss(1e-8);
   
   net.train();
+
+  net.variable().transform( [](const std::array<real_t,2> xi)
+  {
+    return std::array<real_t,1>{ -2.0 * M_PI * M_PI * sin(M_PI*xi[0]) * sin(M_PI*xi[1]) };      
+  } );
+
+  net.variable().boundary().side<1>().transform( [](const std::array<real_t,1> xi)
+  {
+    return std::array<real_t,1>{ 1.0 };      
+  } );
+
+  net.variable().boundary().side<2>().transform( [](const std::array<real_t,1> xi)
+  {
+    return std::array<real_t,1>{ 1.0 };      
+  } );
+
+  net.variable().boundary().side<3>().transform( [](const std::array<real_t,1> xi)
+  {
+    return std::array<real_t,1>{ 1.0 };      
+  } );
+
+  net.variable().boundary().side<4>().transform( [](const std::array<real_t,1> xi)
+  {
+    return std::array<real_t,1>{ 1.0 };      
+  } );
+  
+  net.pde = true;
+  net.options().max_epoch(30000);
+  net.train();
+  
+  net.geometry().plot(net.outputs(), 50, 50);
   
   return 0;
 }

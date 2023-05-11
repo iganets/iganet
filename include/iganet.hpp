@@ -1030,14 +1030,14 @@ namespace iganet {
     
     /// @brief Returns a constant reference to the spline
     /// representation of the geometry
-    inline const geometry_t& geo() const
+    inline const geometry_t& geometry() const
     {
       return geometry_;
     }
 
     /// @brief Returns a non-constant reference to the spline
     /// representation of the geometry
-    inline geometry_t& geo()
+    inline geometry_t& geometry()
     {
       return geometry_;
     }
@@ -1194,21 +1194,27 @@ namespace iganet {
 
           if (status & status::variable_samples)
             variable_samples = this->variable_samples(epoch);
-          
-          // Reset gradients
-          net_->zero_grad();    
-          
-          // Execute the model on the inputs
-          outputs = net_->forward(inputs);
-          
-          // Compute the loss value
-          loss = this->loss(outputs, geometry_samples, variable_samples, epoch, status);
-          
-          // Compute gradients of the loss w.r.t. the model parameters
-          loss.backward({}, true, false);
+
+          auto closure = [&]()
+          {          
+            // Reset gradients
+            net_->zero_grad();    
+            
+            // Execute the model on the inputs
+            outputs = net_->forward(inputs);
+            
+            // Compute the loss value
+            loss = this->loss(outputs, geometry_samples, variable_samples, epoch, status);
+            
+            // Compute gradients of the loss w.r.t. the model parameters
+            loss.backward({}, true, false);
+
+            std::cout << loss.template item<value_type>() << std::endl;
+            return loss;
+          };
           
           // Update the parameters based on the calculated gradients
-          opt_.step();
+          opt_.step(closure);
           
           if (loss.template item<value_type>() < options_.min_loss())
             break;
