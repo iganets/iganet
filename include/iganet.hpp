@@ -712,7 +712,7 @@ namespace iganet {
         archive.write(key+".layer["+std::to_string(i)+"].in_features",
                       torch::full({1}, (int64_t)layers_[i]->options.in_features()));
         archive.write(key+".layer["+std::to_string(i)+"].outputs_features",
-                      torch::full({1}, (int64_t)layers_[i]->options.outputs_features()));
+                      torch::full({1}, (int64_t)layers_[i]->options.out_features()));
         archive.write(key+".layer["+std::to_string(i)+"].bias",
                       torch::full({1}, (int64_t)layers_[i]->options.bias()));
         
