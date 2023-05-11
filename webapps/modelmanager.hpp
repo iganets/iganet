@@ -36,11 +36,13 @@ namespace iganet {
     };
 
   /// @brief Enumerator for specifying the output type
-  enum class output
+  enum class io
     {
-      scalar      = 0, /*!< scalar value */
-      scalarfield = 1, /*!< scalar field */
-      vectorfield = 2  /*!< vector field */
+      scalar               = 0, /*!< scalar value */
+      scalarfield          = 1, /*!< scalar field */
+      vectorfield          = 2, /*!< vector field */
+      scalarfield_boundary = 3, /*!< scalar field at the boundary */
+      vectorfield_boundary = 4  /*!< vector field at the boundary */
     };
   
   /// @brief Model interface
@@ -58,11 +60,19 @@ namespace iganet {
     /// @brief Returns the model's options
     virtual std::string getOptions() const = 0;
 
+    /// @brief Returns the model's inputs
+    virtual std::string getInputs() const = 0;
+
+    /// @brief Returns the model's outputs
+    virtual std::string getOutputs() const = 0;
+
     /// @brief Returns the model's JSON serialization
     virtual nlohmann::json getModel() const {
       return nlohmann::json::parse(std::string("{ \"name\" : \"") + getName() + "\"," +
                                    "\"description\" : \"" + getDescription() + "\"," +
-                                   "\"options\" : " + getOptions() + " }");
+                                   "\"options\" : " + getOptions() + "\"," +
+                                   "\"inputs\" : " + getInputs() + "\"," +
+                                   "\"outputs\" : " + getOutputs() + " }");
     }
 
     /// @brief Serializes the model to JSON
