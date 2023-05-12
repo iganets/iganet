@@ -70,8 +70,8 @@ namespace iganet {
     virtual nlohmann::json getModel() const {
       return nlohmann::json::parse(std::string("{ \"name\" : \"") + getName() + "\"," +
                                    "\"description\" : \"" + getDescription() + "\"," +
-                                   "\"options\" : " + getOptions() + "\"," +
-                                   "\"inputs\" : " + getInputs() + "\"," +
+                                   "\"options\" : " + getOptions() + "," +
+                                   "\"inputs\" : "  + getInputs()  + "," +
                                    "\"outputs\" : " + getOutputs() + " }");
     }
 

@@ -217,7 +217,7 @@ namespace iganet {
 
       /// @brief Returns the model's inputs
       std::string getInputs() const override {
-        return "[]";
+        return "{}";
       }
 
       /// @brief Returns the model's outputs
