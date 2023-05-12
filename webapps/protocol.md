@@ -4,10 +4,10 @@ _Version: 0.7 (12-05-2023)_
 
 ## Table of content
 
-1.  [Session commands](protocol#session-commands)
-2.  [Model commands](protocol#model-commands)
-3.  [Models](protocol#models)
-4.  [Descriptors](protocol#descriptors)
+1.  [Session commands](protocol.md#session-commands)
+2.  [Model commands](protocol.md#model-commands)
+3.  [Models](protocol.md#models)
+4.  [Descriptors](protocol.md#descriptors)
 
 All WebApps implement the following [WebSocket](https://en.wikipedia.org/wiki/WebSocket)-based client-server protocol. All communication is initiated by the client and responded by the server. Only broadcasts are initiated by the server and responded by all clients, e.g., when a client request leads to a state change of the server, then an update is broadcasted to all clients connected to the same session.
 
