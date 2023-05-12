@@ -447,9 +447,9 @@ The following `data` can be passed when [getting all model attributes](protocol.
 
     Currently, the float values are stored as plain JSON string but it is planned to change to binary base64 encoding in the future.
 
-## Desccriptors
+## Descriptors
 
-### Optiontype descriptor
+### Option-type descriptor
 
 The `optiontype descriptor` must be one of the following
 
@@ -466,7 +466,7 @@ The `optiontype descriptor` must be one of the following
 
 Types `list` and `select` correspond to enumerators with the mapping `option0 -> 0`, `option1 -> 1` etc. It is therefore expected that if, say, `option1` is chosen in a `select` type, the UI sends the value `1` in the next request. Similarly, if, say, `options0` and `options1` are chosen in a `list` type, the UI sends the value `[0,1]` in the next request. 
 
-### Inputs/outputs descriptor
+### Input/output-type descriptor
 
 The `iotype descriptor` must be one of the following
 
@@ -477,6 +477,17 @@ The `iotype descriptor` must be one of the following
  | `vectorfield` | vector field (e.g., velocity) | 2 |
  | `scalarfield_boundary` | scalar field at the boundary (e.g., pressure boundary conditions) | 3 |
  | `vectorfield_boundary` | vector field at the boundary (e.g., velocity) | 4 |
+
+ ### Capability descriptor
+
+ The `capability descriptor` must be one of the following
+
+ | `type`        | description   | enum value |
+ |--------------:|:--------------|------------|
+ | `loadModel`   | load model from file | 0 |
+ | `loadXML`     | load object from XML file | 0 |
+ | `saveModel`   | save model to file | 0 |
+ | `saveXML`     | save object to XML file | 0 |
 ---
 
 # TODO
