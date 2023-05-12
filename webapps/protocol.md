@@ -17,8 +17,8 @@ _Client request_
 
 ```
 {
-    "id"      : <UUID>
-    "request" : <command>[/<session-id>][/<model-id>][/<attribute>]
+    "id"      : <UUID>,
+    "request" : <command>[/<session-id>][/<model-id>][/<attribute>],
   [ "data"    : {...} ]
 }
 ```
@@ -27,9 +27,9 @@ _Server response_
 
 ```
 {
-    "request" : <UUID>
-    "status"  : <integer>
-  [ "reason"  : <string> ]
+    "request" : <UUID>,
+    "status"  : <integer>,
+  [ "reason"  : <string> ],
   [ "data"    : {...} ]
 }
 ```
@@ -216,7 +216,7 @@ In what follows, only the non-generic parts of the protocol are specified in mor
    "data"    : {...}
    ```
 
-   The list of supported models is sent by the server upon creating a new session or connecting to an existing session. For details see Sections __1.2 Create a new session__ and __3 Models__.
+   The list of supported models is sent by the server upon creating a new session or connecting to an existing session. See [Create a new session](protocol.md#create-a-new-session) and [Models](protocol.md#models) for details.
 
    _Server response_
    ```
@@ -253,7 +253,7 @@ In what follows, only the non-generic parts of the protocol are specified in mor
    "request" : get/<session-id>/<model-id>
    ```
 
-   The attributes for the different models are given in Section __3 Models__
+   The attributes for the different models are given in [Models](protocol.md#models).
 
    _Server response_
    ```
@@ -273,7 +273,7 @@ In what follows, only the non-generic parts of the protocol are specified in mor
    "request" : get/<session-id>/<model-id>/<attribute>
    ```
 
-   The attributes for the different models are given in Section __3 Models__
+   The attributes for the different models are given in [Models](protocol.md#models).
 
    _Server response_
    ```
@@ -294,7 +294,7 @@ In what follows, only the non-generic parts of the protocol are specified in mor
    "request" : put/<session-id>/<model-id>/<attribute>
    ```
 
-   The updatable attributes for the different models are given in Section __3 Models__
+   The updatable attributes for the different models are given in [Models](protocol.md#models).
 
    _Server response_
    ```
@@ -311,11 +311,13 @@ In what follows, only the non-generic parts of the protocol are specified in mor
 
    _Client request_
    ```
-   "request" : eval/<session-id>/<model-id>
+   "request" : eval/<session-id>/<model-id>/<output>
    "data"    : {
                  "resolution" : [<list of integers]
                }
    ```
+   The `output` must be one of the model's outputs (i.e. the `name` attribute) defined during [session creation](protocol.md#Create-a-new-session). 
+
    If the optional `data` and `resolution` are not present, the default resolution is 25 in each parametric dimension.
 
    _Server response_
@@ -358,11 +360,14 @@ In what follows, only the non-generic parts of the protocol are specified in mor
 ### B-spline models
 
 The following B-spline models are implemented:
--    `BSplineCurve`
--    `BSplineSurface`
--    `BSplineVolume`.
+-    `BSplineCurve` : uni-variate B-spline curve
+-    `BSplineSurface` : bi-variate B-spline surface
+-    `BSplineVolume` : tri-variate B-spline volume
 
 #### B-spline model options
+
+The following `data` can be passed during [model creation](protocol.md#Create-a-new-model):
+
 ```
 "data" : { 
             "degree"     : <integer> valid values are 
@@ -387,6 +392,8 @@ The following B-spline models are implemented:
 ```
 
 #### B-spline model attributes
+
+The following `data` can be passed when [getting all model attributes](protocol.md#Get-all-attributes-of-a-specific-model) or [getting a specific model attribute](protocol.md#Get-a-specific-attribute-of-a-specific-model).
 ```
 "data" : { 
             "geoDim"  : <integer>    valid values are 
@@ -446,8 +453,8 @@ The following B-spline models are implemented:
 
 The `optiontype descriptor` must be one of the following
 
-| `type`        | description  | value format example |
-|--------------:|:-------------|:---------------------|
+| `type`        | description  | value format example | enum value |
+|--------------:|:-------------|:---------------------|------------|
 | `int`         | integer value| `"value" : 5` or     |
 ||| `"value" : [5,5]`  |
 | `float`       | float value  | `"value" : 5.0` or  |
@@ -463,8 +470,8 @@ Types `list` and `select` correspond to enumerators with the mapping `option0 ->
 
 The `iotype descriptor` must be one of the following
 
- | `type`        | description   | value |
- |--------------:|:--------------|-------|
+ | `type`        | description   | enum value |
+ |--------------:|:--------------|------------|
  | `scalar`      | scalar value (e.g., error or drag/lift coefficient) | 0 |
  | `scalarfield` | scalar field (e.g., pressure) | 1 |
  | `vectorfield` | vector field (e.g., velocity) | 2 |
