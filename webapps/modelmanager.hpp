@@ -31,8 +31,22 @@ namespace iganet {
   /// @brief Enumerator for specifying the capabilities
   enum class capability
     {
-      eval   = 0, /*!< evaluation */
-      refine = 1  /*!< refinement */
+      eval      =   0, /*!< evaluates the object */
+      refine    =   1, /*!< h-refines the object */
+      elevate   =   2, /*!< p-refines the object */
+            
+      /*!< Data loading */
+      load      = 101, /*!< loads the model from PyTorch file    */
+      loadXML   = 102, /*!< loads the object from G+Smo XML file */
+
+      /*!< Data saving */
+      save      = 201, /*!< saves the model to PyTorch file    */
+      saveXML   = 202, /*!< saves the object to G+Smo XML file */
+
+      /*!< Error computation */
+      computeL1error = 301, /*!< computes the model's L1-error */
+      computeL2error = 302, /*!< computes the model's L2-error */
+      computeH1error = 303  /*!< computes the model's H1-error */      
     };
 
   /// @brief Enumerator for specifying the output type
