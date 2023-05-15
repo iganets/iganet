@@ -17,6 +17,8 @@
 #include <modelmanager.hpp>
 #include <popl.hpp>
 
+#include <filesystem>
+
 namespace iganet { namespace webapp {
 
     /// @brief Enumerator for specifying the status
@@ -143,13 +145,15 @@ namespace iganet { namespace webapp {
 int main(int argc, char const* argv[])
 {
   using PerSocketData = iganet::webapp::Sessions<float>;
-
+  
   popl::OptionParser op("Allowed options");
   auto help_option = op.add<popl::Switch>("h", "help", "print help message");
   auto port_option = op.add<popl::Value<int>>("p", "port", "TCP port of the server", 9001);
-  auto key_file_option = op.add<popl::Value<std::string>>("k", "keyfile", "key file for SSL encryption", "key.pem");
-  auto cert_file_option = op.add<popl::Value<std::string>>("c", "certfile", "certificate file for SSL encryption", "cert.pem");
+  auto config_option = op.add<popl::Value<std::string>>("f", "configfile", "configuration file", "");
+  auto keyfile_option = op.add<popl::Value<std::string>>("k", "keyfile", "key file for SSL encryption", "");
+  auto certfile_option = op.add<popl::Value<std::string>>("c", "certfile", "certificate file for SSL encryption", "");
   auto passphrase_option = op.add<popl::Value<std::string>>("a", "passphrase", "passphrase for SSL encryption", "");
+
   op.parse(argc, argv);
 
   // Print auto-generated help message
@@ -163,22 +167,77 @@ int main(int argc, char const* argv[])
   // Initialize backend
   iganet::init();
 
+  // Load configuration from file
+  nlohmann::json config;
+  if (!config_option->value().empty()) {
+    std::ifstream file(config_option->value());
+    if (file) {
+      try {
+        config = nlohmann::json::parse(file);
+      } catch (std::exception& e) {
+        std::cerr << e.what();
+        return -1;
+      }
+    } else {
+      std::ifstream file(std::filesystem::path(__FILE__).replace_filename(config_option->value()));        
+      if (file) {
+        try {
+          config = nlohmann::json::parse(file);
+        } catch (std::exception& e) {
+          std::cerr << e.what();
+          return -1;
+        }
+      }
+    }
+  }
+
+  // Override commandline arguments
+  if (!port_option->value())
+    config["port"] = port_option->value();
+  
+  if (!keyfile_option->value().empty())
+    config["keyFile"] = keyfile_option->value();
+  
+  if (!certfile_option->value().empty())
+    config["certFile"] = certfile_option->value();
+  
+  if (!passphrase_option->value().empty())
+    config["passphrase"] = passphrase_option->value();
+  
+  // Check if key file is available
+  if (config.contains("keyFile")) {
+    if (!std::filesystem::exists(std::filesystem::path(config["keyFile"].get<std::string>())))
+      if (std::filesystem::exists(std::filesystem::path(__FILE__).replace_filename(config["keyFile"].get<std::string>())))
+        config["keyFile"] = std::filesystem::path(__FILE__).replace_filename(config["keyFile"].get<std::string>());
+      else
+        throw std::runtime_error("Unable to open key file "+config["keyFile"].get<std::string>());
+  }
+
+  // Check if cert file is available
+  if (config.contains("certFile")) {
+    if (!std::filesystem::exists(std::filesystem::path(config["certFile"].get<std::string>())))
+      if (std::filesystem::exists(std::filesystem::path(__FILE__).replace_filename(config["certFile"].get<std::string>())))
+        config["certFile"] = std::filesystem::path(__FILE__).replace_filename(config["certFile"].get<std::string>());
+      else
+        throw std::runtime_error("Unable to open cert file "+config["certFile"].get<std::string>());
+  }
+  
   // Create WebSocket application
   try {
     uWS::SSLApp({
-        .key_file_name  = key_file_option->value().c_str(),
-        .cert_file_name = cert_file_option->value().c_str(),
-        .passphrase     = passphrase_option->value().c_str()
+        .key_file_name  = (config.contains("keyFile")    ? config["keyFile"].get<std::string>().c_str()    : std::filesystem::path(__FILE__).replace_filename("key.pem").c_str()),
+        .cert_file_name = (config.contains("certFile")   ? config["certFile"].get<std::string>().c_str()   : std::filesystem::path(__FILE__).replace_filename("cert.pem").c_str()),
+        .passphrase     = (config.contains("passphrase") ? config["passphrase"].get<std::string>().c_str() : "")
         }).ws<PerSocketData>("/*", {
         /* Settings */        
         .compression = uWS::CompressOptions(uWS::DEDICATED_COMPRESSOR_4KB |
                                             uWS::DEDICATED_DECOMPRESSOR),
-        .maxPayloadLength = 100 * 1024 * 1024,
-        .idleTimeout = 16,
-        .maxBackpressure = 100 * 1024 * 1024,
-        .closeOnBackpressureLimit = false,
-        .resetIdleTimeoutOnSend = false,
-        .sendPingsAutomatically = true,
+        .maxPayloadLength         = (config.contains("maxPayloadLength")          ? config["maxPayloadLength"].get<unsigned int>() : 100 * 1024 * 1024),
+        .idleTimeout              = (config.contains("idleTimeout")               ? config["idleTimeout"].get<unsigned short>()    : static_cast<unsigned short>(16)),
+        .maxBackpressure          = (config.contains("maxBackpressure")           ? config["maxBackpressure"].get<unsigned int>()  : 100 * 1024 * 1024),
+        .closeOnBackpressureLimit = (config.contains("closeOnBackpressureLimit")  ? config["closeOnBackpressureLimit"].get<bool>() : false),
+        .resetIdleTimeoutOnSend   = (config.contains("resetIdleTimeoutOnSend")    ? config["resetIdleTimeoutOnSend"].get<bool>()   : false),
+        .sendPingsAutomatically   = (config.contains("sendPingsAutomatically")    ? config["sendPingsAutomatically"].get<bool>()   : true),
         /* Handlers */
         .upgrade = nullptr,
         .open = [](auto *ws) {
