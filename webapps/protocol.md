@@ -54,7 +54,7 @@ In what follows, only the non-generic parts of the protocol are specified in mor
 
    _Client request_
    ```
-   "request" : get
+   "request" : "get"
    ```
 
    _Server response_
@@ -72,7 +72,7 @@ In what follows, only the non-generic parts of the protocol are specified in mor
 
    _Client request_
    ```
-   "request" : create/session
+   "request" : "create/session"
    ```
 
    _Server response_
@@ -140,7 +140,7 @@ In what follows, only the non-generic parts of the protocol are specified in mor
 
    _Client request_
    ```
-   "request" : remove/<session-id>
+   "request" : "remove/<session-id>"
    ```
 
    _Server response_
@@ -157,7 +157,7 @@ In what follows, only the non-generic parts of the protocol are specified in mor
 
    _Client request_
    ```
-   "request" : connect/<session-id>
+   "request" : "connect/<session-id>"
    ```
 
    _Server response_
@@ -174,7 +174,7 @@ In what follows, only the non-generic parts of the protocol are specified in mor
 
    _Client request_
    ```
-   "request" : disconnect/<session-id>
+   "request" : "disconnect/<session-id>"
    ```
 
    _Server response_
@@ -194,7 +194,7 @@ In what follows, only the non-generic parts of the protocol are specified in mor
 
    _Client request_
    ```
-   "request" : get/<session-id>
+   "request" : "get/<session-id>"
    ```
 
    _Server response_
@@ -212,7 +212,7 @@ In what follows, only the non-generic parts of the protocol are specified in mor
 
    _Client request_
    ```
-   "request" : create/<session-id>/<model-type>
+   "request" : "create/<session-id>/<model-type>"
    "data"    : {...}
    ```
 
@@ -233,7 +233,7 @@ In what follows, only the non-generic parts of the protocol are specified in mor
 
    _Client request_
    ```
-   "request" : remove/<session-id>/<model-id>
+   "request" : "remove/<session-id>/<model-id>"
    ```
 
    _Server response_
@@ -250,7 +250,7 @@ In what follows, only the non-generic parts of the protocol are specified in mor
 
    _Client request_
    ```
-   "request" : get/<session-id>/<model-id>
+   "request" : "get/<session-id>/<model-id>"
    ```
 
    The attributes for the different models are given in [Models](protocol.md#models).
@@ -270,7 +270,7 @@ In what follows, only the non-generic parts of the protocol are specified in mor
 
    _Client request_
    ```
-   "request" : get/<session-id>/<model-id>/<attribute>
+   "request" : "get/<session-id>/<model-id>/<attribute>"
    ```
 
    The attributes for the different models are given in [Models](protocol.md#models).
@@ -291,7 +291,7 @@ In what follows, only the non-generic parts of the protocol are specified in mor
 
    _Client request_
    ```
-   "request" : put/<session-id>/<model-id>/<attribute>
+   "request" : "put/<session-id>/<model-id>/<attribute>"
    ```
 
    The updatable attributes for the different models are given in [Models](protocol.md#models).
@@ -311,7 +311,7 @@ In what follows, only the non-generic parts of the protocol are specified in mor
 
    _Client request_
    ```
-   "request" : eval/<session-id>/<model-id>/<output>
+   "request" : "eval/<session-id>/<model-id>/<output>"
    "data"    : {
                  "resolution" : [<list of integers]
                }
@@ -337,7 +337,7 @@ In what follows, only the non-generic parts of the protocol are specified in mor
 
    _Client request_
    ```
-   "request" : refine/<session-id>/<model-id>
+   "request" : "refine/<session-id>/<model-id>"
    "data"    : {
                  [ "numRefine" : <integer> (default value is 1) ]
                  [ "dim"       : <integer> (default value is -1) ]

@@ -206,20 +206,24 @@ int main(int argc, char const* argv[])
   
   // Check if key file is available
   if (config.contains("keyFile")) {
-    if (!std::filesystem::exists(std::filesystem::path(config["keyFile"].get<std::string>())))
-      if (std::filesystem::exists(std::filesystem::path(__FILE__).replace_filename(config["keyFile"].get<std::string>())))
+    if (!std::filesystem::exists(std::filesystem::path(config["keyFile"].get<std::string>()))) {
+      if (std::filesystem::exists(std::filesystem::path(__FILE__).replace_filename(config["keyFile"].get<std::string>()))) {
         config["keyFile"] = std::filesystem::path(__FILE__).replace_filename(config["keyFile"].get<std::string>());
-      else
+      } else {
         throw std::runtime_error("Unable to open key file "+config["keyFile"].get<std::string>());
+      }
+    }
   }
 
   // Check if cert file is available
   if (config.contains("certFile")) {
-    if (!std::filesystem::exists(std::filesystem::path(config["certFile"].get<std::string>())))
-      if (std::filesystem::exists(std::filesystem::path(__FILE__).replace_filename(config["certFile"].get<std::string>())))
+    if (!std::filesystem::exists(std::filesystem::path(config["certFile"].get<std::string>()))) {
+      if (std::filesystem::exists(std::filesystem::path(__FILE__).replace_filename(config["certFile"].get<std::string>()))) {
         config["certFile"] = std::filesystem::path(__FILE__).replace_filename(config["certFile"].get<std::string>());
-      else
+      } else {
         throw std::runtime_error("Unable to open cert file "+config["certFile"].get<std::string>());
+      }
+    }
   }
   
   // Create WebSocket application
@@ -268,7 +272,7 @@ int main(int argc, char const* argv[])
                 std::vector<std::string> ids;
                 for (const auto& session : ws->getUserData()->sessions)
                   ids.push_back(session.first);
-                response["data"] = ids;
+                response["data"]["ids"] = ids;
                 ws->send(response.dump(), uWS::OpCode::TEXT, true);
               }
 
@@ -282,9 +286,13 @@ int main(int argc, char const* argv[])
 
                 // Get list of all active models in session
                 std::vector<int64_t> ids;
-                for (const auto& model : session->models)
+                auto models = nlohmann::json::array();
+                for (const auto& model : session->models) {
                   ids.push_back(model.first);
-                response["data"] = ids;
+                  models.push_back(model.second->getModel());
+                }
+                response["data"]["ids"] = ids;
+                response["data"]["models"] = models;
                 ws->send(response.dump(), uWS::OpCode::TEXT, true);
               }
 
@@ -301,6 +309,7 @@ int main(int argc, char const* argv[])
 
                 // Serialize model to JSON
                 response["data"] = model->to_json();
+                response["data"]["model"] = model->getModel();
                 ws->send(response.dump(), uWS::OpCode::TEXT, true);
               }
 
@@ -403,13 +412,15 @@ int main(int argc, char const* argv[])
                   // Create a new model
                   session->models[id] = ws->getUserData()->models.create(tokens[2], request);
                   response["data"]["id"] = std::to_string(id);
+                  response["data"]["model"] = session->models[id]->getModel();
                   ws->send(response.dump(), uWS::OpCode::TEXT, true);
                   
                   // Broadcast creation of a new model
                   nlohmann::json broadcast;
                   broadcast["id"] = session->getUUID();
                   broadcast["request"] = "create/model";
-                  broadcast["data"]["id"] = id;                    
+                  broadcast["data"]["id"] = id;
+                  broadcast["data"]["model"] = session->models[id]->getModel();
                   ws->publish(session->getUUID(), broadcast.dump(), uWS::OpCode::TEXT);
                 } catch(...) {
                   response["status"] = iganet::webapp::status::invalidCreateRequest;
