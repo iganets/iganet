@@ -256,13 +256,13 @@ namespace iganet {
           else if (attribute == "knots")
             data["knots"] = this->knots_to_json();
           else if (attribute == "coeffs")
-            data["coeffs"] = this->coeffs_to_json();
+            data["coeffs"] = this->coeffs_to_json();          
           return data;
         } else
           return BSpline_t::to_json();
       }
 
-      /// @brief Updates the attrbutes of the model
+      /// @brief Updates the attributes of the model
       nlohmann::json updateAttribute(const std::string& attribute,
                                      const nlohmann::json& json) override {
         if (attribute == "coeffs") {
