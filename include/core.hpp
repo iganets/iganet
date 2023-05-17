@@ -19,6 +19,14 @@
 #include <tuple>
 #include <vector>
 
+#ifdef WITH_GISMO
+#include <gismo.h>
+#endif
+
+#undef real_t
+#undef index_t
+#undef short_t
+
 #ifdef WITH_MATPLOT
 #ifdef __CUDACC__
 #pragma nv_diag_suppress 611
@@ -30,6 +38,7 @@
 #endif
 
 #include <json.hpp>
+
 #include <torch/torch.h>
 #include <torch/csrc/api/include/torch/types.h>
 

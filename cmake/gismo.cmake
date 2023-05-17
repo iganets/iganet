@@ -20,10 +20,10 @@ include(FetchContent)
 FetchContent_Declare(
   gismo
   URL https://github.com/gismo/gismo/archive/refs/heads/stable.zip
+  PATCH_COMMAND     patch -p1 -N -d ${PROJECT_BINARY_DIR}/_deps/gismo-src < ${PROJECT_SOURCE_DIR}/cmake/gismo.patch
   )
 
 set(GISMO_BUILD_EXAMPLES 0 CACHE BOOL "")
 set(BUILD_TESTING        0 CACHE BOOL "")
 FetchContent_MakeAvailable(gismo)
-FetchContent_GetProperties(gismo)
-include_directories(${gismo_SOURCE_DIR}/src)
+include_directories(${GISMO_INCLUDE_DIRS})

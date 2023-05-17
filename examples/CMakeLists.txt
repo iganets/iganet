@@ -25,6 +25,11 @@ foreach(example ${EXAMPLES})
   add_executable(${name} ${filename})
   target_link_libraries(${name} PUBLIC ${TORCH_LIBRARIES})
 
+  if (IGANET_WITH_GISMO)
+    target_compile_definitions(${name} PUBLIC WITH_GISMO)
+    target_link_libraries(${name} PUBLIC gismo)
+  endif()
+  
   if (IGANET_WITH_MATPLOT)
     target_compile_definitions(${name} PUBLIC WITH_MATPLOT)
     target_link_libraries(${name} PUBLIC Matplot++::matplot)
