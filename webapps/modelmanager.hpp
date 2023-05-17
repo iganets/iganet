@@ -229,7 +229,7 @@ namespace iganet {
     /// @brief Returns a new instance of the requested model and
     /// throws an exception if model cannot be found
     std::shared_ptr<Model> create(const std::string& name,
-                                   const nlohmann::json& json = NULL) const {
+                                  const nlohmann::json& json = NULL) const {
       try {
         auto it = models.find(name);
         if (it == models.end())

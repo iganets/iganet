@@ -1775,20 +1775,20 @@ namespace iganet {
           for (int64_t i = 0; i < ncumcoeffs(); ++i)
             json.push_back(coeffs_accessor[i]);
         } else if constexpr (parDim_ == 2) {
-          for (int64_t j = 0; j < ncoeffs_[1]; ++j)
-            for (int64_t i = 0; i < ncoeffs_[0]; ++i)
+          for (int64_t i = 0; i < ncoeffs_[0]; ++i)
+            for (int64_t j = 0; j < ncoeffs_[1]; ++j)
               json.push_back(coeffs_accessor[i * ncoeffs_[1] + j]);
         } else if constexpr (parDim_ == 3) {
-          for (int64_t k = 0; k < ncoeffs_[2]; ++k)
+          for (int64_t i = 0; i < ncoeffs_[0]; ++i)
             for (int64_t j = 0; j < ncoeffs_[1]; ++j)
-              for (int64_t i = 0; i < ncoeffs_[0]; ++i)
+              for (int64_t k = 0; k < ncoeffs_[2]; ++k)
                 json.push_back(coeffs_accessor[i * ncoeffs_[1] * ncoeffs_[2] +
                                                j * ncoeffs_[1] + k]);
         } else if constexpr (parDim_ == 4) {
-          for (int64_t l = 0; l < ncoeffs_[3]; ++l)
-            for (int64_t k = 0; k < ncoeffs_[2]; ++k)
-              for (int64_t j = 0; j < ncoeffs_[1]; ++j)
-                for (int64_t i = 0; i < ncoeffs_[0]; ++i)
+          for (int64_t i = 0; i < ncoeffs_[0]; ++i)
+            for (int64_t j = 0; j < ncoeffs_[1]; ++j)
+              for (int64_t k = 0; k < ncoeffs_[2]; ++k)
+                for (int64_t l = 0; l < ncoeffs_[3]; ++l)
                   json.push_back(coeffs_accessor[i * ncoeffs_[1] * ncoeffs_[2] * ncoeffs_[3] +
                                                  j * ncoeffs_[1] * ncoeffs_[2] +
                                                  k * ncoeffs_[1] + l]);

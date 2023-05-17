@@ -410,7 +410,7 @@ int main(int argc, char const* argv[])
 
                 try {
                   // Create a new model
-                  session->models[id] = ws->getUserData()->models.create(tokens[2], request);
+                  session->models[id] = ws->getUserData()->models.create(tokens[2], request);                  
                   response["data"]["id"] = std::to_string(id);
                   response["data"]["model"] = session->models[id]->getModel();
                   ws->send(response.dump(), uWS::OpCode::TEXT, true);
