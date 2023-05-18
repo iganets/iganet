@@ -1843,8 +1843,7 @@ namespace iganet {
 
         auto [knots_cpu, knots_accessor] = to_tensorAccessor<value_type, 1>(knots_[0], torch::kCPU);
         for (int64_t i = 0; i < nknots_[0]; ++i)
-          knots.append_child(pugi::node_pcdata).set_value(std::to_string(knots_accessor[i])+" ");
-        
+          knots.append_child(pugi::node_pcdata).set_value(std::to_string(knots_accessor[i]).append(" ").c_str());
       }
       
       // >1D parametric dimension
