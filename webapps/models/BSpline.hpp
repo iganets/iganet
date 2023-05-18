@@ -33,8 +33,9 @@ namespace iganet {
     /// @brief B-spline model
     template<class BSpline_t>
     class BSplineModel : public Model,
-                         public ModelEval<BSpline_t::geoDim()>,
+                         public ModelEval,
                          public ModelRefine,
+                         public ModelXML,
                          public BSpline_t {
     private:
       BSpline_t solution_;
@@ -51,20 +52,20 @@ namespace iganet {
         if constexpr (BSpline_t::parDim() == 1)
           solution_.transform( [](const std::array<typename BSpline_t::value_type,1> xi)
           {
-            return std::array<typename BSpline_t::value_type,3>{ static_cast<float>(std::sin(M_PI*xi[0])), 0.0, 0.0 };
+            return std::array<typename BSpline_t::value_type,BSpline_t::geoDim()>{ static_cast<float>(std::sin(M_PI*xi[0])), 0.0, 0.0 };
           } );
 
         else if constexpr (BSpline_t::parDim() == 2)
           solution_.transform( [](const std::array<typename BSpline_t::value_type,2> xi)
           {
-            return std::array<typename BSpline_t::value_type,3>{ static_cast<float>(std::sin(M_PI*xi[0]) *
-                                                                                    std::sin(M_PI*xi[1])), 0.0, 0.0 };
+            return std::array<typename BSpline_t::value_type,BSpline_t::geoDim()>{ static_cast<float>(/*std::sin(M_PI*xi[0]) *
+                                                                                                        std::sin(M_PI*xi[1])*/xi[0] ), 0.0, 0.0 };
           } );
 
         else if constexpr (BSpline_t::parDim() == 3)
           solution_.transform( [](const std::array<typename BSpline_t::value_type,3> xi)
           {
-            return std::array<typename BSpline_t::value_type,3>{ static_cast<float>(std::sin(M_PI*xi[0]) *
+            return std::array<typename BSpline_t::value_type,BSpline_t::geoDim()>{ static_cast<float>(std::sin(M_PI*xi[0]) *
                                                                                     std::sin(M_PI*xi[1]) *
                                                                                     std::sin(M_PI*xi[2])), 0.0, 0.0 };
           } );
@@ -351,7 +352,9 @@ namespace iganet {
       }
       
       /// @brief Evaluates the model
-      BlockTensor<torch::Tensor, 1, 3> eval(const nlohmann::json& json = NULL) const override {
+      nlohmann::json eval(const std::string& component,
+                          const nlohmann::json& json) const override {
+        
         if constexpr (BSpline_t::parDim() == 1) {
 
           std::array<int64_t, 1> res({25});          
@@ -360,8 +363,22 @@ namespace iganet {
               res = json["data"]["resolution"].get<std::array<int64_t,1>>();
           
           iganet::TensorArray1 xi = {torch::linspace(0, 1, res[0])};
-          return BSpline_t::eval(xi);
+
+          if (component == "ValueFieldMagnitude") {
+            return nlohmann::json::array()
+              .emplace_back(::iganet::to_json<float,1>(*(solution_.eval(xi)[0])));
+          }
+          else if (component == "ValueField") {
+            auto values = BSpline_t::eval(xi);
+            auto result = nlohmann::json::array();
+            for (short_t dim = 0; dim < BSpline_t::geoDim(); ++dim)
+              result.emplace_back(::iganet::to_json<float,1>(*(values[dim])));
+            return result;
+          }
+          else
+            return "{ INVALID REQUEST }";          
         }
+        
         else if constexpr (BSpline_t::parDim() == 2) {
 
           std::array<int64_t, 2> res({25, 25});          
@@ -375,9 +392,21 @@ namespace iganet {
                 torch::linspace(0, 1, res[1],
                                 core<typename BSpline_t::value_type>::options_)}, "xy"));
 
-          return solution_.eval(xi);
-          return BSpline_t::eval(xi);
+          if (component == "ValueFieldMagnitude") {
+            return nlohmann::json::array()
+              .emplace_back(::iganet::to_json<float,2>(*(solution_.eval(xi)[0])));
+          }
+          else if (component == "ValueField") {
+            auto values = BSpline_t::eval(xi);
+            auto result = nlohmann::json::array();
+            for (short_t dim = 0; dim < BSpline_t::geoDim(); ++dim)
+              result.emplace_back(::iganet::to_json<float,2>(*(values[dim])));
+            return result;
+          }
+          else
+            return "{ INVALID REQUEST }";
         }
+        
         else if constexpr (BSpline_t::parDim() == 3) {
 
           std::array<int64_t, 3> res({25, 25, 25});          
@@ -393,8 +422,21 @@ namespace iganet {
                 torch::linspace(0, 1, res[2],
                                 core<typename BSpline_t::value_type>::options_)}, "xy"));
           
-          return BSpline_t::eval(xi);
+          if (component == "ValueFieldMagnitude") {
+            return nlohmann::json::array()
+              .emplace_back(::iganet::to_json<float,3>(*(solution_.eval(xi)[0])));
+          }
+          else if (component == "ValueField") {
+            auto values = BSpline_t::eval(xi);
+            auto result = nlohmann::json::array();
+            for (short_t dim = 0; dim < BSpline_t::geoDim(); ++dim)
+              result.emplace_back(::iganet::to_json<float,3>(*(values[dim])));
+            return result;
+          }
+          else
+            return "{ INVALID REQUEST }";
         }
+        
         else if constexpr (BSpline_t::parDim() == 4) {
 
           std::array<int64_t, 4> res({25, 25, 25, 25});          
@@ -412,14 +454,26 @@ namespace iganet {
                 torch::linspace(0, 1, res[3],
                                 core<typename BSpline_t::value_type>::options_)}, "xy"));
           
-          return BSpline_t::eval(xi);
+          if (component == "ValueFieldMagnitude") {
+            return nlohmann::json::array()
+              .emplace_back(::iganet::to_json<float,4>(*(solution_.eval(xi)[0])));
+          }
+          else if (component == "ValueField") {
+            auto values = BSpline_t::eval(xi);
+            auto result = nlohmann::json::array();
+            for (short_t dim = 0; dim < BSpline_t::geoDim(); ++dim)
+              result.emplace_back(::iganet::to_json<float,4>(*(values[dim])));
+            return result;
+          }
+          else
+            return "{ INVALID REQUEST }";
         }
       }
 
       /// @brief Refines the model
       void refine(const nlohmann::json& json = NULL) override {
         int numRefine = 1, dim = -1;
-
+        
         if (json.contains("data")) {
           if (json["data"].contains("numRefine"))
             numRefine = json["data"]["numRefine"].get<int>();
@@ -427,10 +481,30 @@ namespace iganet {
           if (json["data"].contains("dim"))
             dim = json["data"]["dim"].get<int>();
         }
-
-        BSpline_t::uniform_refine(numRefine, dim);        
+        
+        BSpline_t::uniform_refine(numRefine, dim);
       }
+
+      /// @brief Loads the model from XML
+      void loadXML(const std::string& xml,
+                   const std::string& component = "") override {
+      }
+      
+      /// @brief Saves the model to XML
+      nlohmann::json saveXML(const std::string& component = "") override {
+        pugi::xml_document doc;
+
+        // add xml node
+        pugi::xml_node xml = doc.append_child("xml");
+        BSpline_t::to_xml(xml);
+
+        // save to JSON
+        std::ostringstream oss;
+        doc.save(oss);
+        
+        return oss.str();
+      }      
     };    
 
-  } // namespace wepapp
+  } // namespace webapp
 } // namespace iganet

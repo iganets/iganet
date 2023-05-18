@@ -119,11 +119,11 @@ namespace iganet {
   };
 
   /// @brief Model evaluator
-  template<short_t Dim>
   class ModelEval {
   public:
     /// @brief Evaluate model
-    virtual BlockTensor<torch::Tensor, 1, Dim> eval(const nlohmann::json& json) const = 0;
+    virtual nlohmann::json eval(const std::string& component,
+                                const nlohmann::json& json) const = 0;
   };
 
   /// @brief Model refinement
@@ -133,6 +133,17 @@ namespace iganet {
     virtual void refine(const nlohmann::json& json) = 0;
   };
 
+  /// @brief Model XML serialization
+  class ModelXML {
+  public:
+    /// @brief Load model from XML
+    virtual void loadXML(const std::string& xml,
+                         const std::string& component) = 0;
+
+    /// @brief Save model to XML
+    virtual nlohmann::json saveXML(const std::string& component) = 0;
+  };
+  
   /// @brief Model manager
   ///
   /// This class implements the model manager

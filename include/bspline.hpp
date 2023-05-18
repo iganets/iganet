@@ -1682,13 +1682,13 @@ namespace iganet {
         }
       }
 
-        // 2D
+      // 2D
       else if constexpr (parDim_ == 2) {
 #pragma omp parallel for collapse(2)
-        for (int64_t i = 0; i < ncoeffs_[0]; ++i) {
-          for (int64_t j = 0; j < ncoeffs_[1]; ++j) {
+        for (int64_t j = 0; j < ncoeffs_[1]; ++j) {
+          for (int64_t i = 0; i < ncoeffs_[0]; ++i) {
             auto c = transformation(std::array<value_type, 2>{i / value_type(ncoeffs_[0] - 1),
-                                                          j / value_type(ncoeffs_[1] - 1)});
+                                                              j / value_type(ncoeffs_[1] - 1)});
 #pragma omp simd
             for (short_t d = 0; d < geoDim_; ++d)
               coeffs_[d].detach()[j * ncoeffs_[0] +
@@ -1697,15 +1697,15 @@ namespace iganet {
         }
       }
 
-        // 3D
+      // 3D
       else if constexpr (parDim_ == 3) {
 #pragma omp parallel for collapse(3)
-        for (int64_t i = 0; i < ncoeffs_[0]; ++i) {
+        for (int64_t k = 0; k < ncoeffs_[2]; ++k) {
           for (int64_t j = 0; j < ncoeffs_[1]; ++j) {
-            for (int64_t k = 0; k < ncoeffs_[2]; ++k) {
+            for (int64_t i = 0; i < ncoeffs_[0]; ++i) {
               auto c = transformation(std::array<value_type, 3>{i / value_type(ncoeffs_[0] - 1),
-                                                            j / value_type(ncoeffs_[1] - 1),
-                                                            k / value_type(ncoeffs_[2] - 1)});
+                                                                j / value_type(ncoeffs_[1] - 1),
+                                                                k / value_type(ncoeffs_[2] - 1)});
 #pragma omp simd
               for (short_t d = 0; d < geoDim_; ++d)
                 coeffs_[d].detach()[k * ncoeffs_[0] * ncoeffs_[1] +
@@ -1715,18 +1715,18 @@ namespace iganet {
           }
         }
       }
-
-        // 4D
+      
+      // 4D
       else if constexpr (parDim_ == 4) {
 #pragma omp parallel for collapse(4)
-        for (int64_t i = 0; i < ncoeffs_[0]; ++i) {
-          for (int64_t j = 0; j < ncoeffs_[1]; ++j) {
-            for (int64_t k = 0; k < ncoeffs_[2]; ++k) {
-              for (int64_t l = 0; l < ncoeffs_[3]; ++l) {
+        for (int64_t l = 0; l < ncoeffs_[3]; ++l) {
+          for (int64_t k = 0; k < ncoeffs_[2]; ++k) {
+            for (int64_t j = 0; j < ncoeffs_[1]; ++j) {
+              for (int64_t i = 0; i < ncoeffs_[0]; ++i) {
                 auto c = transformation(std::array<value_type, 4>{i / value_type(ncoeffs_[0] - 1),
-                                                              j / value_type(ncoeffs_[1] - 1),
-                                                              k / value_type(ncoeffs_[2] - 1),
-                                                              l / value_type(ncoeffs_[3] - 1)});
+                                                                  j / value_type(ncoeffs_[1] - 1),
+                                                                  k / value_type(ncoeffs_[2] - 1),
+                                                                  l / value_type(ncoeffs_[3] - 1)});
 #pragma omp simd
                 for (short_t d = 0; d < geoDim_; ++d)
                   coeffs_[d].detach()[l * ncoeffs_[0] * ncoeffs_[1] * ncoeffs_[2] +
@@ -1771,124 +1771,159 @@ namespace iganet {
         auto [coeffs_cpu, coeffs_accessor] = to_tensorAccessor<value_type, 1>(coeffs_[g], torch::kCPU);
 
         auto json = nlohmann::json::array();
+
+        // 1D
         if constexpr (parDim_ == 1) {
           for (int64_t i = 0; i < ncumcoeffs(); ++i)
             json.push_back(coeffs_accessor[i]);
-        } else if constexpr (parDim_ == 2) {
-          for (int64_t i = 0; i < ncoeffs_[0]; ++i)
+        }
+
+        // 2D
+        else if constexpr (parDim_ == 2) {
+          for (int64_t j = 0; j < ncoeffs_[1]; ++j)
+            for (int64_t i = 0; i < ncoeffs_[0]; ++i)
+              json.push_back(coeffs_accessor[j * ncoeffs_[0] + i]);
+        }
+
+        // 3D
+        else if constexpr (parDim_ == 3) {
+          for (int64_t k = 0; k < ncoeffs_[2]; ++k)
             for (int64_t j = 0; j < ncoeffs_[1]; ++j)
-              json.push_back(coeffs_accessor[i * ncoeffs_[1] + j]);
-        } else if constexpr (parDim_ == 3) {
-          for (int64_t i = 0; i < ncoeffs_[0]; ++i)
-            for (int64_t j = 0; j < ncoeffs_[1]; ++j)
-              for (int64_t k = 0; k < ncoeffs_[2]; ++k)
-                json.push_back(coeffs_accessor[i * ncoeffs_[1] * ncoeffs_[2] +
-                                               j * ncoeffs_[1] + k]);
-        } else if constexpr (parDim_ == 4) {
-          for (int64_t i = 0; i < ncoeffs_[0]; ++i)
-            for (int64_t j = 0; j < ncoeffs_[1]; ++j)
-              for (int64_t k = 0; k < ncoeffs_[2]; ++k)
-                for (int64_t l = 0; l < ncoeffs_[3]; ++l)
-                  json.push_back(coeffs_accessor[i * ncoeffs_[1] * ncoeffs_[2] * ncoeffs_[3] +
-                                                 j * ncoeffs_[1] * ncoeffs_[2] +
-                                                 k * ncoeffs_[1] + l]);
+              for (int64_t i = 0; i < ncoeffs_[0]; ++i)
+                json.push_back(coeffs_accessor[k * ncoeffs_[0] * ncoeffs_[1] +
+                                               j * ncoeffs_[0] + i]);
+        }
+        
+        // 4D
+        else if constexpr (parDim_ == 4) {
+          for (int64_t l = 0; l < ncoeffs_[3]; ++l)
+            for (int64_t k = 0; k < ncoeffs_[2]; ++k)
+              for (int64_t j = 0; j < ncoeffs_[1]; ++j)
+                for (int64_t i = 0; i < ncoeffs_[0]; ++i)
+                  json.push_back(coeffs_accessor[l * ncoeffs_[0] * ncoeffs_[1] * ncoeffs_[2] +
+                                                 k * ncoeffs_[0] * ncoeffs_[1] +
+                                                 j * ncoeffs_[0] + i]);
         } else {
           throw std::runtime_error("Unsupported parametric dimension");
         }
-
+        
         coeffs_json.push_back(json);
       }
       return coeffs_json;
     }
 
-    /// @brief Returns the B-spline object as XML string
-    inline std::string to_xml() const
+    /// @brief Returns the B-spline object as XML doc
+    inline pugi::xml_document to_xml() const
     {
-      std::stringstream ss;
-
-      // Write preamble and knot vectors
-      ss << "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n"
-         << "<xml>\n";
-
+      pugi::xml_document doc;
+      pugi::xml_node node = doc.append_child("xml");
+      to_xml(node);
+      
+      return doc;
+    }
+    
+    /// @brief Returns the B-spline object as XML node
+    inline pugi::xml_node to_xml(pugi::xml_node& root, int id=0) const
+    {
       // 1D parametric dimension
       if constexpr (parDim_ == 1) {
-        ss << " <Geometry type=\"BSpline\">\n"
-           << "  <Basis type=\"BSplineBasis\">\n"
-           << "   <KnotVector degree=\"" << degrees_[0] << "\">";
+        
+        // add Geometry node
+        pugi::xml_node geo = root.append_child("Geometry");
+        geo.append_attribute("type") = "BSpline";
+        geo.append_attribute("id")   = id;
+
+        // add Basis node
+        pugi::xml_node basis = geo.append_child("Basis");
+        basis.append_attribute("type") = "BSplineBasis";
+
+        // add KnotVector node
+        pugi::xml_node knots = basis.append_child("KnotVector");
+        knots.append_attribute("degree") = degrees_[0];
+
         auto [knots_cpu, knots_accessor] = to_tensorAccessor<value_type, 1>(knots_[0], torch::kCPU);
         for (int64_t i = 0; i < nknots_[0]; ++i)
-          ss << knots_accessor[i] << " ";
-        ss << "</KnotVector>\n"
-           << "  </Basis>\n";
+          knots.append_child(pugi::node_pcdata).set_value(std::to_string(knots_accessor[i])+" ");
+        
       }
-
-        // >1D parametric dimension
+      
+      // >1D parametric dimension
       else {
-        ss << " <Geometry type=\"TensorBSpline" << parDim_ << "\" id=\"0\">\n"
-           << "  <Basis type=\"TensorBSplineBasis" << parDim_ << "\">\n";
-        for (short_t i = 0; i < parDim_; ++i) {
-          ss << "   <Basis type=\"BSplineBasis\" index=\"" << i << "\">\n"
-             << "    <KnotVector degree=\"" << degrees_[i] << "\">";
-          auto [knots_cpu, knots_accessor] = to_tensorAccessor<value_type, 1>(knots_[i], torch::kCPU);
-          for (int64_t j = 0; j < nknots_[i]; ++j)
-            ss << knots_accessor[j] << " ";
-          ss << "</KnotVector>\n"
-             << "   </Basis>\n";
+
+        // add Geometry node
+        pugi::xml_node geo = root.append_child("Geometry");
+        geo.append_attribute("type") = std::string("TensorBSpline").append(std::to_string(parDim_)).c_str();
+        geo.append_attribute("id")   = id;
+
+        // add Basis node
+        pugi::xml_node bases = geo.append_child("Basis");
+        bases.append_attribute("type") = std::string("TensorBSplineBasis").append(std::to_string(parDim_)).c_str();
+
+        for (short_t index = 0; index < parDim_; ++index) {
+          pugi::xml_node basis = bases.append_child("Basis");
+          basis.append_attribute("type") = "BSplineBasis";
+          basis.append_attribute("index") = index;
+          
+          // add KnotVector node
+          pugi::xml_node knots = basis.append_child("KnotVector");
+          knots.append_attribute("degree") = degrees_[index];
+          
+          auto [knots_cpu, knots_accessor] = to_tensorAccessor<value_type, 1>(knots_[index], torch::kCPU);
+          for (int64_t i = 0; i < nknots_[index]; ++i)
+            knots.append_child(pugi::node_pcdata).set_value(std::to_string(knots_accessor[i]).append(" ").c_str());
         }
-        ss << "  </Basis>\n";
-      }
 
-      // Write coefficients
-      ss << "  <coefs geoDim=\"" << geoDim_ << "\">\n";
+        // add Coefs node
+        pugi::xml_node coefs = geo.append_child("coefs");
+        coefs.append_attribute("geoDim") = geoDim_;
 
-      auto coeffs_accessors = to_tensorAccessor<value_type,1>(coeffs_);
-
-      if constexpr (parDim_ == 1) {
-        for (int64_t i = 0; i < ncumcoeffs(); ++i) {
-          ss << " " << coeffs() << "\n";
-        }
-      } else if constexpr (parDim_ == 2) {
-        for (int64_t j = 0; j < ncoeffs_[1]; ++j) {
+        auto coeffs_accessors = to_tensorAccessor<value_type,1>(coeffs_);
+        
+        if constexpr (parDim_ == 1) {
           for (int64_t i = 0; i < ncoeffs_[0]; ++i) {
-            for (short_t g = 0; g < geoDim_; ++g)
-              ss << "  " << coeffs_accessors[g][i * ncoeffs_[1] + j];
-            ss << "\n";
-          }
-        }
-      } else if constexpr (parDim_ == 3) {
-        for (int64_t k = 0; k < ncoeffs_[2]; ++k) {
-          for (int64_t j = 0; j < ncoeffs_[1]; ++j) {
-            for (int64_t i = 0; i < ncoeffs_[0]; ++i) {
-              for (short_t g = 0; g < geoDim_; ++g)
-                ss << " " << coeffs_accessors[g][i * ncoeffs_[1] * ncoeffs_[2] +
-                                                 j * ncoeffs_[1] + k];
-              ss << "\n";
+            for (short_t g = 0; g < geoDim_; ++g) {
+              coefs.append_child(pugi::node_pcdata).set_value(std::to_string(coeffs_accessors[g][i]).append(" ").c_str());
             }
           }
-        }
-      } else if constexpr (parDim_ == 4) {
-        for (int64_t l = 0; l < ncoeffs_[3]; ++l) {
-          for (int64_t k = 0; k < ncoeffs_[2]; ++k) {
-            for (int64_t j = 0; j < ncoeffs_[1]; ++j) {
-              for (int64_t i = 0; i < ncoeffs_[0]; ++i) {
-                for (short_t g = 0; g < geoDim_; ++g)
-                  ss << "  " << coeffs_accessors[g][i * ncoeffs_[1] * ncoeffs_[2] * ncoeffs_[3] +
-                                                    j * ncoeffs_[1] * ncoeffs_[2] +
-                                                    k * ncoeffs_[1] + l];
-                ss << "\n";
+        } else if constexpr (parDim_ == 2) {
+          for (int64_t j = 0; j < ncoeffs_[1]; ++j) {
+            for (int64_t i = 0; i < ncoeffs_[0]; ++i) {
+              for (short_t g = 0; g < geoDim_; ++g) {
+                coefs.append_child(pugi::node_pcdata).set_value(std::to_string(coeffs_accessors[g][j * ncoeffs_[1] + i]).append(" ").c_str());
               }
             }
           }
+        } else if constexpr (parDim_ == 3) {
+          for (int64_t k = 0; k < ncoeffs_[2]; ++k) {
+            for (int64_t j = 0; j < ncoeffs_[1]; ++j) {
+              for (int64_t i = 0; i < ncoeffs_[0]; ++i) {
+                for (short_t g = 0; g < geoDim_; ++g) {
+                  coefs.append_child(pugi::node_pcdata).set_value(std::to_string(coeffs_accessors[g][k * ncoeffs_[1] * ncoeffs_[2] +
+                                                                                                     j * ncoeffs_[1] + i]).append(" ").c_str());
+                }
+              }
+            }
+          }
+        } else if constexpr (parDim_ == 4) {
+          for (int64_t l = 0; l < ncoeffs_[3]; ++l) {
+            for (int64_t k = 0; k < ncoeffs_[2]; ++k) {
+              for (int64_t j = 0; j < ncoeffs_[1]; ++j) {
+                for (int64_t i = 0; i < ncoeffs_[0]; ++i) {
+                  for (short_t g = 0; g < geoDim_; ++g) {
+                    coefs.append_child(pugi::node_pcdata).set_value(std::to_string(coeffs_accessors[g][l * ncoeffs_[1] * ncoeffs_[2] * ncoeffs_[3] +
+                                                                                                       k * ncoeffs_[1] * ncoeffs_[2] +
+                                                                                                       j * ncoeffs_[1] + i]).append(" ").c_str());
+                  }
+                }
+              }
+            }
+          }
+        } else {
+          throw std::runtime_error("Unsupported parametric dimension");
         }
-      } else {
-        throw std::runtime_error("Unsupported parametric dimension");
       }
-
-      ss << "  </coefs>\n"
-         << " </Geometry>\n"
-         << "</xml>\n";
-
-      return ss.str();
+      
+      return root;
     }
 
     /// @brief Saves the B-spline to file
