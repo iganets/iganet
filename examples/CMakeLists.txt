@@ -24,6 +24,7 @@ foreach(example ${EXAMPLES})
   string(REPLACE ".cxx" "" name ${filename})
   add_executable(${name} ${filename})
   target_link_libraries(${name} PUBLIC ${TORCH_LIBRARIES})
+  target_link_libraries(${name} PUBLIC pugixml)
 
   if (IGANET_WITH_GISMO)
     target_compile_definitions(${name} PUBLIC WITH_GISMO)

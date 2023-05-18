@@ -105,6 +105,8 @@ list(APPEND CMAKE_CXX_FLAGS ${TORCH_CXX_FLAGS})
 
 find_package(ZLIB REQUIRED)
 
+include(pugixml)
+
 if (IGANET_WITH_GISMO)
   include(gismo)
 endif()

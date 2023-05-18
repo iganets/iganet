@@ -1,25 +1,28 @@
 ########################################################################
-# CMakeLists.txt
+# pugixml.cmake
 #
 # Author: Matthias Moller
-# Copyright (C) 2021-2022 by the IgANet authors
+# Copyright (C) 2021-2022 by the IgaNet authors
 #
-# This file is part of the IgANet project
+# This file is part of the IgaNet project
 #
 # This Source Code Form is subject to the terms of the Mozilla Public
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
-#
+# 
 ########################################################################
 
 ########################################################################
-# Modles
+# pugixml
 ########################################################################
-file(GLOB MODELS *.cxx)
-foreach(model ${MODELS})
-  file(RELATIVE_PATH filename ${CMAKE_CURRENT_SOURCE_DIR} ${model})
-  string(REPLACE ".cxx" "" name ${filename})
-  add_library(${name} SHARED ${filename})
-  target_link_libraries(${name} PUBLIC ${TORCH_LIBRARIES})
-  target_link_libraries(${name} PUBLIC pugixml)
-endforeach()
+
+include(FetchContent)
+FetchContent_Declare(
+  pugixml
+  URL https://github.com/zeux/pugixml/releases/download/v1.13/pugixml-1.13.zip
+  FIND_PACKAGE_ARGS
+  )
+
+FetchContent_MakeAvailable(pugixml)
+FetchContent_GetProperties(pugixml)
+include_directories(${pugixml_SOURCE_DIR}/src)

@@ -35,17 +35,6 @@ FetchContent_Declare(
   FIND_PACKAGE_ARGS
   )
 set(SPLINELIB_BUILD_PUGIXML OFF CACHE BOOL "" FORCE)
-
-# pugixml
-FetchContent_Declare(
-  pugixml
-  URL https://github.com/tataratat/pugixml/archive/refs/heads/tataratat.zip
-  FIND_PACKAGE_ARGS
-  )
-
-# Fetch content of remote repositories
-FetchContent_MakeAvailable(pugixml)
-
 set(pugixml_DIR ${pugixml_BINARY_DIR})
 FetchContent_MakeAvailable(googletest splinelib)
 
