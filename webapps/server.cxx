@@ -35,7 +35,9 @@ namespace iganet { namespace webapp {
         invalidEvalRequest       =  8, /*!<  invalid eval request             */
         invalidRefineRequest     =  9, /*!<  invalid refine request           */
         invalidLoadRequest       = 10, /*!<  invalid load request             */
-        invalidSaveRequest       = 11  /*!<  invalid save request             */
+        invalidSaveRequest       = 11, /*!<  invalid save request             */
+        invalidImportRequest     = 12, /*!<  invalid import request           */
+        invalidExportRequest     = 13  /*!<  invalid export request           */
       };
     
     /// @brief InvalidSessionId exception
@@ -602,12 +604,12 @@ int main(int argc, char const* argv[])
 
             else if (tokens[0] == "loadxml") {
               //
-              // request: loadxml/*
+              // request: importxml/*
               //
 
               if (tokens.size() == 2) {
                 //
-                // request: loadxml/<session-id>
+                // request: importxml/<session-id>
                 //
 
                 // Get session
@@ -619,8 +621,8 @@ int main(int argc, char const* argv[])
                     m->importXML(request, "", model.first);
                   }
                   else {
-                    response["status"] = iganet::webapp::status::invalidLoadRequest;
-                    response["reason"] = "Invalid load request. Valid requests are \"loadxml/<session-id>\", \"loadxml/<session-id>/<model-id>\" and \"loadxml/<session-id>/<model-id>/<component>\"";
+                    response["status"] = iganet::webapp::status::invalidImportRequest;
+                    response["reason"] = "Invalid load request. Valid requests are \"importxml/<session-id>\", \"importxml/<session-id>/<model-id>\" and \"importxml/<session-id>/<model-id>/<component>\"";
                     ws->send(response.dump(), uWS::OpCode::TEXT, true);
                     break;
                   }
@@ -641,7 +643,7 @@ int main(int argc, char const* argv[])
               
               else if (tokens.size() == 3) {
                 //
-                // request: loadxml/<session-id>/<model-id>
+                // request: importxml/<session-id>/<model-id>
                 //
 
                 // Get session
@@ -654,8 +656,8 @@ int main(int argc, char const* argv[])
                 if (auto m = std::dynamic_pointer_cast<iganet::ModelXML>(model))
                   m->importXML(request, "", stoi(tokens[2]));
                 else {
-                  response["status"] = iganet::webapp::status::invalidLoadRequest;
-                  response["reason"] = "Invalid load request. Valid requests are \"loadxml/<session-id>/<model-id>\" and \"loadxml/<session-id>/<model-id>/<component>\"";
+                  response["status"] = iganet::webapp::status::invalidImportRequest;
+                  response["reason"] = "Invalid load request. Valid requests are \"importxml/<session-id>/<model-id>\" and \"importxml/<session-id>/<model-id>/<component>\"";
                 }
                 ws->send(response.dump(), uWS::OpCode::TEXT, true);
 
@@ -669,7 +671,7 @@ int main(int argc, char const* argv[])
 
               else if (tokens.size() == 4) {
                 //
-                // request: loadxml/<session-id>/<model-id>/<component>
+                // request: importxml/<session-id>/<model-id>/<component>
                 //
 
                 // Get session
@@ -682,8 +684,8 @@ int main(int argc, char const* argv[])
                 if (auto m = std::dynamic_pointer_cast<iganet::ModelXML>(model))
                   m->importXML(request, tokens[3], stoi(tokens[2]));
                 else {
-                  response["status"] = iganet::webapp::status::invalidLoadRequest;
-                  response["reason"] = "Invalid load request. Valid requests are \"loadxml/<session-id>/<model-id>\" and \"loadxml/<session-id>/<model-id>/<component>\"";
+                  response["status"] = iganet::webapp::status::invalidImportRequest;
+                  response["reason"] = "Invalid load request. Valid requests are \"importxml/<session-id>/<model-id>\" and \"importxml/<session-id>/<model-id>/<component>\"";
                 }
                 ws->send(response.dump(), uWS::OpCode::TEXT, true);
                 
@@ -696,8 +698,8 @@ int main(int argc, char const* argv[])
               }
               
               else {
-                response["status"] = iganet::webapp::status::invalidLoadRequest;
-                response["reason"] = "Invalid load request. Valid requests are \"loadxml/<session-id>/<model-id>\" and \"loadxml/<session-id>/<model-id>/<component>\"";
+                response["status"] = iganet::webapp::status::invalidImportRequest;
+                response["reason"] = "Invalid load request. Valid requests are \"importxml/<session-id>/<model-id>\" and \"importxml/<session-id>/<model-id>/<component>\"";
                 ws->send(response.dump(), uWS::OpCode::TEXT, true);
               }
             }
@@ -744,12 +746,12 @@ int main(int argc, char const* argv[])
 
             else if (tokens[0] == "savexml") {
               //
-              // request: savexml/*
+              // request: exportxml/*
               //
 
               if (tokens.size() == 2) {
                 //
-                // request: savexml/<session-id>
+                // request: exportxml/<session-id>
                 //
 
                 // Get session
@@ -762,8 +764,8 @@ int main(int argc, char const* argv[])
                     xml.push_back(m->exportXML("", model.first));
                   }
                   else {
-                    response["status"] = iganet::webapp::status::invalidSaveRequest;
-                    response["reason"] = "Invalid save request. Valid requests are \"savexml/<session-id>\", \"savexml/<session-id>/<model-id>\" and \"savexml/<session-id>/<model-id>/<component>\"";
+                    response["status"] = iganet::webapp::status::invalidExportRequest;
+                    response["reason"] = "Invalid save request. Valid requests are \"exportxml/<session-id>\", \"exportxml/<session-id>/<model-id>\" and \"exportxml/<session-id>/<model-id>/<component>\"";
                     ws->send(response.dump(), uWS::OpCode::TEXT, true);
                     break;
                   }
@@ -774,7 +776,7 @@ int main(int argc, char const* argv[])
               
               else if (tokens.size() == 3) {
                 //
-                // request: savexml/<session-id>/<model-id>
+                // request: exportxml/<session-id>/<model-id>
                 //
 
                 // Get session
@@ -787,15 +789,15 @@ int main(int argc, char const* argv[])
                 if (auto m = std::dynamic_pointer_cast<iganet::ModelXML>(model))
                   response["data"]["xml"] = m->exportXML("", stoi(tokens[2]));
                 else {
-                  response["status"] = iganet::webapp::status::invalidSaveRequest;
-                  response["reason"] = "Invalid save request. Valid requests are \"savexml/<session-id>\", \"savexml/<session-id>/<model-id>\" and \"savexml/<session-id>/<model-id>/<component>\"";
+                  response["status"] = iganet::webapp::status::invalidExportRequest;
+                  response["reason"] = "Invalid save request. Valid requests are \"exportxml/<session-id>\", \"exportxml/<session-id>/<model-id>\" and \"exportxml/<session-id>/<model-id>/<component>\"";
                 }
                 ws->send(response.dump(), uWS::OpCode::TEXT, true);
               }
 
               else if (tokens.size() == 4) {
                 //
-                // request: savexml/<session-id>/<model-id>/<component>
+                // request: exportxml/<session-id>/<model-id>/<component>
                 //
 
                 // Get session
@@ -808,15 +810,15 @@ int main(int argc, char const* argv[])
                 if (auto m = std::dynamic_pointer_cast<iganet::ModelXML>(model))
                   response["data"]["xml"] = m->exportXML(tokens[3], stoi(tokens[2]));
                 else {
-                  response["status"] = iganet::webapp::status::invalidSaveRequest;
-                  response["reason"] = "Invalid save request. Valid requests are \"savexml/<session-id>\", \"savexml/<session-id>/<model-id>\" and \"savexml/<session-id>/<model-id>/<component>\"";
+                  response["status"] = iganet::webapp::status::invalidExportRequest;
+                  response["reason"] = "Invalid save request. Valid requests are \"exportxml/<session-id>\", \"exportxml/<session-id>/<model-id>\" and \"exportxml/<session-id>/<model-id>/<component>\"";
                 }
                 ws->send(response.dump(), uWS::OpCode::TEXT, true);
               }
 
               else {
-                response["status"] = iganet::webapp::status::invalidSaveRequest;
-                response["reason"] = "Invalid save request. Valid requests are \"savexml/<session-id>/<model-id>\" and and \"savexml/<session-id>/<model-id>/<component>\"";
+                response["status"] = iganet::webapp::status::invalidExportRequest;
+                response["reason"] = "Invalid save request. Valid requests are \"exportxml/<session-id>/<model-id>\" and and \"exportxml/<session-id>/<model-id>/<component>\"";
                 ws->send(response.dump(), uWS::OpCode::TEXT, true);
               }
             }
