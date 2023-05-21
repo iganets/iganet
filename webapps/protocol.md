@@ -1,6 +1,6 @@
 # WebApp protocol
 
-_Version: 0.7 (12-05-2023)_
+_Version: 0.8 (21-05-2023)_
 
 ## Table of content
 
@@ -51,6 +51,8 @@ _Server response_
     -  9 : `invalidRefineRequest`
     - 10 : `invalidLoadRequest`
     - 11 : `invalidSaveRequest`
+    - 12 : `invalidImportRequest`
+    - 13 : `invalidExportRequest`
 
 *   `reason` is an optional string that contains human-readable information about a failed request. Successful requests with `status : 0` will not contain a `reason` field
 
@@ -203,7 +205,7 @@ In what follows, only the non-generic parts of the protocol are specified in mor
    ```
    {
       "id"      : <UUID>,
-      "request" : loadxml/<session-id>,
+      "request" : importxml/<session-id>,
       "data"    : { "xml" : <xml string>}
    }
    ```
@@ -537,13 +539,15 @@ The `iotype descriptor` must be one of the following
 
  | `type`        | description   | enum value |
  |--------------:|:--------------|------------|
- | `loadModel`   | load model from file | 0 |
- | `loadXML`     | load object from XML file | 0 |
- | `saveModel`   | save model to file | 0 |
- | `saveXML`     | save object to XML file | 0 |
+ | `eval`        | evaluate model| 0 |
+ | `refine`      | refine model  | 1 |
+ | `elevate`     | elevate model | 2 |
+ | `load`        | load model from file | 101 |
+ | `save`        | save model to file   | 102 |
+ | `importXML`   | import object from XML file | 201 |
+ | `exportXML`   | export object to XML file   | 202 |
 ---
 
 # TODO
 
-1. load/save serialized model from/to file on client side
 2. global translate and rotate parameter
