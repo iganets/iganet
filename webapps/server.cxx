@@ -62,9 +62,9 @@ namespace iganet { namespace webapp {
     };
 
     /// @brief Tokenize the input string
-    auto tokenize(std::string str) {
+    std::vector<std::string> tokenize(std::string str, char separator = '/') {
       std::vector<std::string> tokens;
-      for (auto i = strtok(&str[0], "/"); i != NULL; i = strtok(NULL, "/"))
+      for (auto i = strtok(&str[0], &separator); i != NULL; i = strtok(NULL, &separator))
         tokens.push_back(i);
       return tokens;
     }
@@ -77,10 +77,6 @@ namespace iganet { namespace webapp {
       const std::string uuid;
 
     public:
-      /// @brief Default constructor
-      Session() : uuid(iganet::uuid::create())
-      {}
-
       /// @brief Returns the UUID
       const std::string& getUUID() const {
         return uuid;
@@ -115,8 +111,16 @@ namespace iganet { namespace webapp {
     template<typename T>
     struct Sessions {
     public:
-      /// Returns the requested session model or throws an exception
-      std::shared_ptr<Session<T>> getSession(std::string uuid) {
+      inline void addModelPath(const std::string& path) {
+        models.addModelPath(path);
+      }
+
+      inline void addModelPath(const std::vector<std::string>& path) {
+        models.addModelPath(path);
+      }
+      
+      /// @brief Returns the requested session model or throws an exception
+      inline std::shared_ptr<Session<T>> getSession(std::string uuid) {
         auto it = sessions.find(uuid);
         if (it == sessions.end())
           throw InvalidSessionIdException();
@@ -124,8 +128,8 @@ namespace iganet { namespace webapp {
           return it->second;
       }
 
-      /// Returns the session and removes it from the list of sessions
-      std::shared_ptr<Session<T>> removeSession(std::string uuid) {
+      /// @brief Returns the session and removes it from the list of sessions
+      inline std::shared_ptr<Session<T>> removeSession(std::string uuid) {
         auto it = sessions.find(uuid);
         if (it == sessions.end())
           throw InvalidSessionIdException();
@@ -136,10 +140,10 @@ namespace iganet { namespace webapp {
         }
       }
 
-      /// List of sessions shared between all sockets
+      /// @brief List of sessions shared between all sockets
       inline static std::map<std::string, std::shared_ptr<Session<T>>> sessions;
 
-      /// List of models
+      /// @brief List of models
       inline static ModelManager models = ModelManager("webapps/models");
     };
 
@@ -156,6 +160,7 @@ int main(int argc, char const* argv[])
   auto config_option = op.add<popl::Value<std::string>>("f", "configfile", "configuration file", "");
   auto keyfile_option = op.add<popl::Value<std::string>>("k", "keyfile", "key file for SSL encryption", "");
   auto certfile_option = op.add<popl::Value<std::string>>("c", "certfile", "certificate file for SSL encryption", "");
+  auto modelpath_option = op.add<popl::Value<std::string>>("m", "modelpath", "path to model files", "");
   auto passphrase_option = op.add<popl::Value<std::string>>("a", "passphrase", "passphrase for SSL encryption", "");
 
   op.parse(argc, argv);
@@ -207,6 +212,9 @@ int main(int argc, char const* argv[])
   
   if (!passphrase_option->value().empty())
     config["passphrase"] = passphrase_option->value();
+
+  if (!modelpath_option->value().empty())
+    config["modelpath"] = modelpath_option->value();
   
   // Check if key file is available
   if (config.contains("keyFile")) {
@@ -249,6 +257,7 @@ int main(int argc, char const* argv[])
         /* Handlers */
         .upgrade = nullptr,
         .open = [](auto *ws) {
+          std::clog << "Connection has been opened\n"; 
         },
         .message = [](auto *ws, std::string_view message, uWS::OpCode opCode) {
           try {
@@ -552,29 +561,7 @@ int main(int argc, char const* argv[])
               // request: eval/*
               //
 
-              if (tokens.size() == 3) {
-                //
-                // request: eval/<session-id>/<model-id>
-                //
-                // NOTE: REMOVE ONCE THE FRONT-END PROVIDES <OUTPUT> !!!
-
-                // Get session
-                auto session = ws->getUserData()->getSession(tokens[1]);
-
-                // Get model
-                auto model = session->getModel(stoi(tokens[2]));
-
-                // Evaluate an existing model
-                if (auto m = std::dynamic_pointer_cast<iganet::ModelEval>(model))
-                  response["data"] = m->eval("ValueFieldMagnitude", request);
-                else {
-                  response["status"] = iganet::webapp::status::invalidEvalRequest;
-                  response["reason"] = "Invalid eval request. Valid requests are \"eval/<session-id>/<model-id>/<component>\"";
-                }
-                ws->send(response.dump(), uWS::OpCode::TEXT, true);
-              }
-
-              else if (tokens.size() == 4) {
+              if (tokens.size() == 4) {
                 //
                 // request: eval/<session-id>/<model-id>/<component>
                 //
@@ -602,7 +589,7 @@ int main(int argc, char const* argv[])
               }
             }
 
-            else if (tokens[0] == "loadxml") {
+            else if (tokens[0] == "importxml") {
               //
               // request: importxml/*
               //
@@ -622,7 +609,7 @@ int main(int argc, char const* argv[])
                   }
                   else {
                     response["status"] = iganet::webapp::status::invalidImportRequest;
-                    response["reason"] = "Invalid load request. Valid requests are \"importxml/<session-id>\", \"importxml/<session-id>/<model-id>\" and \"importxml/<session-id>/<model-id>/<component>\"";
+                    response["reason"] = "Invalid importrequest. Valid requests are \"importxml/<session-id>\", \"importxml/<session-id>/<model-id>\" and \"importxml/<session-id>/<model-id>/<component>\"";
                     ws->send(response.dump(), uWS::OpCode::TEXT, true);
                     break;
                   }
@@ -657,7 +644,7 @@ int main(int argc, char const* argv[])
                   m->importXML(request, "", stoi(tokens[2]));
                 else {
                   response["status"] = iganet::webapp::status::invalidImportRequest;
-                  response["reason"] = "Invalid load request. Valid requests are \"importxml/<session-id>/<model-id>\" and \"importxml/<session-id>/<model-id>/<component>\"";
+                  response["reason"] = "Invalid import request. Valid requests are \"importxml/<session-id>/<model-id>\" and \"importxml/<session-id>/<model-id>/<component>\"";
                 }
                 ws->send(response.dump(), uWS::OpCode::TEXT, true);
 
@@ -685,7 +672,7 @@ int main(int argc, char const* argv[])
                   m->importXML(request, tokens[3], stoi(tokens[2]));
                 else {
                   response["status"] = iganet::webapp::status::invalidImportRequest;
-                  response["reason"] = "Invalid load request. Valid requests are \"importxml/<session-id>/<model-id>\" and \"importxml/<session-id>/<model-id>/<component>\"";
+                  response["reason"] = "Invalid import request. Valid requests are \"importxml/<session-id>/<model-id>\" and \"importxml/<session-id>/<model-id>/<component>\"";
                 }
                 ws->send(response.dump(), uWS::OpCode::TEXT, true);
                 
@@ -699,7 +686,7 @@ int main(int argc, char const* argv[])
               
               else {
                 response["status"] = iganet::webapp::status::invalidImportRequest;
-                response["reason"] = "Invalid load request. Valid requests are \"importxml/<session-id>/<model-id>\" and \"importxml/<session-id>/<model-id>/<component>\"";
+                response["reason"] = "Invalid import request. Valid requests are \"importxml/<session-id>/<model-id>\" and \"importxml/<session-id>/<model-id>/<component>\"";
                 ws->send(response.dump(), uWS::OpCode::TEXT, true);
               }
             }
@@ -744,7 +731,7 @@ int main(int argc, char const* argv[])
               }
             }
 
-            else if (tokens[0] == "savexml") {
+            else if (tokens[0] == "exportxml") {
               //
               // request: exportxml/*
               //
@@ -765,7 +752,7 @@ int main(int argc, char const* argv[])
                   }
                   else {
                     response["status"] = iganet::webapp::status::invalidExportRequest;
-                    response["reason"] = "Invalid save request. Valid requests are \"exportxml/<session-id>\", \"exportxml/<session-id>/<model-id>\" and \"exportxml/<session-id>/<model-id>/<component>\"";
+                    response["reason"] = "Invalid export request. Valid requests are \"exportxml/<session-id>\", \"exportxml/<session-id>/<model-id>\" and \"exportxml/<session-id>/<model-id>/<component>\"";
                     ws->send(response.dump(), uWS::OpCode::TEXT, true);
                     break;
                   }
@@ -790,7 +777,7 @@ int main(int argc, char const* argv[])
                   response["data"]["xml"] = m->exportXML("", stoi(tokens[2]));
                 else {
                   response["status"] = iganet::webapp::status::invalidExportRequest;
-                  response["reason"] = "Invalid save request. Valid requests are \"exportxml/<session-id>\", \"exportxml/<session-id>/<model-id>\" and \"exportxml/<session-id>/<model-id>/<component>\"";
+                  response["reason"] = "Invalid export request. Valid requests are \"exportxml/<session-id>\", \"exportxml/<session-id>/<model-id>\" and \"exportxml/<session-id>/<model-id>/<component>\"";
                 }
                 ws->send(response.dump(), uWS::OpCode::TEXT, true);
               }
@@ -811,14 +798,14 @@ int main(int argc, char const* argv[])
                   response["data"]["xml"] = m->exportXML(tokens[3], stoi(tokens[2]));
                 else {
                   response["status"] = iganet::webapp::status::invalidExportRequest;
-                  response["reason"] = "Invalid save request. Valid requests are \"exportxml/<session-id>\", \"exportxml/<session-id>/<model-id>\" and \"exportxml/<session-id>/<model-id>/<component>\"";
+                  response["reason"] = "Invalid export request. Valid requests are \"exportxml/<session-id>\", \"exportxml/<session-id>/<model-id>\" and \"exportxml/<session-id>/<model-id>/<component>\"";
                 }
                 ws->send(response.dump(), uWS::OpCode::TEXT, true);
               }
 
               else {
                 response["status"] = iganet::webapp::status::invalidExportRequest;
-                response["reason"] = "Invalid save request. Valid requests are \"exportxml/<session-id>/<model-id>\" and and \"exportxml/<session-id>/<model-id>/<component>\"";
+                response["reason"] = "Invalid export request. Valid requests are \"exportxml/<session-id>/<model-id>\" and and \"exportxml/<session-id>/<model-id>/<component>\"";
                 ws->send(response.dump(), uWS::OpCode::TEXT, true);
               }
             }
@@ -858,8 +845,9 @@ int main(int argc, char const* argv[])
           /* You may access ws->getUserData() here */
           std::clog << "Connection has been closed\n";
         }
-       }).listen(port_option->value(), [&port_option](auto *listen_socket) {
+        }).listen(port_option->value(), [&port_option](auto *listen_socket) {
         if (listen_socket) {
+          //ws->getUserData().addModelPath(iganet::webapp::tokenize(modelpath_option->value()));
           std::clog << "Listening on port " << port_option->value() << std::endl;
         }
        }).run();

@@ -284,6 +284,17 @@ namespace iganet {
     {}
 
     ModelManager(const std::vector<std::string>& paths) {
+      addModelPath(paths);
+    }
+    /// @}
+    
+    /// @brief Adds models from given path
+    inline void addModelPath(const std::string& path) {
+      addModelPath(std::vector<std::string>({path}));
+    }
+
+    /// @brief Adds models from list of directories
+    inline void addModelPath(const std::vector<std::string>& paths) {
       for (const auto& path : paths) {
         const std::filesystem::path fspath{path};
         for (const auto& entry : std::filesystem::directory_iterator{fspath}) {
@@ -297,12 +308,11 @@ namespace iganet {
         }
       }
     }
-    /// @}
-
+    
     /// @brief Returns a new instance of the requested model and
     /// throws an exception if model cannot be found
-    std::shared_ptr<Model> create(const std::string& name,
-                                  const nlohmann::json& json = NULL) const {
+    inline std::shared_ptr<Model> create(const std::string& name,
+                                         const nlohmann::json& json = NULL) const {
       try {
         auto it = models.find(name);
         if (it == models.end())
@@ -317,7 +327,7 @@ namespace iganet {
     }
 
     /// @brief Serializes the list of models to JSON
-    nlohmann::json getModels() const {
+    inline nlohmann::json getModels() const {
       auto data = nlohmann::json::array();
       for (auto const& model : models)
         data.push_back(create(model.first)->getModel());
