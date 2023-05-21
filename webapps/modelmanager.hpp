@@ -31,22 +31,22 @@ namespace iganet {
   /// @brief Enumerator for specifying the capabilities
   enum class capability
     {
-      eval      =   0, /*!< evaluates the object */
-      refine    =   1, /*!< h-refines the object */
-      elevate   =   2, /*!< p-refines the object */
+      eval      =   0, /*!< evaluates object */
+      refine    =   1, /*!< h-refines object */
+      elevate   =   2, /*!< p-refines object */
             
-      /*!< Data loading */
-      load      = 101, /*!< loads the model from PyTorch file    */
-      loadXML   = 102, /*!< loads the object from G+Smo XML file */
+      /*!< Model loading/saving */
+      load      = 101, /*!< loads model from PyTorch file    */
+      save      = 102, /*!< saves model to PyTorch file    */
 
-      /*!< Data saving */
-      save      = 201, /*!< saves the model to PyTorch file    */
-      saveXML   = 202, /*!< saves the object to G+Smo XML file */
+      /*!< Model import/export */
+      importXML = 201, /*!< imports object from G+Smo XML file */     
+      exportXML = 202, /*!< exports object to G+Smo XML file */
 
       /*!< Error computation */
-      computeL1error = 301, /*!< computes the model's L1-error */
-      computeL2error = 302, /*!< computes the model's L2-error */
-      computeH1error = 303  /*!< computes the model's H1-error */      
+      computeL1error = 301, /*!< computes model's L1-error */
+      computeL2error = 302, /*!< computes model's L2-error */
+      computeH1error = 303  /*!< computes model's H1-error */      
     };
 
   /// @brief Enumerator for specifying the output type
@@ -58,6 +58,62 @@ namespace iganet {
       scalarfield_boundary = 3, /*!< scalar field at the boundary */
       vectorfield_boundary = 4  /*!< vector field at the boundary */
     };
+
+  /// @brief Model elevation
+  class ModelElevate {
+  public:
+    /// @brief elevates model
+    virtual void elevate(const nlohmann::json& json) = 0;
+
+    // @brief Returns model capabilities
+    std::vector<std::string> getCapabilities() const {
+      return std::vector{std::string("elevate")};
+    }
+  };
+  
+  /// @brief Model evaluator
+  class ModelEval {
+  public:
+    /// @brief Evaluates model
+    virtual nlohmann::json eval(const std::string& component,
+                                const nlohmann::json& json) const = 0;
+
+    // @brief Returns model capabilities
+    std::vector<std::string> getCapabilities() const {
+      return std::vector{std::string("eval")};
+    }
+  };
+
+  /// @brief Model refinement
+  class ModelRefine {
+  public:
+    /// @brief Refines model
+    virtual void refine(const nlohmann::json& json) = 0;
+
+    // @brief Returns model capabilities
+    std::vector<std::string> getCapabilities() const {
+      return std::vector{std::string("refine")};
+    }
+  };
+  
+  /// @brief Model XML serialization
+  class ModelXML {
+  public:
+    /// @brief Imports model from XML
+    virtual void importXML(const nlohmann::json& json,
+                           const std::string& component,
+                           std::size_t id) = 0;
+    
+    /// @brief Exports model to XML
+    virtual nlohmann::json exportXML(const std::string& component,
+                                     std::size_t id) = 0;
+
+    // @brief Returns model capabilities
+    std::vector<std::string> getCapabilities() const {
+      return std::vector{std::string("exportXML"),
+                         std::string("exportXML")};
+    }
+  };
   
   /// @brief Model interface
   class Model {
@@ -85,10 +141,42 @@ namespace iganet {
       return nlohmann::json::parse(std::string("{ \"name\" : \"") + getName() + "\"," +
                                    "\"description\" : \"" + getDescription() + "\"," +
                                    "\"options\" : " + getOptions() + "," +
-                                   "\"inputs\" : "  + getInputs()  + "," +
+                                   "\"capabilities\" : " + getCapabilities().dump() + "," +
+                                   "\"inputs\" : " + getInputs() + "," +
                                    "\"outputs\" : " + getOutputs() + " }");
     }
 
+    /// @brief Returns the model's capabilities
+    virtual nlohmann::json getCapabilities() const {
+
+      std::vector<std::string> capabilities;
+
+      if (auto m = dynamic_cast<const ModelElevate*>(this))
+        for (auto const& capability : m->getCapabilities())
+          capabilities.push_back(capability);
+      
+      if (auto m = dynamic_cast<const ModelEval*>(this))
+        for (auto const& capability : m->getCapabilities())
+          capabilities.push_back(capability);
+      
+      if (auto m = dynamic_cast<const ModelRefine*>(this))
+        for (auto const& capability : m->getCapabilities())
+          capabilities.push_back(capability);
+
+      if (auto m = dynamic_cast<const ModelXML*>(this))
+        for (auto const& capability : m->getCapabilities())
+          capabilities.push_back(capability);
+      
+      auto data = nlohmann::json::array();
+      for (auto const& capability : capabilities)
+        data.push_back("\""+capability+"\"");
+
+      nlohmann::json json;
+      json["capability"] = data;
+      
+      return json;
+    }
+    
     /// @brief Serializes the model to JSON
     virtual nlohmann::json to_json(const std::string& attribute = "") const = 0;
 
@@ -116,32 +204,6 @@ namespace iganet {
     const char * what() const throw() {
       return "Invalid model attribute";
     }
-  };
-
-  /// @brief Model evaluator
-  class ModelEval {
-  public:
-    /// @brief Evaluate model
-    virtual nlohmann::json eval(const std::string& component,
-                                const nlohmann::json& json) const = 0;
-  };
-
-  /// @brief Model refinement
-  class ModelRefine {
-  public:
-    /// @brief Refine model
-    virtual void refine(const nlohmann::json& json) = 0;
-  };
-
-  /// @brief Model XML serialization
-  class ModelXML {
-  public:
-    /// @brief Load model from XML
-    virtual void loadXML(const std::string& xml,
-                         const std::string& component) = 0;
-
-    /// @brief Save model to XML
-    virtual nlohmann::json saveXML(const std::string& component) = 0;
   };
   
   /// @brief Model manager

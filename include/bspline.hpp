@@ -1925,12 +1925,35 @@ namespace iganet {
       return root;
     }
 
-    /// @brief Saves the B-spline to file
-    inline void save(const std::string& filename,
-                     const std::string& key = "bspline") const
-    {
-      torch::serialize::OutputArchive archive;
-      write(archive, key).save_to(filename);
+    /// @brief Updates the B-spline object from XML node
+    inline UniformBSplineCore& from_xml(const pugi::xml_document& doc, int id=0) {
+
+      // 1D parametric dimension
+      if constexpr (parDim_ == 1) {
+
+        for (pugi::xml_node node:  doc.child("xml").children("Geometry"))
+          if (strcmp(node.attribute("type").value(), "BSpline") == 0 &&
+              node.attribute("id").as_int()  == id) {
+            
+          }
+        
+        std::cout << "done\n";
+      }
+      
+      // >1D parametric dimension
+      else {
+
+        for (pugi::xml_node node:  doc.child("xml").children("Geometry"))
+          if (node.attribute("type").value() == std::string("TensorBSpline").append(std::to_string(parDim_)) &&
+              node.attribute("id").as_int()  == id) {
+            
+          }
+                       
+        std::cout << "done\n";
+        
+      }
+      
+      return *this;
     }
 
     /// @brief Loads the B-spline from file
@@ -1941,32 +1964,7 @@ namespace iganet {
       archive.load_from(filename);
       read(archive, key);
     }
-
-    /// @brief Writes the B-spline into a torch::serialize::OutputArchive object
-    inline torch::serialize::OutputArchive& write(torch::serialize::OutputArchive& archive,
-                                                  const std::string& key = "bspline") const
-    {
-      archive.write(key + ".parDim", torch::full({1}, parDim_));
-      archive.write(key + ".geoDim", torch::full({1}, geoDim_));
-
-      for (short_t i = 0; i < parDim_; ++i)
-        archive.write(key + ".degree[" + std::to_string(i) + "]", torch::full({1}, degrees_[i]));
-
-      for (short_t i = 0; i < parDim_; ++i)
-        archive.write(key + ".nknots[" + std::to_string(i) + "]", torch::full({1}, nknots_[i]));
-
-      for (short_t i = 0; i < parDim_; ++i)
-        archive.write(key + ".knots[" + std::to_string(i) + "]", knots_[i]);
-
-      for (short_t i = 0; i < parDim_; ++i)
-        archive.write(key + ".ncoeffs[" + std::to_string(i) + "]", torch::full({1}, ncoeffs_[i]));
-
-      for (short_t i = 0; i < geoDim_; ++i)
-        archive.write(key + ".coeffs[" + std::to_string(i) + "]", coeffs_[i]);
-
-      return archive;
-    }
-
+    
     /// @brief Reads the B-spline from a torch::serialize::InputArchive object
     inline torch::serialize::InputArchive& read(torch::serialize::InputArchive& archive,
                                                 const std::string& key = "bspline")
@@ -2002,6 +2000,40 @@ namespace iganet {
 
       for (short_t i = 0; i < geoDim_; ++i)
         archive.read(key + ".coeffs[" + std::to_string(i) + "]", coeffs_[i]);
+
+      return archive;
+    }
+    
+    /// @brief Saves the B-spline to file
+    inline void save(const std::string& filename,
+                     const std::string& key = "bspline") const
+    {
+      torch::serialize::OutputArchive archive;
+      write(archive, key).save_to(filename);
+    }
+
+
+    /// @brief Writes the B-spline into a torch::serialize::OutputArchive object
+    inline torch::serialize::OutputArchive& write(torch::serialize::OutputArchive& archive,
+                                                  const std::string& key = "bspline") const
+    {
+      archive.write(key + ".parDim", torch::full({1}, parDim_));
+      archive.write(key + ".geoDim", torch::full({1}, geoDim_));
+
+      for (short_t i = 0; i < parDim_; ++i)
+        archive.write(key + ".degree[" + std::to_string(i) + "]", torch::full({1}, degrees_[i]));
+
+      for (short_t i = 0; i < parDim_; ++i)
+        archive.write(key + ".nknots[" + std::to_string(i) + "]", torch::full({1}, nknots_[i]));
+
+      for (short_t i = 0; i < parDim_; ++i)
+        archive.write(key + ".knots[" + std::to_string(i) + "]", knots_[i]);
+
+      for (short_t i = 0; i < parDim_; ++i)
+        archive.write(key + ".ncoeffs[" + std::to_string(i) + "]", torch::full({1}, ncoeffs_[i]));
+
+      for (short_t i = 0; i < geoDim_; ++i)
+        archive.write(key + ".coeffs[" + std::to_string(i) + "]", coeffs_[i]);
 
       return archive;
     }
@@ -2043,7 +2075,7 @@ namespace iganet {
     /// If `dim = -1`, new knot values are inserted uniformly in each
     /// knot span in all spatial dimensions. Otherwise, i.e., `dim !=
     /// -1` new knots are only inserted in the specified dimension.
-    UniformBSplineCore& uniform_refine(int numRefine = 1, int dim = -1)
+    inline UniformBSplineCore& uniform_refine(int numRefine = 1, int dim = -1)
     {
       assert(numRefine > 0);
       assert(dim == -1 || (dim >= 0 && dim < parDim_));
@@ -2114,7 +2146,7 @@ namespace iganet {
   private:
     /// @brief Computes the prefactor \f$p_d!/(p_d-r_d)! = p_d \cdots (p_d-r_d+1)\f$
     template<int64_t degree, int64_t deriv, int64_t terminal=degree-deriv>
-    int64_t constexpr eval_prefactor() const
+    inline int64_t constexpr eval_prefactor() const
     {
       if constexpr (degree > terminal)
         return degree * eval_prefactor<degree-1, deriv, terminal>();

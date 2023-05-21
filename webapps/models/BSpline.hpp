@@ -485,20 +485,37 @@ namespace iganet {
         BSpline_t::uniform_refine(numRefine, dim);
       }
 
-      /// @brief Loads the model from XML
-      void loadXML(const std::string& xml,
-                   const std::string& component = "") override {
+      /// @brief Imports the model from XML
+      void importXML(const nlohmann::json& json,
+                   const std::string& component = "",
+                   std::size_t id = 0) override {
+        
+        if (json.contains("data")) {
+          if (json["data"].contains("xml")) {
+            
+            std::string xml = json["data"]["xml"].get<std::string>();
+            
+            pugi::xml_document doc;
+            pugi::xml_parse_result result = doc.load_buffer(xml.c_str(), xml.size());            
+            BSpline_t::from_xml(doc, id);
+
+            return;
+          }
+        }
+
+        throw std::runtime_error("No XML node in JSON object");
       }
       
-      /// @brief Saves the model to XML
-      nlohmann::json saveXML(const std::string& component = "") override {
+      /// @brief Exports the model to XML
+      nlohmann::json exportXML(const std::string& component = "",
+                               std::size_t id = 0) override {
+
+        // serialize to XML
         pugi::xml_document doc;
+        pugi::xml_node node = doc.append_child("xml");
+        BSpline_t::to_xml(node, id);
 
-        // add xml node
-        pugi::xml_node xml = doc.append_child("xml");
-        BSpline_t::to_xml(xml);
-
-        // save to JSON
+        // serialize to JSON
         std::ostringstream oss;
         doc.save(oss);
         

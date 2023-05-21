@@ -605,7 +605,41 @@ int main(int argc, char const* argv[])
               // request: loadxml/*
               //
 
-              if (tokens.size() == 3) {
+              if (tokens.size() == 2) {
+                //
+                // request: loadxml/<session-id>
+                //
+
+                // Get session
+                auto session = ws->getUserData()->getSession(tokens[1]);
+                
+                // Load all existing models from XML
+                for (const auto& model : session->models) {
+                  if (auto m = std::dynamic_pointer_cast<iganet::ModelXML>(model.second)) {
+                    m->importXML(request, "", model.first);
+                  }
+                  else {
+                    response["status"] = iganet::webapp::status::invalidLoadRequest;
+                    response["reason"] = "Invalid load request. Valid requests are \"loadxml/<session-id>\", \"loadxml/<session-id>/<model-id>\" and \"loadxml/<session-id>/<model-id>/<component>\"";
+                    ws->send(response.dump(), uWS::OpCode::TEXT, true);
+                    break;
+                  }
+                }
+                ws->send(response.dump(), uWS::OpCode::TEXT, true);
+
+                // Broadcast update of models
+                std::vector<int64_t> ids;
+                for (const auto& model : session->models)
+                  ids.push_back(model.first);
+                               
+                nlohmann::json broadcast;
+                broadcast["id"] = session->getUUID();
+                broadcast["request"] = "update/model";
+                broadcast["data"]["ids"] = ids;
+                ws->publish(session->getUUID(), broadcast.dump(), uWS::OpCode::TEXT);
+              }
+              
+              else if (tokens.size() == 3) {
                 //
                 // request: loadxml/<session-id>/<model-id>
                 //
@@ -616,9 +650,9 @@ int main(int argc, char const* argv[])
                 // Get model
                 auto model = session->getModel(stoi(tokens[2]));
 
-                // Load an existing model from XML
+                // Import an existing model from XML
                 if (auto m = std::dynamic_pointer_cast<iganet::ModelXML>(model))
-                  m->loadXML("", "");
+                  m->importXML(request, "", stoi(tokens[2]));
                 else {
                   response["status"] = iganet::webapp::status::invalidLoadRequest;
                   response["reason"] = "Invalid load request. Valid requests are \"loadxml/<session-id>/<model-id>\" and \"loadxml/<session-id>/<model-id>/<component>\"";
@@ -644,9 +678,9 @@ int main(int argc, char const* argv[])
                 // Get model
                 auto model = session->getModel(stoi(tokens[2]));
 
-                // Load an existing model from XML
+                // Import an existing model from XML
                 if (auto m = std::dynamic_pointer_cast<iganet::ModelXML>(model))
-                  m->loadXML("", tokens[3]);
+                  m->importXML(request, tokens[3], stoi(tokens[2]));
                 else {
                   response["status"] = iganet::webapp::status::invalidLoadRequest;
                   response["reason"] = "Invalid load request. Valid requests are \"loadxml/<session-id>/<model-id>\" and \"loadxml/<session-id>/<model-id>/<component>\"";
@@ -720,22 +754,21 @@ int main(int argc, char const* argv[])
 
                 // Get session
                 auto session = ws->getUserData()->getSession(tokens[1]);
-
-                // Get model
-                auto model = session->getModel(stoi(tokens[2]));
-
-                // Save all existing models to XML
-                if (auto m = std::dynamic_pointer_cast<iganet::ModelXML>(model)) {
-                  auto xml = nlohmann::json::array();
-                  for (const auto& model : session->models)
-                    if (auto m = std::dynamic_pointer_cast<iganet::ModelXML>(model.second))
-                      xml.push_back(m->saveXML(""));
-                  response["data"]["xml"] = xml;
+                
+                // Export all existing models to XML
+                auto xml = nlohmann::json::array();
+                for (const auto& model : session->models) {
+                  if (auto m = std::dynamic_pointer_cast<iganet::ModelXML>(model.second)) {
+                    xml.push_back(m->exportXML("", model.first));
+                  }
+                  else {
+                    response["status"] = iganet::webapp::status::invalidSaveRequest;
+                    response["reason"] = "Invalid save request. Valid requests are \"savexml/<session-id>\", \"savexml/<session-id>/<model-id>\" and \"savexml/<session-id>/<model-id>/<component>\"";
+                    ws->send(response.dump(), uWS::OpCode::TEXT, true);
+                    break;
+                  }
                 }
-                else {
-                  response["status"] = iganet::webapp::status::invalidSaveRequest;
-                  response["reason"] = "Invalid save request. Valid requests are \"savexml/<session-id>\", \"savexml/<session-id>/<model-id>\" and \"savexml/<session-id>/<model-id>/<component>\"";
-                }
+                response["data"]["xml"] = xml;                
                 ws->send(response.dump(), uWS::OpCode::TEXT, true);
               }
               
@@ -750,9 +783,9 @@ int main(int argc, char const* argv[])
                 // Get model
                 auto model = session->getModel(stoi(tokens[2]));
 
-                // Save an existing model to XML
+                // Export an existing model to XML
                 if (auto m = std::dynamic_pointer_cast<iganet::ModelXML>(model))
-                  response["data"]["xml"] = m->saveXML("");
+                  response["data"]["xml"] = m->exportXML("", stoi(tokens[2]));
                 else {
                   response["status"] = iganet::webapp::status::invalidSaveRequest;
                   response["reason"] = "Invalid save request. Valid requests are \"savexml/<session-id>\", \"savexml/<session-id>/<model-id>\" and \"savexml/<session-id>/<model-id>/<component>\"";
@@ -771,9 +804,9 @@ int main(int argc, char const* argv[])
                 // Get model
                 auto model = session->getModel(stoi(tokens[2]));
 
-                // Save an existing model to XML
+                // Export an existing model to XML
                 if (auto m = std::dynamic_pointer_cast<iganet::ModelXML>(model))
-                  response["data"]["xml"] = m->saveXML(tokens[3]);
+                  response["data"]["xml"] = m->exportXML(tokens[3], stoi(tokens[2]));
                 else {
                   response["status"] = iganet::webapp::status::invalidSaveRequest;
                   response["reason"] = "Invalid save request. Valid requests are \"savexml/<session-id>\", \"savexml/<session-id>/<model-id>\" and \"savexml/<session-id>/<model-id>/<component>\"";
