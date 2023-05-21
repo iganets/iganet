@@ -25,9 +25,9 @@
 ########################################################################
 
 ########################################################################
-# Force CMake version 3.14 or above
+# Force CMake version 3.24 or above
 ########################################################################
-cmake_minimum_required (VERSION 3.14)
+cmake_minimum_required (VERSION 3.24)
 
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
