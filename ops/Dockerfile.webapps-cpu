@@ -1,0 +1,47 @@
+FROM ubuntu:22.04 as build-stage
+
+# Install dependencies
+RUN apt-get update && apt-get install -y --no-install-recommends \
+        build-essential \
+        ca-certificates \
+        clang \
+        curl \
+        libcurl4-openssl-dev \
+        libgflags-dev \
+        libz-dev \
+        unzip
+
+# Install CMake
+ARG CMAKE_VERSION=3.26.4
+ARG CMAKE_OS=linux
+ARG CMAKE_ARCH=x86_64
+WORKDIR /opt
+RUN curl -fsSL --insecure -o cmake-${CMAKE_VERSION}-${CMAKE_OS}-${CMAKE_ARCH}.tar.gz https://github.com/Kitware/CMake/releases/download/v${CMAKE_VERSION}/cmake-${CMAKE_VERSION}-${CMAKE_OS}-${CMAKE_ARCH}.tar.gz \
+        && tar xvzf cmake-${CMAKE_VERSION}-${CMAKE_OS}-${CMAKE_ARCH}.tar.gz \
+        && rm cmake-${CMAKE_VERSION}-${CMAKE_OS}-${CMAKE_ARCH}.tar.gz
+
+# Install Torch
+ARG LIBTORCH_URL=https://download.pytorch.org/libtorch/cpu/libtorch-cxx11-abi-shared-with-deps-2.0.1%2Bcpu.zip
+WORKDIR /opt
+RUN curl -fsSL --insecure -o libtorch.zip ${LIBTORCH_URL} \
+        && unzip -q libtorch.zip \
+        && rm libtorch.zip
+
+# Install IgANet
+WORKDIR /opt/iganet
+COPY ./ .
+WORKDIR /opt/iganet/build
+RUN rm -rf * \
+        && CC=clang CXX=clang++ cmake /opt/iganet . \
+        -DTorch_DIR=/opt/libtorch/share/cmake/Torch \
+        -DIGANET_BUILD_WEBAPPS=ON \
+        -DIGANET_BUILD_EXAMPLES=OFF \
+        -DIGANET_BUILD_UNITTESTS=OFF \
+        -DIGANET_BUILD_PERFTESTS=OFF \
+        -DIGANET_WITH_GISMO=OFF \
+        -DIGANET_WITH_MATPLOT=OFF \
+        -DIGANET_WITH_OPENMP=OFF \
+        && make
+
+FROM ubuntu:22.04 as production-stage
+COPY --from=build-stage /opt/iganet/build/webapps /app
