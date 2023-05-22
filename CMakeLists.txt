@@ -19,8 +19,9 @@
 # IGANET_BUILD_UNITTESTS
 # IGANET_BUILD_WEBAPPS
 #
-# IGANET_WITH_OPENMP
+# IGANET_WITH_GISMO
 # IGANET_WITH_MATPLOT
+# IGANET_WITH_OPENMP
 #
 ########################################################################
 
@@ -264,7 +265,11 @@ message("IGANET_BUILD_WEBAPPS...............: ${IGANET_BUILD_WEBAPPS}")
 
 message("")
 message("Features:")
+message("IGANET_WITH_GISMO..................: ${IGANET_WITH_GISMO}")
+message("IGANET_WITH_LIBUV..................: ${IGANET_WITH_LIBUV}")
+message("IGANET_WITH_MATPLOT................: ${IGANET_WITH_MATPLOT}")
 message("IGANET_WITH_OPENMP.................: ${IGANET_WITH_OPENMP}")
+message("IGANET_WITH_OPENSSL................: ${IGANET_WITH_OPENSSL}")
 message("")
 
 ########################################################################
