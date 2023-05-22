@@ -1,14 +1,15 @@
+# Build stage
+FROM ubuntu:22.04 as build-stage
+
 ARG IGANET_BUILD_WEBAPPS=ON
 ARG IGANET_BUILD_EXAMPLES=OFF
 ARG IGANET_BUILD_UNITTESTS=OFF
 ARG IGANET_BUILD_PERFTESTS=OFF
 ARG IGANET_WITH_GISMO=OFF
+ARG IGANET_WITH_LIBUV=OFF
 ARG IGANET_WITH_MATPLOT=OFF
 ARG IGANET_WITH_OPENMP=OFF
 ARG IGANET_WITH_OPENSSL=ON
-
-# Build stage
-FROM ubuntu:22.04 as build-stage
 
 # Install dependencies
 RUN apt-get update && apt-get install -y --no-install-recommends \
@@ -18,6 +19,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
         curl \
         libcurl4-openssl-dev \
         libgflags-dev \
+        libssl-dev \
         libz-dev \
         unzip
 
@@ -51,6 +53,7 @@ RUN rm -rf * \
         -DIGANET_BUILD_UNITTESTS=$IGANET_BUILD_UNITTESTS \
         -DIGANET_BUILD_PERFTESTS=$IGANET_BUILD_PERFTESTS \
         -DIGANET_WITH_GISMO=$IGANET_WITH_GISMO \
+        -DIGANET_WITH_LIBUV=$IGANET_WITH_LIBUV \
         -DIGANET_WITH_MATPLOT=$IGANET_WITH_MATPLOT \
         -DIGANET_WITH_OPENMP=$IGANET_WITH_OPENMP \
         -DIGANET_WITH_OPENSSL=$IGANET_WITH_OPENSSL \
