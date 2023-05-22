@@ -110,8 +110,8 @@ namespace iganet {
 
     // @brief Returns model capabilities
     std::vector<std::string> getCapabilities() const {
-      return std::vector{std::string("exportXML"),
-                         std::string("exportXML")};
+      return std::vector{std::string("exportxml"),
+                         std::string("importxml")};
     }
   };
   
