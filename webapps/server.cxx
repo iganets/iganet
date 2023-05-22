@@ -62,9 +62,9 @@ namespace iganet { namespace webapp {
     };
 
     /// @brief Tokenize the input string
-    std::vector<std::string> tokenize(std::string str, char separator = '/') {
+    std::vector<std::string> tokenize(std::string str, std::string separator = "/") {
       std::vector<std::string> tokens;
-      for (auto i = strtok(&str[0], &separator); i != NULL; i = strtok(NULL, &separator))
+      for (auto i = strtok(&str[0], &separator[0]); i != NULL; i = strtok(NULL, &separator[0]))
         tokens.push_back(i);
       return tokens;
     }
