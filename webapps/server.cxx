@@ -77,6 +77,10 @@ namespace iganet { namespace webapp {
       const std::string uuid;
 
     public:
+      /// @brief Default constructor
+      Session() : uuid(iganet::uuid::create())
+      {}
+      
       /// @brief Returns the UUID
       const std::string& getUUID() const {
         return uuid;
