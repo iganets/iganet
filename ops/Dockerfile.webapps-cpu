@@ -51,8 +51,8 @@ FROM ubuntu:22.04 as production-stage
 COPY --from=build-stage /opt/libtorch /opt/libtorch
 COPY --from=build-stage /opt/iganet/build/webapps/server /webapps/
 COPY --from=build-stage /opt/iganet/build/webapps/models/lib* /webapps/models/
-COPY ./webapps/cert.pem /
-COPY ./webapps/key.pem /
+COPY ./cert.pem /
+COPY ./key.pem /
 COPY ./webapps/server.cfg /
 WORKDIR /
 
