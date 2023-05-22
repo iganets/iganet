@@ -33,18 +33,18 @@ file(GLOB usockets_SOURCE_FILES
 add_library(usockets ${usockets_SOURCE_FILES})
 
 # Compile with OpenSSL support
-find_package(OpenSSL QUIET)
-if (OPENSSL_FOUND)
+if (IGANET_WITH_OPENSSL)
+  find_package(OpenSSL REQUIRED)
   target_compile_definitions(usockets PUBLIC LIBUS_USE_OPENSSL)
   target_include_directories(usockets PUBLIC ${OPENSSL_INCLUDE_DIR})
-  target_link_libraries(usockets ${OPENSSL_LIBRARIES})
+  target_link_libraries(usockets ${OPENSSL_LIBRARIES}) 
 else()
   target_compile_definitions(usockets PUBLIC LIBUS_NO_SSL)
 endif()
 
 # Compile with LibUV support
-find_package(LibUV QUIET)
-if (LibUV_FOUND)
+if (IGANET_WITH_LIBUV)
+  find_package(LibUV REQUIRED)
   target_compile_definitions(usockets PUBLIC LIBUS_USE_LIBUV)
   target_include_directories(usockets ${LibUV_INCLUDE_DIR})
   target_link_libraries(usockets ${LibUV_LIBRARIES})

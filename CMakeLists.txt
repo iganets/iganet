@@ -93,9 +93,9 @@ option(IGANET_BUILD_PYBIND11    "Build Python bindings"     OFF)
 option(IGANET_BUILD_PERFTESTS   "Build perftests"           OFF)
 option(IGANET_BUILD_UNITTESTS   "Build unittests"           OFF)
 option(IGANET_BUILD_WEBAPPS     "Build WebApps"             OFF)
-option(IGANET_WITH_GISMO        "With G+Smo"                OFF)
-option(IGANET_WITH_MATPLOT      "With Matplot"              ON )
-option(IGANET_WITH_OPENMP       "With OpenMP"               ON )
+option(IGANET_WITH_GISMO        "With G+Smo support"        OFF)
+option(IGANET_WITH_MATPLOT      "With Matplot support"      ON )
+option(IGANET_WITH_OPENMP       "With OpenMP support"       ON )
 
 ########################################################################
 # Prerequisites
