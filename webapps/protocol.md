@@ -7,7 +7,7 @@ _Version: 0.9 (23-05-2023)_
 1.  [Terminology](protocol.md#terminology)
 2.  [Overview](protocol.md#overview)
 3.  [Session commands](protocol.md#session-commands)
-4.  [Model commands](protocol.md#model-commands)
+4.  [Model instance commands](protocol.md#model-instance-commands)
 5.  [Models](protocol.md#models)
 6.  [Descriptors](protocol.md#descriptors)
 
@@ -31,7 +31,7 @@ _Client request_
 ```
 {
     "id"      : <UUID>,
-    "request" : <command>[/<session-id>][/<token1>]...[/<tokenN>],
+    "request" : <command>[/<session-id>][/<token0>]...[/<tokenN>],
   [ "data"    : {...} ]
 }
 ```
@@ -256,9 +256,9 @@ In what follows, only the non-generic parts of the protocol are specified in mor
    "reason"  : <string>
    ```
 
-## Model commands
+## Model instance commands
 
-### Get a list of all models of a specific session
+### Get a list of all model instances of a specific session
 
    _Client request_
    ```
@@ -268,7 +268,7 @@ In what follows, only the non-generic parts of the protocol are specified in mor
    _Server response_
    ```
    "status"  : success (0)
-   "data"    : { "ids" : [<comma-separated list of model ids>] }
+   "data"    : { "ids" : [<comma-separated list of model instances>] }
    ```
    or
    ```
@@ -276,7 +276,7 @@ In what follows, only the non-generic parts of the protocol are specified in mor
    "reason"  : <string>
    ```
 
-### Create a new model
+### Create a new model instance
 
    _Client request_
    ```
@@ -289,7 +289,7 @@ In what follows, only the non-generic parts of the protocol are specified in mor
    _Server response_
    ```
    "status"  : success (0)
-   "data"    : { "id" : model-id }
+   "data"    : { "id" : instance }
    ```
    or
    ```
@@ -297,11 +297,11 @@ In what follows, only the non-generic parts of the protocol are specified in mor
    "reason"  : <string>
    ```
 
-### Remove an existing model
+### Remove an existing model instance
 
    _Client request_
    ```
-   "request" : "remove/<session-id>/<model-id>"
+   "request" : "remove/<session-id>/<instance>"
    ```
 
    _Server response_
@@ -314,11 +314,11 @@ In what follows, only the non-generic parts of the protocol are specified in mor
    "reason"  : <string>
    ```
 
-### Get all attributes of a specific model
+### Get all attributes of all components of a specific model
 
    _Client request_
    ```
-   "request" : "get/<session-id>/<model-id>"
+   "request" : "get/<session-id>/<instance>"
    ```
 
    The attributes for the different models are given in [Models](protocol.md#models).
@@ -334,11 +334,31 @@ In what follows, only the non-generic parts of the protocol are specified in mor
    "reason"  : <string>
    ```
 
-### Get a specific attribute of a specific model
+### Get all attributes of a specific component of a specific instance
 
    _Client request_
    ```
-   "request" : "get/<session-id>/<model-id>/<attribute>"
+   "request" : "get/<session-id>/<instance>/<component>"
+   ```
+
+   The attributes for the different models are given in [Models](protocol.md#models).
+
+   _Server response_
+   ```
+   "status"  : success (0)
+   "data"    : {...}
+   ```
+   or
+   ```
+   "status"  : invalidGetRequest (6)
+   "reason"  : <string>
+   ```
+
+### Get a specific attribute of a specific component of a specific instance
+
+   _Client request_
+   ```
+   "request" : "get/<session-id>/<instance>/<component>/<attribute>"
    ```
 
    The attributes for the different models are given in [Models](protocol.md#models).
@@ -355,11 +375,31 @@ In what follows, only the non-generic parts of the protocol are specified in mor
    ```
    The `data` will be formatted in the same format as in the _get all attributes_ case.
 
-### Update a specific attribute of a specific model
+### Update a specific model instance
 
    _Client request_
    ```
-   "request" : "put/<session-id>/<model-id>/<attribute>"
+   "request" : "put/<session-id>/<instance>/<globale attribute>
+   ```
+
+   The updatable _global_ attributes for the different models are given in [Models](protocol.md#models).
+
+   _Server response_
+   ```
+   "status"  : success (0)
+   "data"    : {...}
+   ```
+   or
+   ```
+   "status"  : invalidPutRequest (7)
+   "reason"  : <string>
+   ```
+
+### Update a specific attribute of a specific component of a specific model instance
+
+   _Client request_
+   ```
+   "request" : "put/<session-id>/<instance>/<component>/<attribute>"
    ```
 
    The updatable attributes for the different models are given in [Models](protocol.md#models).
@@ -375,16 +415,16 @@ In what follows, only the non-generic parts of the protocol are specified in mor
    "reason"  : <string>
    ```
 
-### Evaluate a specific model
+### Evaluate a specific component of a specific model instance
 
    _Client request_
    ```
-   "request" : "eval/<session-id>/<model-id>/<output>"
+   "request" : "eval/<session-id>/<instance>/<component>"
    "data"    : {
                  "resolution" : [<list of integers]
                }
    ```
-   The `output` must be one of the model's outputs (i.e. the `name` attribute) defined during [session creation](protocol.md#Create-a-new-session). 
+   The `component` must be one of the model's outputs (i.e. the `name` attribute) defined during [session creation](protocol.md#Create-a-new-session). 
 
    If the optional `data` and `resolution` are not present, the default resolution is 25 in each parametric dimension.
 
@@ -401,11 +441,11 @@ In what follows, only the non-generic parts of the protocol are specified in mor
    "reason"  : <string>
    ```
 
-### Refine a specific model
+### Refine a specific model instance
 
    _Client request_
    ```
-   "request" : "refine/<session-id>/<model-id>"
+   "request" : "refine/<session-id>/<instance>"
    "data"    : {
                  [ "numRefine" : <integer> (default value is 1) ]
                  [ "dim"       : <integer> (default value is -1) ]
@@ -497,7 +537,7 @@ The following `data` can be passed when [getting all model attributes](protocol.
 
     __Example:__
     ```
-    "request" : put/<session-id>/<model-id>/coeffs
+    "request" : put/<session-id>/<instance>/coeffs
     "data"    : {
                   "indices" : [0, 6, 9],
                   "coeffs"  : [[0.5, 0.2], [0.3, 0.6], [0.9, 1.2]]
