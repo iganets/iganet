@@ -1,13 +1,26 @@
 # WebApp protocol
 
-_Version: 0.8 (21-05-2023)_
+_Version: 0.9 (23-05-2023)_
 
 ## Table of content
 
-1.  [Session commands](protocol.md#session-commands)
-2.  [Model commands](protocol.md#model-commands)
-3.  [Models](protocol.md#models)
-4.  [Descriptors](protocol.md#descriptors)
+1.  [Terminology](protocol.md#terminology)
+2.  [Overview](protocol.md#overview)
+3.  [Session commands](protocol.md#session-commands)
+4.  [Model commands](protocol.md#model-commands)
+5.  [Models](protocol.md#models)
+6.  [Descriptors](protocol.md#descriptors)
+
+## Terminology
+
+- **Front-end** is the front-end application enabling interaction with the user. One or more front-end applications can be running at the same time on the same or on different devices and connecting to the same or different sessions running on the back-end.
+- **Back-end** is the back-end application executing the requests. One or more back-end applications can be running at the same time on the same or on different devices provided they accept requests on different TCP port so that a client can connect to a specific back-end.
+- **Session** is the 'scene' presented to one or more users. A back-end can run one or more sessions at the same time. Each session can be identified by its UUID. A front-end application can only connect to a single session at a time but multiple front-end applications can connect to the same session to enable collaborative design.
+- **Model** is the blueprint of a particular type of physical model (e.g. Poisson's equation in 2d). It is realized as library that is loaded dynamically by the back-end application during startup. Each instance of a model blueprint can be customized (e.g., number of control knots per spatial direction) during its creation process. The list of available models is communicated when creating a new session or connecting to an existing one.
+- **Instance** is a customized model instantiation running in a session. A session can contain one or more instances of the same or different models. Instances are identified by their number (integer value starting at 0 and being increased for each new instance that is created).
+- **Component** is a part of a model, e.g., the geometry, the loadvector, or the solution field, that can be addressed individually. Components are separated into **inputs** and **outputs**. Inputs such as the geometry are components that can be modified by the user in the UI. Outputs such as the solution are fields that can be selected for visualization.
+
+## Overview
 
 All WebApps implement the following [WebSocket](https://en.wikipedia.org/wiki/WebSocket)-based client-server protocol. All communication is initiated by the client and responded by the server. Only broadcasts are initiated by the server and responded by all clients, e.g., when a client request leads to a state change of the server, then an update is broadcasted to all clients connected to the same session.
 
@@ -18,7 +31,7 @@ _Client request_
 ```
 {
     "id"      : <UUID>,
-    "request" : <command>[/<session-id>][/<model-id>][/<attribute>],
+    "request" : <command>[/<session-id>][/<token1>]...[/<tokenN>],
   [ "data"    : {...} ]
 }
 ```
@@ -36,23 +49,23 @@ _Server response_
 
 *   `UUID` is chosen by the client for each new request and copied by the server in the reply. 
 
-*   `request` encodes the actual `command`, optionally followed by the `session-id`, the `model-id`, and an `attribute`
+*   `request` encodes the actual `command`, optionally followed by one or more `tokens`
 
 *   `status` is an integer from the following list of predefined integers:
-    -  0 : `success`
-    -  1 : `invalidRequest`
-    -  2 : `invalidCreateRequest`
-    -  3 : `invalidRemoveRequest`
-    -  4 : `invalidConnectRequest`
-    -  5 : `invalidDisconnectRequest`
-    -  6 : `invalidGetRequest`
-    -  7 : `invalidPutRequest`
-    -  8 : `invalidEvalRequest`
-    -  9 : `invalidRefineRequest`
-    - 10 : `invalidLoadRequest`
-    - 11 : `invalidSaveRequest`
-    - 12 : `invalidImportRequest`
-    - 13 : `invalidExportRequest`
+    -  `0` : `success`
+    -  `1` : `invalidRequest`
+    -  `2` : `invalidCreateRequest`
+    -  `3` : `invalidRemoveRequest`
+    -  `4` : `invalidConnectRequest`
+    -  `5` : `invalidDisconnectRequest`
+    -  `6` : `invalidGetRequest`
+    -  `7` : `invalidPutRequest`
+    -  `8` : `invalidEvalRequest`
+    -  `9` : `invalidRefineRequest`
+    - `10` : `invalidLoadRequest`
+    - `11` : `invalidSaveRequest`
+    - `12` : `invalidImportRequest`
+    - `13` : `invalidExportRequest`
 
 *   `reason` is an optional string that contains human-readable information about a failed request. Successful requests with `status : 0` will not contain a `reason` field
 
