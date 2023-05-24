@@ -13,7 +13,7 @@
 */
 
 #include <iganet.hpp>
-#include <modelmanager.hpp>
+#include <model.hpp>
 
 namespace iganet {
 
@@ -58,8 +58,8 @@ namespace iganet {
         else if constexpr (BSpline_t::parDim() == 2)
           solution_.transform( [](const std::array<typename BSpline_t::value_type,2> xi)
           {
-            return std::array<typename BSpline_t::value_type,BSpline_t::geoDim()>{ static_cast<float>(/*std::sin(M_PI*xi[0]) *
-                                                                                                        std::sin(M_PI*xi[1])*/xi[0] ), 0.0, 0.0 };
+            return std::array<typename BSpline_t::value_type,BSpline_t::geoDim()>{ static_cast<float>(std::sin(M_PI*xi[0]) *
+                                                                                                      std::sin(M_PI*xi[1]) ), 0.0, 0.0 };
           } );
 
         else if constexpr (BSpline_t::parDim() == 3)
@@ -485,42 +485,63 @@ namespace iganet {
         BSpline_t::uniform_refine(numRefine, dim);
       }
 
-      /// @brief Imports the model from XML
+      /// @brief Imports the model from XML (as JSON object)
       void importXML(const nlohmann::json& json,
-                   const std::string& component = "",
-                   std::size_t id = 0) override {
+                     const std::string& component = "",
+                     std::size_t id = 0) override {
         
         if (json.contains("data")) {
           if (json["data"].contains("xml")) {
             
             std::string xml = json["data"]["xml"].get<std::string>();
-            
-            pugi::xml_document doc;
-            pugi::xml_parse_result result = doc.load_buffer(xml.c_str(), xml.size());            
-            BSpline_t::from_xml(doc, id);
 
+            pugi::xml_document doc;
+            pugi::xml_parse_result result = doc.load_buffer(xml.c_str(), xml.size());
+
+            if(pugi::xml_node root = doc.child("xml"))
+              exportXML(root, component, id);
+            else
+              throw std::runtime_error("No \"xml\" node in XML object");
+            
             return;
           }
         }
-
+        
         throw std::runtime_error("No XML node in JSON object");
       }
+
+      /// @brief Imports the model from XML (as XML object)
+      void importXML(const pugi::xml_node& root,
+                     const std::string& component = "",
+                     std::size_t id = 0) override {
+        
+        BSpline_t::from_xml(root, id);
+      }
       
-      /// @brief Exports the model to XML
+      /// @brief Exports the model to XML (as JSON object)
       nlohmann::json exportXML(const std::string& component = "",
                                std::size_t id = 0) override {
-
+        
         // serialize to XML
         pugi::xml_document doc;
-        pugi::xml_node node = doc.append_child("xml");
-        BSpline_t::to_xml(node, id);
-
+        pugi::xml_node root = doc.append_child("xml");
+        root = exportXML(root, component, id);
+        
         // serialize to JSON
         std::ostringstream oss;
         doc.save(oss);
         
         return oss.str();
       }      
+      
+      /// @brief Exports the model to XML (as XML object)
+      pugi::xml_node& exportXML(pugi::xml_node& root,
+                                const std::string& component = "",
+                                std::size_t id = 0) override {
+
+        BSpline_t::to_xml(root, id);
+        return root;
+      }
     };    
 
   } // namespace webapp

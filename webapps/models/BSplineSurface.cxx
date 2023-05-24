@@ -13,7 +13,7 @@
 */
 
 #include "BSpline.hpp"
-#include <modelmanager.hpp>
+#include <model.hpp>
 
 #ifdef _WIN32
 extern "C" __declspec(dllexport)

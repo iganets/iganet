@@ -13,7 +13,7 @@
 */
 
 #include <iganet.hpp>
-#include <modelmanager.hpp>
+#include <model.hpp>
 
 namespace iganet {
 
