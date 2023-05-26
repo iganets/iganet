@@ -35,10 +35,18 @@ namespace iganet {
     class BSplineModel : public Model,
                          public ModelEval,
                          public ModelRefine,
+                         public ModelSerialize,
                          public ModelXML,
                          public BSpline_t {
     private:
-      BSpline_t solution_;
+      /// @brief Global offset vector
+      torch::Tensor offset_;
+
+      /// @brief Global rotation vector
+      torch::Tensor rotation_;
+
+      /// @brief "fake" solution vector
+      BSpline_t solution_;      
       
     public:
       /// @brief Default constructor
@@ -47,7 +55,9 @@ namespace iganet {
       /// @brief Constructor for equidistant knot vectors
       BSplineModel(const std::array<int64_t, BSpline_t::parDim()> ncoeffs,
                    enum iganet::init init = iganet::init::zeros)
-        : BSpline_t(ncoeffs, init), solution_(ncoeffs, init)
+        : BSpline_t(ncoeffs, init), solution_(ncoeffs, init),
+          offset_(torch::zeros({3}, core<typename BSpline_t::value_type>::options_)),
+          rotation_(torch::zeros({3}, core<typename BSpline_t::value_type>::options_))
       {
         if constexpr (BSpline_t::parDim() == 1)
           solution_.transform( [](const std::array<typename BSpline_t::value_type,1> xi)
@@ -218,7 +228,11 @@ namespace iganet {
 
       /// @brief Returns the model's inputs
       std::string getInputs() const override {
-        return "{}";
+        return "["
+          "{\"name\" : \"geomerty\","
+          " \"description\" : \"Geometry\","
+          " \"type\" : 2}"
+          "]";
       }
 
       /// @brief Returns the model's outputs
@@ -487,10 +501,36 @@ namespace iganet {
         BSpline_t::uniform_refine(numRefine, dim);
       }
 
+      /// @brief Loads model from LibTorch file
+      void load(const nlohmann::json& json) override {
+        
+      }
+      
+      /// @brief Saves model to LibTorch file
+      nlohmann::json save() const override {
+        torch::serialize::OutputArchive archive;
+        BSpline_t::write(archive, "geometry");
+        solution_.write(archive, "solution");
+
+        std::vector<std::uint8_t> binary{0xCA, 0xFE, 0xBA, 0xBE};
+        
+        archive.save_to([binary&](const void* data, size_t size) mutable -> std::size_t {
+          auto data_ = einterpret_cast<const std::uint8_t*>(data);
+          for (std::size_t i=0; i<sizel ++i)
+            binary.push_back(data_[i]);
+          return 42;
+        });
+        
+        nlohmann::json json;
+        json["binary"] = nlohmann::json::binary(binary);
+
+        return json;
+      }
+      
       /// @brief Imports the model from XML (as JSON object)
       void importXML(const nlohmann::json& json,
-                     const std::string& component = "",
-                     std::size_t id = 0) override {
+                     const std::string& component,
+                     std::size_t id) override {
         
         if (json.contains("data")) {
           if (json["data"].contains("xml")) {
@@ -514,15 +554,15 @@ namespace iganet {
 
       /// @brief Imports the model from XML (as XML object)
       void importXML(const pugi::xml_node& root,
-                     const std::string& component = "",
-                     std::size_t id = 0) override {
+                     const std::string& component,
+                     std::size_t id) override {
         
         BSpline_t::from_xml(root, id);
       }
       
       /// @brief Exports the model to XML (as JSON object)
-      nlohmann::json exportXML(const std::string& component = "",
-                               std::size_t id = 0) override {
+      nlohmann::json exportXML(const std::string& component,
+                               std::size_t id) override {
         
         // serialize to XML
         pugi::xml_document doc;
@@ -538,8 +578,8 @@ namespace iganet {
       
       /// @brief Exports the model to XML (as XML object)
       pugi::xml_node& exportXML(pugi::xml_node& root,
-                                const std::string& component = "",
-                                std::size_t id = 0) override {
+                                const std::string& component,
+                                std::size_t id) override {
 
         BSpline_t::to_xml(root, id);
         return root;

@@ -19,7 +19,18 @@ namespace iganet {
 
   /// @brief Poisson equation in 2d model
   class Poisson2dModel : public Model,
-                         public UniformBSpline<double,1,1,1> {
+                         public ModelEval,
+                         public ModelRefine,
+                         public ModelSerialize,
+                         public ModelXML {
+
+  private:
+    /// @brief Global offset vector
+    torch::Tensor offset;
+    
+    /// @brief Global rotation vector
+    torch::Tensor rotation;
+    
   public:
     /// @brief Default constructor
     Poisson2dModel() = default;
@@ -55,7 +66,7 @@ namespace iganet {
     /// @brief Serializes the model to JSON
     nlohmann::json to_json(const std::string& component,
                            const std::string& attribute) const override {
-      return UniformBSpline<double,1,1,1>::to_json();
+      return "\"reason\" : \"Not implemented yet\"";
     }
 
     /// @brief Updates the attrbutes of the model
@@ -65,6 +76,51 @@ namespace iganet {
       return "\"reason\" : \"Not implemented yet\"";
     }
 
+    /// @brief Evaluates the model
+    nlohmann::json eval(const std::string& component,
+                        const nlohmann::json& json) const override {
+      return "\"reason\" : \"Not implemented yet\"";
+    }
+
+    /// @brief Refines the model
+    void refine(const nlohmann::json& json = NULL) override {
+    }
+
+    /// @brief Loads model from LibTorch file
+      void load(const nlohmann::json& json) override {
+        
+      }
+      
+      /// @brief Saves model to LibTorch file
+      nlohmann::json save() const override {
+        return "\"reason\" : \"Not implemented yet\"";
+      }
+    
+    /// @brief Imports the model from XML (as JSON object)
+    void importXML(const nlohmann::json& json,
+                   const std::string& component,
+                   std::size_t id = 0) override {
+    }
+
+    /// @brief Imports the model from XML (as XML object)
+    void importXML(const pugi::xml_node& root,
+                   const std::string& component,
+                   std::size_t id = 0) override {
+    }
+
+    /// @brief Exports the model to XML (as JSON object)
+    nlohmann::json exportXML(const std::string& component,
+                             std::size_t id) override {
+      return "\"reason\" : \"Not implemented yet\"";
+    }
+
+    /// @brief Exports the model to XML (as XML object)
+    pugi::xml_node& exportXML(pugi::xml_node& root,
+                              const std::string& component,
+                              std::size_t id) override {
+      return root;
+    }
+    
   };
 } // namespace iganet
   

@@ -666,7 +666,26 @@ int main(int argc, char const* argv[])
               // request: save/*
               //
 
-              if (tokens.size() == 3) {
+              if (tokens.size() == 2) {
+                //
+                // request: load/<session-id>
+                //
+
+                // Get session
+                auto session = ws->getUserData()->getSession(tokens[1]);
+                
+                // Save all active models in session
+                auto models = nlohmann::json::array();
+                for (const auto& model : session->models) {
+                  if (auto m = std::dynamic_pointer_cast<iganet::ModelSerialize>(model.second)) {
+                    models.push_back(m->save());
+                  }
+                }                
+                response["data"] = models;
+                ws->send(response.dump(), uWS::OpCode::TEXT, true);
+              }
+
+              else if (tokens.size() == 3) {
                 //
                 // request: load/<session-id>/<model-instance>
                 //
