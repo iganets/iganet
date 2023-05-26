@@ -241,7 +241,8 @@ namespace iganet {
       }
     
       /// @brief Serializes the model to JSON
-      nlohmann::json to_json(const std::string& attribute = "") const override {
+      nlohmann::json to_json(const std::string& component,
+                             const std::string& attribute) const override {
         if (attribute != "") {
           nlohmann::json data;
           if (attribute == "degrees")
@@ -264,7 +265,8 @@ namespace iganet {
       }
 
       /// @brief Updates the attributes of the model
-      nlohmann::json updateAttribute(const std::string& attribute,
+      nlohmann::json updateAttribute(const std::string& component,
+                                     const std::string& attribute,
                                      const nlohmann::json& json) override {
         if (attribute == "coeffs") {
           if (!json.contains("data"))
@@ -345,7 +347,7 @@ namespace iganet {
           default:
             throw InvalidModelAttributeException();
           }
-          return to_json("coeffs");
+          return to_json(component, "coeffs");
         }
         else
           return "{ INVALID REQUEST }";

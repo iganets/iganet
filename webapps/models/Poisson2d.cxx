@@ -53,12 +53,14 @@ namespace iganet {
     }
     
     /// @brief Serializes the model to JSON
-    nlohmann::json to_json(const std::string& attribute = "") const override {
+    nlohmann::json to_json(const std::string& component,
+                           const std::string& attribute) const override {
       return UniformBSpline<double,1,1,1>::to_json();
     }
 
     /// @brief Updates the attrbutes of the model
-    nlohmann::json updateAttribute(const std::string& attribute,
+    nlohmann::json updateAttribute(const std::string& component,
+                                   const std::string& attribute,
                                    const nlohmann::json& json) override {
       return "\"reason\" : \"Not implemented yet\"";
     }

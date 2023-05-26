@@ -379,7 +379,7 @@ In what follows, only the non-generic parts of the protocol are specified in mor
 
    _Client request_
    ```
-   "request" : "put/<session-id>/<instance>/<globale attribute>
+   "request" : "put/<session-id>/<instance>/<global attribute>
    ```
 
    The updatable _global_ attributes for the different models are given in [Models](protocol.md#models).

@@ -85,16 +85,13 @@ namespace iganet {
   };
 
   /// @brief Model serialization
-  class ModelSerialization {
+  class ModelSerialize {
   public:
     /// @brief Loads model from LibTorch file
-    virtual void load(const nlohmann::json& json,
-                      const std::string& component,
-                      std::size_t id) = 0;
+    virtual void load(const nlohmann::json& json) = 0;
     
     /// @brief Saves model to LibTorch file
-    virtual nlohmann::json save(const std::string& component,
-                                std::size_t id) = 0;
+    virtual nlohmann::json save() const = 0;
     
     // @brief Returns model capabilities
     std::vector<std::string> getCapabilities() const {
@@ -195,10 +192,12 @@ namespace iganet {
     }
     
     /// @brief Serializes the model to JSON
-    virtual nlohmann::json to_json(const std::string& attribute = "") const = 0;
+    virtual nlohmann::json to_json(const std::string& component,
+                                   const std::string& attribute) const = 0;
 
     /// @brief Updates the attributes of the model
-    virtual nlohmann::json updateAttribute(const std::string& attribute,
+    virtual nlohmann::json updateAttribute(const std::string& component,
+                                           const std::string& attribute,
                                            const nlohmann::json& json) = 0;
   };
 

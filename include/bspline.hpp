@@ -21,6 +21,7 @@
 #include <core.hpp>
 #include <blocktensor.hpp>
 #include <utils.hpp>
+#include <zip.hpp>
 
 #ifdef __CUDACC__
 #include <ATen/cuda/CUDAContext.h>
@@ -1812,7 +1813,7 @@ namespace iganet {
       return coeffs_json;
     }
 
-    /// @brief Returns the B-spline object as XML doc
+    /// @brief Returns the B-spline object as XML document
     inline pugi::xml_document to_xml() const
     {
       pugi::xml_document doc;
@@ -1925,13 +1926,18 @@ namespace iganet {
       return root;
     }
 
-    /// @brief Updates the B-spline object from XML node
+    /// @brief Updates the B-spline object from XML document
     inline UniformBSplineCore& from_xml(const pugi::xml_document& doc, int id=0) {
-
+      return from_xml(doc.child("xml"), id);
+    }
+    
+    /// @brief Updates the B-spline object from XML node
+    inline UniformBSplineCore& from_xml(const pugi::xml_node& root, int id=0) {
+      
       // 1D parametric dimension
       if constexpr (parDim_ == 1) {
-
-        for (pugi::xml_node node:  doc.child("xml").children("Geometry"))
+        
+        for (pugi::xml_node node : root.children("Geometry"))
           if (strcmp(node.attribute("type").value(), "BSpline") == 0 &&
               node.attribute("id").as_int()  == id) {
             
@@ -1943,14 +1949,134 @@ namespace iganet {
       // >1D parametric dimension
       else {
 
-        for (pugi::xml_node node:  doc.child("xml").children("Geometry"))
-          if (node.attribute("type").value() == std::string("TensorBSpline").append(std::to_string(parDim_)) &&
-              node.attribute("id").as_int()  == id) {
+        // Loop through all geometry nodes
+        for (pugi::xml_node geo : root.children("Geometry")) {
+          
+          // Check for "TensorBSpline<parDim>" with given id
+          if (geo.attribute("type").value() == std::string("TensorBSpline").append(std::to_string(parDim_)) &&
+              geo.attribute("id").as_int()  == id) {
+
+            std::cout << "Geometry found\n";
             
-          }
-                       
-        std::cout << "done\n";
-        
+            // Check for "TensorBSplineBasos<parDim>"
+            if (pugi::xml_node bases = geo.child("Basis");
+                bases.attribute("type").value() == std::string("TensorBSplineBasis").append(std::to_string(parDim_))) {
+
+              std::cout << "Basis found\n";
+              
+              // Loop through all basis nodes
+              for (pugi::xml_node basis : bases.children("Basis")) {
+                
+                // Check for "BSplineBasis"
+                if (basis.attribute("type").value() == std::string("BSplineBasis")) {
+
+                  std::cout << "BSplineBasis found\n";
+                  
+                  short_t index = basis.attribute("index").as_int();
+                  
+                  // Check for "KnotVector"
+                  if (pugi::xml_node kv = basis.child("KnotVector");
+                      kv.attribute("degree").as_int() == degrees_[index]) {
+
+                    std::cout << "KnotVector found\n";
+                    
+                    std::string values = kv.text().get(); int64_t i = 0;
+                    auto [knots_cpu, knots_accessor] = to_tensorAccessor<value_type, 1>(knots_[index], torch::kCPU);
+                    
+                    for (auto value = strtok(&values[0], " "); value != NULL; value = strtok(NULL, " "), ++i)
+                      knots_accessor[i] = std::stod(value);
+                    
+                  } // "KnotVector"
+                  
+                } // "BSplineBasis"
+                
+              } // "Basis"
+              
+            } else
+              throw std::runtime_error("XML object does not provide TensorBSpline with given id");
+            
+          } // "TensorBSpline<parDim>"
+
+          // Check for "coefs"
+          if (pugi::xml_node coefs = geo.child("coefs")) {
+
+            std::cout << "coefs found\n";
+            
+            std::string values = coefs.text().get(); int64_t i = 0;
+            auto [coeffs_cpu, coeffs_accessors] = to_tensorAccessor<value_type, 1>(coeffs_, torch::kCPU);
+            
+            if constexpr (parDim_ == 1) {
+              auto value = strtok(&values[0], " ");
+              
+              for (int64_t i = 0; i < ncoeffs_[0]; ++i) {
+                for (short_t g = 0; g < geoDim_; ++g) {
+                  coeffs_accessors[g][i] = std::stod(value);
+                  if (value != NULL)
+                    value = strtok(NULL, " ");
+                  else
+                    throw std::runtime_error("XML object does not provide enough coefficients");
+                }
+              }
+            } else if constexpr (parDim_ == 2) {
+              auto value = strtok(&values[0], " ");
+              
+              for (int64_t j = 0; j < ncoeffs_[1]; ++j) {
+                for (int64_t i = 0; i < ncoeffs_[0]; ++i) {
+                  for (short_t g = 0; g < geoDim_; ++g) {
+                    coeffs_accessors[g][j * ncoeffs_[1] + i] = std::stod(value);
+                  if (value != NULL)
+                    value = strtok(NULL, " ");
+                  else
+                    throw std::runtime_error("XML object does not provide enough coefficients");
+                  }
+                }
+              }
+            } else if constexpr (parDim_ == 3) {
+              auto value = strtok(&values[0], " ");
+              
+              for (int64_t k = 0; k < ncoeffs_[2]; ++k) {
+                for (int64_t j = 0; j < ncoeffs_[1]; ++j) {
+                  for (int64_t i = 0; i < ncoeffs_[0]; ++i) {
+                    for (short_t g = 0; g < geoDim_; ++g) {
+                      coeffs_accessors[g][k * ncoeffs_[1] * ncoeffs_[2] +
+                                          j * ncoeffs_[1] + i] = std::stod(value);
+                      if (value != NULL)
+                        value = strtok(NULL, " ");
+                      else
+                        throw std::runtime_error("XML object does not provide enough coefficients");
+                    }
+                  }
+                }
+              }
+            } else if constexpr (parDim_ == 4) {
+              auto value = strtok(&values[0], " ");
+              
+              for (int64_t l = 0; l < ncoeffs_[3]; ++l) {
+                for (int64_t k = 0; k < ncoeffs_[2]; ++k) {
+                  for (int64_t j = 0; j < ncoeffs_[1]; ++j) {
+                    for (int64_t i = 0; i < ncoeffs_[0]; ++i) {
+                      for (short_t g = 0; g < geoDim_; ++g) {
+                        coeffs_accessors[g][l * ncoeffs_[1] * ncoeffs_[2] * ncoeffs_[3] +
+                                            k * ncoeffs_[1] * ncoeffs_[2] +
+                                            j * ncoeffs_[1] + i] = std::stod(value);
+                      if (value != NULL)
+                        value = strtok(NULL, " ");
+                      else
+                        throw std::runtime_error("XML object does not provide enough coefficients");
+                      }
+                    }
+                  }
+                }
+              }
+            } else {
+              throw std::runtime_error("Unsupported parametric dimension");
+            }
+            
+          } else
+            throw std::runtime_error("XML object does not provide coefs");
+          
+        } // "Geometry"
+                
       }
       
       return *this;

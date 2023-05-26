@@ -39,6 +39,7 @@ foreach(webapp ${WEBAPPS})
   target_link_libraries(${name} PUBLIC ${ZLIB_LIBRARIES})
   target_link_libraries(${name} PUBLIC ${CMAKE_DL_LIBS})
   target_link_libraries(${name} PUBLIC usockets)
+  target_link_libraries(${name} PUBLIC pugixml)
 endforeach()
 
 add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/models)
