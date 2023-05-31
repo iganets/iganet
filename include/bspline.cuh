@@ -24,13 +24,13 @@ namespace iganet {
     template<typename real_t>
     __global__ void greville_cuda_kernel(torch::PackedTensorAccessor64<real_t, 1>       greville,  
                                          const torch::PackedTensorAccessor64<real_t, 1> knots,
-                                         int64_t ncoeffs, short_t degree)
+                                         int64_t ncoeffs, short_t degree, bool interior)
     {
       for (int64_t k = blockIdx.x * blockDim.x + threadIdx.x;
-           k < ncoeffs;
+           k < ncoeffs - (interior ? 2 : 0);
            k += blockDim.x * gridDim.x) {
         for (short_t l = 1; l <= degree; ++l)
-          greville[k] += knots[k + l];
+          greville[k] += knots[k + (interior ? 1 : 0) + l];
         greville[k] /= real_t(degree);
       }      
     }

@@ -694,11 +694,14 @@ namespace iganet {
     ///   g_{i_d} = \frac{\xi_{i_d+1} + \xi_{i_d+2} + \dots + \xi_{i_d+p_d+1}}{p_d-1}
     /// \f]
     ///
+    ///
+    /// @param[in] interior If true only interior Greville abscissae are considered
+    ///
     /// @result Array of Greville abscissae
-    inline auto greville() const
+    inline auto greville(bool interior = false) const
     {
       if constexpr (parDim_ == 0)
-        return torch::zeros_like(coeffs_[0]);
+        return torch::zeros(ncoeffs_[0] - (interior ? 2 : 0), core<real_t>::options_);
 
       else {
         std::array<torch::Tensor, parDim_> coeffs;
@@ -710,28 +713,31 @@ namespace iganet {
 
           for (short_t j = 0; j < parDim_; ++j) {
             if (i == j) {
-              auto greville_ = torch::zeros(ncoeffs_[j], core<real_t>::options_);
+              auto greville_ = torch::zeros(ncoeffs_[j] - (interior ? 2 : 0),
+                                            core<real_t>::options_);
               if (greville_.is_cuda()) {
 #ifdef __CUDACC__
                 auto greville = greville_.template packed_accessor64<value_type, 1>();
                 auto knots = knots_[j].template packed_accessor64<value_type, 1>();
                 const int num_mp = at::cuda::getCurrentDeviceProperties()->multiProcessorCount;
-                cuda::greville_cuda_kernel<<<32*num_mp, 256>>>(greville, knots, ncoeffs_[j], degrees_[j]);
+                cuda::greville_cuda_kernel<<<32*num_mp, 256>>>(greville, knots,
+                                                               ncoeffs_[j], degrees_[j],
+                                                               interior);
 #else
                 throw std::runtime_error("Code must be compiled with CUDA enabled");
 #endif
               } else {
                 auto greville_accessor = greville_.template accessor<value_type, 1>();
                 auto knots_accessor = knots_[j].template accessor<value_type, 1>();
-                for (int64_t k = 0; k < ncoeffs_[j]; ++k) {
+                for (int64_t k = 0; k < ncoeffs_[j] - (interior ? 2 : 0); ++k) {
                   for (short_t l = 1; l <= degrees_[j]; ++l)
-                    greville_accessor[k] += knots_accessor[k + l];
+                    greville_accessor[k] += knots_accessor[k + (interior ? 1 : 0) + l];
                   greville_accessor[k] /= degrees_[j];
                 }
               }
               coeffs[i] = torch::kron(greville_, coeffs[i]);
             } else
-              coeffs[i] = torch::kron(torch::ones(ncoeffs_[j],
+              coeffs[i] = torch::kron(torch::ones(ncoeffs_[j] - (interior ? 2 : 0),
                                                   core<real_t>::options_), coeffs[i]);
           }
         }
