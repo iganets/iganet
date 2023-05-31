@@ -80,6 +80,9 @@ namespace iganet {
           layers_.emplace_back(register_module("layer["+std::to_string(i)+"]",
                                                torch::nn::Linear(layers[i], layers[i+1])));
           layers_.back()->to(dtype<real_t>());
+
+          torch::nn::init::xavier_uniform_(layers_.back()->weight);
+          torch::nn::init::constant_(layers_.back()->bias, 0.01);
         }
 
       // Generate vector of activation functions
@@ -1095,7 +1098,7 @@ namespace iganet {
       geometry_samples_t samples_;
       
       // Get Greville abscissae inside the domain
-      ((std::get<Is>(samples_.first) = std::get<Is>(geometry_).greville()), ...);
+      ((std::get<Is>(samples_.first) = std::get<Is>(geometry_).greville(true)), ...);
       
       // Get Greville abscissae at the domain
       ((std::get<Is>(samples_.second) = std::get<Is>(geometry_.boundary()).greville()), ...);
@@ -1115,7 +1118,7 @@ namespace iganet {
       variable_samples_t samples_;
       
       // Get Greville abscissae inside the domain
-      ((std::get<Is>(samples_.first) = std::get<Is>(variable_).greville()), ...);
+      ((std::get<Is>(samples_.first) = std::get<Is>(variable_).greville(true)), ...);
       
       // Get Greville abscissae at the domain
       ((std::get<Is>(samples_.second) = std::get<Is>(variable_.boundary()).greville()), ...);
@@ -1133,7 +1136,7 @@ namespace iganet {
     virtual geometry_samples_t geometry_samples(int64_t epoch) const
     {
       if constexpr (geometry_t::dim() == 1)
-        return {geometry_.greville(), geometry_.boundary().greville()};
+        return {geometry_.greville(true), geometry_.boundary().greville()};
       else
         return geometry_samples(std::make_index_sequence<geometry_t::dim()>{});
     }
@@ -1147,7 +1150,7 @@ namespace iganet {
     virtual variable_samples_t variable_samples(int64_t epoch) const
     {
       if constexpr (variable_t::dim() == 1)
-        return {variable_.greville(), variable_.boundary().greville()};
+        return {variable_.greville(true), variable_.boundary().greville()};
       else
         return variable_samples(std::make_index_sequence<variable_t::dim()>{});
     }
