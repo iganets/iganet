@@ -58,6 +58,7 @@ include(FetchContent)
 FetchContent_Declare(
   uwebsockets
   URL https://github.com/uNetworking/uWebSockets/archive/refs/tags/v20.37.0.zip
+  PATCH_COMMAND     patch -p1 -N -d ${PROJECT_BINARY_DIR}/_deps/uwebsockets-src < ${PROJECT_SOURCE_DIR}/cmake/uwebsockets.patch
   )
 
 FetchContent_MakeAvailable(uwebsockets)
