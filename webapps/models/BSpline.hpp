@@ -62,20 +62,20 @@ namespace iganet {
         if constexpr (BSpline_t::parDim() == 1)
           solution_.transform( [](const std::array<typename BSpline_t::value_type,1> xi)
           {
-            return std::array<typename BSpline_t::value_type,BSpline_t::geoDim()>{ static_cast<float>(std::sin(M_PI*xi[0])), 0.0, 0.0 };
+            return std::array<typename BSpline_t::value_type,BSpline_t::geoDim()>{ static_cast<iganet::real_t>(std::sin(M_PI*xi[0])), 0.0, 0.0 };
           } );
 
         else if constexpr (BSpline_t::parDim() == 2)
           solution_.transform( [](const std::array<typename BSpline_t::value_type,2> xi)
           {
-            return std::array<typename BSpline_t::value_type,BSpline_t::geoDim()>{ static_cast<float>(std::sin(M_PI*xi[0]) *
+            return std::array<typename BSpline_t::value_type,BSpline_t::geoDim()>{ static_cast<iganet::real_t>(std::sin(M_PI*xi[0]) *
                                                                                                       std::sin(M_PI*xi[1]) ), 0.0, 0.0 };
           } );
 
         else if constexpr (BSpline_t::parDim() == 3)
           solution_.transform( [](const std::array<typename BSpline_t::value_type,3> xi)
           {
-            return std::array<typename BSpline_t::value_type,BSpline_t::geoDim()>{ static_cast<float>(std::sin(M_PI*xi[0]) *
+            return std::array<typename BSpline_t::value_type,BSpline_t::geoDim()>{ static_cast<iganet::real_t>(std::sin(M_PI*xi[0]) *
                                                                                     std::sin(M_PI*xi[1]) *
                                                                                     std::sin(M_PI*xi[2])), 0.0, 0.0 };
           } );
@@ -382,13 +382,13 @@ namespace iganet {
 
           if (component == "ValueFieldMagnitude") {
             return nlohmann::json::array()
-              .emplace_back(::iganet::to_json<float,1>(*(solution_.eval(xi)[0])));
+              .emplace_back(::iganet::to_json<iganet::real_t,1>(*(solution_.eval(xi)[0])));
           }
           else if (component == "ValueField") {
             auto values = BSpline_t::eval(xi);
             auto result = nlohmann::json::array();
             for (short_t dim = 0; dim < BSpline_t::geoDim(); ++dim)
-              result.emplace_back(::iganet::to_json<float,1>(*(values[dim])));
+              result.emplace_back(::iganet::to_json<iganet::real_t,1>(*(values[dim])));
             return result;
           }
           else
@@ -410,13 +410,13 @@ namespace iganet {
 
           if (component == "ValueFieldMagnitude") {
             return nlohmann::json::array()
-              .emplace_back(::iganet::to_json<float,2>(*(solution_.eval(xi)[0])));
+              .emplace_back(::iganet::to_json<iganet::real_t,2>(*(solution_.eval(xi)[0])));
           }
           else if (component == "ValueField") {
             auto values = BSpline_t::eval(xi);
             auto result = nlohmann::json::array();
             for (short_t dim = 0; dim < BSpline_t::geoDim(); ++dim)
-              result.emplace_back(::iganet::to_json<float,2>(*(values[dim])));
+              result.emplace_back(::iganet::to_json<iganet::real_t,2>(*(values[dim])));
             return result;
           }
           else
@@ -440,13 +440,13 @@ namespace iganet {
           
           if (component == "ValueFieldMagnitude") {
             return nlohmann::json::array()
-              .emplace_back(::iganet::to_json<float,3>(*(solution_.eval(xi)[0])));
+              .emplace_back(::iganet::to_json<iganet::real_t,3>(*(solution_.eval(xi)[0])));
           }
           else if (component == "ValueField") {
             auto values = BSpline_t::eval(xi);
             auto result = nlohmann::json::array();
             for (short_t dim = 0; dim < BSpline_t::geoDim(); ++dim)
-              result.emplace_back(::iganet::to_json<float,3>(*(values[dim])));
+              result.emplace_back(::iganet::to_json<iganet::real_t,3>(*(values[dim])));
             return result;
           }
           else
@@ -472,13 +472,13 @@ namespace iganet {
           
           if (component == "ValueFieldMagnitude") {
             return nlohmann::json::array()
-              .emplace_back(::iganet::to_json<float,4>(*(solution_.eval(xi)[0])));
+              .emplace_back(::iganet::to_json<iganet::real_t,4>(*(solution_.eval(xi)[0])));
           }
           else if (component == "ValueField") {
             auto values = BSpline_t::eval(xi);
             auto result = nlohmann::json::array();
             for (short_t dim = 0; dim < BSpline_t::geoDim(); ++dim)
-              result.emplace_back(::iganet::to_json<float,4>(*(values[dim])));
+              result.emplace_back(::iganet::to_json<iganet::real_t,4>(*(values[dim])));
             return result;
           }
           else
@@ -503,26 +503,47 @@ namespace iganet {
 
       /// @brief Loads model from LibTorch file
       void load(const nlohmann::json& json) override {
-        
+
+        if (json.contains("data")) {
+          if (json["data"].contains("binary")) {
+
+            // get binary vector from JSON object
+            std::vector<std::uint8_t> binary = json["data"]["binary"];
+
+            std::cout << binary.size() << std::endl;
+
+            return;
+          }
+        }
+
+        throw InvalidModelException();        
       }
       
       /// @brief Saves model to LibTorch file
       nlohmann::json save() const override {
+
+        // serialize model to output archive
         torch::serialize::OutputArchive archive;
+        archive.write("model", static_cast<int64_t>(std::hash<std::string>{}(getName())));
+        
         BSpline_t::write(archive, "geometry");
         solution_.write(archive, "solution");
 
-        std::vector<std::uint8_t> binary{0xCA, 0xFE, 0xBA, 0xBE};
+        // store output archive in binary vector
+        std::vector<std::uint8_t> binary;
         
-        archive.save_to([binary&](const void* data, size_t size) mutable -> std::size_t {
-          auto data_ = einterpret_cast<const std::uint8_t*>(data);
-          for (std::size_t i=0; i<sizel ++i)
+        archive.save_to([&binary](const void* data, size_t size) mutable -> std::size_t {
+          auto data_ = reinterpret_cast<const std::uint8_t*>(data);
+
+          for (std::size_t i=0; i<size; ++i)
             binary.push_back(data_[i]);
-          return 42;
+          
+          return size;
         });
-        
+
+        // attach binary vector to JSON object
         nlohmann::json json;
-        json["binary"] = nlohmann::json::binary(binary);
+        json["binary"] = binary;
 
         return json;
       }

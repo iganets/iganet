@@ -14,6 +14,8 @@
 
 #pragma once
 
+#include <config.hpp>
+
 namespace iganet {
 
   /// @brief Enumerator for specifying the capabilities

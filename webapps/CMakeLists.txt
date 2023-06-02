@@ -12,6 +12,14 @@
 #
 ########################################################################
 
+# Set a default coefficient numeric types if not specified
+if(NOT IGANET_WEBAPPS_COEFF_TYPE)
+  set (IGANET_WEBAPPS_COEFF_TYPE "float" CACHE STRING
+    "Coefficient type(float, double)" FORCE)
+endif()
+set_property(CACHE IGANET_WEBAPPS_COEFF_TYPE PROPERTY STRINGS
+"float" "double")
+
 ########################################################################
 # Option list
 ########################################################################
@@ -25,10 +33,16 @@ include(popl)
 include(websockets)
 
 ########################################################################
+# Config file
+########################################################################
+configure_file(${CMAKE_CURRENT_SOURCE_DIR}/config.hpp.in
+              "${CMAKE_CURRENT_BINARY_DIR}/config.hpp" @ONLY)
+
+########################################################################
 # WebApps
 ########################################################################
 find_package(ZLIB REQUIRED)
-include_directories(${CMAKE_CURRENT_SOURCE_DIR})
+include_directories(${CMAKE_CURRENT_SOURCE_DIR} ${CMAKE_CURRENT_BINARY_DIR})
 
 file(GLOB WEBAPPS *.cxx)
 foreach(webapp ${WEBAPPS})

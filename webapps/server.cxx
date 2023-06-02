@@ -157,7 +157,7 @@ namespace iganet { namespace webapp {
 
 int main(int argc, char const* argv[])
 {
-  using PerSocketData = iganet::webapp::Sessions<float>;
+  using PerSocketData = iganet::webapp::Sessions<iganet::real_t>;
   
   popl::OptionParser op("Allowed options");
   auto help_option = op.add<popl::Switch>("h", "help", "print help message");
@@ -453,7 +453,7 @@ int main(int argc, char const* argv[])
                 //
 
                 // Create a new session
-                auto session = std::make_shared<iganet::webapp::Session<float>>();
+                auto session = std::make_shared<iganet::webapp::Session<iganet::real_t>>();
                 std::string uuid = session->getUUID();
                 ws->getUserData()->sessions[uuid] = session;
                 response["data"]["id"] = uuid;
@@ -472,13 +472,13 @@ int main(int argc, char const* argv[])
                 // Get session
                 auto session = ws->getUserData()->getSession(tokens[1]);
 
-                // Create new model
+                // Get new model's id
                 int64_t id = (session->models.size() > 0 ?
                               session->models.crbegin()->first+1 : 0);
 
                 try {
                   // Create a new model
-                  session->models[id] = ws->getUserData()->models.create(tokens[2], request);                  
+                  session->models[id] = ws->getUserData()->models.create(tokens[2], request);
                   response["data"]["id"] = std::to_string(id);
                   response["data"]["model"] = session->models[id]->getModel();
                   ws->send(response.dump(), uWS::OpCode::TEXT, true);
@@ -649,9 +649,33 @@ int main(int argc, char const* argv[])
                 //
                 // request: eval/<session-id>
                 //
-
                 
-                ws->send(response.dump(), uWS::OpCode::TEXT, true);
+                // Get session
+                auto session = ws->getUserData()->getSession(tokens[1]);
+
+                // Get new model's id
+                int64_t id = (session->models.size() > 0 ?
+                              session->models.crbegin()->first+1 : 0);
+
+                try {
+                  // Create a new model from binary data stream
+                  session->models[id] = ws->getUserData()->models.load(request);
+                  response["data"]["id"] = std::to_string(id);
+                  response["data"]["model"] = session->models[id]->getModel();
+                  ws->send(response.dump(), uWS::OpCode::TEXT, true);
+                  
+                  // Broadcast creation of a new model
+                  nlohmann::json broadcast;
+                  broadcast["id"] = session->getUUID();
+                  broadcast["request"] = "create/model";
+                  broadcast["data"]["id"] = id;
+                  broadcast["data"]["model"] = session->models[id]->getModel();
+                  ws->publish(session->getUUID(), broadcast.dump(), uWS::OpCode::TEXT);
+                } catch(...) {
+                  response["status"] = iganet::webapp::status::invalidCreateRequest;
+                  response["reason"] = "Invalid load request. Valid requests are \"load/<session-id>\"";
+                  ws->send(response.dump(), uWS::OpCode::TEXT, true);
+                }
               }
                             
               else {

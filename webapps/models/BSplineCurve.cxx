@@ -21,65 +21,66 @@ extern "C" __declspec(dllexport)
 extern "C"
 #endif
 {
-  std::shared_ptr<iganet::Model> create(const nlohmann::json& config) {
+  /// @brief Create a B-spline curve
+  std::shared_ptr<iganet::Model> create(const nlohmann::json& json) {
     enum iganet::webapp::degree degree = iganet::webapp::degree::linear;
     enum iganet::init init = iganet::init::linear;
     std::array<int64_t, 1> ncoeffs = {4};
     bool nonuniform = false;
 
-    if (config.contains("data")) {
+    if (json.contains("data")) {
 
-      if (config["data"].contains("degree"))
-        degree = config["data"]["degree"].get<enum iganet::webapp::degree>();
+      if (json["data"].contains("degree"))
+        degree = json["data"]["degree"].get<enum iganet::webapp::degree>();
 
-      if (config["data"].contains("init"))
-        init = config["data"]["init"].get<enum iganet::init>();
+      if (json["data"].contains("init"))
+        init = json["data"]["init"].get<enum iganet::init>();
 
-      if (config["data"].contains("ncoeffs"))
-        ncoeffs = config["data"]["ncoeffs"].get<std::array<int64_t,1>>();
+      if (json["data"].contains("ncoeffs"))
+        ncoeffs = json["data"]["ncoeffs"].get<std::array<int64_t,1>>();
 
-      if (config["data"].contains("nonuniform"))
-        nonuniform = config["data"]["nonuniform"].get<bool>();
+      if (json["data"].contains("nonuniform"))
+        nonuniform = json["data"]["nonuniform"].get<bool>();
 
       switch (degree) {
       case iganet::webapp::degree::constant:
         if (nonuniform)
-          return std::make_shared<iganet::webapp::BSplineModel<iganet::NonUniformBSpline<float, 3, 0>>>(ncoeffs, init);
+          return std::make_shared<iganet::webapp::BSplineModel<iganet::NonUniformBSpline<iganet::real_t, 3, 0>>>(ncoeffs, init);
         else
-          return std::make_shared<iganet::webapp::BSplineModel<iganet::   UniformBSpline<float, 3, 0>>>(ncoeffs, init);
+          return std::make_shared<iganet::webapp::BSplineModel<iganet::   UniformBSpline<iganet::real_t, 3, 0>>>(ncoeffs, init);
       case iganet::webapp::degree::linear:
         if (nonuniform)
-          return std::make_shared<iganet::webapp::BSplineModel<iganet::NonUniformBSpline<float, 3, 1>>>(ncoeffs, init);
+          return std::make_shared<iganet::webapp::BSplineModel<iganet::NonUniformBSpline<iganet::real_t, 3, 1>>>(ncoeffs, init);
         else
-          return std::make_shared<iganet::webapp::BSplineModel<iganet::   UniformBSpline<float, 3, 1>>>(ncoeffs, init);
+          return std::make_shared<iganet::webapp::BSplineModel<iganet::   UniformBSpline<iganet::real_t, 3, 1>>>(ncoeffs, init);
       case iganet::webapp::degree::quadratic:
         if (nonuniform)
-          return std::make_shared<iganet::webapp::BSplineModel<iganet::NonUniformBSpline<float, 3, 2>>>(ncoeffs, init);
+          return std::make_shared<iganet::webapp::BSplineModel<iganet::NonUniformBSpline<iganet::real_t, 3, 2>>>(ncoeffs, init);
         else
-          return std::make_shared<iganet::webapp::BSplineModel<iganet::   UniformBSpline<float, 3, 2>>>(ncoeffs, init);
+          return std::make_shared<iganet::webapp::BSplineModel<iganet::   UniformBSpline<iganet::real_t, 3, 2>>>(ncoeffs, init);
       case iganet::webapp::degree::cubic:
         if (nonuniform)
-          return std::make_shared<iganet::webapp::BSplineModel<iganet::NonUniformBSpline<float, 3, 3>>>(ncoeffs, init);
+          return std::make_shared<iganet::webapp::BSplineModel<iganet::NonUniformBSpline<iganet::real_t, 3, 3>>>(ncoeffs, init);
         else
-          return std::make_shared<iganet::webapp::BSplineModel<iganet::   UniformBSpline<float, 3, 3>>>(ncoeffs, init);
+          return std::make_shared<iganet::webapp::BSplineModel<iganet::   UniformBSpline<iganet::real_t, 3, 3>>>(ncoeffs, init);
       case iganet::webapp::degree::quartic:
         if (nonuniform)
-          return std::make_shared<iganet::webapp::BSplineModel<iganet::NonUniformBSpline<float, 3, 4>>>(ncoeffs, init);
+          return std::make_shared<iganet::webapp::BSplineModel<iganet::NonUniformBSpline<iganet::real_t, 3, 4>>>(ncoeffs, init);
         else
-          return std::make_shared<iganet::webapp::BSplineModel<iganet::   UniformBSpline<float, 3, 4>>>(ncoeffs, init);
+          return std::make_shared<iganet::webapp::BSplineModel<iganet::   UniformBSpline<iganet::real_t, 3, 4>>>(ncoeffs, init);
       case iganet::webapp::degree::quintic:
         if (nonuniform)
-          return std::make_shared<iganet::webapp::BSplineModel<iganet::NonUniformBSpline<float, 3, 5>>>(ncoeffs, init);
+          return std::make_shared<iganet::webapp::BSplineModel<iganet::NonUniformBSpline<iganet::real_t, 3, 5>>>(ncoeffs, init);
         else
-          return std::make_shared<iganet::webapp::BSplineModel<iganet::   UniformBSpline<float, 3, 5>>>(ncoeffs, init);
+          return std::make_shared<iganet::webapp::BSplineModel<iganet::   UniformBSpline<iganet::real_t, 3, 5>>>(ncoeffs, init);
       default:
         throw std::runtime_error("Invalid degree");
       }
     }
     else
       if (nonuniform)
-        return std::make_shared<iganet::webapp::BSplineModel<iganet::NonUniformBSpline<float, 3, 1>>>(ncoeffs, init);
+        return std::make_shared<iganet::webapp::BSplineModel<iganet::NonUniformBSpline<iganet::real_t, 3, 1>>>(ncoeffs, init);
       else
-        return std::make_shared<iganet::webapp::BSplineModel<iganet::   UniformBSpline<float, 3, 1>>>(ncoeffs, init);
+        return std::make_shared<iganet::webapp::BSplineModel<iganet::   UniformBSpline<iganet::real_t, 3, 1>>>(ncoeffs, init);
   }
 }

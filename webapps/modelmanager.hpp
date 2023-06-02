@@ -138,18 +138,42 @@ namespace iganet {
     inline std::shared_ptr<Model> create(const std::string& name,
                                          const nlohmann::json& json = NULL) const {
       try {
-        auto it = models.find(name);
-        if (it == models.end())
+        auto model = models.find(name);
+        if (model == models.end())
           throw InvalidModelException();
 
         std::shared_ptr<Model> (*create)(const nlohmann::json&);
-        create = reinterpret_cast<std::shared_ptr<Model> (*)(const nlohmann::json&)> (it->second->getSymbol("create"));
+        create = reinterpret_cast<std::shared_ptr<Model> (*)(const nlohmann::json&)> (model->second->getSymbol("create"));
         return create(json);
       } catch(...) {
         throw InvalidModelException();
       }
     }
 
+    /// @brief Returns a new model instance from binary data stream
+    /// throws an exception if model cannot be created
+    inline std::shared_ptr<Model> load(const nlohmann::json& json) const {
+
+      std::cout << "modelmanager::load\n";
+      
+      for (auto& model : models) {
+        std::cout << typeid(model).name() << "\n";
+        try {
+          std::shared_ptr<Model> (*load)(const nlohmann::json&);
+          std::cout << "Before symbol lookup\n";
+          load = reinterpret_cast<std::shared_ptr<Model> (*)(const nlohmann::json&)> (model.second->getSymbol("load"));
+          std::cout << "One line before loading...\n";
+          return load(json);
+        } catch(std::exception& e) {
+          std::cout << e.what() << std::endl;
+          std::cout << "Exception caught, try next model\n";
+          /* try next model */ }
+      }
+      
+      std::cout << "No working model found, through exception and quit load request\n";
+      throw InvalidModelException();
+    }
+    
     /// @brief Serializes the list of models to JSON
     inline nlohmann::json getModels() const {
       auto data = nlohmann::json::array();
