@@ -167,7 +167,7 @@ namespace iganet {
       /// @brief Sets the coefficients of all spaces from a single tensor
       inline auto& from_tensor(const torch::Tensor& coeffs)
       {
-        return as_tensor(std::make_index_sequence<sizeof...(spline_t)>{}, coeffs);
+        return from_tensor(std::make_index_sequence<sizeof...(spline_t)>{}, coeffs);
       }
       
       /// @brief Returns a constant reference to the boundary spline object
