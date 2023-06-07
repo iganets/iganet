@@ -153,24 +153,16 @@ namespace iganet {
     /// @brief Returns a new model instance from binary data stream
     /// throws an exception if model cannot be created
     inline std::shared_ptr<Model> load(const nlohmann::json& json) const {
-
-      std::cout << "modelmanager::load\n";
       
       for (auto& model : models) {
-        std::cout << typeid(model).name() << "\n";
         try {
           std::shared_ptr<Model> (*load)(const nlohmann::json&);
-          std::cout << "Before symbol lookup\n";
           load = reinterpret_cast<std::shared_ptr<Model> (*)(const nlohmann::json&)> (model.second->getSymbol("load"));
-          std::cout << "One line before loading...\n";
           return load(json);
-        } catch(std::exception& e) {
-          std::cout << e.what() << std::endl;
-          std::cout << "Exception caught, try next model\n";
-          /* try next model */ }
+        } catch(...) { /* try next model */ }
       }
       
-      std::cout << "No working model found, through exception and quit load request\n";
+      // No working model found, through exception and quit load request
       throw InvalidModelException();
     }
     

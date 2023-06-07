@@ -510,7 +510,12 @@ namespace iganet {
             // get binary vector from JSON object
             std::vector<std::uint8_t> binary = json["data"]["binary"];
 
-            std::cout << binary.size() << std::endl;
+            // recover input archive from binary vector
+            torch::serialize::InputArchive archive;
+            archive.load_from(reinterpret_cast<const char*>(binary.data()), binary.size());
+
+            BSpline_t::read(archive, "geometry");
+            solution_.read(archive, "solution");
 
             return;
           }
@@ -525,6 +530,7 @@ namespace iganet {
         // serialize model to output archive
         torch::serialize::OutputArchive archive;
         archive.write("model", static_cast<int64_t>(std::hash<std::string>{}(getName())));
+        archive.write("nonuniform", static_cast<bool>(BSpline_t::is_nonuniform()));
         
         BSpline_t::write(archive, "geometry");
         solution_.write(archive, "solution");

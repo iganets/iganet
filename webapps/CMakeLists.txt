@@ -30,7 +30,7 @@ option(IGANET_WITH_LIBUV        "With LibUV support"        OFF)
 # Prerequisites
 ########################################################################
 include(popl)
-include(websockets)
+include(uwebsockets)
 
 ########################################################################
 # Config file
