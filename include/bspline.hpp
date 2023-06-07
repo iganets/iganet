@@ -422,6 +422,16 @@ namespace iganet {
     template<typename real_t_, short_t GeoDim_, short_t... Degrees_>
     using derived_self_type_t = UniformBSplineCore<real_t_, GeoDim_, Degrees_...>;
 
+    /// @brief Returns true if the B-spline is uniform
+    static bool is_uniform() {
+      return true;
+    }
+
+    /// @brief Returns true if the B-spline is non-uniform
+    static bool is_nonuniform() {
+      return false;
+    }
+    
     /// @brief Default constructor
     UniformBSplineCore()
       : iganet::core<real_t>()
@@ -2723,7 +2733,7 @@ namespace iganet {
     /// @brief Base type
     using Base = UniformBSplineCore<real_t, GeoDim, Degrees...>;
 
-  public:
+  public:    
     /// @brief Deduces the self-type possibly degrees (de-)elevated by
     /// the additive constant `degree_elevate`
     template<std::make_signed<short_t>::type degree_elevate = 0>
@@ -2735,6 +2745,16 @@ namespace iganet {
     template<typename real_t_, short_t GeoDim_, short_t... Degrees_>
     using derived_self_type_t = NonUniformBSplineCore<real_t_, GeoDim_, Degrees_...>;
 
+    /// @brief Returns true if the B-spline is uniform
+    static bool is_uniform() {
+      return false;
+    }
+
+    /// @brief Returns true if the B-spline is non-uniform
+    static bool is_nonuniform() {
+      return true;
+    }
+    
     /// @brief Constructor for equidistant knot vectors
     using UniformBSplineCore<real_t, GeoDim, Degrees...>::UniformBSplineCore;
 
