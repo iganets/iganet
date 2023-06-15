@@ -1,7 +1,7 @@
 /**
-   @file pybind11/pyconfig.hpp
+   @file pyiganet/pyconfig.hpp
 
-   @brief Pybind11 IgANet configuration
+   @brief PyIgANet configuration
 
    @author Matthias Moller
 
@@ -14,8 +14,8 @@
 
 #pragma once
 
-namespace iganet { namespace pybind11 {
+namespace pyiganet {
     
     using real_t = @PYIGANET_COEFF_TYPE@;
     
-}} // namespace iganet::pybind11
+} // namespace pyiganet

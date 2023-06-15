@@ -1,7 +1,7 @@
 /**
-   @file pybind11/pycore.cxx
+   @file pyiganet/pycore.cxx
 
-   @brief Pybind11 core components
+   @brief PyIgANet core components
 
    @author Matthias Moller
 
@@ -22,7 +22,7 @@
 namespace py = pybind11;
 
 void init_core(py::module_ &m) {
-  py::class_<iganet::core<iganet::pybind11::real_t>>(m, "Core")
+  py::class_<iganet::core<pyiganet::real_t>>(m, "Core")
     
     // Constructors
     .def(py::init<>())
@@ -31,6 +31,6 @@ void init_core(py::module_ &m) {
     .def(py::init<c10::DeviceType, bool>())
     
     // Member functions
-    .def("options", &iganet::core<iganet::pybind11::real_t>::options)
-    .def("to_json", &iganet::core<iganet::pybind11::real_t>::to_json);
+    .def("options", &iganet::core<pyiganet::real_t>::options)
+    .def("to_json", &iganet::core<pyiganet::real_t>::to_json);
 }

@@ -1,7 +1,7 @@
 /**
-   @file pybind11/pybspline.cxx
+   @file pyiganet/pybspline.cxx
 
-   @brief Pybind11 multivariate B-splines
+   @brief PyIgANet multivariate B-splines
 
    @author Matthias Moller
 

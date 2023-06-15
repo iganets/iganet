@@ -15,7 +15,7 @@
 # IGANET_BUILD_DOCS
 # IGANET_BUILD_EXAMPLES
 # IGANET_BUILD_PERFTESTS
-# IGANET_BUILD_PYBIND11
+# IGANET_BUILD_PYIGANET
 # IGANET_BUILD_UNITTESTS
 # IGANET_BUILD_WEBAPPS
 #
@@ -24,6 +24,16 @@
 # IGANET_WITH_OPENMP
 #
 ########################################################################
+
+########################################################################
+# IgANet version number
+########################################################################
+set(iganet_VERSION_MAJOR 23) #year
+set(iganet_VERSION_MINOR 06) #month
+set(iganet_VERSION_PATCH 0 ) #patch
+set(iganet_VERSION
+  "${iganet_VERSION_MAJOR}.${iganet_VERSION_MINOR}.${iganet_VERSION_PATCH}" CACHE INTERNAL "iganet version number")
+set(IGANET_VERSION "${iganet_VERSION}" CACHE INTERNAL "IgANet version number")
 
 ########################################################################
 # Force CMake version 3.24 or above
@@ -90,7 +100,7 @@ list(APPEND CMAKE_MODULE_PATH "${PROJECT_SOURCE_DIR}/cmake")
 ########################################################################
 option(IGANET_BUILD_DOCS        "Build documentation"       OFF)
 option(IGANET_BUILD_EXAMPLES    "Build examples"            ON )
-option(IGANET_BUILD_PYBIND11    "Build Python bindings"     OFF)
+option(IGANET_BUILD_PYIGANET    "Build Python bindings"     OFF)
 option(IGANET_BUILD_PERFTESTS   "Build perftests"           OFF)
 option(IGANET_BUILD_UNITTESTS   "Build unittests"           OFF)
 option(IGANET_BUILD_WEBAPPS     "Build WebApps"             OFF)
@@ -259,7 +269,7 @@ message("Options:")
 message("IGANET_BUILD_DOCS..................: ${IGANET_BUILD_DOCS}")
 message("IGANET_BUILD_EXAMPLES..............: ${IGANET_BUILD_EXAMPLES}")
 message("IGANET_BUILD_PERFTESTS.............: ${IGANET_BUILD_PERFTESTS}")
-message("IGANET_BUILD_PYBIND11..............: ${IGANET_BUILD_PYBIND11}")
+message("IGANET_BUILD_PYIGANET..............: ${IGANET_BUILD_PYIGANET}")
 message("IGANET_BUILD_UNITTESTS.............: ${IGANET_BUILD_UNITTESTS}")
 message("IGANET_BUILD_WEBAPPS...............: ${IGANET_BUILD_WEBAPPS}")
 
@@ -295,8 +305,8 @@ endif()
 ########################################################################
 # Add Python bindings (if enabled)
 ########################################################################
-if (IGANET_BUILD_PYBIND11)
-  add_subdirectory(${PROJECT_SOURCE_DIR}/pybind11)
+if (IGANET_BUILD_PYIGANET)
+  add_subdirectory(${PROJECT_SOURCE_DIR}/pyiganet)
 endif()
 
 ########################################################################

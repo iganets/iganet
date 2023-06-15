@@ -38,7 +38,7 @@ pages:
       - include/*
       - examples/*
       - perftests/*
-      - pybind11/*
+      - pyiganet/*
       - unittests/*
       - server/*
   artifacts:
@@ -65,6 +65,6 @@ unittests-gcc:
       - include/*
       - examples/*
       - perftests/*
-      - pybind11/*
+      - pyiganet/*
       - unittests/*
       - server/*

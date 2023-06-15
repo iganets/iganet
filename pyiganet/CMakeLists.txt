@@ -31,8 +31,11 @@ if(NOT PYIGANET_COEFF_TYPE)
 endif()
 set_property(CACHE PYIGANET_COEFF_TYPE PROPERTY STRINGS "float" "double")
 
+option(PYIGANET_MEMORY_OPTIMIZED "Optimize for memory consumption" OFF)
+
 message("Options:")
 message("PYIGANET_COEFF_TYPE................: ${PYIGANET_COEFF_TYPE}")
+message("PYIGANET_MEMORY_OPTIMIZED..........: ${PYIGANET_MEMORY_OPTIMIZED}")
 
 ########################################################################
 # Auto-generate source files
@@ -49,11 +52,11 @@ list(APPEND inits "init_bspline")
 # Explicit instantiation of templated classes
 foreach(GEODIM RANGE 1 4)
   foreach(DEGREES IN ITEMS
-      "1" "1,1" #"1,1,1" "1,1,1,1"
-      "2") #"2,2" "2,2,2" "2,2,2,2"
-    #  "3" "3,3" "3,3,3" "3,3,3,3"
-    #  "4" "4,4" "4,4,4" "4,4,4,4"
-    #  "5" "5,5" "5,5,5" "5,5,5,5")
+      "1")# "1,1") "1,1,1" "1,1,1,1"
+#      "2" "2,2" "2,2,2" "2,2,2,2"
+#      "3" "3,3" "3,3,3" "3,3,3,3"
+#      "4" "4,4" "4,4,4" "4,4,4,4"
+#      "5" "5,5" "5,5,5" "5,5,5,5")
     
     set(SUFFIX "${GEODIM}d_${DEGREES}")
     string(REPLACE "," "_" SUFFIX ${SUFFIX})   
@@ -67,11 +70,12 @@ foreach(GEODIM RANGE 1 4)
   endforeach()
 endforeach()
 
+# 
 file(WRITE ${CMAKE_CURRENT_BINARY_DIR}/pyiganet.cxx
   "/**
-   @file pybind11/pyiganet.cxx
+   @file pyiganet/pyiganet.cxx
 
-   @brief Pybind11 IgANet
+   @brief PyIgANet
 
    @author Matthias Moller
 
@@ -94,7 +98,17 @@ foreach(init IN LISTS inits)
 endforeach()
 
 file(APPEND ${CMAKE_CURRENT_BINARY_DIR}/pyiganet.cxx
-  "\nPYBIND11_MODULE(pyiganet, m) {\n")
+  "\n\n/**
+   @brief Creates IgANet Python module 
+*/
+
+PYBIND11_MODULE(pyiganet, m) {\n
+
+m.attr(\"__name__\") = \"pyiganet\";
+m.attr(\"__version__\") = \"${IGANET_VERSION}\";
+m.doc() = \"IgANet (Physics-informed isogeometric analysis neural network)\";
+
+")
 
 foreach(init IN LISTS inits)
   file(APPEND ${CMAKE_CURRENT_BINARY_DIR}/pyiganet.cxx
@@ -111,9 +125,16 @@ include_directories(${CMAKE_CURRENT_SOURCE_DIR})
 file(GLOB SRCS ${CMAKE_CURRENT_SOURCE_DIR}/*.cxx ${CMAKE_CURRENT_BINARY_DIR}/*.cxx)
 
 pybind11_add_module(pyiganet MODULE ${SRCS})
-#target_link_libraries(pyiganet PUBLIC "${TORCH_LIBRARIES}")
+
 target_include_directories(pyiganet PUBLIC ${TORCH_INCLUDE_DIRS})
-  
+target_link_libraries(pyiganet PUBLIC "${TORCH_LIBRARIES}")
+target_link_libraries(pyiganet PUBLIC pugixml)
+
+if (IGANET_WITH_GISMO)
+  target_compile_definitions(pyiganet PUBLIC WITH_GISMO)
+  target_link_libraries(pyiganet PUBLIC gismo)
+endif()
+
 if (IGANET_WITH_MATPLOT)
   target_link_libraries(pyiganet PUBLIC Matplot++::matplot)
 endif()
