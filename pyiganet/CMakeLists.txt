@@ -10,6 +10,11 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 #
+# CMakeLists.txt accepts the following command line parameters
+#
+# PYIGANET_COEFF_TYPE
+# PYIGANET_MEMORY_OPTIMIZED
+#
 ########################################################################
 
 # Define remote repository
@@ -33,9 +38,11 @@ set_property(CACHE PYIGANET_COEFF_TYPE PROPERTY STRINGS "float" "double")
 
 option(PYIGANET_MEMORY_OPTIMIZED "Optimize for memory consumption" OFF)
 
+message("")
 message("Options:")
 message("PYIGANET_COEFF_TYPE................: ${PYIGANET_COEFF_TYPE}")
 message("PYIGANET_MEMORY_OPTIMIZED..........: ${PYIGANET_MEMORY_OPTIMIZED}")
+message("")
 
 ########################################################################
 # Auto-generate source files
@@ -46,8 +53,8 @@ configure_file(${CMAKE_CURRENT_SOURCE_DIR}/pyconfig.hpp.in
   ${CMAKE_CURRENT_BINARY_DIR}/pyconfig.hpp @ONLY)
 
 # Create list of PyBind11 init subroutines
-list(APPEND inits "init_core")
-list(APPEND inits "init_bspline")
+list(APPEND init_core    "init_core")
+list(APPEND init_splines "init_bspline")
 
 # Explicit instantiation of templated classes
 foreach(GEODIM RANGE 1 4)
@@ -60,7 +67,7 @@ foreach(GEODIM RANGE 1 4)
     
     set(SUFFIX "${GEODIM}d_${DEGREES}")
     string(REPLACE "," "_" SUFFIX ${SUFFIX})   
-    list(APPEND inits "init_UniformBSpline${SUFFIX}")
+    list(APPEND init_splines "init_UniformBSpline${SUFFIX}")
 
     string(REPLACE "," ";" PARDIM ${DEGREES})
     list(LENGTH PARDIM PARDIM)
@@ -70,7 +77,7 @@ foreach(GEODIM RANGE 1 4)
   endforeach()
 endforeach()
 
-# 
+# Create main PyIgANet source file
 file(WRITE ${CMAKE_CURRENT_BINARY_DIR}/pyiganet.cxx
   "/**
    @file pyiganet/pyiganet.cxx
@@ -92,7 +99,7 @@ file(WRITE ${CMAKE_CURRENT_BINARY_DIR}/pyiganet.cxx
 
 namespace py = pybind11;\n\n")
 
-foreach(init IN LISTS inits)
+foreach(init IN LISTS init_core init_splines)
   file(APPEND ${CMAKE_CURRENT_BINARY_DIR}/pyiganet.cxx
     "void ${init}(py::module_ &);\n")
 endforeach()
@@ -108,11 +115,33 @@ m.attr(\"__name__\") = \"pyiganet\";
 m.attr(\"__version__\") = \"${IGANET_VERSION}\";
 m.doc() = \"IgANet (Physics-informed isogeometric analysis neural network)\";
 
+py::module core = m.def_submodule(\"core\");
+
+core.attr(\"__name__\") = \"pyiganet.core\";
+core.attr(\"__version__\") = \"${IGANET_VERSION}\";
+core.doc() = \"IgANet (Physics-informed isogeometric analysis neural network): Core module\";
+
 ")
 
-foreach(init IN LISTS inits)
+foreach(init IN LISTS init_core)
   file(APPEND ${CMAKE_CURRENT_BINARY_DIR}/pyiganet.cxx
-    "${init}(m);\n")
+    "${init}(core);\n")
+endforeach()
+
+file(APPEND ${CMAKE_CURRENT_BINARY_DIR}/pyiganet.cxx
+  "\n
+
+py::module splines = m.def_submodule(\"splines\");
+
+splines.attr(\"__name__\") = \"pyiganet.splines\";
+splines.attr(\"__version__\") = \"${IGANET_VERSION}\";
+splines.doc() = \"IgANet (Physics-informed isogeometric analysis neural network): Spline module\";
+
+")
+
+foreach(init IN LISTS init_splines)
+  file(APPEND ${CMAKE_CURRENT_BINARY_DIR}/pyiganet.cxx
+    "${init}(splines);\n")
 endforeach()
 
 file(APPEND ${CMAKE_CURRENT_BINARY_DIR}/pyiganet.cxx
@@ -127,7 +156,6 @@ file(GLOB SRCS ${CMAKE_CURRENT_SOURCE_DIR}/*.cxx ${CMAKE_CURRENT_BINARY_DIR}/*.c
 pybind11_add_module(pyiganet MODULE ${SRCS})
 
 target_include_directories(pyiganet PUBLIC ${TORCH_INCLUDE_DIRS})
-target_link_libraries(pyiganet PUBLIC "${TORCH_LIBRARIES}")
 target_link_libraries(pyiganet PUBLIC pugixml)
 
 if (IGANET_WITH_GISMO)
