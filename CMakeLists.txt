@@ -306,7 +306,7 @@ endif()
 # Add Python bindings (if enabled)
 ########################################################################
 if (IGANET_BUILD_PYIGANET)
-  add_subdirectory(${PROJECT_SOURCE_DIR}/pyiganet)
+  add_subdirectory(${PROJECT_SOURCE_DIR}/pyiganet/src)
 endif()
 
 ########################################################################
