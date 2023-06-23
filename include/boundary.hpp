@@ -690,9 +690,20 @@ namespace iganet {
     ///
     /// @result Tensor of coefficients
     template<std::size_t... Is>
-    inline torch::Tensor as_tensor(std::index_sequence<Is...>) const
+    inline torch::Tensor as_tensor_(std::index_sequence<Is...>) const
     {
       return torch::cat({std::get<Is>(BoundaryCore::bdr_).as_tensor()...});
+    }
+
+    /// @brief Returns the size of the single tensor representation of
+    /// all spline objects
+    ///
+    /// @result Size of the tensor
+    template<std::size_t... Is>
+    inline int64_t as_tensor_size_(std::index_sequence<Is...>) const
+    {
+      return std::apply([]( auto... v ){ return ( v + ... ); },
+                        std::make_tuple(std::get<Is>(BoundaryCore::bdr_).as_tensor_size()...));
     }
 
     /// @brief Sets all coefficients of all spline objects from a
@@ -700,8 +711,8 @@ namespace iganet {
     ///
     /// @result Updates spline object
     template<std::size_t... Is>
-    inline auto& from_tensor(std::index_sequence<Is...>,
-                             const torch::Tensor& coeffs)
+    inline auto& from_tensor_(std::index_sequence<Is...>,
+                              const torch::Tensor& coeffs)
     {
       std::size_t counter(0);
       auto lambda = [&counter](std::size_t increment){ return counter+=increment; };
@@ -721,16 +732,25 @@ namespace iganet {
     /// @result Tensor of coefficients
     inline torch::Tensor as_tensor() const
     {
-      return as_tensor(std::make_index_sequence<BoundaryCore::sides()>{});
+      return as_tensor_(std::make_index_sequence<BoundaryCore::sides()>{});
     }
 
+    /// @brief Returns the size of the single tensor representation of
+    /// all spline objects
+    //
+    /// @result Size of the tensor
+    inline int64_t as_tensor_size() const
+    {
+      return as_tensor_size_(std::make_index_sequence<BoundaryCore::sides()>{});
+    }
+    
     /// @brief Sets all coefficients of all spline objects from a
     /// single tensor
     ///
     /// @result Updated spline objects
     inline auto& from_tensor(const torch::Tensor& coeffs)
     {
-      return from_tensor(std::make_index_sequence<BoundaryCore::sides()>{}, coeffs);
+      return from_tensor_(std::make_index_sequence<BoundaryCore::sides()>{}, coeffs);
     }
     
   private:

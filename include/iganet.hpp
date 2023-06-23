@@ -82,7 +82,7 @@ namespace iganet {
           layers_.back()->to(dtype<real_t>());
 
           torch::nn::init::xavier_uniform_(layers_.back()->weight);
-          torch::nn::init::constant_(layers_.back()->bias, 0.01);
+          torch::nn::init::constant_(layers_.back()->bias, 0.0);
         }
 
       // Generate vector of activation functions
@@ -698,9 +698,17 @@ namespace iganet {
     /// @brief Forward evaluation
     torch::Tensor forward(torch::Tensor x)
     {
+      torch::Tensor x_in = x.clone();
+      
       // Standard feed-forward neural network
       for (auto [layer, activation] : zip(layers_, activations_))
         x = activation->apply(layer->forward(x));
+      
+      // Skip connections
+      //      x = torch::where(torch::linspace(1, x.size(0), x.size(0)) <= 49,
+      //                       x,
+      //                       x_in.index({torch::indexing::Slice(154, torch::indexing::None)}));
+            
       return x;
     }
 
@@ -950,13 +958,13 @@ namespace iganet {
       geometry_(std::get<Is>(geometry_splines)..., init::greville, core),
       variable_(std::get<Js>(variable_splines)..., init::zeros,    core),
       
-      outputs_(std::get<Js>(variable_splines)..., init::random,   core),
+      outputs_(std::get<Js>(variable_splines)..., init::random,    core),
 
       
       // Construct the deep neural network
-      net_(concat(std::vector<int64_t>{inputs(0).size(0)},
+      net_(concat(std::vector<int64_t>{inputs(/* epoch */ 0).size(0)},
                   layers,
-                  std::vector<int64_t>{outputs_.as_tensor().size(0)}),
+                  std::vector<int64_t>{outputs_.as_tensor_size(false)}),
            activations),
 
       // Construct the optimizer
@@ -1098,7 +1106,7 @@ namespace iganet {
       geometry_samples_t samples_;
       
       // Get Greville abscissae inside the domain
-      ((std::get<Is>(samples_.first) = std::get<Is>(geometry_).greville(true)), ...);
+      ((std::get<Is>(samples_.first) = std::get<Is>(geometry_).greville(/* interior */ true)), ...);
       
       // Get Greville abscissae at the domain
       ((std::get<Is>(samples_.second) = std::get<Is>(geometry_.boundary()).greville()), ...);
@@ -1118,7 +1126,7 @@ namespace iganet {
       variable_samples_t samples_;
       
       // Get Greville abscissae inside the domain
-      ((std::get<Is>(samples_.first) = std::get<Is>(variable_).greville(true)), ...);
+      ((std::get<Is>(samples_.first) = std::get<Is>(variable_).greville(/* interior */ true)), ...);
       
       // Get Greville abscissae at the domain
       ((std::get<Is>(samples_.second) = std::get<Is>(variable_.boundary()).greville()), ...);
@@ -1136,7 +1144,7 @@ namespace iganet {
     virtual geometry_samples_t geometry_samples(int64_t epoch) const
     {
       if constexpr (geometry_t::dim() == 1)
-        return {geometry_.greville(true), geometry_.boundary().greville()};
+        return {geometry_.greville(/* interior */ true), geometry_.boundary().greville()};
       else
         return geometry_samples(std::make_index_sequence<geometry_t::dim()>{});
     }
@@ -1150,7 +1158,7 @@ namespace iganet {
     virtual variable_samples_t variable_samples(int64_t epoch) const
     {
       if constexpr (variable_t::dim() == 1)
-        return {variable_.greville(true), variable_.boundary().greville()};
+        return {variable_.greville(/* interior */ true), variable_.boundary().greville()};
       else
         return variable_samples(std::make_index_sequence<variable_t::dim()>{});
     }
@@ -1163,7 +1171,7 @@ namespace iganet {
     /// a derived class.
     virtual torch::Tensor inputs(int64_t epoch) const
     {
-      return torch::cat({geometry_.as_tensor(), variable_.as_tensor()});
+      return torch::cat({geometry_.as_tensor(/* no boundary */ false), variable_.as_tensor()});
     }
     
     /// @brief Initializes epoch
@@ -1198,6 +1206,14 @@ namespace iganet {
           if (status & status::variable_samples)
             variable_samples = this->variable_samples(epoch);
 
+          std::cout << inputs << std::endl;
+          std::cout << geometry_.as_tensor_size(false)
+                    << "+"
+                    << variable_.as_tensor_size(false)
+                    << std::endl;
+          std::cout << inputs.index({torch::indexing::Slice(147, torch::indexing::None)})
+                    << std::endl;
+          
           auto closure = [&]()
           {          
             // Reset gradients
@@ -1205,7 +1221,7 @@ namespace iganet {
             
             // Execute the model on the inputs
             outputs = net_->forward(inputs);
-            
+
             // Compute the loss value
             loss = this->loss(outputs, geometry_samples, variable_samples, epoch, status);
             

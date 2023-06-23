@@ -23,14 +23,14 @@
 namespace py = pybind11;
 
 void init_bspline(py::module_ &m) {
-  py::enum_<enum iganet::init>(m, "init")
+  py::enum_<enum iganet::init>(m, "init", "Initialization of B-spline coefficients")
     .value("zeros",    iganet::init::zeros)
     .value("ones",     iganet::init::ones)
     .value("linear",   iganet::init::linear)
     .value("random",   iganet::init::random)
     .value("greville", iganet::init::greville);
 
-  py::enum_<iganet::deriv>(m, "deriv")
+  py::enum_<iganet::deriv>(m, "deriv", "Function and derivative values")
     .value("func",    iganet::deriv::func)
     
     .value("dx",      iganet::deriv::dx)

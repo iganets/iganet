@@ -13,18 +13,11 @@
 # CMakeLists.txt accepts the following command line parameters
 #
 # PYIGANET_COEFF_TYPE
-# PYIGANET_MEMORY_OPTIMIZED
 #
 ########################################################################
 
-# Define remote repository
-include(FetchContent)
-FetchContent_Declare(
-  pybind11
-  URL https://github.com/pybind/pybind11/archive/refs/heads/master.zip
-  )
-
-FetchContent_MakeAvailable(pybind11)
+include(boost_preprocessor)
+include(pybind11)
 
 ########################################################################
 # Options
@@ -36,12 +29,9 @@ if(NOT PYIGANET_COEFF_TYPE)
 endif()
 set_property(CACHE PYIGANET_COEFF_TYPE PROPERTY STRINGS "float" "double")
 
-option(PYIGANET_MEMORY_OPTIMIZED "Optimize for memory consumption" OFF)
-
 message("")
 message("Options:")
 message("PYIGANET_COEFF_TYPE................: ${PYIGANET_COEFF_TYPE}")
-message("PYIGANET_MEMORY_OPTIMIZED..........: ${PYIGANET_MEMORY_OPTIMIZED}")
 message("")
 
 ########################################################################
@@ -54,12 +44,26 @@ configure_file(${CMAKE_CURRENT_SOURCE_DIR}/pyconfig.hpp.in
 
 # Create list of PyBind11 init subroutines
 list(APPEND init_core    "init_core")
+
+# Explicit instantiation of templated blocktensor classes
+foreach(ROWS RANGE 1 4)
+  foreach(COLS RANGE 1 4)
+
+    set(SUFFIX "_${ROWS}_${COLS}")
+    list(APPEND init_core "init_BlockTensor${SUFFIX}")
+
+    configure_file(${CMAKE_CURRENT_SOURCE_DIR}/pyblocktensor.cxx.in
+      ${CMAKE_CURRENT_BINARY_DIR}/pyblocktensor${SUFFIX}.cxx @ONLY)    
+  endforeach()
+endforeach()
+  
+# Create list of PyBind11 init subroutines
 list(APPEND init_splines "init_bspline")
 
-# Explicit instantiation of templated classes
+# Explicit instantiation of templated spline classes
 foreach(GEODIM RANGE 1 4)
   foreach(DEGREES IN ITEMS
-      "1")# "1,1") "1,1,1" "1,1,1,1"
+      "1" "1,1" "1,1,1" "1,1,1,1")
 #      "2" "2,2" "2,2,2" "2,2,2,2"
 #      "3" "3,3" "3,3,3" "3,3,3,3"
 #      "4" "4,4" "4,4,4" "4,4,4,4"
@@ -69,9 +73,6 @@ foreach(GEODIM RANGE 1 4)
     string(REPLACE "," "_" SUFFIX ${SUFFIX})   
     list(APPEND init_splines "init_UniformBSpline${SUFFIX}")
 
-    string(REPLACE "," ";" PARDIM ${DEGREES})
-    list(LENGTH PARDIM PARDIM)
-    
     configure_file(${CMAKE_CURRENT_SOURCE_DIR}/pybspline.cxx.in
       ${CMAKE_CURRENT_BINARY_DIR}/pybspline${SUFFIX}.cxx @ONLY)
   endforeach()
@@ -109,15 +110,15 @@ file(APPEND ${CMAKE_CURRENT_BINARY_DIR}/pyiganet.cxx
    @brief Creates IgANet Python module 
 */
 
-PYBIND11_MODULE(pyiganet, m) {\n
+PYBIND11_MODULE(pyiganet_core, m) {\n
 
-m.attr(\"__name__\") = \"pyiganet\";
+m.attr(\"__name__\") = \"pyiganet_core\";
 m.attr(\"__version__\") = \"${IGANET_VERSION}\";
 m.doc() = \"IgANet (Physics-informed isogeometric analysis neural network)\";
 
 py::module core = m.def_submodule(\"core\");
 
-core.attr(\"__name__\") = \"pyiganet.core\";
+core.attr(\"__name__\") = \"pyiganet_core.core\";
 core.attr(\"__version__\") = \"${IGANET_VERSION}\";
 core.doc() = \"IgANet (Physics-informed isogeometric analysis neural network): Core module\";
 
@@ -133,7 +134,7 @@ file(APPEND ${CMAKE_CURRENT_BINARY_DIR}/pyiganet.cxx
 
 py::module splines = m.def_submodule(\"splines\");
 
-splines.attr(\"__name__\") = \"pyiganet.splines\";
+splines.attr(\"__name__\") = \"pyiganet_core.splines\";
 splines.attr(\"__version__\") = \"${IGANET_VERSION}\";
 splines.doc() = \"IgANet (Physics-informed isogeometric analysis neural network): Spline module\";
 
@@ -153,16 +154,16 @@ include_directories(${CMAKE_CURRENT_SOURCE_DIR})
 
 file(GLOB SRCS ${CMAKE_CURRENT_SOURCE_DIR}/*.cxx ${CMAKE_CURRENT_BINARY_DIR}/*.cxx)
 
-pybind11_add_module(pyiganet MODULE ${SRCS})
+pybind11_add_module(pyiganet_core MODULE ${SRCS})
 
-target_include_directories(pyiganet PUBLIC ${TORCH_INCLUDE_DIRS})
-target_link_libraries(pyiganet PUBLIC pugixml)
+target_include_directories(pyiganet_core PUBLIC ${TORCH_INCLUDE_DIRS})
+target_link_libraries(pyiganet_core PUBLIC pugixml)
 
 if (IGANET_WITH_GISMO)
-  target_compile_definitions(pyiganet PUBLIC WITH_GISMO)
-  target_link_libraries(pyiganet PUBLIC gismo)
+  target_compile_definitions(pyiganet_core PUBLIC WITH_GISMO)
+  target_link_libraries(pyiganet_core PUBLIC gismo)
 endif()
 
 if (IGANET_WITH_MATPLOT)
-  target_link_libraries(pyiganet PUBLIC Matplot++::matplot)
+  target_link_libraries(pyiganet_core PUBLIC Matplot++::matplot)
 endif()

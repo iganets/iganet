@@ -93,7 +93,10 @@ namespace iganet {
     template<std::size_t i>
     inline static constexpr std::size_t dim()
     {
-      return std::get<i>(Dims...);
+      if constexpr (i<sizeof...(Dims))
+        return std::get<i>(std::forward_as_tuple(Dims...));
+      else
+        return 0;
     }
 
     /// @brief Returns the number of dimensions
@@ -149,11 +152,11 @@ namespace iganet {
     }
 
     /// @brief Stores the given data object at the given index
-    template<typename D>
-    inline T& set(std::size_t idx, D&& data)
+    template<typename Data>
+    inline T& set(std::size_t idx, Data&& data)
     {
       assert(0 <= idx && idx < (Dims*...));
-      data_[idx] = make_shared<D>(std::move(data));
+      data_[idx] = make_shared<Data>(std::move(data));
       return *data_[idx];
     }
     
@@ -161,7 +164,7 @@ namespace iganet {
     inline virtual void pretty_print(std::ostream& os = std::cout) const = 0;
   };
 
-  /// Print (as string) a compile-time block tensor object
+  /// Prints (as string) a compile-time block tensor object
   template<typename T, std::size_t... Dims>
   inline std::ostream& operator<<(std::ostream& os,
                                   const BlockTensorCore<T, Dims...>& obj)
