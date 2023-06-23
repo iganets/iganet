@@ -13,6 +13,7 @@
 */
 
 #include <pybind11/pybind11.h>
+#include <pybind11_json/pybind11_json.hpp>
 #include <torch/extension.h>
 
 #include <pyconfig.hpp>
@@ -22,7 +23,7 @@
 namespace py = pybind11;
 
 void init_core(py::module_ &m) {
-  py::class_<iganet::core<pyiganet::real_t>>(m, "Core")
+  py::class_<iganet::core<pyiganet::real_t, false>>(m, "Core")
     
     // Constructors
     .def(py::init<>())

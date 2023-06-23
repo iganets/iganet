@@ -38,7 +38,7 @@
 #endif
 
 #include <pugixml.hpp>
-#include <json.hpp>
+#include <nlohmann/json.hpp>
 
 #include <torch/torch.h>
 #include <torch/csrc/api/include/torch/types.h>

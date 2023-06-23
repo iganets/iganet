@@ -6,8 +6,13 @@ key.pem
 # Editor directories and files
 .idea
 .vscode
+*.dll
+*.dylib
 *.suo
 *.ntvs*
 *.njsproj
 *.sln
+*.so
 *.sw?
+*.egg-info
+__pycache__

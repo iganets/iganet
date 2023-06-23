@@ -143,31 +143,58 @@ namespace iganet {
     private:
       /// @brief Returns the coefficients of all spaces as a single tensor
       template<size_t... Is, size_t... Js>
-      inline torch::Tensor as_tensor(std::index_sequence<Is...>) const
+      inline torch::Tensor as_tensor_(std::index_sequence<Is...>,
+                                      bool boundary = true) const
       {
-        return torch::cat({std::get<Is>(*this).as_tensor()...,
-                           std::get<Is>(boundary_).as_tensor()...});
+        if (boundary)
+          return torch::cat({std::get<Is>(*this).as_tensor()...,
+                             std::get<Is>(boundary_).as_tensor()...});
+        else
+          return torch::cat({std::get<Is>(*this).as_tensor()...});
       }
 
+      /// @brief Returns the size of the single tensor representation of all spaces
+      template<size_t... Is, size_t... Js>
+      inline int64_t as_tensor_size_(std::index_sequence<Is...>,
+                                     bool boundary = true) const
+      {
+        if (boundary)
+          return std::apply([]( auto... v ){ return ( v + ... ); },
+                            std::make_tuple(std::get<Is>(*this).as_tensor_size()...))
+            +    std::apply([]( auto... v ){ return ( v + ... ); },
+                            std::make_tuple(std::get<Is>(boundary_).as_tensor_size()...));
+        else
+          return  std::apply([]( auto... v ){ return ( v + ... ); },
+                             std::make_tuple(std::get<Is>(*this).as_tensor_size()...));
+      }
+      
       /// @brief Sets the coefficients of all spaces from a single tensor
       template<size_t... Is, size_t... Js>
-      inline auto& from_tensor(std::index_sequence<Is...>,
-                               const torch::Tensor& coeffs)
+      inline auto& from_tensor_(std::index_sequence<Is...>,
+                                const torch::Tensor& coeffs,
+                                bool boundary = true)
       {
+        throw std::runtime_error("from_tensor is not implemented yet");
         return *this;
       }
       
     public:
       /// @brief Returns the coefficients of all spaces as a single tensor
-      inline torch::Tensor as_tensor() const
+      inline torch::Tensor as_tensor(bool boundary = true) const
       {
-        return as_tensor(std::make_index_sequence<sizeof...(spline_t)>{});
+        return as_tensor_(std::make_index_sequence<sizeof...(spline_t)>{}, boundary);
+      }
+
+      /// @brief Returns the size of the single tensor representation of all spaces
+      inline int64_t as_tensor_size(bool boundary = true) const
+      {
+        return as_tensor_size_(std::make_index_sequence<sizeof...(spline_t)>{}, boundary);
       }
 
       /// @brief Sets the coefficients of all spaces from a single tensor
-      inline auto& from_tensor(const torch::Tensor& coeffs)
+      inline auto& from_tensor(const torch::Tensor& coeffs, bool boundary = true)
       {
-        return from_tensor(std::make_index_sequence<sizeof...(spline_t)>{}, coeffs);
+        return from_tensor_(std::make_index_sequence<sizeof...(spline_t)>{}, coeffs, boundary);
       }
       
       /// @brief Returns a constant reference to the boundary spline object
@@ -526,7 +553,7 @@ namespace iganet {
       /// @brief Returns a string representation of the function space object
       inline virtual void pretty_print(std::ostream& os = std::cout) const
       {
-        //        os << *this;
+        os << *this;
       }
     };
 
@@ -593,16 +620,31 @@ namespace iganet {
       }     
 
       /// @brief Returns the coefficients of all spaces as a single tensor
-      inline torch::Tensor as_tensor() const
+      inline torch::Tensor as_tensor(bool boundary = true) const
       {
-        return torch::cat({Base::as_tensor(), boundary_.as_tensor()});
+        if (boundary)
+          return torch::cat({Base::as_tensor(), boundary_.as_tensor()});
+        else
+          return Base::as_tensor();
+      }
+
+      /// @brief Returns the size of the single tensor representation of all spaces
+      inline int64_t as_tensor_size(bool boundary = true) const
+      {
+        if (boundary)
+          return Base::as_tensor_size() + boundary_.as_tensor_size();
+        else
+          return Base::as_tensor_size();
       }
 
       /// @brief Sets the coefficients of all spaces from a single tensor
-      inline auto& from_tensor(const torch::Tensor& coeffs)
+      inline auto& from_tensor(const torch::Tensor& coeffs, bool boundary = true)
       {
-        Base::from_tensor(coeffs.index({torch::indexing::Slice(0, Base::geoDim()*Base::ncumcoeffs())}));
-        boundary_.from_tensor(coeffs.index({torch::indexing::Slice(Base::geoDim()*Base::ncumcoeffs(), torch::indexing::None)}));       
+        Base::from_tensor(coeffs.index({torch::indexing::Slice(0, Base::as_tensor_size())}));
+        
+        if (boundary)
+          boundary_.from_tensor(coeffs.index({torch::indexing::Slice(Base::as_tensor_size(), torch::indexing::None)}));
+        
         return *this;
       }
 

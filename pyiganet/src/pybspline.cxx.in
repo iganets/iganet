@@ -17,20 +17,28 @@
 #include <pybind11/stl.h>
 #include <torch/extension.h>
 
+#include <boost/preprocessor/cat.hpp>
+#include <boost/preprocessor/seq/for_each.hpp>
+
 #include <pyconfig.hpp>
 
 #include <bspline.hpp>
 
 namespace py = pybind11;
 
+//#define SEQ (func)(dx)
+//#define MACRO(r, data, elem)
+
 void init_UniformBSpline@SUFFIX@(py::module_ &m) {
   py::class_<iganet::UniformBSpline<pyiganet::real_t, @GEODIM@, @DEGREES@>,
              iganet::core<pyiganet::real_t>>(m, "UniformBSpline@SUFFIX@")
-
-    // Constructors
-    .def(py::init< std::array<int64_t,
+    
+    // Constructor
+    .def(py::init<
+         std::array<int64_t,
          static_cast<size_t>(iganet::UniformBSpline<pyiganet::real_t,
-         @GEODIM@, @DEGREES@>::parDim())>, enum iganet::init>(),
+         @GEODIM@, @DEGREES@>::parDim())>,
+         enum iganet::init>(),
          "Creates a uniform B-Spline object")
 
     // Static getters
@@ -103,23 +111,37 @@ void init_UniformBSpline@SUFFIX@(py::module_ &m) {
           py::const_),
          "Returns a constant reference to the coefficient vector in the i-th dimension")
 
+    // Total number of coefficients
+    .def("ncumcoeefs",
+         &iganet::UniformBSpline<pyiganet::real_t, @GEODIM@, @DEGREES@>::ncumcoeffs,
+         "Returns the total number of coefficients")
+    
     // Number of coefficients
     .def("ncoeffs",
          py::overload_cast<>
          (&iganet::UniformBSpline<pyiganet::real_t, @GEODIM@, @DEGREES@>::ncoeffs,
           py::const_),
-         "Returns the total number of coefficients")
+         "Returns the coefficient vector dimensions as array")
     .def("ncoeffs",
          py::overload_cast<short_t>
          (&iganet::UniformBSpline<pyiganet::real_t, @GEODIM@, @DEGREES@>::coeffs,
           py::const_),
-         "Returns the total number of coefficients in the i-th direction")
+         "Returns the number of coefficients in the i-th direction")
 
+    // Coefficients as a single tensor
+    .def("as_tensor",
+         &iganet::UniformBSpline<pyiganet::real_t, @GEODIM@, @DEGREES@>::as_tensor,
+         "Returns all coefficients as a single tensor")
+    
+    // Coefficients from a single tensor
+    .def("from_tensor",
+         &iganet::UniformBSpline<pyiganet::real_t, @GEODIM@, @DEGREES@>::from_tensor,
+         "Sets all coefficients from a single tensor")
+    
     // Greville points
     .def("greville",
-         py::overload_cast<bool>
-         (&iganet::UniformBSpline<pyiganet::real_t, @GEODIM@, @DEGREES@>::greville,
-          py::const_),
+         &iganet::UniformBSpline<pyiganet::real_t, @GEODIM@, @DEGREES@>::greville,
+         py::arg("interior") = false,
          "Returns the Greville abscissae")
 
     // Evaluate B-splines from precomputed quantities
@@ -150,10 +172,105 @@ void init_UniformBSpline@SUFFIX@(py::module_ &m) {
          "Returns the value of the B-spline object in the points xi")
 
     // Evaluate B-splines
-    // .def("eval",
-    //      py::overload_cast<const torch::Tensor&>
-    //      (&iganet::UniformBSpline<pyiganet::real_t, @GEODIM@, @DEGREES@>::eval<>,
-    //       py::const_),
-    //      "Returns the value of the B-spline object in the points xi")   
+#define SEQ (func)(dx1)
+    
+    .def("eval",
+         [](const iganet::UniformBSpline<pyiganet::real_t,@GEODIM@, @DEGREES@>& self,
+            const torch::Tensor& xi,
+            const enum iganet::deriv deriv)
+         {          
+           switch (deriv) {
+             
+#define    MACRO(r, data, elem)                                    \
+             case (iganet::deriv::elem):                           \
+               return self.eval<iganet::deriv::elem>(xi);
+             
+             BOOST_PP_SEQ_FOR_EACH(MACRO, _, SEQ)
+#undef     MACRO
+               
+           default:
+               throw std::runtime_error("Unsupported derivative");
+           }
+         },
+         py::arg("xi"),
+         py::arg("deriv") = iganet::deriv::func,
+         "Returns the value of the B-spline object or its derivative in the points xi")
+
+    .def("eval",
+         [](const iganet::UniformBSpline<pyiganet::real_t,@GEODIM@, @DEGREES@>& self,
+            const std::array<torch::Tensor,
+            iganet::UniformBSpline<pyiganet::real_t, @GEODIM@, @DEGREES@>::parDim()>& xi,
+            const enum iganet::deriv deriv)         
+         {          
+           switch (deriv) {
+             
+#define    MACRO(r, data, elem)                                    \
+             case (iganet::deriv::elem):                           \
+               return self.eval<iganet::deriv::elem>(xi);
+             
+             BOOST_PP_SEQ_FOR_EACH(MACRO, _, SEQ)
+#undef     MACRO
+               
+           default:
+               throw std::runtime_error("Unsupported derivative");
+           }
+         },
+         py::arg("xi"),
+         py::arg("deriv") = iganet::deriv::func,
+         "Returns the value of the B-spline object or its derivative in the points xi")
+
+    .def("eval",
+         [](const iganet::UniformBSpline<pyiganet::real_t,@GEODIM@, @DEGREES@>& self,
+            const std::array<torch::Tensor,
+            iganet::UniformBSpline<pyiganet::real_t, @GEODIM@, @DEGREES@>::parDim()>& xi,
+            const std::array<torch::Tensor,
+            iganet::UniformBSpline<pyiganet::real_t, @GEODIM@, @DEGREES@>::parDim()>& indices,
+            const enum iganet::deriv deriv)         
+         {          
+           switch (deriv) {
+             
+#define    MACRO(r, data, elem)                                     \
+             case (iganet::deriv::elem):                            \
+               return self.eval<iganet::deriv::elem>(xi, indices);
+             
+             BOOST_PP_SEQ_FOR_EACH(MACRO, _, SEQ)
+#undef     MACRO
+               
+           default:
+               throw std::runtime_error("Unsupported derivative");
+           }
+         },
+         py::arg("xi"),
+         py::arg("indices"),
+         py::arg("deriv") = iganet::deriv::func,
+         "Returns the value of the B-spline object or its derivative in the points xi")
+    
+    .def("eval",
+         [](const iganet::UniformBSpline<pyiganet::real_t,@GEODIM@, @DEGREES@>& self,
+            const std::array<torch::Tensor,
+            iganet::UniformBSpline<pyiganet::real_t, @GEODIM@, @DEGREES@>::parDim()>& xi,
+            const std::array<torch::Tensor,
+            iganet::UniformBSpline<pyiganet::real_t, @GEODIM@, @DEGREES@>::parDim()>& indices,
+            const torch::Tensor& coeff_indices,
+            const enum iganet::deriv deriv)         
+         {          
+           switch (deriv) {
+             
+#define    MACRO(r, data, elem)                                         \
+             case (iganet::deriv::elem):                                \
+               return self.eval<iganet::deriv::elem>(xi, indices, coeff_indices);
+             
+             BOOST_PP_SEQ_FOR_EACH(MACRO, _, SEQ)
+#undef     MACRO
+               
+           default:
+               throw std::runtime_error("Unsupported derivative");
+           }
+         },
+         py::arg("xi"),
+         py::arg("indices"),
+         py::arg("coeff_indices"),
+         py::arg("deriv") = iganet::deriv::func,
+         "Returns the value of the B-spline object or its derivative in the points xi")
     ;
 }
