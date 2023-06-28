@@ -1,4 +1,4 @@
-#IgANet: Physics-machine learning embedded into Isogeometric Analysis
+# IgANet: Physics-machine learning embedded into Isogeometric Analysis
 
 ## Compilation instructions
 
@@ -20,3 +20,8 @@ IgANet requires a C++17 compiler, CMake and LibTorch (the C++ API of PyTorch). I
     ```
     make
     ```
+
+4. _Optionally_: Compile pyiganet
+   ```
+   python setup.py develop
+   ```
