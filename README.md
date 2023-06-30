@@ -6,7 +6,7 @@ IgANet requires a C++17 compiler, CMake and LibTorch (the C++ API of PyTorch). I
 
 ### macOS
 
-1. Install prerequisites (CMake and LibTorch 2.0)
+1. Install prerequisites (CMake and LibTorch)
    ```
    brew install cmake pytorch
    ```
@@ -16,6 +16,8 @@ IgANet requires a C++17 compiler, CMake and LibTorch (the C++ API of PyTorch). I
     cmake .. -DTorch_DIR=/opt/homebrew/Cellar/pytorch/2.0.1/share/cmake/Torch -DCMAKE_PREFIX_PATH=/opt/homebrew/Cellar/protobuf@21/21.12/
     ```
 
+    Note that the specific version of PyTorch and/or protobuf might be different on your system.
+
 3. Compile
     ```
     make
@@ -23,5 +25,7 @@ IgANet requires a C++17 compiler, CMake and LibTorch (the C++ API of PyTorch). I
 
 4. _Optionally_: Compile pyiganet
    ```
-   python setup.py develop
+   Torch_DIR=/opt/homebrew/Cellar/pytorch/2.0.1/share/cmake/Torch CMAKE_PREFIX_PATH=/opt/homebrew/Cellar/protobuf@21/21.12/ python setup.py develop python setup.py develop
    ```
+
+   Again, the specific version of PyTorch and/or protobuf might be different on your system.
