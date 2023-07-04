@@ -271,7 +271,7 @@ namespace iganet {
     }
     
     /// @brief Returns a string representation of the Boundary object
-    inline virtual void pretty_print(std::ostream& os = std::cout) const
+    inline virtual void pretty_print(std::ostream& os = std::cout) const override
     {
       os << core<typename spline_t::value_type>::name()
          << "(\n"
