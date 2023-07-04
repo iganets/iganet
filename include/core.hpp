@@ -45,7 +45,7 @@
 
 namespace iganet {
 
-#define short_t unsigned short int
+  using short_t = unsigned short int;
 
   namespace literals {
     inline int64_t operator""_i64(unsigned long long value) { return value; };
@@ -158,7 +158,31 @@ namespace iganet {
                  .requires_grad(true))
     {}
 
-    /// Constructor with used-defined gradient calculation
+    /// Constructor with user-defined device
+    core(c10::Device device)
+      : options_(torch::TensorOptions()
+                 .dtype(dtype<real_t>())
+                 .device(device)
+                 .requires_grad(true))
+    {}
+
+    /// Constructor with user-defined layout
+    core(torch::Layout layout)
+      : options_(torch::TensorOptions()
+                 .dtype(dtype<real_t>())
+                 .layout(layout)
+                 .requires_grad(true))
+    {}
+
+    /// Constructor with user-defined memory format
+    core(torch::MemoryFormat memoryFormat)
+      : options_(torch::TensorOptions()
+                 .dtype(dtype<real_t>())
+                 .memoryFormat(memoryFormat)
+                 .requires_grad(true))
+    {}
+
+    /// Constructor with user-defined gradient calculation
     core(bool requiresGrad)
       : options_(torch::TensorOptions()
                  .dtype(dtype<real_t>())
@@ -174,14 +198,47 @@ namespace iganet {
                  .requires_grad(requiresGrad))
     {}
 
+    /// Constructor with user-defined device and gradient calculation
+    core(c10::Device device, bool requiresGrad)
+      : options_(torch::TensorOptions()
+                 .dtype(dtype<real_t>())
+                 .device(device)
+                 .requires_grad(requiresGrad))
+    {}
+
+    /// Constructor with user-defined device and all other parameters
+    core(c10::DeviceType deviceType, torch::Layout layout, torch::MemoryFormat memoryFormat,
+         bool requiresGrad, bool pinnedMemory)
+      : options_(torch::TensorOptions()
+                 .dtype(dtype<real_t>())
+                 .device(deviceType)
+                 .layout(layout)
+                 .memoryFormat(memoryFormat)
+                 .requires_grad(requiresGrad)
+                 .pinnedMemory(pinnedMemory))
+    {}
+
+    /// Constructor with user-defined device and all other parameters
+    core(c10::Device device, torch::Layout layout, torch::MemoryFormat memoryFormat,
+         bool requiresGrad, bool pinnedMemory)
+      : options_(torch::TensorOptions()
+                 .dtype(dtype<real_t>())
+                 .device(device)
+                 .layout(layout)
+                 .memoryFormat(memoryFormat)
+                 .requires_grad(requiresGrad)
+                 .pinnedMemory(pinnedMemory))
+    {}    
+
+    /// Destructor
     virtual ~core() {}
     
     /// @brief Returns constant reference to options
-    const torch::TensorOptions options() const
+    const torch::TensorOptions& options() const
     {
       return options_;
     }
-
+    
     /// @brief Serialization to JSON
     virtual nlohmann::json to_json() const
     {
@@ -191,6 +248,16 @@ namespace iganet {
     /// @brief Data type
     using value_type = real_t;
 
+    /// @brief Returns a string representation of the core object
+    inline virtual void pretty_print(std::ostream& os = std::cout) const
+    {
+      os << name()
+         << "(\nreal_t = " << typeid(real_t).name()
+         << ", memory_optimized = " << memory_optimized_
+         << ", options = " << options_
+         << "\n)";
+    }
+    
   protected:
     /// @brief Optimize for memory usage
     static constexpr bool memory_optimized_ = memory_optimized;
@@ -199,6 +266,16 @@ namespace iganet {
     const torch::TensorOptions options_;
   };
 
+  /// @brief Print (as string) a core object
+  template<typename real_t>
+  inline std::ostream& operator<<(std::ostream& os,
+                                  const core<real_t>& obj)
+  {
+    obj.pretty_print(os);
+    return os;
+  }
+
+  /// @brief Dispatcher
   template<typename real_t, bool memory_optimized, bool memory_optimized_>
   class core<core<real_t, memory_optimized>, memory_optimized_> : public core<real_t, memory_optimized>
   {
