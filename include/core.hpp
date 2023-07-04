@@ -145,7 +145,7 @@ namespace iganet {
     /// Default constructor
     core()
       : options_(torch::TensorOptions()
-                 .dtype(dtype<real_t>())
+                 .dtype(::iganet::dtype<real_t>())
                  .device(torch::cuda::is_available() ? torch::kCUDA : torch::kCPU)
                  .requires_grad(true))
     {}
@@ -153,7 +153,7 @@ namespace iganet {
     /// Constructor with user-defined device type
     core(c10::DeviceType deviceType)
       : options_(torch::TensorOptions()
-                 .dtype(dtype<real_t>())
+                 .dtype(::iganet::dtype<real_t>())
                  .device(deviceType)
                  .requires_grad(true))
     {}
@@ -161,7 +161,7 @@ namespace iganet {
     /// Constructor with user-defined device
     core(c10::Device device)
       : options_(torch::TensorOptions()
-                 .dtype(dtype<real_t>())
+                 .dtype(::iganet::dtype<real_t>())
                  .device(device)
                  .requires_grad(true))
     {}
@@ -169,7 +169,7 @@ namespace iganet {
     /// Constructor with user-defined layout
     core(torch::Layout layout)
       : options_(torch::TensorOptions()
-                 .dtype(dtype<real_t>())
+                 .dtype(::iganet::dtype<real_t>())
                  .layout(layout)
                  .requires_grad(true))
     {}
@@ -177,7 +177,7 @@ namespace iganet {
     /// Constructor with user-defined memory format
     core(torch::MemoryFormat memoryFormat)
       : options_(torch::TensorOptions()
-                 .dtype(dtype<real_t>())
+                 .dtype(::iganet::dtype<real_t>())
                  .memoryFormat(memoryFormat)
                  .requires_grad(true))
     {}
@@ -185,7 +185,7 @@ namespace iganet {
     /// Constructor with user-defined gradient calculation
     core(bool requiresGrad)
       : options_(torch::TensorOptions()
-                 .dtype(dtype<real_t>())
+                 .dtype(::iganet::dtype<real_t>())
                  .device(torch::cuda::is_available() ? torch::kCUDA : torch::kCPU)
                  .requires_grad(requiresGrad))
     {}
@@ -193,7 +193,7 @@ namespace iganet {
     /// Constructor with user-defined device type and gradient calculation
     core(c10::DeviceType deviceType, bool requiresGrad)
       : options_(torch::TensorOptions()
-                 .dtype(dtype<real_t>())
+                 .dtype(::iganet::dtype<real_t>())
                  .device(deviceType)
                  .requires_grad(requiresGrad))
     {}
@@ -201,7 +201,7 @@ namespace iganet {
     /// Constructor with user-defined device and gradient calculation
     core(c10::Device device, bool requiresGrad)
       : options_(torch::TensorOptions()
-                 .dtype(dtype<real_t>())
+                 .dtype(::iganet::dtype<real_t>())
                  .device(device)
                  .requires_grad(requiresGrad))
     {}
@@ -210,7 +210,7 @@ namespace iganet {
     core(c10::DeviceType deviceType, torch::Layout layout, torch::MemoryFormat memoryFormat,
          bool requiresGrad, bool pinnedMemory)
       : options_(torch::TensorOptions()
-                 .dtype(dtype<real_t>())
+                 .dtype(::iganet::dtype<real_t>())
                  .device(deviceType)
                  .layout(layout)
                  .memoryFormat(memoryFormat)
@@ -222,7 +222,7 @@ namespace iganet {
     core(c10::Device device, torch::Layout layout, torch::MemoryFormat memoryFormat,
          bool requiresGrad, bool pinnedMemory)
       : options_(torch::TensorOptions()
-                 .dtype(dtype<real_t>())
+                 .dtype(::iganet::dtype<real_t>())
                  .device(device)
                  .layout(layout)
                  .memoryFormat(memoryFormat)
@@ -232,6 +232,89 @@ namespace iganet {
 
     /// Destructor
     virtual ~core() {}
+
+    /// @brief Returns the `device` property
+    torch::Device device() const noexcept {
+      return options_.device();
+    }
+
+    /// @brief Returns the `device_index` property
+    int32_t device_index() const noexcept {
+      return options_.device_index();
+    }
+
+    /// @brief Returns the `dtype` property
+    caffe2::TypeMeta dtype() const noexcept {
+      return options_.dtype();
+    }
+
+    /// @brief Returns the `layout` property
+    torch::Layout layout() const noexcept {
+      return options_.layout();
+    }
+    
+    /// @brief Returns the `requires_grad` property
+    bool requires_grad() const noexcept {
+      return options_.requires_grad();
+    }
+
+    /// @brief Returns the `pinned_memory` property
+    bool pinned_memory() const noexcept {
+      return options_.pinned_memory();
+    }
+
+    /// @brief Returns if the layout is sparse
+    bool is_sparse() const noexcept {
+      return options_.is_sparse();
+    }
+
+    /// Sets the `device` property
+    virtual core<real_t>& device(torch::Device device) noexcept {
+      options_ = options_.device(device);
+      return *this;
+    }
+
+    /// Sets the `device_index` property
+    virtual core<real_t>& device_index(int16_t device_index) noexcept {
+      options_ = options_.device_index(device_index);
+      return *this;
+    }
+    
+    /// Sets the `dtype` property
+    virtual core<real_t>& dtype(caffe2::TypeMeta dtype) noexcept {
+      options_ = options_.dtype(dtype);
+      return *this;
+    }
+
+    /// Sets the `dtype` property
+    virtual core<real_t>& dtype(torch::ScalarType dtype) noexcept {
+      options_ = options_.dtype(dtype);
+      return *this;
+    }
+
+    /// Sets the `layout` property
+    virtual core<real_t>& layout(torch::Layout layout) noexcept {
+      options_ = options_.layout(layout);
+      return *this;
+    }
+    
+    /// Sets the `requires_grad` property
+    virtual core<real_t>& requires_grad(bool requires_grad) noexcept {
+      options_ = options_.requires_grad(requires_grad);
+      return *this;
+    }
+
+    /// Sets the `pinned_memory` property
+    virtual core<real_t>& pinned_memory(bool pinned_memory) noexcept {
+      options_ = options_.pinned_memory(pinned_memory);
+      return *this;
+    }
+
+    /// Sets the `memory_format` property
+    virtual core<real_t>& memory_format(torch::MemoryFormat memory_format) noexcept {
+      options_ = options_.memory_format(memory_format);
+      return *this;
+    }
     
     /// @brief Returns constant reference to options
     const torch::TensorOptions& options() const
@@ -263,7 +346,7 @@ namespace iganet {
     static constexpr bool memory_optimized_ = memory_optimized;
 
     /// @brief Tensor options
-    const torch::TensorOptions options_;
+    torch::TensorOptions options_;
   };
 
   /// @brief Print (as string) a core object
