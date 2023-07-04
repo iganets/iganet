@@ -797,4 +797,10 @@ namespace iganet {
   };
   /// @}
 
+  /// @brief Converts an std::array<int64_t, N> to a at::IntArrayRef object
+  template<typename T, std::size_t N>
+  auto to_ArrayRef(const std::array<T, N>& array) {
+    return at::ArrayRef<T>{array};
+  }
+
 } // namespace iganet
