@@ -40,7 +40,7 @@ namespace iganet {
     inline auto make_shared(T&& arg)
     {
       if constexpr (is_shared_ptr<typename std::decay<T>::type>::value)
-        return std::forward<T>(std::move(arg));
+        return std::forward<typename std::decay<T>::type>(std::move(arg));
       else
         return std::make_shared<typename std::decay<T>::type>(std::move(arg));
     }

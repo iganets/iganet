@@ -143,7 +143,7 @@ namespace iganet {
       
     private:
       /// @brief Returns the coefficients of all spaces as a single tensor
-      template<size_t... Is, size_t... Js>
+      template<size_t... Is>
       inline torch::Tensor as_tensor_(std::index_sequence<Is...>,
                                       bool boundary = true) const
       {
@@ -155,7 +155,7 @@ namespace iganet {
       }
 
       /// @brief Returns the size of the single tensor representation of all spaces
-      template<size_t... Is, size_t... Js>
+      template<size_t... Is>
       inline int64_t as_tensor_size_(std::index_sequence<Is...>,
                                      bool boundary = true) const
       {
@@ -170,7 +170,7 @@ namespace iganet {
       }
       
       /// @brief Sets the coefficients of all spaces from a single tensor
-      template<size_t... Is, size_t... Js>
+      template<size_t... Is>
       inline auto& from_tensor_(std::index_sequence<Is...>,
                                 const torch::Tensor& coeffs,
                                 bool boundary = true)

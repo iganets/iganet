@@ -813,8 +813,7 @@ namespace iganet {
                 auto knots = knots_[j].template packed_accessor64<value_type, 1>();
                 const int num_mp = at::cuda::getCurrentDeviceProperties()->multiProcessorCount;
                 cuda::greville_cuda_kernel<<<32*num_mp, 256>>>(greville, knots,
-                                                               ncoeffs_[j], degrees_[j],
-                                                               interior);
+                                                               ncoeffs_[j], degrees_[j], interior);
 #else
                 throw std::runtime_error("Code must be compiled with CUDA enabled");
 #endif
@@ -2557,7 +2556,8 @@ namespace iganet {
                 auto greville = greville_.template packed_accessor64<value_type, 1>();
                 auto knots = knots_[j].template packed_accessor64<value_type, 1>();
                 const int num_mp = at::cuda::getCurrentDeviceProperties()->multiProcessorCount;
-                cuda::greville_cuda_kernel<<<32*num_mp, 256>>>(greville, knots, ncoeffs_[j], degrees_[j]);
+                cuda::greville_cuda_kernel<<<32*num_mp, 256>>>(greville, knots,
+							       ncoeffs_[j], degrees_[j], false);
 #else
                 throw std::runtime_error("Code must be compiled with CUDA enabled");
 #endif
