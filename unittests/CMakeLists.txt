@@ -28,15 +28,17 @@ FetchContent_Declare(
 # For Windows: Prevent overriding the parent project's compiler/linker settings
 set(gtest_force_shared_crt ON CACHE BOOL "" FORCE)
 
-# SplineLib
+# BSplineLib
 FetchContent_Declare(
-  splinelib
-  URL https://github.com/tataratat/SplineLib/archive/refs/heads/tataratat.zip
+  bsplinelib
+  URL https://github.com/tataratat/BSplineLib/archive/refs/heads/tataratat.zip
   FIND_PACKAGE_ARGS
   )
-set(SPLINELIB_BUILD_PUGIXML OFF CACHE BOOL "" FORCE)
+set(BSPLINELIB_BUILD_PUGIXML OFF CACHE BOOL "" FORCE)
 set(pugixml_DIR ${pugixml_BINARY_DIR})
-FetchContent_MakeAvailable(googletest splinelib)
+FetchContent_MakeAvailable(googletest bsplinelib)
+FetchContent_GetProperties(bsplinelib)
+include_directories(${bsplinelib_SOURCE_DIR}/Sources)
 
 # Collect unittest sources
 file(GLOB UNITTESTS *.cxx)
@@ -49,10 +51,16 @@ foreach(unittest ${UNITTESTS})
   endif()
   
   string(REPLACE ".cxx" "" name ${filename})
-  add_executable(${name} ${filename}) 
+  add_executable(${name} ${filename})
+
+  if(NOT ${CMAKE_VERSION} VERSION_LESS "3.16.0")
+    target_precompile_headers(${name} REUSE_FROM iganet_pch)
+  endif()
+
+  # LibTorch
   target_link_libraries(${name} PUBLIC "${TORCH_LIBRARIES}")
 
-  # SplineLib
+  # BSplineLib
   target_link_libraries(${name} PUBLIC pugixml)
   target_link_libraries(${name} PUBLIC splines)
 

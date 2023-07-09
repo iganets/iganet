@@ -19,6 +19,7 @@
 FetchContent_Declare(
   pybind11
   URL https://github.com/pybind/pybind11/archive/refs/heads/master.zip
+  FIND_PACKAGE_ARGS
   )
 FetchContent_MakeAvailable(pybind11)
 
@@ -29,6 +30,7 @@ FetchContent_MakeAvailable(pybind11)
 FetchContent_Declare(
   pybind11_json
   URL https://github.com/pybind/pybind11_json/archive/refs/heads/master.zip
+  FIND_PACKAGE_ARGS
   )
 FetchContent_Populate(pybind11_json)
 FetchContent_GetProperties(pybind11_json)

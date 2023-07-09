@@ -17,10 +17,11 @@
 #include <any>
 
 #include <boundary.hpp>
-#include <creator.hpp>
 #include <functionspace.hpp>
 #include <layer.hpp>
-#include <zip.hpp>
+#include <utils/concat.hpp>
+#include <utils/fqn.hpp>
+#include <utils/zip.hpp>
 
 namespace iganet {
 
@@ -62,7 +63,8 @@ namespace iganet {
   ///
   /// https://pytorch.org/tutorials/advanced/cpp_frontend.html#the-generator-module  
   template<typename real_t>
-  class IgANetGeneratorImpl : public torch::nn::Module
+  class IgANetGeneratorImpl
+    : public torch::nn::Module
   {
   public:
     /// @brief Default constructor
@@ -161,7 +163,7 @@ namespace iganet {
             switch (a.size()) {
             case 3:
               activations_.emplace_back( new ELU{ std::any_cast<double>(a[1]),
-                                                   std::any_cast<bool>(a[2])} );
+                                                  std::any_cast<bool>(a[2])} );
               break;
             case 2:
               try {
@@ -447,8 +449,8 @@ namespace iganet {
             switch (a.size()) {
             case 4:
               activations_.emplace_back( new Normalize{ std::any_cast<double>(a[1]),
-                                                                std::any_cast<double>(a[2]),
-                                                                std::any_cast<int64_t>(a[3]) } );
+                                                        std::any_cast<double>(a[2]),
+                                                        std::any_cast<int64_t>(a[3]) } );
               break;
             case 2:
               activations_.emplace_back( new Normalize{ std::any_cast<torch::nn::functional::NormalizeFuncOptions>(a[1]) } );
@@ -701,14 +703,21 @@ namespace iganet {
       torch::Tensor x_in = x.clone();
       
       // Standard feed-forward neural network
-      for (auto [layer, activation] : zip(layers_, activations_))
+      for (auto [layer, activation] : utils::zip(layers_, activations_))
         x = activation->apply(layer->forward(x));
       
       // Skip connections
-      //      x = torch::where(torch::linspace(1, x.size(0), x.size(0)) <= 49,
-      //                       x,
-      //                       x_in.index({torch::indexing::Slice(154, torch::indexing::None)}));
-            
+      //x = torch::where(torch::linspace(1, x.size(0), x.size(0)) <= 7,
+      //x_in.index({torch::indexing::Slice(147, torch::indexing::None)}),
+      //x);
+
+      x.view({7,7}).index_put_({"...",  0}, x_in.index({torch::indexing::Slice(147,154)}));
+      x.view({7,7}).index_put_({"...", -1}, x_in.index({torch::indexing::Slice(154,161)}));
+      x.view({7,7}).index_put_({ 0, "..."}, x_in.index({torch::indexing::Slice(161,168)}));
+      x.view({7,7}).index_put_({-1, "..."}, x_in.index({torch::indexing::Slice(168,175)}));
+      
+      //std::cout << x_in.index({torch::indexing::Slice(147, torch::indexing::None)});
+        
       return x;
     }
 
@@ -865,8 +874,8 @@ namespace iganet {
       }
       return archive;
     }
-
-    inline virtual void pretty_print(std::ostream& os = std::cout) const override final
+    
+    inline virtual void pretty_print(std::ostream& os = std::cout) const noexcept override
     {
       os << "(\n";
 
@@ -904,8 +913,8 @@ namespace iganet {
   template<typename optimizer_t,
            typename geometry_t,
            typename variable_t>
-  class IgANet : public core<typename std::common_type<typename geometry_t::value_type,
-                                                       typename variable_t::value_type>::type>
+  class IgANet
+    : public utils::Serializable, private utils::FullQualifiedName
   {
   public:
     /// @brief Value type
@@ -951,20 +960,17 @@ namespace iganet {
            std::tuple<variable_spline_t...>           variable_splines,
            std::index_sequence<Js...>,
            IgANetOptions                              defaults = {},
-           iganet::core<value_type>                   core = iganet::core<value_type>{})
-    : iganet::core<value_type>(core),
-      
+           iganet::Options<value_type>                options = iganet::Options<value_type>{})
+    :       
       // Construct the different spline objects individually
-      geometry_(std::get<Is>(geometry_splines)..., init::greville, core),
-      variable_(std::get<Js>(variable_splines)..., init::zeros,    core),
-      
-      outputs_(std::get<Js>(variable_splines)..., init::random,    core),
-
+      geometry_(std::get<Is>(geometry_splines)..., init::greville, options),
+      variable_(std::get<Js>(variable_splines)..., init::zeros,    options),      
+      outputs_(std::get<Js>(variable_splines)..., init::random,    options),
       
       // Construct the deep neural network
-      net_(concat(std::vector<int64_t>{inputs(/* epoch */ 0).size(0)},
-                  layers,
-                  std::vector<int64_t>{outputs_.as_tensor_size(false)}),
+      net_(utils::concat(std::vector<int64_t>{inputs(/* epoch */ 0).size(0)},
+                         layers,
+                         std::vector<int64_t>{outputs_.as_tensor_size(false)}),
            activations),
 
       // Construct the optimizer
@@ -977,9 +983,8 @@ namespace iganet {
   public:
     /// @brief Default constructor
     explicit IgANet(IgANetOptions defaults = {},
-                    iganet::core<value_type> core = iganet::core<value_type>{})
-      : iganet::core<value_type>(core),
-        geometry_(),
+                    iganet::Options<value_type> options = iganet::Options<value_type>{})
+      : geometry_(),
         variable_(),
         outputs_(),
         opt_(net_->parameters()),
@@ -994,8 +999,8 @@ namespace iganet {
            const std::vector<std::vector<std::any>>& activations,
            std::tuple<spline_t...>                   splines,
            IgANetOptions                             defaults = {},
-           iganet::core<value_type>                  core = iganet::core<value_type>{})
-      : IgANet(layers, activations, splines, splines, defaults, core)
+           iganet::Options<value_type>               options = iganet::Options<value_type>{})
+      : IgANet(layers, activations, splines, splines, defaults, options)
     {}
 
     /// @brief Constructor: number of layers, activation functions,
@@ -1008,11 +1013,11 @@ namespace iganet {
            std::tuple<geometry_splines_t...>         geometry_splines,
            std::tuple<variable_splines_t...>         variable_splines,
            IgANetOptions                             defaults = {},
-           iganet::core<value_type>                  core = iganet::core<value_type>{})
-      : IgANet(layers, activations,
-               geometry_splines, std::make_index_sequence<sizeof...(geometry_splines_t)>{},
-               variable_splines, std::make_index_sequence<sizeof...(variable_splines_t)>{},
-               defaults, core)
+           iganet::Options<value_type>               options = iganet::Options<value_type>{})
+    : IgANet(layers, activations,
+             geometry_splines, std::make_index_sequence<sizeof...(geometry_splines_t)>{},
+             variable_splines, std::make_index_sequence<sizeof...(variable_splines_t)>{},
+             defaults, options)
     {}
     
     /// @brief Returns a constant reference to the IgANet generator
@@ -1206,13 +1211,13 @@ namespace iganet {
           if (status & status::variable_samples)
             variable_samples = this->variable_samples(epoch);
 
-          std::cout << inputs << std::endl;
-          std::cout << geometry_.as_tensor_size(false)
-                    << "+"
-                    << variable_.as_tensor_size(false)
-                    << std::endl;
-          std::cout << inputs.index({torch::indexing::Slice(147, torch::indexing::None)})
-                    << std::endl;
+          // std::cout << inputs << std::endl;
+          // std::cout << geometry_.as_tensor_size(false)
+          //           << "+"
+          //           << variable_.as_tensor_size(false)
+          //           << std::endl;
+          // std::cout << inputs.index({torch::indexing::Slice(147, torch::indexing::None)})
+          //           << std::endl;
           
           auto closure = [&]()
           {          
@@ -1240,10 +1245,16 @@ namespace iganet {
         }
     }
 
-    /// @brief Returns a string representation of the IgANet object
-    inline virtual void pretty_print(std::ostream& os = std::cout) const
+    /// @brief Returns the IgANet object as JSON object
+    inline virtual nlohmann::json to_json() const override
     {
-      os << core<value_type>::name()
+      return "Not implemented yet";
+    }
+    
+    /// @brief Returns a string representation of the IgANet object
+    inline virtual void pretty_print(std::ostream& os = std::cout) const noexcept override
+    {
+      os << name()
          << "(\n"
          << "net = " << net_ << "\n"
          << "geo = " << geometry_ << "\n"

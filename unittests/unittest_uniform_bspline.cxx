@@ -12,11 +12,11 @@
    file, You can obtain one at http://mozilla.org/MPL/2.0/.
 */
 
-#include <iganet.hpp>
+#include <iganet.h>
 #include <filesystem>
 #include <iostream>
 
-#include "unittest_splinelib.hpp"
+#include "unittest_bsplinelib.hpp"
 #include <gtest/gtest.h>
 
 TEST(BSpline, UniformBSpline_parDim1_geoDim1_degrees1_double)
@@ -394,143 +394,163 @@ TEST(BSpline, UniformBSpline_parDim4_geoDim4_degrees3421_double)
 TEST(BSpline, UniformBSpline_init_double)
 {
   {
-    iganet::UniformBSpline<double, 1, 1> bspline({5}, iganet::init::zeros);
-    EXPECT_TRUE(torch::allclose(bspline.coeffs(0), torch::zeros(5, bspline.options())));
+    iganet::Options<double> options;
+    iganet::UniformBSpline<double, 1, 1> bspline({5}, iganet::init::zeros, options);
+    EXPECT_TRUE(torch::allclose(bspline.coeffs(0), torch::zeros(5, options)));
   }
 
   {
-    iganet::UniformBSpline<double, 1, 1> bspline({5}, iganet::init::ones);
-    EXPECT_TRUE(torch::allclose(bspline.coeffs(0), torch::ones(5, bspline.options())));
+      iganet::Options<double> options;
+      iganet::UniformBSpline<double, 1, 1> bspline({5}, iganet::init::ones, options);
+    EXPECT_TRUE(torch::allclose(bspline.coeffs(0), torch::ones(5, options)));
   }
     
   {
-    iganet::UniformBSpline<double, 1, 1> bspline({5}, iganet::init::linear);
-    EXPECT_TRUE(torch::allclose(bspline.coeffs(0), torch::linspace(0, 1, 5, bspline.options())));
+    iganet::Options<double> options;
+    iganet::UniformBSpline<double, 1, 1> bspline({5}, iganet::init::linear, options);
+    EXPECT_TRUE(torch::allclose(bspline.coeffs(0), torch::linspace(0, 1, 5, options)));
   }
 
   {
-    iganet::UniformBSpline<double, 1, 1> bspline({5}, iganet::init::greville);
-    EXPECT_TRUE(torch::allclose(bspline.coeffs(0), torch::linspace(0, 1, 5, bspline.options())));
+    iganet::Options<double> options;
+    iganet::UniformBSpline<double, 1, 1> bspline({5}, iganet::init::greville, options);
+    EXPECT_TRUE(torch::allclose(bspline.coeffs(0), torch::linspace(0, 1, 5, options)));
   }
 
   {
-    iganet::UniformBSpline<double, 2, 1> bspline({5}, iganet::init::zeros);
-    EXPECT_TRUE(torch::allclose(bspline.coeffs(0), torch::zeros(5, bspline.options())));
-    EXPECT_TRUE(torch::allclose(bspline.coeffs(1), torch::zeros(5, bspline.options())));
+    iganet::Options<double> options;
+    iganet::UniformBSpline<double, 2, 1> bspline({5}, iganet::init::zeros, options);
+    EXPECT_TRUE(torch::allclose(bspline.coeffs(0), torch::zeros(5, options)));
+    EXPECT_TRUE(torch::allclose(bspline.coeffs(1), torch::zeros(5, options)));
   }
 
   {
-    iganet::UniformBSpline<double, 2, 1> bspline({5}, iganet::init::ones);
-    EXPECT_TRUE(torch::allclose(bspline.coeffs(0), torch::ones(5, bspline.options())));
-    EXPECT_TRUE(torch::allclose(bspline.coeffs(1), torch::ones(5, bspline.options())));
+    iganet::Options<double> options;
+    iganet::UniformBSpline<double, 2, 1> bspline({5}, iganet::init::ones, options);
+    EXPECT_TRUE(torch::allclose(bspline.coeffs(0), torch::ones(5, options)));
+    EXPECT_TRUE(torch::allclose(bspline.coeffs(1), torch::ones(5, options)));
   }
 
   {
-    iganet::UniformBSpline<double, 2, 1> bspline({5}, iganet::init::linear);
-    EXPECT_TRUE(torch::allclose(bspline.coeffs(0), torch::linspace(0, 1, 5, bspline.options())));
-    EXPECT_TRUE(torch::allclose(bspline.coeffs(1), torch::ones(5, bspline.options())));
+    iganet::Options<double> options;
+    iganet::UniformBSpline<double, 2, 1> bspline({5}, iganet::init::linear, options);
+    EXPECT_TRUE(torch::allclose(bspline.coeffs(0), torch::linspace(0, 1, 5, options)));
+    EXPECT_TRUE(torch::allclose(bspline.coeffs(1), torch::ones(5, options)));
   }
 
   {
-    iganet::UniformBSpline<double, 2, 1> bspline({5}, iganet::init::greville);
-    EXPECT_TRUE(torch::allclose(bspline.coeffs(0), torch::linspace(0, 1, 5, bspline.options())));
-    EXPECT_TRUE(torch::allclose(bspline.coeffs(1), torch::ones(5, bspline.options())));
+    iganet::Options<double> options;
+    iganet::UniformBSpline<double, 2, 1> bspline({5}, iganet::init::greville, options);
+    EXPECT_TRUE(torch::allclose(bspline.coeffs(0), torch::linspace(0, 1, 5, options)));
+    EXPECT_TRUE(torch::allclose(bspline.coeffs(1), torch::ones(5, options)));
   }
   
   {
-    iganet::UniformBSpline<double, 2, 2, 2> bspline({5, 8}, iganet::init::zeros);
-    EXPECT_TRUE(torch::allclose(bspline.coeffs(0), torch::zeros(40, bspline.options())));
-    EXPECT_TRUE(torch::allclose(bspline.coeffs(1), torch::zeros(40, bspline.options())));
+    iganet::Options<double> options;
+    iganet::UniformBSpline<double, 2, 2, 2> bspline({5, 8}, iganet::init::zeros, options);
+    EXPECT_TRUE(torch::allclose(bspline.coeffs(0), torch::zeros(40, options)));
+    EXPECT_TRUE(torch::allclose(bspline.coeffs(1), torch::zeros(40, options)));
   }
 
   {
-    iganet::UniformBSpline<double, 2, 2, 2> bspline({5, 8}, iganet::init::ones);
-    EXPECT_TRUE(torch::allclose(bspline.coeffs(0), torch::ones(40, bspline.options())));
-    EXPECT_TRUE(torch::allclose(bspline.coeffs(1), torch::ones(40, bspline.options())));
+    iganet::Options<double> options;
+    iganet::UniformBSpline<double, 2, 2, 2> bspline({5, 8}, iganet::init::ones, options);
+    EXPECT_TRUE(torch::allclose(bspline.coeffs(0), torch::ones(40, options)));
+    EXPECT_TRUE(torch::allclose(bspline.coeffs(1), torch::ones(40, options)));
   }
 
   {
-    iganet::UniformBSpline<double, 2, 2, 2> bspline({5, 8}, iganet::init::linear);
+    iganet::Options<double> options;
+    iganet::UniformBSpline<double, 2, 2, 2> bspline({5, 8}, iganet::init::linear, options);
     EXPECT_TRUE(torch::allclose(bspline.coeffs(0),
-                                torch::linspace(0, 1, 5, bspline.options()).repeat(8)));
+                                torch::linspace(0, 1, 5, options).repeat(8)));
     EXPECT_TRUE(torch::allclose(bspline.coeffs(1),
-                                torch::linspace(0, 1, 8, bspline.options()).repeat_interleave(5)));
+                                torch::linspace(0, 1, 8, options).repeat_interleave(5)));
   }
   
   {
-    iganet::UniformBSpline<double, 2, 1, 1> bspline({5, 8}, iganet::init::greville);
+    iganet::Options<double> options;
+    iganet::UniformBSpline<double, 2, 1, 1> bspline({5, 8}, iganet::init::greville, options);
     EXPECT_TRUE(torch::allclose(bspline.coeffs(0),
-                                torch::linspace(0, 1, 5, bspline.options()).repeat(8)));
+                                torch::linspace(0, 1, 5, options).repeat(8)));
     EXPECT_TRUE(torch::allclose(bspline.coeffs(1),
-                                torch::linspace(0, 1, 8, bspline.options()).repeat_interleave(5)));
+                                torch::linspace(0, 1, 8, options).repeat_interleave(5)));
   }
   
   {
-    iganet::UniformBSpline<double, 3, 2, 2> bspline({5, 8}, iganet::init::zeros);
-    EXPECT_TRUE(torch::allclose(bspline.coeffs(0), torch::zeros(40, bspline.options())));
-    EXPECT_TRUE(torch::allclose(bspline.coeffs(1), torch::zeros(40, bspline.options())));
-    EXPECT_TRUE(torch::allclose(bspline.coeffs(2), torch::zeros(40, bspline.options())));
+    iganet::Options<double> options;
+    iganet::UniformBSpline<double, 3, 2, 2> bspline({5, 8}, iganet::init::zeros, options);
+    EXPECT_TRUE(torch::allclose(bspline.coeffs(0), torch::zeros(40, options)));
+    EXPECT_TRUE(torch::allclose(bspline.coeffs(1), torch::zeros(40, options)));
+    EXPECT_TRUE(torch::allclose(bspline.coeffs(2), torch::zeros(40, options)));
   }
 
   {
-    iganet::UniformBSpline<double, 3, 2, 2> bspline({5, 8}, iganet::init::ones);
-    EXPECT_TRUE(torch::allclose(bspline.coeffs(0), torch::ones(40, bspline.options())));
-    EXPECT_TRUE(torch::allclose(bspline.coeffs(1), torch::ones(40, bspline.options())));
-    EXPECT_TRUE(torch::allclose(bspline.coeffs(2), torch::ones(40, bspline.options())));
+    iganet::Options<double> options;
+    iganet::UniformBSpline<double, 3, 2, 2> bspline({5, 8}, iganet::init::ones, options);
+    EXPECT_TRUE(torch::allclose(bspline.coeffs(0), torch::ones(40, options)));
+    EXPECT_TRUE(torch::allclose(bspline.coeffs(1), torch::ones(40, options)));
+    EXPECT_TRUE(torch::allclose(bspline.coeffs(2), torch::ones(40, options)));
   }
 
   {
-    iganet::UniformBSpline<double, 3, 2, 2> bspline({5, 8}, iganet::init::linear);
+    iganet::Options<double> options;
+    iganet::UniformBSpline<double, 3, 2, 2> bspline({5, 8}, iganet::init::linear, options);
     EXPECT_TRUE(torch::allclose(bspline.coeffs(0),
-                                torch::linspace(0, 1, 5, bspline.options()).repeat(8)));
+                                torch::linspace(0, 1, 5, options).repeat(8)));
     EXPECT_TRUE(torch::allclose(bspline.coeffs(1),
-                                torch::linspace(0, 1, 8, bspline.options()).repeat_interleave(5)));
-    EXPECT_TRUE(torch::allclose(bspline.coeffs(2), torch::ones(40, bspline.options())));
+                                torch::linspace(0, 1, 8, options).repeat_interleave(5)));
+    EXPECT_TRUE(torch::allclose(bspline.coeffs(2), torch::ones(40, options)));
   }
   
   {
-    iganet::UniformBSpline<double, 3, 1, 1> bspline({5, 8}, iganet::init::greville);
+    iganet::Options<double> options;
+    iganet::UniformBSpline<double, 3, 1, 1> bspline({5, 8}, iganet::init::greville, options);
     EXPECT_TRUE(torch::allclose(bspline.coeffs(0),
-                                torch::linspace(0, 1, 5, bspline.options()).repeat(8)));
+                                torch::linspace(0, 1, 5, options).repeat(8)));
     EXPECT_TRUE(torch::allclose(bspline.coeffs(1),
-                                torch::linspace(0, 1, 8, bspline.options()).repeat_interleave(5)));
-    EXPECT_TRUE(torch::allclose(bspline.coeffs(2), torch::ones(40, bspline.options())));
+                                torch::linspace(0, 1, 8, options).repeat_interleave(5)));
+    EXPECT_TRUE(torch::allclose(bspline.coeffs(2), torch::ones(40, options)));
   }
 
   {
-    iganet::UniformBSpline<double, 4, 2, 2> bspline({5, 8}, iganet::init::zeros);
-    EXPECT_TRUE(torch::allclose(bspline.coeffs(0), torch::zeros(40, bspline.options())));
-    EXPECT_TRUE(torch::allclose(bspline.coeffs(1), torch::zeros(40, bspline.options())));
-    EXPECT_TRUE(torch::allclose(bspline.coeffs(2), torch::zeros(40, bspline.options())));
-    EXPECT_TRUE(torch::allclose(bspline.coeffs(3), torch::zeros(40, bspline.options())));
+    iganet::Options<double> options;
+    iganet::UniformBSpline<double, 4, 2, 2> bspline({5, 8}, iganet::init::zeros, options);
+    EXPECT_TRUE(torch::allclose(bspline.coeffs(0), torch::zeros(40, options)));
+    EXPECT_TRUE(torch::allclose(bspline.coeffs(1), torch::zeros(40, options)));
+    EXPECT_TRUE(torch::allclose(bspline.coeffs(2), torch::zeros(40, options)));
+    EXPECT_TRUE(torch::allclose(bspline.coeffs(3), torch::zeros(40, options)));
   }
 
   {
-    iganet::UniformBSpline<double, 4, 2, 2> bspline({5, 8}, iganet::init::ones);
-    EXPECT_TRUE(torch::allclose(bspline.coeffs(0), torch::ones(40, bspline.options())));
-    EXPECT_TRUE(torch::allclose(bspline.coeffs(1), torch::ones(40, bspline.options())));
-    EXPECT_TRUE(torch::allclose(bspline.coeffs(2), torch::ones(40, bspline.options())));
-    EXPECT_TRUE(torch::allclose(bspline.coeffs(3), torch::ones(40, bspline.options())));
+    iganet::Options<double> options;
+    iganet::UniformBSpline<double, 4, 2, 2> bspline({5, 8}, iganet::init::ones, options);
+    EXPECT_TRUE(torch::allclose(bspline.coeffs(0), torch::ones(40, options)));
+    EXPECT_TRUE(torch::allclose(bspline.coeffs(1), torch::ones(40, options)));
+    EXPECT_TRUE(torch::allclose(bspline.coeffs(2), torch::ones(40, options)));
+    EXPECT_TRUE(torch::allclose(bspline.coeffs(3), torch::ones(40, options)));
   }
 
   {
-    iganet::UniformBSpline<double, 4, 2, 2> bspline({5, 8}, iganet::init::linear);
+    iganet::Options<double> options;
+    iganet::UniformBSpline<double, 4, 2, 2> bspline({5, 8}, iganet::init::linear, options);
     EXPECT_TRUE(torch::allclose(bspline.coeffs(0),
-                                torch::linspace(0, 1, 5, bspline.options()).repeat(8)));
+                                torch::linspace(0, 1, 5, options).repeat(8)));
     EXPECT_TRUE(torch::allclose(bspline.coeffs(1),
-                                torch::linspace(0, 1, 8, bspline.options()).repeat_interleave(5)));
-    EXPECT_TRUE(torch::allclose(bspline.coeffs(2), torch::ones(40, bspline.options())));
-    EXPECT_TRUE(torch::allclose(bspline.coeffs(3), torch::ones(40, bspline.options())));
+                                torch::linspace(0, 1, 8, options).repeat_interleave(5)));
+    EXPECT_TRUE(torch::allclose(bspline.coeffs(2), torch::ones(40, options)));
+    EXPECT_TRUE(torch::allclose(bspline.coeffs(3), torch::ones(40, options)));
   }
   
   {
-    iganet::UniformBSpline<double, 4, 1, 1> bspline({5, 8}, iganet::init::greville);
+    iganet::Options<double> options;
+    iganet::UniformBSpline<double, 4, 1, 1> bspline({5, 8}, iganet::init::greville, options);
     EXPECT_TRUE(torch::allclose(bspline.coeffs(0),
-                                torch::linspace(0, 1, 5, bspline.options()).repeat(8)));
+                                torch::linspace(0, 1, 5, options).repeat(8)));
     EXPECT_TRUE(torch::allclose(bspline.coeffs(1),
-                                torch::linspace(0, 1, 8, bspline.options()).repeat_interleave(5)));
-    EXPECT_TRUE(torch::allclose(bspline.coeffs(2), torch::ones(40, bspline.options())));
-    EXPECT_TRUE(torch::allclose(bspline.coeffs(3), torch::ones(40, bspline.options())));
+                                torch::linspace(0, 1, 8, options).repeat_interleave(5)));
+    EXPECT_TRUE(torch::allclose(bspline.coeffs(2), torch::ones(40, options)));
+    EXPECT_TRUE(torch::allclose(bspline.coeffs(3), torch::ones(40, options)));
   } 
 }
 

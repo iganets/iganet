@@ -34,7 +34,7 @@ namespace iganet {
   /// - east (u=1)
   template<typename spline_t>
   class BoundaryCore<spline_t, /* parDim */1>
-    : public core<typename spline_t::value_type>
+    : public utils::Serializable, private utils::FullQualifiedName
   {
   protected:
     /// @brief Boundary spline type
@@ -45,6 +45,7 @@ namespace iganet {
     /// @brief Tuple of splines
     std::tuple<boundaryspline_t,
                boundaryspline_t> bdr_;
+    
   public:
     /// @brief Evaluation type
     using eval_t = std::tuple<torch::Tensor,
@@ -55,13 +56,12 @@ namespace iganet {
 
     /// @brief Constructor
     BoundaryCore(const std::array<int64_t, 1>&,
-                 enum init init = init::zeros,
-                 core<typename spline_t::value_type> core = iganet::core<typename spline_t::value_type>{})
-      : iganet::core<typename spline_t::value_type>(core),
-        bdr_(
+                 enum init init = init::zeros,                 
+                 Options<typename spline_t::value_type> options = Options<typename spline_t::value_type>{})
+      : bdr_(
              {
-               boundaryspline_t(std::array<int64_t, 0>{}, init, core),
-               boundaryspline_t(std::array<int64_t, 0>{}, init, core),
+               boundaryspline_t(std::array<int64_t, 0>{}, init, options),
+               boundaryspline_t(std::array<int64_t, 0>{}, init, options),
              }               
              )
     {}
@@ -69,12 +69,11 @@ namespace iganet {
     /// @brief Constructor
     BoundaryCore(const std::array<std::vector<typename spline_t::value_type>, 1>&,
                  enum init init = init::zeros,
-                 core<typename spline_t::value_type> core = iganet::core<typename spline_t::value_type>{})
-      : iganet::core<typename spline_t::value_type>(core),
-        bdr_(
+                 Options<typename spline_t::value_type> options = Options<typename spline_t::value_type>{})
+      : bdr_(
              {
-               boundaryspline_t(std::array<int64_t, 0>{}, init, core),
-               boundaryspline_t(std::array<int64_t, 0>{}, init, core),
+               boundaryspline_t(std::array<int64_t, 0>{}, init, options),
+               boundaryspline_t(std::array<int64_t, 0>{}, init, options),
              }               
              )
     {}
@@ -126,9 +125,9 @@ namespace iganet {
     }
     
     /// @brief Returns a string representation of the Boundary object
-    inline virtual void pretty_print(std::ostream& os = std::cout) const
+    inline virtual void pretty_print(std::ostream& os = std::cout) const noexcept override
     {
-      os << core<typename spline_t::value_type>::name()
+      os << name()
          << "(\n"
          << "west = " << std::get<west-1>(bdr_) << "\n"
          << "east = " << std::get<east-1>(bdr_)
@@ -162,7 +161,7 @@ namespace iganet {
   /// - north (u,   v=1)
   template<typename spline_t>
   class BoundaryCore<spline_t, /* parDim */2>
-    : public core<typename spline_t::value_type>
+    : public utils::Serializable, private utils::FullQualifiedName
   {
   protected:
     /// @brief Boundary spline type
@@ -181,7 +180,7 @@ namespace iganet {
                typename std::tuple_element_t<0,boundaryspline_t>,
                typename std::tuple_element_t<1,boundaryspline_t>,
                typename std::tuple_element_t<1,boundaryspline_t>> bdr_;
-    
+
   public:
     /// @brief Evaluation type
     using eval_t = std::tuple<std::array<torch::Tensor, 1>,
@@ -195,14 +194,13 @@ namespace iganet {
     /// @brief Constructor
     BoundaryCore(const std::array<int64_t, 2>& ncoeffs,
                  enum init init = init::zeros,
-                 core<typename spline_t::value_type> core = iganet::core<typename spline_t::value_type>{})
-      : iganet::core<typename spline_t::value_type>(core),
-        bdr_(
+                 Options<typename spline_t::value_type> options = Options<typename spline_t::value_type>{})
+      : bdr_(
              {
-               std::tuple_element_t<0,boundaryspline_t>(std::array<int64_t,1>({ncoeffs[1]}), init, core),
-               std::tuple_element_t<0,boundaryspline_t>(std::array<int64_t,1>({ncoeffs[1]}), init, core),
-               std::tuple_element_t<1,boundaryspline_t>(std::array<int64_t,1>({ncoeffs[0]}), init, core),
-               std::tuple_element_t<1,boundaryspline_t>(std::array<int64_t,1>({ncoeffs[0]}), init, core)
+               std::tuple_element_t<0,boundaryspline_t>(std::array<int64_t,1>({ncoeffs[1]}), init, options),
+               std::tuple_element_t<0,boundaryspline_t>(std::array<int64_t,1>({ncoeffs[1]}), init, options),
+               std::tuple_element_t<1,boundaryspline_t>(std::array<int64_t,1>({ncoeffs[0]}), init, options),
+               std::tuple_element_t<1,boundaryspline_t>(std::array<int64_t,1>({ncoeffs[0]}), init, options)
              }
              )
     {}
@@ -210,14 +208,13 @@ namespace iganet {
     /// @brief Constructor
     BoundaryCore(const std::array<std::vector<typename spline_t::value_type>, 2>& kv,
                  enum init init = init::zeros,
-                 core<typename spline_t::value_type> core = iganet::core<typename spline_t::value_type>{})
-      : iganet::core<typename spline_t::value_type>(core),
-        bdr_(
+                 Options<typename spline_t::value_type> options = Options<typename spline_t::value_type>{})
+      : bdr_(
              {
-               std::tuple_element_t<0,boundaryspline_t>(std::array<std::vector<typename spline_t::value_type>,1>({kv[1]}), init, core),
-               std::tuple_element_t<0,boundaryspline_t>(std::array<std::vector<typename spline_t::value_type>,1>({kv[1]}), init, core),
-               std::tuple_element_t<1,boundaryspline_t>(std::array<std::vector<typename spline_t::value_type>,1>({kv[0]}), init, core),
-               std::tuple_element_t<1,boundaryspline_t>(std::array<std::vector<typename spline_t::value_type>,1>({kv[0]}), init, core)
+               std::tuple_element_t<0,boundaryspline_t>(std::array<std::vector<typename spline_t::value_type>,1>({kv[1]}), init, options),
+               std::tuple_element_t<0,boundaryspline_t>(std::array<std::vector<typename spline_t::value_type>,1>({kv[1]}), init, options),
+               std::tuple_element_t<1,boundaryspline_t>(std::array<std::vector<typename spline_t::value_type>,1>({kv[0]}), init, options),
+               std::tuple_element_t<1,boundaryspline_t>(std::array<std::vector<typename spline_t::value_type>,1>({kv[0]}), init, options)
              }
              )
     {}
@@ -271,9 +268,9 @@ namespace iganet {
     }
     
     /// @brief Returns a string representation of the Boundary object
-    inline virtual void pretty_print(std::ostream& os = std::cout) const override
+    inline virtual void pretty_print(std::ostream& os = std::cout) const noexcept override
     {
-      os << core<typename spline_t::value_type>::name()
+      os << name()
          << "(\n"
          << "west = "  << std::get<west-1>(bdr_) << "\n"
          << "east = "  << std::get<east-1>(bdr_) << "\n"
@@ -315,7 +312,7 @@ namespace iganet {
   /// - back  (u,   v,   w=1)
   template<typename spline_t>
   class BoundaryCore<spline_t, /* parDim */3>
-    : public core<typename spline_t::value_type>
+    : public utils::Serializable, private utils::FullQualifiedName
   {
   protected:
     /// @brief Boundary spline type
@@ -333,7 +330,6 @@ namespace iganet {
                         spline_t::geoDim(),
                         spline_t::degree(0), spline_t::degree(1)>>;
 
-
     /// @brief Tuple of splines
     std::tuple<typename std::tuple_element_t<0,boundaryspline_t>,
                typename std::tuple_element_t<0,boundaryspline_t>,
@@ -341,7 +337,7 @@ namespace iganet {
                typename std::tuple_element_t<1,boundaryspline_t>,
                typename std::tuple_element_t<2,boundaryspline_t>,
                typename std::tuple_element_t<2,boundaryspline_t>> bdr_;
-    
+
   public:
     /// @brief Evaluation type
     using eval_t = std::tuple<std::array<torch::Tensor, 2>,
@@ -357,16 +353,15 @@ namespace iganet {
     /// @brief Constructor
     BoundaryCore(const std::array<int64_t, 3>& ncoeffs,
                  enum init init = init::zeros,
-                 core<typename spline_t::value_type> core = iganet::core<typename spline_t::value_type>{})
-      : iganet::core<typename spline_t::value_type>(core),
-        bdr_(
+                 Options<typename spline_t::value_type> options = Options<typename spline_t::value_type>{})
+      : bdr_(
              {
-               std::tuple_element_t<0,boundaryspline_t>(std::array<int64_t,2>({ncoeffs[1], ncoeffs[2]}), init, core),
-               std::tuple_element_t<0,boundaryspline_t>(std::array<int64_t,2>({ncoeffs[1], ncoeffs[2]}), init, core),
-               std::tuple_element_t<1,boundaryspline_t>(std::array<int64_t,2>({ncoeffs[0], ncoeffs[2]}), init, core),
-               std::tuple_element_t<1,boundaryspline_t>(std::array<int64_t,2>({ncoeffs[0], ncoeffs[2]}), init, core),
-               std::tuple_element_t<2,boundaryspline_t>(std::array<int64_t,2>({ncoeffs[0], ncoeffs[1]}), init, core),
-               std::tuple_element_t<2,boundaryspline_t>(std::array<int64_t,2>({ncoeffs[0], ncoeffs[1]}), init, core)
+               std::tuple_element_t<0,boundaryspline_t>(std::array<int64_t,2>({ncoeffs[1], ncoeffs[2]}), init, options),
+               std::tuple_element_t<0,boundaryspline_t>(std::array<int64_t,2>({ncoeffs[1], ncoeffs[2]}), init, options),
+               std::tuple_element_t<1,boundaryspline_t>(std::array<int64_t,2>({ncoeffs[0], ncoeffs[2]}), init, options),
+               std::tuple_element_t<1,boundaryspline_t>(std::array<int64_t,2>({ncoeffs[0], ncoeffs[2]}), init, options),
+               std::tuple_element_t<2,boundaryspline_t>(std::array<int64_t,2>({ncoeffs[0], ncoeffs[1]}), init, options),
+               std::tuple_element_t<2,boundaryspline_t>(std::array<int64_t,2>({ncoeffs[0], ncoeffs[1]}), init, options)
              }
              )
     {}
@@ -374,16 +369,15 @@ namespace iganet {
     /// @brief Constructor
     BoundaryCore(const std::array<std::vector<typename spline_t::value_type>, 3>& kv,
                  enum init init = init::zeros,
-                 core<typename spline_t::value_type> core = iganet::core<typename spline_t::value_type>{})
-      : iganet::core<typename spline_t::value_type>(core),
-        bdr_(
+                 Options<typename spline_t::value_type> options = Options<typename spline_t::value_type>{})
+      : bdr_(
              {
-               std::tuple_element_t<0,boundaryspline_t>(std::array<std::vector<typename spline_t::value_type>,2>({kv[1], kv[2]}), init, core),
-               std::tuple_element_t<0,boundaryspline_t>(std::array<std::vector<typename spline_t::value_type>,2>({kv[1], kv[2]}), init, core),
-               std::tuple_element_t<1,boundaryspline_t>(std::array<std::vector<typename spline_t::value_type>,2>({kv[0], kv[2]}), init, core),
-               std::tuple_element_t<1,boundaryspline_t>(std::array<std::vector<typename spline_t::value_type>,2>({kv[0], kv[2]}), init, core),
-               std::tuple_element_t<2,boundaryspline_t>(std::array<std::vector<typename spline_t::value_type>,2>({kv[0], kv[1]}), init, core),
-               std::tuple_element_t<2,boundaryspline_t>(std::array<std::vector<typename spline_t::value_type>,2>({kv[0], kv[1]}), init, core)
+               std::tuple_element_t<0,boundaryspline_t>(std::array<std::vector<typename spline_t::value_type>,2>({kv[1], kv[2]}), init, options),
+               std::tuple_element_t<0,boundaryspline_t>(std::array<std::vector<typename spline_t::value_type>,2>({kv[1], kv[2]}), init, options),
+               std::tuple_element_t<1,boundaryspline_t>(std::array<std::vector<typename spline_t::value_type>,2>({kv[0], kv[2]}), init, options),
+               std::tuple_element_t<1,boundaryspline_t>(std::array<std::vector<typename spline_t::value_type>,2>({kv[0], kv[2]}), init, options),
+               std::tuple_element_t<2,boundaryspline_t>(std::array<std::vector<typename spline_t::value_type>,2>({kv[0], kv[1]}), init, options),
+               std::tuple_element_t<2,boundaryspline_t>(std::array<std::vector<typename spline_t::value_type>,2>({kv[0], kv[1]}), init, options)
              }
              )
     {}
@@ -439,9 +433,9 @@ namespace iganet {
     }
     
     /// @brief Returns a string representation of the Boundary object
-    inline virtual void pretty_print(std::ostream& os = std::cout) const
+    inline virtual void pretty_print(std::ostream& os = std::cout) const noexcept override
     {
-      os << core<typename spline_t::value_type>::name()
+      os << name()
          << "(\n"
          << "west = "  << std::get<west-1>(bdr_) << "\n"
          << "east = "  << std::get<east-1>(bdr_) << "\n"
@@ -491,7 +485,7 @@ namespace iganet {
   /// - etime (u,   v,   w,   t=1)
   template<typename spline_t>
   class BoundaryCore<spline_t, /* parDim */4>
-    : public core<typename spline_t::value_type>
+    : public utils::Serializable, private utils::FullQualifiedName
   {
   protected:
     /// @brief Array storing the degrees
@@ -512,8 +506,7 @@ namespace iganet {
     derived_self_type_t<typename spline_t::value_type,
                         spline_t::geoDim(),
                         spline_t::degree(0), spline_t::degree(1), spline_t::degree(2)>>;
-    
-    
+        
     /// @brief Tuple of splines
     std::tuple<typename std::tuple_element_t<0,boundaryspline_t>,
                typename std::tuple_element_t<0,boundaryspline_t>,
@@ -523,7 +516,7 @@ namespace iganet {
                typename std::tuple_element_t<2,boundaryspline_t>,
                typename std::tuple_element_t<3,boundaryspline_t>,
                typename std::tuple_element_t<3,boundaryspline_t>> bdr_;
-    
+
   public:
     /// @brief Evaluation type
     using eval_t = std::tuple<std::array<torch::Tensor, 3>,
@@ -541,18 +534,17 @@ namespace iganet {
     /// @brief Constructor
     BoundaryCore(const std::array<int64_t, 4>& ncoeffs,
                  enum init init = init::zeros,
-                 core<typename spline_t::value_type> core = iganet::core<typename spline_t::value_type>{})
-      : iganet::core<typename spline_t::value_type>(core),
-        bdr_(
+                 Options<typename spline_t::value_type> options = Options<typename spline_t::value_type>{})
+      : bdr_(
              {
-               std::tuple_element_t<0,boundaryspline_t>(std::array<int64_t,3>({ncoeffs[1], ncoeffs[2], ncoeffs[3]}), init, core),
-               std::tuple_element_t<0,boundaryspline_t>(std::array<int64_t,3>({ncoeffs[1], ncoeffs[2], ncoeffs[3]}), init, core),
-               std::tuple_element_t<1,boundaryspline_t>(std::array<int64_t,3>({ncoeffs[0], ncoeffs[2], ncoeffs[3]}), init, core),
-               std::tuple_element_t<1,boundaryspline_t>(std::array<int64_t,3>({ncoeffs[0], ncoeffs[2], ncoeffs[3]}), init, core),
-               std::tuple_element_t<2,boundaryspline_t>(std::array<int64_t,3>({ncoeffs[0], ncoeffs[1], ncoeffs[3]}), init, core),
-               std::tuple_element_t<2,boundaryspline_t>(std::array<int64_t,3>({ncoeffs[0], ncoeffs[1], ncoeffs[3]}), init, core),
-               std::tuple_element_t<3,boundaryspline_t>(std::array<int64_t,3>({ncoeffs[0], ncoeffs[1], ncoeffs[2]}), init, core),
-               std::tuple_element_t<3,boundaryspline_t>(std::array<int64_t,3>({ncoeffs[0], ncoeffs[1], ncoeffs[2]}), init, core)
+               std::tuple_element_t<0,boundaryspline_t>(std::array<int64_t,3>({ncoeffs[1], ncoeffs[2], ncoeffs[3]}), init, options),
+               std::tuple_element_t<0,boundaryspline_t>(std::array<int64_t,3>({ncoeffs[1], ncoeffs[2], ncoeffs[3]}), init, options),
+               std::tuple_element_t<1,boundaryspline_t>(std::array<int64_t,3>({ncoeffs[0], ncoeffs[2], ncoeffs[3]}), init, options),
+               std::tuple_element_t<1,boundaryspline_t>(std::array<int64_t,3>({ncoeffs[0], ncoeffs[2], ncoeffs[3]}), init, options),
+               std::tuple_element_t<2,boundaryspline_t>(std::array<int64_t,3>({ncoeffs[0], ncoeffs[1], ncoeffs[3]}), init, options),
+               std::tuple_element_t<2,boundaryspline_t>(std::array<int64_t,3>({ncoeffs[0], ncoeffs[1], ncoeffs[3]}), init, options),
+               std::tuple_element_t<3,boundaryspline_t>(std::array<int64_t,3>({ncoeffs[0], ncoeffs[1], ncoeffs[2]}), init, options),
+               std::tuple_element_t<3,boundaryspline_t>(std::array<int64_t,3>({ncoeffs[0], ncoeffs[1], ncoeffs[2]}), init, options)
              }
              )
     {}
@@ -560,18 +552,17 @@ namespace iganet {
     /// @brief Constructor
     BoundaryCore(const std::array<std::vector<typename spline_t::value_type>, 4>& kv,
                  enum init init = init::zeros,
-                 core<typename spline_t::value_type> core = iganet::core<typename spline_t::value_type>{})
-      : iganet::core<typename spline_t::value_type>(core),
-        bdr_(
+                 Options<typename spline_t::value_type> options = Options<typename spline_t::value_type>{})
+      : bdr_(
              {
-               std::tuple_element_t<0,boundaryspline_t>(std::array<std::vector<typename spline_t::value_type>,3>({kv[1], kv[2], kv[3]}), init, core),
-               std::tuple_element_t<0,boundaryspline_t>(std::array<std::vector<typename spline_t::value_type>,3>({kv[1], kv[2], kv[3]}), init, core),
-               std::tuple_element_t<1,boundaryspline_t>(std::array<std::vector<typename spline_t::value_type>,3>({kv[0], kv[2], kv[3]}), init, core),
-               std::tuple_element_t<1,boundaryspline_t>(std::array<std::vector<typename spline_t::value_type>,3>({kv[0], kv[2], kv[3]}), init, core),
-               std::tuple_element_t<2,boundaryspline_t>(std::array<std::vector<typename spline_t::value_type>,3>({kv[0], kv[1], kv[3]}), init, core),
-               std::tuple_element_t<2,boundaryspline_t>(std::array<std::vector<typename spline_t::value_type>,3>({kv[0], kv[1], kv[3]}), init, core),
-               std::tuple_element_t<3,boundaryspline_t>(std::array<std::vector<typename spline_t::value_type>,3>({kv[0], kv[1], kv[2]}), init, core),
-               std::tuple_element_t<3,boundaryspline_t>(std::array<std::vector<typename spline_t::value_type>,3>({kv[0], kv[1], kv[2]}), init, core)
+               std::tuple_element_t<0,boundaryspline_t>(std::array<std::vector<typename spline_t::value_type>,3>({kv[1], kv[2], kv[3]}), init, options),
+               std::tuple_element_t<0,boundaryspline_t>(std::array<std::vector<typename spline_t::value_type>,3>({kv[1], kv[2], kv[3]}), init, options),
+               std::tuple_element_t<1,boundaryspline_t>(std::array<std::vector<typename spline_t::value_type>,3>({kv[0], kv[2], kv[3]}), init, options),
+               std::tuple_element_t<1,boundaryspline_t>(std::array<std::vector<typename spline_t::value_type>,3>({kv[0], kv[2], kv[3]}), init, options),
+               std::tuple_element_t<2,boundaryspline_t>(std::array<std::vector<typename spline_t::value_type>,3>({kv[0], kv[1], kv[3]}), init, options),
+               std::tuple_element_t<2,boundaryspline_t>(std::array<std::vector<typename spline_t::value_type>,3>({kv[0], kv[1], kv[3]}), init, options),
+               std::tuple_element_t<3,boundaryspline_t>(std::array<std::vector<typename spline_t::value_type>,3>({kv[0], kv[1], kv[2]}), init, options),
+               std::tuple_element_t<3,boundaryspline_t>(std::array<std::vector<typename spline_t::value_type>,3>({kv[0], kv[1], kv[2]}), init, options)
              }
              )
     {}
@@ -629,9 +620,9 @@ namespace iganet {
     }
     
     /// @brief Returns a string representation of the Boundary object
-    inline virtual void pretty_print(std::ostream& os = std::cout) const
+    inline virtual void pretty_print(std::ostream& os = std::cout) const noexcept override
     {
-      os << core<typename spline_t::value_type>::name()
+      os << name()
          << "(\n"
          << "west = "  << std::get<west-1>(bdr_) << "\n"
          << "east = "  << std::get<east-1>(bdr_) << "\n"
@@ -678,7 +669,8 @@ namespace iganet {
   
   /// @brief Boundary (common high-level functionality)
   template<typename BoundaryCore>
-  class BoundaryCommon : public BoundaryCore
+  class BoundaryCommon
+    : public BoundaryCore
   {
   public:
     /// @brief Constructors from the base class
@@ -788,7 +780,7 @@ namespace iganet {
     /// @}
 
     /// @brief Returns the value of the boundary spline objects from
-    /// precomputed basis function
+    /// precomputed basis function @{
     template<size_t... Is,
              typename... Basfunc, typename... Coeff_Indices,
              typename... Numeval, typename... Sizes>
@@ -924,7 +916,7 @@ namespace iganet {
     /// @}
     
     /// @brief Returns the value of the spline objects from
-    /// precomputed basis function
+    /// precomputed basis function @{
     template<typename... Basfunc, typename... Coeff_Indices,
              typename... Numeval, typename... Sizes>
     inline auto eval_from_precomputed(const std::tuple<Basfunc...>& basfunc,

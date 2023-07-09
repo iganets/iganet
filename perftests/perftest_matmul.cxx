@@ -12,7 +12,7 @@
    file, You can obtain one at http://mozilla.org/MPL/2.0/.
 */
 
-#include <iganet.hpp>
+#include <iganet.h>
 
 #include <iostream>
 #include <chrono>
@@ -21,14 +21,14 @@
 
 TEST(Performance, MatmulTensorLayout_double)
 {
-  iganet::core<double> core_(false);
+  iganet::Options<double> options = iganet::Options<double>{}.requires_grad(false);
 
-  for (short_t n : {2, 3, 4, 5}) {
+  for (iganet::short_t n : {2, 3, 4, 5}) {
     for (int64_t m : {100, 500, 1000, 5000, 10000, 50000, 100000}) {
 
       { // (n,m) data format
-        torch::Tensor a = torch::ones({n,m}, core_.options());
-        torch::Tensor b = torch::ones({n,m}, core_.options());
+        torch::Tensor a = torch::ones({n,m}, options.options());
+        torch::Tensor b = torch::ones({n,m}, options.options());
         torch::Tensor c;
 
         auto t1 = std::chrono::high_resolution_clock::now();
@@ -47,8 +47,8 @@ TEST(Performance, MatmulTensorLayout_double)
       }
 
       { // (m,n) data format
-        torch::Tensor a = torch::ones({m,n}, core_.options());
-        torch::Tensor b = torch::ones({m,n}, core_.options());
+        torch::Tensor a = torch::ones({m,n}, options.options());
+        torch::Tensor b = torch::ones({m,n}, options.options());
         torch::Tensor c;
 
         auto t1 = std::chrono::high_resolution_clock::now();

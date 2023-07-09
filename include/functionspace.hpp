@@ -15,7 +15,7 @@
 #pragma once
 
 #include <bspline.hpp>
-#include <zip.hpp>
+#include <utils/zip.hpp>
 
 namespace iganet {
 
@@ -84,7 +84,8 @@ namespace iganet {
     /// applications. Instead use S1, S2, S3, S4, TH1, TH2, TH3, TH4,
     /// NE1, NE2, NE3, NE, RT1, RT2, RT3, or RT4.
     template<typename... spline_t>
-    class FunctionSpace : public std::tuple<spline_t...>
+    class FunctionSpace
+      : public std::tuple<spline_t...>, public utils::Serializable, private utils::FullQualifiedName
     {
     public:
       /// @brief Boundary spline objects type
@@ -120,17 +121,17 @@ namespace iganet {
       /// @{
       FunctionSpace(const std::array<int64_t, spline_t::parDim()>&... ncoeffs,
                     enum init init = init::zeros,
-                    core<value_type> core = iganet::core<value_type>{})
-        : Base({ncoeffs, init, core}...),
-          boundary_({ncoeffs, init, core}...)
+                    Options<value_type> options = iganet::Options<value_type>{})
+        : Base({ncoeffs, init, options}...),
+          boundary_({ncoeffs, init, options}...)
       {}
 
       FunctionSpace(const std::array<std::vector<typename spline_t::value_type>,
                     spline_t::parDim()>&... kv,
                     enum init init = init::zeros,
-                    core<value_type> core = iganet::core<value_type>{})
-        : Base({kv, init, core}...),
-          boundary_({kv, init, core}...)
+                    Options<value_type> options = iganet::Options<value_type>{})
+        : Base({kv, init, options}...),
+          boundary_({kv, init, options}...)
       {}      
       /// @}
 
@@ -148,7 +149,7 @@ namespace iganet {
       {
         if (boundary)
           return torch::cat({std::get<Is>(*this).as_tensor()...,
-                             std::get<Is>(boundary_).as_tensor()...});
+              std::get<Is>(boundary_).as_tensor()...});
         else
           return torch::cat({std::get<Is>(*this).as_tensor()...});
       }
@@ -231,7 +232,7 @@ namespace iganet {
         (json_boundary.push_back(std::get<Is>(boundary_).to_json()), ...);
 
         auto json = nlohmann::json::array();
-        for (auto [t,b] : zip(json_this, json_boundary)) {
+        for (auto [t,b] : utils::zip(json_this, json_boundary)) {
           auto json_inner = nlohmann::json::array();
           json_inner.push_back(t);
           json_inner.push_back(b);
@@ -290,6 +291,7 @@ namespace iganet {
 
       /// @brief Returns the value of the spline objects from
       /// precomputed basis function
+      /// @{
       template<functionspace comp = functionspace::interior,
                size_t... Is,
                typename... Basfunc, typename... Coeff_Indices,
@@ -430,7 +432,7 @@ namespace iganet {
       }
 
       /// @brief Serialization to JSON
-      nlohmann::json to_json() const
+      nlohmann::json to_json() const override
       {
         return to_json_(std::make_index_sequence<sizeof...(spline_t)>{});
       }
@@ -466,6 +468,7 @@ namespace iganet {
 
       /// @brief Returns the value of the spline objects from
       /// precomputed basis function
+      /// @{
       template<functionspace comp = functionspace::interior,
                typename... Basfunc, typename... Coeff_Indices,
                typename... Numeval, typename... Sizes>
@@ -485,7 +488,7 @@ namespace iganet {
                                         const std::tuple<Xi...>& xi) const
       {
         return eval_from_precomputed_<comp>(std::make_index_sequence<sizeof...(spline_t)>{},
-                                      basfunc, coeff_indices, xi);
+                                            basfunc, coeff_indices, xi);
       }
       /// @}
 
@@ -551,7 +554,7 @@ namespace iganet {
       }
 
       /// @brief Returns a string representation of the function space object
-      inline virtual void pretty_print(std::ostream& os = std::cout) const
+      inline virtual void pretty_print(std::ostream& os = std::cout) const noexcept override
       {
         os << *this;
       }
@@ -563,7 +566,8 @@ namespace iganet {
     /// applications. Instead use S1, S2, S3, S4, TH1, TH2, TH3, TH4,
     /// NE1, NE2, NE3, NE, RT1, RT2, RT3, or RT4.
     template<typename spline_t>
-    class FunctionSpace<spline_t> : public spline_t
+    class FunctionSpace<spline_t>
+      : public spline_t
     {
     public:
       /// @brief Boundary spline objects type
@@ -599,17 +603,19 @@ namespace iganet {
       /// @{
       FunctionSpace(const std::array<int64_t, spline_t::parDim()>& ncoeffs,
                     enum init init = init::zeros,
-                    core<value_type> core = iganet::core<value_type>{})
-        : Base(ncoeffs, init, core),
-          boundary_(ncoeffs, init)
+                    //bool shared_boundary = false,
+                    Options<value_type> options = iganet::Options<value_type>{})
+        : Base(ncoeffs, init, options),
+          boundary_(ncoeffs, init, options)
       {}
 
       FunctionSpace(std::array<std::vector<typename spline_t::value_type>,
                     spline_t::parDim()> kv,
                     enum init init = init::zeros,
-                    core<value_type> core = iganet::core<value_type>{})
-        : Base(kv, init, core),
-          boundary_(kv, init, core)
+                    //bool shared_boundary = false,
+                    Options<value_type> options = iganet::Options<value_type>{})
+        : Base(kv, init, options),
+          boundary_(kv, init, options)
       {}
       /// @}
       
@@ -719,6 +725,7 @@ namespace iganet {
 
       /// @brief Returns the value of the spline object from
       /// precomputed basis function
+      /// @{
       template<functionspace comp = functionspace::interior,
                typename Basfunc, typename Coeff_Indices,
                typename Numeval, typename Sizes>
@@ -823,9 +830,9 @@ namespace iganet {
       }
 
       /// @brief Returns a string representation of the function space object
-      inline virtual void pretty_print(std::ostream& os = std::cout) const override
+      inline virtual void pretty_print(std::ostream& os = std::cout) const noexcept override
       {
-        os << FunctionSpace::name()
+        os << spline_t::name()
            << "(\ninterior = ";
         Base::pretty_print(os);
         os << "\nboundary = ";
@@ -870,8 +877,8 @@ namespace iganet {
 
     S1(const std::array<int64_t, spline_t::parDim()>& ncoeffs,
        enum init init = init::zeros,
-       core<typename spline_t::value_type> core = iganet::core<typename spline_t::value_type>{})
-      : Base(ncoeffs, init, core)
+       Options<typename spline_t::value_type> options = iganet::Options<typename spline_t::value_type>{})
+      : Base(ncoeffs, init, options)
     {
       if constexpr (sizeof...(Cs) == 1) {
         if constexpr (const auto c = std::get<0>(std::make_tuple(Cs...));
@@ -882,10 +889,10 @@ namespace iganet {
     }
 
     S1(std::array<std::vector<typename spline_t::value_type>,
-                 spline_t::parDim()> kv,
+       spline_t::parDim()> kv,
        enum init init = init::zeros,
-       core<typename spline_t::value_type> core = iganet::core<typename spline_t::value_type>{})
-      : Base(kv, init, core)
+       Options<typename spline_t::value_type> options = iganet::Options<typename spline_t::value_type>{})
+      : Base(kv, init, options)
     {
       if constexpr (sizeof...(Cs) == 1) {
         if constexpr (const auto c = std::get<0>(std::make_tuple(Cs...));
@@ -894,7 +901,7 @@ namespace iganet {
       } else
         static_assert(sizeof...(Cs) == 0, "Dimensions mismatch");
     }
-  /// @}
+    /// @}
   };
 
   TUPLE_WRAPPER(S1);
@@ -923,8 +930,8 @@ namespace iganet {
 
     S2(const std::array<int64_t, spline_t::parDim()>& ncoeffs,
        enum init init = init::zeros,
-       core<typename spline_t::value_type> core = iganet::core<typename spline_t::value_type>{})
-      : Base(ncoeffs, init, core)
+       Options<typename spline_t::value_type> options = iganet::Options<typename spline_t::value_type>{})
+      : Base(ncoeffs, init, options)
     {
       if constexpr (sizeof...(Cs) == 2) {
         if constexpr (const auto c = std::get<0>(std::make_tuple(Cs...));
@@ -938,10 +945,10 @@ namespace iganet {
     }
 
     S2(std::array<std::vector<typename spline_t::value_type>,
-                 spline_t::parDim()> kv,
+       spline_t::parDim()> kv,
        enum init init = init::zeros,
-       core<typename spline_t::value_type> core = iganet::core<typename spline_t::value_type>{})
-      : Base(kv, init, core)
+       Options<typename spline_t::value_type> options = iganet::Options<typename spline_t::value_type>{})
+      : Base(kv, init, options)
     {
       if constexpr (sizeof...(Cs) == 2) {
         if constexpr (const auto c = std::get<0>(std::make_tuple(Cs...));
@@ -953,7 +960,7 @@ namespace iganet {
       } else
         static_assert(sizeof...(Cs) == 0, "Dimensions mismatch");
     }
-  /// @}
+    /// @}
   };
 
   TUPLE_WRAPPER(S2);
@@ -984,8 +991,8 @@ namespace iganet {
 
     S3(const std::array<int64_t, spline_t::parDim()>& ncoeffs,
        enum init init = init::zeros,
-       core<typename spline_t::value_type> core = iganet::core<typename spline_t::value_type>{})
-      : Base(ncoeffs, init, core)
+       Options<typename spline_t::value_type> options = iganet::Options<typename spline_t::value_type>{})
+      : Base(ncoeffs, init, options)
     {
       if constexpr (sizeof...(Cs) == 3) {
         if constexpr (const auto c = std::get<0>(std::make_tuple(Cs...));
@@ -1002,10 +1009,10 @@ namespace iganet {
     }
 
     S3(std::array<std::vector<typename spline_t::value_type>,
-                 spline_t::parDim()> kv,
+       spline_t::parDim()> kv,
        enum init init = init::zeros,
-       core<typename spline_t::value_type> core = iganet::core<typename spline_t::value_type>{})
-      : Base(kv, init, core)
+       Options<typename spline_t::value_type> options = iganet::Options<typename spline_t::value_type>{})
+      : Base(kv, init, options)
     {
       if constexpr (sizeof...(Cs) == 3) {
         if constexpr (const auto c = std::get<0>(std::make_tuple(Cs...));
@@ -1020,7 +1027,7 @@ namespace iganet {
       } else
         static_assert(sizeof...(Cs) == 0, "Dimensions mismatch");
     }
-  /// @}
+    /// @}
   };
 
   TUPLE_WRAPPER(S3);
@@ -1053,8 +1060,8 @@ namespace iganet {
 
     S4(const std::array<int64_t, spline_t::parDim()>& ncoeffs,
        enum init init = init::zeros,
-       core<typename spline_t::value_type> core = iganet::core<typename spline_t::value_type>{})
-      : Base(ncoeffs, init, core)
+       Options<typename spline_t::value_type> options = iganet::Options<typename spline_t::value_type>{})
+      : Base(ncoeffs, init, options)
     {
       if constexpr (sizeof...(Cs) == 4) {
         if constexpr (const auto c = std::get<0>(std::make_tuple(Cs...));
@@ -1074,10 +1081,10 @@ namespace iganet {
     }
 
     S4(std::array<std::vector<typename spline_t::value_type>,
-                       spline_t::parDim()> kv,
+       spline_t::parDim()> kv,
        enum init init = init::zeros,
-       core<typename spline_t::value_type> core = iganet::core<typename spline_t::value_type>{})
-      : Base(kv, init, core)
+       Options<typename spline_t::value_type> options = iganet::Options<typename spline_t::value_type>{})
+      : Base(kv, init, options)
     {
       if constexpr (sizeof...(Cs) == 4) {
         if constexpr (const auto c = std::get<0>(std::make_tuple(Cs...));
@@ -1095,7 +1102,7 @@ namespace iganet {
       } else
         static_assert(sizeof...(Cs) == 0, "Dimensions mismatch");
     }
-  /// @}
+    /// @}
   };
 
   TUPLE_WRAPPER(S4);
@@ -1103,14 +1110,15 @@ namespace iganet {
   /// @brief Taylor-Hood like function space
   /// \f$ S_{p+1}^{p-1} \otimes S_{p}^{p-1} \f$
   template<typename spline_t>
-  class TH1 : public FunctionSpace<S1<typename spline_t::template
-                                      derived_self_type_t<typename spline_t::value_type,
-                                                          spline_t::geoDim(),
-                                      spline_t::degree(0)+1>>,
-                                   S1<typename spline_t::template
-                                      derived_self_type_t<typename spline_t::value_type,
-                                                          spline_t::geoDim(),
-                                                          spline_t::degree(0)>>>
+  class TH1
+    : public FunctionSpace<S1<typename spline_t::template
+                              derived_self_type_t<typename spline_t::value_type,
+                                                  spline_t::geoDim(),
+                                                  spline_t::degree(0)+1>>,
+                           S1<typename spline_t::template
+                              derived_self_type_t<typename spline_t::value_type,
+                                                  spline_t::geoDim(),
+                                                  spline_t::degree(0)>>>
   {
   public:
     /// @brief Base type
@@ -1131,8 +1139,8 @@ namespace iganet {
 
     TH1(const std::array<int64_t, spline_t::parDim()>& ncoeffs,
         enum init init = init::zeros,
-        core<typename spline_t::value_type> core = iganet::core<typename spline_t::value_type>{})
-      : Base(ncoeffs, ncoeffs, init, core)
+        Options<typename spline_t::value_type> options = iganet::Options<typename spline_t::value_type>{})
+      : Base(ncoeffs, ncoeffs, init, options)
     {
       std::get<0>(*this).uniform_refine();
     }
@@ -1140,8 +1148,8 @@ namespace iganet {
     TH1(const std::array<std::vector<typename spline_t::value_type>,
         spline_t::parDim()>& kv,
         enum init init = init::zeros,
-        core<typename spline_t::value_type> core = iganet::core<typename spline_t::value_type>{})
-      : Base(kv, kv, init, core)
+        Options<typename spline_t::value_type> options = iganet::Options<typename spline_t::value_type>{})
+      : Base(kv, kv, init, options)
     {
       std::get<0>(*this).uniform_refine();
     }
@@ -1155,21 +1163,22 @@ namespace iganet {
   /// S_{p+1,p+1}^{p-1,p-1} \otimes
   /// S_{p,p}^{p-1,p-1} \f$
   template<typename spline_t>
-  class TH2 : public FunctionSpace<S2<typename spline_t::template
-                                      derived_self_type_t<typename spline_t::value_type,
-                                                          spline_t::geoDim(),
-                                                          spline_t::degree(0)+1,
-                                                          spline_t::degree(1)+1>>,
-                                   S2<typename spline_t::template
-                                      derived_self_type_t<typename spline_t::value_type,
-                                                          spline_t::geoDim(),
-                                                          spline_t::degree(0)+1,
-                                                          spline_t::degree(1)+1>>,
-                                   S2<typename spline_t::template
-                                      derived_self_type_t<typename spline_t::value_type,
-                                                          spline_t::geoDim(),
-                                                          spline_t::degree(0),
-                                                          spline_t::degree(1)>>>
+  class TH2
+    : public FunctionSpace<S2<typename spline_t::template
+                              derived_self_type_t<typename spline_t::value_type,
+                                                  spline_t::geoDim(),
+                                                  spline_t::degree(0)+1,
+                                                  spline_t::degree(1)+1>>,
+                           S2<typename spline_t::template
+                              derived_self_type_t<typename spline_t::value_type,
+                                                  spline_t::geoDim(),
+                                                  spline_t::degree(0)+1,
+                                                  spline_t::degree(1)+1>>,
+                           S2<typename spline_t::template
+                              derived_self_type_t<typename spline_t::value_type,
+                                                  spline_t::geoDim(),
+                                                  spline_t::degree(0),
+                                                  spline_t::degree(1)>>>
   {
   public:
     /// @brief Base type
@@ -1197,8 +1206,8 @@ namespace iganet {
 
     TH2(const std::array<int64_t, spline_t::parDim()>& ncoeffs,
         enum init init = init::zeros,
-        core<typename spline_t::value_type> core = iganet::core<typename spline_t::value_type>{})
-      : Base(ncoeffs, ncoeffs, ncoeffs, init, core)
+        Options<typename spline_t::value_type> options = iganet::Options<typename spline_t::value_type>{})
+      : Base(ncoeffs, ncoeffs, ncoeffs, init, options)
     {
       std::get<0>(*this).uniform_refine();
       std::get<1>(*this).uniform_refine();
@@ -1207,8 +1216,8 @@ namespace iganet {
     TH2(const std::array<std::vector<typename spline_t::value_type>,
         spline_t::parDim()>& kv,
         enum init init = init::zeros,
-        core<typename spline_t::value_type> core = iganet::core<typename spline_t::value_type>{})
-      : Base(kv, kv, kv, init, core)
+        Options<typename spline_t::value_type> options = iganet::Options<typename spline_t::value_type>{})
+      : Base(kv, kv, kv, init, options)
     {
       std::get<0>(*this).uniform_refine();
       std::get<1>(*this).uniform_refine();
@@ -1224,30 +1233,31 @@ namespace iganet {
   /// S_{p+1,p+1,p+1}^{p-1,p-1,p-1} \otimes
   /// S_{p,p,p}^{p-1,p-1,p-1} \f$
   template<typename spline_t>
-  class TH3 : public FunctionSpace<S3<typename spline_t::template
-                                      derived_self_type_t<typename spline_t::value_type,
-                                                          spline_t::geoDim(),
-                                                          spline_t::degree(0)+1,
-                                                          spline_t::degree(1)+1,
-                                                          spline_t::degree(2)+1>>,
-                                   S3<typename spline_t::template
-                                      derived_self_type_t<typename spline_t::value_type,
-                                                          spline_t::geoDim(),
-                                                          spline_t::degree(0)+1,
-                                                          spline_t::degree(1)+1,
-                                                          spline_t::degree(2)+1>>,
-                                   S3<typename spline_t::template
-                                      derived_self_type_t<typename spline_t::value_type,
-                                                          spline_t::geoDim(),
-                                                          spline_t::degree(0)+1,
-                                                          spline_t::degree(1)+1,
-                                                          spline_t::degree(2)+1>>,
-                                   S3<typename spline_t::template
-                                      derived_self_type_t<typename spline_t::value_type,
-                                                          spline_t::geoDim(),
-                                                          spline_t::degree(0),
-                                                          spline_t::degree(1),
-                                                          spline_t::degree(2)>>>
+  class TH3
+    : public FunctionSpace<S3<typename spline_t::template
+                              derived_self_type_t<typename spline_t::value_type,
+                                                  spline_t::geoDim(),
+                                                  spline_t::degree(0)+1,
+                                                  spline_t::degree(1)+1,
+                                                  spline_t::degree(2)+1>>,
+                           S3<typename spline_t::template
+                              derived_self_type_t<typename spline_t::value_type,
+                                                  spline_t::geoDim(),
+                                                  spline_t::degree(0)+1,
+                                                  spline_t::degree(1)+1,
+                                                  spline_t::degree(2)+1>>,
+                           S3<typename spline_t::template
+                              derived_self_type_t<typename spline_t::value_type,
+                                                  spline_t::geoDim(),
+                                                  spline_t::degree(0)+1,
+                                                  spline_t::degree(1)+1,
+                                                  spline_t::degree(2)+1>>,
+                           S3<typename spline_t::template
+                              derived_self_type_t<typename spline_t::value_type,
+                                                  spline_t::geoDim(),
+                                                  spline_t::degree(0),
+                                                  spline_t::degree(1),
+                                                  spline_t::degree(2)>>>
   {
   public:
     /// @brief Base type
@@ -1284,8 +1294,8 @@ namespace iganet {
 
     TH3(const std::array<int64_t, spline_t::parDim()>& ncoeffs,
         enum init init = init::zeros,
-        core<typename spline_t::value_type> core = iganet::core<typename spline_t::value_type>{})
-      : Base(ncoeffs, ncoeffs, ncoeffs, ncoeffs, init, core)
+        Options<typename spline_t::value_type> options = iganet::Options<typename spline_t::value_type>{})
+      : Base(ncoeffs, ncoeffs, ncoeffs, ncoeffs, init, options)
     {
       std::get<0>(*this).uniform_refine();
       std::get<1>(*this).uniform_refine();
@@ -1293,10 +1303,10 @@ namespace iganet {
     }
 
     TH3(const std::array<std::vector<typename spline_t::value_type>,
-                         spline_t::parDim()>& kv,
+        spline_t::parDim()>& kv,
         enum init init = init::zeros,
-        core<typename spline_t::value_type> core = iganet::core<typename spline_t::value_type>{})
-      : Base(kv, kv, kv, kv, init, core)
+        Options<typename spline_t::value_type> options = iganet::Options<typename spline_t::value_type>{})
+      : Base(kv, kv, kv, kv, init, options)
     {
       std::get<0>(*this).uniform_refine();
       std::get<1>(*this).uniform_refine();
@@ -1314,41 +1324,42 @@ namespace iganet {
   /// S_{p+1,p+1,p+1,p+1}^{p-1,p-1,p-1,p-1} \otimes
   /// S_{p,p,p,p}^{p-1,p-1,p-1,p-1} \f$
   template<typename spline_t>
-  class TH4 : public FunctionSpace<S4<typename spline_t::template
-                                      derived_self_type_t<typename spline_t::value_type,
-                                                          spline_t::geoDim(),
-                                                          spline_t::degree(0)+1,
-                                                          spline_t::degree(1)+1,
-                                                          spline_t::degree(2)+1,
-                                                          spline_t::degree(3)+1>>,
-                                   S4<typename spline_t::template
-                                      derived_self_type_t<typename spline_t::value_type,
-                                                          spline_t::geoDim(),
-                                                          spline_t::degree(0)+1,
-                                                          spline_t::degree(1)+1,
-                                                          spline_t::degree(2)+1,
-                                                          spline_t::degree(3)+1>>,
-                                   S4<typename spline_t::template
-                                      derived_self_type_t<typename spline_t::value_type,
-                                                          spline_t::geoDim(),
-                                                          spline_t::degree(0)+1,
-                                                          spline_t::degree(1)+1,
-                                                          spline_t::degree(2)+1,
-                                                          spline_t::degree(3)+1>>,
-                                   S4<typename spline_t::template
-                                      derived_self_type_t<typename spline_t::value_type,
-                                                          spline_t::geoDim(),
-                                                          spline_t::degree(0)+1,
-                                                          spline_t::degree(1)+1,
-                                                          spline_t::degree(2)+1,
-                                                          spline_t::degree(3)+1>>,
-                                   S4<typename spline_t::template
-                                      derived_self_type_t<typename spline_t::value_type,
-                                                          spline_t::geoDim(),
-                                                          spline_t::degree(0),
-                                                          spline_t::degree(1),
-                                                          spline_t::degree(2),
-                                                          spline_t::degree(3)>>>
+  class TH4
+    : public FunctionSpace<S4<typename spline_t::template
+                              derived_self_type_t<typename spline_t::value_type,
+                                                  spline_t::geoDim(),
+                                                  spline_t::degree(0)+1,
+                                                  spline_t::degree(1)+1,
+                                                  spline_t::degree(2)+1,
+                                                  spline_t::degree(3)+1>>,
+                           S4<typename spline_t::template
+                              derived_self_type_t<typename spline_t::value_type,
+                                                  spline_t::geoDim(),
+                                                  spline_t::degree(0)+1,
+                                                  spline_t::degree(1)+1,
+                                                  spline_t::degree(2)+1,
+                                                  spline_t::degree(3)+1>>,
+                           S4<typename spline_t::template
+                              derived_self_type_t<typename spline_t::value_type,
+                                                  spline_t::geoDim(),
+                                                  spline_t::degree(0)+1,
+                                                  spline_t::degree(1)+1,
+                                                  spline_t::degree(2)+1,
+                                                  spline_t::degree(3)+1>>,
+                           S4<typename spline_t::template
+                              derived_self_type_t<typename spline_t::value_type,
+                                                  spline_t::geoDim(),
+                                                  spline_t::degree(0)+1,
+                                                  spline_t::degree(1)+1,
+                                                  spline_t::degree(2)+1,
+                                                  spline_t::degree(3)+1>>,
+                           S4<typename spline_t::template
+                              derived_self_type_t<typename spline_t::value_type,
+                                                  spline_t::geoDim(),
+                                                  spline_t::degree(0),
+                                                  spline_t::degree(1),
+                                                  spline_t::degree(2),
+                                                  spline_t::degree(3)>>>
   {
   public:
     /// @brief Base type
@@ -1396,8 +1407,8 @@ namespace iganet {
 
     TH4(const std::array<int64_t, spline_t::parDim()>& ncoeffs,
         enum init init = init::zeros,
-        core<typename spline_t::value_type> core = iganet::core<typename spline_t::value_type>{})
-      : Base(ncoeffs, ncoeffs, ncoeffs, ncoeffs, ncoeffs, init, core)
+        Options<typename spline_t::value_type> options = iganet::Options<typename spline_t::value_type>{})
+      : Base(ncoeffs, ncoeffs, ncoeffs, ncoeffs, ncoeffs, init, options)
     {
       std::get<0>(*this).uniform_refine();
       std::get<1>(*this).uniform_refine();
@@ -1406,10 +1417,10 @@ namespace iganet {
     }
 
     TH4(const std::array<std::vector<typename spline_t::value_type>,
-                         spline_t::parDim()>& kv,
+        spline_t::parDim()>& kv,
         enum init init = init::zeros,
-        core<typename spline_t::value_type> core = iganet::core<typename spline_t::value_type>{})
-      : Base(kv, kv, kv, kv, kv, init, core)
+        Options<typename spline_t::value_type> options = iganet::Options<typename spline_t::value_type>{})
+      : Base(kv, kv, kv, kv, kv, init, options)
     {
       std::get<0>(*this).uniform_refine();
       std::get<1>(*this).uniform_refine();
@@ -1424,14 +1435,15 @@ namespace iganet {
   /// @brief Alias for Nedelec like function space
   /// \f$ S_{p+1}^{p-1} \otimes S_{p}^{p-1} \f$
   template<typename spline_t>
-  class NE1 : public FunctionSpace<S1<typename spline_t::template
-                                      derived_self_type_t<typename spline_t::value_type,
-                                                          spline_t::geoDim(),
-                                                          spline_t::degree(0)+1>>,
-                                   S1<typename spline_t::template
-                                      derived_self_type_t<typename spline_t::value_type,
-                                                          spline_t::geoDim(),
-                                                          spline_t::degree(0)>>>
+  class NE1
+    : public FunctionSpace<S1<typename spline_t::template
+                              derived_self_type_t<typename spline_t::value_type,
+                                                  spline_t::geoDim(),
+                                                  spline_t::degree(0)+1>>,
+                           S1<typename spline_t::template
+                              derived_self_type_t<typename spline_t::value_type,
+                                                  spline_t::geoDim(),
+                                                  spline_t::degree(0)>>>
   {
   public:
     /// @brief Base type
@@ -1452,17 +1464,17 @@ namespace iganet {
 
     NE1(const std::array<int64_t, spline_t::parDim()>& ncoeffs,
         enum init init = init::zeros,
-        core<typename spline_t::value_type> core = iganet::core<typename spline_t::value_type>{})
-      : Base(ncoeffs, ncoeffs, init, core)
+        Options<typename spline_t::value_type> options = iganet::Options<typename spline_t::value_type>{})
+      : Base(ncoeffs, ncoeffs, init, options)
     {
       std::get<0>(*this).uniform_refine();
     }
 
     NE1(const std::array<std::vector<typename spline_t::value_type>,
-                         spline_t::parDim()>& kv,
+        spline_t::parDim()>& kv,
         enum init init = init::zeros,
-        core<typename spline_t::value_type> core = iganet::core<typename spline_t::value_type>{})
-      : Base(kv, kv, init, core)
+        Options<typename spline_t::value_type> options = iganet::Options<typename spline_t::value_type>{})
+      : Base(kv, kv, init, options)
     {
       std::get<0>(*this).uniform_refine();
     }
@@ -1476,21 +1488,22 @@ namespace iganet {
   /// S_{p+1,p+1}^{p-1,p} \otimes
   /// S_{p,p}^{p-1,p-1} \f$
   template<typename spline_t>
-  class NE2 : public FunctionSpace<S2<typename spline_t::template
-                                      derived_self_type_t<typename spline_t::value_type,
-                                                          spline_t::geoDim(),
-                                                          spline_t::degree(0)+1,
-                                                          spline_t::degree(1)+1>>,
-                                   S2<typename spline_t::template
-                                      derived_self_type_t<typename spline_t::value_type,
-                                                          spline_t::geoDim(),
-                                                          spline_t::degree(0)+1,
-                                                          spline_t::degree(1)+1>>,
-                                   S2<typename spline_t::template
-                                      derived_self_type_t<typename spline_t::value_type,
-                                                          spline_t::geoDim(),
-                                                          spline_t::degree(0),
-                                                          spline_t::degree(1)>>>
+  class NE2
+    : public FunctionSpace<S2<typename spline_t::template
+                              derived_self_type_t<typename spline_t::value_type,
+                                                  spline_t::geoDim(),
+                                                  spline_t::degree(0)+1,
+                                                  spline_t::degree(1)+1>>,
+                           S2<typename spline_t::template
+                              derived_self_type_t<typename spline_t::value_type,
+                                                  spline_t::geoDim(),
+                                                  spline_t::degree(0)+1,
+                                                  spline_t::degree(1)+1>>,
+                           S2<typename spline_t::template
+                              derived_self_type_t<typename spline_t::value_type,
+                                                  spline_t::geoDim(),
+                                                  spline_t::degree(0),
+                                                  spline_t::degree(1)>>>
   {
   public:
     /// @brief Base type
@@ -1518,18 +1531,18 @@ namespace iganet {
 
     NE2(const std::array<int64_t, spline_t::parDim()>& ncoeffs,
         enum init init = init::zeros,
-        core<typename spline_t::value_type> core = iganet::core<typename spline_t::value_type>{})
-      : Base(ncoeffs, ncoeffs, ncoeffs, init, core)
+        Options<typename spline_t::value_type> options = iganet::Options<typename spline_t::value_type>{})
+      : Base(ncoeffs, ncoeffs, ncoeffs, init, options)
     {
       std::get<0>(*this).uniform_refine(1, 1);
       std::get<1>(*this).uniform_refine(1, 0);
     }
 
     NE2(const std::array<std::vector<typename spline_t::value_type>,
-                         spline_t::parDim()>& kv,
+        spline_t::parDim()>& kv,
         enum init init = init::zeros,
-        core<typename spline_t::value_type> core = iganet::core<typename spline_t::value_type>{})
-      : Base(kv, kv, kv, init, core)
+        Options<typename spline_t::value_type> options = iganet::Options<typename spline_t::value_type>{})
+      : Base(kv, kv, kv, init, options)
     {
       std::get<0>(*this).uniform_refine(1, 1);
       std::get<1>(*this).uniform_refine(1, 0);
@@ -1545,30 +1558,31 @@ namespace iganet {
   /// S_{p+1,p+1,p+1}^{p-1,p-1,p} \otimes
   /// S_{p,p,p}^{p-1,p-1,p-1} \f$
   template<typename spline_t>
-  class NE3 : public FunctionSpace<S3<typename spline_t::template
-                                      derived_self_type_t<typename spline_t::value_type,
-                                                          spline_t::geoDim(),
-                                                          spline_t::degree(0)+1,
-                                                          spline_t::degree(1)+1,
-                                                          spline_t::degree(2)+1>>,
-                                   S3<typename spline_t::template
-                                      derived_self_type_t<typename spline_t::value_type,
-                                                          spline_t::geoDim(),
-                                                          spline_t::degree(0)+1,
-                                                          spline_t::degree(1)+1,
-                                                          spline_t::degree(2)+1>>,
-                                   S3<typename spline_t::template
-                                      derived_self_type_t<typename spline_t::value_type,
-                                                          spline_t::geoDim(),
-                                                          spline_t::degree(0)+1,
-                                                          spline_t::degree(1)+1,
-                                                          spline_t::degree(2)+1>>,
-                                   S3<typename spline_t::template
-                                      derived_self_type_t<typename spline_t::value_type,
-                                                          spline_t::geoDim(),
-                                                          spline_t::degree(0),
-                                                          spline_t::degree(1),
-                                                          spline_t::degree(2)>>>
+  class NE3
+    : public FunctionSpace<S3<typename spline_t::template
+                              derived_self_type_t<typename spline_t::value_type,
+                                                  spline_t::geoDim(),
+                                                  spline_t::degree(0)+1,
+                                                  spline_t::degree(1)+1,
+                                                  spline_t::degree(2)+1>>,
+                           S3<typename spline_t::template
+                              derived_self_type_t<typename spline_t::value_type,
+                                                  spline_t::geoDim(),
+                                                  spline_t::degree(0)+1,
+                                                  spline_t::degree(1)+1,
+                                                  spline_t::degree(2)+1>>,
+                           S3<typename spline_t::template
+                              derived_self_type_t<typename spline_t::value_type,
+                                                  spline_t::geoDim(),
+                                                  spline_t::degree(0)+1,
+                                                  spline_t::degree(1)+1,
+                                                  spline_t::degree(2)+1>>,
+                           S3<typename spline_t::template
+                              derived_self_type_t<typename spline_t::value_type,
+                                                  spline_t::geoDim(),
+                                                  spline_t::degree(0),
+                                                  spline_t::degree(1),
+                                                  spline_t::degree(2)>>>
   {
   public:
     /// @brief Base type
@@ -1605,8 +1619,8 @@ namespace iganet {
 
     NE3(const std::array<int64_t, spline_t::parDim()>& ncoeffs,
         enum init init = init::zeros,
-        core<typename spline_t::value_type> core = iganet::core<typename spline_t::value_type>{})
-      : Base(ncoeffs, ncoeffs, ncoeffs, ncoeffs, init, core)
+        Options<typename spline_t::value_type> options = iganet::Options<typename spline_t::value_type>{})
+      : Base(ncoeffs, ncoeffs, ncoeffs, ncoeffs, init, options)
     {
       std::get<0>(*this).uniform_refine(1, 1).uniform_refine(1, 2);
       std::get<1>(*this).uniform_refine(1, 0).uniform_refine(1, 2);
@@ -1614,10 +1628,10 @@ namespace iganet {
     }
 
     NE3(const std::array<std::vector<typename spline_t::value_type>,
-                         spline_t::parDim()>& kv,
+        spline_t::parDim()>& kv,
         enum init init = init::zeros,
-        core<typename spline_t::value_type> core = iganet::core<typename spline_t::value_type>{})
-      : Base(kv, kv, kv, kv, init, core)
+        Options<typename spline_t::value_type> options = iganet::Options<typename spline_t::value_type>{})
+      : Base(kv, kv, kv, kv, init, options)
     {
       std::get<0>(*this).uniform_refine(1, 1).uniform_refine(1, 2);
       std::get<1>(*this).uniform_refine(1, 0).uniform_refine(1, 2);
@@ -1635,41 +1649,42 @@ namespace iganet {
   /// S_{p+1,p+1,p+1,p+1}^{p-1,p-1,p-1,p} \otimes
   /// S_{p,p,p,p}^{p-1,p-1,p-1,p-1} \f$
   template<typename spline_t>
-  class NE4 : public FunctionSpace<S4<typename spline_t::template
-                                      derived_self_type_t<typename spline_t::value_type,
-                                                          spline_t::geoDim(),
-                                                          spline_t::degree(0)+1,
-                                                          spline_t::degree(1)+1,
-                                                          spline_t::degree(2)+1,
-                                                          spline_t::degree(3)+1>>,
-                                   S4<typename spline_t::template
-                                      derived_self_type_t<typename spline_t::value_type,
-                                                          spline_t::geoDim(),
-                                                          spline_t::degree(0)+1,
-                                                          spline_t::degree(1)+1,
-                                                          spline_t::degree(2)+1,
-                                                          spline_t::degree(3)+1>>,
-                                   S4<typename spline_t::template
-                                      derived_self_type_t<typename spline_t::value_type,
-                                                          spline_t::geoDim(),
-                                                          spline_t::degree(0)+1,
-                                                          spline_t::degree(1)+1,
-                                                          spline_t::degree(2)+1,
-                                                          spline_t::degree(3)+1>>,
-                                   S4<typename spline_t::template
-                                      derived_self_type_t<typename spline_t::value_type,
-                                                          spline_t::geoDim(),
-                                                          spline_t::degree(0)+1,
-                                                          spline_t::degree(1)+1,
-                                                          spline_t::degree(2)+1,
-                                                          spline_t::degree(3)+1>>,
-                                   S4<typename spline_t::template
-                                      derived_self_type_t<typename spline_t::value_type,
-                                                          spline_t::geoDim(),
-                                                          spline_t::degree(0),
-                                                          spline_t::degree(1),
-                                                          spline_t::degree(2),
-                                                          spline_t::degree(3)>>>
+  class NE4
+    : public FunctionSpace<S4<typename spline_t::template
+                              derived_self_type_t<typename spline_t::value_type,
+                                                  spline_t::geoDim(),
+                                                  spline_t::degree(0)+1,
+                                                  spline_t::degree(1)+1,
+                                                  spline_t::degree(2)+1,
+                                                  spline_t::degree(3)+1>>,
+                           S4<typename spline_t::template
+                              derived_self_type_t<typename spline_t::value_type,
+                                                  spline_t::geoDim(),
+                                                  spline_t::degree(0)+1,
+                                                  spline_t::degree(1)+1,
+                                                  spline_t::degree(2)+1,
+                                                  spline_t::degree(3)+1>>,
+                           S4<typename spline_t::template
+                              derived_self_type_t<typename spline_t::value_type,
+                                                  spline_t::geoDim(),
+                                                  spline_t::degree(0)+1,
+                                                  spline_t::degree(1)+1,
+                                                  spline_t::degree(2)+1,
+                                                  spline_t::degree(3)+1>>,
+                           S4<typename spline_t::template
+                              derived_self_type_t<typename spline_t::value_type,
+                                                  spline_t::geoDim(),
+                                                  spline_t::degree(0)+1,
+                                                  spline_t::degree(1)+1,
+                                                  spline_t::degree(2)+1,
+                                                  spline_t::degree(3)+1>>,
+                           S4<typename spline_t::template
+                              derived_self_type_t<typename spline_t::value_type,
+                                                  spline_t::geoDim(),
+                                                  spline_t::degree(0),
+                                                  spline_t::degree(1),
+                                                  spline_t::degree(2),
+                                                  spline_t::degree(3)>>>
   {
   public:
     /// @brief Base type
@@ -1717,8 +1732,8 @@ namespace iganet {
 
     NE4(const std::array<int64_t, spline_t::parDim()>& ncoeffs,
         enum init init = init::zeros,
-        core<typename spline_t::value_type> core = iganet::core<typename spline_t::value_type>{})
-      : Base(ncoeffs, ncoeffs, ncoeffs, ncoeffs, ncoeffs, init, core)
+        Options<typename spline_t::value_type> options = iganet::Options<typename spline_t::value_type>{})
+      : Base(ncoeffs, ncoeffs, ncoeffs, ncoeffs, ncoeffs, init, options)
     {
       std::get<0>(*this).uniform_refine(1, 1).uniform_refine(1, 2).uniform_refine(1, 3);
       std::get<1>(*this).uniform_refine(1, 0).uniform_refine(1, 2).uniform_refine(1, 3);
@@ -1727,10 +1742,10 @@ namespace iganet {
     }
 
     NE4(const std::array<std::vector<typename spline_t::value_type>,
-                         spline_t::parDim()>& kv,
+        spline_t::parDim()>& kv,
         enum init init = init::zeros,
-        core<typename spline_t::value_type> core = iganet::core<typename spline_t::value_type>{})
-      : Base(kv, kv, kv, kv, kv, init, core)
+        Options<typename spline_t::value_type> options = iganet::Options<typename spline_t::value_type>{})
+      : Base(kv, kv, kv, kv, kv, init, options)
     {
       std::get<0>(*this).uniform_refine(1, 1).uniform_refine(1, 2).uniform_refine(1, 3);
       std::get<1>(*this).uniform_refine(1, 0).uniform_refine(1, 2).uniform_refine(1, 3);
@@ -1745,14 +1760,15 @@ namespace iganet {
   /// @brief Alias for Raviart-Thomas like function space
   /// \f$ S_{p+1}^{p-1} \otimes S_{p}^{p-1} \f$
   template<typename spline_t>
-  class RT1 : public FunctionSpace<S1<typename spline_t::template
-                                      derived_self_type_t<typename spline_t::value_type,
-                                                          spline_t::geoDim(),
-                                                          spline_t::degree(0)+1>>,
-                                   S1<typename spline_t::template
-                                      derived_self_type_t<typename spline_t::value_type,
-                                                          spline_t::geoDim(),
-                                                          spline_t::degree(0)>>>
+  class RT1
+    : public FunctionSpace<S1<typename spline_t::template
+                              derived_self_type_t<typename spline_t::value_type,
+                                                  spline_t::geoDim(),
+                                                  spline_t::degree(0)+1>>,
+                           S1<typename spline_t::template
+                              derived_self_type_t<typename spline_t::value_type,
+                                                  spline_t::geoDim(),
+                                                  spline_t::degree(0)>>>
   {
   public:
     /// @brief Base type
@@ -1773,17 +1789,17 @@ namespace iganet {
 
     RT1(const std::array<int64_t, spline_t::parDim()>& ncoeffs,
         enum init init = init::zeros,
-        core<typename spline_t::value_type> core = iganet::core<typename spline_t::value_type>{})
-      : Base(ncoeffs, ncoeffs, init, core)
+        Options<typename spline_t::value_type> options = iganet::Options<typename spline_t::value_type>{})
+      : Base(ncoeffs, ncoeffs, init, options)
     {
       std::get<0>(*this).uniform_refine();
     }
 
     RT1(const std::array<std::vector<typename spline_t::value_type>,
-                         spline_t::parDim()>& kv,
+        spline_t::parDim()>& kv,
         enum init init = init::zeros,
-        core<typename spline_t::value_type> core = iganet::core<typename spline_t::value_type>{})
-      : Base(kv, kv, init, core)
+        Options<typename spline_t::value_type> options = iganet::Options<typename spline_t::value_type>{})
+      : Base(kv, kv, init, options)
     {
       std::get<0>(*this).uniform_refine();
     }
@@ -1797,28 +1813,29 @@ namespace iganet {
   /// S_{p,p+1}^{p-1,p} \otimes
   /// S_{p,p}^{p-1,p-1} \f$
   template<typename spline_t>
-  class RT2 : public FunctionSpace<S2<typename spline_t::template
-                                      derived_self_type_t<typename spline_t::value_type,
-                                                          spline_t::geoDim(),
-                                                          spline_t::degree(0)+1,
-                                                          spline_t::degree(1)>>,
-                                   S2<typename spline_t::template
-                                      derived_self_type_t<typename spline_t::value_type,
-                                                          spline_t::geoDim(),
-                                                          spline_t::degree(0),
-                                                          spline_t::degree(1)+1>>,
-                                   S2<typename spline_t::template
-                                   derived_self_type_t<typename spline_t::value_type,
-                                                       spline_t::geoDim(),
-                                                       spline_t::degree(0),
-                                                       spline_t::degree(1)>>>
+  class RT2
+    : public FunctionSpace<S2<typename spline_t::template
+                              derived_self_type_t<typename spline_t::value_type,
+                                                  spline_t::geoDim(),
+                                                  spline_t::degree(0)+1,
+                                                  spline_t::degree(1)>>,
+                           S2<typename spline_t::template
+                              derived_self_type_t<typename spline_t::value_type,
+                                                  spline_t::geoDim(),
+                                                  spline_t::degree(0),
+                                                  spline_t::degree(1)+1>>,
+                           S2<typename spline_t::template
+                              derived_self_type_t<typename spline_t::value_type,
+                                                  spline_t::geoDim(),
+                                                  spline_t::degree(0),
+                                                  spline_t::degree(1)>>>
   {
   public:
     using Base = FunctionSpace<S2<typename spline_t::template
-                               derived_self_type_t<typename spline_t::value_type,
-                                                   spline_t::geoDim(),
-                                                   spline_t::degree(0)+1,
-                                  spline_t::degree(1)>>,
+                                  derived_self_type_t<typename spline_t::value_type,
+                                                      spline_t::geoDim(),
+                                                      spline_t::degree(0)+1,
+                                                      spline_t::degree(1)>>,
                                S2<typename spline_t::template
                                   derived_self_type_t<typename spline_t::value_type,
                                                       spline_t::geoDim(),
@@ -1838,16 +1855,16 @@ namespace iganet {
 
     RT2(const std::array<int64_t, spline_t::parDim()>& ncoeffs,
         enum init init = init::zeros,
-        core<typename spline_t::value_type> core = iganet::core<typename spline_t::value_type>{})
-      : Base(ncoeffs, ncoeffs, ncoeffs, init, core)
+        Options<typename spline_t::value_type> options = iganet::Options<typename spline_t::value_type>{})
+      : Base(ncoeffs, ncoeffs, ncoeffs, init, options)
     {
     }
 
     RT2(const std::array<std::vector<typename spline_t::value_type>,
-                         spline_t::parDim()>& kv,
+        spline_t::parDim()>& kv,
         enum init init = init::zeros,
-        core<typename spline_t::value_type> core = iganet::core<typename spline_t::value_type>{})
-      : Base(kv, kv, kv, init, core)
+        Options<typename spline_t::value_type> options = iganet::Options<typename spline_t::value_type>{})
+      : Base(kv, kv, kv, init, options)
     {
     }
     /// @}
@@ -1861,30 +1878,31 @@ namespace iganet {
   /// S_{p,p,p+1}^{p-1,p-1,p} \otimes
   /// S_{p,p,p}^{p-1,p-1,p-1} \f$
   template<typename spline_t>
-  class RT3 : public FunctionSpace<S3<typename spline_t::template
-                                      derived_self_type_t<typename spline_t::value_type,
-                                                          spline_t::geoDim(),
-                                                          spline_t::degree(0)+1,
-                                                          spline_t::degree(1),
-                                                          spline_t::degree(2)>>,
-                                   S3<typename spline_t::template
-                                      derived_self_type_t<typename spline_t::value_type,
-                                                          spline_t::geoDim(),
-                                                          spline_t::degree(0),
-                                                          spline_t::degree(1)+1,
-                                                          spline_t::degree(2)>>,
-                                   S3<typename spline_t::template
-                                      derived_self_type_t<typename spline_t::value_type,
-                                                          spline_t::geoDim(),
-                                                          spline_t::degree(0),
-                                                          spline_t::degree(1),
-                                                          spline_t::degree(2)+1>>,
-                                   S3<typename spline_t::template
-                                      derived_self_type_t<typename spline_t::value_type,
-                                                          spline_t::geoDim(),
-                                                          spline_t::degree(0),
-                                                          spline_t::degree(1),
-                                                          spline_t::degree(2)>>>
+  class RT3
+    : public FunctionSpace<S3<typename spline_t::template
+                              derived_self_type_t<typename spline_t::value_type,
+                                                  spline_t::geoDim(),
+                                                  spline_t::degree(0)+1,
+                                                  spline_t::degree(1),
+                                                  spline_t::degree(2)>>,
+                           S3<typename spline_t::template
+                              derived_self_type_t<typename spline_t::value_type,
+                                                  spline_t::geoDim(),
+                                                  spline_t::degree(0),
+                                                  spline_t::degree(1)+1,
+                                                  spline_t::degree(2)>>,
+                           S3<typename spline_t::template
+                              derived_self_type_t<typename spline_t::value_type,
+                                                  spline_t::geoDim(),
+                                                  spline_t::degree(0),
+                                                  spline_t::degree(1),
+                                                  spline_t::degree(2)+1>>,
+                           S3<typename spline_t::template
+                              derived_self_type_t<typename spline_t::value_type,
+                                                  spline_t::geoDim(),
+                                                  spline_t::degree(0),
+                                                  spline_t::degree(1),
+                                                  spline_t::degree(2)>>>
   {
   public:
     /// @brief Base type
@@ -1921,16 +1939,16 @@ namespace iganet {
 
     RT3(const std::array<int64_t, spline_t::parDim()>& ncoeffs,
         enum init init = init::zeros,
-        core<typename spline_t::value_type> core = iganet::core<typename spline_t::value_type>{})
-      : Base(ncoeffs, ncoeffs, ncoeffs, ncoeffs, init, core)
+        Options<typename spline_t::value_type> options = iganet::Options<typename spline_t::value_type>{})
+      : Base(ncoeffs, ncoeffs, ncoeffs, ncoeffs, init, options)
     {
     }
 
     RT3(const std::array<std::vector<typename spline_t::value_type>,
-                         spline_t::parDim()>& kv,
+        spline_t::parDim()>& kv,
         enum init init = init::zeros,
-        core<typename spline_t::value_type> core = iganet::core<typename spline_t::value_type>{})
-      : Base(kv, kv, kv, kv, init, core)
+        Options<typename spline_t::value_type> options = iganet::Options<typename spline_t::value_type>{})
+      : Base(kv, kv, kv, kv, init, options)
     {
     }
     /// @}
@@ -1945,41 +1963,42 @@ namespace iganet {
   /// S_{p,p,p,p+1}^{p-1,p-1,p-1,p} \otimes
   /// S_{p,p,p,p}^{p-1,p-1,p-1,p-1} \f$
   template<typename spline_t>
-  class RT4 : public FunctionSpace<S4<typename spline_t::template
-                                      derived_self_type_t<typename spline_t::value_type,
-                                                          spline_t::geoDim(),
-                                                          spline_t::degree(0)+1,
-                                                          spline_t::degree(1),
-                                                          spline_t::degree(2),
-                                                          spline_t::degree(3)>>,
-                                   S4<typename spline_t::template
-                                      derived_self_type_t<typename spline_t::value_type,
-                                                          spline_t::geoDim(),
-                                                          spline_t::degree(0),
-                                                          spline_t::degree(1)+1,
-                                                          spline_t::degree(2),
-                                                          spline_t::degree(3)>>,
-                                   S4<typename spline_t::template
-                                      derived_self_type_t<typename spline_t::value_type,
-                                                          spline_t::geoDim(),
-                                                          spline_t::degree(0),
-                                                          spline_t::degree(1),
-                                                          spline_t::degree(2)+1,
-                                                          spline_t::degree(3)>>,
-                                   S4<typename spline_t::template
-                                      derived_self_type_t<typename spline_t::value_type,
-                                                          spline_t::geoDim(),
-                                                          spline_t::degree(0),
-                                                          spline_t::degree(1),
-                                                          spline_t::degree(2),
-                                                          spline_t::degree(3)+1>>,
-                                   S4<typename spline_t::template
-                                      derived_self_type_t<typename spline_t::value_type,
-                                                          spline_t::geoDim(),
-                                                          spline_t::degree(0),
-                                                          spline_t::degree(1),
-                                                          spline_t::degree(2),
-                                                          spline_t::degree(3)>>>
+  class RT4
+    : public FunctionSpace<S4<typename spline_t::template
+                              derived_self_type_t<typename spline_t::value_type,
+                                                  spline_t::geoDim(),
+                                                  spline_t::degree(0)+1,
+                                                  spline_t::degree(1),
+                                                  spline_t::degree(2),
+                                                  spline_t::degree(3)>>,
+                           S4<typename spline_t::template
+                              derived_self_type_t<typename spline_t::value_type,
+                                                  spline_t::geoDim(),
+                                                  spline_t::degree(0),
+                                                  spline_t::degree(1)+1,
+                                                  spline_t::degree(2),
+                                                  spline_t::degree(3)>>,
+                           S4<typename spline_t::template
+                              derived_self_type_t<typename spline_t::value_type,
+                                                  spline_t::geoDim(),
+                                                  spline_t::degree(0),
+                                                  spline_t::degree(1),
+                                                  spline_t::degree(2)+1,
+                                                  spline_t::degree(3)>>,
+                           S4<typename spline_t::template
+                              derived_self_type_t<typename spline_t::value_type,
+                                                  spline_t::geoDim(),
+                                                  spline_t::degree(0),
+                                                  spline_t::degree(1),
+                                                  spline_t::degree(2),
+                                                  spline_t::degree(3)+1>>,
+                           S4<typename spline_t::template
+                              derived_self_type_t<typename spline_t::value_type,
+                                                  spline_t::geoDim(),
+                                                  spline_t::degree(0),
+                                                  spline_t::degree(1),
+                                                  spline_t::degree(2),
+                                                  spline_t::degree(3)>>>
   {
   public:
     /// @brief Base type
@@ -2027,16 +2046,16 @@ namespace iganet {
 
     RT4(const std::array<int64_t, spline_t::parDim()>& ncoeffs,
         enum init init = init::zeros,
-        core<typename spline_t::value_type> core = iganet::core<typename spline_t::value_type>{})
-      : Base(ncoeffs, ncoeffs, ncoeffs, ncoeffs, ncoeffs, init, core)
+        Options<typename spline_t::value_type> options = iganet::Options<typename spline_t::value_type>{})
+      : Base(ncoeffs, ncoeffs, ncoeffs, ncoeffs, ncoeffs, init, options)
     {
     }
 
     RT4(const std::array<std::vector<typename spline_t::value_type>,
-                         spline_t::parDim()>& kv,
+        spline_t::parDim()>& kv,
         enum init init = init::zeros,
-        core<typename spline_t::value_type> core = iganet::core<typename spline_t::value_type>{})
-      : Base(kv, kv, kv, kv, kv, init, core)
+        Options<typename spline_t::value_type> options = iganet::Options<typename spline_t::value_type>{})
+      : Base(kv, kv, kv, kv, kv, init, options)
     {
     }
     /// @}

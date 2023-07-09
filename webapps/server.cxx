@@ -13,7 +13,7 @@
 */
 
 #include <App.h>
-#include <iganet.hpp>
+#include <iganet.h>
 #include <modelmanager.hpp>
 #include <popl.hpp>
 
@@ -78,7 +78,7 @@ namespace iganet { namespace webapp {
 
     public:
       /// @brief Default constructor
-      Session() : uuid(iganet::uuid::create())
+      Session() : uuid(iganet::utils::uuid::create())
       {}
       
       /// @brief Returns the UUID

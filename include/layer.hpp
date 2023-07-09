@@ -15,6 +15,7 @@
 #pragma once
 
 #include <core.hpp>
+#include <utils/fqn.hpp>
 
 namespace iganet {
 
@@ -60,6 +61,7 @@ namespace iganet {
 
   /// @brief Abstract activation function structure
   class ActivationFunction
+    : protected utils::FullQualifiedName
   {
   public:
     virtual ~ActivationFunction() = default;
@@ -68,7 +70,7 @@ namespace iganet {
     virtual torch::Tensor apply(const torch::Tensor&) const = 0;
 
     /// @brief Returns a string representation of the activation function
-    virtual void pretty_print(std::ostream& os) const = 0;
+    virtual void pretty_print(std::ostream& os) const noexcept = 0;
 
     /// @brief Writes the activation function into a torch::serialize::OutputArchive object
     virtual torch::serialize::OutputArchive& write(torch::serialize::OutputArchive& archive,
@@ -98,9 +100,9 @@ namespace iganet {
     }
 
     /// @brief Returns a string representation of the activation function
-    inline virtual void pretty_print(std::ostream& os) const override
+    inline virtual void pretty_print(std::ostream& os) const noexcept override
     {
-      os << "none";
+      os << utils::FullQualifiedName::name();
     }
 
     /// @brief Writes the activation function into a torch::serialize::OutputArchive object
@@ -201,9 +203,9 @@ namespace iganet {
     }
 
     /// @brief Returns a string representation of the activation function
-    inline virtual void pretty_print(std::ostream& os = std::cout) const override
+    inline virtual void pretty_print(std::ostream& os = std::cout) const noexcept override
     {
-      os << "BatchNorm"
+      os << utils::FullQualifiedName::name()
          << "(\n  eps=" << options_.eps()
          << ", momentum=" << options_.momentum().value()
          << ", training=" << options_.training();
@@ -297,9 +299,9 @@ namespace iganet {
     }
 
     /// @brief Returns a string representation of the activation function
-    inline virtual void pretty_print(std::ostream& os = std::cout) const override
+    inline virtual void pretty_print(std::ostream& os = std::cout) const noexcept override
     {
-      os << "CELU"
+      os << utils::FullQualifiedName::name()
          << "(\n  alpha=" << options_.alpha()
          << ", inplace=" << options_.inplace()
          << "\n)";
@@ -376,9 +378,9 @@ namespace iganet {
     }
 
     /// @brief Returns a string representation of the activation function
-    inline virtual void pretty_print(std::ostream& os = std::cout) const override
+    inline virtual void pretty_print(std::ostream& os = std::cout) const noexcept override
     {
-      os << "ELU"
+      os << utils::FullQualifiedName::name()
          << "(\n  alpha=" << options_.alpha()
          << ", inplace=" << options_.inplace()
          << "\n)";
@@ -437,9 +439,9 @@ namespace iganet {
     }
 
     /// @brief Returns a string representation of the activation function
-    inline virtual void pretty_print(std::ostream& os = std::cout) const override
+    inline virtual void pretty_print(std::ostream& os = std::cout) const noexcept override
     {
-      os << "GELU";
+      os << utils::FullQualifiedName::name();
     }
 
     /// @brief Writes the activation function into a torch::serialize::OutputArchive object
@@ -505,9 +507,9 @@ namespace iganet {
     }
 
     /// @brief Returns a string representation of the activation function
-    inline virtual void pretty_print(std::ostream& os = std::cout) const override
+    inline virtual void pretty_print(std::ostream& os = std::cout) const noexcept override
     {
-      os << "GLU"
+      os << utils::FullQualifiedName::name()
          << "(\n  dim=" << options_.dim()
          << "\n)";
     }
@@ -582,9 +584,9 @@ namespace iganet {
     }
 
     /// @brief Returns a string representation of the activation function
-    inline virtual void pretty_print(std::ostream& os = std::cout) const override
+    inline virtual void pretty_print(std::ostream& os = std::cout) const noexcept override
     {
-      os << "GroupNorm"
+      os << utils::FullQualifiedName::name()
          << "(\n  eps=" << options_.eps();
       
       if (is_verbose(os)) {
@@ -661,9 +663,9 @@ namespace iganet {
     }
 
     /// @brief Returns a string representation of the activation function
-    inline virtual void pretty_print(std::ostream& os = std::cout) const override
+    inline virtual void pretty_print(std::ostream& os = std::cout) const noexcept override
     {
-      os << "GumbelSoftmax"
+      os << utils::FullQualifiedName::name()
          << "(\n  tau=" << options_.tau()
          << ", dim=" << options_.dim()
          << ", hard=" << options_.hard()
@@ -734,9 +736,9 @@ namespace iganet {
     }
 
     /// @brief Returns a string representation of the activation function
-    inline virtual void pretty_print(std::ostream& os = std::cout) const override
+    inline virtual void pretty_print(std::ostream& os = std::cout) const noexcept override
     {
-      os << "Hardshrink"
+      os << utils::FullQualifiedName::name()
          << "(\n  lambda=" << options_.lambda()
          << "\n)";
     }
@@ -793,9 +795,9 @@ namespace iganet {
     }
 
     /// @brief Returns a string representation of the activation function
-    inline virtual void pretty_print(std::ostream& os = std::cout) const override
+    inline virtual void pretty_print(std::ostream& os = std::cout) const noexcept override
     {
-      os << "Hardsigmoid";
+      os << utils::FullQualifiedName::name();
     }
 
     /// @brief Writes the activation function into a torch::serialize::OutputArchive object
@@ -845,9 +847,9 @@ namespace iganet {
     }
 
     /// @brief Returns a string representation of the activation function
-    inline virtual void pretty_print(std::ostream& os = std::cout) const override
+    inline virtual void pretty_print(std::ostream& os = std::cout) const noexcept override
     {
-      os << "Hardswish";
+      os << utils::FullQualifiedName::name();
     }
 
     /// @brief Writes the activation function into a torch::serialize::OutputArchive object
@@ -916,9 +918,9 @@ namespace iganet {
     }
 
     /// @brief Returns a string representation of the activation function
-    inline virtual void pretty_print(std::ostream& os = std::cout) const override
+    inline virtual void pretty_print(std::ostream& os = std::cout) const noexcept override
     {
-      os << "Hardtanh"
+      os << utils::FullQualifiedName::name()
          << "(\n  min_val=" << options_.min_val()
          << ", max_val="  << options_.max_val()
          << ", inplace="  << options_.inplace()
@@ -1004,9 +1006,9 @@ namespace iganet {
     }
 
     /// @brief Returns a string representation of the activation function
-    inline virtual void pretty_print(std::ostream& os = std::cout) const override
+    inline virtual void pretty_print(std::ostream& os = std::cout) const noexcept override
     {
-      os << "InstanceNorm"
+      os << utils::FullQualifiedName::name()
          << "(\n  eps=" << options_.eps()
          << ", momentum=" << options_.momentum()
          << ", use_input_stats=" << options_.use_input_stats();
@@ -1104,9 +1106,9 @@ namespace iganet {
     }
 
     /// @brief Returns a string representation of the activation function
-    inline virtual void pretty_print(std::ostream& os = std::cout) const override
+    inline virtual void pretty_print(std::ostream& os = std::cout) const noexcept override
     {
-      os << "LayerNorm"
+      os << utils::FullQualifiedName::name()
          << "(\n  eps=" << options_.eps();
 
       if (is_verbose(os)) {
@@ -1192,9 +1194,9 @@ namespace iganet {
     }
 
     /// @brief Returns a string representation of the activation function
-    inline virtual void pretty_print(std::ostream& os = std::cout) const override
+    inline virtual void pretty_print(std::ostream& os = std::cout) const noexcept override
     {
-      os << "LeakyReLU"
+      os << utils::FullQualifiedName::name()
          << "(\n  negative_slope=" << options_.negative_slope()
          << ", inplace="  << options_.inplace()
          << "\n)";
@@ -1270,9 +1272,9 @@ namespace iganet {
     }
 
     /// @brief Returns a string representation of the activation function
-    inline virtual void pretty_print(std::ostream& os = std::cout) const override
+    inline virtual void pretty_print(std::ostream& os = std::cout) const noexcept override
     {
-      os << "LocalResponseNorm"
+      os << utils::FullQualifiedName::name()
          << "(\n  size=" << options_.size()
          << ", alpha="  << options_.alpha()
          << ", beta="  << options_.beta()
@@ -1335,9 +1337,9 @@ namespace iganet {
     }
 
     /// @brief Returns a string representation of the activation function
-    inline virtual void pretty_print(std::ostream& os = std::cout) const override
+    inline virtual void pretty_print(std::ostream& os = std::cout) const noexcept override
     {
-      os << "LogSigmoid";
+      os << utils::FullQualifiedName::name();
     }
 
     /// @brief Writes the activation function into a torch::serialize::OutputArchive object
@@ -1400,9 +1402,9 @@ namespace iganet {
     }
 
     /// @brief Returns a string representation of the activation function
-    inline virtual void pretty_print(std::ostream& os = std::cout) const override
+    inline virtual void pretty_print(std::ostream& os = std::cout) const noexcept override
     {
-      os << "LogSoftmax"
+      os << utils::FullQualifiedName::name()
          << "(\n  dim=" << options_.dim()
          << "\n)";
     }
@@ -1452,9 +1454,9 @@ namespace iganet {
     }
 
     /// @brief Returns a string representation of the activation function
-    inline virtual void pretty_print(std::ostream& os = std::cout) const override
+    inline virtual void pretty_print(std::ostream& os = std::cout) const noexcept override
     {
-      os << "Mish";
+      os << utils::FullQualifiedName::name();
     }
 
     /// @brief Writes the activation function into a torch::serialize::OutputArchive object
@@ -1514,9 +1516,9 @@ namespace iganet {
     }
 
     /// @brief Returns a string representation of the activation function
-    inline virtual void pretty_print(std::ostream& os = std::cout) const override
+    inline virtual void pretty_print(std::ostream& os = std::cout) const noexcept override
     {
-      os << "Normalize"
+      os << utils::FullQualifiedName::name()
          << "(\n  eps=" << options_.eps()
          << "(\n  p=" << options_.p()
          << "(\n  dim=" << options_.dim()
@@ -1584,9 +1586,9 @@ namespace iganet {
     }
 
     /// @brief Returns a string representation of the activation function
-    inline virtual void pretty_print(std::ostream& os = std::cout) const override
+    inline virtual void pretty_print(std::ostream& os = std::cout) const noexcept override
     {
-      os << "PReLU";
+      os << utils::FullQualifiedName::name();
       
       if (is_verbose(os))
         os << "(\n  weight = " << weight() << "\n)";
@@ -1656,9 +1658,9 @@ namespace iganet {
     }
 
     /// @brief Returns a string representation of the activation function
-    inline virtual void pretty_print(std::ostream& os = std::cout) const override
+    inline virtual void pretty_print(std::ostream& os = std::cout) const noexcept override
     {
-      os << "ReLU"
+      os << utils::FullQualifiedName::name()
          << "(\n  inplace=" << options_.inplace()
          << "\n)";
     }
@@ -1727,9 +1729,9 @@ namespace iganet {
     }
 
     /// @brief Returns a string representation of the activation function
-    inline virtual void pretty_print(std::ostream& os = std::cout) const override
+    inline virtual void pretty_print(std::ostream& os = std::cout) const noexcept override
     {
-      os << "ReLU6"
+      os << utils::FullQualifiedName::name()
          << "(\n  inplace=" << options_.inplace()
          << "\n)";
     }
@@ -1804,9 +1806,9 @@ namespace iganet {
     }
 
     /// @brief Returns a string representation of the activation function
-    inline virtual void pretty_print(std::ostream& os = std::cout) const override
+    inline virtual void pretty_print(std::ostream& os = std::cout) const noexcept override
     {
-      os << "PReLU"
+      os << utils::FullQualifiedName::name()
          << "(\n  lower=" << options_.lower()
          << ",  upper=" << options_.upper()
          << ",  inplace=" << options_.inplace()
@@ -1884,9 +1886,9 @@ namespace iganet {
     }
 
     /// @brief Returns a string representation of the activation function
-    inline virtual void pretty_print(std::ostream& os = std::cout) const override
+    inline virtual void pretty_print(std::ostream& os = std::cout) const noexcept override
     {
-      os << "SELU"
+      os << utils::FullQualifiedName::name()
         << "(\n  inplace=" << options_.inplace()
          << "\n)";
     }
@@ -1935,9 +1937,9 @@ namespace iganet {
     }
 
     /// @brief Returns a string representation of the activation function
-    inline virtual void pretty_print(std::ostream& os = std::cout) const override
+    inline virtual void pretty_print(std::ostream& os = std::cout) const noexcept override
     {
-      os << "Sigmoid";
+      os << utils::FullQualifiedName::name();
     }
 
     /// @brief Writes the activation function into a torch::serialize::OutputArchive object
@@ -1978,9 +1980,9 @@ namespace iganet {
     }
 
     /// @brief Returns a string representation of the activation function
-    inline virtual void pretty_print(std::ostream& os = std::cout) const override
+    inline virtual void pretty_print(std::ostream& os = std::cout) const noexcept override
     {
-      os << "SiLU";
+      os << utils::FullQualifiedName::name();
     }
 
     /// @brief Writes the activation function into a torch::serialize::OutputArchive object
@@ -2043,9 +2045,9 @@ namespace iganet {
     }
 
     /// @brief Returns a string representation of the activation function
-    inline virtual void pretty_print(std::ostream& os = std::cout) const override
+    inline virtual void pretty_print(std::ostream& os = std::cout) const noexcept override
     {
-      os << "Softmax"
+      os << utils::FullQualifiedName::name()
          << "(\n  dim=" << options_.dim()
          << "\n)";
     }
@@ -2114,9 +2116,9 @@ namespace iganet {
     }
 
     /// @brief Returns a string representation of the activation function
-    inline virtual void pretty_print(std::ostream& os = std::cout) const override
+    inline virtual void pretty_print(std::ostream& os = std::cout) const noexcept override
     {
-      os << "Softmin"
+      os << utils::FullQualifiedName::name()
          << "(\n  dim=" << options_.dim()
          << "\n)";
     }
@@ -2187,9 +2189,9 @@ namespace iganet {
     }
 
     /// @brief Returns a string representation of the activation function
-    inline virtual void pretty_print(std::ostream& os = std::cout) const override
+    inline virtual void pretty_print(std::ostream& os = std::cout) const noexcept override
     {
-      os << "Softplus"
+      os << utils::FullQualifiedName::name()
          << "(\n  beta=" << options_.beta()
          << ",  theshold=" << options_.threshold()
          << "\n)";
@@ -2267,9 +2269,9 @@ namespace iganet {
     }
 
     /// @brief Returns a string representation of the activation function
-    inline virtual void pretty_print(std::ostream& os = std::cout) const override
+    inline virtual void pretty_print(std::ostream& os = std::cout) const noexcept override
     {
-      os << "Softshrink"
+      os << utils::FullQualifiedName::name()
          << "(\n  lambda=" << options_.lambda()
          << "\n)";
     }
@@ -2317,9 +2319,9 @@ namespace iganet {
     }
 
     /// @brief Returns a string representation of the activation function
-    inline virtual void pretty_print(std::ostream& os = std::cout) const override
+    inline virtual void pretty_print(std::ostream& os = std::cout) const noexcept override
     {
-      os << "Softsign";
+      os << utils::FullQualifiedName::name();
     }
 
     /// @brief Writes the activation function into a torch::serialize::OutputArchive object
@@ -2360,9 +2362,9 @@ namespace iganet {
     }
 
     /// @brief Returns a string representation of the activation function
-    inline virtual void pretty_print(std::ostream& os = std::cout) const override
+    inline virtual void pretty_print(std::ostream& os = std::cout) const noexcept override
     {
-      os << "Tanh";
+      os << utils::FullQualifiedName::name();
     }
 
     /// @brief Writes the activation function into a torch::serialize::OutputArchive object
@@ -2403,9 +2405,9 @@ namespace iganet {
     }
 
     /// @brief Returns a string representation of the activation function
-    inline virtual void pretty_print(std::ostream& os = std::cout) const override
+    inline virtual void pretty_print(std::ostream& os = std::cout) const noexcept override
     {
-      os << "Tanhshrink";
+      os << utils::FullQualifiedName::name();
     }
 
     /// @brief Writes the activation function into a torch::serialize::OutputArchive object
@@ -2471,9 +2473,9 @@ namespace iganet {
     }
 
     /// @brief Returns a string representation of the activation function
-    inline virtual void pretty_print(std::ostream& os = std::cout) const override
+    inline virtual void pretty_print(std::ostream& os = std::cout) const noexcept override
     {
-      os << "Threshold"
+      os << utils::FullQualifiedName::name()
          << "(\n  threshold=" << options_.threshold()
          << ",  value=" << options_.value()
          << ",  inplace=" << options_.inplace()

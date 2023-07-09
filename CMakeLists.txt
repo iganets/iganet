@@ -287,6 +287,7 @@ message("")
 # Add kernel directory
 ########################################################################
 include_directories(${PROJECT_SOURCE_DIR}/include)
+add_subdirectory(${PROJECT_SOURCE_DIR}/include)
 
 ########################################################################
 # Add examples (if enabled)

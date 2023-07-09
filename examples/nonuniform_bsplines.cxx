@@ -12,7 +12,7 @@
    file, You can obtain one at http://mozilla.org/MPL/2.0/.
 */
 
-#include <iganet.hpp>
+#include <iganet.h>
 #include <iostream>
 
 int main()
@@ -36,7 +36,7 @@ int main()
     color.transform( [](const std::array<real_t,1> xi){ return std::array<real_t,1>{ xi[0] }; } );
     
     // Evaluate B-spline at xi=0, xi=0.5, and xi=1
-    std::cout << bspline.eval( iganet::to_tensorArray<real_t>({0.0, 0.5, 1.0}) ) << std::endl;
+    std::cout << bspline.eval( iganet::utils::to_tensorArray<real_t>({0.0, 0.5, 1.0}) ) << std::endl;
 
     // Plot B-spline
     bspline.plot(50);
@@ -62,7 +62,7 @@ int main()
     color.transform( [](const std::array<real_t,1> xi){ return std::array<real_t,1>{ xi[0] }; } );
     
     // Evaluate B-spline at xi=0, xi=0.5, and xi=1
-    std::cout << bspline.eval( iganet::to_tensorArray<real_t>({0.0, 0.5, 1.0}) ) << std::endl;
+    std::cout << bspline.eval( iganet::utils::to_tensorArray<real_t>({0.0, 0.5, 1.0}) ) << std::endl;
     
     // Plot B-spline
     bspline.plot(50);
@@ -89,7 +89,7 @@ int main()
     color.transform( [](const std::array<real_t,1> xi){ return std::array<real_t,1>{ xi[0] }; } );
     
     // Evaluate B-spline at xi=0, xi=0.5, and xi=1
-    std::cout << bspline.eval( iganet::to_tensorArray<real_t>({0.0, 0.5, 1.0}) ) << std::endl;
+    std::cout << bspline.eval( iganet::utils::to_tensorArray<real_t>({0.0, 0.5, 1.0}) ) << std::endl;
 
     // Plot B-spline
     bspline.plot(50);
@@ -118,8 +118,8 @@ int main()
     color.transform( [](const std::array<real_t,2> xi){ return std::array<real_t,1>{ xi[0]*xi[1] }; } );
     
     // Evaluate B-spline at xi=0, xi=0.5, and xi=1
-    std::cout << bspline.eval( iganet::to_tensorArray<real_t>({0.0, 0.5, 1.0},
-                                                              {0.0, 0.5, 0.5}) ) << std::endl;
+    std::cout << bspline.eval( iganet::utils::to_tensorArray<real_t>({0.0, 0.5, 1.0},
+                                                                     {0.0, 0.5, 0.5}) ) << std::endl;
 
     // Plot B-spline
     bspline.plot(50, 50);
@@ -143,14 +143,14 @@ int main()
     // Map control points to phyiscal coordinates
     bspline.transform( [](const std::array<real_t,2> xi){ return std::array<real_t,3>{(xi[0]+1)*cos(M_PI*xi[1]),
                                                                                       (xi[0]+1)*sin(M_PI*xi[1]),
-                                                                                       xi[0] }; } );
+                                                                                      xi[0] }; } );
 
     // Map colors
     color.transform( [](const std::array<real_t,2> xi){ return std::array<real_t,1>{ xi[0]*xi[1] }; } );
     
     // Evaluate B-spline at (xi=0,eta=0), (xi=0.5,eta=0.5), and (xi=1,eta=0.5)
-    std::cout << bspline.eval( iganet::to_tensorArray<real_t>({0.0, 0.5, 1.0},
-                                                              {0.0, 0.5, 0.5}) ) << std::endl;
+    std::cout << bspline.eval( iganet::utils::to_tensorArray<real_t>({0.0, 0.5, 1.0},
+                                                                     {0.0, 0.5, 0.5}) ) << std::endl;
     
     // Plot B-spline
     bspline.plot(50, 50);

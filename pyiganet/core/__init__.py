@@ -1,6 +1,14 @@
 from pyiganet import pyiganet_core as _pyiganet_core
 
+def Options():
+    """
+    Creator function for Options objects. Based on the input, a
+    corresponding backend class will be created
+    """
+    return eval(f"_pyiganet_core.core.Options")()
+
 def BlockTensor(rows, cols=None):
+
     """
     Creator function for block tensors. Based on the input, a corresponding
     backend class will be created

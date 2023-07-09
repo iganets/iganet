@@ -15,6 +15,7 @@
 #include <pybind11/pybind11.h>
 #include <pybind11/cast.h>
 #include <pybind11/stl.h>
+#include <pybind11_json/pybind11_json.hpp>
 #include <torch/extension.h>
 
 #include <boost/preprocessor/cat.hpp>
@@ -26,12 +27,8 @@
 
 namespace py = pybind11;
 
-//#define SEQ (func)(dx)
-//#define MACRO(r, data, elem)
-
 void init_UniformBSpline@SUFFIX@(py::module_ &m) {
-  py::class_<iganet::UniformBSpline<pyiganet::real_t, @GEODIM@, @DEGREES@>,
-             iganet::core<pyiganet::real_t>>(m, "UniformBSpline@SUFFIX@")
+  py::class_<iganet::UniformBSpline<pyiganet::real_t, @GEODIM@, @DEGREES@>>(m, "UniformBSpline@SUFFIX@")
     
     // Constructor
     .def(py::init<
@@ -39,6 +36,8 @@ void init_UniformBSpline@SUFFIX@(py::module_ &m) {
          static_cast<size_t>(iganet::UniformBSpline<pyiganet::real_t,
          @GEODIM@, @DEGREES@>::parDim())>,
          enum iganet::init>(),
+         py::arg("ncoeffs"),
+         py::arg("init") = iganet::init::greville,
          "Creates a uniform B-Spline object")
 
     // Static getters
@@ -70,11 +69,11 @@ void init_UniformBSpline@SUFFIX@(py::module_ &m) {
           py::const_),
          "Returns a constant reference to the array of knot vectors")
     .def("knots",
-         py::overload_cast<short_t>
+         py::overload_cast<iganet::short_t>
          (&iganet::UniformBSpline<pyiganet::real_t, @GEODIM@, @DEGREES@>::knots),
          "Returns a non-constant reference to the knot vector in the i-th dimension")
     .def("knots",
-         py::overload_cast<short_t>
+         py::overload_cast<iganet::short_t>
          (&iganet::UniformBSpline<pyiganet::real_t, @GEODIM@, @DEGREES@>::knots,
           py::const_),
          "Returns a constant reference to the knot vector in the i-th dimension")
@@ -86,7 +85,7 @@ void init_UniformBSpline@SUFFIX@(py::module_ &m) {
           py::const_),
          "Returns a constant reference to the array of knot vector dimensions")
     .def("knots",
-         py::overload_cast<short_t>
+         py::overload_cast<iganet::short_t>
          (&iganet::UniformBSpline<pyiganet::real_t, @GEODIM@, @DEGREES@>::nknots,
           py::const_),
          "Returns the dimension of the knot vector in the i-th dimension")
@@ -102,11 +101,11 @@ void init_UniformBSpline@SUFFIX@(py::module_ &m) {
           py::const_),
          "Returns a constant reference to the array of coefficient vectors")
     .def("coeffs",
-         py::overload_cast<short_t>
+         py::overload_cast<iganet::short_t>
          (&iganet::UniformBSpline<pyiganet::real_t, @GEODIM@, @DEGREES@>::coeffs),
          "Returns a non-constant reference to the coefficient vector in the i-th dimension")
     .def("coeffs",
-         py::overload_cast<short_t>
+         py::overload_cast<iganet::short_t>
          (&iganet::UniformBSpline<pyiganet::real_t, @GEODIM@, @DEGREES@>::coeffs,
           py::const_),
          "Returns a constant reference to the coefficient vector in the i-th dimension")
@@ -123,7 +122,7 @@ void init_UniformBSpline@SUFFIX@(py::module_ &m) {
           py::const_),
          "Returns the coefficient vector dimensions as array")
     .def("ncoeffs",
-         py::overload_cast<short_t>
+         py::overload_cast<iganet::short_t>
          (&iganet::UniformBSpline<pyiganet::real_t, @GEODIM@, @DEGREES@>::coeffs,
           py::const_),
          "Returns the number of coefficients in the i-th direction")
@@ -151,22 +150,22 @@ void init_UniformBSpline@SUFFIX@(py::module_ &m) {
           py::const_),
          "Returns the value of the B-spline object in the points xi")
     .def("eval_from_precomputed",
-         py::overload_cast<const iganet::TensorArray1&, const torch::Tensor&, int64_t, torch::IntArrayRef>
+         py::overload_cast<const iganet::utils::TensorArray1&, const torch::Tensor&, int64_t, torch::IntArrayRef>
          (&iganet::UniformBSpline<pyiganet::real_t, @GEODIM@, @DEGREES@>::eval_from_precomputed,
           py::const_),
          "Returns the value of the B-spline object in the points xi")
     .def("eval_from_precomputed",
-         py::overload_cast<const iganet::TensorArray2&, const torch::Tensor&, int64_t, torch::IntArrayRef>
+         py::overload_cast<const iganet::utils::TensorArray2&, const torch::Tensor&, int64_t, torch::IntArrayRef>
          (&iganet::UniformBSpline<pyiganet::real_t, @GEODIM@, @DEGREES@>::eval_from_precomputed,
           py::const_),
          "Returns the value of the B-spline object in the points xi")
     .def("eval_from_precomputed",
-         py::overload_cast<const iganet::TensorArray3&, const torch::Tensor&, int64_t, torch::IntArrayRef>
+         py::overload_cast<const iganet::utils::TensorArray3&, const torch::Tensor&, int64_t, torch::IntArrayRef>
          (&iganet::UniformBSpline<pyiganet::real_t, @GEODIM@, @DEGREES@>::eval_from_precomputed,
           py::const_),
          "Returns the value of the B-spline object in the points xi")
     .def("eval_from_precomputed",
-         py::overload_cast<const iganet::TensorArray4&, const torch::Tensor&, int64_t, torch::IntArrayRef>
+         py::overload_cast<const iganet::utils::TensorArray4&, const torch::Tensor&, int64_t, torch::IntArrayRef>
          (&iganet::UniformBSpline<pyiganet::real_t, @GEODIM@, @DEGREES@>::eval_from_precomputed,
           py::const_),
          "Returns the value of the B-spline object in the points xi")

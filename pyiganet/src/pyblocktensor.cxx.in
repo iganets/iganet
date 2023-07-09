@@ -13,26 +13,28 @@
 */
 
 #include <pybind11/pybind11.h>
+#include <pybind11/cast.h>
+#include <pybind11/stl.h>
 #include <pybind11_json/pybind11_json.hpp>
 #include <torch/extension.h>
 
-#include <boost/preprocessor.hpp>
+#include <boost/preprocessor/repeat.hpp>
 
 #include <pyconfig.hpp>
 
-#include <blocktensor.hpp>
+#include <utils/blocktensor.hpp>
 
 namespace py = pybind11;
 
 void init_BlockTensor@SUFFIX@(py::module_ &m) {
-  py::class_<iganet::BlockTensor<torch::Tensor, @ROWS@, @COLS@>>(m, "BlockTensor@SUFFIX@")
+  py::class_<iganet::utils::BlockTensor<torch::Tensor, @ROWS@, @COLS@>>(m, "BlockTensor@SUFFIX@")
     
     // Constructors
     .def(py::init<>())
 
     // Static getters
     .def_static("dims",
-                &iganet::BlockTensor<torch::Tensor, @ROWS@, @COLS@>::dims,
+                &iganet::utils::BlockTensor<torch::Tensor, @ROWS@, @COLS@>::dims,
                 "Returns all dimensions as array")
     .def_static("dim",
                 [](std::size_t i) {                  
@@ -40,7 +42,7 @@ void init_BlockTensor@SUFFIX@(py::module_ &m) {
                     
 #define           MACRO(r, elem, data)                \
                     case (elem):                      \
-                      return iganet::BlockTensor<torch::Tensor, @ROWS@, @COLS@>::dim<elem>();
+                      return iganet::utils::BlockTensor<torch::Tensor, @ROWS@, @COLS@>::dim<elem>();
                   BOOST_PP_REPEAT( 16, MACRO, _ )
 #undef            MACRO
                     
@@ -50,26 +52,26 @@ void init_BlockTensor@SUFFIX@(py::module_ &m) {
                 },
                 "Returns the i-th dimension")
     .def_static("size",
-                &iganet::BlockTensor<torch::Tensor, @ROWS@, @COLS@>::size,
+                &iganet::utils::BlockTensor<torch::Tensor, @ROWS@, @COLS@>::size,
                 "Returns the number of dimensions")
     .def_static("entries",
-                &iganet::BlockTensor<torch::Tensor, @ROWS@, @COLS@>::entries,
+                &iganet::utils::BlockTensor<torch::Tensor, @ROWS@, @COLS@>::entries,
                 "Returns the total number of entries")
 
     // Access data
     .def("__getitem__",
-         [](iganet::BlockTensor<torch::Tensor, @ROWS@, @COLS@>& blockvector, std::size_t idx)
+         [](iganet::utils::BlockTensor<torch::Tensor, @ROWS@, @COLS@>& blockvector, std::size_t idx)
          { return blockvector(idx); },
          "Returns a non-constant reference to entry")
     .def("__setitem__",
-         [](iganet::BlockTensor<torch::Tensor, @ROWS@, @COLS@>& blockvector,
+         [](iganet::utils::BlockTensor<torch::Tensor, @ROWS@, @COLS@>& blockvector,
             std::size_t idx, torch::Tensor value)
          { return blockvector(idx) = value; },         
          "Returns a constant reference to entry")
     
     // Print
     .def("print",
-         &iganet::BlockTensor<torch::Tensor, @ROWS@, @COLS@>::pretty_print,
+         &iganet::utils::BlockTensor<torch::Tensor, @ROWS@, @COLS@>::pretty_print,
          "Prints (as string) a compile-time block tensor object")    
     ;
 }

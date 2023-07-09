@@ -109,15 +109,15 @@ extern "C"
             torch::Tensor tensor;
 
             // get parametric and geometric dimensions
-            archive.read("geometry.parDim", tensor); short_t parDim = tensor.item<int64_t>();
-            archive.read("geometry.geoDim", tensor); short_t geoDim = tensor.item<int64_t>();
+            archive.read("geometry.parDim", tensor); iganet::short_t parDim = tensor.item<int64_t>();
+            archive.read("geometry.geoDim", tensor); iganet::short_t geoDim = tensor.item<int64_t>();
 
             if (parDim != 2)
               throw iganet::InvalidModelException();
             
             // get degrees
-            std::array<short_t, 2> degrees;
-            for (short_t i = 0; i < parDim; ++i) {
+            std::array<iganet::short_t, 2> degrees;
+            for (iganet::short_t i = 0; i < parDim; ++i) {
               archive.read("geometry.degree[" + std::to_string(i) + "]", tensor);
               degrees[i] = tensor.item<int64_t>();
             }

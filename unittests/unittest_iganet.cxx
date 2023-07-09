@@ -12,7 +12,7 @@
    file, You can obtain one at http://mozilla.org/MPL/2.0/.
 */
 
-#include <iganet.hpp>
+#include <iganet.h>
 #include <iostream>
 
 #include <gtest/gtest.h>
@@ -61,7 +61,7 @@ TEST(BSpline, IgANet_UniformBSpline_1d_double)
                                                     {iganet::activation::none}
                                                   },
                                                   // Number of B-spline coefficients
-                                                  std::tuple(iganet::to_array(6_i64)));
+                                                  std::tuple(iganet::utils::to_array(6_i64)));
   
   EXPECT_EQ(net.geometry().parDim(), 1);
   EXPECT_EQ(net.variable().parDim(), 1);
@@ -105,7 +105,8 @@ TEST(BSpline, IgANet_UniformBSpline_2d_double)
                                                     {iganet::activation::none}
                                                   },
                                                   // Number of B-spline coefficients
-                                                  std::tuple(iganet::to_array(4_i64, 6_i64))); 
+                                                  std::tuple(iganet::utils::to_array(4_i64,
+                                                                                     6_i64))); 
   
   EXPECT_EQ(net.geometry().parDim(), 2);
   EXPECT_EQ(net.variable().parDim(), 2);
@@ -171,7 +172,9 @@ TEST(BSpline, IgANet_UniformBSpline_3d_double)
                                                     {iganet::activation::none}
                                                   },
                                                   // Number of B-spline coefficients
-                                                  std::tuple(iganet::to_array(4_i64, 6_i64, 3_i64)));
+                                                  std::tuple(iganet::utils::to_array(4_i64,
+                                                                                     6_i64,
+                                                                                     3_i64)));
   
   EXPECT_EQ(net.geometry().parDim(), 3);
   EXPECT_EQ(net.variable().parDim(), 3);
@@ -267,8 +270,10 @@ TEST(BSpline, IgANet_UniformBSpline_4d_double)
                                                     {iganet::activation::none}
                                                   },
                                                   // Number of B-spline coefficients
-                                                  std::tuple(iganet::to_array(4_i64, 6_i64,
-                                                                              3_i64, 5_i64)));
+                                                  std::tuple(iganet::utils::to_array(4_i64,
+                                                                                     6_i64,
+                                                                                     3_i64,
+                                                                                     5_i64)));
   
   EXPECT_EQ(net.geometry().parDim(), 4);
   EXPECT_EQ(net.variable().parDim(), 4);
@@ -403,7 +408,7 @@ TEST(BSpline, IgANet_NonUniformBSpline_1d_double)
                                                     {iganet::activation::none}
                                                   },
                                                   // Number of B-spline coefficients
-                                                  std::tuple(iganet::to_array(6_i64)));
+                                                  std::tuple(iganet::utils::to_array(6_i64)));
   
   EXPECT_EQ(net.geometry().parDim(), 1);
   EXPECT_EQ(net.variable().parDim(), 1);
@@ -447,7 +452,8 @@ TEST(BSpline, IgANet_NonUniformBSpline_2d_double)
                                                     {iganet::activation::none}
                                                   },
                                                   // Number of B-spline coefficients
-                                                  std::tuple(iganet::to_array(4_i64, 6_i64)));
+                                                  std::tuple(iganet::utils::to_array(4_i64,
+                                                                                     6_i64)));
   
   EXPECT_EQ(net.geometry().parDim(), 2);
   EXPECT_EQ(net.variable().parDim(), 2);
@@ -513,8 +519,9 @@ TEST(BSpline, IgANet_NonUniformBSpline_3d_double)
                                                     {iganet::activation::none}
                                                   },
                                                   // Number of B-spline coefficients
-                                                  std::tuple(iganet::to_array(4_i64, 6_i64,
-                                                                              3_i64)));
+                                                  std::tuple(iganet::utils::to_array(4_i64,
+                                                                                     6_i64,
+                                                                                     3_i64)));
   
   EXPECT_EQ(net.geometry().parDim(), 3);
   EXPECT_EQ(net.variable().parDim(), 3);
@@ -610,8 +617,10 @@ TEST(BSpline, IgANet_NonUniformBSpline_4d_double)
                                                     {iganet::activation::none}
                                                   },
                                                   // Number of B-spline coefficients
-                                                  std::tuple(iganet::to_array(4_i64, 6_i64,
-                                                                              3_i64, 5_i64)));
+                                                  std::tuple(iganet::utils::to_array(4_i64,
+                                                                                     6_i64,
+                                                                                     3_i64,
+                                                                                     5_i64)));
   
   EXPECT_EQ(net.geometry().parDim(), 4);
   EXPECT_EQ(net.variable().parDim(), 4);

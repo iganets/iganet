@@ -12,7 +12,7 @@
    file, You can obtain one at http://mozilla.org/MPL/2.0/.
 */
 
-#include <iganet.hpp>
+#include <iganet.h>
 #include <iostream>
 
 /// @brief IgANet for Poisson's equation
@@ -20,7 +20,7 @@ template<typename optimizer_t,
          typename geometry_t,
          typename variable_t>
 class poisson : public iganet::IgANet<optimizer_t, geometry_t, variable_t>,
-  public iganet::IgANetCustomizable<optimizer_t, geometry_t, variable_t>
+                public iganet::IgANetCustomizable<optimizer_t, geometry_t, variable_t>
 {
 public:
   bool pde;
@@ -79,7 +79,7 @@ public:
     }
 
     // Evaluate right-hand side in the interior
-    Base::outputs_.from_tensor(outputs);
+    Base::outputs_.from_tensor(outputs, false);
     auto rhs = Base::variable_.eval(variable_samples.first);
 
     // Evaluate solution at the boundary
@@ -100,13 +100,13 @@ public:
     // Evaluate loss function
     if (!pde)
       return torch::mse_loss(*Base::outputs_.eval(variable_samples.first)[0], *rhs[0])
-        + (loss_bdr0 + loss_bdr1 + loss_bdr2 + loss_bdr3);
+        + 0*(loss_bdr0 + loss_bdr1 + loss_bdr2 + loss_bdr3);
 
     // Evaluate pde loss
     auto sol_ilaplace = Base::outputs_.ihess(Base::geometry_, variable_samples.first);
     auto loss_pde     = torch::mse_loss(*sol_ilaplace[0] + *sol_ilaplace[3], *rhs[0]);
 
-    return loss_pde + (loss_bdr0 + loss_bdr1 + loss_bdr2 + loss_bdr3);
+    return loss_pde + 0*(loss_bdr0 + loss_bdr1 + loss_bdr2 + loss_bdr3);
   }
 };
 
@@ -114,11 +114,41 @@ int main()
 {
   iganet::init();
   iganet::verbose(std::cout);
-
+  
   using namespace iganet::literals;
   using optimizer_t = torch::optim::Adam;
   using real_t = double;
 
+  using bspline_t  = iganet::NonUniformBSpline<real_t, 1, 2, 2>;
+
+  iganet::Options<real_t> options;  
+  bspline_t sol(iganet::utils::to_array(7_i64, 7_i64), iganet::init::greville, options);
+  
+  bspline_t sol_copy1(sol);
+
+  auto a = sol.coeffs();
+
+  bspline_t sol_copy2(sol, a, false);
+  bspline_t sol_copy3(sol, a, true);
+
+  bspline_t sol_copy4(iganet::utils::to_array(7_i64, 7_i64), a, false, options);
+  bspline_t sol_copy5(iganet::utils::to_array(7_i64, 7_i64), a, true,  options);
+
+  iganet::Options<float> options_float;
+  auto sol_float = sol.to(options_float);
+  
+  sol.coeffs(0) *= 0;
+  
+  std::cout << "\n\nORIGINAL\n\n"            << sol       << std::endl;
+  std::cout << "\n\nSHALLOW COPY\n\n"        << sol_copy1 << std::endl;
+  std::cout << "\n\nSHALLOW COPY COEFFS\n\n" << sol_copy2 << std::endl;
+  std::cout << "\n\nDEEP COPY COEFFS\n\n"    << sol_copy3 << std::endl;
+  std::cout << "\n\nSHALLOW COPY COEFFS\n\n" << sol_copy4 << std::endl;
+  std::cout << "\n\nDEEP COPY COEFFS\n\n"    << sol_copy5 << std::endl;
+  std::cout << "\n\nTO\n\n"                  << sol_float << std::endl;
+  
+  return 0;
+  
   using geometry_t  = iganet::S2<iganet::UniformBSpline<real_t, 2, 2, 2>>;
   using variable_t  = iganet::S2<iganet::UniformBSpline<real_t, 1, 2, 2>>;
 
@@ -126,16 +156,23 @@ int main()
                                                    {50,50,50,50,50},
                                                    // Activation functions
                                                    {
-                                                     {iganet::activation::relu},
-                                                     {iganet::activation::relu},
-                                                     {iganet::activation::relu},
-                                                     {iganet::activation::relu},
-                                                     {iganet::activation::relu},
+                                                     {iganet::activation::sigmoid},
+                                                     {iganet::activation::sigmoid},
+                                                     {iganet::activation::sigmoid},
+                                                     {iganet::activation::sigmoid},
+                                                     {iganet::activation::sigmoid},
                                                      {iganet::activation::none}
                                                    },
                                                    // Number of B-spline coefficients
-                                                   std::tuple(iganet::to_array(7_i64, 7_i64)));
+                                                   std::tuple(iganet::utils::to_array(7_i64, 7_i64)));
 
+  // defotm geometry
+  net.geometry().transform( [](const std::array<real_t,2> xi)
+  {
+    return std::array<real_t,2>{(xi[0]+1)*cos(M_PI*xi[1]),
+                                (xi[0]+1)*sin(M_PI*xi[1])};
+  } );
+  
   // impose solution value for supervised training (not right-hand side)
   net.variable().transform( [](const std::array<real_t,2> xi)
   {
@@ -143,22 +180,22 @@ int main()
   } );
 
   // boundary values
-  net.variable().boundary().side<1>().transform( [](const std::array<real_t,1> xi)
+  net.variable().boundary().template side<1>().transform( [](const std::array<real_t,1> xi)
   {
     return std::array<real_t,1>{ 0.0 };
   } );
 
-  net.variable().boundary().side<2>().transform( [](const std::array<real_t,1> xi)
+  net.variable().boundary().template side<2>().transform( [](const std::array<real_t,1> xi)
   {
     return std::array<real_t,1>{ 0.0 };
   } );
 
-  net.variable().boundary().side<3>().transform( [](const std::array<real_t,1> xi)
+  net.variable().boundary().template side<3>().transform( [](const std::array<real_t,1> xi)
   {
     return std::array<real_t,1>{ 0.0 };
   } );
 
-  net.variable().boundary().side<4>().transform( [](const std::array<real_t,1> xi)
+  net.variable().boundary().template side<4>().transform( [](const std::array<real_t,1> xi)
   {
     return std::array<real_t,1>{ 0.0 };
   } );
@@ -174,10 +211,10 @@ int main()
   {
     return std::array<real_t,1>{ -2.0 * M_PI * M_PI * sin(M_PI*xi[0]) * sin(M_PI*xi[1]) };
   } );
-
+  
   net.pde = true;
   net.options().max_epoch(1000);
-  net.options().min_loss(1e-8);
+  net.options().min_loss(1e-10);
   net.train();
 
   net.geometry().plot(net.outputs(), 50, 50);

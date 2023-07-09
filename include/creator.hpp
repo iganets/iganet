@@ -18,16 +18,17 @@
 #include <ctime>
 
 #include <bspline.hpp>
+#include <utils/fqn.hpp>
 
 namespace iganet {
 
   /// @brief Abstract creator class
   template<typename T>
-  class CreatorCore : public fqn
+  class CreatorCore : protected iganet::utils::FullQualifiedName
   {
   public:
     /// Returns a string representation of the CreatorCore object
-    virtual void pretty_print(std::ostream& os = std::cout) const = 0;
+    virtual void pretty_print(std::ostream& os = std::cout) const noexcept = 0;
   };
 
   /// Print (as string) a CreatorCore object
@@ -84,7 +85,7 @@ namespace iganet {
     }
 
     /// Returns a string representation of the IntervalCreator object
-    virtual void pretty_print(std::ostream& os = std::cout) const
+    virtual void pretty_print(std::ostream& os = std::cout) const noexcept override
     {
       os << CreatorCore<T>::name() << "\n"
          << "(x0min = " << x0min_ << ", x0max = " << x0max_
@@ -152,7 +153,7 @@ namespace iganet {
     }
 
     /// Returns a string representation of the RectangleCreator object
-    virtual void pretty_print(std::ostream& os = std::cout) const
+    virtual void pretty_print(std::ostream& os = std::cout) const noexcept override
     {
       os << CreatorCore<T>::name() << "\n"
          << "(x0min = " << x0min_ << ", x0max = " << x0max_

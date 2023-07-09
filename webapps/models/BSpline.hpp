@@ -12,7 +12,7 @@
    file, You can obtain one at http://mozilla.org/MPL/2.0/.
 */
 
-#include <iganet.hpp>
+#include <iganet.h>
 #include <model.hpp>
 
 namespace iganet {
@@ -56,8 +56,8 @@ namespace iganet {
       BSplineModel(const std::array<int64_t, BSpline_t::parDim()> ncoeffs,
                    enum iganet::init init = iganet::init::zeros)
         : BSpline_t(ncoeffs, init), solution_(ncoeffs, init),
-          offset_(torch::zeros({3}, core<typename BSpline_t::value_type>::options_)),
-          rotation_(torch::zeros({3}, core<typename BSpline_t::value_type>::options_))
+          offset_(torch::zeros({3}, Options<typename BSpline_t::value_type>{})),
+          rotation_(torch::zeros({3}, Options<typename BSpline_t::value_type>{}))
       {
         if constexpr (BSpline_t::parDim() == 1)
           solution_.transform( [](const std::array<typename BSpline_t::value_type,1> xi)
@@ -290,14 +290,14 @@ namespace iganet {
             throw InvalidModelAttributeException();
           
           auto indices    = json["data"]["indices"].get<std::vector<int64_t>>();
-          auto coeffs_cpu = to_tensorAccessor<typename BSpline_t::value_type,1>(BSpline_t::coeffs(), torch::kCPU);
+          auto coeffs_cpu = utils::to_tensorAccessor<typename BSpline_t::value_type,1>(BSpline_t::coeffs(), torch::kCPU);
           
           switch (BSpline_t::geoDim()) {
           case (1): {
             auto coords    = json["data"]["coeffs"].get<std::vector<std::tuple<typename BSpline_t::value_type>>>();
             auto xAccessor = std::get<1>(coeffs_cpu)[0];
 
-            for (const auto& [index, coord] : iganet::zip(indices, coords)) {
+            for (const auto& [index, coord] : iganet::utils::zip(indices, coords)) {
               if (index < 0 || index >= BSpline_t::ncumcoeffs())
                 throw IndexOutOfBoundsException();
               xAccessor[index] = std::get<0>(coord);
@@ -310,7 +310,7 @@ namespace iganet {
             auto xAccessor = std::get<1>(coeffs_cpu)[0];
             auto yAccessor = std::get<1>(coeffs_cpu)[1];
 
-            for (const auto& [index, coord] : iganet::zip(indices, coords)) {
+            for (const auto& [index, coord] : iganet::utils::zip(indices, coords)) {
               if (index < 0 || index >= BSpline_t::ncumcoeffs())
                 throw IndexOutOfBoundsException();
               
@@ -327,7 +327,7 @@ namespace iganet {
             auto yAccessor = std::get<1>(coeffs_cpu)[1];
             auto zAccessor = std::get<1>(coeffs_cpu)[2];
 
-            for (const auto& [index, coord] : iganet::zip(indices, coords)) {
+            for (const auto& [index, coord] : iganet::utils::zip(indices, coords)) {
               if (index < 0 || index >= BSpline_t::ncumcoeffs())
                 throw IndexOutOfBoundsException();
               
@@ -347,7 +347,7 @@ namespace iganet {
             auto zAccessor = std::get<1>(coeffs_cpu)[2];
             auto tAccessor = std::get<1>(coeffs_cpu)[3];
 
-            for (const auto& [index, coord] : iganet::zip(indices, coords)) {
+            for (const auto& [index, coord] : iganet::utils::zip(indices, coords)) {
               if (index < 0 || index >= BSpline_t::ncumcoeffs())
                 throw IndexOutOfBoundsException();
               
@@ -378,17 +378,17 @@ namespace iganet {
             if (json["data"].contains("resolution"))
               res = json["data"]["resolution"].get<std::array<int64_t,1>>();
           
-          iganet::TensorArray1 xi = {torch::linspace(0, 1, res[0])};
+          utils::TensorArray1 xi = {torch::linspace(0, 1, res[0])};
 
           if (component == "ValueFieldMagnitude") {
             return nlohmann::json::array()
-              .emplace_back(::iganet::to_json<iganet::real_t,1>(*(solution_.eval(xi)[0])));
+              .emplace_back(utils::to_json<iganet::real_t,1>(*(solution_.eval(xi)[0])));
           }
           else if (component == "ValueField") {
             auto values = BSpline_t::eval(xi);
             auto result = nlohmann::json::array();
             for (short_t dim = 0; dim < BSpline_t::geoDim(); ++dim)
-              result.emplace_back(::iganet::to_json<iganet::real_t,1>(*(values[dim])));
+              result.emplace_back(utils::to_json<iganet::real_t,1>(*(values[dim])));
             return result;
           }
           else
@@ -402,21 +402,21 @@ namespace iganet {
             if (json["data"].contains("resolution"))
               res = json["data"]["resolution"].get<std::array<int64_t,2>>();
           
-          iganet::TensorArray2 xi = convert<2>(torch::meshgrid({
+          utils::TensorArray2 xi = utils::convert<2>(torch::meshgrid({
                 torch::linspace(0, 1, res[0],
-                                core<typename BSpline_t::value_type>::options_),                
+                                Options<typename BSpline_t::value_type>{}),
                 torch::linspace(0, 1, res[1],
-                                core<typename BSpline_t::value_type>::options_)}, "xy"));
+                                Options<typename BSpline_t::value_type>{})}, "xy"));
 
           if (component == "ValueFieldMagnitude") {
             return nlohmann::json::array()
-              .emplace_back(::iganet::to_json<iganet::real_t,2>(*(solution_.eval(xi)[0])));
+              .emplace_back(utils::to_json<iganet::real_t,2>(*(solution_.eval(xi)[0])));
           }
           else if (component == "ValueField") {
             auto values = BSpline_t::eval(xi);
             auto result = nlohmann::json::array();
             for (short_t dim = 0; dim < BSpline_t::geoDim(); ++dim)
-              result.emplace_back(::iganet::to_json<iganet::real_t,2>(*(values[dim])));
+              result.emplace_back(utils::to_json<iganet::real_t,2>(*(values[dim])));
             return result;
           }
           else
@@ -430,23 +430,23 @@ namespace iganet {
             if (json["data"].contains("resolution"))
               res = json["data"]["resolution"].get<std::array<int64_t,3>>();
 
-          iganet::TensorArray3 xi = convert<3>(torch::meshgrid({
+          utils::TensorArray3 xi = utils::convert<3>(torch::meshgrid({
                 torch::linspace(0, 1, res[0],
-                                core<typename BSpline_t::value_type>::options_),                
+                                Options<typename BSpline_t::value_type>{}),                
                 torch::linspace(0, 1, res[1],
-                                core<typename BSpline_t::value_type>::options_),
+                                Options<typename BSpline_t::value_type>{}),
                 torch::linspace(0, 1, res[2],
-                                core<typename BSpline_t::value_type>::options_)}, "xy"));
+                                Options<typename BSpline_t::value_type>{})}, "xy"));
           
           if (component == "ValueFieldMagnitude") {
             return nlohmann::json::array()
-              .emplace_back(::iganet::to_json<iganet::real_t,3>(*(solution_.eval(xi)[0])));
+              .emplace_back(utils::to_json<iganet::real_t,3>(*(solution_.eval(xi)[0])));
           }
           else if (component == "ValueField") {
             auto values = BSpline_t::eval(xi);
             auto result = nlohmann::json::array();
             for (short_t dim = 0; dim < BSpline_t::geoDim(); ++dim)
-              result.emplace_back(::iganet::to_json<iganet::real_t,3>(*(values[dim])));
+              result.emplace_back(utils::to_json<iganet::real_t,3>(*(values[dim])));
             return result;
           }
           else
@@ -460,25 +460,25 @@ namespace iganet {
             if (json["data"].contains("resolution"))
               res = json["data"]["resolution"].get<std::array<int64_t,4>>();
 
-          iganet::TensorArray4 xi = convert<4>(torch::meshgrid({
+          utils::TensorArray4 xi = utils::convert<4>(torch::meshgrid({
                 torch::linspace(0, 1, res[0],
-                                core<typename BSpline_t::value_type>::options_),                
+                                Options<typename BSpline_t::value_type>{}),                
                 torch::linspace(0, 1, res[1],
-                                core<typename BSpline_t::value_type>::options_),
+                                Options<typename BSpline_t::value_type>{}),
                 torch::linspace(0, 1, res[2],
-                                core<typename BSpline_t::value_type>::options_),
+                                Options<typename BSpline_t::value_type>{}),
                 torch::linspace(0, 1, res[3],
-                                core<typename BSpline_t::value_type>::options_)}, "xy"));
+                                Options<typename BSpline_t::value_type>{})}, "xy"));
           
           if (component == "ValueFieldMagnitude") {
             return nlohmann::json::array()
-              .emplace_back(::iganet::to_json<iganet::real_t,4>(*(solution_.eval(xi)[0])));
+              .emplace_back(utils::to_json<iganet::real_t,4>(*(solution_.eval(xi)[0])));
           }
           else if (component == "ValueField") {
             auto values = BSpline_t::eval(xi);
             auto result = nlohmann::json::array();
             for (short_t dim = 0; dim < BSpline_t::geoDim(); ++dim)
-              result.emplace_back(::iganet::to_json<iganet::real_t,4>(*(values[dim])));
+              result.emplace_back(utils::to_json<iganet::real_t,4>(*(values[dim])));
             return result;
           }
           else

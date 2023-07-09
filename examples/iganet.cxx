@@ -12,7 +12,7 @@
    file, You can obtain one at http://mozilla.org/MPL/2.0/.
 */
 
-#include <iganet.hpp>
+#include <iganet.h>
 #include <iostream>
 
 /// @brief IgANet for Poisson's equation
@@ -57,7 +57,7 @@ int main()
   using optimizer_t = torch::optim::Adam;
   using real_t      = float;
 
-  #if 0
+#if 0
   {
     using UniformBSpline_t = iganet::UniformBSpline<real_t, 1, 3>;    
     using geometry_t       = iganet::S1<UniformBSpline_t>;
@@ -72,14 +72,14 @@ int main()
                                                        {iganet::activation::none}
                                                      },
                                                      // Number of B-spline coefficients
-                                                     std::tuple(iganet::to_array(5_i64)));
+                                                     std::tuple(iganet::utils::to_array(5_i64)));
     
     net.options().max_epoch(1000);
     net.options().min_loss(1e-8);
     
     net.train();
   }
-  #endif
+#endif
   
   {
     using UniformBSpline_t = iganet::UniformBSpline<real_t, 1, 3,3>;    
@@ -95,7 +95,7 @@ int main()
                                                        {iganet::activation::none}
                                                      },
                                                      // Number of B-spline coefficients
-                                                     std::tuple(iganet::to_array(5_i64, 5_i64)));
+                                                     std::tuple(iganet::utils::to_array(5_i64, 5_i64)));
     
     net.options().max_epoch(1000);
     net.options().min_loss(1e-8);
@@ -117,7 +117,7 @@ int main()
                                                        {iganet::activation::none}
                                                      },
                                                      // Number of B-spline coefficients
-                                                     std::tuple(iganet::to_array(5_i64, 5_i64, 5_i64)));
+                                                     std::tuple(iganet::utils::to_array(5_i64, 5_i64, 5_i64)));
     
     net.options().max_epoch(1000);
     net.options().min_loss(1e-8);
@@ -139,7 +139,7 @@ int main()
                                                        {iganet::activation::none}
                                                      },
                                                      // Number of B-spline coefficients
-                                                     std::tuple(iganet::to_array(5_i64, 5_i64, 5_i64, 5_i64)));
+                                                     std::tuple(iganet::utils::to_array(5_i64, 5_i64, 5_i64, 5_i64)));
     
     net.options().max_epoch(1000);
     net.options().min_loss(1e-8);

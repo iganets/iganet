@@ -43,7 +43,7 @@ configure_file(${CMAKE_CURRENT_SOURCE_DIR}/pyconfig.hpp.in
   ${CMAKE_CURRENT_BINARY_DIR}/pyconfig.hpp @ONLY)
 
 # Create list of PyBind11 init subroutines
-list(APPEND init_core    "init_core")
+list(APPEND init_core "init_options")
 
 # Explicit instantiation of templated blocktensor classes
 foreach(ROWS RANGE 1 4)

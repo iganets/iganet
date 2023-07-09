@@ -23,6 +23,12 @@ foreach(example ${EXAMPLES})
   
   string(REPLACE ".cxx" "" name ${filename})
   add_executable(${name} ${filename})
+
+  if(NOT ${CMAKE_VERSION} VERSION_LESS "3.16.0")
+    target_precompile_headers(${name} REUSE_FROM iganet_pch)
+  endif()
+
+  # LibTorch
   target_link_libraries(${name} PUBLIC ${TORCH_LIBRARIES})
   target_link_libraries(${name} PUBLIC pugixml)
 
