@@ -830,7 +830,7 @@ namespace iganet {
              size_t... Is, typename... Xi>
     inline auto eval_basfunc_(std::index_sequence<Is...>, const std::tuple<Xi...>& xi) const
     {
-      return std::tuple(std::get<Is>(BoundaryCore::bdr_).template eval_basfunc<memory_optimized>(std::get<Is>(xi))...);
+      return std::tuple(std::get<Is>(BoundaryCore::bdr_).template eval_basfunc<deriv, memory_optimized>(std::get<Is>(xi))...);
     }
 
     template<deriv deriv = deriv::func,
@@ -840,7 +840,7 @@ namespace iganet {
                               const std::tuple<Xi...>& xi,
                               const std::tuple<Indices...>& indices) const
     {
-      return std::tuple(std::get<Is>(BoundaryCore::bdr_).template eval_basfunc<memory_optimized>(std::get<Is>(xi), std::get<Is>(indices))...);
+      return std::tuple(std::get<Is>(BoundaryCore::bdr_).template eval_basfunc<deriv, memory_optimized>(std::get<Is>(xi), std::get<Is>(indices))...);
     }
     /// @}
 
@@ -962,7 +962,7 @@ namespace iganet {
              typename... Xi>
     inline auto eval_basfunc(const std::tuple<Xi...>& xi) const
     {
-      return eval_basfunc_<memory_optimized>(std::make_index_sequence<BoundaryCore::sides()>{}, xi);
+      return eval_basfunc_<deriv, memory_optimized>(std::make_index_sequence<BoundaryCore::sides()>{}, xi);
     }
 
     template<deriv deriv = deriv::func,
@@ -971,7 +971,7 @@ namespace iganet {
     inline auto eval_basfunc(const std::tuple<Xi...>& xi,
                              const std::tuple<Indices...>& indices) const
     {
-      return eval_basfunc_<memory_optimized>(std::make_index_sequence<BoundaryCore::sides()>{}, xi, indices);
+      return eval_basfunc_<deriv, memory_optimized>(std::make_index_sequence<BoundaryCore::sides()>{}, xi, indices);
     }
     /// @}
 

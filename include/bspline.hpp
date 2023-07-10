@@ -36,6 +36,12 @@
 #include <bspline.cuh>
 #endif
 
+/// @brief Sequence of expression (parametric coordinates)
+#define GENERATE_EXPR_SEQ (grad)(hess)(jac)
+
+/// @brief Sequence of expression (physical coordinates)
+#define GENERATE_IEXPR_SEQ (igrad)(ihess)(ijac)
+
 namespace iganet {
 
   /// @brief Enumerator for specifying the initialization of B-spline coefficients
