@@ -20,19 +20,22 @@
 #include "../unittests/unittest_bsplinelib.hpp"
 #include <gtest/gtest.h>
 
-#define BSPLINELIB
-static constexpr iganet::deriv deriv = iganet::deriv::func;
-static constexpr bool precompute = false;
+class BSplinePerformanceTest
+  : public ::testing::Test
+{
+protected:
+  using                          real_t           = double;
+  static constexpr iganet::deriv deriv            = iganet::deriv::func;
+  static constexpr bool          memory_optimized = true;
+  static constexpr bool          precompute       = true;
+  static constexpr bool          bsplinelib       = true;
 
-namespace perftest {
-
-  template<typename real_t, iganet::short_t GeoDim,
-           iganet::short_t Degree0,
-           iganet::deriv deriv,
-           bool precompute = false>
-  auto test_UniformBSpline(int64_t ncoeffs, int64_t nsamples)
+  static const iganet::Options<real_t> options;
+  
+  template<iganet::short_t GeoDim,
+           iganet::short_t Degree0>
+  static auto test_UniformBSpline(int64_t ncoeffs, int64_t nsamples)
   {
-    iganet::Options<real_t> options = iganet::Options<real_t>{}.requires_grad(false);
     iganet::UniformBSpline<real_t, GeoDim, Degree0> bspline({ncoeffs},
                                                             iganet::init::linear, options);
     iganet::utils::TensorArray1 xi = {torch::rand(nsamples, options)};
@@ -41,58 +44,55 @@ namespace perftest {
     if constexpr (precompute)
       {
         auto knot_idx  = bspline.find_knot_indices(xi);
-        auto basfunc   = bspline.template eval_basfunc<deriv>(xi, knot_idx);
-        auto coeff_idx = bspline.eval_coeff_indices(knot_idx);
+        auto basfunc   = bspline.template eval_basfunc<deriv, memory_optimized>(xi, knot_idx);
+        auto coeff_idx = bspline.template find_coeff_indices<memory_optimized>(knot_idx);
         for (int i=0; i<10; i++)
           auto bspline_val = bspline.eval_from_precomputed(basfunc, coeff_idx, xi[0].numel(), xi[0].sizes());
       }
     else
       for (int i=0; i<10; i++)
-        bspline.template eval<deriv, false>(xi);
+        bspline.template eval<deriv, memory_optimized>(xi);
     auto t2 = std::chrono::high_resolution_clock::now();
     std::cout << std::right << std::setw(10)
               << std::chrono::duration_cast<std::chrono::nanoseconds>(t2-t1).count() / double(nsamples*10)
               << " (ns/entry)";
     
-#ifdef BSPLINELIB
-    if (nsamples == 1) {
-      auto splinelib_bspline = to_bsplinelib_bspline(bspline);
+    if constexpr (bsplinelib) {
+      if (nsamples == 1) {
+        auto splinelib_bspline = to_bsplinelib_bspline(bspline);
       
-      // B-spline evaluation
-      using ParametricCoordinate       = typename decltype(splinelib_bspline)::ParametricCoordinate_;
-      using ScalarParametricCoordinate = typename ParametricCoordinate::value_type;
-      using Derivative                 = typename decltype(splinelib_bspline)::ParameterSpace_::Derivative_;
-      using ScalarDerivative           = typename Derivative::value_type;
+        // B-spline evaluation
+        using ParametricCoordinate       = typename decltype(splinelib_bspline)::ParametricCoordinate_;
+        using ScalarParametricCoordinate = typename ParametricCoordinate::value_type;
+        using Derivative                 = typename decltype(splinelib_bspline)::ParameterSpace_::Derivative_;
+        using ScalarDerivative           = typename Derivative::value_type;
       
-      auto t1 = std::chrono::high_resolution_clock::now();
-      for (int i=0; i<1000; i++)
-        splinelib_bspline(ParametricCoordinate
-                          {
-                            ScalarParametricCoordinate{0.5}
-                          },
-                          Derivative
-                          {
-                            ScalarDerivative{(iganet::short_t) deriv % 10}
-                          });
-      auto t2 = std::chrono::high_resolution_clock::now();
-      std::cout << std::right << std::setw(10)
-                << std::chrono::duration_cast<std::chrono::nanoseconds>(t2-t1).count() / double(1000)
-                << " (ns/entry)";
-    } else {
-      std::cout << std::right << std::setw(10)
-                << "--"
-                << " (ns/entry)";
+        auto t1 = std::chrono::high_resolution_clock::now();
+        for (int i=0; i<1000; i++)
+          splinelib_bspline(ParametricCoordinate
+                            {
+                              ScalarParametricCoordinate{0.5}
+                            },
+                            Derivative
+                            {
+                              ScalarDerivative{(iganet::short_t) deriv % 10}
+                            });
+        auto t2 = std::chrono::high_resolution_clock::now();
+        std::cout << std::right << std::setw(10)
+                  << std::chrono::duration_cast<std::chrono::nanoseconds>(t2-t1).count() / double(1000)
+                  << " (ns/entry)";
+      } else {
+        std::cout << std::right << std::setw(10)
+                  << "--"
+                  << " (ns/entry)";
+      }
     }
-#endif
   }
 
-  template<typename real_t, iganet::short_t GeoDim,
-           iganet::short_t Degree0, iganet::short_t Degree1,
-           iganet::deriv deriv,
-           bool precompute = false>
-  auto test_UniformBSpline(int64_t ncoeffs, int64_t nsamples)
+  template<iganet::short_t GeoDim,
+           iganet::short_t Degree0, iganet::short_t Degree1>
+  static auto test_UniformBSpline(int64_t ncoeffs, int64_t nsamples)
   {
-    iganet::Options<real_t> options = iganet::Options<real_t>{}.requires_grad(false);
     iganet::UniformBSpline<real_t, GeoDim, Degree0, Degree1> bspline({ncoeffs,
         ncoeffs}, iganet::init::linear, options);
     iganet::utils::TensorArray2 xi = {torch::rand(nsamples, options),
@@ -102,60 +102,57 @@ namespace perftest {
     if constexpr (precompute)
       {
         auto knot_idx  = bspline.find_knot_indices(xi);
-        auto basfunc   = bspline.template eval_basfunc<deriv>(xi, knot_idx);
-        auto coeff_idx = bspline.eval_coeff_indices(knot_idx);
+        auto basfunc   = bspline.template eval_basfunc<deriv, memory_optimized>(xi, knot_idx);
+        auto coeff_idx = bspline.template find_coeff_indices<memory_optimized>(knot_idx);
         for (int i=0; i<10; i++)
           auto bspline_val = bspline.eval_from_precomputed(basfunc, coeff_idx, xi[0].numel(), xi[0].sizes());
       }
     else
       for (int i=0; i<10; i++)
-        bspline.template eval<deriv, false>(xi);
+        bspline.template eval<deriv, memory_optimized>(xi);
     auto t2 = std::chrono::high_resolution_clock::now();
     std::cout << std::right << std::setw(10)
               << std::chrono::duration_cast<std::chrono::nanoseconds>(t2-t1).count() / double(nsamples*10)
               << " (ns/entry)";
     
-#ifdef BSPLINELIB
-    if (nsamples == 1) {
-      auto splinelib_bspline = to_bsplinelib_bspline(bspline);
+    if constexpr (bsplinelib) {
+      if (nsamples == 1) {
+        auto splinelib_bspline = to_bsplinelib_bspline(bspline);
       
-      // B-spline evaluation
-      using ParametricCoordinate       = typename decltype(splinelib_bspline)::ParametricCoordinate_;
-      using ScalarParametricCoordinate = typename ParametricCoordinate::value_type;
-      using Derivative                 = typename decltype(splinelib_bspline)::ParameterSpace_::Derivative_;
-      using ScalarDerivative           = typename Derivative::value_type;
+        // B-spline evaluation
+        using ParametricCoordinate       = typename decltype(splinelib_bspline)::ParametricCoordinate_;
+        using ScalarParametricCoordinate = typename ParametricCoordinate::value_type;
+        using Derivative                 = typename decltype(splinelib_bspline)::ParameterSpace_::Derivative_;
+        using ScalarDerivative           = typename Derivative::value_type;
       
-      auto t1 = std::chrono::high_resolution_clock::now();
-      for (int i=0; i<1000; i++)
-        splinelib_bspline(ParametricCoordinate
-                          {
-                            ScalarParametricCoordinate{0.5},
-                            ScalarParametricCoordinate{0.5}
-                          },
-                          Derivative
-                          {
-                            ScalarDerivative{ (iganet::short_t)deriv    %10},
-                            ScalarDerivative{((iganet::short_t)deriv/10)%10}
-                          });
-      auto t2 = std::chrono::high_resolution_clock::now();
-      std::cout << std::right << std::setw(10)
-                << std::chrono::duration_cast<std::chrono::nanoseconds>(t2-t1).count() / double(1000)
-                << " (ns/entry)";
-    } else {
-      std::cout << std::right << std::setw(10)
-                << "--"
-                << " (ns/entry)";
+        auto t1 = std::chrono::high_resolution_clock::now();
+        for (int i=0; i<1000; i++)
+          splinelib_bspline(ParametricCoordinate
+                            {
+                              ScalarParametricCoordinate{0.5},
+                              ScalarParametricCoordinate{0.5}
+                            },
+                            Derivative
+                            {
+                              ScalarDerivative{ (iganet::short_t)deriv    %10},
+                              ScalarDerivative{((iganet::short_t)deriv/10)%10}
+                            });
+        auto t2 = std::chrono::high_resolution_clock::now();
+        std::cout << std::right << std::setw(10)
+                  << std::chrono::duration_cast<std::chrono::nanoseconds>(t2-t1).count() / double(1000)
+                  << " (ns/entry)";
+      } else {
+        std::cout << std::right << std::setw(10)
+                  << "--"
+                  << " (ns/entry)";
+      }
     }
-#endif
   }
 
-  template<typename real_t, iganet::short_t GeoDim,
-           iganet::short_t Degree0, iganet::short_t Degree1, iganet::short_t Degree2,
-           iganet::deriv deriv,
-           bool precompute = false>
-  auto test_UniformBSpline(int64_t ncoeffs, int64_t nsamples)
+  template<iganet::short_t GeoDim,
+           iganet::short_t Degree0, iganet::short_t Degree1, iganet::short_t Degree2>
+  static auto test_UniformBSpline(int64_t ncoeffs, int64_t nsamples)
   {
-    iganet::Options<real_t> options = iganet::Options<real_t>{}.requires_grad(false);
     iganet::UniformBSpline<real_t, GeoDim, Degree0, Degree1, Degree2> bspline({ncoeffs,
         ncoeffs,
         ncoeffs}, iganet::init::linear, options);
@@ -167,62 +164,59 @@ namespace perftest {
     if constexpr (precompute)
       {
         auto knot_idx  = bspline.find_knot_indices(xi);
-        auto basfunc   = bspline.template eval_basfunc<deriv>(xi, knot_idx);
-        auto coeff_idx = bspline.eval_coeff_indices(knot_idx);
+        auto basfunc   = bspline.template eval_basfunc<deriv, memory_optimized>(xi, knot_idx);
+        auto coeff_idx = bspline.template find_coeff_indices<memory_optimized>(knot_idx);
         for (int i=0; i<10; i++)
           auto bspline_val = bspline.eval_from_precomputed(basfunc, coeff_idx, xi[0].numel(), xi[0].sizes());
       }
     else
       for (int i=0; i<10; i++)
-        bspline.template eval<deriv, false>(xi);
+        bspline.template eval<deriv, memory_optimized>(xi);
     auto t2 = std::chrono::high_resolution_clock::now();
     std::cout << std::right << std::setw(10)
               << std::chrono::duration_cast<std::chrono::nanoseconds>(t2-t1).count() / double(nsamples*10)
               << " (ns/entry)";
     
-#ifdef BSPLINELIB
-    if (nsamples == 1) {
-      auto splinelib_bspline = to_bsplinelib_bspline(bspline);
+    if constexpr (bsplinelib) {
+      if (nsamples == 1) {
+        auto splinelib_bspline = to_bsplinelib_bspline(bspline);
       
-      // B-spline evaluation
-      using ParametricCoordinate       = typename decltype(splinelib_bspline)::ParametricCoordinate_;
-      using ScalarParametricCoordinate = typename ParametricCoordinate::value_type;
-      using Derivative                 = typename decltype(splinelib_bspline)::ParameterSpace_::Derivative_;
-      using ScalarDerivative           = typename Derivative::value_type;
+        // B-spline evaluation
+        using ParametricCoordinate       = typename decltype(splinelib_bspline)::ParametricCoordinate_;
+        using ScalarParametricCoordinate = typename ParametricCoordinate::value_type;
+        using Derivative                 = typename decltype(splinelib_bspline)::ParameterSpace_::Derivative_;
+        using ScalarDerivative           = typename Derivative::value_type;
       
-      auto t1 = std::chrono::high_resolution_clock::now();
-      for (int i=0; i<1000; i++)
-        splinelib_bspline(ParametricCoordinate
-                          {
-                            ScalarParametricCoordinate{0.5},
-                            ScalarParametricCoordinate{0.5},
-                            ScalarParametricCoordinate{0.5}
-                          },
-                          Derivative
-                          {
-                            ScalarDerivative{ (iganet::short_t)deriv     %10},
-                            ScalarDerivative{((iganet::short_t)deriv/ 10)%10},
-                            ScalarDerivative{((iganet::short_t)deriv/100)%10}
-                          });
-      auto t2 = std::chrono::high_resolution_clock::now();
-      std::cout << std::right << std::setw(10)
-                << std::chrono::duration_cast<std::chrono::nanoseconds>(t2-t1).count() / double(1000)
-                << " (ns/entry)";
-    } else {
-      std::cout << std::right << std::setw(10)
-                << "--"
-                << " (ns/entry)";
+        auto t1 = std::chrono::high_resolution_clock::now();
+        for (int i=0; i<1000; i++)
+          splinelib_bspline(ParametricCoordinate
+                            {
+                              ScalarParametricCoordinate{0.5},
+                              ScalarParametricCoordinate{0.5},
+                              ScalarParametricCoordinate{0.5}
+                            },
+                            Derivative
+                            {
+                              ScalarDerivative{ (iganet::short_t)deriv     %10},
+                              ScalarDerivative{((iganet::short_t)deriv/ 10)%10},
+                              ScalarDerivative{((iganet::short_t)deriv/100)%10}
+                            });
+        auto t2 = std::chrono::high_resolution_clock::now();
+        std::cout << std::right << std::setw(10)
+                  << std::chrono::duration_cast<std::chrono::nanoseconds>(t2-t1).count() / double(1000)
+                  << " (ns/entry)";
+      } else {
+        std::cout << std::right << std::setw(10)
+                  << "--"
+                  << " (ns/entry)";
+      }
     }
-#endif
   }
 
-  template<typename real_t, iganet::short_t GeoDim,
-           iganet::short_t Degree0, iganet::short_t Degree1, iganet::short_t Degree2, iganet::short_t Degree3,
-           iganet::deriv deriv,
-           bool precompute = false>
-  auto test_UniformBSpline(int64_t ncoeffs, int64_t nsamples)
+  template<iganet::short_t GeoDim,
+           iganet::short_t Degree0, iganet::short_t Degree1, iganet::short_t Degree2, iganet::short_t Degree3>
+  static auto test_UniformBSpline(int64_t ncoeffs, int64_t nsamples)
   {
-    iganet::Options<real_t> options = iganet::Options<real_t>{}.requires_grad(false);
     iganet::UniformBSpline<real_t, GeoDim, Degree0, Degree1, Degree2, Degree3> bspline({ncoeffs,
         ncoeffs,
         ncoeffs,
@@ -236,60 +230,62 @@ namespace perftest {
     if constexpr (precompute)
       {
         auto knot_idx  = bspline.find_knot_indices(xi);
-        auto basfunc   = bspline.template eval_basfunc<deriv>(xi, knot_idx);
-        auto coeff_idx = bspline.eval_coeff_indices(knot_idx);
+        auto basfunc   = bspline.template eval_basfunc<deriv, memory_optimized>(xi, knot_idx);
+        auto coeff_idx = bspline.template find_coeff_indices<memory_optimized>(knot_idx);
         for (int i=0; i<10; i++)
           auto bspline_val = bspline.eval_from_precomputed(basfunc, coeff_idx, xi[0].numel(), xi[0].sizes());
       }
     else
       for (int i=0; i<10; i++)
-        bspline.template eval<deriv, false>(xi);
+        bspline.template eval<deriv, memory_optimized>(xi);
     auto t2 = std::chrono::high_resolution_clock::now();
     std::cout << std::right << std::setw(10)
               << std::chrono::duration_cast<std::chrono::nanoseconds>(t2-t1).count() / double(nsamples*10)
               << " (ns/entry)";
     
-#ifdef BSPLINELIB
-    if (nsamples == 1) {
-      auto splinelib_bspline = to_bsplinelib_bspline(bspline);
+    if constexpr (bsplinelib) {
+      if (nsamples == 1) {
+        auto splinelib_bspline = to_bsplinelib_bspline(bspline);
       
-      // B-spline evaluation
-      using ParametricCoordinate       = typename decltype(splinelib_bspline)::ParametricCoordinate_;
-      using ScalarParametricCoordinate = typename ParametricCoordinate::value_type;
-      using Derivative                 = typename decltype(splinelib_bspline)::ParameterSpace_::Derivative_;
-      using ScalarDerivative           = typename Derivative::value_type;
+        // B-spline evaluation
+        using ParametricCoordinate       = typename decltype(splinelib_bspline)::ParametricCoordinate_;
+        using ScalarParametricCoordinate = typename ParametricCoordinate::value_type;
+        using Derivative                 = typename decltype(splinelib_bspline)::ParameterSpace_::Derivative_;
+        using ScalarDerivative           = typename Derivative::value_type;
       
-      auto t1 = std::chrono::high_resolution_clock::now();
-      for (int i=0; i<1000; i++)
-        splinelib_bspline(ParametricCoordinate
-                          {
-                            ScalarParametricCoordinate{0.5},
-                            ScalarParametricCoordinate{0.5},
-                            ScalarParametricCoordinate{0.5},
-                            ScalarParametricCoordinate{0.5}
-                          },
-                          Derivative
-                          {
-                            ScalarDerivative{ (iganet::short_t)deriv      %10},
-                            ScalarDerivative{((iganet::short_t)deriv/  10)%10},
-                            ScalarDerivative{((iganet::short_t)deriv/ 100)%10},
-                            ScalarDerivative{((iganet::short_t)deriv/1000)%10}
-                          });
-      auto t2 = std::chrono::high_resolution_clock::now();
-      std::cout << std::right << std::setw(10)
-                << std::chrono::duration_cast<std::chrono::nanoseconds>(t2-t1).count() / double(1000)
-                << " (ns/entry)";
-    } else {
-      std::cout << std::right << std::setw(10)
-                << "--"
-                << " (ns/entry)";
+        auto t1 = std::chrono::high_resolution_clock::now();
+        for (int i=0; i<1000; i++)
+          splinelib_bspline(ParametricCoordinate
+                            {
+                              ScalarParametricCoordinate{0.5},
+                              ScalarParametricCoordinate{0.5},
+                              ScalarParametricCoordinate{0.5},
+                              ScalarParametricCoordinate{0.5}
+                            },
+                            Derivative
+                            {
+                              ScalarDerivative{ (iganet::short_t)deriv      %10},
+                              ScalarDerivative{((iganet::short_t)deriv/  10)%10},
+                              ScalarDerivative{((iganet::short_t)deriv/ 100)%10},
+                              ScalarDerivative{((iganet::short_t)deriv/1000)%10}
+                            });
+        auto t2 = std::chrono::high_resolution_clock::now();
+        std::cout << std::right << std::setw(10)
+                  << std::chrono::duration_cast<std::chrono::nanoseconds>(t2-t1).count() / double(1000)
+                  << " (ns/entry)";
+      } else {
+        std::cout << std::right << std::setw(10)
+                  << "--"
+                  << " (ns/entry)";
+      }
     }
-#endif
   }
-  
-} // namespace perftest
+};
 
-TEST(Performance, UniformBSpline_parDim1_double)
+const iganet::Options<BSplinePerformanceTest::real_t> BSplinePerformanceTest::options =
+  iganet::Options<BSplinePerformanceTest::real_t>{}.requires_grad(false);
+
+TEST_F(BSplinePerformanceTest, UniformBSpline_parDim1)
 {
   std::cout << std::scientific << std::setprecision(3);  
   for (int64_t ncoeffs : {10, 100}) {
@@ -298,17 +294,17 @@ TEST(Performance, UniformBSpline_parDim1_double)
       std::cout << "("
                 << std::right << std::setw(8) << ncoeffs << ","
                 << std::right << std::setw(8) << nsamples << ") ";
-      perftest::template test_UniformBSpline<double, 1, 1, deriv, precompute>(ncoeffs, nsamples);
-      perftest::template test_UniformBSpline<double, 1, 2, deriv, precompute>(ncoeffs, nsamples);
-      perftest::template test_UniformBSpline<double, 1, 3, deriv, precompute>(ncoeffs, nsamples);
-      perftest::template test_UniformBSpline<double, 1, 4, deriv, precompute>(ncoeffs, nsamples);
-      perftest::template test_UniformBSpline<double, 1, 5, deriv, precompute>(ncoeffs, nsamples);
+      BSplinePerformanceTest::test_UniformBSpline<1, 1>(ncoeffs, nsamples);
+      BSplinePerformanceTest::test_UniformBSpline<1, 2>(ncoeffs, nsamples);
+      BSplinePerformanceTest::test_UniformBSpline<1, 3>(ncoeffs, nsamples);
+      BSplinePerformanceTest::test_UniformBSpline<1, 4>(ncoeffs, nsamples);
+      BSplinePerformanceTest::test_UniformBSpline<1, 5>(ncoeffs, nsamples);
       std::cout << std::endl;
     }
   }
 }
 
-TEST(Performance, UniformBSpline_parDim2_double)
+TEST_F(BSplinePerformanceTest, UniformBSpline_parDim2)
 {
   std::cout << std::scientific << std::setprecision(3);  
   for (int64_t ncoeffs : {10, 100}) {
@@ -318,17 +314,17 @@ TEST(Performance, UniformBSpline_parDim2_double)
                 << std::right << std::setw(8) << ncoeffs << ","
                 << std::right << std::setw(8) << nsamples << ") ";
       
-      perftest::template test_UniformBSpline<double, 1, 1, 1, deriv, precompute>(ncoeffs, nsamples);
-      perftest::template test_UniformBSpline<double, 1, 2, 2, deriv, precompute>(ncoeffs, nsamples);
-      perftest::template test_UniformBSpline<double, 1, 3, 3, deriv, precompute>(ncoeffs, nsamples);
-      perftest::template test_UniformBSpline<double, 1, 4, 4, deriv, precompute>(ncoeffs, nsamples);
-      perftest::template test_UniformBSpline<double, 1, 5, 5, deriv, precompute>(ncoeffs, nsamples);
+      BSplinePerformanceTest::test_UniformBSpline<1, 1, 1>(ncoeffs, nsamples);
+      BSplinePerformanceTest::test_UniformBSpline<1, 2, 2>(ncoeffs, nsamples);
+      BSplinePerformanceTest::test_UniformBSpline<1, 3, 3>(ncoeffs, nsamples);
+      BSplinePerformanceTest::test_UniformBSpline<1, 4, 4>(ncoeffs, nsamples);
+      BSplinePerformanceTest::test_UniformBSpline<1, 5, 5>(ncoeffs, nsamples);
       std::cout << std::endl;
     }
   }
 }
 
-TEST(Performance, UniformBSpline_parDim3_double)
+TEST_F(BSplinePerformanceTest, UniformBSpline_parDim3)
 {
   std::cout << std::scientific << std::setprecision(3);  
   for (int64_t ncoeffs : {10, 100}) {
@@ -338,17 +334,17 @@ TEST(Performance, UniformBSpline_parDim3_double)
                 << std::right << std::setw(8) << ncoeffs << ","
                 << std::right << std::setw(8) << nsamples << ") ";
       
-      perftest::template test_UniformBSpline<double, 1, 1, 1, 1, deriv, precompute>(ncoeffs, nsamples);
-      perftest::template test_UniformBSpline<double, 1, 2, 2, 2, deriv, precompute>(ncoeffs, nsamples);
-      perftest::template test_UniformBSpline<double, 1, 3, 3, 3, deriv, precompute>(ncoeffs, nsamples);
-      perftest::template test_UniformBSpline<double, 1, 4, 4, 4, deriv, precompute>(ncoeffs, nsamples);
-      perftest::template test_UniformBSpline<double, 1, 5, 5, 5, deriv, precompute>(ncoeffs, nsamples);
+      BSplinePerformanceTest::test_UniformBSpline<1, 1, 1, 1>(ncoeffs, nsamples);
+      BSplinePerformanceTest::test_UniformBSpline<1, 2, 2, 2>(ncoeffs, nsamples);
+      BSplinePerformanceTest::test_UniformBSpline<1, 3, 3, 3>(ncoeffs, nsamples);
+      BSplinePerformanceTest::test_UniformBSpline<1, 4, 4, 4>(ncoeffs, nsamples);
+      BSplinePerformanceTest::test_UniformBSpline<1, 5, 5, 5>(ncoeffs, nsamples);
       std::cout << std::endl;
     }
   }
 }
 
-TEST(Performance, UniformBSpline_parDim4_double)
+TEST_F(BSplinePerformanceTest, UniformBSpline_parDim4)
 {
   std::cout << std::scientific << std::setprecision(3);  
   for (int64_t ncoeffs : {10, 100}) {
@@ -358,11 +354,11 @@ TEST(Performance, UniformBSpline_parDim4_double)
                 << std::right << std::setw(8) << ncoeffs << ","
                 << std::right << std::setw(8) << nsamples << ") ";
       
-      perftest::template test_UniformBSpline<double, 1, 1, 1, 1, 1, deriv, precompute>(ncoeffs, nsamples);
-      perftest::template test_UniformBSpline<double, 1, 2, 2, 2, 2, deriv, precompute>(ncoeffs, nsamples);
-      perftest::template test_UniformBSpline<double, 1, 3, 3, 3, 3, deriv, precompute>(ncoeffs, nsamples);
-      perftest::template test_UniformBSpline<double, 1, 4, 4, 4, 4, deriv, precompute>(ncoeffs, nsamples);
-      perftest::template test_UniformBSpline<double, 1, 5, 5, 5, 5, deriv, precompute>(ncoeffs, nsamples);
+      BSplinePerformanceTest::test_UniformBSpline<1, 1, 1, 1, 1>(ncoeffs, nsamples);
+      BSplinePerformanceTest::test_UniformBSpline<1, 2, 2, 2, 2>(ncoeffs, nsamples);
+      BSplinePerformanceTest::test_UniformBSpline<1, 3, 3, 3, 3>(ncoeffs, nsamples);
+      BSplinePerformanceTest::test_UniformBSpline<1, 4, 4, 4, 4>(ncoeffs, nsamples);
+      BSplinePerformanceTest::test_UniformBSpline<1, 5, 5, 5, 5>(ncoeffs, nsamples);
       std::cout << std::endl;
     }
   } 

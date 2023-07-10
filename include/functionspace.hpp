@@ -245,33 +245,37 @@ namespace iganet {
       /// @brief Returns the values of the spline objects in the points `xi`
       /// @{
       template<functionspace comp = functionspace::interior,
-               deriv deriv = deriv::func, size_t... Is, typename... Xi>
+               deriv deriv = deriv::func,
+               bool memory_optimized = false,
+               size_t... Is, typename... Xi>
       inline auto eval_(std::index_sequence<Is...>,
                         const std::tuple<Xi...>& xi) const
       {
         if constexpr (comp == functionspace::interior)
-          return std::tuple(std::get<Is>(*this).template eval<deriv>(std::get<Is>(xi))...);
+          return std::tuple(std::get<Is>(*this).template eval<deriv, memory_optimized>(std::get<Is>(xi))...);
         else if constexpr (comp == functionspace::boundary)
-          return std::tuple(std::get<Is>(boundary_).template eval<deriv>(std::get<Is>(xi))...);
+          return std::tuple(std::get<Is>(boundary_).template eval<deriv, memory_optimized>(std::get<Is>(xi))...);
       }
 
       template<functionspace comp = functionspace::interior,
                deriv deriv = deriv::func,
+               bool memory_optimized = false,
                size_t... Is, typename... Xi, typename... Indices>
       inline auto eval_(std::index_sequence<Is...>,
                         const std::tuple<Xi...>& xi,
                         const std::tuple<Indices...>& indices) const
       {
         if constexpr (comp == functionspace::interior)
-          return std::tuple(std::get<Is>(*this).template eval<deriv>(std::get<Is>(xi),
-                                                                     std::get<Is>(indices))...);
+          return std::tuple(std::get<Is>(*this).template eval<deriv, memory_optimized>(std::get<Is>(xi),
+                                                                                       std::get<Is>(indices))...);
         else if constexpr (comp == functionspace::boundary)
-          return std::tuple(std::get<Is>(boundary_).template eval<deriv>(std::get<Is>(xi),
-                                                                         std::get<Is>(indices))...);
+          return std::tuple(std::get<Is>(boundary_).template eval<deriv, memory_optimized>(std::get<Is>(xi),
+                                                                                           std::get<Is>(indices))...);
       }
 
       template<functionspace comp = functionspace::interior,
                deriv deriv = deriv::func,
+               bool memory_optimized = false,
                size_t... Is, typename... Xi, typename... Indices, typename... Coeff_Indices>
       inline auto eval_(std::index_sequence<Is...>,
                         const std::tuple<Xi...>& xi,
@@ -279,13 +283,13 @@ namespace iganet {
                         const std::tuple<Coeff_Indices...>& coeff_indices) const
       {
         if constexpr (comp == functionspace::interior)
-          return std::tuple(std::get<Is>(*this).template eval<deriv>(std::get<Is>(xi),
-                                                                     std::get<Is>(indices),
-                                                                     std::get<Is>(coeff_indices))...);
+          return std::tuple(std::get<Is>(*this).template eval<deriv, memory_optimized>(std::get<Is>(xi),
+                                                                                       std::get<Is>(indices),
+                                                                                       std::get<Is>(coeff_indices))...);
         else if constexpr (comp == functionspace::boundary)
-          return std::tuple(std::get<Is>(boundary_).template eval<deriv>(std::get<Is>(xi),
-                                                                         std::get<Is>(indices),
-                                                                         std::get<Is>(coeff_indices))...);
+          return std::tuple(std::get<Is>(boundary_).template eval<deriv, memory_optimized>(std::get<Is>(xi),
+                                                                                           std::get<Is>(indices),
+                                                                                           std::get<Is>(coeff_indices))...);
       }
       /// @}
 
@@ -349,43 +353,47 @@ namespace iganet {
       /// @brief Returns the values of the spline objects' basis functions in the points `xi`
       /// @{
       template<functionspace comp = functionspace::interior,
-               deriv deriv = deriv::func, size_t... Is, typename... Xi>
+               deriv deriv = deriv::func,
+               bool memory_optimized = false,
+               size_t... Is, typename... Xi>
       inline auto eval_basfunc_(std::index_sequence<Is...>,
                                 const std::tuple<Xi...>& xi) const
       {
         if constexpr (comp == functionspace::interior)
-          return std::tuple(std::get<Is>(*this).template eval_basfunc<deriv>(std::get<Is>(xi))...);
+          return std::tuple(std::get<Is>(*this).template eval_basfunc<deriv, memory_optimized>(std::get<Is>(xi))...);
         else if constexpr (comp == functionspace::boundary)
-          return std::tuple(std::get<Is>(boundary_).template eval_basfunc<deriv>(std::get<Is>(xi))...);
+          return std::tuple(std::get<Is>(boundary_).template eval_basfunc<deriv, memory_optimized>(std::get<Is>(xi))...);
       }
       
       template<functionspace comp = functionspace::interior,
                deriv deriv = deriv::func,
+               bool memory_optimized = false,
                size_t... Is, typename... Xi, typename... Indices>
       inline auto eval_basfunc_(std::index_sequence<Is...>,
                                 const std::tuple<Xi...>& xi,
                                 const std::tuple<Indices...>& indices) const
       {
         if constexpr (comp == functionspace::interior)
-          return std::tuple(std::get<Is>(*this).template eval_basfunc<deriv>(std::get<Is>(xi),
-                                                                             std::get<Is>(indices))...);
+          return std::tuple(std::get<Is>(*this).template eval_basfunc<deriv, memory_optimized>(std::get<Is>(xi),
+                                                                                               std::get<Is>(indices))...);
         else if constexpr (comp == functionspace::boundary)
-          return std::tuple(std::get<Is>(boundary_).template eval_basfunc<deriv>(std::get<Is>(xi),
-                                                                                 std::get<Is>(indices))...);
+          return std::tuple(std::get<Is>(boundary_).template eval_basfunc<deriv, memory_optimized>(std::get<Is>(xi),
+                                                                                                   std::get<Is>(indices))...);
       }
       /// @}
 
       /// @brief Returns the indices of the spline objects'
       /// coefficients corresponding to the knot indices `indices`
       template<functionspace comp = functionspace::interior,
+               bool memory_optimized = false,
                size_t... Is, typename... Indices>
       inline auto find_coeff_indices_(std::index_sequence<Is...>,
                                       const std::tuple<Indices...>& indices) const
       {
         if constexpr (comp == functionspace::interior)
-          return std::tuple(std::get<Is>(*this).find_coeff_indices(std::get<Is>(indices))...);
+          return std::tuple(std::get<Is>(*this).template find_coeff_indices<memory_optimized>(std::get<Is>(indices))...);
         else if constexpr (comp == functionspace::boundary)
-          return std::tuple(std::get<Is>(boundary_).find_coeff_indices(std::get<Is>(indices))...);
+          return std::tuple(std::get<Is>(boundary_).template find_coeff_indices<memory_optimized>(std::get<Is>(indices))...);
       }
       
       /// @brief Returns the spline objects with uniformly refined
@@ -440,29 +448,33 @@ namespace iganet {
       /// @brief Returns the values of the spline objects in the points `xi`
       /// @{
       template<functionspace comp = functionspace::interior,
-               deriv deriv = deriv::func, typename... Xi>
+               deriv deriv = deriv::func,
+               bool memory_optimized = false,
+               typename... Xi>
       inline auto eval(const std::tuple<Xi...>& xi) const
       {
-        return eval_<comp, deriv>(std::make_index_sequence<sizeof...(spline_t)>{}, xi);
+        return eval_<comp, deriv, memory_optimized>(std::make_index_sequence<sizeof...(spline_t)>{}, xi);
       }
 
       template<functionspace comp = functionspace::interior,
                deriv deriv = deriv::func,
+               bool memory_optimized = false,
                typename... Xi, typename... Indices>
       inline auto eval(const std::tuple<Xi...>& xi,
                        const std::tuple<Indices...>& indices) const
       {
-        return eval_<comp,deriv>(std::make_index_sequence<sizeof...(spline_t)>{}, xi, indices);
+        return eval_<comp, deriv, memory_optimized>(std::make_index_sequence<sizeof...(spline_t)>{}, xi, indices);
       }
 
       template<functionspace comp = functionspace::interior,
                deriv deriv = deriv::func,
+               bool memory_optimized = false,
                typename... Xi, typename... Indices, typename... Coeff_Indices>
       inline auto eval(const std::tuple<Xi...>& xi,
                        const std::tuple<Indices...>& indices,
                        const std::tuple<Coeff_Indices...>& coeff_indices) const
       {
-        return eval_<comp,deriv>(std::make_index_sequence<sizeof...(spline_t)>{}, xi, indices, coeff_indices);
+        return eval_<comp, deriv, memory_optimized>(std::make_index_sequence<sizeof...(spline_t)>{}, xi, indices, coeff_indices);
       }
       /// @}
 
@@ -503,28 +515,33 @@ namespace iganet {
       /// @brief Returns the values of the spline objects' basis
       /// functions in the points `xi` @{
       template<functionspace comp = functionspace::interior,
-               deriv deriv = deriv::func, typename... Xi>
+               deriv deriv = deriv::func,
+               bool memory_optimized = false,
+               typename... Xi>
       inline auto eval_basfunc(const std::tuple<Xi...>& xi) const
       {
-        return eval_basfunc_<comp>(std::make_index_sequence<sizeof...(spline_t)>{}, xi);
+        return eval_basfunc_<comp, deriv, memory_optimized>(std::make_index_sequence<sizeof...(spline_t)>{}, xi);
       }
 
       template<functionspace comp = functionspace::interior,
-               deriv deriv = deriv::func, typename... Xi, typename... Indices>
+               deriv deriv = deriv::func,
+               bool memory_optimized = false,
+               typename... Xi, typename... Indices>
       inline auto eval_basfunc(const std::tuple<Xi...>& xi,
                                const std::tuple<Indices...>& indices) const
       {
-        return eval_basfunc_<comp>(std::make_index_sequence<sizeof...(spline_t)>{}, xi, indices);
+        return eval_basfunc_<comp, deriv, memory_optimized>(std::make_index_sequence<sizeof...(spline_t)>{}, xi, indices);
       }
       /// @}
 
       /// @brief Returns the indices of the spline objects'
       /// coefficients corresponding to the knot indices `indices`
       template<functionspace comp = functionspace::interior,
+               bool memory_optimized = false,
                typename... Indices>
       inline auto find_coeff_indices(const std::tuple<Indices...>& indices) const
       {
-        return find_coeff_indices_<comp>(std::make_index_sequence<sizeof...(spline_t)>{}, indices);
+        return find_coeff_indices_<comp, memory_optimized>(std::make_index_sequence<sizeof...(spline_t)>{}, indices);
       }
 
       /// @brief Returns the spline objects with uniformly refined
@@ -688,41 +705,81 @@ namespace iganet {
       /// @brief Returns the values of the spline object in the points `xi`
       /// @{
       template<functionspace comp = functionspace::interior,
-               deriv deriv = deriv::func, typename Xi>
+               deriv deriv = deriv::func,
+               bool memory_optimized = false, 
+               typename Xi>
       inline auto eval(const Xi& xi) const
       {
         if constexpr (comp == functionspace::interior)
-          return spline_t::template eval<deriv>(xi);
+          return spline_t::template eval<deriv, memory_optimized>(xi);
         else if constexpr (comp == functionspace::boundary)
-          return boundary_.template eval<deriv>(xi);
+          return boundary_.template eval<deriv, memory_optimized>(xi);
       }
 
       template<functionspace comp = functionspace::interior,
                deriv deriv = deriv::func,
+               bool memory_optimized = false, 
                typename Xi, typename Indices>
       inline auto eval(const Xi& xi,
                        const Indices& indices) const
       {
         if constexpr (comp == functionspace::interior)
-          return spline_t::template eval<deriv>(xi, indices);
+          return spline_t::template eval<deriv, memory_optimized>(xi, indices);
         else if constexpr (comp == functionspace::boundary)
-          return boundary_.template eval<deriv>(xi, indices);
+          return boundary_.template eval<deriv, memory_optimized>(xi, indices);
       }
 
       template<functionspace comp = functionspace::interior,
                deriv deriv = deriv::func,
+               bool memory_optimized = false, 
                typename Xi, typename Indices, typename Coeff_Indices>
       inline auto eval(const Xi& xi,
                        const Indices& indices,
                        const Coeff_Indices& coeff_indices) const
       {
         if constexpr (comp == functionspace::interior)
-          return spline_t::template eval<deriv>(xi, indices, coeff_indices);
+          return spline_t::template eval<deriv, memory_optimized>(xi, indices, coeff_indices);
         else if constexpr (comp == functionspace::boundary)
-          return boundary_.template eval<deriv>(xi, indices, coeff_indices);
+          return boundary_.template eval<deriv, memory_optimized>(xi, indices, coeff_indices);
       }
       /// @}
+      
+#define GENERATE_EXPR(name)                                             \
+      template<functionspace comp = functionspace::interior,            \
+               bool memory_optimized = false,                           \
+               typename... Args>                                        \
+      inline auto name(const Args&... args) const                       \
+      {                                                                 \
+        if constexpr (comp == functionspace::interior)                  \
+          return spline_t::template name<memory_optimized>(args...);    \
+        else if constexpr (comp == functionspace::boundary)             \
+          return boundary_.template name<memory_optimized>(args...);    \
+      }
 
+#define GENERATE_IEXPR(name)                                            \
+      template<functionspace comp = functionspace::interior,            \
+               bool memory_optimized = false,                           \
+               typename Geometry_t,                                     \
+               typename... Args>                                        \
+      inline auto name(const Geometry_t& G,                             \
+                       const Args&... args) const                       \
+      {                                                                 \
+        if constexpr (comp == functionspace::interior)                  \
+          return spline_t::template name<memory_optimized,              \
+                                         Geometry_t>(G, args...);       \
+        else if constexpr (comp == functionspace::boundary)             \
+          return boundary_.template name<memory_optimized,              \
+                                         Geometry_t>(G, args...);       \
+      }
+      
+      GENERATE_EXPR(grad);      
+      GENERATE_EXPR(hess);
+      GENERATE_EXPR(jac);
+
+      GENERATE_IEXPR(igrad);
+      GENERATE_IEXPR(ihess);
+      GENERATE_IEXPR(ijac);
+      
       /// @brief Returns the value of the spline object from
       /// precomputed basis function
       /// @{
@@ -768,36 +825,41 @@ namespace iganet {
       /// @brief Returns the values of the spline objects' basis
       /// functions in the points `xi` @{
       template<functionspace comp = functionspace::interior,
-               deriv deriv = deriv::func, typename Xi>
+               deriv deriv = deriv::func,
+               bool memory_optimized = false,
+               typename Xi>
       inline auto eval_basfunc(const Xi& xi) const
       {
         if constexpr (comp == functionspace::interior)
-          return spline_t::eval_basfunc(xi);
+          return spline_t::template eval_basfunc<deriv, memory_optimized>(xi);
         else if constexpr (comp == functionspace::boundary)
-          return boundary_.eval_basfunc(xi);
+          return boundary_.template eval_basfunc<deriv, memory_optimized>(xi);
       }
 
       template<functionspace comp = functionspace::interior,
-               deriv deriv = deriv::func, typename Xi, typename Indices>
+               deriv deriv = deriv::func,
+               bool memory_optimized = false, 
+               typename Xi, typename Indices>
       inline auto eval_basfunc(const Xi& xi, const Indices& indices) const
       {
         if constexpr (comp == functionspace::interior)
-          return spline_t::eval_basfunc(xi, indices);
+          return spline_t::template eval_basfunc<deriv, memory_optimized>(xi, indices);
         else if constexpr (comp == functionspace::boundary)
-          return boundary_.eval_basfunc(xi, indices);
+          return boundary_.template eval_basfunc<deriv, memory_optimized>(xi, indices);
       }
       /// @}
 
       /// @brief Returns the indices of the spline objects'
       /// coefficients corresponding to the knot indices `indices`
       template<functionspace comp = functionspace::interior,
+               bool memory_optimized = false, 
                typename Indices>
       inline auto find_coeff_indices(const Indices& indices) const
       {
         if constexpr (comp == functionspace::interior)
-          return spline_t::find_coeff_indices(indices);
+          return spline_t::template find_coeff_indices<memory_optimized>(indices);
         else if constexpr (comp == functionspace::boundary)
-          return boundary_.find_coeff_indices(indices);
+          return boundary_.template find_coeff_indices<memory_optimized>(indices);
       }
 
       /// @brief Returns the spline objects with uniformly refined

@@ -27,8 +27,8 @@ TEST(Performance, MatmulTensorLayout_double)
     for (int64_t m : {100, 500, 1000, 5000, 10000, 50000, 100000}) {
 
       { // (n,m) data format
-        torch::Tensor a = torch::ones({n,m}, options.options());
-        torch::Tensor b = torch::ones({n,m}, options.options());
+        torch::Tensor a = torch::ones({n,m}, options);
+        torch::Tensor b = torch::ones({n,m}, options);
         torch::Tensor c;
 
         auto t1 = std::chrono::high_resolution_clock::now();
@@ -47,8 +47,8 @@ TEST(Performance, MatmulTensorLayout_double)
       }
 
       { // (m,n) data format
-        torch::Tensor a = torch::ones({m,n}, options.options());
-        torch::Tensor b = torch::ones({m,n}, options.options());
+        torch::Tensor a = torch::ones({m,n}, options);
+        torch::Tensor b = torch::ones({m,n}, options);
         torch::Tensor c;
 
         auto t1 = std::chrono::high_resolution_clock::now();

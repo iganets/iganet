@@ -19,724 +19,676 @@
 #include "unittest_bsplinelib.hpp"
 #include <gtest/gtest.h>
 
-auto trafo_parDim1_geoDim1_double = [](const std::array<double,1> xi){ return std::array<double,1>{ xi[0]*xi[0] }; };
-auto trafo_parDim1_geoDim2_double = [](const std::array<double,1> xi){ return std::array<double,2>{ xi[0]*xi[0],
-                                                                                                    sin(M_PI*xi[0]) }; };
-auto trafo_parDim1_geoDim3_double = [](const std::array<double,1> xi){ return std::array<double,3>{ xi[0]*xi[0],
-                                                                                                    sin(M_PI*xi[0]),
-                                                                                                    xi[0] }; };
-auto trafo_parDim1_geoDim4_double = [](const std::array<double,1> xi){ return std::array<double,4>{ xi[0]*xi[0],
-                                                                                                    sin(M_PI*xi[0]),
-                                                                                                    xi[0],
-                                                                                                    cos(M_PI*xi[0])}; };
-
-auto trafo_parDim2_geoDim1_double = [](const std::array<double,2> xi){ return std::array<double,1>{ xi[0]*xi[1] }; };
-auto trafo_parDim2_geoDim2_double = [](const std::array<double,2> xi){ return std::array<double,2>{ xi[0]*xi[1],
-                                                                                                    sin(M_PI*xi[0]) }; };
-auto trafo_parDim2_geoDim3_double = [](const std::array<double,2> xi){ return std::array<double,3>{ xi[0]*xi[1],
-                                                                                                    sin(M_PI*xi[0]),
-                                                                                                    xi[1] }; };
-auto trafo_parDim2_geoDim4_double = [](const std::array<double,2> xi){ return std::array<double,4>{ xi[0]*xi[1],
-                                                                                                    sin(M_PI*xi[0]),
-                                                                                                    xi[1],
-                                                                                                    cos(M_PI*xi[1])}; };
-
-auto trafo_parDim3_geoDim1_double = [](const std::array<double,3> xi){ return std::array<double,1>{ xi[0]*xi[1]*xi[2] }; };
-auto trafo_parDim3_geoDim2_double = [](const std::array<double,3> xi){ return std::array<double,2>{ xi[0]*xi[1]*xi[2],
-                                                                                                    sin(M_PI*xi[0]) }; };
-auto trafo_parDim3_geoDim3_double = [](const std::array<double,3> xi){ return std::array<double,3>{ xi[0]*xi[1]*xi[2],
-                                                                                                    sin(M_PI*xi[0]),
-                                                                                                    xi[1]*xi[2] }; };
-auto trafo_parDim3_geoDim4_double = [](const std::array<double,3> xi){ return std::array<double,4>{ xi[0]*xi[1]*xi[2],
-                                                                                                    sin(M_PI*xi[0]),
-                                                                                                    xi[1]*xi[2],
-                                                                                                    cos(M_PI*xi[1])}; };
-
-auto trafo_parDim4_geoDim1_double = [](const std::array<double,4> xi){ return std::array<double,1>{ xi[0]*xi[1]*xi[2]*xi[3] }; };
-auto trafo_parDim4_geoDim2_double = [](const std::array<double,4> xi){ return std::array<double,2>{ xi[0]*xi[1]*xi[2]*xi[3],
-                                                                                                    sin(M_PI*xi[0]) }; };
-auto trafo_parDim4_geoDim3_double = [](const std::array<double,4> xi){ return std::array<double,3>{ xi[0]*xi[1]*xi[2]*xi[3],
-                                                                                                    sin(M_PI*xi[0]),
-                                                                                                    xi[1]*xi[2]*xi[3] }; };
-auto trafo_parDim4_geoDim4_double = [](const std::array<double,4> xi){ return std::array<double,4>{ xi[0]*xi[1]*xi[2]*xi[3],
-                                                                                                    sin(M_PI*xi[0]),
-                                                                                                    xi[1]*xi[2]*xi[3],
-                                                                                                    cos(M_PI*xi[1])}; };
-
-TEST(BSpline, NonUniformBSpline_eval_parDim1_geoDim1_degrees1_double)
+class BSplineTest
+  : public ::testing::Test
 {
-  iganet::Options<double> options;
-  iganet::NonUniformBSpline<double, 1, 1> bspline( {{{0.0, 0.0, 0.5, 1.0, 1.0}}},
+protected:
+  using real_t = double;
+  iganet::Options<real_t> options;
+
+  static constexpr auto trafo_parDim1_geoDim1 = [](const std::array<real_t,1> xi){ return std::array<real_t,1>{ xi[0]*xi[0] }; };
+  static constexpr auto trafo_parDim1_geoDim2 = [](const std::array<real_t,1> xi){ return std::array<real_t,2>{ xi[0]*xi[0],
+                                                                                                                sin(M_PI*xi[0]) }; };
+  static constexpr auto trafo_parDim1_geoDim3 = [](const std::array<real_t,1> xi){ return std::array<real_t,3>{ xi[0]*xi[0],
+                                                                                                                sin(M_PI*xi[0]),
+                                                                                                                xi[0] }; };
+  static constexpr auto trafo_parDim1_geoDim4 = [](const std::array<real_t,1> xi){ return std::array<real_t,4>{ xi[0]*xi[0],
+                                                                                                                sin(M_PI*xi[0]),
+                                                                                                                xi[0],
+                                                                                                                cos(M_PI*xi[0])}; };
+
+  static constexpr auto trafo_parDim2_geoDim1 = [](const std::array<real_t,2> xi){ return std::array<real_t,1>{ xi[0]*xi[1] }; };
+  static constexpr auto trafo_parDim2_geoDim2 = [](const std::array<real_t,2> xi){ return std::array<real_t,2>{ xi[0]*xi[1],
+                                                                                                                sin(M_PI*xi[0]) }; };
+  static constexpr auto trafo_parDim2_geoDim3 = [](const std::array<real_t,2> xi){ return std::array<real_t,3>{ xi[0]*xi[1],
+                                                                                                                sin(M_PI*xi[0]),
+                                                                                                                xi[1] }; };
+  static constexpr auto trafo_parDim2_geoDim4 = [](const std::array<real_t,2> xi){ return std::array<real_t,4>{ xi[0]*xi[1],
+                                                                                                                sin(M_PI*xi[0]),
+                                                                                                                xi[1],
+                                                                                                                cos(M_PI*xi[1])}; };
+
+  static constexpr auto trafo_parDim3_geoDim1 = [](const std::array<real_t,3> xi){ return std::array<real_t,1>{ xi[0]*xi[1]*xi[2] }; };
+  static constexpr auto trafo_parDim3_geoDim2 = [](const std::array<real_t,3> xi){ return std::array<real_t,2>{ xi[0]*xi[1]*xi[2],
+                                                                                                                sin(M_PI*xi[0]) }; };
+  static constexpr auto trafo_parDim3_geoDim3 = [](const std::array<real_t,3> xi){ return std::array<real_t,3>{ xi[0]*xi[1]*xi[2],
+                                                                                                                sin(M_PI*xi[0]),
+                                                                                                                xi[1]*xi[2] }; };
+  static constexpr auto trafo_parDim3_geoDim4 = [](const std::array<real_t,3> xi){ return std::array<real_t,4>{ xi[0]*xi[1]*xi[2],
+                                                                                                                sin(M_PI*xi[0]),
+                                                                                                                xi[1]*xi[2],
+                                                                                                                cos(M_PI*xi[1])}; };
+
+  static constexpr auto trafo_parDim4_geoDim1 = [](const std::array<real_t,4> xi){ return std::array<real_t,1>{ xi[0]*xi[1]*xi[2]*xi[3] }; };
+  static constexpr auto trafo_parDim4_geoDim2 = [](const std::array<real_t,4> xi){ return std::array<real_t,2>{ xi[0]*xi[1]*xi[2]*xi[3],
+                                                                                                                sin(M_PI*xi[0]) }; };
+  static constexpr auto trafo_parDim4_geoDim3 = [](const std::array<real_t,4> xi){ return std::array<real_t,3>{ xi[0]*xi[1]*xi[2]*xi[3],
+                                                                                                                sin(M_PI*xi[0]),
+                                                                                                                xi[1]*xi[2]*xi[3] }; };
+  static constexpr auto trafo_parDim4_geoDim4 = [](const std::array<real_t,4> xi){ return std::array<real_t,4>{ xi[0]*xi[1]*xi[2]*xi[3],
+                                                                                                                sin(M_PI*xi[0]),
+                                                                                                                xi[1]*xi[2]*xi[3],
+                                                                                                                cos(M_PI*xi[1])}; };
+};
+
+TEST_F(BSplineTest, NonUniformBSpline_eval_parDim1_geoDim1_degrees1)
+{
+  iganet::NonUniformBSpline<real_t, 1, 1> bspline( {{{0.0, 0.0, 0.5, 1.0, 1.0}}},
                                                    iganet::init::zeros, options);
-  bspline.transform(trafo_parDim1_geoDim1_double);
-  auto xi  = iganet::utils::to_tensorArray<double>({0.0, 0.1, 0.2, 0.5, 0.75, 0.9, 1.0}, options);
+  bspline.transform(trafo_parDim1_geoDim1);
+  auto xi  = iganet::utils::to_tensorArray<real_t>({0.0, 0.1, 0.2, 0.5, 0.75, 0.9, 1.0}, options);
   test_bspline_eval(bspline, xi, 1e-12);
 }
 
-TEST(BSpline, NonUniformBSpline_eval_parDim1_geoDim1_degrees2_double)
+TEST_F(BSplineTest, NonUniformBSpline_eval_parDim1_geoDim1_degrees2)
 {
-  iganet::Options<double> options;
-  iganet::NonUniformBSpline<double, 1, 2> bspline( {{{0.0, 0.0, 0.0, 0.5, 1.0, 1.0, 1.0}}},
+  iganet::NonUniformBSpline<real_t, 1, 2> bspline( {{{0.0, 0.0, 0.0, 0.5, 1.0, 1.0, 1.0}}},
                                                    iganet::init::zeros, options);
-  bspline.transform(trafo_parDim1_geoDim1_double);
-  auto xi  = iganet::utils::to_tensorArray<double>({0.0, 0.1, 0.2, 0.5, 0.75, 0.9, 1.0}, options);
+  bspline.transform(trafo_parDim1_geoDim1);
+  auto xi  = iganet::utils::to_tensorArray<real_t>({0.0, 0.1, 0.2, 0.5, 0.75, 0.9, 1.0}, options);
   test_bspline_eval(bspline, xi, 1e-12);
 }
 
-TEST(BSpline, NonUniformBSpline_eval_parDim1_geoDim1_degrees3_double)
+TEST_F(BSplineTest, NonUniformBSpline_eval_parDim1_geoDim1_degrees3)
 {
-  iganet::Options<double> options;
-  iganet::NonUniformBSpline<double, 1, 3> bspline( {{{0.0, 0.0, 0.0, 0.0, 0.5, 1.0, 1.0, 1.0, 1.0}}},
+  iganet::NonUniformBSpline<real_t, 1, 3> bspline( {{{0.0, 0.0, 0.0, 0.0, 0.5, 1.0, 1.0, 1.0, 1.0}}},
                                                    iganet::init::zeros, options);
-  bspline.transform(trafo_parDim1_geoDim1_double);
-  auto xi  = iganet::utils::to_tensorArray<double>({0.0, 0.1, 0.2, 0.5, 0.75, 0.9, 1.0}, options);
+  bspline.transform(trafo_parDim1_geoDim1);
+  auto xi  = iganet::utils::to_tensorArray<real_t>({0.0, 0.1, 0.2, 0.5, 0.75, 0.9, 1.0}, options);
   test_bspline_eval(bspline, xi, 1e-12);
 }
 
-TEST(BSpline, NonUniformBSpline_eval_parDim1_geoDim1_degrees4_double)
+TEST_F(BSplineTest, NonUniformBSpline_eval_parDim1_geoDim1_degrees4)
 {
-  iganet::Options<double> options;
-  iganet::NonUniformBSpline<double, 1, 4> bspline( {{{0.0, 0.0, 0.0, 0.0, 0.0, 0.5, 1.0, 1.0, 1.0, 1.0, 1.0}}},
+  iganet::NonUniformBSpline<real_t, 1, 4> bspline( {{{0.0, 0.0, 0.0, 0.0, 0.0, 0.5, 1.0, 1.0, 1.0, 1.0, 1.0}}},
                                                    iganet::init::zeros, options);
-  bspline.transform(trafo_parDim1_geoDim1_double);
-  auto xi  = iganet::utils::to_tensorArray<double>({0.0, 0.1, 0.2, 0.5, 0.75, 0.9, 1.0}, options);
+  bspline.transform(trafo_parDim1_geoDim1);
+  auto xi  = iganet::utils::to_tensorArray<real_t>({0.0, 0.1, 0.2, 0.5, 0.75, 0.9, 1.0}, options);
   test_bspline_eval(bspline, xi, 1e-12);
 }
 
-TEST(BSpline, NonUniformBSpline_eval_parDim1_geoDim1_degrees5_double)
+TEST_F(BSplineTest, NonUniformBSpline_eval_parDim1_geoDim1_degrees5)
 {
-  iganet::Options<double> options;
-  iganet::NonUniformBSpline<double, 1, 5> bspline( {{{0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.5, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0}}},
+  iganet::NonUniformBSpline<real_t, 1, 5> bspline( {{{0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.5, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0}}},
                                                    iganet::init::zeros, options);
-  bspline.transform(trafo_parDim1_geoDim1_double);
-  auto xi  = iganet::utils::to_tensorArray<double>({0.0, 0.1, 0.2, 0.5, 0.75, 0.9, 1.0}, options);
+  bspline.transform(trafo_parDim1_geoDim1);
+  auto xi  = iganet::utils::to_tensorArray<real_t>({0.0, 0.1, 0.2, 0.5, 0.75, 0.9, 1.0}, options);
   test_bspline_eval(bspline, xi, 1e-12);
 }
 
-TEST(BSpline, NonUniformBSpline_eval_parDim1_geoDim1_degrees6_double)
+TEST_F(BSplineTest, NonUniformBSpline_eval_parDim1_geoDim1_degrees6)
 {
-  iganet::Options<double> options;
-  iganet::NonUniformBSpline<double, 1, 6> bspline( {{{0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.5, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0}}},
+  iganet::NonUniformBSpline<real_t, 1, 6> bspline( {{{0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.5, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0}}},
                                                    iganet::init::zeros, options);
-  bspline.transform(trafo_parDim1_geoDim1_double);
-  auto xi  = iganet::utils::to_tensorArray<double>({0.0, 0.1, 0.2, 0.5, 0.75, 0.9, 1.0}, options);
+  bspline.transform(trafo_parDim1_geoDim1);
+  auto xi  = iganet::utils::to_tensorArray<real_t>({0.0, 0.1, 0.2, 0.5, 0.75, 0.9, 1.0}, options);
   test_bspline_eval(bspline, xi, 1e-12);
 }
 
-TEST(BSpline, NonUniformBSpline_eval_parDim1_geoDim2_degrees1_double)
+TEST_F(BSplineTest, NonUniformBSpline_eval_parDim1_geoDim2_degrees1)
 {
-  iganet::Options<double> options;
-  iganet::NonUniformBSpline<double, 2, 1> bspline( {{{0.0, 0.0, 0.5, 1.0, 1.0}}},
+  iganet::NonUniformBSpline<real_t, 2, 1> bspline( {{{0.0, 0.0, 0.5, 1.0, 1.0}}},
                                                    iganet::init::zeros, options);
-  bspline.transform(trafo_parDim1_geoDim2_double);
-  auto xi  = iganet::utils::to_tensorArray<double>({0.0, 0.1, 0.2, 0.5, 0.75, 0.9, 1.0}, options);
+  bspline.transform(trafo_parDim1_geoDim2);
+  auto xi  = iganet::utils::to_tensorArray<real_t>({0.0, 0.1, 0.2, 0.5, 0.75, 0.9, 1.0}, options);
   test_bspline_eval(bspline, xi, 1e-12);
 }
 
-TEST(BSpline, NonUniformBSpline_eval_parDim1_geoDim2_degrees2_double)
+TEST_F(BSplineTest, NonUniformBSpline_eval_parDim1_geoDim2_degrees2)
 {
-  iganet::Options<double> options;
-  iganet::NonUniformBSpline<double, 2, 2> bspline( {{{0.0, 0.0, 0.0, 0.5, 1.0, 1.0, 1.0}}},
+  iganet::NonUniformBSpline<real_t, 2, 2> bspline( {{{0.0, 0.0, 0.0, 0.5, 1.0, 1.0, 1.0}}},
                                                    iganet::init::zeros, options);
-  bspline.transform(trafo_parDim1_geoDim2_double);
-  auto xi  = iganet::utils::to_tensorArray<double>({0.0, 0.1, 0.2, 0.5, 0.75, 0.9, 1.0}, options);
+  bspline.transform(trafo_parDim1_geoDim2);
+  auto xi  = iganet::utils::to_tensorArray<real_t>({0.0, 0.1, 0.2, 0.5, 0.75, 0.9, 1.0}, options);
   test_bspline_eval(bspline, xi, 1e-12);
 }
 
-TEST(BSpline, NonUniformBSpline_eval_parDim1_geoDim2_degrees3_double)
+TEST_F(BSplineTest, NonUniformBSpline_eval_parDim1_geoDim2_degrees3)
 {
-  iganet::Options<double> options;
-  iganet::NonUniformBSpline<double, 2, 3> bspline( {{{0.0, 0.0, 0.0, 0.0, 0.5, 1.0, 1.0, 1.0, 1.0}}},
+  iganet::NonUniformBSpline<real_t, 2, 3> bspline( {{{0.0, 0.0, 0.0, 0.0, 0.5, 1.0, 1.0, 1.0, 1.0}}},
                                                    iganet::init::zeros, options);
-  bspline.transform(trafo_parDim1_geoDim2_double);
-  auto xi  = iganet::utils::to_tensorArray<double>({0.0, 0.1, 0.2, 0.5, 0.75, 0.9, 1.0}, options);
+  bspline.transform(trafo_parDim1_geoDim2);
+  auto xi  = iganet::utils::to_tensorArray<real_t>({0.0, 0.1, 0.2, 0.5, 0.75, 0.9, 1.0}, options);
   test_bspline_eval(bspline, xi, 1e-12);
 }
 
-TEST(BSpline, NonUniformBSpline_eval_parDim1_geoDim2_degrees4_double)
+TEST_F(BSplineTest, NonUniformBSpline_eval_parDim1_geoDim2_degrees4)
 {
-  iganet::Options<double> options;
-  iganet::NonUniformBSpline<double, 2, 4> bspline( {{{0.0, 0.0, 0.0, 0.0, 0.0, 0.5, 1.0, 1.0, 1.0, 1.0, 1.0}}},
+  iganet::NonUniformBSpline<real_t, 2, 4> bspline( {{{0.0, 0.0, 0.0, 0.0, 0.0, 0.5, 1.0, 1.0, 1.0, 1.0, 1.0}}},
                                                    iganet::init::zeros, options);
-  bspline.transform(trafo_parDim1_geoDim2_double);
-  auto xi  = iganet::utils::to_tensorArray<double>({0.0, 0.1, 0.2, 0.5, 0.75, 0.9, 1.0}, options);
+  bspline.transform(trafo_parDim1_geoDim2);
+  auto xi  = iganet::utils::to_tensorArray<real_t>({0.0, 0.1, 0.2, 0.5, 0.75, 0.9, 1.0}, options);
   test_bspline_eval(bspline, xi, 1e-12);
 }
 
-TEST(BSpline, NonUniformBSpline_eval_parDim1_geoDim2_degrees5_double)
+TEST_F(BSplineTest, NonUniformBSpline_eval_parDim1_geoDim2_degrees5)
 {
-  iganet::Options<double> options;
-  iganet::NonUniformBSpline<double, 2, 5> bspline( {{{0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.5, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0}}},
+  iganet::NonUniformBSpline<real_t, 2, 5> bspline( {{{0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.5, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0}}},
                                                    iganet::init::zeros, options);
-  bspline.transform(trafo_parDim1_geoDim2_double);
-  auto xi  = iganet::utils::to_tensorArray<double>({0.0, 0.1, 0.2, 0.5, 0.75, 0.9, 1.0}, options);
+  bspline.transform(trafo_parDim1_geoDim2);
+  auto xi  = iganet::utils::to_tensorArray<real_t>({0.0, 0.1, 0.2, 0.5, 0.75, 0.9, 1.0}, options);
   test_bspline_eval(bspline, xi, 1e-12);
 }
 
-TEST(BSpline, NonUniformBSpline_eval_parDim1_geoDim2_degrees6_double)
+TEST_F(BSplineTest, NonUniformBSpline_eval_parDim1_geoDim2_degrees6)
 {
-  iganet::Options<double> options;
-  iganet::NonUniformBSpline<double, 2, 6> bspline( {{{0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.5, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0}}},
+  iganet::NonUniformBSpline<real_t, 2, 6> bspline( {{{0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.5, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0}}},
                                                    iganet::init::zeros, options);
-  bspline.transform(trafo_parDim1_geoDim2_double);
-  auto xi  = iganet::utils::to_tensorArray<double>({0.0, 0.1, 0.2, 0.5, 0.75, 0.9, 1.0}, options);
+  bspline.transform(trafo_parDim1_geoDim2);
+  auto xi  = iganet::utils::to_tensorArray<real_t>({0.0, 0.1, 0.2, 0.5, 0.75, 0.9, 1.0}, options);
+  test_bspline_eval(bspline, xi, 1e-11);
+}
+
+TEST_F(BSplineTest, NonUniformBSpline_eval_parDim1_geoDim3_degrees1)
+{
+  iganet::NonUniformBSpline<real_t, 3, 1> bspline( {{{0.0, 0.0, 0.5, 1.0, 1.0}}},
+                                                   iganet::init::zeros, options);
+  bspline.transform(trafo_parDim1_geoDim3);
+  auto xi  = iganet::utils::to_tensorArray<real_t>({0.0, 0.1, 0.2, 0.5, 0.75, 0.9, 1.0}, options);
   test_bspline_eval(bspline, xi, 1e-12);
 }
 
-TEST(BSpline, NonUniformBSpline_eval_parDim1_geoDim3_degrees1_double)
+TEST_F(BSplineTest, NonUniformBSpline_eval_parDim1_geoDim3_degrees2)
 {
-  iganet::Options<double> options;
-  iganet::NonUniformBSpline<double, 3, 1> bspline( {{{0.0, 0.0, 0.5, 1.0, 1.0}}},
+  iganet::NonUniformBSpline<real_t, 3, 2> bspline( {{{0.0, 0.0, 0.0, 0.5, 1.0, 1.0, 1.0}}},
                                                    iganet::init::zeros, options);
-  bspline.transform(trafo_parDim1_geoDim3_double);
-  auto xi  = iganet::utils::to_tensorArray<double>({0.0, 0.1, 0.2, 0.5, 0.75, 0.9, 1.0}, options);
+  bspline.transform(trafo_parDim1_geoDim3);
+  auto xi  = iganet::utils::to_tensorArray<real_t>({0.0, 0.1, 0.2, 0.5, 0.75, 0.9, 1.0}, options);
   test_bspline_eval(bspline, xi, 1e-12);
 }
 
-TEST(BSpline, NonUniformBSpline_eval_parDim1_geoDim3_degrees2_double)
+TEST_F(BSplineTest, NonUniformBSpline_eval_parDim1_geoDim3_degrees3)
 {
-  iganet::Options<double> options;
-  iganet::NonUniformBSpline<double, 3, 2> bspline( {{{0.0, 0.0, 0.0, 0.5, 1.0, 1.0, 1.0}}},
+  iganet::NonUniformBSpline<real_t, 3, 3> bspline( {{{0.0, 0.0, 0.0, 0.0, 0.5, 1.0, 1.0, 1.0, 1.0}}},
                                                    iganet::init::zeros, options);
-  bspline.transform(trafo_parDim1_geoDim3_double);
-  auto xi  = iganet::utils::to_tensorArray<double>({0.0, 0.1, 0.2, 0.5, 0.75, 0.9, 1.0}, options);
+  bspline.transform(trafo_parDim1_geoDim3);
+  auto xi  = iganet::utils::to_tensorArray<real_t>({0.0, 0.1, 0.2, 0.5, 0.75, 0.9, 1.0}, options);
   test_bspline_eval(bspline, xi, 1e-12);
 }
 
-TEST(BSpline, NonUniformBSpline_eval_parDim1_geoDim3_degrees3_double)
+TEST_F(BSplineTest, NonUniformBSpline_eval_parDim1_geoDim3_degrees4)
 {
-  iganet::Options<double> options;
-  iganet::NonUniformBSpline<double, 3, 3> bspline( {{{0.0, 0.0, 0.0, 0.0, 0.5, 1.0, 1.0, 1.0, 1.0}}},
+  iganet::NonUniformBSpline<real_t, 3, 4> bspline( {{{0.0, 0.0, 0.0, 0.0, 0.0, 0.5, 1.0, 1.0, 1.0, 1.0, 1.0}}},
                                                    iganet::init::zeros, options);
-  bspline.transform(trafo_parDim1_geoDim3_double);
-  auto xi  = iganet::utils::to_tensorArray<double>({0.0, 0.1, 0.2, 0.5, 0.75, 0.9, 1.0}, options);
+  bspline.transform(trafo_parDim1_geoDim3);
+  auto xi  = iganet::utils::to_tensorArray<real_t>({0.0, 0.1, 0.2, 0.5, 0.75, 0.9, 1.0}, options);
   test_bspline_eval(bspline, xi, 1e-12);
 }
 
-TEST(BSpline, NonUniformBSpline_eval_parDim1_geoDim3_degrees4_double)
+TEST_F(BSplineTest, NonUniformBSpline_eval_parDim1_geoDim3_degrees5)
 {
-  iganet::Options<double> options;
-  iganet::NonUniformBSpline<double, 3, 4> bspline( {{{0.0, 0.0, 0.0, 0.0, 0.0, 0.5, 1.0, 1.0, 1.0, 1.0, 1.0}}},
+  iganet::NonUniformBSpline<real_t, 3, 5> bspline( {{{0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.5, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0}}},
                                                    iganet::init::zeros, options);
-  bspline.transform(trafo_parDim1_geoDim3_double);
-  auto xi  = iganet::utils::to_tensorArray<double>({0.0, 0.1, 0.2, 0.5, 0.75, 0.9, 1.0}, options);
+  bspline.transform(trafo_parDim1_geoDim3);
+  auto xi  = iganet::utils::to_tensorArray<real_t>({0.0, 0.1, 0.2, 0.5, 0.75, 0.9, 1.0}, options);
   test_bspline_eval(bspline, xi, 1e-12);
 }
 
-TEST(BSpline, NonUniformBSpline_eval_parDim1_geoDim3_degrees5_double)
+TEST_F(BSplineTest, NonUniformBSpline_eval_parDim1_geoDim3_degrees6)
 {
-  iganet::Options<double> options;
-  iganet::NonUniformBSpline<double, 3, 5> bspline( {{{0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.5, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0}}},
+  iganet::NonUniformBSpline<real_t, 3, 6> bspline( {{{0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.5, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0}}},
                                                    iganet::init::zeros, options);
-  bspline.transform(trafo_parDim1_geoDim3_double);
-  auto xi  = iganet::utils::to_tensorArray<double>({0.0, 0.1, 0.2, 0.5, 0.75, 0.9, 1.0}, options);
+  bspline.transform(trafo_parDim1_geoDim3);
+  auto xi  = iganet::utils::to_tensorArray<real_t>({0.0, 0.1, 0.2, 0.5, 0.75, 0.9, 1.0}, options);
+  test_bspline_eval(bspline, xi, 1e-11);
+}
+
+TEST_F(BSplineTest, NonUniformBSpline_eval_parDim1_geoDim4_degrees1)
+{
+  iganet::NonUniformBSpline<real_t, 4, 1> bspline( {{{0.0, 0.0, 0.5, 1.0, 1.0}}},
+                                                   iganet::init::zeros, options);
+  bspline.transform(trafo_parDim1_geoDim4);
+  auto xi  = iganet::utils::to_tensorArray<real_t>({0.0, 0.1, 0.2, 0.5, 0.75, 0.9, 1.0}, options);
   test_bspline_eval(bspline, xi, 1e-12);
 }
 
-TEST(BSpline, NonUniformBSpline_eval_parDim1_geoDim3_degrees6_double)
+TEST_F(BSplineTest, NonUniformBSpline_eval_parDim1_geoDim4_degrees2)
 {
-  iganet::Options<double> options;
-  iganet::NonUniformBSpline<double, 3, 6> bspline( {{{0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.5, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0}}},
+  iganet::NonUniformBSpline<real_t, 4, 2> bspline( {{{0.0, 0.0, 0.0, 0.5, 1.0, 1.0, 1.0}}},
                                                    iganet::init::zeros, options);
-  bspline.transform(trafo_parDim1_geoDim3_double);
-  auto xi  = iganet::utils::to_tensorArray<double>({0.0, 0.1, 0.2, 0.5, 0.75, 0.9, 1.0}, options);
+  bspline.transform(trafo_parDim1_geoDim4);
+  auto xi  = iganet::utils::to_tensorArray<real_t>({0.0, 0.1, 0.2, 0.5, 0.75, 0.9, 1.0}, options);
   test_bspline_eval(bspline, xi, 1e-12);
 }
 
-TEST(BSpline, NonUniformBSpline_eval_parDim1_geoDim4_degrees1_double)
+TEST_F(BSplineTest, NonUniformBSpline_eval_parDim1_geoDim4_degrees3)
 {
-  iganet::Options<double> options;
-  iganet::NonUniformBSpline<double, 4, 1> bspline( {{{0.0, 0.0, 0.5, 1.0, 1.0}}},
+  iganet::NonUniformBSpline<real_t, 4, 3> bspline( {{{0.0, 0.0, 0.0, 0.0, 0.5, 1.0, 1.0, 1.0, 1.0}}},
                                                    iganet::init::zeros, options);
-  bspline.transform(trafo_parDim1_geoDim4_double);
-  auto xi  = iganet::utils::to_tensorArray<double>({0.0, 0.1, 0.2, 0.5, 0.75, 0.9, 1.0}, options);
+  bspline.transform(trafo_parDim1_geoDim4);
+  auto xi  = iganet::utils::to_tensorArray<real_t>({0.0, 0.1, 0.2, 0.5, 0.75, 0.9, 1.0}, options);
   test_bspline_eval(bspline, xi, 1e-12);
 }
 
-TEST(BSpline, NonUniformBSpline_eval_parDim1_geoDim4_degrees2_double)
+TEST_F(BSplineTest, NonUniformBSpline_eval_parDim1_geoDim4_degrees4)
 {
-  iganet::Options<double> options;
-  iganet::NonUniformBSpline<double, 4, 2> bspline( {{{0.0, 0.0, 0.0, 0.5, 1.0, 1.0, 1.0}}},
+  iganet::NonUniformBSpline<real_t, 4, 4> bspline( {{{0.0, 0.0, 0.0, 0.0, 0.0, 0.5, 1.0, 1.0, 1.0, 1.0, 1.0}}},
                                                    iganet::init::zeros, options);
-  bspline.transform(trafo_parDim1_geoDim4_double);
-  auto xi  = iganet::utils::to_tensorArray<double>({0.0, 0.1, 0.2, 0.5, 0.75, 0.9, 1.0}, options);
+  bspline.transform(trafo_parDim1_geoDim4);
+  auto xi  = iganet::utils::to_tensorArray<real_t>({0.0, 0.1, 0.2, 0.5, 0.75, 0.9, 1.0}, options);
   test_bspline_eval(bspline, xi, 1e-12);
 }
 
-TEST(BSpline, NonUniformBSpline_eval_parDim1_geoDim4_degrees3_double)
+TEST_F(BSplineTest, NonUniformBSpline_eval_parDim1_geoDim4_degrees5)
 {
-  iganet::Options<double> options;
-  iganet::NonUniformBSpline<double, 4, 3> bspline( {{{0.0, 0.0, 0.0, 0.0, 0.5, 1.0, 1.0, 1.0, 1.0}}},
+  iganet::NonUniformBSpline<real_t, 4, 5> bspline( {{{0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.5, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0}}},
                                                    iganet::init::zeros, options);
-  bspline.transform(trafo_parDim1_geoDim4_double);
-  auto xi  = iganet::utils::to_tensorArray<double>({0.0, 0.1, 0.2, 0.5, 0.75, 0.9, 1.0}, options);
+  bspline.transform(trafo_parDim1_geoDim4);
+  auto xi  = iganet::utils::to_tensorArray<real_t>({0.0, 0.1, 0.2, 0.5, 0.75, 0.9, 1.0}, options);
   test_bspline_eval(bspline, xi, 1e-12);
 }
 
-TEST(BSpline, NonUniformBSpline_eval_parDim1_geoDim4_degrees4_double)
+TEST_F(BSplineTest, NonUniformBSpline_eval_parDim1_geoDim4_degrees6)
 {
-  iganet::Options<double> options;
-  iganet::NonUniformBSpline<double, 4, 4> bspline( {{{0.0, 0.0, 0.0, 0.0, 0.0, 0.5, 1.0, 1.0, 1.0, 1.0, 1.0}}},
+  iganet::NonUniformBSpline<real_t, 4, 6> bspline( {{{0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.5, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0}}},
                                                    iganet::init::zeros, options);
-  bspline.transform(trafo_parDim1_geoDim4_double);
-  auto xi  = iganet::utils::to_tensorArray<double>({0.0, 0.1, 0.2, 0.5, 0.75, 0.9, 1.0}, options);
-  test_bspline_eval(bspline, xi, 1e-12);
-}
-
-TEST(BSpline, NonUniformBSpline_eval_parDim1_geoDim4_degrees5_double)
-{
-  iganet::Options<double> options;
-  iganet::NonUniformBSpline<double, 4, 5> bspline( {{{0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.5, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0}}},
-                                                   iganet::init::zeros, options);
-  bspline.transform(trafo_parDim1_geoDim4_double);
-  auto xi  = iganet::utils::to_tensorArray<double>({0.0, 0.1, 0.2, 0.5, 0.75, 0.9, 1.0}, options);
-  test_bspline_eval(bspline, xi, 1e-12);
-}
-
-TEST(BSpline, NonUniformBSpline_eval_parDim1_geoDim4_degrees6_double)
-{
-  iganet::Options<double> options;
-  iganet::NonUniformBSpline<double, 4, 6> bspline( {{{0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.5, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0}}},
-                                                   iganet::init::zeros, options);
-  bspline.transform(trafo_parDim1_geoDim4_double);
-  auto xi  = iganet::utils::to_tensorArray<double>({0.0, 0.1, 0.2, 0.5, 0.75, 0.9, 1.0}, options);
+  bspline.transform(trafo_parDim1_geoDim4);
+  auto xi  = iganet::utils::to_tensorArray<real_t>({0.0, 0.1, 0.2, 0.5, 0.75, 0.9, 1.0}, options);
   test_bspline_eval(bspline, xi, 1e-10);
 }
 
-TEST(BSpline, NonUniformBSpline_eval_parDim2_geoDim1_degrees22_double)
+TEST_F(BSplineTest, NonUniformBSpline_eval_parDim2_geoDim1_degrees22)
 {
-  iganet::Options<double> options;
-  iganet::NonUniformBSpline<double, 1, 2, 2> bspline( {{{0.0, 0.0, 0.0, 0.5, 1.0, 1.0, 1.0},
+  iganet::NonUniformBSpline<real_t, 1, 2, 2> bspline( {{{0.0, 0.0, 0.0, 0.5, 1.0, 1.0, 1.0},
                                                         {0.0, 0.0, 0.0, 0.5, 1.0, 1.0, 1.0}}},
     iganet::init::zeros, options);
-  bspline.transform(trafo_parDim2_geoDim1_double);
-  auto xi  = iganet::utils::to_tensorArray<double>({0.0, 0.1, 0.2, 0.5, 0.75, 0.9, 1.0},
+  bspline.transform(trafo_parDim2_geoDim1);
+  auto xi  = iganet::utils::to_tensorArray<real_t>({0.0, 0.1, 0.2, 0.5, 0.75, 0.9, 1.0},
                                                    {0.0, 0.1, 0.2, 0.5, 0.75, 0.9, 1.0}, options);
   test_bspline_eval(bspline, xi, 1e-12);
 }
 
-TEST(BSpline, NonUniformBSpline_eval_parDim2_geoDim1_degrees46_double)
+TEST_F(BSplineTest, NonUniformBSpline_eval_parDim2_geoDim1_degrees46)
 {
-  iganet::Options<double> options;
-  iganet::NonUniformBSpline<double, 1, 4, 6> bspline( {{{0.0, 0.0, 0.0, 0.0, 0.0, 0.5, 1.0, 1.0, 1.0, 1.0, 1.0},
+  iganet::NonUniformBSpline<real_t, 1, 4, 6> bspline( {{{0.0, 0.0, 0.0, 0.0, 0.0, 0.5, 1.0, 1.0, 1.0, 1.0, 1.0},
                                                         {0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.5, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0}}},
     iganet::init::zeros, options);
-  bspline.transform(trafo_parDim2_geoDim1_double);
-  auto xi  = iganet::utils::to_tensorArray<double>({0.0, 0.1, 0.2, 0.5, 0.75, 0.9, 1.0},
+  bspline.transform(trafo_parDim2_geoDim1);
+  auto xi  = iganet::utils::to_tensorArray<real_t>({0.0, 0.1, 0.2, 0.5, 0.75, 0.9, 1.0},
                                                    {0.0, 0.1, 0.2, 0.5, 0.75, 0.9, 1.0}, options);
   test_bspline_eval(bspline, xi, 1e-12);
 }
 
-TEST(BSpline, NonUniformBSpline_eval_parDim2_geoDim1_degrees64_double)
+TEST_F(BSplineTest, NonUniformBSpline_eval_parDim2_geoDim1_degrees64)
 {
-  iganet::Options<double> options;
-  iganet::NonUniformBSpline<double, 1, 6, 4> bspline( {{{0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.5, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0},
+  iganet::NonUniformBSpline<real_t, 1, 6, 4> bspline( {{{0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.5, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0},
                                                         {0.0, 0.0, 0.0, 0.0, 0.0, 0.5, 1.0, 1.0, 1.0, 1.0, 1.0}}},
     iganet::init::zeros, options);
-  bspline.transform(trafo_parDim2_geoDim1_double);
-  auto xi  = iganet::utils::to_tensorArray<double>({0.0, 0.1, 0.2, 0.5, 0.75, 0.9, 1.0},
+  bspline.transform(trafo_parDim2_geoDim1);
+  auto xi  = iganet::utils::to_tensorArray<real_t>({0.0, 0.1, 0.2, 0.5, 0.75, 0.9, 1.0},
                                                    {0.0, 0.1, 0.2, 0.5, 0.75, 0.9, 1.0}, options);
   test_bspline_eval(bspline, xi, 1e-12);
 }
 
-TEST(BSpline, NonUniformBSpline_eval_parDim2_geoDim2_degrees22_double)
+TEST_F(BSplineTest, NonUniformBSpline_eval_parDim2_geoDim2_degrees22)
 {
-  iganet::Options<double> options;
-  iganet::NonUniformBSpline<double, 2, 2, 2> bspline( {{{0.0, 0.0, 0.0, 0.5, 1.0, 1.0, 1.0},
+  iganet::NonUniformBSpline<real_t, 2, 2, 2> bspline( {{{0.0, 0.0, 0.0, 0.5, 1.0, 1.0, 1.0},
                                                         {0.0, 0.0, 0.0, 0.5, 1.0, 1.0, 1.0}}},
     iganet::init::zeros, options);
-  bspline.transform(trafo_parDim2_geoDim2_double);
-  auto xi  = iganet::utils::to_tensorArray<double>({0.0, 0.1, 0.2, 0.5, 0.75, 0.9, 1.0},
+  bspline.transform(trafo_parDim2_geoDim2);
+  auto xi  = iganet::utils::to_tensorArray<real_t>({0.0, 0.1, 0.2, 0.5, 0.75, 0.9, 1.0},
                                                    {0.0, 0.1, 0.2, 0.5, 0.75, 0.9, 1.0}, options);
   test_bspline_eval(bspline, xi, 1e-12);
 }
 
-TEST(BSpline, NonUniformBSpline_eval_parDim2_geoDim2_degrees46_double)
+TEST_F(BSplineTest, NonUniformBSpline_eval_parDim2_geoDim2_degrees46)
 {
-  iganet::Options<double> options;
-  iganet::NonUniformBSpline<double, 2, 4, 6> bspline( {{{0.0, 0.0, 0.0, 0.0, 0.0, 0.5, 1.0, 1.0, 1.0, 1.0, 1.0},
+  iganet::NonUniformBSpline<real_t, 2, 4, 6> bspline( {{{0.0, 0.0, 0.0, 0.0, 0.0, 0.5, 1.0, 1.0, 1.0, 1.0, 1.0},
                                                         {0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.5, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0}}},
     iganet::init::zeros, options);
-  bspline.transform(trafo_parDim2_geoDim2_double);
-  auto xi  = iganet::utils::to_tensorArray<double>({0.0, 0.1, 0.2, 0.5, 0.75, 0.9, 1.0},
+  bspline.transform(trafo_parDim2_geoDim2);
+  auto xi  = iganet::utils::to_tensorArray<real_t>({0.0, 0.1, 0.2, 0.5, 0.75, 0.9, 1.0},
                                                    {0.0, 0.1, 0.2, 0.5, 0.75, 0.9, 1.0}, options);
   test_bspline_eval(bspline, xi, 1e-12);
 }
 
-TEST(BSpline, NonUniformBSpline_eval_parDim2_geoDim2_degrees64_double)
+TEST_F(BSplineTest, NonUniformBSpline_eval_parDim2_geoDim2_degrees64)
 {
-  iganet::Options<double> options;
-  iganet::NonUniformBSpline<double, 2, 6, 4> bspline( {{{0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.5, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0},
+  iganet::NonUniformBSpline<real_t, 2, 6, 4> bspline( {{{0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.5, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0},
                                                         {0.0, 0.0, 0.0, 0.0, 0.0, 0.5, 1.0, 1.0, 1.0, 1.0, 1.0}}},
     iganet::init::zeros, options);
-  bspline.transform(trafo_parDim2_geoDim2_double);
-  auto xi  = iganet::utils::to_tensorArray<double>({0.0, 0.1, 0.2, 0.5, 0.75, 0.9, 1.0},
+  bspline.transform(trafo_parDim2_geoDim2);
+  auto xi  = iganet::utils::to_tensorArray<real_t>({0.0, 0.1, 0.2, 0.5, 0.75, 0.9, 1.0},
                                                    {0.0, 0.1, 0.2, 0.5, 0.75, 0.9, 1.0}, options);
   test_bspline_eval(bspline, xi, 1e-12);
 }
 
-TEST(BSpline, NonUniformBSpline_eval_parDim2_geoDim3_degrees22_double)
+TEST_F(BSplineTest, NonUniformBSpline_eval_parDim2_geoDim3_degrees22)
 {
-  iganet::Options<double> options;
-  iganet::NonUniformBSpline<double, 3, 2, 2> bspline( {{{0.0, 0.0, 0.0, 0.5, 1.0, 1.0, 1.0},
+  iganet::NonUniformBSpline<real_t, 3, 2, 2> bspline( {{{0.0, 0.0, 0.0, 0.5, 1.0, 1.0, 1.0},
                                                         {0.0, 0.0, 0.0, 0.5, 1.0, 1.0, 1.0}}},
     iganet::init::zeros, options);
-  bspline.transform(trafo_parDim2_geoDim3_double);
-  auto xi  = iganet::utils::to_tensorArray<double>({0.0, 0.1, 0.2, 0.5, 0.75, 0.9, 1.0},
+  bspline.transform(trafo_parDim2_geoDim3);
+  auto xi  = iganet::utils::to_tensorArray<real_t>({0.0, 0.1, 0.2, 0.5, 0.75, 0.9, 1.0},
                                                    {0.0, 0.1, 0.2, 0.5, 0.75, 0.9, 1.0}, options);
   test_bspline_eval(bspline, xi, 1e-12);
 }
 
-TEST(BSpline, NonUniformBSpline_eval_parDim2_geoDim3_degrees46_double)
+TEST_F(BSplineTest, NonUniformBSpline_eval_parDim2_geoDim3_degrees46)
 {
-  iganet::Options<double> options;
-  iganet::NonUniformBSpline<double, 3, 4, 6> bspline( {{{0.0, 0.0, 0.0, 0.0, 0.0, 0.5, 1.0, 1.0, 1.0, 1.0, 1.0},
+  iganet::NonUniformBSpline<real_t, 3, 4, 6> bspline( {{{0.0, 0.0, 0.0, 0.0, 0.0, 0.5, 1.0, 1.0, 1.0, 1.0, 1.0},
                                                         {0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.5, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0}}},
     iganet::init::zeros, options);
-  bspline.transform(trafo_parDim2_geoDim3_double);
-  auto xi  = iganet::utils::to_tensorArray<double>({0.0, 0.1, 0.2, 0.5, 0.75, 0.9, 1.0},
+  bspline.transform(trafo_parDim2_geoDim3);
+  auto xi  = iganet::utils::to_tensorArray<real_t>({0.0, 0.1, 0.2, 0.5, 0.75, 0.9, 1.0},
                                                    {0.0, 0.1, 0.2, 0.5, 0.75, 0.9, 1.0}, options);
   test_bspline_eval(bspline, xi, 1e-11);
 }
 
-TEST(BSpline, NonUniformBSpline_eval_parDim2_geoDim3_degrees64_double)
+TEST_F(BSplineTest, NonUniformBSpline_eval_parDim2_geoDim3_degrees64)
 {
-  iganet::Options<double> options;
-  iganet::NonUniformBSpline<double, 3, 6, 4> bspline( {{{0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.5, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0},
+  iganet::NonUniformBSpline<real_t, 3, 6, 4> bspline( {{{0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.5, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0},
                                                         {0.0, 0.0, 0.0, 0.0, 0.0, 0.5, 1.0, 1.0, 1.0, 1.0, 1.0}}},
     iganet::init::zeros, options);
-  bspline.transform(trafo_parDim2_geoDim3_double);
-  auto xi  = iganet::utils::to_tensorArray<double>({0.0, 0.1, 0.2, 0.5, 0.75, 0.9, 1.0},
+  bspline.transform(trafo_parDim2_geoDim3);
+  auto xi  = iganet::utils::to_tensorArray<real_t>({0.0, 0.1, 0.2, 0.5, 0.75, 0.9, 1.0},
                                                    {0.0, 0.1, 0.2, 0.5, 0.75, 0.9, 1.0}, options);
   test_bspline_eval(bspline, xi, 1e-12);
 }
 
-TEST(BSpline, NonUniformBSpline_eval_parDim2_geoDim4_degrees22_double)
+TEST_F(BSplineTest, NonUniformBSpline_eval_parDim2_geoDim4_degrees22)
 {
-  iganet::Options<double> options;
-  iganet::NonUniformBSpline<double, 4, 2, 2> bspline( {{{0.0, 0.0, 0.0, 0.5, 1.0, 1.0, 1.0},
+  iganet::NonUniformBSpline<real_t, 4, 2, 2> bspline( {{{0.0, 0.0, 0.0, 0.5, 1.0, 1.0, 1.0},
                                                         {0.0, 0.0, 0.0, 0.5, 1.0, 1.0, 1.0}}},
     iganet::init::zeros, options);
-  bspline.transform(trafo_parDim2_geoDim4_double);
-  auto xi  = iganet::utils::to_tensorArray<double>({0.0, 0.1, 0.2, 0.5, 0.75, 0.9, 1.0},
+  bspline.transform(trafo_parDim2_geoDim4);
+  auto xi  = iganet::utils::to_tensorArray<real_t>({0.0, 0.1, 0.2, 0.5, 0.75, 0.9, 1.0},
                                                    {0.0, 0.1, 0.2, 0.5, 0.75, 0.9, 1.0}, options);
   test_bspline_eval(bspline, xi, 1e-12);
 }
 
-TEST(BSpline, NonUniformBSpline_eval_parDim2_geoDim4_degrees46_double)
+TEST_F(BSplineTest, NonUniformBSpline_eval_parDim2_geoDim4_degrees46)
 {
-  iganet::Options<double> options;
-  iganet::NonUniformBSpline<double, 4, 4, 6> bspline( {{{0.0, 0.0, 0.0, 0.0, 0.0, 0.5, 1.0, 1.0, 1.0, 1.0, 1.0},
+  iganet::NonUniformBSpline<real_t, 4, 4, 6> bspline( {{{0.0, 0.0, 0.0, 0.0, 0.0, 0.5, 1.0, 1.0, 1.0, 1.0, 1.0},
                                                         {0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.5, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0}}},
     iganet::init::zeros, options);
-  bspline.transform(trafo_parDim2_geoDim4_double);
-  auto xi  = iganet::utils::to_tensorArray<double>({0.0, 0.1, 0.2, 0.5, 0.75, 0.9, 1.0},
+  bspline.transform(trafo_parDim2_geoDim4);
+  auto xi  = iganet::utils::to_tensorArray<real_t>({0.0, 0.1, 0.2, 0.5, 0.75, 0.9, 1.0},
                                                    {0.0, 0.1, 0.2, 0.5, 0.75, 0.9, 1.0}, options);
   test_bspline_eval(bspline, xi, 1e-11);
 }
 
-TEST(BSpline, NonUniformBSpline_eval_parDim2_geoDim4_degrees64_double)
+TEST_F(BSplineTest, NonUniformBSpline_eval_parDim2_geoDim4_degrees64)
 {
-  iganet::Options<double> options;
-  iganet::NonUniformBSpline<double, 4, 6, 4> bspline( {{{0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.5, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0},
+  iganet::NonUniformBSpline<real_t, 4, 6, 4> bspline( {{{0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.5, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0},
                                                         {0.0, 0.0, 0.0, 0.0, 0.0, 0.5, 1.0, 1.0, 1.0, 1.0, 1.0}}},
     iganet::init::zeros, options);
-  bspline.transform(trafo_parDim2_geoDim4_double);
-  auto xi  = iganet::utils::to_tensorArray<double>({0.0, 0.1, 0.2, 0.5, 0.75, 0.9, 1.0},
+  bspline.transform(trafo_parDim2_geoDim4);
+  auto xi  = iganet::utils::to_tensorArray<real_t>({0.0, 0.1, 0.2, 0.5, 0.75, 0.9, 1.0},
                                                    {0.0, 0.1, 0.2, 0.5, 0.75, 0.9, 1.0}, options);
   test_bspline_eval(bspline, xi, 1e-10);
 }
 
-TEST(BSpline, NonUniformBSpline_eval_parDim3_geoDim1_degrees222_double)
+TEST_F(BSplineTest, NonUniformBSpline_eval_parDim3_geoDim1_degrees222)
 {
-  iganet::Options<double> options;
-  iganet::NonUniformBSpline<double, 1, 2, 2, 2> bspline( {{{0.0, 0.0, 0.0, 0.5, 1.0, 1.0, 1.0},
+  iganet::NonUniformBSpline<real_t, 1, 2, 2, 2> bspline( {{{0.0, 0.0, 0.0, 0.5, 1.0, 1.0, 1.0},
                                                            {0.0, 0.0, 0.0, 0.5, 1.0, 1.0, 1.0},
                                                            {0.0, 0.0, 0.0, 0.5, 1.0, 1.0, 1.0}}},
     iganet::init::zeros, options);
-  bspline.transform(trafo_parDim3_geoDim1_double);
-  auto xi  = iganet::utils::to_tensorArray<double>({0.0, 0.1, 0.2, 0.5, 0.75, 0.9, 1.0},
+  bspline.transform(trafo_parDim3_geoDim1);
+  auto xi  = iganet::utils::to_tensorArray<real_t>({0.0, 0.1, 0.2, 0.5, 0.75, 0.9, 1.0},
                                                    {0.0, 0.1, 0.2, 0.5, 0.75, 0.9, 1.0},
                                                    {0.0, 0.1, 0.2, 0.5, 0.75, 0.9, 1.0}, options);
   test_bspline_eval(bspline, xi, 1e-12);
 }
 
-TEST(BSpline, NonUniformBSpline_eval_parDim3_geoDim1_degrees462_double)
+TEST_F(BSplineTest, NonUniformBSpline_eval_parDim3_geoDim1_degrees462)
 {
-  iganet::Options<double> options;
-  iganet::NonUniformBSpline<double, 1, 4, 6, 2> bspline( {{{0.0, 0.0, 0.0, 0.0, 0.0, 0.5, 1.0, 1.0, 1.0, 1.0, 1.0},
+  iganet::NonUniformBSpline<real_t, 1, 4, 6, 2> bspline( {{{0.0, 0.0, 0.0, 0.0, 0.0, 0.5, 1.0, 1.0, 1.0, 1.0, 1.0},
                                                            {0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.5, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0},
                                                            {0.0, 0.0, 0.0, 0.5, 1.0, 1.0, 1.0}}},
     iganet::init::zeros, options);
-  bspline.transform(trafo_parDim3_geoDim1_double);
-  auto xi  = iganet::utils::to_tensorArray<double>({0.0, 0.1, 0.2, 0.5, 0.75, 0.9, 1.0},
+  bspline.transform(trafo_parDim3_geoDim1);
+  auto xi  = iganet::utils::to_tensorArray<real_t>({0.0, 0.1, 0.2, 0.5, 0.75, 0.9, 1.0},
                                                    {0.0, 0.1, 0.2, 0.5, 0.75, 0.9, 1.0},
                                                    {0.0, 0.1, 0.2, 0.5, 0.75, 0.9, 1.0}, options);
   test_bspline_eval(bspline, xi, 1e-12);
 }
 
-TEST(BSpline, NonUniformBSpline_eval_parDim3_geoDim1_degrees642_double)
+TEST_F(BSplineTest, NonUniformBSpline_eval_parDim3_geoDim1_degrees642)
 {
-  iganet::Options<double> options;
-  iganet::NonUniformBSpline<double, 1, 6, 4, 2> bspline( {{{0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.5, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0},
+  iganet::NonUniformBSpline<real_t, 1, 6, 4, 2> bspline( {{{0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.5, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0},
                                                            {0.0, 0.0, 0.0, 0.0, 0.0, 0.5, 1.0, 1.0, 1.0, 1.0, 1.0},
                                                            {0.0, 0.0, 0.0, 0.5, 1.0, 1.0, 1.0}}},
     iganet::init::zeros, options);
-  bspline.transform(trafo_parDim3_geoDim1_double);
-  auto xi  = iganet::utils::to_tensorArray<double>({0.0, 0.1, 0.2, 0.5, 0.75, 0.9, 1.0},
+  bspline.transform(trafo_parDim3_geoDim1);
+  auto xi  = iganet::utils::to_tensorArray<real_t>({0.0, 0.1, 0.2, 0.5, 0.75, 0.9, 1.0},
                                                    {0.0, 0.1, 0.2, 0.5, 0.75, 0.9, 1.0},
                                                    {0.0, 0.1, 0.2, 0.5, 0.75, 0.9, 1.0}, options);
   test_bspline_eval(bspline, xi, 1e-12);
 }
 
-TEST(BSpline, NonUniformBSpline_eval_parDim3_geoDim2_degrees222_double)
+TEST_F(BSplineTest, NonUniformBSpline_eval_parDim3_geoDim2_degrees222)
 {
-  iganet::Options<double> options;
-  iganet::NonUniformBSpline<double, 2, 2, 2, 2> bspline( {{{0.0, 0.0, 0.0, 0.5, 1.0, 1.0, 1.0},
+  iganet::NonUniformBSpline<real_t, 2, 2, 2, 2> bspline( {{{0.0, 0.0, 0.0, 0.5, 1.0, 1.0, 1.0},
                                                            {0.0, 0.0, 0.0, 0.5, 1.0, 1.0, 1.0},
                                                            {0.0, 0.0, 0.0, 0.5, 1.0, 1.0, 1.0}}},
     iganet::init::zeros, options);
-  bspline.transform(trafo_parDim3_geoDim2_double);
-  auto xi  = iganet::utils::to_tensorArray<double>({0.0, 0.1, 0.2, 0.5, 0.75, 0.9, 1.0},
+  bspline.transform(trafo_parDim3_geoDim2);
+  auto xi  = iganet::utils::to_tensorArray<real_t>({0.0, 0.1, 0.2, 0.5, 0.75, 0.9, 1.0},
                                                    {0.0, 0.1, 0.2, 0.5, 0.75, 0.9, 1.0},
                                                    {0.0, 0.1, 0.2, 0.5, 0.75, 0.9, 1.0}, options);
   test_bspline_eval(bspline, xi, 1e-12);
 }
 
-TEST(BSpline, NonUniformBSpline_eval_parDim3_geoDim2_degrees462_double)
+TEST_F(BSplineTest, NonUniformBSpline_eval_parDim3_geoDim2_degrees462)
 {
-  iganet::Options<double> options;
-  iganet::NonUniformBSpline<double, 2, 4, 6, 2> bspline( {{{0.0, 0.0, 0.0, 0.0, 0.0, 0.5, 1.0, 1.0, 1.0, 1.0, 1.0},
+  iganet::NonUniformBSpline<real_t, 2, 4, 6, 2> bspline( {{{0.0, 0.0, 0.0, 0.0, 0.0, 0.5, 1.0, 1.0, 1.0, 1.0, 1.0},
                                                            {0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.5, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0},
                                                            {0.0, 0.0, 0.0, 0.5, 1.0, 1.0, 1.0}}},
     iganet::init::zeros, options);
-  bspline.transform(trafo_parDim3_geoDim2_double);
-  auto xi  = iganet::utils::to_tensorArray<double>({0.0, 0.1, 0.2, 0.5, 0.75, 0.9, 1.0},
+  bspline.transform(trafo_parDim3_geoDim2);
+  auto xi  = iganet::utils::to_tensorArray<real_t>({0.0, 0.1, 0.2, 0.5, 0.75, 0.9, 1.0},
                                                    {0.0, 0.1, 0.2, 0.5, 0.75, 0.9, 1.0},
                                                    {0.0, 0.1, 0.2, 0.5, 0.75, 0.9, 1.0}, options);
   test_bspline_eval(bspline, xi, 1e-12);
 }
 
-TEST(BSpline, NonUniformBSpline_eval_parDim3_geoDim2_degrees642_double)
+TEST_F(BSplineTest, NonUniformBSpline_eval_parDim3_geoDim2_degrees642)
 {
-  iganet::Options<double> options;
-  iganet::NonUniformBSpline<double, 2, 6, 4, 2> bspline( {{{0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.5, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0},
+  iganet::NonUniformBSpline<real_t, 2, 6, 4, 2> bspline( {{{0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.5, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0},
                                                            {0.0, 0.0, 0.0, 0.0, 0.0, 0.5, 1.0, 1.0, 1.0, 1.0, 1.0},
                                                            {0.0, 0.0, 0.0, 0.5, 1.0, 1.0, 1.0}}},
     iganet::init::zeros, options);
-  bspline.transform(trafo_parDim3_geoDim2_double);
-  auto xi  = iganet::utils::to_tensorArray<double>({0.0, 0.1, 0.2, 0.5, 0.75, 0.9, 1.0},
+  bspline.transform(trafo_parDim3_geoDim2);
+  auto xi  = iganet::utils::to_tensorArray<real_t>({0.0, 0.1, 0.2, 0.5, 0.75, 0.9, 1.0},
                                                    {0.0, 0.1, 0.2, 0.5, 0.75, 0.9, 1.0},
                                                    {0.0, 0.1, 0.2, 0.5, 0.75, 0.9, 1.0}, options);
   test_bspline_eval(bspline, xi, 1e-12);
 }
 
-TEST(BSpline, NonUniformBSpline_eval_parDim3_geoDim3_degrees222_double)
+TEST_F(BSplineTest, NonUniformBSpline_eval_parDim3_geoDim3_degrees222)
 {
-  iganet::Options<double> options;
-  iganet::NonUniformBSpline<double, 3, 2, 2, 2> bspline( {{{0.0, 0.0, 0.0, 0.5, 1.0, 1.0, 1.0},
+  iganet::NonUniformBSpline<real_t, 3, 2, 2, 2> bspline( {{{0.0, 0.0, 0.0, 0.5, 1.0, 1.0, 1.0},
                                                            {0.0, 0.0, 0.0, 0.5, 1.0, 1.0, 1.0},
                                                            {0.0, 0.0, 0.0, 0.5, 1.0, 1.0, 1.0}}},
     iganet::init::zeros, options);
-  bspline.transform(trafo_parDim3_geoDim3_double);
-  auto xi  = iganet::utils::to_tensorArray<double>({0.0, 0.1, 0.2, 0.5, 0.75, 0.9, 1.0},
+  bspline.transform(trafo_parDim3_geoDim3);
+  auto xi  = iganet::utils::to_tensorArray<real_t>({0.0, 0.1, 0.2, 0.5, 0.75, 0.9, 1.0},
                                                    {0.0, 0.1, 0.2, 0.5, 0.75, 0.9, 1.0},
                                                    {0.0, 0.1, 0.2, 0.5, 0.75, 0.9, 1.0}, options);
   test_bspline_eval(bspline, xi, 1e-12);
 }
 
-TEST(BSpline, NonUniformBSpline_eval_parDim3_geoDim3_degrees462_double)
+TEST_F(BSplineTest, NonUniformBSpline_eval_parDim3_geoDim3_degrees462)
 {
-  iganet::Options<double> options;
-  iganet::NonUniformBSpline<double, 3, 4, 6, 2> bspline( {{{0.0, 0.0, 0.0, 0.0, 0.0, 0.5, 1.0, 1.0, 1.0, 1.0, 1.0},
+  iganet::NonUniformBSpline<real_t, 3, 4, 6, 2> bspline( {{{0.0, 0.0, 0.0, 0.0, 0.0, 0.5, 1.0, 1.0, 1.0, 1.0, 1.0},
                                                            {0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.5, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0},
                                                            {0.0, 0.0, 0.0, 0.5, 1.0, 1.0, 1.0}}},
     iganet::init::zeros, options);
-  bspline.transform(trafo_parDim3_geoDim3_double);
-  auto xi  = iganet::utils::to_tensorArray<double>({0.0, 0.1, 0.2, 0.5, 0.75, 0.9, 1.0},
+  bspline.transform(trafo_parDim3_geoDim3);
+  auto xi  = iganet::utils::to_tensorArray<real_t>({0.0, 0.1, 0.2, 0.5, 0.75, 0.9, 1.0},
                                                    {0.0, 0.1, 0.2, 0.5, 0.75, 0.9, 1.0},
                                                    {0.0, 0.1, 0.2, 0.5, 0.75, 0.9, 1.0}, options);
   test_bspline_eval(bspline, xi, 1e-12);
 }
 
-TEST(BSpline, NonUniformBSpline_eval_parDim3_geoDim3_degrees642_double)
+TEST_F(BSplineTest, NonUniformBSpline_eval_parDim3_geoDim3_degrees642)
 {
-  iganet::Options<double> options;
-  iganet::NonUniformBSpline<double, 3, 6, 4, 2> bspline( {{{0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.5, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0},
+  iganet::NonUniformBSpline<real_t, 3, 6, 4, 2> bspline( {{{0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.5, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0},
                                                            {0.0, 0.0, 0.0, 0.0, 0.0, 0.5, 1.0, 1.0, 1.0, 1.0, 1.0},
                                                            {0.0, 0.0, 0.0, 0.5, 1.0, 1.0, 1.0}}},
     iganet::init::zeros, options);
-  bspline.transform(trafo_parDim3_geoDim3_double);
-  auto xi  = iganet::utils::to_tensorArray<double>({0.0, 0.1, 0.2, 0.5, 0.75, 0.9, 1.0},
+  bspline.transform(trafo_parDim3_geoDim3);
+  auto xi  = iganet::utils::to_tensorArray<real_t>({0.0, 0.1, 0.2, 0.5, 0.75, 0.9, 1.0},
                                                    {0.0, 0.1, 0.2, 0.5, 0.75, 0.9, 1.0},
                                                    {0.0, 0.1, 0.2, 0.5, 0.75, 0.9, 1.0}, options);
   test_bspline_eval(bspline, xi, 1e-12);
 }
 
-TEST(BSpline, NonUniformBSpline_eval_parDim3_geoDim4_degrees222_double)
+TEST_F(BSplineTest, NonUniformBSpline_eval_parDim3_geoDim4_degrees222)
 {
-  iganet::Options<double> options;
-  iganet::NonUniformBSpline<double, 4, 2, 2, 2> bspline( {{{0.0, 0.0, 0.0, 0.5, 1.0, 1.0, 1.0},
+  iganet::NonUniformBSpline<real_t, 4, 2, 2, 2> bspline( {{{0.0, 0.0, 0.0, 0.5, 1.0, 1.0, 1.0},
                                                            {0.0, 0.0, 0.0, 0.5, 1.0, 1.0, 1.0},
                                                            {0.0, 0.0, 0.0, 0.5, 1.0, 1.0, 1.0}}},
     iganet::init::zeros, options);
-  bspline.transform(trafo_parDim3_geoDim4_double);
-  auto xi  = iganet::utils::to_tensorArray<double>({0.0, 0.1, 0.2, 0.5, 0.75, 0.9, 1.0},
+  bspline.transform(trafo_parDim3_geoDim4);
+  auto xi  = iganet::utils::to_tensorArray<real_t>({0.0, 0.1, 0.2, 0.5, 0.75, 0.9, 1.0},
                                                    {0.0, 0.1, 0.2, 0.5, 0.75, 0.9, 1.0},
                                                    {0.0, 0.1, 0.2, 0.5, 0.75, 0.9, 1.0}, options);
   test_bspline_eval(bspline, xi, 1e-12);
 }
 
-TEST(BSpline, NonUniformBSpline_eval_parDim3_geoDim4_degrees462_double)
+TEST_F(BSplineTest, NonUniformBSpline_eval_parDim3_geoDim4_degrees462)
 {
-  iganet::Options<double> options;
-  iganet::NonUniformBSpline<double, 4, 4, 6, 2> bspline( {{{0.0, 0.0, 0.0, 0.0, 0.0, 0.5, 1.0, 1.0, 1.0, 1.0, 1.0},
+  iganet::NonUniformBSpline<real_t, 4, 4, 6, 2> bspline( {{{0.0, 0.0, 0.0, 0.0, 0.0, 0.5, 1.0, 1.0, 1.0, 1.0, 1.0},
                                                            {0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.5, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0},
                                                            {0.0, 0.0, 0.0, 0.5, 1.0, 1.0, 1.0}}},
     iganet::init::zeros, options);
-  bspline.transform(trafo_parDim3_geoDim4_double);
-  auto xi  = iganet::utils::to_tensorArray<double>({0.0, 0.1, 0.2, 0.5, 0.75, 0.9, 1.0},
+  bspline.transform(trafo_parDim3_geoDim4);
+  auto xi  = iganet::utils::to_tensorArray<real_t>({0.0, 0.1, 0.2, 0.5, 0.75, 0.9, 1.0},
                                                    {0.0, 0.1, 0.2, 0.5, 0.75, 0.9, 1.0},
                                                    {0.0, 0.1, 0.2, 0.5, 0.75, 0.9, 1.0}, options);
   test_bspline_eval(bspline, xi, 1e-12);
 }
 
-TEST(BSpline, NonUniformBSpline_eval_parDim3_geoDim4_degrees642_double)
+TEST_F(BSplineTest, NonUniformBSpline_eval_parDim3_geoDim4_degrees642)
 {
-  iganet::Options<double> options;
-  iganet::NonUniformBSpline<double, 4, 6, 4, 2> bspline( {{{0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.5, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0},
+  iganet::NonUniformBSpline<real_t, 4, 6, 4, 2> bspline( {{{0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.5, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0},
                                                            {0.0, 0.0, 0.0, 0.0, 0.0, 0.5, 1.0, 1.0, 1.0, 1.0, 1.0},
                                                            {0.0, 0.0, 0.0, 0.5, 1.0, 1.0, 1.0}}},
     iganet::init::zeros, options);
-  bspline.transform(trafo_parDim3_geoDim4_double);
-  auto xi  = iganet::utils::to_tensorArray<double>({0.0, 0.1, 0.2, 0.5, 0.75, 0.9, 1.0},
+  bspline.transform(trafo_parDim3_geoDim4);
+  auto xi  = iganet::utils::to_tensorArray<real_t>({0.0, 0.1, 0.2, 0.5, 0.75, 0.9, 1.0},
                                                    {0.0, 0.1, 0.2, 0.5, 0.75, 0.9, 1.0},
                                                    {0.0, 0.1, 0.2, 0.5, 0.75, 0.9, 1.0}, options);
   test_bspline_eval(bspline, xi, 1e-10);
 }
 
-TEST(BSpline, NonUniformBSpline_eval_parDim4_geoDim1_degrees2222_double)
+TEST_F(BSplineTest, NonUniformBSpline_eval_parDim4_geoDim1_degrees2222)
 {
-  iganet::Options<double> options;
-  iganet::NonUniformBSpline<double, 1, 2, 2, 2, 2> bspline( {{{0.0, 0.0, 0.0, 0.5, 1.0, 1.0, 1.0},
+  iganet::NonUniformBSpline<real_t, 1, 2, 2, 2, 2> bspline( {{{0.0, 0.0, 0.0, 0.5, 1.0, 1.0, 1.0},
                                                               {0.0, 0.0, 0.0, 0.5, 1.0, 1.0, 1.0},
                                                               {0.0, 0.0, 0.0, 0.5, 1.0, 1.0, 1.0},
                                                               {0.0, 0.0, 0.0, 0.5, 1.0, 1.0, 1.0}}},
     iganet::init::zeros, options);
-  bspline.transform(trafo_parDim4_geoDim1_double);
-  auto xi  = iganet::utils::to_tensorArray<double>({0.0, 0.1, 0.2, 0.5, 0.75, 0.9, 1.0},
+  bspline.transform(trafo_parDim4_geoDim1);
+  auto xi  = iganet::utils::to_tensorArray<real_t>({0.0, 0.1, 0.2, 0.5, 0.75, 0.9, 1.0},
                                                    {0.0, 0.1, 0.2, 0.5, 0.75, 0.9, 1.0},
                                                    {0.0, 0.1, 0.2, 0.5, 0.75, 0.9, 1.0},
                                                    {0.0, 0.1, 0.2, 0.5, 0.75, 0.9, 1.0}, options);
   test_bspline_eval(bspline, xi, 1e-12);
 }
 
-TEST(BSpline, NonUniformBSpline_eval_parDim4_geoDim1_degrees2463_double)
+TEST_F(BSplineTest, NonUniformBSpline_eval_parDim4_geoDim1_degrees2463)
 {
-  iganet::Options<double> options;
-  iganet::NonUniformBSpline<double, 1, 2, 4, 6, 3> bspline( {{{0.0, 0.0, 0.0, 0.5, 1.0, 1.0, 1.0},
+  iganet::NonUniformBSpline<real_t, 1, 2, 4, 6, 3> bspline( {{{0.0, 0.0, 0.0, 0.5, 1.0, 1.0, 1.0},
                                                               {0.0, 0.0, 0.0, 0.0, 0.0, 0.5, 1.0, 1.0, 1.0, 1.0, 1.0},
                                                               {0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.5, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0},
                                                               {0.0, 0.0, 0.0, 0.0, 0.5, 1.0, 1.0, 1.0, 1.0}}},
     iganet::init::zeros, options);
-  bspline.transform(trafo_parDim4_geoDim1_double);
-  auto xi  = iganet::utils::to_tensorArray<double>({0.0, 0.1, 0.2, 0.5, 0.75, 0.9, 1.0},
+  bspline.transform(trafo_parDim4_geoDim1);
+  auto xi  = iganet::utils::to_tensorArray<real_t>({0.0, 0.1, 0.2, 0.5, 0.75, 0.9, 1.0},
                                                    {0.0, 0.1, 0.2, 0.5, 0.75, 0.9, 1.0},
                                                    {0.0, 0.1, 0.2, 0.5, 0.75, 0.9, 1.0},
                                                    {0.0, 0.1, 0.2, 0.5, 0.75, 0.9, 1.0}, options);
   test_bspline_eval(bspline, xi, 1e-12);
 }
 
-TEST(BSpline, NonUniformBSpline_eval_parDim4_geoDim2_degrees2222_double)
+TEST_F(BSplineTest, NonUniformBSpline_eval_parDim4_geoDim2_degrees2222)
 {
-  iganet::Options<double> options;
-  iganet::NonUniformBSpline<double, 2, 2, 2, 2, 2> bspline( {{{0.0, 0.0, 0.0, 0.5, 1.0, 1.0, 1.0},
+  iganet::NonUniformBSpline<real_t, 2, 2, 2, 2, 2> bspline( {{{0.0, 0.0, 0.0, 0.5, 1.0, 1.0, 1.0},
                                                               {0.0, 0.0, 0.0, 0.5, 1.0, 1.0, 1.0},
                                                               {0.0, 0.0, 0.0, 0.5, 1.0, 1.0, 1.0},
                                                               {0.0, 0.0, 0.0, 0.5, 1.0, 1.0, 1.0}}},
     iganet::init::zeros, options);
-  bspline.transform(trafo_parDim4_geoDim2_double);
-  auto xi  = iganet::utils::to_tensorArray<double>({0.0, 0.1, 0.2, 0.5, 0.75, 0.9, 1.0},
+  bspline.transform(trafo_parDim4_geoDim2);
+  auto xi  = iganet::utils::to_tensorArray<real_t>({0.0, 0.1, 0.2, 0.5, 0.75, 0.9, 1.0},
                                                    {0.0, 0.1, 0.2, 0.5, 0.75, 0.9, 1.0},
                                                    {0.0, 0.1, 0.2, 0.5, 0.75, 0.9, 1.0},
                                                    {0.0, 0.1, 0.2, 0.5, 0.75, 0.9, 1.0}, options);
   test_bspline_eval(bspline, xi, 1e-12);
 }
 
-TEST(BSpline, NonUniformBSpline_eval_parDim4_geoDim2_degrees2463_double)
+TEST_F(BSplineTest, NonUniformBSpline_eval_parDim4_geoDim2_degrees2463)
 {
-  iganet::Options<double> options;
-  iganet::NonUniformBSpline<double, 2, 2, 4, 6, 3> bspline( {{{0.0, 0.0, 0.0, 0.5, 1.0, 1.0, 1.0},
+  iganet::NonUniformBSpline<real_t, 2, 2, 4, 6, 3> bspline( {{{0.0, 0.0, 0.0, 0.5, 1.0, 1.0, 1.0},
                                                               {0.0, 0.0, 0.0, 0.0, 0.0, 0.5, 1.0, 1.0, 1.0, 1.0, 1.0},
                                                               {0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.5, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0},
                                                               {0.0, 0.0, 0.0, 0.0, 0.5, 1.0, 1.0, 1.0, 1.0}}},
     iganet::init::zeros, options);
-  bspline.transform(trafo_parDim4_geoDim2_double);
-  auto xi  = iganet::utils::to_tensorArray<double>({0.0, 0.1, 0.2, 0.5, 0.75, 0.9, 1.0},
+  bspline.transform(trafo_parDim4_geoDim2);
+  auto xi  = iganet::utils::to_tensorArray<real_t>({0.0, 0.1, 0.2, 0.5, 0.75, 0.9, 1.0},
                                                    {0.0, 0.1, 0.2, 0.5, 0.75, 0.9, 1.0},
                                                    {0.0, 0.1, 0.2, 0.5, 0.75, 0.9, 1.0},
                                                    {0.0, 0.1, 0.2, 0.5, 0.75, 0.9, 1.0}, options);
   test_bspline_eval(bspline, xi, 1e-12);
 }
 
-TEST(BSpline, NonUniformBSpline_eval_parDim4_geoDim3_degrees2222_double)
+TEST_F(BSplineTest, NonUniformBSpline_eval_parDim4_geoDim3_degrees2222)
 {
-  iganet::Options<double> options;
-  iganet::NonUniformBSpline<double, 3, 2, 2, 2, 2> bspline( {{{0.0, 0.0, 0.0, 0.5, 1.0, 1.0, 1.0},
+  iganet::NonUniformBSpline<real_t, 3, 2, 2, 2, 2> bspline( {{{0.0, 0.0, 0.0, 0.5, 1.0, 1.0, 1.0},
                                                               {0.0, 0.0, 0.0, 0.5, 1.0, 1.0, 1.0},
                                                               {0.0, 0.0, 0.0, 0.5, 1.0, 1.0, 1.0},
                                                               {0.0, 0.0, 0.0, 0.5, 1.0, 1.0, 1.0}}},
     iganet::init::zeros, options);
-  bspline.transform(trafo_parDim4_geoDim3_double);
-  auto xi  = iganet::utils::to_tensorArray<double>({0.0, 0.1, 0.2, 0.5, 0.75, 0.9, 1.0},
+  bspline.transform(trafo_parDim4_geoDim3);
+  auto xi  = iganet::utils::to_tensorArray<real_t>({0.0, 0.1, 0.2, 0.5, 0.75, 0.9, 1.0},
                                                    {0.0, 0.1, 0.2, 0.5, 0.75, 0.9, 1.0},
                                                    {0.0, 0.1, 0.2, 0.5, 0.75, 0.9, 1.0},
                                                    {0.0, 0.1, 0.2, 0.5, 0.75, 0.9, 1.0}, options);
   test_bspline_eval(bspline, xi, 1e-12);
 }
 
-TEST(BSpline, NonUniformBSpline_eval_parDim4_geoDim3_degrees2463_double)
+TEST_F(BSplineTest, NonUniformBSpline_eval_parDim4_geoDim3_degrees2463)
 {
-  iganet::Options<double> options;
-  iganet::NonUniformBSpline<double, 3, 2, 4, 6, 3> bspline( {{{0.0, 0.0, 0.0, 0.5, 1.0, 1.0, 1.0},
+  iganet::NonUniformBSpline<real_t, 3, 2, 4, 6, 3> bspline( {{{0.0, 0.0, 0.0, 0.5, 1.0, 1.0, 1.0},
                                                               {0.0, 0.0, 0.0, 0.0, 0.0, 0.5, 1.0, 1.0, 1.0, 1.0, 1.0},
                                                               {0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.5, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0},
                                                               {0.0, 0.0, 0.0, 0.0, 0.5, 1.0, 1.0, 1.0, 1.0}}},
     iganet::init::zeros, options);
-  bspline.transform(trafo_parDim4_geoDim3_double);
-  auto xi  = iganet::utils::to_tensorArray<double>({0.0, 0.1, 0.2, 0.5, 0.75, 0.9, 1.0},
+  bspline.transform(trafo_parDim4_geoDim3);
+  auto xi  = iganet::utils::to_tensorArray<real_t>({0.0, 0.1, 0.2, 0.5, 0.75, 0.9, 1.0},
                                                    {0.0, 0.1, 0.2, 0.5, 0.75, 0.9, 1.0},
                                                    {0.0, 0.1, 0.2, 0.5, 0.75, 0.9, 1.0},
                                                    {0.0, 0.1, 0.2, 0.5, 0.75, 0.9, 1.0}, options);
   test_bspline_eval(bspline, xi, 1e-12);
 }
 
-TEST(BSpline, NonUniformBSpline_eval_parDim4_geoDim4_degrees2222_double)
+TEST_F(BSplineTest, NonUniformBSpline_eval_parDim4_geoDim4_degrees2222)
 {
-  iganet::Options<double> options;
-  iganet::NonUniformBSpline<double, 4, 2, 2, 2, 2> bspline( {{{0.0, 0.0, 0.0, 0.5, 1.0, 1.0, 1.0},
+  iganet::NonUniformBSpline<real_t, 4, 2, 2, 2, 2> bspline( {{{0.0, 0.0, 0.0, 0.5, 1.0, 1.0, 1.0},
                                                               {0.0, 0.0, 0.0, 0.5, 1.0, 1.0, 1.0},
                                                               {0.0, 0.0, 0.0, 0.5, 1.0, 1.0, 1.0},
                                                               {0.0, 0.0, 0.0, 0.5, 1.0, 1.0, 1.0}}},
     iganet::init::zeros, options);
-  bspline.transform(trafo_parDim4_geoDim4_double);
-  auto xi  = iganet::utils::to_tensorArray<double>({0.0, 0.1, 0.2, 0.5, 0.75, 0.9, 1.0},
+  bspline.transform(trafo_parDim4_geoDim4);
+  auto xi  = iganet::utils::to_tensorArray<real_t>({0.0, 0.1, 0.2, 0.5, 0.75, 0.9, 1.0},
                                                    {0.0, 0.1, 0.2, 0.5, 0.75, 0.9, 1.0},
                                                    {0.0, 0.1, 0.2, 0.5, 0.75, 0.9, 1.0},
                                                    {0.0, 0.1, 0.2, 0.5, 0.75, 0.9, 1.0}, options);
   test_bspline_eval(bspline, xi, 1e-12);
 }
 
-TEST(BSpline, NonUniformBSpline_eval_parDim4_geoDim4_degrees2463_double)
+TEST_F(BSplineTest, NonUniformBSpline_eval_parDim4_geoDim4_degrees2463)
 {
-  iganet::Options<double> options;
-  iganet::NonUniformBSpline<double, 4, 2, 4, 6, 3> bspline( {{{0.0, 0.0, 0.0, 0.5, 1.0, 1.0, 1.0},
+  iganet::NonUniformBSpline<real_t, 4, 2, 4, 6, 3> bspline( {{{0.0, 0.0, 0.0, 0.5, 1.0, 1.0, 1.0},
                                                               {0.0, 0.0, 0.0, 0.0, 0.0, 0.5, 1.0, 1.0, 1.0, 1.0, 1.0},
                                                               {0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.5, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0},
                                                               {0.0, 0.0, 0.0, 0.0, 0.5, 1.0, 1.0, 1.0, 1.0}}},
     iganet::init::zeros, options);
-  bspline.transform(trafo_parDim4_geoDim4_double);
-  auto xi  = iganet::utils::to_tensorArray<double>({0.0, 0.1, 0.2, 0.5, 0.75, 0.9, 1.0},
+  bspline.transform(trafo_parDim4_geoDim4);
+  auto xi  = iganet::utils::to_tensorArray<real_t>({0.0, 0.1, 0.2, 0.5, 0.75, 0.9, 1.0},
                                                    {0.0, 0.1, 0.2, 0.5, 0.75, 0.9, 1.0},
                                                    {0.0, 0.1, 0.2, 0.5, 0.75, 0.9, 1.0},
                                                    {0.0, 0.1, 0.2, 0.5, 0.75, 0.9, 1.0}, options);

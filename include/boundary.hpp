@@ -749,33 +749,36 @@ namespace iganet {
     /// @brief Returns the values of the boundary spline objects in
     /// the points `xi` @{
     template<deriv deriv = deriv::func,
+             bool memory_optimized = false,
              size_t... Is, typename... Xi>
     inline auto eval_(std::index_sequence<Is...>,
                       const std::tuple<Xi...>& xi) const
     {
-      return std::tuple(std::get<Is>(BoundaryCore::bdr_).template eval<deriv>(std::get<Is>(xi))...);
+      return std::tuple(std::get<Is>(BoundaryCore::bdr_).template eval<deriv, memory_optimized>(std::get<Is>(xi))...);
     }
     
     template<deriv deriv = deriv::func,
+             bool memory_optimized = false,
              size_t... Is, typename... Xi, typename... Indices>
     inline auto eval_(std::index_sequence<Is...>,
                       const std::tuple<Xi...>& xi,
                       const std::tuple<Indices...>& indices) const
     {
-      return std::tuple(std::get<Is>(BoundaryCore::bdr_).template eval<deriv>(std::get<Is>(xi),
-                                                                              std::get<Is>(indices))...);
+      return std::tuple(std::get<Is>(BoundaryCore::bdr_).template eval<deriv, memory_optimized>(std::get<Is>(xi),
+                                                                                                std::get<Is>(indices))...);
     }
     
     template<deriv deriv = deriv::func,
+             bool memory_optimized = false,
              size_t... Is, typename... Xi, typename... Indices, typename... Coeff_Indices>
     inline auto eval_(std::index_sequence<Is...>,
                       const std::tuple<Xi...>& xi,
                       const std::tuple<Indices...>& indices,
                       const std::tuple<Coeff_Indices...>& coeff_indices) const
     {
-      return std::tuple(std::get<Is>(BoundaryCore::bdr_).template eval<deriv>(std::get<Is>(xi),
-                                                                              std::get<Is>(indices),
-                                                                              std::get<Is>(coeff_indices))...);
+      return std::tuple(std::get<Is>(BoundaryCore::bdr_).template eval<deriv, memory_optimized>(std::get<Is>(xi),
+                                                                                                std::get<Is>(indices),
+                                                                                                std::get<Is>(coeff_indices))...);
     }
     /// @}
 
@@ -822,29 +825,32 @@ namespace iganet {
     /// @brief Returns the values of the boundary spline spline
     /// object's basis functions in the points `xi`
     /// @{
-    template<deriv deriv = deriv::func, size_t... Is, typename... Xi>
+    template<deriv deriv = deriv::func,
+             bool memory_optimized = false,
+             size_t... Is, typename... Xi>
     inline auto eval_basfunc_(std::index_sequence<Is...>, const std::tuple<Xi...>& xi) const
     {
-      return std::tuple(std::get<Is>(BoundaryCore::bdr_).eval_basfunc(std::get<Is>(xi))...);
+      return std::tuple(std::get<Is>(BoundaryCore::bdr_).template eval_basfunc<memory_optimized>(std::get<Is>(xi))...);
     }
 
     template<deriv deriv = deriv::func,
+             bool memory_optimized = false, 
              size_t... Is, typename... Xi, typename... Indices>
     inline auto eval_basfunc_(std::index_sequence<Is...>,
                               const std::tuple<Xi...>& xi,
                               const std::tuple<Indices...>& indices) const
     {
-      return std::tuple(std::get<Is>(BoundaryCore::bdr_).eval_basfunc(std::get<Is>(xi), std::get<Is>(indices))...);
+      return std::tuple(std::get<Is>(BoundaryCore::bdr_).template eval_basfunc<memory_optimized>(std::get<Is>(xi), std::get<Is>(indices))...);
     }
     /// @}
 
     /// @brief Returns the indices of the boundary spline object's
     /// coefficients corresponding to the knot indices `indices`
-    template<size_t... Is, typename... Indices>
+    template<bool memory_optimized = false, size_t... Is, typename... Indices>
     inline auto find_coeff_indices_(std::index_sequence<Is...>,
                                     const std::tuple<Indices...>& indices) const
     {
-      return std::tuple(std::get<Is>(BoundaryCore::bdr_).find_coeff_indices(std::get<Is>(indices))...);
+      return std::tuple(std::get<Is>(BoundaryCore::bdr_).template find_coeff_indices<memory_optimized>(std::get<Is>(indices))...);
     }
 
     /// @brief Returns the boundary spline object with uniformly
@@ -891,27 +897,31 @@ namespace iganet {
   public:
     /// @brief Returns the values of the spline objects in the points `xi`
     /// @{
-    template<deriv deriv = deriv::func, typename... Xi>
+    template<deriv deriv = deriv::func,
+             bool memory_optimized = false,
+             typename... Xi>
     inline auto eval(const std::tuple<Xi...>& xi) const
     {
-      return eval_<deriv>(std::make_index_sequence<BoundaryCore::sides()>{}, xi);
+      return eval_<deriv, memory_optimized>(std::make_index_sequence<BoundaryCore::sides()>{}, xi);
     }
     
     template<deriv deriv = deriv::func,
+             bool memory_optimized = false,
              typename... Xi, typename... Indices>
     inline auto eval(const std::tuple<Xi...>& xi,
                      const std::tuple<Indices...>& indices) const
     {
-      return eval_<deriv>(std::make_index_sequence<BoundaryCore::sides()>{}, xi, indices);
+      return eval_<deriv, memory_optimized>(std::make_index_sequence<BoundaryCore::sides()>{}, xi, indices);
     }
     
     template<deriv deriv = deriv::func,
+             bool memory_optimized = false,
              typename... Xi, typename... Indices, typename... Coeff_Indices>
     inline auto eval(const std::tuple<Xi...>& xi,
                      const std::tuple<Indices...>& indices,
                      const std::tuple<Coeff_Indices...>& coeff_indices) const
     {
-      return eval_<deriv>(std::make_index_sequence<BoundaryCore::sides()>{}, xi, indices, coeff_indices);
+      return eval_<deriv, memory_optimized>(std::make_index_sequence<BoundaryCore::sides()>{}, xi, indices, coeff_indices);
     }
     /// @}
     
@@ -947,26 +957,30 @@ namespace iganet {
 
     /// @brief Returns the values of the spline objects' basis
     /// functions in the points `xi` @{
-    template<deriv deriv = deriv::func, typename... Xi>
+    template<deriv deriv = deriv::func,
+             bool memory_optimized = false, 
+             typename... Xi>
     inline auto eval_basfunc(const std::tuple<Xi...>& xi) const
     {
-      return eval_basfunc_(std::make_index_sequence<BoundaryCore::sides()>{}, xi);
+      return eval_basfunc_<memory_optimized>(std::make_index_sequence<BoundaryCore::sides()>{}, xi);
     }
 
-    template<deriv deriv = deriv::func, typename... Xi, typename... Indices>
+    template<deriv deriv = deriv::func,
+             bool memory_optimized = false, 
+             typename... Xi, typename... Indices>
     inline auto eval_basfunc(const std::tuple<Xi...>& xi,
                              const std::tuple<Indices...>& indices) const
     {
-      return eval_basfunc_(std::make_index_sequence<BoundaryCore::sides()>{}, xi, indices);
+      return eval_basfunc_<memory_optimized>(std::make_index_sequence<BoundaryCore::sides()>{}, xi, indices);
     }
     /// @}
 
     /// @brief Returns the indices of the spline objects'
     /// coefficients corresponding to the knot indices `indices`
-    template<typename... Indices>
+    template<bool memory_optimized = false, typename... Indices>
     inline auto find_coeff_indices(const std::tuple<Indices...>& indices) const
     {
-      return find_coeff_indices_(std::make_index_sequence<BoundaryCore::sides()>{}, indices);
+      return find_coeff_indices_<memory_optimized>(std::make_index_sequence<BoundaryCore::sides()>{}, indices);
     }
 
     /// @brief Returns the spline objects with uniformly refined
