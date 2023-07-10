@@ -18,7 +18,6 @@
 #include <pybind11_json/pybind11_json.hpp>
 #include <torch/extension.h>
 
-#include <boost/preprocessor/cat.hpp>
 #include <boost/preprocessor/seq/for_each.hpp>
 
 #include <pyconfig.hpp>
