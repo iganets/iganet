@@ -265,14 +265,10 @@ namespace iganet {
         return result;
       }
 
-      /// @brief Returns the (generalized) inverse of the block tensor
+      /// @brief Returns the inverse of the block tensor
       ///
-      /// This function computes the (generalized) inverse of the
-      /// block tensor. For square matrices it computes the regular
-      /// inverse matrix based on explicit iversion formulas assuming
-      /// that the matrix is invertible. For rectangular matrices it
-      /// computes the generalized inverse i.e. \f$(A^T A)^{-1} A^T\f$.
-      inline auto ginv() const
+      /// This function computes the inverse of the block tensor.
+      inline auto inv() const
       {      
         if constexpr (Rows == 1 && Cols == 1) {
           BlockTensor<T, Rows, Cols> result;
@@ -283,7 +279,7 @@ namespace iganet {
           // DET  =  a11a22-a21a12
           auto det = torch::mul(*Base::data_[0], *Base::data_[3])
             - torch::mul(*Base::data_[1], *Base::data_[2]);
-        
+          
           BlockTensor<T, Rows, Cols> result;
           result[0] = std::make_shared<T>(torch::div(*Base::data_[3], det));
           result[1] = std::make_shared<T>(torch::div(*Base::data_[2],-det));
@@ -330,21 +326,34 @@ namespace iganet {
           result[8] = std::make_shared<T>(torch::div(a33, det));
           return result;
         }
+        else {
+          throw std::runtime_error("Unsupported block tensor dimension");
+          return *this;
+        }
+      }
+      
+      /// @brief Returns the (generalized) inverse of the block tensor
+      ///
+      /// This function computes the (generalized) inverse of the
+      /// block tensor. For square matrices it computes the regular
+      /// inverse matrix based on explicit iversion formulas assuming
+      /// that the matrix is invertible. For rectangular matrices it
+      /// computes the generalized inverse i.e. \f$(A^T A)^{-1} A^T\f$.
+      inline auto ginv() const
+      {      
+        if constexpr (Rows == Cols)
+          return this->inv();        
         else
           // Compute the generalized inverse, i.e. (A^T A)^{-1} A^T
-          return (this->tr() * (*this)).ginv() * this->tr();
+          return (this->tr() * (*this)).inv() * this->tr();
       }
 
-      /// @brief Returns the transpose of the (generalized) inverse of
-      /// the block tensor
+      /// @brief Returns the transpose of the inverse of the block
+      /// tensor
       ///
       /// This function computes the transpose of the (generalized)
-      /// inverse of the block tensor. For square matrices it computes
-      /// the regular inverse matrix based on explicit iversion formulas
-      /// assuming that the matrix is invertible and transposed it
-      /// afterwards. For rectangular matrices it computes the
-      /// generalized inverse i.e. \f$((A^T A)^{-1} A^T)^T = A (A^T A)^{-T}\f$.
-      inline auto ginvtr() const
+      /// inverse of the block tensor.
+      inline auto invtr() const
       {      
         if constexpr (Rows == 1 && Cols == 1) {
           BlockTensor<T, Cols, Rows> result;
@@ -402,11 +411,30 @@ namespace iganet {
           result[8] = std::make_shared<T>(torch::div(a33, det));
           return result;
         }
-        else
-          // Compute the transpose of the generalized inverse, i.e. A (A^T A)^{-T}
-          return (*this) * (this->tr() * (*this)).ginvtr();
+        else {
+          throw std::runtime_error("Unsupported block tensor dimension");
+          return *this;
+        }
       }
 
+      /// @brief Returns the transpose of the (generalized) inverse of
+      /// the block tensor
+      ///
+      /// This function computes the transpose of the (generalized)
+      /// inverse of the block tensor. For square matrices it computes
+      /// the regular inverse matrix based on explicit iversion formulas
+      /// assuming that the matrix is invertible and transposed it
+      /// afterwards. For rectangular matrices it computes the
+      /// generalized inverse i.e. \f$((A^T A)^{-1} A^T)^T = A (A^T A)^{-T}\f$.
+      inline auto ginvtr() const
+      {      
+        if constexpr (Rows == Cols)
+          return this->invtr();        
+        else
+          // Compute the transpose of the generalized inverse, i.e. A (A^T A)^{-T}
+          return (*this) * (this->tr() * (*this)).invtr();
+      }
+      
       /// Returns the trace of the block tensor
       inline auto trace() const
       {
