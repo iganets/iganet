@@ -37,9 +37,15 @@
 #endif
 
 /// @brief Sequence of expression (parametric coordinates)
+///
+/// For each item in this sequence corresponding expressions will be
+/// generated for function spaces, boundary spaces, etc.
 #define GENERATE_EXPR_SEQ (grad)(hess)(jac)
 
 /// @brief Sequence of expression (physical coordinates)
+///
+/// For each item in this sequence corresponding expressions will be
+/// generated for function spaces, boundary spaces, etc.
 #define GENERATE_IEXPR_SEQ (igrad)(ihess)(ijac)
 
 namespace iganet {
@@ -302,11 +308,16 @@ namespace iganet {
       dt4dz4 = 4400, /*!< eigths mixed derivative in t- and z-direction  */
     };
 
-  inline auto operator+(deriv lhs, deriv rhs)
+  inline constexpr auto operator+(deriv lhs, deriv rhs)
   {
     return deriv( static_cast<short_t>(lhs)+static_cast<short_t>(rhs) );
   }
 
+  inline constexpr auto operator^(deriv lhs, short_t rhs)
+  {
+    return deriv( static_cast<short_t>(lhs) * rhs );
+  }
+  
   /// @brief Tensor-product uniform B-spline (core functionality)
   ///
   /// This class implements the core functionality of all B-spline
@@ -1660,8 +1671,12 @@ namespace iganet {
     template<deriv deriv = deriv::func, bool memory_optimized = false>
     inline auto eval_basfunc(const torch::Tensor& xi) const
     {
-      if constexpr (parDim_ == 0)
-        return torch::ones_like(coeffs_[0]);
+      if constexpr (parDim_ == 0) {
+        if constexpr (deriv == deriv::func)
+          return torch::ones_like(coeffs_[0]);
+        else
+          return torch::zeros_like(coeffs_[0]);
+      }
       else
         return eval_basfunc<deriv, memory_optimized>(utils::TensorArray1({xi}));
     }
@@ -1669,8 +1684,12 @@ namespace iganet {
     template<deriv deriv = deriv::func, bool memory_optimized = false>
     inline auto eval_basfunc(const torch::Tensor& xi, const torch::Tensor& indices) const
     {
-      if constexpr (parDim_ == 0)
-        return torch::ones_like(coeffs_[0]);
+      if constexpr (parDim_ == 0) {
+        if constexpr (deriv == deriv::func)
+          return torch::ones_like(coeffs_[0]);
+        else
+          return torch::zeros_like(coeffs_[0]);
+      }
       else
         return eval_basfunc<deriv, memory_optimized>(utils::TensorArray1({xi}),
                                                      utils::TensorArray1({indices}));
@@ -1679,8 +1698,12 @@ namespace iganet {
     template<deriv deriv = deriv::func, bool memory_optimized = false>
     inline auto eval_basfunc(const std::array<torch::Tensor, parDim_>& xi) const
     {
-      if constexpr (parDim_ == 0)
-        return torch::ones_like(coeffs_[0]);
+      if constexpr (parDim_ == 0) {
+        if constexpr (deriv == deriv::func)
+          return torch::ones_like(coeffs_[0]);
+        else
+          return torch::zeros_like(coeffs_[0]);
+      }
       else
         return eval_basfunc<deriv, memory_optimized>(xi, find_knot_indices(xi));
     }
@@ -2111,9 +2134,7 @@ namespace iganet {
           if (strcmp(node.attribute("type").value(), "BSpline") == 0 &&
               node.attribute("id").as_int()  == id) {
             
-          }
-        
-        std::cout << "done\n";
+          }       
       }
       
       // >1D parametric dimension
@@ -2126,30 +2147,22 @@ namespace iganet {
           if (geo.attribute("type").value() == std::string("TensorBSpline").append(std::to_string(parDim_)) &&
               geo.attribute("id").as_int()  == id) {
 
-            std::cout << "Geometry found\n";
-            
             // Check for "TensorBSplineBasos<parDim>"
             if (pugi::xml_node bases = geo.child("Basis");
                 bases.attribute("type").value() == std::string("TensorBSplineBasis").append(std::to_string(parDim_))) {
 
-              std::cout << "Basis found\n";
-              
               // Loop through all basis nodes
               for (pugi::xml_node basis : bases.children("Basis")) {
                 
                 // Check for "BSplineBasis"
                 if (basis.attribute("type").value() == std::string("BSplineBasis")) {
 
-                  std::cout << "BSplineBasis found\n";
-                  
                   short_t index = basis.attribute("index").as_int();
                   
                   // Check for "KnotVector"
                   if (pugi::xml_node kv = basis.child("KnotVector");
                       kv.attribute("degree").as_int() == degrees_[index]) {
 
-                    std::cout << "KnotVector found\n";
-                    
                     std::string values = kv.text().get(); int64_t i = 0;
                     auto [knots_cpu, knots_accessor] = utils::to_tensorAccessor<value_type, 1>(knots_[index], torch::kCPU);
                     
@@ -2170,8 +2183,6 @@ namespace iganet {
           // Check for "coefs"
           if (pugi::xml_node coefs = geo.child("coefs")) {
 
-            std::cout << "coefs found\n";
-            
             std::string values = coefs.text().get(); int64_t i = 0;
             auto [coeffs_cpu, coeffs_accessors] = utils::to_tensorAccessor<value_type, 1>(coeffs_, torch::kCPU);
             
@@ -3227,11 +3238,10 @@ namespace iganet {
     /// coefficient vectors
     NonUniformBSplineCore& insert_knots(const std::array<torch::Tensor, Base::parDim_>& knots)
     {
-      std::cout << "FIRST LINE\n";
       std::array<int64_t, Base::parDim_> nknots(Base::nknots_);
       std::array<int64_t, Base::parDim_> ncoeffs(Base::ncoeffs_);
       std::array<torch::Tensor, Base::parDim_> knots_, knots_indices;
-      std::cout << "BEFORE\n";
+
       // Update number of knots and coefficients and generate new knot
       // vectors
       for (short_t i = 0; i < Base::parDim_; ++i) {
@@ -3239,7 +3249,7 @@ namespace iganet {
         ncoeffs[i] += knots[i].numel();
         knots_[i] = std::get<0>(torch::sort(torch::cat({Base::knots_[i], knots[i]})));
       }
-      std::cout << "AFTER\n";
+
       // The updated knot vectors have lengths \f$m_d+p_d+1\f$, where
       // \f$m_d\f$ is the number of coefficients after the update. To
       // update the coefficients using the Oslo algorithm (Algorithm
