@@ -73,6 +73,9 @@ foreach(GEODIM RANGE 1 4)
     string(REPLACE "," "_" SUFFIX ${SUFFIX})   
     list(APPEND init_splines "init_UniformBSpline${SUFFIX}")
 
+    string(REPLACE "," ";" PARDIM ${DEGREES})
+    list(LENGTH PARDIM PARDIM)
+    
     configure_file(${CMAKE_CURRENT_SOURCE_DIR}/pybspline.cxx.in
       ${CMAKE_CURRENT_BINARY_DIR}/pybspline${SUFFIX}.cxx @ONLY)
   endforeach()

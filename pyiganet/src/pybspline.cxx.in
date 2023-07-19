@@ -170,21 +170,30 @@ void init_UniformBSpline@SUFFIX@(py::module_ &m) {
          "Returns the value of the B-spline object in the points xi")
 
     // Evaluate B-splines
-#define SEQ (func)(dx1)
-    
+#define SEQ1 (func)(dx)(dx^2)(dx^3)(dx^4)
+#define SEQ2 (func)(dx)(dx^2)(dx^3)(dx^4)(dy)(dy^2)(dy^3)(dy^4)
+#define SEQ3 (func)(dx)(dx^2)(dx^3)(dx^4)(dy)(dy^2)(dy^3)(dy^4)(dz)(dz^2)(dz^3)(dz^4)
+#define SEQ4 (func)(dx)(dx^2)(dx^3)(dx^4)(dy)(dy^2)(dy^3)(dy^4)(dz)(dz^2)(dz^3)(dz^4)(dt)(dt^2)(dt^3)(dt^4)
+
+#define SEQ SEQ@PARDIM@
     .def("eval",
          [](const iganet::UniformBSpline<pyiganet::real_t,@GEODIM@, @DEGREES@>& self,
             const torch::Tensor& xi,
             const enum iganet::deriv deriv)
          {          
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wswitch"
+
            switch (deriv) {
-             
+           
 #define    MACRO(r, data, elem)                                    \
              case (iganet::deriv::elem):                           \
                return self.eval<iganet::deriv::elem>(xi);
              
              BOOST_PP_SEQ_FOR_EACH(MACRO, _, SEQ)
 #undef     MACRO
+
+#pragma clang diagnostic pop
                
            default:
                throw std::runtime_error("Unsupported derivative");
@@ -200,14 +209,19 @@ void init_UniformBSpline@SUFFIX@(py::module_ &m) {
             iganet::UniformBSpline<pyiganet::real_t, @GEODIM@, @DEGREES@>::parDim()>& xi,
             const enum iganet::deriv deriv)         
          {          
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wswitch"
+
            switch (deriv) {
-             
+           
 #define    MACRO(r, data, elem)                                    \
              case (iganet::deriv::elem):                           \
                return self.eval<iganet::deriv::elem>(xi);
              
              BOOST_PP_SEQ_FOR_EACH(MACRO, _, SEQ)
 #undef     MACRO
+
+#pragma clang diagnostic pop
                
            default:
                throw std::runtime_error("Unsupported derivative");
@@ -225,14 +239,19 @@ void init_UniformBSpline@SUFFIX@(py::module_ &m) {
             iganet::UniformBSpline<pyiganet::real_t, @GEODIM@, @DEGREES@>::parDim()>& indices,
             const enum iganet::deriv deriv)         
          {          
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wswitch"
+
            switch (deriv) {
-             
+           
 #define    MACRO(r, data, elem)                                     \
              case (iganet::deriv::elem):                            \
                return self.eval<iganet::deriv::elem>(xi, indices);
              
              BOOST_PP_SEQ_FOR_EACH(MACRO, _, SEQ)
 #undef     MACRO
+
+#pragma clang diagnostic pop
                
            default:
                throw std::runtime_error("Unsupported derivative");
@@ -252,14 +271,19 @@ void init_UniformBSpline@SUFFIX@(py::module_ &m) {
             const torch::Tensor& coeff_indices,
             const enum iganet::deriv deriv)         
          {          
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wswitch"
+           
            switch (deriv) {
-             
+           
 #define    MACRO(r, data, elem)                                         \
              case (iganet::deriv::elem):                                \
                return self.eval<iganet::deriv::elem>(xi, indices, coeff_indices);
              
              BOOST_PP_SEQ_FOR_EACH(MACRO, _, SEQ)
 #undef     MACRO
+
+#pragma clang diagnostic pop
                
            default:
                throw std::runtime_error("Unsupported derivative");
