@@ -40,9 +40,9 @@ namespace iganet {
     inline auto make_shared(T&& arg)
     {
       if constexpr (is_shared_ptr<typename std::decay<T>::type>::value)
-        return std::forward<typename std::decay<T>::type>(std::move(arg));
+        return std::forward<typename std::decay<T>::type>(arg);
       else
-        return std::make_shared<typename std::decay<T>::type>(std::move(arg));
+        return std::make_shared<typename std::decay<T>::type>(std::forward<typename std::decay<T>::type>(arg));
     }
 
     /// @brief Forward declaration of BlockTensor
@@ -82,8 +82,8 @@ namespace iganet {
 
       /// @brief Constructor from variadic templates
       template<typename... Ts>
-      BlockTensorCore(Ts&&... data)
-        : data_({make_shared<Ts>(std::move(data))...})
+      explicit BlockTensorCore(Ts&&... data)
+        : data_({make_shared<Ts>(std::forward<Ts>(data))...})
       {}
 
       /// @brief Returns all dimensions as array
@@ -159,7 +159,7 @@ namespace iganet {
       inline T& set(std::size_t idx, Data&& data)
       {
         assert(0 <= idx && idx < (Dims*...));
-        data_[idx] = make_shared<Data>(std::move(data));
+        data_[idx] = make_shared<Data>(std::forward<Data>(data));
         return *data_[idx];
       }
 
@@ -251,7 +251,7 @@ namespace iganet {
       inline T& set(std::size_t row, std::size_t col, D&& data)
       {
         assert(0 <= row && row < Rows && 0 <= col && col < Cols);
-        Base::data_[Cols*row+col] = make_shared<D>(data);
+        Base::data_[Cols*row+col] = make_shared<D>(std::forward<D>(data));
         return *Base::data_[Cols*row+col];
       }
 
@@ -836,7 +836,7 @@ namespace iganet {
       template<typename D>
       inline T& set(std::size_t row, std::size_t col, std::size_t slice, D&& data)
       {
-        Base::data_[Rows*Cols*slice+Cols*row+col] = make_shared<D>(data);
+        Base::data_[Rows*Cols*slice+Cols*row+col] = make_shared<D>(std::forward<D>(data));
         return *Base::data_[Rows*Cols*slice+Cols*row+col];
       }
 
