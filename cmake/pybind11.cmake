@@ -16,8 +16,7 @@
 # PyBind11
 ########################################################################
 
-FetchContent_Declare(
-  pybind11
+FetchContent_Declare(pybind11
   URL https://github.com/pybind/pybind11/archive/refs/heads/master.zip
   FIND_PACKAGE_ARGS
   )
@@ -27,8 +26,7 @@ FetchContent_MakeAvailable(pybind11)
 # PyBind11_json
 ########################################################################
 
-FetchContent_Declare(
-  pybind11_json
+FetchContent_Declare(pybind11_json
   URL https://github.com/pybind/pybind11_json/archive/refs/heads/master.zip
   FIND_PACKAGE_ARGS
   )

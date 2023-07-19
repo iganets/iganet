@@ -17,8 +17,7 @@
 ########################################################################
 
 include(FetchContent)
-FetchContent_Declare(
-  boost_preprocessor
+FetchContent_Declare(boost_preprocessor
   URL https://github.com/boostorg/preprocessor/archive/refs/tags/boost-1.82.0.zip
   )
 

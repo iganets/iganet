@@ -17,8 +17,7 @@
 ########################################################################
 
 include(FetchContent)
-FetchContent_Declare(
-  matplotplusplus
+FetchContent_Declare(matplotplusplus
   URL https://github.com/alandefreitas/matplotplusplus/archive/refs/tags/v1.1.0.zip
   )
 

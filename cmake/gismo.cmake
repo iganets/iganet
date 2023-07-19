@@ -17,10 +17,9 @@
 ########################################################################
 
 include(FetchContent)
-FetchContent_Declare(
-  gismo
+FetchContent_Declare(gismo
   URL https://github.com/gismo/gismo/archive/refs/heads/stable.zip
-  PATCH_COMMAND     patch -p1 -N -d ${PROJECT_BINARY_DIR}/_deps/gismo-src < ${PROJECT_SOURCE_DIR}/cmake/gismo.patch
+  PATCH_COMMAND patch -p1 -N -d ${PROJECT_BINARY_DIR}/_deps/gismo-src < ${PROJECT_SOURCE_DIR}/cmake/gismo.patch
   )
 
 set(GISMO_BUILD_EXAMPLES 0 CACHE BOOL "")

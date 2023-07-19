@@ -17,8 +17,7 @@
 ########################################################################
 
 include(FetchContent)
-FetchContent_Declare(
-  popl
+FetchContent_Declare(popl
   URL https://github.com/badaix/popl/archive/refs/tags/v1.3.0.zip
   )
 
