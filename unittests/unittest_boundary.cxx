@@ -26,6 +26,26 @@ protected:
   iganet::Options<real_t> options;
 };
 
+TEST_F(BoundaryTest, Boundary_parDim1_geoDim1_degrees2)
+{
+  using iganet::deriv;
+  using BSpline_t = iganet::UniformBSpline<real_t, 1, 2>;
+  iganet::Boundary<BSpline_t> boundary({0}, iganet::init::greville, options);
+
+  std::cout << boundary << std::endl;
+}
+
+TEST_F(BoundaryTest, Boundary_parDim2_geoDim1_degrees23)
+{
+  using iganet::deriv;
+  using BSpline_t = iganet::UniformBSpline<real_t, 1, 2, 3>;
+  iganet::Boundary<BSpline_t> boundary({5, 5});
+
+  std::cout << boundary << std::endl;
+}
+
+
+
 int main(int argc, char **argv) {
   ::testing::InitGoogleTest(&argc, argv);
   iganet::init();

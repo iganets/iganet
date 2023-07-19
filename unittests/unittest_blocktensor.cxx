@@ -49,46 +49,84 @@ TEST(BlockTensor, BlockTensor_double)
   
   iganet::utils::BlockTensor<torch::Tensor, 1, 1> C( 5*torch::ones({5,5}) );
 
-  EXPECT_EQ(C.ginv(),
+  EXPECT_EQ(C.inv(),
             (iganet::utils::BlockTensor<torch::Tensor, 1, 1>( 0.2*torch::ones({5,5}))) );
 
-  EXPECT_EQ(C.ginvtr(), C.ginv().tr());
+  EXPECT_EQ(C.invtr(), C.inv().tr());
   
   iganet::utils::BlockTensor<torch::Tensor, 2, 2> D(   torch::ones({5,5}),
-                                                       2*torch::ones({5,5}),
-                                                       3*torch::ones({5,5}),
-                                                       4*torch::ones({5,5}));
+                                                     2*torch::ones({5,5}),
+                                                     3*torch::ones({5,5}),
+                                                     4*torch::ones({5,5}));
   
-  EXPECT_EQ(D.ginv(),
+  EXPECT_EQ(D.inv(),
             (iganet::utils::BlockTensor<torch::Tensor, 2, 2>( -2.0*torch::ones({5,5}),
-                                                              1.5*torch::ones({5,5}),
-                                                              1.0*torch::ones({5,5}),
+                                                               1.5*torch::ones({5,5}),
+                                                               1.0*torch::ones({5,5}),
                                                               -0.5*torch::ones({5,5}))) );
   
-  EXPECT_EQ(D.ginvtr(), D.ginv().tr());
+  EXPECT_EQ(D.invtr(), D.inv().tr());
   
-  iganet::utils::BlockTensor<torch::Tensor, 3, 3> E( 2*torch::ones({5,5}),
-                                                     torch::ones({5,5}),
-                                                     torch::zeros({5,5}),
-                                                     torch::ones({5,5}),
+  iganet::utils::BlockTensor<torch::Tensor, 3, 3> E(   torch::ones({5,5}),
                                                      2*torch::ones({5,5}),
-                                                     torch::ones({5,5}),
-                                                     torch::zeros({5,5}),
-                                                     torch::ones({5,5}),
-                                                     2*torch::ones({5,5}));
+                                                     3*torch::ones({5,5}),
+                                                       torch::zeros({5,5}),
+                                                       torch::ones({5,5}),
+                                                     4*torch::ones({5,5}),
+                                                     5*torch::ones({5,5}),
+                                                     6*torch::ones({5,5}),
+                                                       torch::zeros({5,5}));
 
-  EXPECT_EQ(E.ginv(),
-            (iganet::utils::BlockTensor<torch::Tensor, 3, 3>(  0.75*torch::ones({5,5}),
-                                                               -0.50*torch::ones({5,5}),
-                                                               0.25*torch::ones({5,5}),
-                                                               -0.50*torch::ones({5,5}),
-                                                               torch::ones({5,5}),
-                                                               -0.50*torch::ones({5,5}),
-                                                               0.25*torch::ones({5,5}),
-                                                               -0.50*torch::ones({5,5}),
-                                                               0.75*torch::ones({5,5}))) );
+  EXPECT_EQ(E.inv(),
+            (iganet::utils::BlockTensor<torch::Tensor, 3, 3>( -24*torch::ones({5,5}),
+                                                               18*torch::ones({5,5}),
+                                                                5*torch::ones({5,5}),
+                                                               20*torch::ones({5,5}),
+                                                              -15*torch::ones({5,5}),
+                                                              - 4*torch::ones({5,5}),
+                                                              - 5*torch::ones({5,5}),
+                                                                4*torch::ones({5,5}),
+                                                                  torch::ones({5,5}))) );
   
-  EXPECT_EQ(E.ginvtr(), E.ginv().tr());
+  EXPECT_EQ(E.invtr(), E.inv().tr());
+
+  iganet::utils::BlockTensor<torch::Tensor, 4, 4> F( 5*torch::ones({5,5}),
+                                                     6*torch::ones({5,5}),
+                                                     6*torch::ones({5,5}),
+                                                     8*torch::ones({5,5}),
+                                                     2*torch::ones({5,5}),
+                                                     2*torch::ones({5,5}),
+                                                     2*torch::ones({5,5}),
+                                                     8*torch::ones({5,5}),
+                                                     6*torch::ones({5,5}),
+                                                     6*torch::ones({5,5}),
+                                                     2*torch::ones({5,5}),
+                                                     8*torch::ones({5,5}),
+                                                     2*torch::ones({5,5}),
+                                                     3*torch::ones({5,5}),
+                                                     6*torch::ones({5,5}),
+                                                     7*torch::ones({5,5}));
+
+  EXPECT_EQ(F.inv(),
+            (iganet::utils::BlockTensor<torch::Tensor, 4, 4>( -17.00*torch::ones({5,5}),
+                                                              - 9.00*torch::ones({5,5}),
+                                                               12.00*torch::ones({5,5}),
+                                                               16.00*torch::ones({5,5}),
+                                                               17.00*torch::ones({5,5}),
+                                                                8.75*torch::ones({5,5}),
+                                                              -11.75*torch::ones({5,5}),
+                                                              -16.00*torch::ones({5,5}),
+                                                              - 4.00*torch::ones({5,5}),
+                                                              - 2.25*torch::ones({5,5}),
+                                                                2.75*torch::ones({5,5}),
+                                                                4.00*torch::ones({5,5}),
+                                                                     torch::ones({5,5}),
+                                                                0.75*torch::ones({5,5}),
+                                                              - 0.75*torch::ones({5,5}),
+                                                              - 1.00*torch::ones({5,5}))) );
+  
+  EXPECT_EQ(F.invtr(), F.inv().tr());
+
 }
 
 #define test_unary_op(op, A, ...)                                       \

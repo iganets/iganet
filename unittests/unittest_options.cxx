@@ -72,6 +72,20 @@ TEST(Options, Options_clone)
   EXPECT_EQ(options_clone.is_sparse(),     true);
 }
 
+TEST(Options, Options_conversion)
+{
+  auto options = iganet::Options<float>{}.device(torch::kCPU).layout(torch::kSparse).requires_grad(false);
+
+  torch::TensorOptions tensorOptions(options);
+  
+  EXPECT_EQ(tensorOptions.dtype(),         c10::ScalarType::Float);
+  EXPECT_EQ(tensorOptions.device(),        torch::kCPU);
+  EXPECT_EQ(tensorOptions.layout(),        torch::kSparse);
+  EXPECT_EQ(tensorOptions.requires_grad(), false);
+  EXPECT_EQ(tensorOptions.pinned_memory(), false);
+  EXPECT_EQ(tensorOptions.is_sparse(),     true);
+}
+
 int main(int argc, char **argv) {
   ::testing::InitGoogleTest(&argc, argv);
   iganet::init();
