@@ -42,7 +42,7 @@ namespace iganet {
       if constexpr (is_shared_ptr<typename std::decay<T>::type>::value)
         return std::forward<typename std::decay<T>::type>(arg);
       else
-        return std::make_shared<typename std::decay<T>::type>(std::forward<typename std::decay<T>::type>(arg));
+        return std::make_shared<typename std::decay<T>::type>(std::forward<T>(arg));
     }
 
     /// @brief Forward declaration of BlockTensor

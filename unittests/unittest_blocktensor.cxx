@@ -19,8 +19,8 @@
 
 TEST(BlockTensor, BlockTensor_double)
 {
-  iganet::utils::BlockTensor<torch::Tensor, 2, 1> A   (   torch::ones({5,5}), 2*torch::ones({5,5}) );
-  iganet::utils::BlockTensor<torch::Tensor, 2, 1> B = { 3*torch::ones({5,5}), 4*torch::ones({5,5}) };
+  iganet::utils::BlockTensor<torch::Tensor, 2, 1> A (   torch::ones({5,5}), 2*torch::ones({5,5}) );
+  iganet::utils::BlockTensor<torch::Tensor, 2, 1> B ( 3*torch::ones({5,5}), 4*torch::ones({5,5}) );
   
   EXPECT_EQ(A+B,
             (iganet::utils::BlockTensor<torch::Tensor, 2, 1>( 4*torch::ones({5,5}),

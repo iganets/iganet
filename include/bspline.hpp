@@ -422,7 +422,7 @@ namespace iganet {
     /// coefficient vectors
     ///
     /// @result Array of coefficient vectors
-    inline const auto& coeffs() const
+    inline const std::array<torch::Tensor, geoDim_>& coeffs() const
     {
       return coeffs_;
     }
@@ -433,7 +433,7 @@ namespace iganet {
     /// @param[in] i Geometric dimension
     ///
     /// @result Coefficient vector for the given geometric dimension[<35;29;43M]
-    inline const auto& coeffs(short_t i) const
+    inline const torch::Tensor& coeffs(short_t i) const
     {
       assert(i >= 0 && i < geoDim_);
       return coeffs_[i];
@@ -443,7 +443,7 @@ namespace iganet {
     /// coefficient vectors
     ///
     /// @result Array of coefficient vectord
-    inline auto& coeffs()
+    inline std::array<torch::Tensor, geoDim_>& coeffs()
     {
       return coeffs_;
     }
@@ -454,7 +454,7 @@ namespace iganet {
     /// @param[in] i Geometric dimension
     ///
     /// @result Coefficient vector for the given geometric dimension
-    inline auto& coeffs(short_t i)
+    inline torch::Tensor& coeffs(short_t i)
     {
       assert(i >= 0 && i < geoDim_);
       return coeffs_[i];
@@ -640,9 +640,10 @@ namespace iganet {
     /// @result Value(s) of the univariate B-spline object
     ///
     /// @{
-    inline auto eval_from_precomputed(const torch::Tensor& basfunc,
-                                      const torch::Tensor& coeff_indices,
-                                      int64_t numeval, torch::IntArrayRef sizes) const
+    inline utils::BlockTensor<torch::Tensor, 1, geoDim_>
+    eval_from_precomputed(const torch::Tensor& basfunc,
+                          const torch::Tensor& coeff_indices,
+                          int64_t numeval, torch::IntArrayRef sizes) const
     {
       if constexpr (geoDim_ > 1) {
         utils::BlockTensor<torch::Tensor, 1, geoDim_> result;
@@ -659,9 +660,10 @@ namespace iganet {
                                                                     ).view(sizes));
     }
 
-    inline auto eval_from_precomputed(const utils::TensorArray0& basfunc,
-                                      const torch::Tensor& coeff_indices,
-                                      int64_t numeval, torch::IntArrayRef sizes) const
+    inline utils::BlockTensor<torch::Tensor, 1, geoDim_>
+    eval_from_precomputed(const utils::TensorArray0& basfunc,
+                          const torch::Tensor& coeff_indices,
+                          int64_t numeval, torch::IntArrayRef sizes) const
     {
       utils::BlockTensor<torch::Tensor, 1, geoDim_> result;
       for (short_t i = 0; i < geoDim_; ++i)
@@ -669,9 +671,10 @@ namespace iganet {
       return result;
     }
     
-    inline auto eval_from_precomputed(const utils::TensorArray1& basfunc,
-                                      const torch::Tensor& coeff_indices,
-                                      int64_t numeval, torch::IntArrayRef sizes) const
+    inline utils::BlockTensor<torch::Tensor, 1, geoDim_>
+    eval_from_precomputed(const utils::TensorArray1& basfunc,
+                          const torch::Tensor& coeff_indices,
+                          int64_t numeval, torch::IntArrayRef sizes) const
     {
       utils::BlockTensor<torch::Tensor, 1, geoDim_> result;
       for (short_t i = 0; i < geoDim_; ++i)
@@ -683,9 +686,10 @@ namespace iganet {
       return result;
     }
 
-    inline auto eval_from_precomputed(const utils::TensorArray2& basfunc,
-                                      const torch::Tensor& coeff_indices,
-                                      int64_t numeval, torch::IntArrayRef sizes) const
+    inline utils::BlockTensor<torch::Tensor, 1, geoDim_>
+    eval_from_precomputed(const utils::TensorArray2& basfunc,
+                          const torch::Tensor& coeff_indices,
+                          int64_t numeval, torch::IntArrayRef sizes) const
     {
       utils::BlockTensor<torch::Tensor, 1, geoDim_> result;
       for (short_t i = 0; i < geoDim_; ++i)
@@ -699,9 +703,10 @@ namespace iganet {
       return result;
     }
 
-    inline auto eval_from_precomputed(const utils::TensorArray3& basfunc,
-                                      const torch::Tensor& coeff_indices,
-                                      int64_t numeval, torch::IntArrayRef sizes) const
+    inline utils::BlockTensor<torch::Tensor, 1, geoDim_>
+    eval_from_precomputed(const utils::TensorArray3& basfunc,
+                          const torch::Tensor& coeff_indices,
+                          int64_t numeval, torch::IntArrayRef sizes) const
     {
       utils::BlockTensor<torch::Tensor, 1, geoDim_> result;
       for (short_t i = 0; i < geoDim_; ++i)
@@ -717,9 +722,10 @@ namespace iganet {
       return result;
     }
 
-    inline auto eval_from_precomputed(const utils::TensorArray4& basfunc,
-                                      const torch::Tensor& coeff_indices,
-                                      int64_t numeval, torch::IntArrayRef sizes) const
+    inline utils::BlockTensor<torch::Tensor, 1, geoDim_>
+    eval_from_precomputed(const utils::TensorArray4& basfunc,
+                          const torch::Tensor& coeff_indices,
+                          int64_t numeval, torch::IntArrayRef sizes) const
     {
       utils::BlockTensor<torch::Tensor, 1, geoDim_> result;
       for (short_t i = 0; i < geoDim_; ++i)
@@ -800,7 +806,6 @@ namespace iganet {
     inline auto eval(const std::array<torch::Tensor, parDim_>& xi) const
     {
       if constexpr (parDim_ == 0) {
-        //return coeffs_[0];
         utils::BlockTensor<torch::Tensor, 1, geoDim_> result;
         for (short_t i = 0; i < geoDim_; ++i)
           result.set(i, coeffs_[i]);
@@ -3484,7 +3489,7 @@ namespace iganet {
                      const std::array<torch::Tensor, Geometry_t::parDim()>& indices_G,
                      const torch::Tensor& coeff_indices_G) const
     {
-      return BSplineCore::ijac<memory_optimized>(xi, indices, coeff_indices, indices_G, coeff_indices_G).trace();
+      return BSplineCore::template ijac<memory_optimized>(xi, indices, coeff_indices, indices_G, coeff_indices_G).trace();
     }
 
     /// @brief Returns a block-tensor with the gradient of the B-spline
