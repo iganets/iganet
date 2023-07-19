@@ -64,248 +64,16 @@ namespace iganet {
   ///
   /// **Examples**
   ///
-  /// * 3d Laplace operator `dx2+dy2+dz2`
+  /// * 3d Laplace operator `dx^2+dy^2+dz^2`
   /// * 2d convection operator with time derivative dt+dx+dy`
   enum class deriv : short_t
     {
       func   =    0, /*!< function value */
 
       dx     =    1, /*!< first derivative in x-direction  */
-      dx1    =    1, /*!< first derivative in x-direction  */
-      dx2    =    2, /*!< second derivative in x-direction */
-      dx3    =    3, /*!< third derivative in x-direction  */
-      dx4    =    4, /*!< fourth derivative in x-direction */
       dy     =   10, /*!< first derivative in y-direction  */
-      dy1    =   10, /*!< first derivative in y-direction  */
-      dy2    =   20, /*!< second derivative in y-direction */
-      dy3    =   30, /*!< third derivative in y-direction  */
-      dy4    =   40, /*!< fourth derivative in y-direction */
       dz     =  100, /*!< first derivative in z-direction  */
-      dz1    =  100, /*!< first derivative in z-direction  */
-      dz2    =  200, /*!< second derivative in z-direction */
-      dz3    =  300, /*!< third derivative in z-direction  */
-      dz4    =  400, /*!< fourth derivative in z-direction */
       dt     = 1000, /*!< first derivative in t-direction  */
-      dt1    = 1000, /*!< first derivative in t-direction  */
-      dt2    = 2000, /*!< second derivative in t-direction */
-      dt3    = 3000, /*!< third derivative in t-direction  */
-      dt4    = 4000, /*!< fourth derivative in t-direction */
-
-      dxdy   =   11, /*!< second mixed derivative in x- and y-direction  */
-      dx1dy1 =   11, /*!< second mixed derivative in x- and y-direction  */
-      dx2dy1 =   12, /*!< third mixed derivative in x- and y-direction   */
-      dx3dy1 =   13, /*!< fourth mixed derivative in x- and y-direction  */
-      dx4dy1 =   14, /*!< fifth mixed derivative in x- and y-direction   */
-      dx1dy2 =   21, /*!< third mixed derivative in x- and y-direction   */
-      dx2dy2 =   22, /*!< fourth mixed derivative in x- and y-direction  */
-      dx3dy2 =   23, /*!< fifth mixed derivative in x- and y-direction   */
-      dx4dy2 =   24, /*!< sixth mixed derivative in x- and y-direction   */
-      dx1dy3 =   31, /*!< fourth mixed derivative in x- and y-direction  */
-      dx2dy3 =   32, /*!< fifth mixed derivative in x- and y-direction   */
-      dx3dy3 =   33, /*!< sixth mixed derivative in x- and y-direction   */
-      dx4dy3 =   34, /*!< seventh mixed derivative in x- and y-direction */
-      dx1dy4 =   41, /*!< fifth mixed derivative in x- and y-direction   */
-      dx2dy4 =   42, /*!< sixth mixed derivative in x- and y-direction   */
-      dx3dy4 =   43, /*!< seventh mixed derivative in x- and y-direction */
-      dx4dy4 =   44, /*!< eigths mixed derivative in x- and y-direction  */
-
-      dxdz   =  101, /*!< second mixed derivative in x- and z-direction  */
-      dx1dz1 =  101, /*!< second mixed derivative in x- and z-direction  */
-      dx2dz1 =  102, /*!< third mixed derivative in x- and z-direction   */
-      dx3dz1 =  103, /*!< fourth mixed derivative in x- and z-direction  */
-      dx4dz1 =  104, /*!< fifth mixed derivative in x- and z-direction   */
-      dx1dz2 =  201, /*!< third mixed derivative in x- and z-direction   */
-      dx2dz2 =  202, /*!< fourth mixed derivative in x- and z-direction  */
-      dx3dz2 =  203, /*!< fifth mixed derivative in x- and z-direction   */
-      dx4dz2 =  204, /*!< sixth mixed derivative in x- and z-direction   */
-      dx1dz3 =  301, /*!< fourth mixed derivative in x- and z-direction  */
-      dx2dz3 =  302, /*!< fifth mixed derivative in x- and z-direction   */
-      dx3dz3 =  303, /*!< sixth mixed derivative in x- and z-direction   */
-      dx4dz3 =  304, /*!< seventh mixed derivative in x- and z-direction */
-      dx1dz4 =  401, /*!< fifth mixed derivative in x- and z-direction   */
-      dx2dz4 =  402, /*!< sixth mixed derivative in x- and z-direction   */
-      dx3dz4 =  403, /*!< seventh mixed derivative in x- and z-direction */
-      dx4dz4 =  404, /*!< eigths mixed derivative in x- and z-direction  */
-
-      dxdt   = 1001, /*!< second mixed derivative in x- and t-direction  */
-      dx1dt1 = 1001, /*!< second mixed derivative in x- and t-direction  */
-      dx2dt1 = 1002, /*!< third mixed derivative in x- and t-direction   */
-      dx3dt1 = 1003, /*!< fourth mixed derivative in x- and t-direction  */
-      dx4dt1 = 1004, /*!< fifth mixed derivative in x- and t-direction   */
-      dx1dt2 = 2001, /*!< third mixed derivative in x- and t-direction   */
-      dx2dt2 = 2002, /*!< fourth mixed derivative in x- and t-direction  */
-      dx3dt2 = 2003, /*!< fifth mixed derivative in x- and t-direction   */
-      dx4dt2 = 2004, /*!< sixth mixed derivative in x- and t-direction   */
-      dx1dt3 = 3001, /*!< fourth mixed derivative in x- and t-direction  */
-      dx2dt3 = 3002, /*!< fifth mixed derivative in x- and t-direction   */
-      dx3dt3 = 3003, /*!< sixth mixed derivative in x- and t-direction   */
-      dx4dt3 = 3004, /*!< seventh mixed derivative in x- and t-direction */
-      dx1dt4 = 4001, /*!< fifth mixed derivative in x- and t-direction   */
-      dx2dt4 = 4002, /*!< sixth mixed derivative in x- and t-direction   */
-      dx3dt4 = 4003, /*!< seventh mixed derivative in x- and t-direction */
-      dx4dt4 = 4004, /*!< eigths mixed derivative in x- and t-direction  */
-
-      dydx   =   11, /*!< second mixed derivative in y- and x-direction  */
-      dy1dx1 =   11, /*!< second mixed derivative in y- and x-direction  */
-      dy2dx1 =   21, /*!< third mixed derivative in y- and x-direction   */
-      dy3dx1 =   31, /*!< fourth mixed derivative in y- and x-direction  */
-      dy4dx1 =   41, /*!< fifth mixed derivative in y- and x-direction   */
-      dy1dx2 =   12, /*!< third mixed derivative in y- and x-direction   */
-      dy2dx2 =   22, /*!< fourth mixed derivative in y- and x-direction  */
-      dy3dx2 =   32, /*!< fifth mixed derivative in y- and x-direction   */
-      dy4dx2 =   42, /*!< sixth mixed derivative in y- and x-direction   */
-      dy1dx3 =   13, /*!< fourth mixed derivative in y- and x-direction  */
-      dy2dx3 =   23, /*!< fifth mixed derivative in y- and x-direction   */
-      dy3dx3 =   33, /*!< sixth mixed derivative in y- and x-direction   */
-      dy4dx3 =   43, /*!< seventh mixed derivative in y- and x-direction */
-      dy1dx4 =   14, /*!< fifth mixed derivative in y- and x-direction   */
-      dy2dx4 =   24, /*!< sixth mixed derivative in y- and x-direction   */
-      dy3dx4 =   34, /*!< seventh mixed derivative in y- and x-direction */
-      dy4dx4 =   44, /*!< eigths mixed derivative in y- and x-direction  */
-
-      dydz   =  110, /*!< second mixed derivative in y- and z-direction  */
-      dy1dz1 =  110, /*!< second mixed derivative in y- and z-direction  */
-      dy2dz1 =  120, /*!< third mixed derivative in y- and z-direction   */
-      dy3dz1 =  130, /*!< fourth mixed derivative in y- and z-direction  */
-      dy4dz1 =  140, /*!< fifth mixed derivative in y- and z-direction   */
-      dy1dz2 =  210, /*!< third mixed derivative in y- and z-direction   */
-      dy2dz2 =  220, /*!< fourth mixed derivative in y- and z-direction  */
-      dy3dz2 =  230, /*!< fifth mixed derivative in y- and z-direction   */
-      dy4dz2 =  240, /*!< sixth mixed derivative in y- and z-direction   */
-      dy1dz3 =  310, /*!< fourth mixed derivative in y- and z-direction  */
-      dy2dz3 =  320, /*!< fifth mixed derivative in y- and z-direction   */
-      dy3dz3 =  330, /*!< sixth mixed derivative in y- and z-direction   */
-      dy4dz3 =  340, /*!< seventh mixed derivative in y- and z-direction */
-      dy1dz4 =  410, /*!< fifth mixed derivative in y- and z-direction   */
-      dy2dz4 =  420, /*!< sixth mixed derivative in y- and z-direction   */
-      dy3dz4 =  430, /*!< seventh mixed derivative in y- and z-direction */
-      dy4dz4 =  440, /*!< eigths mixed derivative in y- and z-direction  */
-
-      dydt   = 1010, /*!< second mixed derivative in y- and t-direction  */
-      dy1dt1 = 1010, /*!< second mixed derivative in y- and t-direction  */
-      dy2dt1 = 1020, /*!< third mixed derivative in y- and t-direction   */
-      dy3dt1 = 1030, /*!< fourth mixed derivative in y- and t-direction  */
-      dy4dt1 = 1040, /*!< fifth mixed derivative in y- and t-direction   */
-      dy1dt2 = 2010, /*!< third mixed derivative in y- and t-direction   */
-      dy2dt2 = 2020, /*!< fourth mixed derivative in y- and t-direction  */
-      dy3dt2 = 2030, /*!< fifth mixed derivative in y- and t-direction   */
-      dy4dt2 = 2040, /*!< sixth mixed derivative in y- and t-direction   */
-      dy1dt3 = 3010, /*!< fourth mixed derivative in y- and t-direction  */
-      dy2dt3 = 3020, /*!< fifth mixed derivative in y- and t-direction   */
-      dy3dt3 = 3030, /*!< sixth mixed derivative in y- and t-direction   */
-      dy4dt3 = 3040, /*!< seventh mixed derivative in y- and t-direction */
-      dy1dt4 = 4010, /*!< fifth mixed derivative in y- and t-direction   */
-      dy2dt4 = 4020, /*!< sixth mixed derivative in y- and t-direction   */
-      dy3dt4 = 4030, /*!< seventh mixed derivative in y- and t-direction */
-      dy4dt4 = 4040, /*!< eigths mixed derivative in y- and t-direction  */
-
-      dzdx   =  101, /*!< second mixed derivative in z- and x-direction  */
-      dz1dx1 =  101, /*!< second mixed derivative in z- and x-direction  */
-      dz2dx1 =  102, /*!< third mixed derivative in z- and x-direction   */
-      dz3dx1 =  103, /*!< fourth mixed derivative in z- and x-direction  */
-      dz4dx1 =  104, /*!< fifth mixed derivative in z- and x-direction   */
-      dz1dx2 =  201, /*!< third mixed derivative in z- and x-direction   */
-      dz2dx2 =  202, /*!< fourth mixed derivative in z- and x-direction  */
-      dz3dx2 =  203, /*!< fifth mixed derivative in z- and x-direction   */
-      dz4dx2 =  204, /*!< sixth mixed derivative in z- and x-direction   */
-      dz1dx3 =  301, /*!< fourth mixed derivative in z- and x-direction  */
-      dz2dx3 =  302, /*!< fifth mixed derivative in z- and x-direction   */
-      dz3dx3 =  303, /*!< sixth mixed derivative in z- and x-direction   */
-      dz4dx3 =  304, /*!< seventh mixed derivative in z- and x-direction */
-      dz1dx4 =  401, /*!< fifth mixed derivative in z- and x-direction   */
-      dz2dx4 =  402, /*!< sixth mixed derivative in z- and x-direction   */
-      dz3dx4 =  403, /*!< seventh mixed derivative in z- and x-direction */
-      dz4dx4 =  404, /*!< eigths mixed derivative in z- and x-direction  */
-
-      dzdy   =  110, /*!< second mixed derivative in z- and y-direction  */
-      dz1dy1 =  110, /*!< second mixed derivative in z- and y-direction  */
-      dz2dy1 =  120, /*!< third mixed derivative in z- and y-direction   */
-      dz3dy1 =  130, /*!< fourth mixed derivative in z- and y-direction  */
-      dz4dy1 =  140, /*!< fifth mixed derivative in z- and y-direction   */
-      dz1dy2 =  210, /*!< third mixed derivative in z- and y-direction   */
-      dz2dy2 =  220, /*!< fourth mixed derivative in z- and y-direction  */
-      dz3dy2 =  230, /*!< fifth mixed derivative in z- and y-direction   */
-      dz4dy2 =  240, /*!< sixth mixed derivative in z- and y-direction   */
-      dz1dy3 =  310, /*!< fourth mixed derivative in z- and y-direction  */
-      dz2dy3 =  320, /*!< fifth mixed derivative in z- and y-direction   */
-      dz3dy3 =  330, /*!< sixth mixed derivative in z- and y-direction   */
-      dz4dy3 =  340, /*!< seventh mixed derivative in z- and y-direction */
-      dz1dy4 =  410, /*!< fifth mixed derivative in z- and y-direction   */
-      dz2dy4 =  420, /*!< sixth mixed derivative in z- and y-direction   */
-      dz3dy4 =  430, /*!< seventh mixed derivative in z- and y-direction */
-      dz4dy4 =  440, /*!< eigths mixed derivative in z- and y-direction  */
-
-      dzdt   = 1100, /*!< second mixed derivative in z- and t-direction  */
-      dz1dt1 = 1100, /*!< second mixed derivative in z- and t-direction  */
-      dz2dt1 = 1200, /*!< third mixed derivative in z- and t-direction   */
-      dz3dt1 = 1300, /*!< fourth mixed derivative in z- and t-direction  */
-      dz4dt1 = 1400, /*!< fifth mixed derivative in z- and t-direction   */
-      dz1dt2 = 2100, /*!< third mixed derivative in z- and t-direction   */
-      dz2dt2 = 2200, /*!< fourth mixed derivative in z- and t-direction  */
-      dz3dt2 = 2300, /*!< fifth mixed derivative in z- and t-direction   */
-      dz4dt2 = 2400, /*!< sixth mixed derivative in z- and t-direction   */
-      dz1dt3 = 3100, /*!< fourth mixed derivative in z- and t-direction  */
-      dz2dt3 = 3200, /*!< fifth mixed derivative in z- and t-direction   */
-      dz3dt3 = 3300, /*!< sixth mixed derivative in z- and t-direction   */
-      dz4dt3 = 3400, /*!< seventh mixed derivative in z- and t-direction */
-      dz1dt4 = 4100, /*!< fifth mixed derivative in z- and t-direction   */
-      dz2dt4 = 4200, /*!< sixth mixed derivative in z- and t-direction   */
-      dz3dt4 = 4300, /*!< seventh mixed derivative in z- and t-direction */
-      dz4dt4 = 4400, /*!< eigths mixed derivative in z- and t-direction  */
-
-      dtdx   = 1001, /*!< second mixed derivative in t- and x-direction  */
-      dt1dx1 = 1001, /*!< second mixed derivative in t- and x-direction  */
-      dt2dx1 = 1002, /*!< third mixed derivative in t- and x-direction   */
-      dt3dx1 = 1003, /*!< fourth mixed derivative in t- and x-direction  */
-      dt4dx1 = 1004, /*!< fifth mixed derivative in t- and x-direction   */
-      dt1dx2 = 2001, /*!< third mixed derivative in t- and x-direction   */
-      dt2dx2 = 2002, /*!< fourth mixed derivative in t- and x-direction  */
-      dt3dx2 = 2003, /*!< fifth mixed derivative in t- and x-direction   */
-      dt4dx2 = 2004, /*!< sixth mixed derivative in t- and x-direction   */
-      dt1dx3 = 3001, /*!< fourth mixed derivative in t- and x-direction  */
-      dt2dx3 = 3002, /*!< fifth mixed derivative in t- and x-direction   */
-      dt3dx3 = 3003, /*!< sixth mixed derivative in t- and x-direction   */
-      dt4dx3 = 3004, /*!< seventh mixed derivative in t- and x-direction */
-      dt1dx4 = 4001, /*!< fifth mixed derivative in t- and x-direction   */
-      dt2dx4 = 4002, /*!< sixth mixed derivative in t- and x-direction   */
-      dt3dx4 = 4003, /*!< seventh mixed derivative in t- and x-direction */
-      dt4dx4 = 4004, /*!< eigths mixed derivative in t- and x-direction  */
-
-      dtdy   = 1010, /*!< second mixed derivative in t- and y-direction  */
-      dt1dy1 = 1010, /*!< second mixed derivative in t- and y-direction  */
-      dt2dy1 = 2010, /*!< third mixed derivative in t- and y-direction   */
-      dt3dy1 = 3010, /*!< fourth mixed derivative in t- and y-direction  */
-      dt4dy1 = 4010, /*!< fifth mixed derivative in t- and y-direction   */
-      dt1dy2 = 1020, /*!< third mixed derivative in t- and y-direction   */
-      dt2dy2 = 2020, /*!< fourth mixed derivative in t- and y-direction  */
-      dt3dy2 = 3020, /*!< fifth mixed derivative in t- and y-direction   */
-      dt4dy2 = 4020, /*!< sixth mixed derivative in t- and y-direction   */
-      dt1dy3 = 1030, /*!< fourth mixed derivative in t- and y-direction  */
-      dt2dy3 = 2030, /*!< fifth mixed derivative in t- and y-direction   */
-      dt3dy3 = 3030, /*!< sixth mixed derivative in t- and y-direction   */
-      dt4dy3 = 4030, /*!< seventh mixed derivative in t- and y-direction */
-      dt1dy4 = 1040, /*!< fifth mixed derivative in t- and y-direction   */
-      dt2dy4 = 2040, /*!< sixth mixed derivative in t- and y-direction   */
-      dt3dy4 = 3040, /*!< seventh mixed derivative in t- and y-direction */
-      dt4dy4 = 4040, /*!< eigths mixed derivative in t- and y-direction  */
-
-      dtdz   = 1100, /*!< second mixed derivative in t- and z-direction  */
-      dt1dz1 = 1100, /*!< second mixed derivative in t- and z-direction  */
-      dt2dz1 = 2100, /*!< third mixed derivative in t- and z-direction   */
-      dt3dz1 = 3100, /*!< fourth mixed derivative in t- and z-direction  */
-      dt4dz1 = 4100, /*!< fifth mixed derivative in t- and z-direction   */
-      dt1dz2 = 1200, /*!< third mixed derivative in t- and z-direction   */
-      dt2dz2 = 2200, /*!< fourth mixed derivative in t- and z-direction  */
-      dt3dz2 = 3200, /*!< fifth mixed derivative in t- and z-direction   */
-      dt4dz2 = 4200, /*!< sixth mixed derivative in t- and z-direction   */
-      dt1dz3 = 1300, /*!< fourth mixed derivative in t- and z-direction  */
-      dt2dz3 = 2300, /*!< fifth mixed derivative in t- and z-direction   */
-      dt3dz3 = 3300, /*!< sixth mixed derivative in t- and z-direction   */
-      dt4dz3 = 4300, /*!< seventh mixed derivative in t- and z-direction */
-      dt1dz4 = 1400, /*!< fifth mixed derivative in t- and z-direction   */
-      dt2dz4 = 2400, /*!< sixth mixed derivative in t- and z-direction   */
-      dt3dz4 = 3400, /*!< seventh mixed derivative in t- and z-direction */
-      dt4dz4 = 4400, /*!< eigths mixed derivative in t- and z-direction  */
     };
 
   inline constexpr auto operator+(deriv lhs, deriv rhs)
@@ -891,6 +659,16 @@ namespace iganet {
                                                                     ).view(sizes));
     }
 
+    inline auto eval_from_precomputed(const utils::TensorArray0& basfunc,
+                                      const torch::Tensor& coeff_indices,
+                                      int64_t numeval, torch::IntArrayRef sizes) const
+    {
+      utils::BlockTensor<torch::Tensor, 1, geoDim_> result;
+      for (short_t i = 0; i < geoDim_; ++i)
+        result.set(i, coeffs_[i]);
+      return result;
+    }
+    
     inline auto eval_from_precomputed(const utils::TensorArray1& basfunc,
                                       const torch::Tensor& coeff_indices,
                                       int64_t numeval, torch::IntArrayRef sizes) const
@@ -1021,8 +799,13 @@ namespace iganet {
     template<deriv deriv = deriv::func, bool memory_optimized = false>
     inline auto eval(const std::array<torch::Tensor, parDim_>& xi) const
     {
-      if constexpr (parDim_ == 0)
-        return coeffs_[0];
+      if constexpr (parDim_ == 0) {
+        //return coeffs_[0];
+        utils::BlockTensor<torch::Tensor, 1, geoDim_> result;
+        for (short_t i = 0; i < geoDim_; ++i)
+          result.set(i, coeffs_[i]);
+        return result;
+      }
       else
         return eval<deriv, memory_optimized>(xi, find_knot_indices(xi));
     }
@@ -1540,6 +1323,14 @@ namespace iganet {
       else
         return find_knot_indices(utils::TensorArray1({xi}));
     }
+
+    inline auto find_knot_indices(const utils::TensorArray0& xi) const
+    {
+      if constexpr (parDim_ == 0)
+        return utils::TensorArray0{};
+      else
+        throw std::runtime_error("Invalid parametric dimension");
+    }
     
     inline auto find_knot_indices(const utils::TensorArray1& xi) const
     {
@@ -1609,6 +1400,15 @@ namespace iganet {
         return find_coeff_indices<memory_optimized>(utils::TensorArray1({indices}));  
     }
 
+    template<bool memory_optimized = false>
+    inline auto find_coeff_indices(const utils::TensorArray0& indices) const
+    {
+      if constexpr (parDim_ == 0)
+        return torch::zeros_like(coeffs_[0]).to(torch::kInt64);
+      else
+        throw std::runtime_error("Invalid parametric dimension");
+    }
+    
     template<bool memory_optimized = false>
     inline auto find_coeff_indices(const utils::TensorArray1& indices) const
     {
@@ -1706,6 +1506,19 @@ namespace iganet {
       }
       else
         return eval_basfunc<deriv, memory_optimized>(xi, find_knot_indices(xi));
+    }
+
+    template<deriv deriv = deriv::func, bool memory_optimized = false>
+    inline auto eval_basfunc(const utils::TensorArray0& xi, const utils::TensorArray0& indices) const
+    {
+      if constexpr (parDim_ == 0) {
+        if constexpr (deriv == deriv::func)
+          return torch::ones_like(coeffs_[0]);
+        else
+          return torch::zeros_like(coeffs_[0]);
+      }       
+      else
+        throw std::runtime_error("Invalid parametric dimension");
     }
 
     template<deriv deriv = deriv::func, bool memory_optimized = false>
@@ -4085,7 +3898,7 @@ namespace iganet {
       assert(xi[0].sizes() == indices[0].sizes());
       if constexpr (BSplineCore::parDim_ == 1)
         return utils::BlockTensor<torch::Tensor, 1, 1, BSplineCore::geoDim_>
-          (BSplineCore::template eval<deriv::dx2, memory_optimized>(xi, indices, coeff_indices));
+          (BSplineCore::template eval<deriv::dx^2, memory_optimized>(xi, indices, coeff_indices));
       else
         throw std::runtime_error("Unsupported parametric dimension");
     }
@@ -4099,10 +3912,10 @@ namespace iganet {
 
       if constexpr (BSplineCore::parDim_ == 2)
         return utils::BlockTensor<torch::Tensor, 2, BSplineCore::geoDim_, 2>
-          (BSplineCore::template eval<deriv::dx2,  memory_optimized>(xi, indices, coeff_indices),
-           BSplineCore::template eval<deriv::dxdy, memory_optimized>(xi, indices, coeff_indices),
-           BSplineCore::template eval<deriv::dydx, memory_optimized>(xi, indices, coeff_indices),
-           BSplineCore::template eval<deriv::dy2,  memory_optimized>(xi, indices, coeff_indices)).reorder_ikj();
+          (BSplineCore::template eval<deriv::dx^2,         memory_optimized>(xi, indices, coeff_indices),
+           BSplineCore::template eval<deriv::dx+deriv::dy, memory_optimized>(xi, indices, coeff_indices),
+           BSplineCore::template eval<deriv::dy+deriv::dx, memory_optimized>(xi, indices, coeff_indices),
+           BSplineCore::template eval<deriv::dy^2,         memory_optimized>(xi, indices, coeff_indices)).reorder_ikj();
       else
         throw std::runtime_error("Unsupported parametric dimension");
     }
@@ -4117,15 +3930,15 @@ namespace iganet {
 
       if constexpr (BSplineCore::parDim_ == 3)
         return utils::BlockTensor<torch::Tensor, 3, BSplineCore::geoDim_, 3>
-          (BSplineCore::template eval<deriv::dx2,  memory_optimized>(xi, indices, coeff_indices),
-           BSplineCore::template eval<deriv::dxdy, memory_optimized>(xi, indices, coeff_indices),
-           BSplineCore::template eval<deriv::dxdz, memory_optimized>(xi, indices, coeff_indices),
-           BSplineCore::template eval<deriv::dydx, memory_optimized>(xi, indices, coeff_indices),
-           BSplineCore::template eval<deriv::dy2,  memory_optimized>(xi, indices, coeff_indices),
-           BSplineCore::template eval<deriv::dydz, memory_optimized>(xi, indices, coeff_indices),
-           BSplineCore::template eval<deriv::dzdx, memory_optimized>(xi, indices, coeff_indices),
-           BSplineCore::template eval<deriv::dzdy, memory_optimized>(xi, indices, coeff_indices),
-           BSplineCore::template eval<deriv::dz2,  memory_optimized>(xi, indices, coeff_indices)).reorder_ikj();
+          (BSplineCore::template eval<deriv::dx^2,         memory_optimized>(xi, indices, coeff_indices),
+           BSplineCore::template eval<deriv::dx+deriv::dy, memory_optimized>(xi, indices, coeff_indices),
+           BSplineCore::template eval<deriv::dx+deriv::dz, memory_optimized>(xi, indices, coeff_indices),
+           BSplineCore::template eval<deriv::dy+deriv::dx, memory_optimized>(xi, indices, coeff_indices),
+           BSplineCore::template eval<deriv::dy^2,         memory_optimized>(xi, indices, coeff_indices),
+           BSplineCore::template eval<deriv::dy+deriv::dz, memory_optimized>(xi, indices, coeff_indices),
+           BSplineCore::template eval<deriv::dz+deriv::dx, memory_optimized>(xi, indices, coeff_indices),
+           BSplineCore::template eval<deriv::dz+deriv::dy, memory_optimized>(xi, indices, coeff_indices),
+           BSplineCore::template eval<deriv::dz^2,         memory_optimized>(xi, indices, coeff_indices)).reorder_ikj();
       else
         throw std::runtime_error("Unsupported parametric dimension");
     }
@@ -4141,22 +3954,22 @@ namespace iganet {
 
       if constexpr (BSplineCore::parDim_ == 4)
         return utils::BlockTensor<torch::Tensor, 4, BSplineCore::geoDim_, 4>
-          (BSplineCore::template eval<deriv::dx2,  memory_optimized>(xi, indices, coeff_indices),
-           BSplineCore::template eval<deriv::dxdy, memory_optimized>(xi, indices, coeff_indices),
-           BSplineCore::template eval<deriv::dxdz, memory_optimized>(xi, indices, coeff_indices),
-           BSplineCore::template eval<deriv::dxdt, memory_optimized>(xi, indices, coeff_indices),
-           BSplineCore::template eval<deriv::dydx, memory_optimized>(xi, indices, coeff_indices),
-           BSplineCore::template eval<deriv::dy2,  memory_optimized>(xi, indices, coeff_indices),
-           BSplineCore::template eval<deriv::dydz, memory_optimized>(xi, indices, coeff_indices),
-           BSplineCore::template eval<deriv::dydt, memory_optimized>(xi, indices, coeff_indices),
-           BSplineCore::template eval<deriv::dzdx, memory_optimized>(xi, indices, coeff_indices),
-           BSplineCore::template eval<deriv::dzdy, memory_optimized>(xi, indices, coeff_indices),
-           BSplineCore::template eval<deriv::dz2,  memory_optimized>(xi, indices, coeff_indices),
-           BSplineCore::template eval<deriv::dzdt, memory_optimized>(xi, indices, coeff_indices),
-           BSplineCore::template eval<deriv::dtdx, memory_optimized>(xi, indices, coeff_indices),
-           BSplineCore::template eval<deriv::dtdy, memory_optimized>(xi, indices, coeff_indices),
-           BSplineCore::template eval<deriv::dtdz, memory_optimized>(xi, indices, coeff_indices),
-           BSplineCore::template eval<deriv::dt2,  memory_optimized>(xi, indices, coeff_indices)).reorder_ikj();
+          (BSplineCore::template eval<deriv::dx^2,         memory_optimized>(xi, indices, coeff_indices),
+           BSplineCore::template eval<deriv::dx+deriv::dy, memory_optimized>(xi, indices, coeff_indices),
+           BSplineCore::template eval<deriv::dx+deriv::dz, memory_optimized>(xi, indices, coeff_indices),
+           BSplineCore::template eval<deriv::dx+deriv::dt, memory_optimized>(xi, indices, coeff_indices),
+           BSplineCore::template eval<deriv::dy+deriv::dx, memory_optimized>(xi, indices, coeff_indices),
+           BSplineCore::template eval<deriv::dy^2,         memory_optimized>(xi, indices, coeff_indices),
+           BSplineCore::template eval<deriv::dy+deriv::dz, memory_optimized>(xi, indices, coeff_indices),
+           BSplineCore::template eval<deriv::dy+deriv::dt, memory_optimized>(xi, indices, coeff_indices),
+           BSplineCore::template eval<deriv::dz+deriv::dx, memory_optimized>(xi, indices, coeff_indices),
+           BSplineCore::template eval<deriv::dz+deriv::dy, memory_optimized>(xi, indices, coeff_indices),
+           BSplineCore::template eval<deriv::dz^2,         memory_optimized>(xi, indices, coeff_indices),
+           BSplineCore::template eval<deriv::dz+deriv::dt, memory_optimized>(xi, indices, coeff_indices),
+           BSplineCore::template eval<deriv::dt+deriv::dx, memory_optimized>(xi, indices, coeff_indices),
+           BSplineCore::template eval<deriv::dt+deriv::dy, memory_optimized>(xi, indices, coeff_indices),
+           BSplineCore::template eval<deriv::dt+deriv::dz, memory_optimized>(xi, indices, coeff_indices),
+           BSplineCore::template eval<deriv::dt^2,         memory_optimized>(xi, indices, coeff_indices)).reorder_ikj();
       else
         throw std::runtime_error("Unsupported parametric dimension");
     }

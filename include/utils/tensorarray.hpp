@@ -25,6 +25,7 @@
 namespace iganet {
   namespace utils {
 
+    using TensorArray0 = std::array<torch::Tensor,0>;
     using TensorArray1 = std::array<torch::Tensor,1>;
     using TensorArray2 = std::array<torch::Tensor,2>;
     using TensorArray3 = std::array<torch::Tensor,3>;

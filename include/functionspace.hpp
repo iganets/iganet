@@ -14,6 +14,8 @@
 
 #pragma once
 
+#include <boost/preprocessor/seq/for_each.hpp>
+
 #include <bspline.hpp>
 #include <utils/zip.hpp>
 
@@ -703,48 +705,19 @@ namespace iganet {
       }
 
       /// @brief Returns the values of the spline object in the points `xi`
-      /// @{
       template<functionspace comp = functionspace::interior,
                deriv deriv = deriv::func,
                bool memory_optimized = false, 
-               typename Xi>
-      inline auto eval(const Xi& xi) const
+               typename... Args>
+      inline auto eval(const Args&... args) const
       {
         if constexpr (comp == functionspace::interior)
-          return spline_t::template eval<deriv, memory_optimized>(xi);
+          return spline_t::template eval<deriv, memory_optimized>(args...);
         else if constexpr (comp == functionspace::boundary)
-          return boundary_.template eval<deriv, memory_optimized>(xi);
+          return boundary_.template eval<deriv, memory_optimized>(args...);
       }
-
-      template<functionspace comp = functionspace::interior,
-               deriv deriv = deriv::func,
-               bool memory_optimized = false, 
-               typename Xi, typename Indices>
-      inline auto eval(const Xi& xi,
-                       const Indices& indices) const
-      {
-        if constexpr (comp == functionspace::interior)
-          return spline_t::template eval<deriv, memory_optimized>(xi, indices);
-        else if constexpr (comp == functionspace::boundary)
-          return boundary_.template eval<deriv, memory_optimized>(xi, indices);
-      }
-
-      template<functionspace comp = functionspace::interior,
-               deriv deriv = deriv::func,
-               bool memory_optimized = false, 
-               typename Xi, typename Indices, typename Coeff_Indices>
-      inline auto eval(const Xi& xi,
-                       const Indices& indices,
-                       const Coeff_Indices& coeff_indices) const
-      {
-        if constexpr (comp == functionspace::interior)
-          return spline_t::template eval<deriv, memory_optimized>(xi, indices, coeff_indices);
-        else if constexpr (comp == functionspace::boundary)
-          return boundary_.template eval<deriv, memory_optimized>(xi, indices, coeff_indices);
-      }
-      /// @}
       
-#define GENERATE_EXPR(name)                                             \
+#define GENERATE_EXPR_MACRO(r, data, name)                              \
       template<functionspace comp = functionspace::interior,            \
                bool memory_optimized = false,                           \
                typename... Args>                                        \
@@ -756,7 +729,10 @@ namespace iganet {
           return boundary_.template name<memory_optimized>(args...);    \
       }
 
-#define GENERATE_IEXPR(name)                                            \
+      BOOST_PP_SEQ_FOR_EACH(GENERATE_EXPR_MACRO, _, GENERATE_EXPR_SEQ)
+#undef GENERATE_EXPR_MACRO
+      
+#define GENERATE_IEXPR_MACRO(r, data, name)                             \
       template<functionspace comp = functionspace::interior,            \
                bool memory_optimized = false,                           \
                typename Geometry_t,                                     \
@@ -765,52 +741,27 @@ namespace iganet {
                        const Args&... args) const                       \
       {                                                                 \
         if constexpr (comp == functionspace::interior)                  \
-          return spline_t::template name<memory_optimized,              \
-                                         Geometry_t>(G, args...);       \
+          return spline_t::template name<memory_optimized>              \
+            (static_cast<typename Geometry_t::Base::Base>(G), args...); \
         else if constexpr (comp == functionspace::boundary)             \
-          return boundary_.template name<memory_optimized,              \
-                                         Geometry_t>(G, args...);       \
+          return boundary_.template name<memory_optimized>              \
+            (static_cast<typename Geometry_t::Base::Base>(G), args...); \
       }
       
-      GENERATE_EXPR(grad);      
-      GENERATE_EXPR(hess);
-      GENERATE_EXPR(jac);
-
-      GENERATE_IEXPR(igrad);
-      GENERATE_IEXPR(ihess);
-      GENERATE_IEXPR(ijac);
+      BOOST_PP_SEQ_FOR_EACH(GENERATE_IEXPR_MACRO, _, GENERATE_IEXPR_SEQ)
+#undef GENERATE_IEXPR_MACRO
       
       /// @brief Returns the value of the spline object from
       /// precomputed basis function
-      /// @{
       template<functionspace comp = functionspace::interior,
-               typename Basfunc, typename Coeff_Indices,
-               typename Numeval, typename Sizes>
-      inline auto eval_from_precomputed(const Basfunc& basfunc,
-                                        const Coeff_Indices& coeff_indices,
-                                        const Numeval& numeval,
-                                        const Sizes& sizes) const
+               typename... Args>
+      inline auto eval_from_precomputed(const Args&... args) const
       {
         if constexpr (comp == functionspace::interior)
-          return spline_t::eval_from_precomputed(basfunc, coeff_indices, numeval, sizes);
+          return spline_t::eval_from_precomputed(args...);
         else if constexpr (comp == functionspace::boundary)
-          return boundary_.eval_from_precomputed(basfunc, coeff_indices, numeval, sizes);
+          return boundary_.eval_from_precomputed(args...);
       }
-
-      template<functionspace comp = functionspace::interior,
-               typename Basfunc, typename Coeff_Indices, typename Xi>
-      inline auto eval_from_precomputed(const Basfunc& basfunc,
-                                        const Coeff_Indices& coeff_indices,
-                                        const Xi& xi) const
-      {
-        if constexpr (comp == functionspace::interior)
-          return spline_t::eval_from_precomputed(basfunc, coeff_indices,
-                                                 xi[0].numel(),
-                                                 xi[0].sizes());
-        else if constexpr (comp == functionspace::boundary)
-          return boundary_.eval_from_precomputed(basfunc, coeff_indices, xi);
-      }
-      /// @}
 
       /// @brief Returns the knot indicies of knot spans containing `xi`
       template<functionspace comp = functionspace::interior, typename Xi>
@@ -823,31 +774,18 @@ namespace iganet {
       }
 
       /// @brief Returns the values of the spline objects' basis
-      /// functions in the points `xi` @{
+      /// functions in the points `xi`
       template<functionspace comp = functionspace::interior,
                deriv deriv = deriv::func,
                bool memory_optimized = false,
-               typename Xi>
-      inline auto eval_basfunc(const Xi& xi) const
+               typename... Args>
+      inline auto eval_basfunc(const Args&... args) const
       {
         if constexpr (comp == functionspace::interior)
-          return spline_t::template eval_basfunc<deriv, memory_optimized>(xi);
+          return spline_t::template eval_basfunc<deriv, memory_optimized>(args...);
         else if constexpr (comp == functionspace::boundary)
-          return boundary_.template eval_basfunc<deriv, memory_optimized>(xi);
+          return boundary_.template eval_basfunc<deriv, memory_optimized>(args...);
       }
-
-      template<functionspace comp = functionspace::interior,
-               deriv deriv = deriv::func,
-               bool memory_optimized = false, 
-               typename Xi, typename Indices>
-      inline auto eval_basfunc(const Xi& xi, const Indices& indices) const
-      {
-        if constexpr (comp == functionspace::interior)
-          return spline_t::template eval_basfunc<deriv, memory_optimized>(xi, indices);
-        else if constexpr (comp == functionspace::boundary)
-          return boundary_.template eval_basfunc<deriv, memory_optimized>(xi, indices);
-      }
-      /// @}
 
       /// @brief Returns the indices of the spline objects'
       /// coefficients corresponding to the knot indices `indices`
