@@ -911,6 +911,7 @@ namespace iganet {
     inline auto eval(const std::tuple<Xi...>& xi,
                      const std::tuple<Indices...>& indices) const
     {
+      static_assert(sizeof...(Xi) == sizeof...(Indices));
       return eval_<deriv, memory_optimized>(std::make_index_sequence<BoundaryCore::sides()>{}, xi, indices);
     }
     
@@ -921,6 +922,8 @@ namespace iganet {
                      const std::tuple<Indices...>& indices,
                      const std::tuple<Coeff_Indices...>& coeff_indices) const
     {
+      static_assert(sizeof...(Xi) == sizeof...(Indices) &&
+                    sizeof...(Xi) == sizeof...(Coeff_Indices));
       return eval_<deriv, memory_optimized>(std::make_index_sequence<BoundaryCore::sides()>{}, xi, indices, coeff_indices);
     }
     /// @}
@@ -934,6 +937,9 @@ namespace iganet {
                                       const std::tuple<Numeval...>& numeval,
                                       const std::tuple<Sizes...>& sizes) const
     {
+      static_assert(sizeof...(Basfunc) == sizeof...(Coeff_Indices) &&
+                    sizeof...(Basfunc) == sizeof...(Numeval) &&
+                    sizeof...(Basfunc) == sizeof...(Sizes));
       return eval_from_precomputed_(std::make_index_sequence<BoundaryCore::sides()>{},
                                     basfunc, coeff_indices, numeval, sizes);
     }
@@ -943,6 +949,8 @@ namespace iganet {
                                       const std::tuple<Coeff_Indices...>& coeff_indices,
                                       const std::tuple<Xi...>& xi) const
     {
+      static_assert(sizeof...(Basfunc) == sizeof...(Coeff_Indices) &&
+                    sizeof...(Basfunc) == sizeof...(Xi));
       return eval_from_precomputed_(std::make_index_sequence<BoundaryCore::sides()>{},
                                     basfunc, coeff_indices, xi);
     }
@@ -971,6 +979,7 @@ namespace iganet {
     inline auto eval_basfunc(const std::tuple<Xi...>& xi,
                              const std::tuple<Indices...>& indices) const
     {
+      static_assert(sizeof...(Xi) == sizeof...(Indices));
       return eval_basfunc_<deriv, memory_optimized>(std::make_index_sequence<BoundaryCore::sides()>{}, xi, indices);
     }
     /// @}
