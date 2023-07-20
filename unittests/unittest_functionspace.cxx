@@ -74,13 +74,13 @@ TEST_F(FunctionSpaceTest, S1_geoDim1_degrees2)
     
     eval = functionspace.eval<functionspace::boundary, deriv::dx, false>(xi);
     
-    EXPECT_TRUE(torch::equal(*std::get<side::left -1>(eval)[0], torch::ones(1, options)));
-    EXPECT_TRUE(torch::equal(*std::get<side::right-1>(eval)[0], torch::ones(1, options)));
+    EXPECT_TRUE(torch::equal(*std::get<side::left -1>(eval)[0], torch::zeros(1, options)));
+    EXPECT_TRUE(torch::equal(*std::get<side::right-1>(eval)[0], torch::zeros(1, options)));
     
     eval = functionspace.eval<functionspace::boundary, deriv::dx^2, false>(xi);
     
-    EXPECT_TRUE(torch::equal(*std::get<side::left -1>(eval)[0], torch::ones(1, options)));
-    EXPECT_TRUE(torch::equal(*std::get<side::right-1>(eval)[0], torch::ones(1, options)));
+    EXPECT_TRUE(torch::equal(*std::get<side::left -1>(eval)[0], torch::zeros(1, options)));
+    EXPECT_TRUE(torch::equal(*std::get<side::right-1>(eval)[0], torch::zeros(1, options)));
 
     auto knot_indices  = functionspace.template find_knot_indices<functionspace::boundary>(xi);
     auto coeff_indices = functionspace.template find_coeff_indices<functionspace::boundary>(knot_indices);
@@ -100,15 +100,15 @@ TEST_F(FunctionSpaceTest, S1_geoDim1_degrees2)
 
     basfunc = functionspace.template eval_basfunc<functionspace::boundary, deriv::dx, false>(xi, knot_indices);
     eval    = functionspace.template eval_from_precomputed<functionspace::boundary>(basfunc, coeff_indices, numel(xi), sizes(xi));
-            
-    EXPECT_TRUE(torch::equal(*std::get<side::left -1>(eval)[0], torch::ones(1, options)));
-    EXPECT_TRUE(torch::equal(*std::get<side::right-1>(eval)[0], torch::ones(1, options)));
+
+    EXPECT_TRUE(torch::equal(*std::get<side::left -1>(eval)[0], torch::zeros({}, options)));
+    EXPECT_TRUE(torch::equal(*std::get<side::right-1>(eval)[0], torch::zeros({}, options)));
 
     basfunc = functionspace.template eval_basfunc<functionspace::boundary, deriv::dx^2, false>(xi, knot_indices);
     eval    = functionspace.template eval_from_precomputed<functionspace::boundary>(basfunc, coeff_indices, numel(xi), sizes(xi));
     
-    EXPECT_TRUE(torch::equal(*std::get<side::left -1>(eval)[0], torch::ones(1, options)));
-    EXPECT_TRUE(torch::equal(*std::get<side::right-1>(eval)[0], torch::ones(1, options)));
+    EXPECT_TRUE(torch::equal(*std::get<side::left -1>(eval)[0], torch::zeros({}, options)));
+    EXPECT_TRUE(torch::equal(*std::get<side::right-1>(eval)[0], torch::zeros({}, options)));
   }
 }
 

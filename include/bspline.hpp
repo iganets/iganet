@@ -808,7 +808,10 @@ namespace iganet {
       if constexpr (parDim_ == 0) {
         utils::BlockTensor<torch::Tensor, 1, geoDim_> result;
         for (short_t i = 0; i < geoDim_; ++i)
-          result.set(i, coeffs_[i]);
+          if constexpr (deriv == deriv::func)
+            result.set(i, coeffs_[i]);
+          else
+            result.set(i, torch::zeros_like(coeffs_[i]));
         return result;
       }
       else
@@ -2871,8 +2874,15 @@ namespace iganet {
     template<deriv deriv = deriv::func, bool memory_optimized = false>
     inline auto eval(const std::array<torch::Tensor, Base::parDim_>& xi) const
     {
-      if constexpr (Base::parDim_ == 0)
-        return Base::coeffs_[0];
+      if constexpr (Base::parDim_ == 0) {
+        utils::BlockTensor<torch::Tensor, 1, Base::geoDim_> result;
+        for (short_t i = 0; i < Base::geoDim_; ++i)
+          if constexpr (deriv == deriv::func)
+            result.set(i, Base::coeffs_[i]);
+          else
+            result.set(i, torch::zeros_like(Base::coeffs_[i]));
+        return result;
+      }
       else
         return Base::template eval<deriv, memory_optimized>(xi, find_knot_indices(xi));
     }
@@ -2881,8 +2891,15 @@ namespace iganet {
     inline auto eval(const std::array<torch::Tensor, Base::parDim_>& xi,
                      const std::array<torch::Tensor, Base::parDim_>& indices) const
     {
-      if constexpr (Base::parDim_ == 0)
-        return Base::coeffs_[0];
+      if constexpr (Base::parDim_ == 0) {
+        utils::BlockTensor<torch::Tensor, 1, Base::geoDim_> result;
+        for (short_t i = 0; i < Base::geoDim_; ++i)
+          if constexpr (deriv == deriv::func)
+            result.set(i, Base::coeffs_[i]);
+          else
+            result.set(i, torch::zeros_like(Base::coeffs_[i]));
+        return result;
+      }
       else
         return Base::template eval<deriv, memory_optimized>(xi, indices);
     }
@@ -2892,8 +2909,15 @@ namespace iganet {
                      const std::array<torch::Tensor, Base::parDim_>& indices,
                      const torch::Tensor& coeff_indices) const
     {
-      if constexpr (Base::parDim_ == 0)
-        return Base::coeffs_[0];
+      if constexpr (Base::parDim_ == 0) {
+        utils::BlockTensor<torch::Tensor, 1, Base::geoDim_> result;
+        for (short_t i = 0; i < Base::geoDim_; ++i)
+          if constexpr (deriv == deriv::func)
+            result.set(i, Base::coeffs_[i]);
+          else
+            result.set(i, torch::zeros_like(Base::coeffs_[i]));
+        return result;
+      }
       else
         return Base::template eval<deriv, memory_optimized>(xi, indices, coeff_indices);
     }
