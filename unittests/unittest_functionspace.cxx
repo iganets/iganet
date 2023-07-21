@@ -35,9 +35,11 @@ TEST_F(FunctionSpaceTest, S1_geoDim1_degrees2)
   BSpline_t                   bspline({5}, iganet::init::greville, options);
   iganet::S1<BSpline_t> functionspace({5}, iganet::init::greville, options);
 
-  {
-    auto xi = iganet::utils::to_tensorArray<real_t>({0.0, 0.1, 0.2, 0.5, 0.75, 0.9, 1.0}, options);
+  { // Interior
     
+    auto xi = iganet::utils::to_tensorArray<real_t>({0.0, 0.1, 0.2, 0.5, 0.75, 0.9, 1.0}, options);
+
+    // Evaluation
     EXPECT_TRUE(torch::equal(*(functionspace.eval<functionspace::interior, deriv::func, false>(xi)[0]),
                              *(bspline.eval<deriv::func, false>(xi)[0])));
     
@@ -46,7 +48,8 @@ TEST_F(FunctionSpaceTest, S1_geoDim1_degrees2)
     
     EXPECT_TRUE(torch::equal(*(functionspace.eval<functionspace::interior, deriv::dx^2,  false>(xi)[0]),
                              *(bspline.eval<deriv::dx^2, false>(xi)[0])));
-    
+
+    // Evaluation from precomputed coefficients and basis functions
     auto knot_indices  = functionspace.template find_knot_indices<functionspace::interior>(xi);
     auto coeff_indices = functionspace.template find_coeff_indices<functionspace::interior>(knot_indices);
 
@@ -61,12 +64,50 @@ TEST_F(FunctionSpaceTest, S1_geoDim1_degrees2)
     
     basfunc = functionspace.template eval_basfunc<functionspace::interior, deriv::dx^2, false>(xi, knot_indices);   
     EXPECT_TRUE(torch::equal(*(functionspace.eval_from_precomputed<functionspace::interior>(basfunc, coeff_indices, xi[0].numel(), xi[0].sizes())[0]),
-                             *(bspline.eval<deriv::dx^2, false>(xi)[0])));    
+                             *(bspline.eval<deriv::dx^2, false>(xi)[0])));
+
+    /// Evaluation of gradient (in parametric domain)
+    auto grad = functionspace.template grad<functionspace::interior>(xi);
+    auto grad_ref = bspline.grad(xi);
+
+    EXPECT_TRUE(torch::equal(*(grad)[0], *(grad_ref)[0]));
+
+    /// Evaluation of gradient (in physical domain)
+    auto igrad = functionspace.template igrad<functionspace::interior>(functionspace, xi);
+    auto igrad_ref = bspline.igrad(bspline, xi);
+
+    EXPECT_TRUE(torch::equal(*(igrad)[0], *(igrad_ref)[0]));
+    
+    /// Evaluation of Jacobian (in parametric domain)
+    auto jac = functionspace.template jac<functionspace::interior>(xi);
+    auto jac_ref = bspline.jac(xi);
+    
+    EXPECT_TRUE(torch::equal(*(jac)[0], *(jac_ref)[0]));
+
+    /// Evaluation of Jacobian (in physical domain)
+    auto ijac = functionspace.template ijac<functionspace::interior>(functionspace, xi);
+    auto ijac_ref = bspline.ijac(bspline, xi);
+    
+    EXPECT_TRUE(torch::equal(*(ijac)[0], *(ijac_ref)[0]));
+
+    /// Evaluation of Hessian (in parametric domain)
+    auto hess = functionspace.template hess<functionspace::interior>(xi);
+    auto hess_ref = bspline.hess(xi);
+
+    EXPECT_TRUE(torch::equal(*(hess)[0], *(hess_ref)[0]));
+
+    /// Evaluation of Hessian (in physical domain)
+    auto ihess = functionspace.template ihess<functionspace::interior>(functionspace, xi);
+    auto ihess_ref = bspline.ihess(bspline, xi);
+
+    EXPECT_TRUE(torch::equal(*(ihess)[0], *(ihess_ref)[0]));
   }
 
-  {
-    auto xi = std::tuple{ std::array<torch::Tensor,0>{}, std::array<torch::Tensor,0>{} };
+  { // Boundary
     
+    auto xi = std::tuple{ std::array<torch::Tensor,0>{}, std::array<torch::Tensor,0>{} };
+
+    // Evaluation
     auto eval = functionspace.eval<functionspace::boundary, deriv::func, false>(xi);
     
     EXPECT_TRUE(torch::equal(*std::get<side::left-1>(eval)[0], torch::ones(1, options)));
@@ -82,6 +123,7 @@ TEST_F(FunctionSpaceTest, S1_geoDim1_degrees2)
     EXPECT_TRUE(torch::equal(*std::get<side::left -1>(eval)[0], torch::zeros(1, options)));
     EXPECT_TRUE(torch::equal(*std::get<side::right-1>(eval)[0], torch::zeros(1, options)));
 
+    // Evaluation from precomputed coefficients and basis functions
     auto knot_indices  = functionspace.template find_knot_indices<functionspace::boundary>(xi);
     auto coeff_indices = functionspace.template find_coeff_indices<functionspace::boundary>(knot_indices);
 
@@ -121,10 +163,12 @@ TEST_F(FunctionSpaceTest, S2_geoDim1_degrees23)
   BSpline_t                   bspline({5, 4}, iganet::init::greville, options);
   iganet::S2<BSpline_t> functionspace({5, 4}, iganet::init::greville, options);
 
-  {
+  { // Interior
+    
     auto xi  = iganet::utils::to_tensorArray<real_t>({0.0, 0.1, 0.2, 0.5, 0.75, 0.9, 1.0} /* u */,
                                                      {1.0, 0.2, 0.1, 0.5, 0.9, 0.75, 0.0} /* v */, options);
 
+    // Evaluation
     EXPECT_TRUE(torch::equal(*(functionspace.eval<functionspace::interior, deriv::func, false>(xi)[0]),
                              *(bspline.eval<deriv::func, false>(xi)[0])));
   
@@ -143,6 +187,7 @@ TEST_F(FunctionSpaceTest, S2_geoDim1_degrees23)
     EXPECT_TRUE(torch::equal(*(functionspace.eval<functionspace::interior, deriv::dx+deriv::dy, false>(xi)[0]),
                              *(bspline.eval<deriv::dx+deriv::dy, false>(xi)[0])));
 
+    // Evaluation from precomputed coefficients and basis functions
     auto knot_indices  = functionspace.template find_knot_indices<functionspace::interior>(xi);
     auto coeff_indices = functionspace.template find_coeff_indices<functionspace::interior>(knot_indices);
 
@@ -168,15 +213,59 @@ TEST_F(FunctionSpaceTest, S2_geoDim1_degrees23)
 
     basfunc = functionspace.template eval_basfunc<functionspace::interior, deriv::dx+deriv::dy, false>(xi, knot_indices);   
     EXPECT_TRUE(torch::equal(*(functionspace.eval_from_precomputed<functionspace::interior>(basfunc, coeff_indices, xi[0].numel(), xi[0].sizes())[0]),
-                             *(bspline.eval<deriv::dx+deriv::dy, false>(xi)[0])));    
+                             *(bspline.eval<deriv::dx+deriv::dy, false>(xi)[0])));
+
+    /// Evaluation of gradient (in parametric domain)
+    auto grad = functionspace.template grad<functionspace::interior>(xi);
+    auto grad_ref = bspline.grad(xi);
+
+    for (std::size_t i=0; i<2; ++i)
+      EXPECT_TRUE(torch::equal(*(grad)[i], *(grad_ref)[i]));
+
+    /// Evaluation of gradient (in physical domain)
+    auto igrad = functionspace.template igrad<functionspace::interior>(functionspace, xi);
+    auto igrad_ref = bspline.igrad(bspline, xi);
+    
+    EXPECT_TRUE(torch::equal(*(igrad)[0], *(igrad_ref)[0]) ||
+                torch::equal(torch::isnan(*(igrad)[0]), torch::isnan(*(igrad_ref)[0])));
+    
+    /// Evaluation of Jacobian (in parametric domain)
+    auto jac = functionspace.template jac<functionspace::interior>(xi);
+    auto jac_ref = bspline.jac(xi);
+    
+    for (std::size_t i=0; i<2; ++i)
+      EXPECT_TRUE(torch::equal(*(jac)[i], *(jac_ref)[i]));
+
+    /// Evaluation of Jacobian (in physical domain)
+    auto ijac = functionspace.template ijac<functionspace::interior>(functionspace, xi);
+    auto ijac_ref = bspline.ijac(bspline, xi);
+    
+    EXPECT_TRUE(torch::equal(*(ijac)[0], *(ijac_ref)[0]) ||
+                torch::equal(torch::isnan(*(ijac)[0]), torch::isnan(*(ijac_ref)[0])));
+
+    /// Evaluation of Hessian (in parametric domain)
+    auto hess = functionspace.template hess<functionspace::interior>(xi);
+    auto hess_ref = bspline.hess(xi);
+    
+    for (std::size_t i=0; i<4; ++i)
+      EXPECT_TRUE(torch::equal(*(hess)[i], *(hess_ref)[i]));
+
+    /// Evaluation of Hessian (in physical domain)
+    auto ihess = functionspace.template ihess<functionspace::interior>(functionspace, xi);
+    auto ihess_ref = bspline.ihess(bspline, xi);
+    
+    EXPECT_TRUE(torch::equal(*(ihess)[0], *(ihess_ref)[0]) ||
+                torch::equal(torch::isnan(*(ihess)[0]), torch::isnan(*(ihess_ref)[0])));
   }
   
-  {
+  { // Boundary
+    
     auto xi  = std::tuple{ iganet::utils::to_tensorArray<real_t>({1.0, 0.2, 0.1, 0.5, 0.9, 0.75, 0.0}, options) /* west  */,
                            iganet::utils::to_tensorArray<real_t>({1.0, 0.2, 0.1, 0.5, 0.9, 0.75, 0.0}, options) /* east  */,
                            iganet::utils::to_tensorArray<real_t>({0.0, 0.1, 0.2, 0.5, 0.75, 0.9, 1.0}, options) /* south */,
                            iganet::utils::to_tensorArray<real_t>({0.0, 0.1, 0.2, 0.5, 0.75, 0.9, 1.0}, options) /* north */};
 
+    // Evaluation
     auto eval = functionspace.eval<functionspace::boundary, deriv::func, false>(xi);
 
     iganet::UniformBSpline<real_t, 1, 2> bspline_bdrNS({5}, iganet::init::greville, options);
@@ -246,6 +335,7 @@ TEST_F(FunctionSpaceTest, S2_geoDim1_degrees23)
     EXPECT_TRUE(torch::equal(*(std::get<side::west-1>(eval)[0]),
                              *(bspline_bdrEW.eval<deriv::dx+deriv::dy, false>(std::get<side::west-1>(xi))[0])));
 
+    // Evaluation from precomputed coefficients and basis functions
     auto knot_indices  = functionspace.template find_knot_indices<functionspace::boundary>(xi);
     auto coeff_indices = functionspace.template find_coeff_indices<functionspace::boundary>(knot_indices);
 
@@ -341,11 +431,13 @@ TEST_F(FunctionSpaceTest, S3_geoDim1_degrees234)
   BSpline_t                   bspline({5, 4, 7}, iganet::init::greville, options);
   iganet::S3<BSpline_t> functionspace({5, 4, 7}, iganet::init::greville, options);
 
-  {
+  { // Interior
+    
     auto xi  = iganet::utils::to_tensorArray<real_t>({0.0, 0.1, 0.2,  0.5, 0.75, 0.9,  1.0} /* u */,
                                                      {1.0, 0.2, 0.1,  0.5, 0.9,  0.75, 0.0} /* v */,
                                                      {0.2, 0.5, 0.75, 0.9, 1.0,  0.0,  0.1} /* w */, options);
 
+    // Evaluation
     EXPECT_TRUE(torch::equal(*(functionspace.eval<functionspace::interior, deriv::func, false>(xi)[0]),
                              *(bspline.eval<deriv::func, false>(xi)[0])));
 
@@ -376,6 +468,7 @@ TEST_F(FunctionSpaceTest, S3_geoDim1_degrees234)
     EXPECT_TRUE(torch::equal(*(functionspace.eval<functionspace::interior, deriv::dy+deriv::dz, false>(xi)[0]),
                              *(bspline.eval<deriv::dy+deriv::dz, false>(xi)[0])));
 
+    // Evaluation from precomputed coefficients and basis functions
     auto knot_indices  = functionspace.template find_knot_indices<functionspace::interior>(xi);
     auto coeff_indices = functionspace.template find_coeff_indices<functionspace::interior>(knot_indices);
     
@@ -418,9 +511,52 @@ TEST_F(FunctionSpaceTest, S3_geoDim1_degrees234)
     basfunc = functionspace.template eval_basfunc<functionspace::interior, deriv::dy+deriv::dz, false>(xi, knot_indices);   
     EXPECT_TRUE(torch::equal(*(functionspace.eval_from_precomputed<functionspace::interior>(basfunc, coeff_indices, xi[0].numel(), xi[0].sizes())[0]),
                              *(bspline.eval<deriv::dy+deriv::dz, false>(xi)[0])));
+
+    /// Evaluation of gradient (in parametric domain)
+    auto grad = functionspace.template grad<functionspace::interior>(xi);
+    auto grad_ref = bspline.grad(xi);
+
+    for (std::size_t i=0; i<3; ++i)
+      EXPECT_TRUE(torch::equal(*(grad)[i], *(grad_ref)[i]));
+
+    /// Evaluation of gradient (in physical domain)
+    auto igrad = functionspace.template igrad<functionspace::interior>(functionspace, xi);
+    auto igrad_ref = bspline.igrad(bspline, xi);
+    
+    EXPECT_TRUE(torch::equal(*(igrad)[0], *(igrad_ref)[0]) ||
+                torch::equal(torch::isnan(*(igrad)[0]), torch::isnan(*(igrad_ref)[0])));
+    
+    /// Evaluation of Jacobian (in parametric domain)
+    auto jac = functionspace.template jac<functionspace::interior>(xi);
+    auto jac_ref = bspline.jac(xi);
+    
+    for (std::size_t i=0; i<3; ++i)
+      EXPECT_TRUE(torch::equal(*(jac)[i], *(jac_ref)[i]));
+
+    /// Evaluation of Jacobian (in physical domain)
+    auto ijac = functionspace.template ijac<functionspace::interior>(functionspace, xi);
+    auto ijac_ref = bspline.ijac(bspline, xi);
+    
+    EXPECT_TRUE(torch::equal(*(ijac)[0], *(ijac_ref)[0]) ||
+                torch::equal(torch::isnan(*(ijac)[0]), torch::isnan(*(ijac_ref)[0])));
+
+    /// Evaluation of Hessian (in parametric domain)
+    auto hess = functionspace.template hess<functionspace::interior>(xi);
+    auto hess_ref = bspline.hess(xi);
+    
+    for (std::size_t i=0; i<9; ++i)
+      EXPECT_TRUE(torch::equal(*(hess)[i], *(hess_ref)[i]));
+
+    /// Evaluation of Hessian (in physical domain)
+    auto ihess = functionspace.template ihess<functionspace::interior>(functionspace, xi);
+    auto ihess_ref = bspline.ihess(bspline, xi);
+    
+    EXPECT_TRUE(torch::equal(*(ihess)[0], *(ihess_ref)[0]) ||
+                torch::equal(torch::isnan(*(ihess)[0]), torch::isnan(*(ihess_ref)[0])));
   }
   
-  {
+  { // Boundary
+    
     auto xi  = std::tuple{ iganet::utils::to_tensorArray<real_t>({1.0, 0.2, 0.1,  0.5, 0.9,  0.75, 0.0} /* v */,
                                                                  {0.2, 0.5, 0.75, 0.9, 1.0,  0.0,  0.1} /* w */, options) /* west  */,
                            iganet::utils::to_tensorArray<real_t>({1.0, 0.2, 0.1,  0.5, 0.9,  0.75, 0.0} /* v */,
@@ -434,6 +570,7 @@ TEST_F(FunctionSpaceTest, S3_geoDim1_degrees234)
                            iganet::utils::to_tensorArray<real_t>({0.0, 0.1, 0.2,  0.5, 0.75, 0.9,  1.0} /* u */,
                                                                  {1.0, 0.2, 0.1,  0.5, 0.9,  0.75, 0.0} /* v */, options) /* back  */};
 
+    // Evaluation
     auto eval = functionspace.eval<functionspace::boundary, deriv::func, false>(xi);
 
     iganet::UniformBSpline<real_t, 1, 2, 4> bspline_bdrNS({5, 7}, iganet::init::greville, options);
@@ -588,6 +725,7 @@ TEST_F(FunctionSpaceTest, S3_geoDim1_degrees234)
     EXPECT_TRUE(torch::equal(*(std::get<side::back-1>(eval)[0]),
                              *(bspline_bdrFB.eval<deriv::dy+deriv::dz, false>(std::get<side::back-1>(xi))[0])));
 
+    // Evaluation from precomputed coefficients and basis functions
     auto knot_indices  = functionspace.template find_knot_indices<functionspace::boundary>(xi);
     auto coeff_indices = functionspace.template find_coeff_indices<functionspace::boundary>(knot_indices);
 
