@@ -14,6 +14,9 @@
 
 #pragma once
 
+#include <boost/preprocessor/cat.hpp>
+#include <boost/preprocessor/seq/for_each.hpp>
+
 #include <bspline.hpp>
 
 namespace iganet {
@@ -47,6 +50,9 @@ namespace iganet {
                boundaryspline_t> bdr_;
     
   public:
+    /// @brief Boundary type
+    using boundary_t = decltype(bdr_);
+    
     /// @brief Evaluation type
     using eval_t = std::tuple<torch::Tensor,
                               torch::Tensor>;
@@ -182,6 +188,9 @@ namespace iganet {
                typename std::tuple_element_t<1,boundaryspline_t>> bdr_;
 
   public:
+    /// @brief Boundary type
+    using boundary_t = decltype(bdr_);
+    
     /// @brief Evaluation type
     using eval_t = std::tuple<std::array<torch::Tensor, 1>,
                               std::array<torch::Tensor, 1>,
@@ -339,6 +348,9 @@ namespace iganet {
                typename std::tuple_element_t<2,boundaryspline_t>> bdr_;
 
   public:
+    /// @brief Boundary type
+    using boundary_t = decltype(bdr_);
+    
     /// @brief Evaluation type
     using eval_t = std::tuple<std::array<torch::Tensor, 2>,
                               std::array<torch::Tensor, 2>,
@@ -518,6 +530,9 @@ namespace iganet {
                typename std::tuple_element_t<3,boundaryspline_t>> bdr_;
 
   public:
+    /// @brief Boundary type
+    using boundary_t = decltype(bdr_);
+    
     /// @brief Evaluation type
     using eval_t = std::tuple<std::array<torch::Tensor, 3>,
                               std::array<torch::Tensor, 3>,
@@ -750,19 +765,19 @@ namespace iganet {
     /// the points `xi` @{
     template<deriv deriv = deriv::func,
              bool memory_optimized = false,
-             size_t... Is, typename... Xi>
+             size_t... Is, typename... Xi_t>
     inline auto eval_(std::index_sequence<Is...>,
-                      const std::tuple<Xi...>& xi) const
+                      const std::tuple<Xi_t...>& xi) const
     {
       return std::tuple(std::get<Is>(BoundaryCore::bdr_).template eval<deriv, memory_optimized>(std::get<Is>(xi))...);
     }
     
     template<deriv deriv = deriv::func,
              bool memory_optimized = false,
-             size_t... Is, typename... Xi, typename... Indices>
+             size_t... Is, typename... Xi_t, typename... Indices_t>
     inline auto eval_(std::index_sequence<Is...>,
-                      const std::tuple<Xi...>& xi,
-                      const std::tuple<Indices...>& indices) const
+                      const std::tuple<Xi_t...>& xi,
+                      const std::tuple<Indices_t...>& indices) const
     {
       return std::tuple(std::get<Is>(BoundaryCore::bdr_).template eval<deriv, memory_optimized>(std::get<Is>(xi),
                                                                                                 std::get<Is>(indices))...);
@@ -770,26 +785,26 @@ namespace iganet {
     
     template<deriv deriv = deriv::func,
              bool memory_optimized = false,
-             size_t... Is, typename... Xi, typename... Indices, typename... Coeff_Indices>
+             size_t... Is, typename... Xi_t, typename... Indices_t, typename... Coeff_Indices_t>
     inline auto eval_(std::index_sequence<Is...>,
-                      const std::tuple<Xi...>& xi,
-                      const std::tuple<Indices...>& indices,
-                      const std::tuple<Coeff_Indices...>& coeff_indices) const
+                      const std::tuple<Xi_t...>& xi,
+                      const std::tuple<Indices_t...>& indices,
+                      const std::tuple<Coeff_Indices_t...>& coeff_indices) const
     {
       return std::tuple(std::get<Is>(BoundaryCore::bdr_).template eval<deriv, memory_optimized>(std::get<Is>(xi),
                                                                                                 std::get<Is>(indices),
                                                                                                 std::get<Is>(coeff_indices))...);
     }
     /// @}
-
+    
     /// @brief Returns the value of the boundary spline objects from
     /// precomputed basis function @{
     template<size_t... Is,
-             typename... Basfunc, typename... Coeff_Indices,
+             typename... Basfunc_t, typename... Coeff_Indices_t,
              typename... Numeval, typename... Sizes>
     inline auto eval_from_precomputed_(std::index_sequence<Is...>,
-                                       const std::tuple<Basfunc...>& basfunc,
-                                       const std::tuple<Coeff_Indices...>& coeff_indices,
+                                       const std::tuple<Basfunc_t...>& basfunc,
+                                       const std::tuple<Coeff_Indices_t...>& coeff_indices,
                                        const std::tuple<Numeval...>& numeval,
                                        const std::tuple<Sizes...>& sizes) const
     {
@@ -800,11 +815,11 @@ namespace iganet {
     }
 
     template<size_t... Is,
-             typename... Basfunc, typename... Coeff_Indices, typename... Xi>
+             typename... Basfunc_t, typename... Coeff_Indices_t, typename... Xi_t>
     inline auto eval_from_precomputed_(std::index_sequence<Is...>,
-                                       const std::tuple<Basfunc...>& basfunc,
-                                       const std::tuple<Coeff_Indices...>& coeff_indices,
-                                       const std::tuple<Xi...>& xi) const
+                                       const std::tuple<Basfunc_t...>& basfunc,
+                                       const std::tuple<Coeff_Indices_t...>& coeff_indices,
+                                       const std::tuple<Xi_t...>& xi) const
     {
       return std::tuple(std::get<Is>(BoundaryCore::bdr_).eval_from_precomputed(std::get<Is>(basfunc),
                                                                                std::get<Is>(coeff_indices),
@@ -815,9 +830,9 @@ namespace iganet {
 
     /// @brief Returns the knot indicies of boundary spline object's
     /// knot spans containing `xi`
-    template<size_t... Is, typename... Xi>
+    template<size_t... Is, typename... Xi_t>
     inline auto find_knot_indices_(std::index_sequence<Is...>,
-                                   const std::tuple<Xi...>& xi) const
+                                   const std::tuple<Xi_t...>& xi) const
     {
       return std::tuple(std::get<Is>(BoundaryCore::bdr_).find_knot_indices(std::get<Is>(xi))...);
     }
@@ -827,18 +842,18 @@ namespace iganet {
     /// @{
     template<deriv deriv = deriv::func,
              bool memory_optimized = false,
-             size_t... Is, typename... Xi>
-    inline auto eval_basfunc_(std::index_sequence<Is...>, const std::tuple<Xi...>& xi) const
+             size_t... Is, typename... Xi_t>
+    inline auto eval_basfunc_(std::index_sequence<Is...>, const std::tuple<Xi_t...>& xi) const
     {
       return std::tuple(std::get<Is>(BoundaryCore::bdr_).template eval_basfunc<deriv, memory_optimized>(std::get<Is>(xi))...);
     }
 
     template<deriv deriv = deriv::func,
              bool memory_optimized = false, 
-             size_t... Is, typename... Xi, typename... Indices>
+             size_t... Is, typename... Xi_t, typename... Indices_t>
     inline auto eval_basfunc_(std::index_sequence<Is...>,
-                              const std::tuple<Xi...>& xi,
-                              const std::tuple<Indices...>& indices) const
+                              const std::tuple<Xi_t...>& xi,
+                              const std::tuple<Indices_t...>& indices) const
     {
       return std::tuple(std::get<Is>(BoundaryCore::bdr_).template eval_basfunc<deriv, memory_optimized>(std::get<Is>(xi), std::get<Is>(indices))...);
     }
@@ -846,9 +861,9 @@ namespace iganet {
 
     /// @brief Returns the indices of the boundary spline object's
     /// coefficients corresponding to the knot indices `indices`
-    template<bool memory_optimized = false, size_t... Is, typename... Indices>
+    template<bool memory_optimized = false, size_t... Is, typename... Indices_t>
     inline auto find_coeff_indices_(std::index_sequence<Is...>,
-                                    const std::tuple<Indices...>& indices) const
+                                    const std::tuple<Indices_t...>& indices) const
     {
       return std::tuple(std::get<Is>(BoundaryCore::bdr_).template find_coeff_indices<memory_optimized>(std::get<Is>(indices))...);
     }
@@ -899,66 +914,66 @@ namespace iganet {
     /// @{
     template<deriv deriv = deriv::func,
              bool memory_optimized = false,
-             typename... Xi>
-    inline auto eval(const std::tuple<Xi...>& xi) const
+             typename... Xi_t>
+    inline auto eval(const std::tuple<Xi_t...>& xi) const
     {
       return eval_<deriv, memory_optimized>(std::make_index_sequence<BoundaryCore::sides()>{}, xi);
     }
     
     template<deriv deriv = deriv::func,
              bool memory_optimized = false,
-             typename... Xi, typename... Indices>
-    inline auto eval(const std::tuple<Xi...>& xi,
-                     const std::tuple<Indices...>& indices) const
+             typename... Xi_t, typename... Indices_t>
+    inline auto eval(const std::tuple<Xi_t...>& xi,
+                     const std::tuple<Indices_t...>& indices) const
     {
-      static_assert(sizeof...(Xi) == sizeof...(Indices));
+      static_assert(sizeof...(Xi_t) == sizeof...(Indices_t));
       return eval_<deriv, memory_optimized>(std::make_index_sequence<BoundaryCore::sides()>{}, xi, indices);
     }
     
     template<deriv deriv = deriv::func,
              bool memory_optimized = false,
-             typename... Xi, typename... Indices, typename... Coeff_Indices>
-    inline auto eval(const std::tuple<Xi...>& xi,
-                     const std::tuple<Indices...>& indices,
-                     const std::tuple<Coeff_Indices...>& coeff_indices) const
+             typename... Xi_t, typename... Indices_t, typename... Coeff_Indices_t>
+    inline auto eval(const std::tuple<Xi_t...>& xi,
+                     const std::tuple<Indices_t...>& indices,
+                     const std::tuple<Coeff_Indices_t...>& coeff_indices) const
     {
-      static_assert(sizeof...(Xi) == sizeof...(Indices) &&
-                    sizeof...(Xi) == sizeof...(Coeff_Indices));
+      static_assert(sizeof...(Xi_t) == sizeof...(Indices_t) &&
+                    sizeof...(Xi_t) == sizeof...(Coeff_Indices_t));
       return eval_<deriv, memory_optimized>(std::make_index_sequence<BoundaryCore::sides()>{}, xi, indices, coeff_indices);
     }
     /// @}
     
     /// @brief Returns the value of the spline objects from
     /// precomputed basis function @{
-    template<typename... Basfunc, typename... Coeff_Indices,
+    template<typename... Basfunc_t, typename... Coeff_Indices_t,
              typename... Numeval, typename... Sizes>
-    inline auto eval_from_precomputed(const std::tuple<Basfunc...>& basfunc,
-                                      const std::tuple<Coeff_Indices...>& coeff_indices,
+    inline auto eval_from_precomputed(const std::tuple<Basfunc_t...>& basfunc,
+                                      const std::tuple<Coeff_Indices_t...>& coeff_indices,
                                       const std::tuple<Numeval...>& numeval,
                                       const std::tuple<Sizes...>& sizes) const
     {
-      static_assert(sizeof...(Basfunc) == sizeof...(Coeff_Indices) &&
-                    sizeof...(Basfunc) == sizeof...(Numeval) &&
-                    sizeof...(Basfunc) == sizeof...(Sizes));
+      static_assert(sizeof...(Basfunc_t) == sizeof...(Coeff_Indices_t) &&
+                    sizeof...(Basfunc_t) == sizeof...(Numeval) &&
+                    sizeof...(Basfunc_t) == sizeof...(Sizes));
       return eval_from_precomputed_(std::make_index_sequence<BoundaryCore::sides()>{},
                                     basfunc, coeff_indices, numeval, sizes);
     }
 
-    template<typename... Basfunc, typename... Coeff_Indices, typename... Xi>
-    inline auto eval_from_precomputed(const std::tuple<Basfunc...>& basfunc,
-                                      const std::tuple<Coeff_Indices...>& coeff_indices,
-                                      const std::tuple<Xi...>& xi) const
+    template<typename... Basfunc_t, typename... Coeff_Indices_t, typename... Xi_t>
+    inline auto eval_from_precomputed(const std::tuple<Basfunc_t...>& basfunc,
+                                      const std::tuple<Coeff_Indices_t...>& coeff_indices,
+                                      const std::tuple<Xi_t...>& xi) const
     {
-      static_assert(sizeof...(Basfunc) == sizeof...(Coeff_Indices) &&
-                    sizeof...(Basfunc) == sizeof...(Xi));
+      static_assert(sizeof...(Basfunc_t) == sizeof...(Coeff_Indices_t) &&
+                    sizeof...(Basfunc_t) == sizeof...(Xi_t));
       return eval_from_precomputed_(std::make_index_sequence<BoundaryCore::sides()>{},
                                     basfunc, coeff_indices, xi);
     }
     /// @}
 
     /// @brief Returns the knot indicies of knot spans containing `xi`
-    template<typename... Xi>
-    inline auto find_knot_indices(const std::tuple<Xi...>& xi) const
+    template<typename... Xi_t>
+    inline auto find_knot_indices(const std::tuple<Xi_t...>& xi) const
     {
       return find_knot_indices_(std::make_index_sequence<BoundaryCore::sides()>{}, xi);
     }
@@ -967,27 +982,27 @@ namespace iganet {
     /// functions in the points `xi` @{
     template<deriv deriv = deriv::func,
              bool memory_optimized = false, 
-             typename... Xi>
-    inline auto eval_basfunc(const std::tuple<Xi...>& xi) const
+             typename... Xi_t>
+    inline auto eval_basfunc(const std::tuple<Xi_t...>& xi) const
     {
       return eval_basfunc_<deriv, memory_optimized>(std::make_index_sequence<BoundaryCore::sides()>{}, xi);
     }
 
     template<deriv deriv = deriv::func,
              bool memory_optimized = false, 
-             typename... Xi, typename... Indices>
-    inline auto eval_basfunc(const std::tuple<Xi...>& xi,
-                             const std::tuple<Indices...>& indices) const
+             typename... Xi_t, typename... Indices_t>
+    inline auto eval_basfunc(const std::tuple<Xi_t...>& xi,
+                             const std::tuple<Indices_t...>& indices) const
     {
-      static_assert(sizeof...(Xi) == sizeof...(Indices));
+      static_assert(sizeof...(Xi_t) == sizeof...(Indices_t));
       return eval_basfunc_<deriv, memory_optimized>(std::make_index_sequence<BoundaryCore::sides()>{}, xi, indices);
     }
     /// @}
 
     /// @brief Returns the indices of the spline objects'
     /// coefficients corresponding to the knot indices `indices`
-    template<bool memory_optimized = false, typename... Indices>
-    inline auto find_coeff_indices(const std::tuple<Indices...>& indices) const
+    template<bool memory_optimized = false, typename... Indices_t>
+    inline auto find_coeff_indices(const std::tuple<Indices_t...>& indices) const
     {
       return find_coeff_indices_<memory_optimized>(std::make_index_sequence<BoundaryCore::sides()>{}, indices);
     }
@@ -1029,7 +1044,113 @@ namespace iganet {
       read_(std::make_index_sequence<BoundaryCore::sides()>{}, archive, key);
       return archive;
     }
+
+#define GENERATE_EXPR_MACRO(r, data, name)                              \
+    private:                                                            \
+      template<bool memory_optimized = false,                           \
+               size_t... Is, typename... Xi_t>                          \
+      inline auto BOOST_PP_CAT(name,_)(std::index_sequence<Is...>,      \
+                                       const std::tuple<Xi_t...>& xi) const \
+      {                                                                 \
+        return std::tuple(std::get<Is>(BoundaryCore::bdr_).             \
+                          template name<memory_optimized>(std::get<Is>(xi))...); \
+      }                                                                 \
+                                                                        \
+      template<bool memory_optimized = false,                           \
+               size_t... Is, typename... Xi_t, typename... Indices_t>   \
+      inline auto BOOST_PP_CAT(name,_)(std::index_sequence<Is...>,      \
+                                       const std::tuple<Xi_t...>& xi, \
+                                       const std::tuple<Indices_t...>& indices) const \
+      {                                                                 \
+        return std::tuple(std::get<Is>(BoundaryCore::bdr_).             \
+                          template name<memory_optimized>(std::get<Is>(xi), \
+                                                          std::get<Is>(indices))...); \
+      }                                                                 \
+                                                                        \
+      template<bool memory_optimized = false,                           \
+               size_t... Is, typename... Xi_t, typename... Indices_t,   \
+               typename... Coeff_Indices_t>                             \
+      inline auto BOOST_PP_CAT(name,_)(std::index_sequence<Is...>,      \
+                                       const std::tuple<Xi_t...>&  xi,  \
+                                       const std::tuple<Indices_t...>& indices, \
+                                       const std::tuple<Coeff_Indices_t...>& coeff_indices) const \
+      {                                                                 \
+        return std::tuple(std::get<Is>(BoundaryCore::bdr_).             \
+                          template name<memory_optimized>(std::get<Is>(xi), \
+                                                          std::get<Is>(indices), \
+                                                          std::get<Is>(coeff_indices))...); \
+      }                                                                 \
+                                                                        \
+    public:                                                             \
+      template<bool memory_optimized = false, typename... Args_t>       \
+      inline auto name(const Args_t&... args) const                     \
+      {                                                                 \
+        return BOOST_PP_CAT(name,_)<memory_optimized>(std::make_index_sequence<BoundaryCore::sides()>{}, \
+                                                      args...);         \
+      }
     
+    /// @brief Auto-generated functions
+    /// @{
+    BOOST_PP_SEQ_FOR_EACH(GENERATE_EXPR_MACRO, _, GENERATE_EXPR_SEQ)
+    /// @}
+#undef GENERATE_EXPR_MACRO
+
+#define GENERATE_IEXPR_MACRO(r, data, name)                             \
+    private:                                                            \
+      template<bool memory_optimized = false,                           \
+               size_t... Is, typename... Geometry_t, typename... Xi_t>  \
+      inline auto BOOST_PP_CAT(name,_)(std::index_sequence<Is...>,      \
+                                       const std::tuple<Geometry_t...>& G, \
+                                       const std::tuple<Xi_t...>& xi) const \
+      {                                                                 \
+        return std::tuple(std::get<Is>(BoundaryCore::bdr_).             \
+                          template name<memory_optimized>(std::get<Is>(G), \
+                                                          std::get<Is>(xi))...); \
+      }                                                                 \
+                                                                        \
+      template<bool memory_optimized = false,                           \
+               size_t... Is, typename... Geometry_t, typename... Xi_t,  \
+               typename... Indices_t>                                   \
+      inline auto BOOST_PP_CAT(name,_)(std::index_sequence<Is...>,      \
+                                       const std::tuple<Geometry_t...>& G, \
+                                       const std::tuple<Xi_t...>& xi,   \
+                                       const std::tuple<Indices_t...>& indices) const \
+      {                                                                 \
+        return std::tuple(std::get<Is>(BoundaryCore::bdr_).             \
+                          template name<memory_optimized>(std::get<Is>(G), \
+                                                          std::get<Is>(xi), \
+                                                          std::get<Is>(indices))...); \
+      }                                                                 \
+                                                                        \
+      template<bool memory_optimized = false,                           \
+               size_t... Is, typename... Geometry_t, typename... Xi_t,  \
+               typename... Indices_t, typename... Coeff_Indices_t>      \
+      inline auto BOOST_PP_CAT(name,_)(std::index_sequence<Is...>,      \
+                                       const std::tuple<Geometry_t...>& G, \
+                                       const std::tuple<Xi_t...>& xi,   \
+                                       const std::tuple<Indices_t...>& indices, \
+                                       const std::tuple<Coeff_Indices_t...>& coeff_indices) const \
+      {                                                                 \
+        return std::tuple(std::get<Is>(BoundaryCore::bdr_).             \
+                          template name<memory_optimized>(std::get<Is>(G), \
+                                                          std::get<Is>(xi), \
+                                                          std::get<Is>(indices), \
+                                                          std::get<Is>(coeff_indices))...); \
+      }                                                                 \
+                                                                        \
+    public:                                                             \
+      template<bool memory_optimized = false, typename... Args_t>       \
+      inline auto name(const Args_t&... args) const                     \
+      {                                                                 \
+        return BOOST_PP_CAT(name,_)<memory_optimized>(std::make_index_sequence<BoundaryCore::sides()>{}, \
+                                                      args...);         \
+      }
+    
+    /// @brief Auto-generated functions
+    /// @{
+    BOOST_PP_SEQ_FOR_EACH(GENERATE_IEXPR_MACRO, _, GENERATE_IEXPR_SEQ)
+    /// @}
+#undef GENERATE_IEXPR_MACRO
   };
 
   /// @brief Boundary

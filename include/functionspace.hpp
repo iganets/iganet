@@ -708,8 +708,8 @@ namespace iganet {
       template<functionspace comp = functionspace::interior,
                deriv deriv = deriv::func,
                bool memory_optimized = false, 
-               typename... Args>
-      inline auto eval(const Args&... args) const
+               typename... Args_t>
+      inline auto eval(const Args_t&... args) const
       {
         if constexpr (comp == functionspace::interior)
           return spline_t::template eval<deriv, memory_optimized>(args...);
@@ -720,8 +720,8 @@ namespace iganet {
 #define GENERATE_EXPR_MACRO(r, data, name)                              \
       template<functionspace comp = functionspace::interior,            \
                bool memory_optimized = false,                           \
-               typename... Args>                                        \
-      inline auto name(const Args&... args) const                       \
+               typename... Args_t>                                      \
+      inline auto name(const Args_t&... args) const                     \
       {                                                                 \
         if constexpr (comp == functionspace::interior)                  \
           return spline_t::template name<memory_optimized>(args...);    \
@@ -729,33 +729,39 @@ namespace iganet {
           return boundary_.template name<memory_optimized>(args...);    \
       }
 
+      /// @brief Auto-generated functions
+      /// @{
       BOOST_PP_SEQ_FOR_EACH(GENERATE_EXPR_MACRO, _, GENERATE_EXPR_SEQ)
+      /// @}
 #undef GENERATE_EXPR_MACRO
       
 #define GENERATE_IEXPR_MACRO(r, data, name)                             \
       template<functionspace comp = functionspace::interior,            \
                bool memory_optimized = false,                           \
                typename Geometry_t,                                     \
-               typename... Args>                                        \
+               typename... Args_t>                                      \
       inline auto name(const Geometry_t& G,                             \
-                       const Args&... args) const                       \
+                       const Args_t&... args) const                     \
       {                                                                 \
         if constexpr (comp == functionspace::interior)                  \
           return spline_t::template name<memory_optimized>              \
             (static_cast<typename Geometry_t::Base::Base>(G), args...); \
         else if constexpr (comp == functionspace::boundary)             \
           return boundary_.template name<memory_optimized>              \
-            (static_cast<typename Geometry_t::Base::Base>(G), args...); \
+            (static_cast<typename Geometry_t::boundary_t::boundary_t>(G.boundary().coeffs()), args...); \
       }
-      
+
+      /// @brief Auto-generated functions
+      /// @{
       BOOST_PP_SEQ_FOR_EACH(GENERATE_IEXPR_MACRO, _, GENERATE_IEXPR_SEQ)
+      /// @}
 #undef GENERATE_IEXPR_MACRO
       
       /// @brief Returns the value of the spline object from
       /// precomputed basis function
       template<functionspace comp = functionspace::interior,
-               typename... Args>
-      inline auto eval_from_precomputed(const Args&... args) const
+               typename... Args_t>
+      inline auto eval_from_precomputed(const Args_t&... args) const
       {
         if constexpr (comp == functionspace::interior)
           return spline_t::eval_from_precomputed(args...);
@@ -778,8 +784,8 @@ namespace iganet {
       template<functionspace comp = functionspace::interior,
                deriv deriv = deriv::func,
                bool memory_optimized = false,
-               typename... Args>
-      inline auto eval_basfunc(const Args&... args) const
+               typename... Args_t>
+      inline auto eval_basfunc(const Args_t&... args) const
       {
         if constexpr (comp == functionspace::interior)
           return spline_t::template eval_basfunc<deriv, memory_optimized>(args...);
