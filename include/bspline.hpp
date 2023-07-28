@@ -183,6 +183,11 @@ namespace iganet {
     /// control net \f$\left(n_d\right)_{d=1}^{d_\text{par}}\f$
     std::array<int64_t, parDim_> ncoeffs_;
 
+    /// @brief Array storing the sizes of the coefficients of the
+    /// control net \f$\left(n_d\right)_{d=1}^{d_\text{par}}\f$ in
+    /// reverse order (needed for coeffs_view)
+    std::array<int64_t, parDim_> ncoeffs_reverse_;
+
     /// @brief Array storing the knot vectors
     /// \f$\left(\left(t_{i_d}\right)_{i_d=1}^{n_d+p_d+1}\right)_{d=1}^{d_\text{par}}\f$
     std::array<torch::Tensor, parDim_> knots_;
@@ -249,9 +254,16 @@ namespace iganet {
                        enum init                           init    = init::greville,
                        Options<real_t>                     options = Options<real_t>{})
       : options_(options),
-        ncoeffs_(ncoeffs)
+        ncoeffs_(ncoeffs),
+        ncoeffs_reverse_(ncoeffs)
     {
+      // Reverse ncoeffs
+      std::reverse(ncoeffs_reverse_.begin(), ncoeffs_reverse_.end());
+
+      // Initialize knot vectors
       init_knots();
+
+      // Initialize coefficients
       init_coeffs(init);
     }
 
@@ -272,9 +284,16 @@ namespace iganet {
                        bool                                      clone   = false,
                        Options<real_t>                           options = Options<real_t>{})
       : options_(options),
-        ncoeffs_(ncoeffs)
+        ncoeffs_(ncoeffs),
+        ncoeffs_reverse_(ncoeffs)
     {
+      // Reverse ncoeffs
+      std::reverse(ncoeffs_reverse_.begin(), ncoeffs_reverse_.end());
+
+      // Initialize knot vectors
       init_knots();
+
+      // Copy/clone coefficients
       if (clone)
         for (short_t i = 0; i < geoDim_; ++i)
           coeffs_[i] = coeffs[i].clone().to(options.requires_grad(false)).requires_grad_(options.requires_grad());
@@ -298,8 +317,13 @@ namespace iganet {
                        Options<real_t>                      options = Options<real_t>{})
       : options_(options),
         ncoeffs_(ncoeffs),
+        ncoeffs_reverse_(ncoeffs),
         coeffs_(std::move(coeffs))
     {
+      // Reverse ncoeffs
+      std::reverse(ncoeffs_reverse_.begin(), ncoeffs_reverse_.end());
+
+      // Initialize knot vectors
       init_knots();
     }
     
@@ -311,11 +335,17 @@ namespace iganet {
                        Options<real_t>                                        options = Options<real_t>{})
       : options_(options),
         ncoeffs_(other.ncoeffs()),
+        ncoeffs_reverse_(ncoeffs_),
         nknots_(other.nknots())
     {
+      // Reverse ncoeffs
+      std::reverse(ncoeffs_reverse_.begin(), ncoeffs_reverse_.end());
+
+      // Clone coefficients
       for (short_t i = 0; i < geoDim_; ++i)
         coeffs_[i] = other.coeffs(i).clone().to(options.requires_grad(false)).requires_grad_(options.requires_grad());
 
+      // Clone knot vectors
       for (short_t i = 0; i < parDim_; ++i)
         knots_[i] = other.knots(i).clone().to(options.requires_grad(false)).requires_grad_(options.requires_grad());
     }
@@ -480,7 +510,7 @@ namespace iganet {
     inline const auto coeffs_view(short_t i) const
     {
       assert(i >= 0 && i < geoDim_);
-      return coeffs_[i].view(utils::to_ArrayRef(ncoeffs_));
+      return coeffs_[i].view(utils::to_ArrayRef(ncoeffs_reverse_));
     }
     
     /// @brief Returns the total number of coefficients
@@ -3537,15 +3567,22 @@ namespace iganet {
     ///
     /// @{
     template<bool memory_optimized = false>
-    auto grad(torch::Tensor& xi) const
+    inline auto grad(const torch::Tensor& xi) const
     {
+      static_assert(BSplineCore::geoDim_ == 1,
+                    "grad(.) requires 1D variable, use jac(.) instead");
       return grad<memory_optimized>(utils::TensorArray1({xi}));
     }
 
     template<bool memory_optimized = false>
     inline auto grad(const std::array<torch::Tensor, BSplineCore::parDim_>& xi) const
     {
-      return grad<memory_optimized>(xi, BSplineCore::find_knot_indices(xi));
+      static_assert(BSplineCore::geoDim_ == 1,
+                    "grad(.) requires 1D variable, use jac(.) instead");
+      if constexpr (BSplineCore::parDim_ == 0)
+        return utils::BlockTensor<torch::Tensor, 1, 1>{ torch::zeros_like(BSplineCore::coeffs_[0]) };
+      else
+        return grad<memory_optimized>(xi, BSplineCore::find_knot_indices(xi));
     }
     /// @}
 
@@ -3574,6 +3611,8 @@ namespace iganet {
     inline auto grad(const std::array<torch::Tensor, BSplineCore::parDim_>& xi,
                      const std::array<torch::Tensor, BSplineCore::parDim_>& indices) const
     {
+      static_assert(BSplineCore::geoDim_ == 1,
+                    "grad(.) requires 1D variable, use jac(.) instead");
       return grad<memory_optimized>(xi, indices,
                                     BSplineCore::template find_coeff_indices<memory_optimized>(indices));
     }
@@ -3705,7 +3744,7 @@ namespace iganet {
     ///
     /// @{
     template<bool memory_optimized = false, typename Geometry_t>
-    auto igrad(const Geometry_t& G, torch::Tensor& xi)
+    auto igrad(const Geometry_t& G, const torch::Tensor& xi) const
     {
       return igrad<memory_optimized, Geometry_t>(G, utils::TensorArray1({xi}));
     }
@@ -3829,7 +3868,7 @@ namespace iganet {
     ///
     /// @{
     template<bool memory_optimized = false>
-    auto hess(torch::Tensor& xi) const
+    inline auto hess(const torch::Tensor& xi) const
     {
       return hess<memory_optimized>(utils::TensorArray1({xi}));
     }
@@ -3837,7 +3876,10 @@ namespace iganet {
     template<bool memory_optimized = false>
     inline auto hess(const std::array<torch::Tensor, BSplineCore::parDim_>& xi) const
     {
-      return hess<memory_optimized>(xi, BSplineCore::find_knot_indices(xi));
+      if constexpr (BSplineCore::parDim_ == 0)
+        return utils::BlockTensor<torch::Tensor, 1, 1>{ torch::zeros_like(BSplineCore::coeffs_[0]) };
+      else
+        return hess<memory_optimized>(xi, BSplineCore::find_knot_indices(xi));
     }
     /// @}
 
@@ -4032,7 +4074,7 @@ namespace iganet {
     ///
     /// @{
     template<bool memory_optimized = false, typename Geometry_t>
-    auto ihess(const Geometry_t& G, torch::Tensor& xi)
+    auto ihess(const Geometry_t& G, const torch::Tensor& xi) const
     {
       return ihess<memory_optimized, Geometry_t>(G, utils::TensorArray1({xi}));
     }
@@ -4177,7 +4219,7 @@ namespace iganet {
     ///
                   /// @{
     template<bool memory_optimized = false>
-    auto jac(torch::Tensor& xi)
+    inline auto jac(const torch::Tensor& xi) const
     {
       return jac<memory_optimized>(utils::TensorArray1({xi}));
     }
@@ -4185,7 +4227,10 @@ namespace iganet {
     template<bool memory_optimized = false>
     inline auto jac(const std::array<torch::Tensor, BSplineCore::parDim_>& xi) const
     {
-      return jac<memory_optimized>(xi, BSplineCore::find_knot_indices(xi));
+      if constexpr (BSplineCore::parDim_ == 0)
+        return utils::BlockTensor<torch::Tensor, 1, 1>{ torch::zeros_like(BSplineCore::coeffs_[0]) };
+      else
+        return jac<memory_optimized>(xi, BSplineCore::find_knot_indices(xi));
     }
     /// @}
 
@@ -4358,7 +4403,7 @@ namespace iganet {
     ///
     /// @{
     template<bool memory_optimized = false, typename Geometry_t>
-    auto ijac(const Geometry_t& G, torch::Tensor& xi)
+    auto ijac(const Geometry_t& G, const torch::Tensor& xi) const
     {
       return ijac<memory_optimized, Geometry_t>(G, utils::TensorArray1({xi}));
     }
@@ -4953,7 +4998,7 @@ namespace iganet {
         else
           os << "{}";
         os << "\ncoeffs = "
-           << BSplineCore::coeffs();
+           << BSplineCore::coeffs_view();
       }
       
       os << "\n)";
