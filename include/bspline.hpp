@@ -256,13 +256,13 @@ namespace iganet {
       : options_(options),
         ncoeffs_(ncoeffs),
         ncoeffs_reverse_(ncoeffs)
-    {
+    {      
       // Reverse ncoeffs
       std::reverse(ncoeffs_reverse_.begin(), ncoeffs_reverse_.end());
 
       // Initialize knot vectors
       init_knots();
-
+      
       // Initialize coefficients
       init_coeffs(init);
     }
@@ -2319,7 +2319,7 @@ namespace iganet {
       for (short_t i = 0; i < parDim_; ++i) {
         
         // Check that open knot vector can be created
-        if ((degrees_[i] > ncoeffs_[i] + 1) || (ncoeffs_[i] < 2))
+        if ((ncoeffs_[i] < degrees_[i] + 1) || (ncoeffs_[i] < 2))
           throw std::runtime_error("Not enough coefficients to create open knot vector");
         
         // Create open uniform knot vector
@@ -2425,7 +2425,7 @@ namespace iganet {
                 auto knots = knots_[j].template packed_accessor64<value_type, 1>();
                 const int num_mp = at::cuda::getCurrentDeviceProperties()->multiProcessorCount;
                 cuda::greville_cuda_kernel<<<32*num_mp, 256>>>(greville, knots,
-							       ncoeffs_[j], degrees_[j], false);
+                                                               ncoeffs_[j], degrees_[j], false);
 #else
                 throw std::runtime_error("Code must be compiled with CUDA enabled");
 #endif
@@ -3788,11 +3788,14 @@ namespace iganet {
                       const std::array<torch::Tensor, BSplineCore::parDim_>& indices,
                       const std::array<torch::Tensor, Geometry_t::parDim()>& indices_G) const
     {
-      return igrad<memory_optimized, Geometry_t>(G, xi,
-                                                 indices,
-                                                 BSplineCore::template find_coeff_indices<memory_optimized>(indices),
-                                                 indices_G,
-                                                 G.template find_coeff_indices<memory_optimized>(indices_G));
+      if constexpr (BSplineCore::parDim_ == 0)
+        return utils::BlockTensor<torch::Tensor, 1, 1>{ torch::zeros_like(BSplineCore::coeffs_[0]) };
+      else
+        return igrad<memory_optimized, Geometry_t>(G, xi,
+                                                   indices,
+                                                   BSplineCore::template find_coeff_indices<memory_optimized>(indices),
+                                                   indices_G,
+                                                   G.template find_coeff_indices<memory_optimized>(indices_G));
     }
 
     /// @brief Returns a block-tensor with the gradient of the
@@ -4083,9 +4086,12 @@ namespace iganet {
     inline auto ihess(const Geometry_t& G,
                       const std::array<torch::Tensor, BSplineCore::parDim_>& xi) const
     {
-      return ihess<memory_optimized, Geometry_t>(G, xi,
-                                                 BSplineCore::find_knot_indices(xi),
-                                                 G.find_knot_indices(xi));
+      if constexpr (BSplineCore::parDim_ == 0)
+        return utils::BlockTensor<torch::Tensor, 1, 1>{ torch::zeros_like(BSplineCore::coeffs_[0]) };
+      else
+        return ihess<memory_optimized, Geometry_t>(G, xi,
+                                                   BSplineCore::find_knot_indices(xi),
+                                                   G.find_knot_indices(xi));
     }
     /// @}
 
@@ -4447,11 +4453,14 @@ namespace iganet {
                      const std::array<torch::Tensor, BSplineCore::parDim_>& indices,
                      const std::array<torch::Tensor, Geometry_t::parDim()>& indices_G) const
     {
-      return ijac<memory_optimized, Geometry_t>(G, xi,
-                                                indices,
-                                                BSplineCore::template find_coeff_indices<memory_optimized>(indices),
-                                                indices_G,
-                                                G.template find_coeff_indices<memory_optimized>(indices_G));
+      if constexpr (BSplineCore::parDim_ == 0)
+        return utils::BlockTensor<torch::Tensor, 1, 1>{ torch::zeros_like(BSplineCore::coeffs_[0]) };
+      else
+        return ijac<memory_optimized, Geometry_t>(G, xi,
+                                                  indices,
+                                                  BSplineCore::template find_coeff_indices<memory_optimized>(indices),
+                                                  indices_G,
+                                                  G.template find_coeff_indices<memory_optimized>(indices_G));
     }
 
     /// @brief Returns a block-tensor with the Jacobian of the
