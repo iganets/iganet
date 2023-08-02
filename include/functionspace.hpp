@@ -17,10 +17,25 @@
 #include <boost/preprocessor/seq/for_each.hpp>
 
 #include <bspline.hpp>
+#include <utils/convert.hpp>
 #include <utils/zip.hpp>
 
 namespace iganet {
 
+  using namespace literals;
+  
+  /// @brief Adds two std::arrays
+  template<typename T, std::size_t size>
+  inline std::array<T, size> operator+(std::array<T, size> lhs, std::array<T, size> rhs)
+  {
+    std::array<T, size> result;
+    
+    for (std::size_t i=0; i<size; ++i)
+      result[i] = lhs[i] + rhs[i];
+    
+    return result;
+  }
+  
   /// @brief Enumerator for the function space component
   enum class functionspace : short_t
     {
@@ -1302,21 +1317,21 @@ namespace iganet {
     TH1(TH1&&) = default;
     TH1(const TH1&) = default;
 
-    TH1(const std::array<int64_t, spline_t::parDim()>& ncoeffs,
+    TH1(const std::array<int64_t, 1>& ncoeffs,
         enum init init = init::zeros,
         Options<typename spline_t::value_type> options = iganet::Options<typename spline_t::value_type>{})
-      : Base(ncoeffs, ncoeffs, init, options)
+      : Base(ncoeffs + utils::to_array(1_i64),
+             ncoeffs, init, options)
     {
-      std::get<0>(*this).uniform_refine();
+      std::get<0>(*this).reduce_continuity();
     }
     
-    TH1(const std::array<std::vector<typename spline_t::value_type>,
-        spline_t::parDim()>& kv,
+    TH1(const std::array<std::vector<typename spline_t::value_type>, 1>& kv,
         enum init init = init::zeros,
         Options<typename spline_t::value_type> options = iganet::Options<typename spline_t::value_type>{})
       : Base(kv, kv, init, options)
     {
-      std::get<0>(*this).uniform_refine();
+      std::get<0>(*this).reduce_continuity();
     }
     /// @}
   };
@@ -1369,23 +1384,24 @@ namespace iganet {
     TH2(TH2&&) = default;
     TH2(const TH2&) = default;
 
-    TH2(const std::array<int64_t, spline_t::parDim()>& ncoeffs,
+    TH2(const std::array<int64_t, 2>& ncoeffs,
         enum init init = init::zeros,
         Options<typename spline_t::value_type> options = iganet::Options<typename spline_t::value_type>{})
-      : Base(ncoeffs, ncoeffs, ncoeffs, init, options)
+      : Base(ncoeffs + utils::to_array(1_i64, 1_i64),
+             ncoeffs + utils::to_array(1_i64, 1_i64),
+             ncoeffs, init, options)
     {
-      std::get<0>(*this).uniform_refine();
-      std::get<1>(*this).uniform_refine();
+      std::get<0>(*this).reduce_continuity();
+      std::get<1>(*this).reduce_continuity();
     }
 
-    TH2(const std::array<std::vector<typename spline_t::value_type>,
-        spline_t::parDim()>& kv,
+    TH2(const std::array<std::vector<typename spline_t::value_type>, 2>& kv,
         enum init init = init::zeros,
         Options<typename spline_t::value_type> options = iganet::Options<typename spline_t::value_type>{})
       : Base(kv, kv, kv, init, options)
     {
-      std::get<0>(*this).uniform_refine();
-      std::get<1>(*this).uniform_refine();
+      std::get<0>(*this).reduce_continuity();
+      std::get<1>(*this).reduce_continuity();
     }
     /// @}
   };
@@ -1457,25 +1473,27 @@ namespace iganet {
     TH3(TH3&&) = default;
     TH3(const TH3&) = default;
 
-    TH3(const std::array<int64_t, spline_t::parDim()>& ncoeffs,
+    TH3(const std::array<int64_t, 3>& ncoeffs,
         enum init init = init::zeros,
         Options<typename spline_t::value_type> options = iganet::Options<typename spline_t::value_type>{})
-      : Base(ncoeffs, ncoeffs, ncoeffs, ncoeffs, init, options)
+      : Base(ncoeffs + utils::to_array(1_i64, 1_i64, 1_i64),
+             ncoeffs + utils::to_array(1_i64, 1_i64, 1_i64),
+             ncoeffs + utils::to_array(1_i64, 1_i64, 1_i64),
+             ncoeffs, init, options)
     {
-      std::get<0>(*this).uniform_refine();
-      std::get<1>(*this).uniform_refine();
-      std::get<2>(*this).uniform_refine();
+      std::get<0>(*this).reduce_continuity();
+      std::get<1>(*this).reduce_continuity();
+      std::get<2>(*this).reduce_continuity();
     }
 
-    TH3(const std::array<std::vector<typename spline_t::value_type>,
-        spline_t::parDim()>& kv,
+    TH3(const std::array<std::vector<typename spline_t::value_type>, 3>& kv,
         enum init init = init::zeros,
         Options<typename spline_t::value_type> options = iganet::Options<typename spline_t::value_type>{})
       : Base(kv, kv, kv, kv, init, options)
     {
-      std::get<0>(*this).uniform_refine();
-      std::get<1>(*this).uniform_refine();
-      std::get<2>(*this).uniform_refine();
+      std::get<0>(*this).reduce_continuity();
+      std::get<1>(*this).reduce_continuity();
+      std::get<2>(*this).reduce_continuity();
     }
     /// @}
   };
@@ -1570,27 +1588,30 @@ namespace iganet {
     TH4(TH4&&) = default;
     TH4(const TH4&) = default;
 
-    TH4(const std::array<int64_t, spline_t::parDim()>& ncoeffs,
+    TH4(const std::array<int64_t, 4>& ncoeffs,
         enum init init = init::zeros,
         Options<typename spline_t::value_type> options = iganet::Options<typename spline_t::value_type>{})
-      : Base(ncoeffs, ncoeffs, ncoeffs, ncoeffs, ncoeffs, init, options)
+      : Base(ncoeffs + utils::to_array(1_i64, 1_i64, 1_i64, 1_i64),
+             ncoeffs + utils::to_array(1_i64, 1_i64, 1_i64, 1_i64),
+             ncoeffs + utils::to_array(1_i64, 1_i64, 1_i64, 1_i64),
+             ncoeffs + utils::to_array(1_i64, 1_i64, 1_i64, 1_i64),
+             ncoeffs, init, options)
     {
-      std::get<0>(*this).uniform_refine();
-      std::get<1>(*this).uniform_refine();
-      std::get<2>(*this).uniform_refine();
-      std::get<3>(*this).uniform_refine();
+      std::get<0>(*this).reduce_continuity();
+      std::get<1>(*this).reduce_continuity();
+      std::get<2>(*this).reduce_continuity();
+      std::get<3>(*this).reduce_continuity();
     }
 
-    TH4(const std::array<std::vector<typename spline_t::value_type>,
-        spline_t::parDim()>& kv,
+    TH4(const std::array<std::vector<typename spline_t::value_type>, 4>& kv,
         enum init init = init::zeros,
         Options<typename spline_t::value_type> options = iganet::Options<typename spline_t::value_type>{})
       : Base(kv, kv, kv, kv, kv, init, options)
     {
-      std::get<0>(*this).uniform_refine();
-      std::get<1>(*this).uniform_refine();
-      std::get<2>(*this).uniform_refine();
-      std::get<3>(*this).uniform_refine();
+      std::get<0>(*this).reduce_continuity();
+      std::get<1>(*this).reduce_continuity();
+      std::get<2>(*this).reduce_continuity();
+      std::get<3>(*this).reduce_continuity();
     }
     /// @}
   };
@@ -1598,7 +1619,7 @@ namespace iganet {
   TUPLE_WRAPPER(TH4);
 
   /// @brief Nedelec like function space
-  /// \f$ S_{p+1}^{p-1} \otimes S_{p}^{p-1} \f$
+  /// \f$ S_{p+1}^{p} \otimes S_{p}^{p-1} \f$
   template<typename spline_t>
   class NE1
     : public FunctionSpace<S1<typename spline_t::template
@@ -1627,21 +1648,19 @@ namespace iganet {
     NE1(NE1&&) = default;
     NE1(const NE1&) = default;
 
-    NE1(const std::array<int64_t, spline_t::parDim()>& ncoeffs,
+    NE1(const std::array<int64_t, 1>& ncoeffs,
         enum init init = init::zeros,
         Options<typename spline_t::value_type> options = iganet::Options<typename spline_t::value_type>{})
-      : Base(ncoeffs, ncoeffs, init, options)
+      : Base(ncoeffs + utils::to_array(1_i64),
+             ncoeffs, init, options)
     {
-      std::get<0>(*this).uniform_refine();
     }
 
-    NE1(const std::array<std::vector<typename spline_t::value_type>,
-        spline_t::parDim()>& kv,
+    NE1(const std::array<std::vector<typename spline_t::value_type>, 1>& kv,
         enum init init = init::zeros,
         Options<typename spline_t::value_type> options = iganet::Options<typename spline_t::value_type>{})
       : Base(kv, kv, init, options)
     {
-      std::get<0>(*this).uniform_refine();
     }
     /// @}
   };
@@ -1694,23 +1713,24 @@ namespace iganet {
     NE2(NE2&&) = default;
     NE2(const NE2&) = default;
 
-    NE2(const std::array<int64_t, spline_t::parDim()>& ncoeffs,
+    NE2(const std::array<int64_t, 2>& ncoeffs,
         enum init init = init::zeros,
         Options<typename spline_t::value_type> options = iganet::Options<typename spline_t::value_type>{})
-      : Base(ncoeffs, ncoeffs, ncoeffs, init, options)
+      : Base(ncoeffs + utils::to_array(1_i64, 1_i64),
+             ncoeffs + utils::to_array(1_i64, 1_i64),
+             ncoeffs, init, options)
     {
-      std::get<0>(*this).uniform_refine(1, 1);
-      std::get<1>(*this).uniform_refine(1, 0);
+      std::get<0>(*this).reduce_continuity(1, 1);
+      std::get<1>(*this).reduce_continuity(1, 0);
     }
 
-    NE2(const std::array<std::vector<typename spline_t::value_type>,
-        spline_t::parDim()>& kv,
+    NE2(const std::array<std::vector<typename spline_t::value_type>, 2>& kv,
         enum init init = init::zeros,
         Options<typename spline_t::value_type> options = iganet::Options<typename spline_t::value_type>{})
       : Base(kv, kv, kv, init, options)
     {
-      std::get<0>(*this).uniform_refine(1, 1);
-      std::get<1>(*this).uniform_refine(1, 0);
+      std::get<0>(*this).reduce_continuity(1, 1);
+      std::get<1>(*this).reduce_continuity(1, 0);
     }
     /// @}
   };
@@ -1782,25 +1802,27 @@ namespace iganet {
     NE3(NE3&&) = default;
     NE3(const NE3&) = default;
 
-    NE3(const std::array<int64_t, spline_t::parDim()>& ncoeffs,
+    NE3(const std::array<int64_t, 3>& ncoeffs,
         enum init init = init::zeros,
         Options<typename spline_t::value_type> options = iganet::Options<typename spline_t::value_type>{})
-      : Base(ncoeffs, ncoeffs, ncoeffs, ncoeffs, init, options)
+      : Base(ncoeffs + utils::to_array(1_i64, 1_i64, 1_i64),
+             ncoeffs + utils::to_array(1_i64, 1_i64, 1_i64),
+             ncoeffs + utils::to_array(1_i64, 1_i64, 1_i64),
+             ncoeffs, init, options)
     {
-      std::get<0>(*this).uniform_refine(1, 1).uniform_refine(1, 2);
-      std::get<1>(*this).uniform_refine(1, 0).uniform_refine(1, 2);
-      std::get<2>(*this).uniform_refine(1, 0).uniform_refine(1, 1);
+      std::get<0>(*this).reduce_continuity(1, 1).reduce_continuity(1, 2);
+      std::get<1>(*this).reduce_continuity(1, 0).reduce_continuity(1, 2);
+      std::get<2>(*this).reduce_continuity(1, 0).reduce_continuity(1, 1);
     }
 
-    NE3(const std::array<std::vector<typename spline_t::value_type>,
-        spline_t::parDim()>& kv,
+    NE3(const std::array<std::vector<typename spline_t::value_type>, 3>& kv,
         enum init init = init::zeros,
         Options<typename spline_t::value_type> options = iganet::Options<typename spline_t::value_type>{})
       : Base(kv, kv, kv, kv, init, options)
     {
-      std::get<0>(*this).uniform_refine(1, 1).uniform_refine(1, 2);
-      std::get<1>(*this).uniform_refine(1, 0).uniform_refine(1, 2);
-      std::get<2>(*this).uniform_refine(1, 0).uniform_refine(1, 1);
+      std::get<0>(*this).reduce_continuity(1, 1).reduce_continuity(1, 2);
+      std::get<1>(*this).reduce_continuity(1, 0).reduce_continuity(1, 2);
+      std::get<2>(*this).reduce_continuity(1, 0).reduce_continuity(1, 1);
     }
     /// @}
   };
@@ -1895,15 +1917,19 @@ namespace iganet {
     NE4(NE4&&) = default;
     NE4(const NE4&) = default;
 
-    NE4(const std::array<int64_t, spline_t::parDim()>& ncoeffs,
+    NE4(const std::array<int64_t, 4>& ncoeffs,
         enum init init = init::zeros,
         Options<typename spline_t::value_type> options = iganet::Options<typename spline_t::value_type>{})
-      : Base(ncoeffs, ncoeffs, ncoeffs, ncoeffs, ncoeffs, init, options)
+      : Base(ncoeffs + utils::to_array(1_i64, 1_i64, 1_i64, 1_i64),
+             ncoeffs + utils::to_array(1_i64, 1_i64, 1_i64, 1_i64),
+             ncoeffs + utils::to_array(1_i64, 1_i64, 1_i64, 1_i64),
+             ncoeffs + utils::to_array(1_i64, 1_i64, 1_i64, 1_i64),
+             ncoeffs, init, options)
     {
-      std::get<0>(*this).uniform_refine(1, 1).uniform_refine(1, 2).uniform_refine(1, 3);
-      std::get<1>(*this).uniform_refine(1, 0).uniform_refine(1, 2).uniform_refine(1, 3);
-      std::get<2>(*this).uniform_refine(1, 0).uniform_refine(1, 1).uniform_refine(1, 3);
-      std::get<3>(*this).uniform_refine(1, 0).uniform_refine(1, 1).uniform_refine(1, 2);
+      std::get<0>(*this).reduce_continuity(1, 1).reduce_continuity(1, 2).reduce_continuity(1, 3);
+      std::get<1>(*this).reduce_continuity(1, 0).reduce_continuity(1, 2).reduce_continuity(1, 3);
+      std::get<2>(*this).reduce_continuity(1, 0).reduce_continuity(1, 1).reduce_continuity(1, 3);
+      std::get<3>(*this).reduce_continuity(1, 0).reduce_continuity(1, 1).reduce_continuity(1, 2);
     }
 
     NE4(const std::array<std::vector<typename spline_t::value_type>,
@@ -1912,10 +1938,10 @@ namespace iganet {
         Options<typename spline_t::value_type> options = iganet::Options<typename spline_t::value_type>{})
       : Base(kv, kv, kv, kv, kv, init, options)
     {
-      std::get<0>(*this).uniform_refine(1, 1).uniform_refine(1, 2).uniform_refine(1, 3);
-      std::get<1>(*this).uniform_refine(1, 0).uniform_refine(1, 2).uniform_refine(1, 3);
-      std::get<2>(*this).uniform_refine(1, 0).uniform_refine(1, 1).uniform_refine(1, 3);
-      std::get<3>(*this).uniform_refine(1, 0).uniform_refine(1, 1).uniform_refine(1, 2);
+      std::get<0>(*this).reduce_continuity(1, 1).reduce_continuity(1, 2).reduce_continuity(1, 3);
+      std::get<1>(*this).reduce_continuity(1, 0).reduce_continuity(1, 2).reduce_continuity(1, 3);
+      std::get<2>(*this).reduce_continuity(1, 0).reduce_continuity(1, 1).reduce_continuity(1, 3);
+      std::get<3>(*this).reduce_continuity(1, 0).reduce_continuity(1, 1).reduce_continuity(1, 2);
     }
     /// @}
   };
@@ -1952,16 +1978,15 @@ namespace iganet {
     RT1(RT1&&) = default;
     RT1(const RT1&) = default;
 
-    RT1(const std::array<int64_t, spline_t::parDim()>& ncoeffs,
+    RT1(const std::array<int64_t, 1>& ncoeffs,
         enum init init = init::zeros,
         Options<typename spline_t::value_type> options = iganet::Options<typename spline_t::value_type>{})
-      : Base(ncoeffs, ncoeffs, init, options)
+      : Base(ncoeffs + utils::to_array(1_i64),
+             ncoeffs, init, options)
     {
-      std::get<0>(*this).uniform_refine();
     }
 
-    RT1(const std::array<std::vector<typename spline_t::value_type>,
-        spline_t::parDim()>& kv,
+    RT1(const std::array<std::vector<typename spline_t::value_type>, 1>& kv,
         enum init init = init::zeros,
         Options<typename spline_t::value_type> options = iganet::Options<typename spline_t::value_type>{})
       : Base(kv, kv, init, options)
@@ -2017,15 +2042,16 @@ namespace iganet {
     RT2(RT2&&) = default;
     RT2(const RT2&) = default;
 
-    RT2(const std::array<int64_t, spline_t::parDim()>& ncoeffs,
+    RT2(const std::array<int64_t, 2>& ncoeffs,
         enum init init = init::zeros,
         Options<typename spline_t::value_type> options = iganet::Options<typename spline_t::value_type>{})
-      : Base(ncoeffs, ncoeffs, ncoeffs, init, options)
+      : Base(ncoeffs + utils::to_array(1_i64, 0_i64),
+             ncoeffs + utils::to_array(0_i64, 1_i64),
+             ncoeffs, init, options)
     {
     }
 
-    RT2(const std::array<std::vector<typename spline_t::value_type>,
-        spline_t::parDim()>& kv,
+    RT2(const std::array<std::vector<typename spline_t::value_type>, 2>& kv,
         enum init init = init::zeros,
         Options<typename spline_t::value_type> options = iganet::Options<typename spline_t::value_type>{})
       : Base(kv, kv, kv, init, options)
@@ -2101,15 +2127,17 @@ namespace iganet {
     RT3(RT3&&) = default;
     RT3(const RT3&) = default;
 
-    RT3(const std::array<int64_t, spline_t::parDim()>& ncoeffs,
+    RT3(const std::array<int64_t, 3>& ncoeffs,
         enum init init = init::zeros,
         Options<typename spline_t::value_type> options = iganet::Options<typename spline_t::value_type>{})
-      : Base(ncoeffs, ncoeffs, ncoeffs, ncoeffs, init, options)
+      : Base(ncoeffs + utils::to_array(1_i64, 0_i64, 0_i64),
+             ncoeffs + utils::to_array(0_i64, 1_i64, 0_i64),
+             ncoeffs + utils::to_array(0_i64, 0_i64, 1_i64),
+             ncoeffs, init, options)
     {
     }
 
-    RT3(const std::array<std::vector<typename spline_t::value_type>,
-        spline_t::parDim()>& kv,
+    RT3(const std::array<std::vector<typename spline_t::value_type>, 3>& kv,
         enum init init = init::zeros,
         Options<typename spline_t::value_type> options = iganet::Options<typename spline_t::value_type>{})
       : Base(kv, kv, kv, kv, init, options)
@@ -2208,15 +2236,18 @@ namespace iganet {
     RT4(RT4&&) = default;
     RT4(const RT4&) = default;
 
-    RT4(const std::array<int64_t, spline_t::parDim()>& ncoeffs,
+    RT4(const std::array<int64_t, 4>& ncoeffs,
         enum init init = init::zeros,
         Options<typename spline_t::value_type> options = iganet::Options<typename spline_t::value_type>{})
-      : Base(ncoeffs, ncoeffs, ncoeffs, ncoeffs, ncoeffs, init, options)
+      : Base(ncoeffs + utils::to_array(1_i64, 0_i64, 0_i64, 0_i64),
+             ncoeffs + utils::to_array(0_i64, 1_i64, 0_i64, 0_i64),
+             ncoeffs + utils::to_array(0_i64, 0_i64, 1_i64, 0_i64),
+             ncoeffs + utils::to_array(0_i64, 0_i64, 0_i64, 1_i64),
+             ncoeffs, init, options)
     {
     }
 
-    RT4(const std::array<std::vector<typename spline_t::value_type>,
-        spline_t::parDim()>& kv,
+    RT4(const std::array<std::vector<typename spline_t::value_type>, 4>& kv,
         enum init init = init::zeros,
         Options<typename spline_t::value_type> options = iganet::Options<typename spline_t::value_type>{})
       : Base(kv, kv, kv, kv, kv, init, options)
