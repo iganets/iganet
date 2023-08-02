@@ -3111,7 +3111,7 @@ namespace iganet {
 
     /// @brief Returns the B-spline object with refined knot and
     /// coefficient vectors
-    NonUniformBSplineCore& insert_knots(const std::array<torch::Tensor, Base::parDim_>& knots)
+    inline NonUniformBSplineCore& insert_knots(const std::array<torch::Tensor, Base::parDim_>& knots)
     {
       std::array<int64_t, Base::parDim_> nknots(Base::nknots_);
       std::array<int64_t, Base::parDim_> ncoeffs(Base::ncoeffs_);
@@ -3225,6 +3225,18 @@ namespace iganet {
     /// @brief Move assignment operator
     BSplineCommon& operator=(BSplineCommon&&) = default;
 
+    /// @brief Returns the B-spline object with uniformly refined knot
+    /// and coefficient vectors
+    ///
+    /// If `dim = -1`, new knot values are inserted uniformly in each
+    /// knot span in all spatial dimensions. Otherwise, i.e., `dim !=
+    /// -1` new knots are only inserted in the specified dimension.
+    inline BSplineCommon& uniform_refine(int numRefine = 1, int dim = -1)
+    {
+      BSplineCore::uniform_refine(numRefine, dim);
+      return *this;
+    }
+      
     /// @brief Returns a clone of the B-spline object
     inline auto clone() const
     {
