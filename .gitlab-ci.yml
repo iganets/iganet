@@ -1,13 +1,13 @@
 before_script:
    - apt-get update -y
-   - apt-get install build-essential doxygen locales unzip wget zlib1g-dev libstdc++-11-dev -y
-   - wget https://github.com/Kitware/CMake/releases/download/v3.26.3/cmake-3.26.3-linux-x86_64.tar.gz
-   - tar xvzf cmake-3.26.3-linux-x86_64.tar.gz -C /opt
-   - rm -f cmake-3.26.3-linux-x86_64.tar.gz
-   - wget https://download.pytorch.org/libtorch/cpu/libtorch-cxx11-abi-shared-with-deps-1.13.0%2Bcpu.zip -O libtorch.zip
+   - apt-get install build-essential clang doxygen locales unzip wget zlib1g-dev libstdc++-11-dev -y
+   - wget https://github.com/Kitware/CMake/releases/download/v3.27.1/cmake-3.27.1-linux-x86_64.tar.gz
+   - tar xvzf cmake-3.27.1-linux-x86_64.tar.gz -C /opt
+   - rm -f cmake-3.27.1-linux-x86_64.tar.gz
+   - wget https://download.pytorch.org/libtorch/cpu/libtorch-cxx11-abi-shared-with-deps-2.0.1%2Bcpu.zip -O libtorch.zip
    - unzip libtorch.zip -d /opt
    - rm -f libtorch.zip
-   - export PATH=$PATH:/opt/cmake-3.26.3-linux-x86_64/bin
+   - export PATH=$PATH:/opt/cmake-3.27.1-linux-x86_64/bin
    - locale-gen --purge en_US.UTF-8
    - echo -e 'LANG="en_US.UTF-8"\nLANGUAGE="en_US:en"\n' > /etc/default/locale
    - export LANG=en_US.UTF-8
@@ -55,6 +55,30 @@ unittests-gcc:
     - mkdir -p build
     - cd build
     - CC=gcc CXX=g++ cmake .. -DIGANET_BUILD_UNITTESTS=ON -DTorch_DIR=/opt/libtorch/share/cmake/Torch -DIGANET_WITH_MATPLOT=OFF
+    - make
+    - make test
+  only:
+    changes:
+      - .gitlab-ci.yml
+      - CMakeLists.txt
+      - cmake/*
+      - include/*
+      - examples/*
+      - perftests/*
+      - pyiganet/*
+      - unittests/*
+      - server/*
+
+#
+# Compile and run unittests with Clang compiler
+#
+unittests-clang:
+  stage: build
+  image: ubuntu:22.04
+  script:
+    - mkdir -p build
+    - cd build
+    - CC=clang CXX=clang++ cmake .. -DIGANET_BUILD_UNITTESTS=ON -DTorch_DIR=/opt/libtorch/share/cmake/Torch -DIGANET_WITH_MATPLOT=OFF
     - make
     - make test
   only:
