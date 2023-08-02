@@ -510,7 +510,10 @@ namespace iganet {
     inline const auto coeffs_view(short_t i) const
     {
       assert(i >= 0 && i < geoDim_);
-      return coeffs_[i].view(utils::to_ArrayRef(ncoeffs_reverse_));
+      if constexpr (parDim_ > 1)
+        return coeffs_[i].view(utils::to_ArrayRef(ncoeffs_reverse_));
+      else
+        return coeffs_[i];
     }
     
     /// @brief Returns the total number of coefficients
@@ -3043,7 +3046,7 @@ namespace iganet {
     /// If `dim = -1`, new knot values are inserted uniformly in each
     /// knot span in all spatial dimensions. Otherwise, i.e., `dim !=
     /// -1` new knots are only inserted in the specified dimension.
-    NonUniformBSplineCore& uniform_refine(int numRefine = 1, int dim = -1)
+    inline NonUniformBSplineCore& uniform_refine(int numRefine = 1, int dim = -1)
     {
       assert(numRefine > 0);
       assert(dim == -1 || (dim >= 0 && dim < Base::parDim_));
