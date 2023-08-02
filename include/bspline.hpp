@@ -2301,6 +2301,9 @@ namespace iganet {
       nknots.swap(nknots_);
       ncoeffs.swap(ncoeffs_);
 
+      ncoeffs_reverse_(ncoeffs_);
+      reverse(ncoeffs_reverse_.begin(), ncoeffs_reverse_.end());
+            
       return *this;
     }
 
@@ -3058,7 +3061,7 @@ namespace iganet {
       for (short_t i = 0; i < Base::parDim_; ++i) {
         auto [kv_cpu, kv_accessor] = utils::to_tensorAccessor<typename Base::value_type, 1>(Base::knots_[i], torch::kCPU);
 
-        std::vector<typename Base::value_type> kv; kv.reserve(nknots[i]);
+        std::vector<typename Base::value_type> kv; kv.reserve(Base::nknots_[i]);
         kv.push_back(kv_accessor[0]);
 
         for (int64_t j = 1; j < kv_accessor.size(0); ++j) {
@@ -3106,6 +3109,9 @@ namespace iganet {
       nknots.swap(Base::nknots_);
       ncoeffs.swap(Base::ncoeffs_);
 
+      Base::ncoeffs_reverse_(Base::ncoeffs_);
+      std::reverse(Base::ncoeffs_reverse_.begin(), Base::ncoeffs_reverse_.end());
+            
       return *this;
     }
 
@@ -3145,6 +3151,76 @@ namespace iganet {
       nknots.swap(Base::nknots_);
       ncoeffs.swap(Base::ncoeffs_);
 
+      Base::ncoeffs_reverse_ = Base::ncoeffs_;
+      std::reverse(Base::ncoeffs_reverse_.begin(), Base::ncoeffs_reverse_.end());
+            
+      return *this;
+    }
+
+    /// @brief Returns the B-spline object with updated knot and
+    /// coefficient vectors with reduced continuity
+    inline NonUniformBSplineCore& reduce_continuity(int numReduce = 1, int dim = -1)
+    {
+      assert(numReduce > 0);
+      assert(dim == -1 || (dim >= 0 && dim < Base::parDim_));
+
+      // Update knot vectors, number of knots and coefficients
+      std::array<int64_t, Base::parDim_> nknots, ncoeffs;
+      std::array<torch::Tensor, Base::parDim_> knots, knots_indices;
+
+      for (short_t i = 0; i < Base::parDim_; ++i) {
+        auto [kv_cpu, kv_accessor] = utils::to_tensorAccessor<typename Base::value_type, 1>(Base::knots_[i], torch::kCPU);
+        
+        std::vector<typename Base::value_type> kv; kv.reserve(Base::nknots_[i]);
+        kv.push_back(kv_accessor[0]);
+        
+        for (int64_t j = 1; j < kv_accessor.size(0); ++j) {
+          
+          if ((dim == -1 || dim == i) &&
+              (kv_accessor[j-1] < kv_accessor[j]) &&
+              (kv_accessor[j] < kv_accessor[kv_accessor.size(0)-1]))
+            for (short_t reduce = 0; reduce < numReduce; ++reduce)
+              kv.push_back(kv_accessor[j]);
+
+          kv.push_back(kv_accessor[j]);
+        }
+        
+        if (Base::options_.device() == torch::kCPU)
+          knots[i] = torch::from_blob(static_cast<typename Base::value_type *>(kv.data()),
+                                      kv.size(), Base::options_).clone();
+        else
+          knots[i] = torch::from_blob(static_cast<typename Base::value_type *>(kv.data()),
+                                      kv.size(), Base::options_.device(torch::kCPU))
+            .to(Base::options_.device());
+
+        // Store the size of the updated knot and coefficient vector
+        nknots[i] = kv.size();
+        ncoeffs[i] = nknots[i]-Base::degrees_[i]-1;
+      }
+      
+      // The updated knot vectors have lengths \f$m_d+p_d+1\f$, where
+      // \f$m_d\f$ is the number of coefficients after the update. To
+      // update the coefficients using the Oslo algorithm (Algorithm
+      // 4.11 from \cite Lyche:2011) we need to neglect the last
+      // \f$p_d+1\f$ knots in what follows
+      for (short_t i = 0; i < Base::parDim_; ++i)
+        knots_indices[i] = knots[i].index({torch::indexing::Slice(0, knots[i].numel()-Base::degrees_[i]-1)});
+
+      // Get indices of the first \f$m_d\f$ new knots relative to old
+      // knot vectors
+      auto indices = find_knot_indices(knots_indices);
+
+      // Update coefficient vector
+      Base::update_coeffs(knots, indices);
+
+      // Swap old and new data
+      knots.swap(Base::knots_);
+      nknots.swap(Base::nknots_);
+      ncoeffs.swap(Base::ncoeffs_);
+
+      Base::ncoeffs_reverse_ = Base::ncoeffs_;
+      std::reverse(Base::ncoeffs_reverse_.begin(), Base::ncoeffs_reverse_.end());
+      
       return *this;
     }
   };
