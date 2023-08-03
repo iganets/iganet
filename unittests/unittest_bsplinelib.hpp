@@ -15,10 +15,16 @@
 #include <iganet.h>
 #include <iostream>
 
+#if __clang_major__ > 14
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Wunqualified-std-cast-call"
+#endif
+
 #include <BSplineLib/Splines/b_spline.hpp>
+
+#if __clang_major__ > 14
 #pragma clang diagnostic pop
+#endif
 
 #include <gtest/gtest.h>
 
