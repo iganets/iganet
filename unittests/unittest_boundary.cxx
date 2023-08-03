@@ -249,7 +249,7 @@ TEST_F(BoundaryTest, Boundary_parDim2_geoDim1_degrees23)
                            *(bspline_bdrEW.eval<deriv::dx+deriv::dy, false>(std::get<side::west-1>(xi))[0])));
 }
 
-TEST_F(BoundaryTest, Boundary_parDim3_geoDim1_degrees23)
+TEST_F(BoundaryTest, Boundary_parDim3_geoDim1_degrees234)
 {
   using iganet::side;
   using iganet::deriv;
