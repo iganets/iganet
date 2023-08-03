@@ -3295,6 +3295,15 @@ namespace iganet {
     /// @brief Copy constructor
     BSplineCommon(const BSplineCommon&) = default;
 
+    /// @brief Copy/clone constructor
+    BSplineCommon(const BSplineCommon& other, bool clone)
+      : BSplineCommon(other)
+    {
+      if (clone)
+        for (short_t i=0; i<BSplineCore::geoDim_; ++i)
+          BSplineCore::coeffs_[i] = other.coeffs(i).clone();
+    }
+
     /// @brief Copy constructor with external coefficients
     BSplineCommon(const BSplineCommon&                                   other,
                   const std::array<torch::Tensor, BSplineCore::geoDim_>& coeffs,
