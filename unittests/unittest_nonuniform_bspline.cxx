@@ -36,6 +36,8 @@ TEST_F(BSplineTest, NonUniformBSpline_parDim1_geoDim1_degrees1)
   EXPECT_EQ(bspline.nknots(0),    5);
   EXPECT_EQ(bspline.ncoeffs(0),   3);
   EXPECT_EQ(bspline.ncumcoeffs(), 3);
+  EXPECT_TRUE(bspline.is_nonuniform());
+  EXPECT_FALSE(bspline.is_uniform());
 }
 
 TEST_F(BSplineTest, NonUniformBSpline_parDim1_geoDim2_degrees1)
@@ -490,6 +492,156 @@ TEST_F(BSplineTest, NonUniformBSpline_read_write)
 
   EXPECT_EQ( (bspline_in == bspline_out), true);
   EXPECT_EQ( (bspline_in != bspline_out), false);
+}
+
+TEST_F(BSplineTest, NonUniformBSpline_uniform_refine)
+{
+  {
+    iganet::NonUniformBSpline<real_t, 3, 3, 4> bspline({4,5});
+    iganet::NonUniformBSpline<real_t, 3, 3, 4> bspline_ref({5,6});
+    bspline.uniform_refine();
+    
+    EXPECT_EQ( bspline.isclose(bspline_ref), true);
+  }
+
+  {
+    iganet::NonUniformBSpline<real_t, 3, 3, 4> bspline({4,5});
+    iganet::NonUniformBSpline<real_t, 3, 3, 4> bspline_ref({7,8});
+    bspline.uniform_refine(2);
+    
+    EXPECT_EQ( bspline.isclose(bspline_ref), true);
+  }
+
+  {
+    iganet::NonUniformBSpline<real_t, 3, 3, 4> bspline({4,5});
+    iganet::NonUniformBSpline<real_t, 3, 3, 4> bspline_ref({5,5});
+    bspline.uniform_refine(1, 0);
+    
+    EXPECT_EQ( bspline.isclose(bspline_ref), true);
+  }
+  
+  {
+    iganet::NonUniformBSpline<real_t, 3, 3, 4> bspline({4,5});
+    iganet::NonUniformBSpline<real_t, 3, 3, 4> bspline_ref({5,8});
+    bspline.uniform_refine(1, 0).uniform_refine(2, 1);
+    
+    EXPECT_EQ( bspline.isclose(bspline_ref), true);
+  }
+}
+
+TEST_F(BSplineTest, NonUniformBSpline_copy_constructor)
+{
+  iganet::NonUniformBSpline<real_t, 3, 3, 4> bspline_orig({4,5}, iganet::init::greville, options);
+  iganet::NonUniformBSpline<real_t, 3, 3, 4> bspline_copy (bspline_orig);
+  
+  bspline_orig.transform( [](const std::array<real_t,2> xi)
+  { return std::array<real_t,3>{0.0, 1.0, 2.0};} );
+  
+  EXPECT_EQ( (bspline_orig == bspline_copy), true);
+}
+
+TEST_F(BSplineTest, NonUniformBSpline_clone_constructor)
+{
+  iganet::NonUniformBSpline<real_t, 3, 3, 4> bspline_ref ({4,5}, iganet::init::greville, options);
+  iganet::NonUniformBSpline<real_t, 3, 3, 4> bspline_orig({4,5}, iganet::init::greville, options);
+  iganet::NonUniformBSpline<real_t, 3, 3, 4> bspline_clone(bspline_orig, true);
+  
+  bspline_orig.transform( [](const std::array<real_t,2> xi)
+  { return std::array<real_t,3>{0.0, 1.0, 2.0};} );
+  
+  EXPECT_EQ( (bspline_ref == bspline_clone), true);    
+}
+
+TEST_F(BSplineTest, NonUniformBSpline_move_constructor)
+{
+  iganet::NonUniformBSpline<real_t, 3, 3, 4> bspline_ref({7,8});
+  auto bspline(iganet::NonUniformBSpline<real_t, 3, 3, 4>({4,5}).uniform_refine(2));
+
+  EXPECT_EQ( bspline.isclose(bspline_ref), true);
+}
+
+TEST_F(BSplineTest, NonUniformBSpline_copy_assignment)
+{
+  iganet::NonUniformBSpline<real_t, 3, 3, 4> bspline_orig({4,5}, iganet::init::greville, options);
+  auto bspline = bspline_orig;
+
+  bspline_orig.transform( [](const std::array<real_t,2> xi)
+  { return std::array<real_t,3>{0.0, 1.0, 2.0};} );
+
+  EXPECT_EQ( bspline.isclose(bspline_orig), true);
+}
+
+TEST_F(BSplineTest, NonUniformBSpline_move_assignment)
+{
+  iganet::NonUniformBSpline<real_t, 3, 3, 4> bspline_ref({7,8}, iganet::init::greville, options);
+  auto bspline = iganet::NonUniformBSpline<real_t, 3, 3, 4>({4,5}, iganet::init::greville, options).uniform_refine(2);
+  
+  EXPECT_EQ( bspline.isclose(bspline_ref), true);
+}
+
+TEST_F(BSplineTest, NonUniformBSpline_copy_coeffs_constructor)
+{
+  iganet::NonUniformBSpline<real_t, 3, 3, 4> bspline_orig({4,5}, iganet::init::greville, options);
+  iganet::NonUniformBSpline<real_t, 3, 3, 4> bspline_copy(bspline_orig, bspline_orig.coeffs());
+  
+  bspline_orig.transform( [](const std::array<real_t,2> xi)
+  { return std::array<real_t,3>{0.0, 1.0, 2.0};} );
+  
+  EXPECT_EQ( (bspline_orig == bspline_copy), true);
+}
+
+TEST_F(BSplineTest, NonUniformBSpline_clone_coeffs_constructor)
+{
+  iganet::NonUniformBSpline<real_t, 3, 3, 4> bspline_ref ({4,5}, iganet::init::greville, options);
+  iganet::NonUniformBSpline<real_t, 3, 3, 4> bspline_orig({4,5}, iganet::init::greville, options);
+  iganet::NonUniformBSpline<real_t, 3, 3, 4> bspline_clone(bspline_orig, bspline_orig.coeffs(), true);
+  
+  bspline_orig.transform( [](const std::array<real_t,2> xi)
+  { return std::array<real_t,3>{0.0, 1.0, 2.0};} );
+  
+  EXPECT_EQ( (bspline_ref == bspline_clone), true);    
+}
+
+TEST_F(BSplineTest, NonUniformBSpline_reduce_continuity)
+{
+  {
+    iganet::NonUniformBSpline<real_t, 3, 3, 4> bspline({5,6});
+    iganet::NonUniformBSpline<real_t, 3, 3, 4> bspline_ref(iganet::utils::to_array(iganet::utils::to_vector(0.0, 0.0, 0.0, 0.0, 0.5, 0.5, 1.0, 1.0, 1.0, 1.0),
+                                                                                   iganet::utils::to_vector(0.0, 0.0, 0.0, 0.0, 0.0, 0.5, 0.5, 1.0, 1.0, 1.0, 1.0, 1.0)));
+    bspline.reduce_continuity();
+    
+    EXPECT_EQ( bspline.isclose(bspline_ref), true);
+  }
+
+  {
+    iganet::NonUniformBSpline<real_t, 3, 3, 4> bspline({5,6});
+    iganet::NonUniformBSpline<real_t, 3, 3, 4> bspline_ref(iganet::utils::to_array(iganet::utils::to_vector(0.0, 0.0, 0.0, 0.0, 0.5, 0.5, 0.5, 1.0, 1.0, 1.0, 1.0),
+                                                                                   iganet::utils::to_vector(0.0, 0.0, 0.0, 0.0, 0.0, 0.5, 0.5, 0.5, 1.0, 1.0, 1.0, 1.0, 1.0)));
+    bspline.reduce_continuity(2);
+    
+    EXPECT_EQ( bspline.isclose(bspline_ref), true);
+  }
+
+  {
+    iganet::NonUniformBSpline<real_t, 3, 3, 4> bspline({5,6});
+    iganet::NonUniformBSpline<real_t, 3, 3, 4> bspline_ref(iganet::utils::to_array(iganet::utils::to_vector(0.0, 0.0, 0.0, 0.0, 0.5, 0.5, 1.0, 1.0, 1.0, 1.0),
+                                                                                   iganet::utils::to_vector(0.0, 0.0, 0.0, 0.0, 0.0, 0.5, 0.5, 0.5, 1.0, 1.0, 1.0, 1.0, 1.0)));
+    bspline.reduce_continuity(1, 0).reduce_continuity(2, 1);
+    
+    EXPECT_EQ( bspline.isclose(bspline_ref), true);
+  }
+}
+
+TEST_F(BSplineTest, NonUniformBSpline_insert_knots)
+{
+  {
+    iganet::NonUniformBSpline<real_t, 3, 3, 4> bspline({5,6});
+    iganet::NonUniformBSpline<real_t, 3, 3, 4> bspline_ref(iganet::utils::to_array(iganet::utils::to_vector(0.0, 0.0, 0.0, 0.0, 0.1, 0.3, 0.5, 1.0, 1.0, 1.0, 1.0),
+                                                                                   iganet::utils::to_vector(0.0, 0.0, 0.0, 0.0, 0.0, 0.2, 0.4, 0.5, 1.0, 1.0, 1.0, 1.0, 1.0)));
+    bspline.insert_knots(iganet::utils::to_tensorArray({0.1, 0.3}, {0.2, 0.4}));
+    
+    EXPECT_EQ( bspline.isclose(bspline_ref), true);
+  }
 }
 
 int main(int argc, char **argv) {

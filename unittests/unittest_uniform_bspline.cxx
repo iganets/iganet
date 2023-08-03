@@ -565,6 +565,79 @@ TEST_F(BSplineTest, UniformBSpline_uniform_refine)
   }
 }
 
+TEST_F(BSplineTest, UniformBSpline_copy_constructor)
+{
+  iganet::UniformBSpline<real_t, 3, 3, 4> bspline_orig({4,5}, iganet::init::greville, options);
+  iganet::UniformBSpline<real_t, 3, 3, 4> bspline_copy(bspline_orig);
+  
+  bspline_orig.transform( [](const std::array<real_t,2> xi)
+  { return std::array<real_t,3>{0.0, 1.0, 2.0};} );
+  
+  EXPECT_EQ( (bspline_orig == bspline_copy), true);
+}
+
+TEST_F(BSplineTest, UniformBSpline_clone_constructor)
+{
+  iganet::UniformBSpline<real_t, 3, 3, 4> bspline_ref ({4,5}, iganet::init::greville, options);
+  iganet::UniformBSpline<real_t, 3, 3, 4> bspline_orig({4,5}, iganet::init::greville, options);
+  iganet::UniformBSpline<real_t, 3, 3, 4> bspline_clone(bspline_orig, true);
+  
+  bspline_orig.transform( [](const std::array<real_t,2> xi)
+  { return std::array<real_t,3>{0.0, 1.0, 2.0};} );
+  
+  EXPECT_EQ( (bspline_ref == bspline_clone), true);    
+}
+
+TEST_F(BSplineTest, UniformBSpline_move_constructor)
+{
+  iganet::UniformBSpline<real_t, 3, 3, 4> bspline_ref({7,8}, iganet::init::greville, options);
+  auto bspline(iganet::UniformBSpline<real_t, 3, 3, 4>({4,5}, iganet::init::greville, options).uniform_refine(2));
+
+  EXPECT_EQ( bspline.isclose(bspline_ref), true);
+}
+
+TEST_F(BSplineTest, UniformBSpline_copy_assignment)
+{
+  iganet::UniformBSpline<real_t, 3, 3, 4> bspline_orig({4,5}, iganet::init::greville, options);
+  auto bspline = bspline_orig;
+
+  bspline_orig.transform( [](const std::array<real_t,2> xi)
+  { return std::array<real_t,3>{0.0, 1.0, 2.0};} );
+
+  EXPECT_EQ( bspline.isclose(bspline_orig), true);
+}
+
+TEST_F(BSplineTest, UniformBSpline_move_assignment)
+{
+  iganet::UniformBSpline<real_t, 3, 3, 4> bspline_ref({7,8}, iganet::init::greville, options);
+  auto bspline = iganet::UniformBSpline<real_t, 3, 3, 4>({4,5}, iganet::init::greville, options).uniform_refine(2);
+  
+  EXPECT_EQ( bspline.isclose(bspline_ref), true);
+}
+
+TEST_F(BSplineTest, UniformBSpline_copy_coeffs_constructor)
+{
+  iganet::UniformBSpline<real_t, 3, 3, 4> bspline_orig({4,5}, iganet::init::greville, options);
+  iganet::UniformBSpline<real_t, 3, 3, 4> bspline_copy(bspline_orig, bspline_orig.coeffs());
+  
+  bspline_orig.transform( [](const std::array<real_t,2> xi)
+  { return std::array<real_t,3>{0.0, 1.0, 2.0};} );
+  
+  EXPECT_EQ( (bspline_orig == bspline_copy), true);
+}
+
+TEST_F(BSplineTest, UniformBSpline_clone_coeffs_constructor)
+{
+  iganet::UniformBSpline<real_t, 3, 3, 4> bspline_ref ({4,5}, iganet::init::greville, options);
+  iganet::UniformBSpline<real_t, 3, 3, 4> bspline_orig({4,5}, iganet::init::greville, options);
+  iganet::UniformBSpline<real_t, 3, 3, 4> bspline_clone(bspline_orig, bspline_orig.coeffs(), true);
+  
+  bspline_orig.transform( [](const std::array<real_t,2> xi)
+  { return std::array<real_t,3>{0.0, 1.0, 2.0};} );
+  
+  EXPECT_EQ( (bspline_ref == bspline_clone), true);    
+}
+
 int main(int argc, char **argv) {
   ::testing::InitGoogleTest(&argc, argv);
   iganet::init();
