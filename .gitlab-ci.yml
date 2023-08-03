@@ -1,6 +1,6 @@
 before_script:
    - apt-get update -y
-   - apt-get install build-essential clang doxygen locales unzip wget zlib1g-dev libstdc++-11-dev -y
+   - apt-get install build-essential clang doxygen libomp-devlocales unzip wget zlib1g-dev libstdc++-11-dev -y
    - wget https://github.com/Kitware/CMake/releases/download/v3.27.1/cmake-3.27.1-linux-x86_64.tar.gz
    - tar xvzf cmake-3.27.1-linux-x86_64.tar.gz -C /opt
    - rm -f cmake-3.27.1-linux-x86_64.tar.gz
@@ -78,7 +78,7 @@ unittests-clang:
   script:
     - mkdir -p build
     - cd build
-    - CC=clang CXX=clang++ cmake .. -DIGANET_BUILD_UNITTESTS=ON -DTorch_DIR=/opt/libtorch/share/cmake/Torch -DIGANET_WITH_MATPLOT=OFF
+    - CC=clang CXX=clang++ cmake .. -DIGANET_BUILD_UNITTESTS=ON -DTorch_DIR=/opt/libtorch/share/cmake/Torch -DIGANET_WITH_MATPLOT=OFF -DOpenMP_C_FLAGS="-Xpreprocessor -fopenmp -I/usr/lib/llvm-14/lib/clang/14.0.0/include" -DOpenMP_C_LIB_NAMES=omp -DOpenMP_CXX_FLAGS="-Xpreprocessor -fopenmp -I/usr/lib/llvm-14/lib/clang/14.0.0/include" -DOpenMP_CXX_LIB_NAMES=omp -DOpenMP_libomp_LIBRARY=/usr/lib/llvm-14/lib/libomp.so
     - make
     - make test
   only:
