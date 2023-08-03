@@ -2,7 +2,7 @@
 # CMakeLists.txt
 #
 # Author: Matthias Moller
-# Copyright (C) 2021-2022 by the IgANet authors
+# Copyright (C) 2021-2023 by the IgANet authors
 #
 # This file is part of the IgANet project
 #
@@ -29,7 +29,7 @@
 # IgANet version number
 ########################################################################
 set(iganet_VERSION_MAJOR 23) #year
-set(iganet_VERSION_MINOR 06) #month
+set(iganet_VERSION_MINOR 08) #month
 set(iganet_VERSION_PATCH 0 ) #patch
 set(iganet_VERSION
   "${iganet_VERSION_MAJOR}.${iganet_VERSION_MINOR}.${iganet_VERSION_PATCH}" CACHE INTERNAL "iganet version number")

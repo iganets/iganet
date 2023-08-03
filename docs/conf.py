@@ -42,7 +42,7 @@ if read_the_docs_build:
 # -- Project information -----------------------------------------------------
 
 project = 'IgANet'
-copyright = '2021-2022, Matthias Möller (m.moller@tudelft.nl)'
+copyright = '2021-2023, Matthias Möller (m.moller@tudelft.nl)'
 author = 'Matthias Möller'
 
 
