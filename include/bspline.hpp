@@ -2199,6 +2199,32 @@ namespace iganet {
       return archive;
     }
 
+    /// @brief Returns true if both B-spline objects are close up to the given tolerance
+    bool isclose(const UniformBSplineCore& other, real_t rtol = real_t{1e-5}, real_t atol = real_t{1e-8}) const
+    {
+      bool result(true);
+
+      result *= (parDim_ == other.parDim());
+      result *= (geoDim_ == other.geoDim());
+
+      for (short_t i = 0; i < parDim_; ++i)
+        result *= (degree(i) == other.degree(i));
+
+      for (short_t i = 0; i < parDim_; ++i)
+        result *= (nknots(i) == other.nknots(i));
+
+      for (short_t i = 0; i < parDim_; ++i)
+        result *= (ncoeffs(i) == other.ncoeffs(i));
+
+      for (short_t i = 0; i < parDim_; ++i)
+        result *= torch::allclose(knots(i), other.knots(i), rtol, atol);
+
+      for (short_t i = 0; i < parDim_; ++i)
+        result *= torch::allclose(coeffs(i), other.coeffs(i), rtol, atol);
+
+      return result;
+    }
+    
     /// @brief Returns true if both B-spline objects are the same
     bool operator==(const UniformBSplineCore& other) const
     {
@@ -2217,10 +2243,10 @@ namespace iganet {
         result *= (ncoeffs(i) == other.ncoeffs(i));
 
       for (short_t i = 0; i < parDim_; ++i)
-        result *= torch::all(knots(i) == other.knots(i)).template item<bool>();
+        result *= torch::equal(knots(i), other.knots(i));
 
       for (short_t i = 0; i < parDim_; ++i)
-        result *= torch::all(coeffs(i) == other.coeffs(i)).template item<bool>();
+        result *= torch::equal(coeffs(i), other.coeffs(i));
 
       return result;
     }
@@ -2301,8 +2327,8 @@ namespace iganet {
       nknots.swap(nknots_);
       ncoeffs.swap(ncoeffs_);
 
-      ncoeffs_reverse_(ncoeffs_);
-      reverse(ncoeffs_reverse_.begin(), ncoeffs_reverse_.end());
+      ncoeffs_reverse_ = ncoeffs_;
+      std::reverse(ncoeffs_reverse_.begin(), ncoeffs_reverse_.end());
             
       return *this;
     }
@@ -3109,7 +3135,7 @@ namespace iganet {
       nknots.swap(Base::nknots_);
       ncoeffs.swap(Base::ncoeffs_);
 
-      Base::ncoeffs_reverse_(Base::ncoeffs_);
+      Base::ncoeffs_reverse_ = Base::ncoeffs_;
       std::reverse(Base::ncoeffs_reverse_.begin(), Base::ncoeffs_reverse_.end());
             
       return *this;
