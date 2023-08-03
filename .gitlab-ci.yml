@@ -82,7 +82,7 @@ unittests-clang:
     - apt-get install clang libomp-dev -y
     - mkdir -p build
     - cd build
-    - CC=clang CXX=clang++ cmake .. -DIGANET_BUILD_UNITTESTS=ON -DTorch_DIR=/opt/libtorch/share/cmake/Torch -DIGANET_WITH_MATPLOT=OFF -DOpenMP_C_FLAGS="-Xpreprocessor -fopenmp -I/usr/lib/llvm-14/lib/clang/14.0.0/include" -DOpenMP_C_LIB_NAMES=omp -DOpenMP_CXX_FLAGS="-Xpreprocessor -fopenmp -I/usr/lib/llvm-14/lib/clang/14.0.0/include" -DOpenMP_CXX_LIB_NAMES=omp -DOpenMP_omp_LIBRARY=/usr/lib/llvm-14/lib/libomp.so
+    - CC=clang CXX=clang++ cmake .. -DIGANET_BUILD_UNITTESTS=ON -DTorch_DIR=/opt/libtorch/share/cmake/Torch -DIGANET_WITH_MATPLOT=OFF -DOpenMP_C_FLAGS="-Xpreprocessor -fopenmp -I/usr/lib/llvm-14/lib/clang/14.0.0/include" -DOpenMP_C_LIB_NAMES=libomp -DOpenMP_CXX_FLAGS="-Xpreprocessor -fopenmp -I/usr/lib/llvm-14/lib/clang/14.0.0/include" -DOpenMP_CXX_LIB_NAMES=libomp -DOpenMP_libomp_LIBRARY=/usr/lib/llvm-14/lib/libomp.so
     - make
     - make test
   only:
