@@ -1288,7 +1288,7 @@ namespace iganet {
   TUPLE_WRAPPER(S4);
 
   /// @brief Taylor-Hood like function space
-  /// \f$ S_{p+1}^{p-1} \otimes S_{p}^{p-1} \f$
+  /// \f$ S^{p+1}_{p-1} \otimes S^{p}_{p-1} \f$
   template<typename spline_t>
   class TH1
     : public FunctionSpace<S1<typename spline_t::template
@@ -1339,9 +1339,9 @@ namespace iganet {
   TUPLE_WRAPPER(TH1);
 
   /// @brief Taylor-Hood like function space \f$
-  /// S_{p+1,p+1}^{p-1,p-1} \otimes
-  /// S_{p+1,p+1}^{p-1,p-1} \otimes
-  /// S_{p,p}^{p-1,p-1} \f$
+  /// S^{p+1,p+1}_{p-1,p-1} \otimes
+  /// S^{p+1,p+1}_{p-1,p-1} \otimes
+  /// S^{p,p}_{p-1,p-1} \f$
   template<typename spline_t>
   class TH2
     : public FunctionSpace<S2<typename spline_t::template
@@ -1409,10 +1409,10 @@ namespace iganet {
   TUPLE_WRAPPER(TH2);
 
   /// @brief Taylor-Hood like function space \f$
-  /// S_{p+1,p+1,p+1}^{p-1,p-1,p-1} \otimes
-  /// S_{p+1,p+1,p+1}^{p-1,p-1,p-1} \otimes
-  /// S_{p+1,p+1,p+1}^{p-1,p-1,p-1} \otimes
-  /// S_{p,p,p}^{p-1,p-1,p-1} \f$
+  /// S^{p+1,p+1,p+1}_{p-1,p-1,p-1} \otimes
+  /// S^{p+1,p+1,p+1}_{p-1,p-1,p-1} \otimes
+  /// S^{p+1,p+1,p+1}_{p-1,p-1,p-1} \otimes
+  /// S^{p,p,p}_{p-1,p-1,p-1} \f$
   template<typename spline_t>
   class TH3
     : public FunctionSpace<S3<typename spline_t::template
@@ -1501,11 +1501,11 @@ namespace iganet {
   TUPLE_WRAPPER(TH3);
 
   /// @brief Taylor-Hood like function space \f$
-  /// S_{p+1,p+1,p+1,p+1}^{p-1,p-1,p-1,p-1} \otimes
-  /// S_{p+1,p+1,p+1,p+1}^{p-1,p-1,p-1,p-1} \otimes
-  /// S_{p+1,p+1,p+1,p+1}^{p-1,p-1,p-1,p-1} \otimes
-  /// S_{p+1,p+1,p+1,p+1}^{p-1,p-1,p-1,p-1} \otimes
-  /// S_{p,p,p,p}^{p-1,p-1,p-1,p-1} \f$
+  /// S^{p+1,p+1,p+1,p+1}_{p-1,p-1,p-1,p-1} \otimes
+  /// S^{p+1,p+1,p+1,p+1}_{p-1,p-1,p-1,p-1} \otimes
+  /// S^{p+1,p+1,p+1,p+1}_{p-1,p-1,p-1,p-1} \otimes
+  /// S^{p+1,p+1,p+1,p+1}_{p-1,p-1,p-1,p-1} \otimes
+  /// S^{p,p,p,p}_{p-1,p-1,p-1,p-1} \f$
   template<typename spline_t>
   class TH4
     : public FunctionSpace<S4<typename spline_t::template
@@ -1619,7 +1619,7 @@ namespace iganet {
   TUPLE_WRAPPER(TH4);
 
   /// @brief Nedelec like function space
-  /// \f$ S_{p+1}^{p} \otimes S_{p}^{p-1} \f$
+  /// \f$ S^{p+1}_{p} \otimes S^{p}_{p-1} \f$
   template<typename spline_t>
   class NE1
     : public FunctionSpace<S1<typename spline_t::template
@@ -1668,9 +1668,9 @@ namespace iganet {
   TUPLE_WRAPPER(NE1);
 
   /// @brief Nedelec like function space \f$
-  /// S_{p+1,p+1}^{p,p-1} \otimes
-  /// S_{p+1,p+1}^{p-1,p} \otimes
-  /// S_{p,p}^{p-1,p-1} \f$
+  /// S^{p+1,p+1}_{p,p-1} \otimes
+  /// S^{p+1,p+1}_{p-1,p} \otimes
+  /// S^{p,p}_{p-1,p-1} \f$
   template<typename spline_t>
   class NE2
     : public FunctionSpace<S2<typename spline_t::template
@@ -1738,10 +1738,10 @@ namespace iganet {
   TUPLE_WRAPPER(NE2);
 
   /// @brief Nedelec like function space \f$
-  /// S_{p+1,p+1,p+1}^{p,p-1,p-1} \otimes
-  /// S_{p+1,p+1,p+1}^{p-1,p,p-1} \otimes
-  /// S_{p+1,p+1,p+1}^{p-1,p-1,p} \otimes
-  /// S_{p,p,p}^{p-1,p-1,p-1} \f$
+  /// S^{p+1,p+1,p+1}_{p,p-1,p-1} \otimes
+  /// S^{p+1,p+1,p+1}_{p-1,p,p-1} \otimes
+  /// S^{p+1,p+1,p+1}_{p-1,p-1,p} \otimes
+  /// S^{p,p,p}_{p-1,p-1,p-1} \f$
   template<typename spline_t>
   class NE3
     : public FunctionSpace<S3<typename spline_t::template
@@ -1830,11 +1830,11 @@ namespace iganet {
   TUPLE_WRAPPER(NE3);
 
   /// @brief Nedelec like function space \f$
-  /// S_{p+1,p+1,p+1,p+1}^{p,p-1,p-1,p-1} \otimes
-  /// S_{p+1,p+1,p+1,p+1}^{p-1,p,p-1,p-1} \otimes
-  /// S_{p+1,p+1,p+1,p+1}^{p-1,p-1,p,p-1} \otimes
-  /// S_{p+1,p+1,p+1,p+1}^{p-1,p-1,p-1,p} \otimes
-  /// S_{p,p,p,p}^{p-1,p-1,p-1,p-1} \f$
+  /// S^{p+1,p+1,p+1,p+1}_{p,p-1,p-1,p-1} \otimes
+  /// S^{p+1,p+1,p+1,p+1}_{p-1,p,p-1,p-1} \otimes
+  /// S^{p+1,p+1,p+1,p+1}_{p-1,p-1,p,p-1} \otimes
+  /// S^{p+1,p+1,p+1,p+1}_{p-1,p-1,p-1,p} \otimes
+  /// S^{p,p,p,p}_{p-1,p-1,p-1,p-1} \f$
   template<typename spline_t>
   class NE4
     : public FunctionSpace<S4<typename spline_t::template
@@ -1949,7 +1949,7 @@ namespace iganet {
   TUPLE_WRAPPER(NE4);
 
   /// @brief Raviart-Thomas like function space
-  /// \f$ S_{p+1}^{p} \otimes S_{p}^{p-1} \f$
+  /// \f$ S^{p+1}_{p} \otimes S^{p}_{p-1} \f$
   template<typename spline_t>
   class RT1
     : public FunctionSpace<S1<typename spline_t::template
@@ -1998,9 +1998,9 @@ namespace iganet {
   TUPLE_WRAPPER(RT1);
 
   /// @brief Raviart-Thomas like function space \f$
-  /// S_{p+1,p}^{p,p-1} \otimes
-  /// S_{p,p+1}^{p-1,p} \otimes
-  /// S_{p,p}^{p-1,p-1} \f$
+  /// S^{p+1,p}_{p,p-1} \otimes
+  /// S^{p,p+1}_{p-1,p} \otimes
+  /// S^{p,p}_{p-1,p-1} \f$
   template<typename spline_t>
   class RT2
     : public FunctionSpace<S2<typename spline_t::template
@@ -2063,10 +2063,10 @@ namespace iganet {
   TUPLE_WRAPPER(RT2);
 
   /// @brief Raviart-Thomas like function space \f$
-  /// S_{p+1,p,p}^{p,p-1,p-1} \otimes
-  /// S_{p,p+1,p}^{p-1,p,p-1} \otimes
-  /// S_{p,p,p+1}^{p-1,p-1,p} \otimes
-  /// S_{p,p,p}^{p-1,p-1,p-1} \f$
+  /// S^{p+1,p,p}_{p,p-1,p-1} \otimes
+  /// S^{p,p+1,p}_{p-1,p,p-1} \otimes
+  /// S^{p,p,p+1}_{p-1,p-1,p} \otimes
+  /// S^{p,p,p}_{p-1,p-1,p-1} \f$
   template<typename spline_t>
   class RT3
     : public FunctionSpace<S3<typename spline_t::template
@@ -2149,11 +2149,11 @@ namespace iganet {
   TUPLE_WRAPPER(RT3);
 
   /// @brief Raviart-Thomas like function space \f$
-  /// S_{p+1,p,p,p}^{p,p-1,p-1,p-1} \otimes
-  /// S_{p,p+1,p,p}^{p-1,p,p-1,p-1} \otimes
-  /// S_{p,p,p+1,p}^{p-1,p-1,p,p-1} \otimes
-  /// S_{p,p,p,p+1}^{p-1,p-1,p-1,p} \otimes
-  /// S_{p,p,p,p}^{p-1,p-1,p-1,p-1} \f$
+  /// S^{p+1,p,p,p}_{p,p-1,p-1,p-1} \otimes
+  /// S^{p,p+1,p,p}_{p-1,p,p-1,p-1} \otimes
+  /// S^{p,p,p+1,p}_{p-1,p-1,p,p-1} \otimes
+  /// S^{p,p,p,p+1}_{p-1,p-1,p-1,p} \otimes
+  /// S^{p,p,p,p}_{p-1,p-1,p-1,p-1} \f$
   template<typename spline_t>
   class RT4
     : public FunctionSpace<S4<typename spline_t::template
