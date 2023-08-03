@@ -530,6 +530,41 @@ TEST_F(BSplineTest, UniformBSpline_read_write)
   EXPECT_EQ( (bspline_in != bspline_out), false);
 }
 
+TEST_F(BSplineTest, UniformBSpline_uniform_refine)
+{
+  {
+    iganet::UniformBSpline<real_t, 3, 3, 4> bspline({4,5});
+    iganet::UniformBSpline<real_t, 3, 3, 4> bspline_ref({5,6});
+    bspline.uniform_refine();
+    
+    EXPECT_EQ( bspline.isclose(bspline_ref), true);
+  }
+
+  {
+    iganet::UniformBSpline<real_t, 3, 3, 4> bspline({4,5});
+    iganet::UniformBSpline<real_t, 3, 3, 4> bspline_ref({7,8});
+    bspline.uniform_refine(2);
+    
+    EXPECT_EQ( bspline.isclose(bspline_ref), true);
+  }
+
+  {
+    iganet::UniformBSpline<real_t, 3, 3, 4> bspline({4,5});
+    iganet::UniformBSpline<real_t, 3, 3, 4> bspline_ref({5,5});
+    bspline.uniform_refine(1, 0);
+    
+    EXPECT_EQ( bspline.isclose(bspline_ref), true);
+  }
+  
+  {
+    iganet::UniformBSpline<real_t, 3, 3, 4> bspline({4,5});
+    iganet::UniformBSpline<real_t, 3, 3, 4> bspline_ref({5,8});
+    bspline.uniform_refine(1, 0).uniform_refine(2, 1);
+    
+    EXPECT_EQ( bspline.isclose(bspline_ref), true);
+  }
+}
+
 int main(int argc, char **argv) {
   ::testing::InitGoogleTest(&argc, argv);
   iganet::init();
