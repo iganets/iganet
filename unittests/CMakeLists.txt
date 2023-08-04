@@ -57,6 +57,8 @@ foreach(unittest ${UNITTESTS})
     target_precompile_headers(${name} REUSE_FROM iganet_pch)
   endif()
 
+  target_compile_options(${name} PUBLIC "-DIGANET_DATA_DIR=\"${PROJECT_SOURCE_DIR}/filedata/\"")
+  
   # LibTorch
   target_link_libraries(${name} PUBLIC "${TORCH_LIBRARIES}")
 

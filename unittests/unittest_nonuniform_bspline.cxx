@@ -479,21 +479,6 @@ TEST_F(BSplineTest, NonUniformBSpline_init)
   } 
 }
 
-TEST_F(BSplineTest, NonUniformBSpline_read_write)
-{
-  std::filesystem::path filename = std::filesystem::temp_directory_path() / std::to_string(rand());
-  iganet::NonUniformBSpline<real_t, 3, 1, 2, 3> bspline_out( {{{0.0, 0.0, 0.5, 1.0, 1.0},
-                                                               {0.0, 0.0, 0.0, 1.0, 1.0, 1.0},
-                                                               {0.0, 0.0, 0.0, 0.0, 0.5, 1.0, 1.0, 1.0, 1.0}}} );
-  bspline_out.save(filename.c_str());
-  iganet::NonUniformBSpline<real_t, 3, 1, 2, 3> bspline_in;
-  bspline_in.load(filename.c_str());
-  std::filesystem::remove(filename);
-
-  EXPECT_EQ( (bspline_in == bspline_out), true);
-  EXPECT_EQ( (bspline_in != bspline_out), false);
-}
-
 TEST_F(BSplineTest, NonUniformBSpline_uniform_refine)
 {
   {
@@ -600,6 +585,91 @@ TEST_F(BSplineTest, NonUniformBSpline_clone_coeffs_constructor)
   { return std::array<real_t,3>{0.0, 1.0, 2.0};} );
   
   EXPECT_EQ( (bspline_ref == bspline_clone), true);    
+}
+
+TEST_F(BSplineTest, NonUniformBSpline_read_write)
+{
+  std::filesystem::path filename = std::filesystem::temp_directory_path() / std::to_string(rand());
+  iganet::NonUniformBSpline<real_t, 3, 1, 2, 3> bspline_out( {{{0.0, 0.0, 0.5, 1.0, 1.0},
+                                                               {0.0, 0.0, 0.0, 1.0, 1.0, 1.0},
+                                                               {0.0, 0.0, 0.0, 0.0, 0.5, 1.0, 1.0, 1.0, 1.0}}},
+                                                            iganet::init::greville, options);
+  bspline_out.save(filename.c_str());
+  iganet::NonUniformBSpline<real_t, 3, 1, 2, 3> bspline_in(options);
+  bspline_in.load(filename.c_str());
+  std::filesystem::remove(filename);
+
+  EXPECT_EQ( (bspline_in == bspline_out), true);
+  EXPECT_EQ( (bspline_in != bspline_out), false);
+}
+
+TEST_F(BSplineTest, NonUniformBSpline_to_from_xml)
+{
+  iganet::NonUniformBSpline<real_t, 3, 3, 4> bspline_out({4,5}, iganet::init::zeros, options);
+
+  bspline_out.transform( [](const std::array<real_t,2> xi)
+  { return std::array<real_t,3>{static_cast<real_t>(std::rand()),
+                                static_cast<real_t>(std::rand()),
+                                static_cast<real_t>(std::rand())}; } );
+  
+  pugi::xml_document doc = bspline_out.to_xml();
+  
+  iganet::NonUniformBSpline<real_t, 3, 3, 4> bspline_in(options);
+  bspline_in.from_xml(doc);  
+  
+  EXPECT_EQ( (bspline_in == bspline_out), true);
+}
+
+TEST_F(BSplineTest, UniformBSpline_load_from_xml)
+{
+  {
+    pugi::xml_document doc;
+    pugi::xml_parse_result result = doc.load_file(IGANET_DATA_DIR "domain1d/line.xml");
+    
+    iganet::NonUniformBSpline<real_t, 3, 2> bspline_in(options);
+    bspline_in.from_xml(doc);
+    
+    iganet::NonUniformBSpline<real_t, 3, 2> bspline_ref({3}, iganet::init::zeros, options);
+    
+    bspline_ref.transform( [](const std::array<real_t,1> xi)
+    { return std::array<real_t,3>{xi[0], 0.0, 0.0}; } );
+    
+    EXPECT_EQ( (bspline_in == bspline_ref), true);
+  }
+
+  {
+    pugi::xml_document doc;
+    pugi::xml_parse_result result = doc.load_file(IGANET_DATA_DIR "domain2d/square.xml");
+    
+    iganet::NonUniformBSpline<real_t, 2, 1, 1> bspline_in(options);
+    bspline_in.from_xml(doc, 1);
+
+    iganet::NonUniformBSpline<real_t, 2, 1, 1> bspline_ref({2, 2}, iganet::init::greville, options);
+    
+    EXPECT_EQ( (bspline_in == bspline_ref), true);
+  }
+
+  {
+    pugi::xml_document doc;
+    pugi::xml_parse_result result = doc.load_file(IGANET_DATA_DIR "domain3d/GshapedVolume.xml");
+
+    iganet::NonUniformBSpline<real_t, 3, 2, 2, 2> bspline_in(options);
+    bspline_in.from_xml(doc);
+  }
+
+  {
+    pugi::xml_document doc;
+    pugi::xml_parse_result result = doc.load_file(IGANET_DATA_DIR "surfaces/g_plus_s_surf.xml");
+
+    iganet::NonUniformBSpline<real_t, 3, 3, 3> bspline_in0(options);
+    iganet::NonUniformBSpline<real_t, 3, 3, 1> bspline_in1(options);
+
+    for (int i : {0, 1, 4, 5, 8, 9, 12, 13, 18, 19, 22, 23, 27, 31, 32, 33, 36, 37, 39, 44, 45, 49, 50, 51, 52, 53, 56, 57, 58, 59})
+      bspline_in0.from_xml(doc, i);
+    
+    for (int i : {2, 3, 6, 7, 10, 11, 14, 15, 16, 17, 20, 21, 24, 25, 26, 28, 29, 30, 34, 35, 38, 40, 41, 42, 43, 46, 47, 48, 54, 55, 60})
+      bspline_in1.from_xml(doc, i);
+  }  
 }
 
 TEST_F(BSplineTest, NonUniformBSpline_reduce_continuity)
