@@ -641,19 +641,509 @@ TEST_F(BSplineTest, UniformBSpline_read_write)
 
 TEST_F(BSplineTest, UniformBSpline_to_from_xml)
 {
-  iganet::UniformBSpline<real_t, 3, 3, 4> bspline_out({4,5}, iganet::init::zeros, options);
+  {
+    iganet::UniformBSpline<real_t, 1, 3> bspline_out({4}, iganet::init::zeros, options);
+    
+    bspline_out.transform( [](const std::array<real_t,1> xi)
+    { return std::array<real_t,1>{static_cast<real_t>(std::rand())}; } );
+    
+    pugi::xml_document doc = bspline_out.to_xml();
 
-  bspline_out.transform( [](const std::array<real_t,2> xi)
-  { return std::array<real_t,3>{static_cast<real_t>(std::rand()),
-                                static_cast<real_t>(std::rand()),
-                                static_cast<real_t>(std::rand())}; } );
+    iganet::UniformBSpline<real_t, 1, 3> bspline_in(options);
+    bspline_in.from_xml(doc);
+    
+    EXPECT_EQ( (bspline_in == bspline_out), true);
 
-  pugi::xml_document doc = bspline_out.to_xml();
+    // non-matching degree
+    EXPECT_THROW( (iganet::UniformBSpline<real_t, 1, 2>{}.from_xml(doc, 0)), std::runtime_error);
+    
+    // non-matching parametric dimension
+    EXPECT_THROW( (iganet::UniformBSpline<real_t, 1, 3, 3>{}.from_xml(doc, 0)), std::runtime_error);
+    EXPECT_THROW( (iganet::UniformBSpline<real_t, 1, 3, 3, 3>{}.from_xml(doc, 0)), std::runtime_error);
+    EXPECT_THROW( (iganet::UniformBSpline<real_t, 1, 3, 3, 3, 3>{}.from_xml(doc, 0)), std::runtime_error);
 
-  iganet::UniformBSpline<real_t, 3, 3, 4> bspline_in(options);
-  bspline_in.from_xml(doc);
+    // non-matching geometric dimension
+    EXPECT_THROW( (iganet::UniformBSpline<real_t, 2, 3>{}.from_xml(doc, 0)), std::runtime_error);
+    EXPECT_THROW( (iganet::UniformBSpline<real_t, 3, 3>{}.from_xml(doc, 0)), std::runtime_error);
+    EXPECT_THROW( (iganet::UniformBSpline<real_t, 4, 3>{}.from_xml(doc, 0)), std::runtime_error);
+    
+    // non-matching id
+    EXPECT_THROW( (iganet::UniformBSpline<real_t, 1, 3>{}.from_xml(doc, 1)), std::runtime_error);
+  }
 
-  EXPECT_EQ( (bspline_in == bspline_out), true);
+  {
+    iganet::UniformBSpline<real_t, 2, 3> bspline_out({4}, iganet::init::zeros, options);
+    
+    bspline_out.transform( [](const std::array<real_t,1> xi)
+    { return std::array<real_t,2>{static_cast<real_t>(std::rand()),
+                                  static_cast<real_t>(std::rand())}; } );
+    
+    pugi::xml_document doc = bspline_out.to_xml();
+    
+    iganet::UniformBSpline<real_t, 2, 3> bspline_in(options);
+    bspline_in.from_xml(doc);
+    
+    EXPECT_EQ( (bspline_in == bspline_out), true);
+
+    // non-matching degree
+    EXPECT_THROW( (iganet::UniformBSpline<real_t, 2, 2>{}.from_xml(doc, 0)), std::runtime_error);
+    
+    // non-matching parametric dimension
+    EXPECT_THROW( (iganet::UniformBSpline<real_t, 2, 3, 3>{}.from_xml(doc, 0)), std::runtime_error);
+    EXPECT_THROW( (iganet::UniformBSpline<real_t, 2, 3, 3, 3>{}.from_xml(doc, 0)), std::runtime_error);
+    EXPECT_THROW( (iganet::UniformBSpline<real_t, 2, 3, 3, 3, 3>{}.from_xml(doc, 0)), std::runtime_error);
+
+    // non-matching geometric dimension
+    EXPECT_THROW( (iganet::UniformBSpline<real_t, 1, 3>{}.from_xml(doc, 0)), std::runtime_error);
+    EXPECT_THROW( (iganet::UniformBSpline<real_t, 3, 3>{}.from_xml(doc, 0)), std::runtime_error);
+    EXPECT_THROW( (iganet::UniformBSpline<real_t, 4, 3>{}.from_xml(doc, 0)), std::runtime_error);
+    
+    // non-matching id
+    EXPECT_THROW( (iganet::UniformBSpline<real_t, 1, 3>{}.from_xml(doc, 1)), std::runtime_error);
+  }
+
+  {
+    iganet::UniformBSpline<real_t, 3, 3> bspline_out({4}, iganet::init::zeros, options);
+    
+    bspline_out.transform( [](const std::array<real_t,1> xi)
+    { return std::array<real_t,3>{static_cast<real_t>(std::rand()),
+                                  static_cast<real_t>(std::rand()),
+                                  static_cast<real_t>(std::rand())}; } );
+    
+    pugi::xml_document doc = bspline_out.to_xml();
+    
+    iganet::UniformBSpline<real_t, 3, 3> bspline_in(options);
+    bspline_in.from_xml(doc);
+    
+    EXPECT_EQ( (bspline_in == bspline_out), true);
+
+    // non-matching degree
+    EXPECT_THROW( (iganet::UniformBSpline<real_t, 3, 2>{}.from_xml(doc, 0)), std::runtime_error);
+    
+    // non-matching parametric dimension
+    EXPECT_THROW( (iganet::UniformBSpline<real_t, 3, 3, 3>{}.from_xml(doc, 0)), std::runtime_error);
+    EXPECT_THROW( (iganet::UniformBSpline<real_t, 3, 3, 3, 3>{}.from_xml(doc, 0)), std::runtime_error);
+    EXPECT_THROW( (iganet::UniformBSpline<real_t, 3, 3, 3, 3, 3>{}.from_xml(doc, 0)), std::runtime_error);
+
+    // non-matching geometric dimension
+    EXPECT_THROW( (iganet::UniformBSpline<real_t, 1, 3>{}.from_xml(doc, 0)), std::runtime_error);
+    EXPECT_THROW( (iganet::UniformBSpline<real_t, 2, 3>{}.from_xml(doc, 0)), std::runtime_error);
+    EXPECT_THROW( (iganet::UniformBSpline<real_t, 4, 3>{}.from_xml(doc, 0)), std::runtime_error);
+    
+    // non-matching id
+    EXPECT_THROW( (iganet::UniformBSpline<real_t, 3, 3>{}.from_xml(doc, 1)), std::runtime_error);
+  }
+
+  {
+    iganet::UniformBSpline<real_t, 4, 3> bspline_out({4}, iganet::init::zeros, options);
+    
+    bspline_out.transform( [](const std::array<real_t,1> xi)
+    { return std::array<real_t,4>{static_cast<real_t>(std::rand()),
+                                  static_cast<real_t>(std::rand()),
+                                  static_cast<real_t>(std::rand()),
+                                  static_cast<real_t>(std::rand())}; } );
+    
+    pugi::xml_document doc = bspline_out.to_xml();
+    
+    iganet::UniformBSpline<real_t, 4, 3> bspline_in(options);
+    bspline_in.from_xml(doc);
+    
+    EXPECT_EQ( (bspline_in == bspline_out), true);
+
+    // non-matching degree
+    EXPECT_THROW( (iganet::UniformBSpline<real_t, 4, 2>{}.from_xml(doc, 0)), std::runtime_error);
+    
+    // non-matching parametric dimension
+    EXPECT_THROW( (iganet::UniformBSpline<real_t, 4, 3, 3>{}.from_xml(doc, 0)), std::runtime_error);
+    EXPECT_THROW( (iganet::UniformBSpline<real_t, 4, 3, 3, 3>{}.from_xml(doc, 0)), std::runtime_error);
+    EXPECT_THROW( (iganet::UniformBSpline<real_t, 4, 3, 3, 3, 3>{}.from_xml(doc, 0)), std::runtime_error);
+
+    // non-matching geometric dimension
+    EXPECT_THROW( (iganet::UniformBSpline<real_t, 1, 3>{}.from_xml(doc, 0)), std::runtime_error);
+    EXPECT_THROW( (iganet::UniformBSpline<real_t, 2, 3>{}.from_xml(doc, 0)), std::runtime_error);
+    EXPECT_THROW( (iganet::UniformBSpline<real_t, 3, 3>{}.from_xml(doc, 0)), std::runtime_error);
+    
+    // non-matching id
+    EXPECT_THROW( (iganet::UniformBSpline<real_t, 4, 3>{}.from_xml(doc, 1)), std::runtime_error);
+  }
+  
+  {
+    iganet::UniformBSpline<real_t, 1, 3, 4> bspline_out({4,5}, iganet::init::zeros, options);
+    
+    bspline_out.transform( [](const std::array<real_t,2> xi)
+    { return std::array<real_t,1>{static_cast<real_t>(std::rand())}; } );
+    
+    pugi::xml_document doc = bspline_out.to_xml();
+
+    iganet::UniformBSpline<real_t, 1, 3, 4> bspline_in(options);
+    bspline_in.from_xml(doc);
+    
+    EXPECT_EQ( (bspline_in == bspline_out), true);
+
+    // non-matching degree
+    EXPECT_THROW( (iganet::UniformBSpline<real_t, 1, 3, 3>{}.from_xml(doc, 0)), std::runtime_error);
+    
+    // non-matching parametric dimension
+    EXPECT_THROW( (iganet::UniformBSpline<real_t, 1, 3>{}.from_xml(doc, 0)), std::runtime_error);
+    EXPECT_THROW( (iganet::UniformBSpline<real_t, 1, 3, 4, 3>{}.from_xml(doc, 0)), std::runtime_error);
+    EXPECT_THROW( (iganet::UniformBSpline<real_t, 1, 3, 4, 3, 3>{}.from_xml(doc, 0)), std::runtime_error);
+
+    // non-matching geometric dimension
+    EXPECT_THROW( (iganet::UniformBSpline<real_t, 2, 3, 4>{}.from_xml(doc, 0)), std::runtime_error);
+    EXPECT_THROW( (iganet::UniformBSpline<real_t, 3, 3, 4>{}.from_xml(doc, 0)), std::runtime_error);
+    EXPECT_THROW( (iganet::UniformBSpline<real_t, 4, 3, 4>{}.from_xml(doc, 0)), std::runtime_error);
+    
+    // non-matching id
+    EXPECT_THROW( (iganet::UniformBSpline<real_t, 1, 3, 4>{}.from_xml(doc, 1)), std::runtime_error);
+  }
+    
+  {
+    iganet::UniformBSpline<real_t, 2, 3, 4> bspline_out({4,5}, iganet::init::zeros, options);
+    
+    bspline_out.transform( [](const std::array<real_t,2> xi)
+    { return std::array<real_t,2>{static_cast<real_t>(std::rand()),
+                                  static_cast<real_t>(std::rand())}; } );
+    
+    pugi::xml_document doc = bspline_out.to_xml();
+    
+    iganet::UniformBSpline<real_t, 2, 3, 4> bspline_in(options);
+    bspline_in.from_xml(doc);
+    
+    EXPECT_EQ( (bspline_in == bspline_out), true);
+
+    // non-matching degree
+    EXPECT_THROW( (iganet::UniformBSpline<real_t, 2, 3, 3>{}.from_xml(doc, 0)), std::runtime_error);
+    
+    // non-matching parametric dimension
+    EXPECT_THROW( (iganet::UniformBSpline<real_t, 2, 3>{}.from_xml(doc, 0)), std::runtime_error);
+    EXPECT_THROW( (iganet::UniformBSpline<real_t, 2, 3, 4, 3>{}.from_xml(doc, 0)), std::runtime_error);
+    EXPECT_THROW( (iganet::UniformBSpline<real_t, 2, 3, 4, 3, 3>{}.from_xml(doc, 0)), std::runtime_error);
+
+    // non-matching geometric dimension
+    EXPECT_THROW( (iganet::UniformBSpline<real_t, 1, 3, 4>{}.from_xml(doc, 0)), std::runtime_error);
+    EXPECT_THROW( (iganet::UniformBSpline<real_t, 3, 3, 4>{}.from_xml(doc, 0)), std::runtime_error);
+    EXPECT_THROW( (iganet::UniformBSpline<real_t, 4, 3, 4>{}.from_xml(doc, 0)), std::runtime_error);
+    
+    // non-matching id
+    EXPECT_THROW( (iganet::UniformBSpline<real_t, 2, 3, 4>{}.from_xml(doc, 1)), std::runtime_error);
+  }
+  
+  {
+    iganet::UniformBSpline<real_t, 3, 3, 4> bspline_out({4,5}, iganet::init::zeros, options);
+    
+    bspline_out.transform( [](const std::array<real_t,2> xi)
+    { return std::array<real_t,3>{static_cast<real_t>(std::rand()),
+                                  static_cast<real_t>(std::rand()),
+                                  static_cast<real_t>(std::rand())}; } );
+    
+    pugi::xml_document doc = bspline_out.to_xml();
+    
+    iganet::UniformBSpline<real_t, 3, 3, 4> bspline_in(options);
+    bspline_in.from_xml(doc);
+    
+    EXPECT_EQ( (bspline_in == bspline_out), true);
+
+    // non-matching degree
+    EXPECT_THROW( (iganet::UniformBSpline<real_t, 3, 3, 3>{}.from_xml(doc, 0)), std::runtime_error);
+    
+    // non-matching parametric dimension
+    EXPECT_THROW( (iganet::UniformBSpline<real_t, 3, 3>{}.from_xml(doc, 0)), std::runtime_error);
+    EXPECT_THROW( (iganet::UniformBSpline<real_t, 3, 3, 4, 3>{}.from_xml(doc, 0)), std::runtime_error);
+    EXPECT_THROW( (iganet::UniformBSpline<real_t, 3, 3, 4, 3, 3>{}.from_xml(doc, 0)), std::runtime_error);
+
+    // non-matching geometric dimension
+    EXPECT_THROW( (iganet::UniformBSpline<real_t, 1, 3, 4>{}.from_xml(doc, 0)), std::runtime_error);
+    EXPECT_THROW( (iganet::UniformBSpline<real_t, 2, 3, 4>{}.from_xml(doc, 0)), std::runtime_error);
+    EXPECT_THROW( (iganet::UniformBSpline<real_t, 4, 3, 4>{}.from_xml(doc, 0)), std::runtime_error);
+    
+    // non-matching id
+    EXPECT_THROW( (iganet::UniformBSpline<real_t, 3, 3, 4>{}.from_xml(doc, 1)), std::runtime_error);
+  }
+
+  {
+    iganet::UniformBSpline<real_t, 4, 3, 4> bspline_out({4,5}, iganet::init::zeros, options);
+    
+    bspline_out.transform( [](const std::array<real_t,2> xi)
+    { return std::array<real_t,4>{static_cast<real_t>(std::rand()),
+                                  static_cast<real_t>(std::rand()),
+                                  static_cast<real_t>(std::rand()),
+                                  static_cast<real_t>(std::rand())}; } );
+    
+    pugi::xml_document doc = bspline_out.to_xml();
+    
+    iganet::UniformBSpline<real_t, 4, 3, 4> bspline_in(options);
+    bspline_in.from_xml(doc);
+    
+    EXPECT_EQ( (bspline_in == bspline_out), true);
+
+    // non-matching degree
+    EXPECT_THROW( (iganet::UniformBSpline<real_t, 4, 3, 3>{}.from_xml(doc, 0)), std::runtime_error);
+    
+    // non-matching parametric dimension
+    EXPECT_THROW( (iganet::UniformBSpline<real_t, 4, 3>{}.from_xml(doc, 0)), std::runtime_error);
+    EXPECT_THROW( (iganet::UniformBSpline<real_t, 4, 3, 4, 3>{}.from_xml(doc, 0)), std::runtime_error);
+    EXPECT_THROW( (iganet::UniformBSpline<real_t, 4, 3, 4, 3, 3>{}.from_xml(doc, 0)), std::runtime_error);
+
+    // non-matching geometric dimension
+    EXPECT_THROW( (iganet::UniformBSpline<real_t, 1, 3, 4>{}.from_xml(doc, 0)), std::runtime_error);
+    EXPECT_THROW( (iganet::UniformBSpline<real_t, 2, 3, 4>{}.from_xml(doc, 0)), std::runtime_error);
+    EXPECT_THROW( (iganet::UniformBSpline<real_t, 3, 3, 4>{}.from_xml(doc, 0)), std::runtime_error);
+    
+    // non-matching id
+    EXPECT_THROW( (iganet::UniformBSpline<real_t, 4, 3, 4>{}.from_xml(doc, 1)), std::runtime_error);
+  }
+  
+  {
+    iganet::UniformBSpline<real_t, 1, 3, 4, 5> bspline_out({4,5,6}, iganet::init::zeros, options);
+    
+    bspline_out.transform( [](const std::array<real_t,3> xi)
+    { return std::array<real_t,1>{static_cast<real_t>(std::rand())}; } );
+    
+    pugi::xml_document doc = bspline_out.to_xml();
+
+    iganet::UniformBSpline<real_t, 1, 3, 4, 5> bspline_in(options);
+    bspline_in.from_xml(doc);
+    
+    EXPECT_EQ( (bspline_in == bspline_out), true);
+
+    // non-matching degree
+    EXPECT_THROW( (iganet::UniformBSpline<real_t, 1, 3, 3, 3>{}.from_xml(doc, 0)), std::runtime_error);
+    
+    // non-matching parametric dimension
+    EXPECT_THROW( (iganet::UniformBSpline<real_t, 1, 3>{}.from_xml(doc, 0)), std::runtime_error);
+    EXPECT_THROW( (iganet::UniformBSpline<real_t, 1, 3, 4>{}.from_xml(doc, 0)), std::runtime_error);
+    EXPECT_THROW( (iganet::UniformBSpline<real_t, 1, 3, 4, 5, 3>{}.from_xml(doc, 0)), std::runtime_error);
+
+    // non-matching geometric dimension
+    EXPECT_THROW( (iganet::UniformBSpline<real_t, 2, 3, 4, 5>{}.from_xml(doc, 0)), std::runtime_error);
+    EXPECT_THROW( (iganet::UniformBSpline<real_t, 3, 3, 4, 5>{}.from_xml(doc, 0)), std::runtime_error);
+    EXPECT_THROW( (iganet::UniformBSpline<real_t, 4, 3, 4, 5>{}.from_xml(doc, 0)), std::runtime_error);
+    
+    // non-matching id
+    EXPECT_THROW( (iganet::UniformBSpline<real_t, 1, 3, 4, 5>{}.from_xml(doc, 1)), std::runtime_error);
+  }
+    
+  {
+    iganet::UniformBSpline<real_t, 2, 3, 4, 5> bspline_out({4,5,6}, iganet::init::zeros, options);
+    
+    bspline_out.transform( [](const std::array<real_t,3> xi)
+    { return std::array<real_t,2>{static_cast<real_t>(std::rand()),
+                                  static_cast<real_t>(std::rand())}; } );
+    
+    pugi::xml_document doc = bspline_out.to_xml();
+    
+    iganet::UniformBSpline<real_t, 2, 3, 4, 5> bspline_in(options);
+    bspline_in.from_xml(doc);
+    
+    EXPECT_EQ( (bspline_in == bspline_out), true);
+
+    // non-matching degree
+    EXPECT_THROW( (iganet::UniformBSpline<real_t, 2, 3, 3, 3>{}.from_xml(doc, 0)), std::runtime_error);
+    
+    // non-matching parametric dimension
+    EXPECT_THROW( (iganet::UniformBSpline<real_t, 2, 3>{}.from_xml(doc, 0)), std::runtime_error);
+    EXPECT_THROW( (iganet::UniformBSpline<real_t, 2, 3, 4>{}.from_xml(doc, 0)), std::runtime_error);
+    EXPECT_THROW( (iganet::UniformBSpline<real_t, 2, 3, 4, 5, 3>{}.from_xml(doc, 0)), std::runtime_error);
+
+    // non-matching geometric dimension
+    EXPECT_THROW( (iganet::UniformBSpline<real_t, 1, 3, 4, 5>{}.from_xml(doc, 0)), std::runtime_error);
+    EXPECT_THROW( (iganet::UniformBSpline<real_t, 3, 3, 4, 5>{}.from_xml(doc, 0)), std::runtime_error);
+    EXPECT_THROW( (iganet::UniformBSpline<real_t, 4, 3, 4, 5>{}.from_xml(doc, 0)), std::runtime_error);
+    
+    // non-matching id
+    EXPECT_THROW( (iganet::UniformBSpline<real_t, 2, 3, 4, 5>{}.from_xml(doc, 1)), std::runtime_error);
+  }
+  
+  {
+    iganet::UniformBSpline<real_t, 3, 3, 4, 5> bspline_out({4,5,6}, iganet::init::zeros, options);
+    
+    bspline_out.transform( [](const std::array<real_t,3> xi)
+    { return std::array<real_t,3>{static_cast<real_t>(std::rand()),
+                                  static_cast<real_t>(std::rand()),
+                                  static_cast<real_t>(std::rand())}; } );
+    
+    pugi::xml_document doc = bspline_out.to_xml();
+    
+    iganet::UniformBSpline<real_t, 3, 3, 4, 5> bspline_in(options);
+    bspline_in.from_xml(doc);
+    
+    EXPECT_EQ( (bspline_in == bspline_out), true);
+
+    // non-matching degree
+    EXPECT_THROW( (iganet::UniformBSpline<real_t, 3, 3, 3, 3>{}.from_xml(doc, 0)), std::runtime_error);
+    
+    // non-matching parametric dimension
+    EXPECT_THROW( (iganet::UniformBSpline<real_t, 3, 3>{}.from_xml(doc, 0)), std::runtime_error);
+    EXPECT_THROW( (iganet::UniformBSpline<real_t, 3, 3, 4>{}.from_xml(doc, 0)), std::runtime_error);
+    EXPECT_THROW( (iganet::UniformBSpline<real_t, 3, 3, 4, 5, 3>{}.from_xml(doc, 0)), std::runtime_error);
+
+    // non-matching geometric dimension
+    EXPECT_THROW( (iganet::UniformBSpline<real_t, 1, 3, 4, 5>{}.from_xml(doc, 0)), std::runtime_error);
+    EXPECT_THROW( (iganet::UniformBSpline<real_t, 2, 3, 4, 5>{}.from_xml(doc, 0)), std::runtime_error);
+    EXPECT_THROW( (iganet::UniformBSpline<real_t, 4, 3, 4, 5>{}.from_xml(doc, 0)), std::runtime_error);
+    
+    // non-matching id
+    EXPECT_THROW( (iganet::UniformBSpline<real_t, 3, 3, 4, 5>{}.from_xml(doc, 1)), std::runtime_error);
+  }
+
+  {
+    iganet::UniformBSpline<real_t, 4, 3, 4, 5> bspline_out({4,5,6}, iganet::init::zeros, options);
+    
+    bspline_out.transform( [](const std::array<real_t,3> xi)
+    { return std::array<real_t,4>{static_cast<real_t>(std::rand()),
+                                  static_cast<real_t>(std::rand()),
+                                  static_cast<real_t>(std::rand()),
+                                  static_cast<real_t>(std::rand())}; } );
+    
+    pugi::xml_document doc = bspline_out.to_xml();
+    
+    iganet::UniformBSpline<real_t, 4, 3, 4, 5> bspline_in(options);
+    bspline_in.from_xml(doc);
+    
+    EXPECT_EQ( (bspline_in == bspline_out), true);
+
+    // non-matching degree
+    EXPECT_THROW( (iganet::UniformBSpline<real_t, 4, 3, 3, 3>{}.from_xml(doc, 0)), std::runtime_error);
+    
+    // non-matching parametric dimension
+    EXPECT_THROW( (iganet::UniformBSpline<real_t, 4, 3>{}.from_xml(doc, 0)), std::runtime_error);
+    EXPECT_THROW( (iganet::UniformBSpline<real_t, 4, 3, 4>{}.from_xml(doc, 0)), std::runtime_error);
+    EXPECT_THROW( (iganet::UniformBSpline<real_t, 4, 3, 4, 5, 3>{}.from_xml(doc, 0)), std::runtime_error);
+
+    // non-matching geometric dimension
+    EXPECT_THROW( (iganet::UniformBSpline<real_t, 1, 3, 4, 5>{}.from_xml(doc, 0)), std::runtime_error);
+    EXPECT_THROW( (iganet::UniformBSpline<real_t, 2, 3, 4, 5>{}.from_xml(doc, 0)), std::runtime_error);
+    EXPECT_THROW( (iganet::UniformBSpline<real_t, 3, 3, 4, 5>{}.from_xml(doc, 0)), std::runtime_error);
+    
+    // non-matching id
+    EXPECT_THROW( (iganet::UniformBSpline<real_t, 4, 3, 4, 5>{}.from_xml(doc, 1)), std::runtime_error);
+  }
+
+  {
+    iganet::UniformBSpline<real_t, 1, 3, 4, 5, 1> bspline_out({4,5,6,2}, iganet::init::zeros, options);
+    
+    bspline_out.transform( [](const std::array<real_t,4> xi)
+    { return std::array<real_t,1>{static_cast<real_t>(std::rand())}; } );
+    
+    pugi::xml_document doc = bspline_out.to_xml();
+
+    iganet::UniformBSpline<real_t, 1, 3, 4, 5, 1> bspline_in(options);
+    bspline_in.from_xml(doc);
+    
+    EXPECT_EQ( (bspline_in == bspline_out), true);
+
+    // non-matching degree
+    EXPECT_THROW( (iganet::UniformBSpline<real_t, 1, 3, 4, 5, 2>{}.from_xml(doc, 0)), std::runtime_error);
+    
+    // non-matching parametric dimension
+    EXPECT_THROW( (iganet::UniformBSpline<real_t, 1, 3>{}.from_xml(doc, 0)), std::runtime_error);
+    EXPECT_THROW( (iganet::UniformBSpline<real_t, 1, 3, 4>{}.from_xml(doc, 0)), std::runtime_error);
+    EXPECT_THROW( (iganet::UniformBSpline<real_t, 1, 3, 4, 5>{}.from_xml(doc, 0)), std::runtime_error);
+
+    // non-matching geometric dimension
+    EXPECT_THROW( (iganet::UniformBSpline<real_t, 2, 3, 4, 5, 1>{}.from_xml(doc, 0)), std::runtime_error);
+    EXPECT_THROW( (iganet::UniformBSpline<real_t, 3, 3, 4, 5, 1>{}.from_xml(doc, 0)), std::runtime_error);
+    EXPECT_THROW( (iganet::UniformBSpline<real_t, 4, 3, 4, 5, 1>{}.from_xml(doc, 0)), std::runtime_error);
+    
+    // non-matching id
+    EXPECT_THROW( (iganet::UniformBSpline<real_t, 1, 3, 4, 5, 1>{}.from_xml(doc, 1)), std::runtime_error);
+  }
+    
+  {
+    iganet::UniformBSpline<real_t, 2, 3, 4, 5, 1> bspline_out({4,5,6,2}, iganet::init::zeros, options);
+    
+    bspline_out.transform( [](const std::array<real_t,4> xi)
+    { return std::array<real_t,2>{static_cast<real_t>(std::rand()),
+                                  static_cast<real_t>(std::rand())}; } );
+    
+    pugi::xml_document doc = bspline_out.to_xml();
+    
+    iganet::UniformBSpline<real_t, 2, 3, 4, 5, 1> bspline_in(options);
+    bspline_in.from_xml(doc);
+    
+    EXPECT_EQ( (bspline_in == bspline_out), true);
+
+    // non-matching degree
+    EXPECT_THROW( (iganet::UniformBSpline<real_t, 2, 3, 4, 5, 2>{}.from_xml(doc, 0)), std::runtime_error);
+    
+    // non-matching parametric dimension
+    EXPECT_THROW( (iganet::UniformBSpline<real_t, 2, 3>{}.from_xml(doc, 0)), std::runtime_error);
+    EXPECT_THROW( (iganet::UniformBSpline<real_t, 2, 3, 4>{}.from_xml(doc, 0)), std::runtime_error);
+    EXPECT_THROW( (iganet::UniformBSpline<real_t, 2, 3, 4, 5>{}.from_xml(doc, 0)), std::runtime_error);
+
+    // non-matching geometric dimension
+    EXPECT_THROW( (iganet::UniformBSpline<real_t, 1, 3, 4, 5, 1>{}.from_xml(doc, 0)), std::runtime_error);
+    EXPECT_THROW( (iganet::UniformBSpline<real_t, 3, 3, 4, 5, 1>{}.from_xml(doc, 0)), std::runtime_error);
+    EXPECT_THROW( (iganet::UniformBSpline<real_t, 4, 3, 4, 5, 1>{}.from_xml(doc, 0)), std::runtime_error);
+    
+    // non-matching id
+    EXPECT_THROW( (iganet::UniformBSpline<real_t, 2, 3, 4, 5, 1>{}.from_xml(doc, 1)), std::runtime_error);
+  }
+  
+  {
+    iganet::UniformBSpline<real_t, 3, 3, 4, 5, 1> bspline_out({4,5,6,2}, iganet::init::zeros, options);
+    
+    bspline_out.transform( [](const std::array<real_t,4> xi)
+    { return std::array<real_t,3>{static_cast<real_t>(std::rand()),
+                                  static_cast<real_t>(std::rand()),
+                                  static_cast<real_t>(std::rand())}; } );
+    
+    pugi::xml_document doc = bspline_out.to_xml();
+    
+    iganet::UniformBSpline<real_t, 3, 3, 4, 5, 1> bspline_in(options);
+    bspline_in.from_xml(doc);
+    
+    EXPECT_EQ( (bspline_in == bspline_out), true);
+
+    // non-matching degree
+    EXPECT_THROW( (iganet::UniformBSpline<real_t, 3, 3, 4, 5, 2>{}.from_xml(doc, 0)), std::runtime_error);
+    
+    // non-matching parametric dimension
+    EXPECT_THROW( (iganet::UniformBSpline<real_t, 3, 3>{}.from_xml(doc, 0)), std::runtime_error);
+    EXPECT_THROW( (iganet::UniformBSpline<real_t, 3, 3, 4>{}.from_xml(doc, 0)), std::runtime_error);
+    EXPECT_THROW( (iganet::UniformBSpline<real_t, 3, 3, 4, 5>{}.from_xml(doc, 0)), std::runtime_error);
+
+    // non-matching geometric dimension
+    EXPECT_THROW( (iganet::UniformBSpline<real_t, 1, 3, 4, 5, 1>{}.from_xml(doc, 0)), std::runtime_error);
+    EXPECT_THROW( (iganet::UniformBSpline<real_t, 2, 3, 4, 5, 1>{}.from_xml(doc, 0)), std::runtime_error);
+    EXPECT_THROW( (iganet::UniformBSpline<real_t, 4, 3, 4, 5, 1>{}.from_xml(doc, 0)), std::runtime_error);
+    
+    // non-matching id
+    EXPECT_THROW( (iganet::UniformBSpline<real_t, 3, 3, 4, 5, 1>{}.from_xml(doc, 1)), std::runtime_error);
+  }
+
+  {
+    iganet::UniformBSpline<real_t, 4, 3, 4, 5, 1> bspline_out({4,5,6,2}, iganet::init::zeros, options);
+    
+    bspline_out.transform( [](const std::array<real_t,4> xi)
+    { return std::array<real_t,4>{static_cast<real_t>(std::rand()),
+                                  static_cast<real_t>(std::rand()),
+                                  static_cast<real_t>(std::rand()),
+                                  static_cast<real_t>(std::rand())}; } );
+    
+    pugi::xml_document doc = bspline_out.to_xml();
+    
+    iganet::UniformBSpline<real_t, 4, 3, 4, 5, 1> bspline_in(options);
+    bspline_in.from_xml(doc);
+    
+    EXPECT_EQ( (bspline_in == bspline_out), true);
+
+    // non-matching degree
+    EXPECT_THROW( (iganet::UniformBSpline<real_t, 4, 3, 4, 5, 2>{}.from_xml(doc, 0)), std::runtime_error);
+    
+    // non-matching parametric dimension
+    EXPECT_THROW( (iganet::UniformBSpline<real_t, 4, 3>{}.from_xml(doc, 0)), std::runtime_error);
+    EXPECT_THROW( (iganet::UniformBSpline<real_t, 4, 3, 4>{}.from_xml(doc, 0)), std::runtime_error);
+    EXPECT_THROW( (iganet::UniformBSpline<real_t, 4, 3, 4, 5>{}.from_xml(doc, 0)), std::runtime_error);
+
+    // non-matching geometric dimension
+    EXPECT_THROW( (iganet::UniformBSpline<real_t, 1, 3, 4, 5, 1>{}.from_xml(doc, 0)), std::runtime_error);
+    EXPECT_THROW( (iganet::UniformBSpline<real_t, 2, 3, 4, 5, 1>{}.from_xml(doc, 0)), std::runtime_error);
+    EXPECT_THROW( (iganet::UniformBSpline<real_t, 3, 3, 4, 5, 1>{}.from_xml(doc, 0)), std::runtime_error);
+    
+    // non-matching id
+    EXPECT_THROW( (iganet::UniformBSpline<real_t, 4, 3, 4, 5, 1>{}.from_xml(doc, 1)), std::runtime_error);
+  }
 }
 
 TEST_F(BSplineTest, UniformBSpline_load_from_xml)
@@ -706,6 +1196,465 @@ TEST_F(BSplineTest, UniformBSpline_load_from_xml)
     for (int i : {2, 3, 6, 7, 10, 11, 14, 15, 16, 17, 20, 21, 24, 25, 26, 28, 29, 30, 34, 35, 38, 40, 41, 42, 43, 46, 47, 48, 54, 55, 60})
       bspline_in1.from_xml(doc, i);
   }  
+}
+
+TEST_F(BSplineTest, UniformBSpline_to_from_json)
+{
+  {
+    iganet::UniformBSpline<real_t, 1, 3> bspline_out({4}, iganet::init::zeros, options);
+    
+    bspline_out.transform( [](const std::array<real_t,1> xi)
+    { return std::array<real_t,1>{static_cast<real_t>(std::rand())}; } );
+    
+    nlohmann::json json = bspline_out.to_json();
+    
+    iganet::UniformBSpline<real_t, 1, 3> bspline_in(options);
+    bspline_in.from_json(json);
+    
+    EXPECT_EQ( (bspline_in == bspline_out), true);
+    
+    // non-matching degree
+    EXPECT_THROW( (iganet::UniformBSpline<real_t, 1, 2>{}.from_json(json)), std::runtime_error);
+    
+    // non-matching parametric dimension
+    EXPECT_THROW( (iganet::UniformBSpline<real_t, 1, 3, 3>{}.from_json(json)), std::runtime_error);
+    EXPECT_THROW( (iganet::UniformBSpline<real_t, 1, 3, 3, 3>{}.from_json(json)), std::runtime_error);
+    EXPECT_THROW( (iganet::UniformBSpline<real_t, 1, 3, 3, 3, 3>{}.from_json(json)), std::runtime_error);
+    
+    // non-matching geometric dimension
+    EXPECT_THROW( (iganet::UniformBSpline<real_t, 2, 3>{}.from_json(json)), std::runtime_error);
+    EXPECT_THROW( (iganet::UniformBSpline<real_t, 3, 3>{}.from_json(json)), std::runtime_error);
+    EXPECT_THROW( (iganet::UniformBSpline<real_t, 4, 3>{}.from_json(json)), std::runtime_error);  
+  }
+
+  {
+    iganet::UniformBSpline<real_t, 2, 3> bspline_out({4}, iganet::init::zeros, options);
+    
+    bspline_out.transform( [](const std::array<real_t,1> xi)
+    { return std::array<real_t,2>{static_cast<real_t>(std::rand()),
+                                  static_cast<real_t>(std::rand())}; } );
+    
+    nlohmann::json json = bspline_out.to_json();
+    
+    iganet::UniformBSpline<real_t, 2, 3> bspline_in(options);
+    bspline_in.from_json(json);
+    
+    EXPECT_EQ( (bspline_in == bspline_out), true);
+    
+    // non-matching degree
+    EXPECT_THROW( (iganet::UniformBSpline<real_t, 2, 2>{}.from_json(json)), std::runtime_error);
+    
+    // non-matching parametric dimension
+    EXPECT_THROW( (iganet::UniformBSpline<real_t, 2, 3, 3>{}.from_json(json)), std::runtime_error);
+    EXPECT_THROW( (iganet::UniformBSpline<real_t, 2, 3, 3, 3>{}.from_json(json)), std::runtime_error);
+    EXPECT_THROW( (iganet::UniformBSpline<real_t, 2, 3, 3, 3, 3>{}.from_json(json)), std::runtime_error);
+    
+    // non-matching geometric dimension
+    EXPECT_THROW( (iganet::UniformBSpline<real_t, 1, 3>{}.from_json(json)), std::runtime_error);
+    EXPECT_THROW( (iganet::UniformBSpline<real_t, 3, 3>{}.from_json(json)), std::runtime_error);
+    EXPECT_THROW( (iganet::UniformBSpline<real_t, 4, 3>{}.from_json(json)), std::runtime_error);  
+  }
+
+  {
+    iganet::UniformBSpline<real_t, 3, 3> bspline_out({4}, iganet::init::zeros, options);
+    
+    bspline_out.transform( [](const std::array<real_t,1> xi)
+    { return std::array<real_t,3>{static_cast<real_t>(std::rand()),
+                                  static_cast<real_t>(std::rand()),
+                                  static_cast<real_t>(std::rand())}; } );
+    
+    nlohmann::json json = bspline_out.to_json();
+    
+    iganet::UniformBSpline<real_t, 3, 3> bspline_in(options);
+    bspline_in.from_json(json);
+    
+    EXPECT_EQ( (bspline_in == bspline_out), true);
+    
+    // non-matching degree
+    EXPECT_THROW( (iganet::UniformBSpline<real_t, 3, 2>{}.from_json(json)), std::runtime_error);
+    
+    // non-matching parametric dimension
+    EXPECT_THROW( (iganet::UniformBSpline<real_t, 3, 3, 3>{}.from_json(json)), std::runtime_error);
+    EXPECT_THROW( (iganet::UniformBSpline<real_t, 3, 3, 3, 3>{}.from_json(json)), std::runtime_error);
+    EXPECT_THROW( (iganet::UniformBSpline<real_t, 3, 3, 3, 3, 3>{}.from_json(json)), std::runtime_error);
+    
+    // non-matching geometric dimension
+    EXPECT_THROW( (iganet::UniformBSpline<real_t, 1, 3>{}.from_json(json)), std::runtime_error);
+    EXPECT_THROW( (iganet::UniformBSpline<real_t, 2, 3>{}.from_json(json)), std::runtime_error);
+    EXPECT_THROW( (iganet::UniformBSpline<real_t, 4, 3>{}.from_json(json)), std::runtime_error);  
+  }
+
+  {
+    iganet::UniformBSpline<real_t, 4, 3> bspline_out({4}, iganet::init::zeros, options);
+    
+    bspline_out.transform( [](const std::array<real_t,1> xi)
+    { return std::array<real_t,4>{static_cast<real_t>(std::rand()),
+                                  static_cast<real_t>(std::rand()),
+                                  static_cast<real_t>(std::rand()),
+                                  static_cast<real_t>(std::rand())}; } );
+    
+    nlohmann::json json = bspline_out.to_json();
+    
+    iganet::UniformBSpline<real_t, 4, 3> bspline_in(options);
+    bspline_in.from_json(json);
+    
+    EXPECT_EQ( (bspline_in == bspline_out), true);
+    
+    // non-matching degree
+    EXPECT_THROW( (iganet::UniformBSpline<real_t, 4, 2>{}.from_json(json)), std::runtime_error);
+    
+    // non-matching parametric dimension
+    EXPECT_THROW( (iganet::UniformBSpline<real_t, 4, 3, 3>{}.from_json(json)), std::runtime_error);
+    EXPECT_THROW( (iganet::UniformBSpline<real_t, 4, 3, 3, 3>{}.from_json(json)), std::runtime_error);
+    EXPECT_THROW( (iganet::UniformBSpline<real_t, 4, 3, 3, 3, 3>{}.from_json(json)), std::runtime_error);
+    
+    // non-matching geometric dimension
+    EXPECT_THROW( (iganet::UniformBSpline<real_t, 1, 3>{}.from_json(json)), std::runtime_error);
+    EXPECT_THROW( (iganet::UniformBSpline<real_t, 2, 3>{}.from_json(json)), std::runtime_error);
+    EXPECT_THROW( (iganet::UniformBSpline<real_t, 3, 3>{}.from_json(json)), std::runtime_error);  
+  }
+
+  {
+    iganet::UniformBSpline<real_t, 1, 3, 4> bspline_out({4,5}, iganet::init::zeros, options);
+    
+    bspline_out.transform( [](const std::array<real_t,2> xi)
+    { return std::array<real_t,1>{static_cast<real_t>(std::rand())}; } );
+    
+    nlohmann::json json = bspline_out.to_json();
+    
+    iganet::UniformBSpline<real_t, 1, 3, 4> bspline_in(options);
+    bspline_in.from_json(json);
+    
+    EXPECT_EQ( (bspline_in == bspline_out), true);
+    
+    // non-matching degree
+    EXPECT_THROW( (iganet::UniformBSpline<real_t, 1, 3, 3>{}.from_json(json)), std::runtime_error);
+    
+    // non-matching parametric dimension
+    EXPECT_THROW( (iganet::UniformBSpline<real_t, 1, 3>{}.from_json(json)), std::runtime_error);
+    EXPECT_THROW( (iganet::UniformBSpline<real_t, 1, 3, 4, 3>{}.from_json(json)), std::runtime_error);
+    EXPECT_THROW( (iganet::UniformBSpline<real_t, 1, 3, 4, 3, 3>{}.from_json(json)), std::runtime_error);
+    
+    // non-matching geometric dimension
+    EXPECT_THROW( (iganet::UniformBSpline<real_t, 2, 3, 4>{}.from_json(json)), std::runtime_error);
+    EXPECT_THROW( (iganet::UniformBSpline<real_t, 3, 3, 4>{}.from_json(json)), std::runtime_error);
+    EXPECT_THROW( (iganet::UniformBSpline<real_t, 4, 3, 4>{}.from_json(json)), std::runtime_error);  
+  }
+
+  {
+    iganet::UniformBSpline<real_t, 2, 3, 4> bspline_out({4,5}, iganet::init::zeros, options);
+    
+    bspline_out.transform( [](const std::array<real_t,2> xi)
+    { return std::array<real_t,2>{static_cast<real_t>(std::rand()),
+                                  static_cast<real_t>(std::rand())}; } );
+    
+    nlohmann::json json = bspline_out.to_json();
+    
+    iganet::UniformBSpline<real_t, 2, 3, 4> bspline_in(options);
+    bspline_in.from_json(json);
+    
+    EXPECT_EQ( (bspline_in == bspline_out), true);
+    
+    // non-matching degree
+    EXPECT_THROW( (iganet::UniformBSpline<real_t, 2, 3, 3>{}.from_json(json)), std::runtime_error);
+    
+    // non-matching parametric dimension
+    EXPECT_THROW( (iganet::UniformBSpline<real_t, 2, 3>{}.from_json(json)), std::runtime_error);
+    EXPECT_THROW( (iganet::UniformBSpline<real_t, 2, 3, 4, 3>{}.from_json(json)), std::runtime_error);
+    EXPECT_THROW( (iganet::UniformBSpline<real_t, 2, 3, 4, 3, 3>{}.from_json(json)), std::runtime_error);
+    
+    // non-matching geometric dimension
+    EXPECT_THROW( (iganet::UniformBSpline<real_t, 1, 3, 4>{}.from_json(json)), std::runtime_error);
+    EXPECT_THROW( (iganet::UniformBSpline<real_t, 3, 3, 4>{}.from_json(json)), std::runtime_error);
+    EXPECT_THROW( (iganet::UniformBSpline<real_t, 4, 3, 4>{}.from_json(json)), std::runtime_error);  
+  }
+
+  {
+    iganet::UniformBSpline<real_t, 3, 3, 4> bspline_out({4,5}, iganet::init::zeros, options);
+    
+    bspline_out.transform( [](const std::array<real_t,2> xi)
+    { return std::array<real_t,3>{static_cast<real_t>(std::rand()),
+                                  static_cast<real_t>(std::rand()),
+                                  static_cast<real_t>(std::rand())}; } );
+    
+    nlohmann::json json = bspline_out.to_json();
+    
+    iganet::UniformBSpline<real_t, 3, 3, 4> bspline_in(options);
+    bspline_in.from_json(json);
+    
+    EXPECT_EQ( (bspline_in == bspline_out), true);
+    
+    // non-matching degree
+    EXPECT_THROW( (iganet::UniformBSpline<real_t, 3, 3, 3>{}.from_json(json)), std::runtime_error);
+    
+    // non-matching parametric dimension
+    EXPECT_THROW( (iganet::UniformBSpline<real_t, 3, 3>{}.from_json(json)), std::runtime_error);
+    EXPECT_THROW( (iganet::UniformBSpline<real_t, 3, 3, 4, 3>{}.from_json(json)), std::runtime_error);
+    EXPECT_THROW( (iganet::UniformBSpline<real_t, 3, 3, 4, 3, 3>{}.from_json(json)), std::runtime_error);
+    
+    // non-matching geometric dimension
+    EXPECT_THROW( (iganet::UniformBSpline<real_t, 1, 3, 4>{}.from_json(json)), std::runtime_error);
+    EXPECT_THROW( (iganet::UniformBSpline<real_t, 2, 3, 4>{}.from_json(json)), std::runtime_error);
+    EXPECT_THROW( (iganet::UniformBSpline<real_t, 4, 3, 4>{}.from_json(json)), std::runtime_error);  
+  }
+
+  {
+    iganet::UniformBSpline<real_t, 4, 3, 4> bspline_out({4,5}, iganet::init::zeros, options);
+    
+    bspline_out.transform( [](const std::array<real_t,2> xi)
+    { return std::array<real_t,4>{static_cast<real_t>(std::rand()),
+                                  static_cast<real_t>(std::rand()),
+                                  static_cast<real_t>(std::rand()),
+                                  static_cast<real_t>(std::rand())}; } );
+    
+    nlohmann::json json = bspline_out.to_json();
+    
+    iganet::UniformBSpline<real_t, 4, 3, 4> bspline_in(options);
+    bspline_in.from_json(json);
+    
+    EXPECT_EQ( (bspline_in == bspline_out), true);
+    
+    // non-matching degree
+    EXPECT_THROW( (iganet::UniformBSpline<real_t, 4, 3, 3>{}.from_json(json)), std::runtime_error);
+    
+    // non-matching parametric dimension
+    EXPECT_THROW( (iganet::UniformBSpline<real_t, 4, 3>{}.from_json(json)), std::runtime_error);
+    EXPECT_THROW( (iganet::UniformBSpline<real_t, 4, 3, 4, 3>{}.from_json(json)), std::runtime_error);
+    EXPECT_THROW( (iganet::UniformBSpline<real_t, 4, 3, 4, 3, 3>{}.from_json(json)), std::runtime_error);
+    
+    // non-matching geometric dimension
+    EXPECT_THROW( (iganet::UniformBSpline<real_t, 1, 3, 4>{}.from_json(json)), std::runtime_error);
+    EXPECT_THROW( (iganet::UniformBSpline<real_t, 2, 3, 4>{}.from_json(json)), std::runtime_error);
+    EXPECT_THROW( (iganet::UniformBSpline<real_t, 3, 3, 4>{}.from_json(json)), std::runtime_error);  
+  }
+
+  {
+    iganet::UniformBSpline<real_t, 1, 3, 4, 5> bspline_out({4,5,6}, iganet::init::zeros, options);
+    
+    bspline_out.transform( [](const std::array<real_t,3> xi)
+    { return std::array<real_t,1>{static_cast<real_t>(std::rand())}; } );
+    
+    nlohmann::json json = bspline_out.to_json();
+    
+    iganet::UniformBSpline<real_t, 1, 3, 4, 5> bspline_in(options);
+    bspline_in.from_json(json);
+    
+    EXPECT_EQ( (bspline_in == bspline_out), true);
+    
+    // non-matching degree
+    EXPECT_THROW( (iganet::UniformBSpline<real_t, 1, 3, 3, 3>{}.from_json(json)), std::runtime_error);
+    
+    // non-matching parametric dimension
+    EXPECT_THROW( (iganet::UniformBSpline<real_t, 1, 3>{}.from_json(json)), std::runtime_error);
+    EXPECT_THROW( (iganet::UniformBSpline<real_t, 1, 3, 4>{}.from_json(json)), std::runtime_error);
+    EXPECT_THROW( (iganet::UniformBSpline<real_t, 1, 3, 4, 5, 3>{}.from_json(json)), std::runtime_error);
+    
+    // non-matching geometric dimension
+    EXPECT_THROW( (iganet::UniformBSpline<real_t, 2, 3, 4, 5>{}.from_json(json)), std::runtime_error);
+    EXPECT_THROW( (iganet::UniformBSpline<real_t, 3, 3, 4, 5>{}.from_json(json)), std::runtime_error);
+    EXPECT_THROW( (iganet::UniformBSpline<real_t, 4, 3, 4, 5>{}.from_json(json)), std::runtime_error);  
+  }
+
+  {
+    iganet::UniformBSpline<real_t, 2, 3, 4, 5> bspline_out({4,5,6}, iganet::init::zeros, options);
+    
+    bspline_out.transform( [](const std::array<real_t,3> xi)
+    { return std::array<real_t,2>{static_cast<real_t>(std::rand()),
+                                  static_cast<real_t>(std::rand())}; } );
+    
+    nlohmann::json json = bspline_out.to_json();
+    
+    iganet::UniformBSpline<real_t, 2, 3, 4, 5> bspline_in(options);
+    bspline_in.from_json(json);
+    
+    EXPECT_EQ( (bspline_in == bspline_out), true);
+    
+    // non-matching degree
+    EXPECT_THROW( (iganet::UniformBSpline<real_t, 2, 3, 3, 3>{}.from_json(json)), std::runtime_error);
+    
+    // non-matching parametric dimension
+    EXPECT_THROW( (iganet::UniformBSpline<real_t, 2, 3>{}.from_json(json)), std::runtime_error);
+    EXPECT_THROW( (iganet::UniformBSpline<real_t, 2, 3, 4>{}.from_json(json)), std::runtime_error);
+    EXPECT_THROW( (iganet::UniformBSpline<real_t, 2, 3, 4, 5, 3>{}.from_json(json)), std::runtime_error);
+    
+    // non-matching geometric dimension
+    EXPECT_THROW( (iganet::UniformBSpline<real_t, 1, 3, 4, 5>{}.from_json(json)), std::runtime_error);
+    EXPECT_THROW( (iganet::UniformBSpline<real_t, 3, 3, 4, 5>{}.from_json(json)), std::runtime_error);
+    EXPECT_THROW( (iganet::UniformBSpline<real_t, 4, 3, 4, 5>{}.from_json(json)), std::runtime_error);  
+  }
+
+  {
+    iganet::UniformBSpline<real_t, 3, 3, 4, 5> bspline_out({4,5,6}, iganet::init::zeros, options);
+    
+    bspline_out.transform( [](const std::array<real_t,3> xi)
+    { return std::array<real_t,3>{static_cast<real_t>(std::rand()),
+                                  static_cast<real_t>(std::rand()),
+                                  static_cast<real_t>(std::rand())}; } );
+    
+    nlohmann::json json = bspline_out.to_json();
+    
+    iganet::UniformBSpline<real_t, 3, 3, 4, 5> bspline_in(options);
+    bspline_in.from_json(json);
+    
+    EXPECT_EQ( (bspline_in == bspline_out), true);
+    
+    // non-matching degree
+    EXPECT_THROW( (iganet::UniformBSpline<real_t, 3, 3, 3, 3>{}.from_json(json)), std::runtime_error);
+    
+    // non-matching parametric dimension
+    EXPECT_THROW( (iganet::UniformBSpline<real_t, 3, 3>{}.from_json(json)), std::runtime_error);
+    EXPECT_THROW( (iganet::UniformBSpline<real_t, 3, 3, 4>{}.from_json(json)), std::runtime_error);
+    EXPECT_THROW( (iganet::UniformBSpline<real_t, 3, 3, 4, 5, 3>{}.from_json(json)), std::runtime_error);
+    
+    // non-matching geometric dimension
+    EXPECT_THROW( (iganet::UniformBSpline<real_t, 1, 3, 4, 5>{}.from_json(json)), std::runtime_error);
+    EXPECT_THROW( (iganet::UniformBSpline<real_t, 2, 3, 4, 5>{}.from_json(json)), std::runtime_error);
+    EXPECT_THROW( (iganet::UniformBSpline<real_t, 4, 3, 4, 5>{}.from_json(json)), std::runtime_error);  
+  }
+
+  {
+    iganet::UniformBSpline<real_t, 4, 3, 4, 5> bspline_out({4,5,6}, iganet::init::zeros, options);
+    
+    bspline_out.transform( [](const std::array<real_t,3> xi)
+    { return std::array<real_t,4>{static_cast<real_t>(std::rand()),
+                                  static_cast<real_t>(std::rand()),
+                                  static_cast<real_t>(std::rand()),
+                                  static_cast<real_t>(std::rand())}; } );
+    
+    nlohmann::json json = bspline_out.to_json();
+    
+    iganet::UniformBSpline<real_t, 4, 3, 4, 5> bspline_in(options);
+    bspline_in.from_json(json);
+    
+    EXPECT_EQ( (bspline_in == bspline_out), true);
+    
+    // non-matching degree
+    EXPECT_THROW( (iganet::UniformBSpline<real_t, 4, 3, 3, 3>{}.from_json(json)), std::runtime_error);
+    
+    // non-matching parametric dimension
+    EXPECT_THROW( (iganet::UniformBSpline<real_t, 4, 3>{}.from_json(json)), std::runtime_error);
+    EXPECT_THROW( (iganet::UniformBSpline<real_t, 4, 3, 4>{}.from_json(json)), std::runtime_error);
+    EXPECT_THROW( (iganet::UniformBSpline<real_t, 4, 3, 4, 5, 3>{}.from_json(json)), std::runtime_error);
+    
+    // non-matching geometric dimension
+    EXPECT_THROW( (iganet::UniformBSpline<real_t, 1, 3, 4, 5>{}.from_json(json)), std::runtime_error);
+    EXPECT_THROW( (iganet::UniformBSpline<real_t, 2, 3, 4, 5>{}.from_json(json)), std::runtime_error);
+    EXPECT_THROW( (iganet::UniformBSpline<real_t, 3, 3, 4, 5>{}.from_json(json)), std::runtime_error);  
+  }
+
+  {
+    iganet::UniformBSpline<real_t, 1, 3, 4, 5, 1> bspline_out({4,5,6,2}, iganet::init::zeros, options);
+    
+    bspline_out.transform( [](const std::array<real_t,4> xi)
+    { return std::array<real_t,1>{static_cast<real_t>(std::rand())}; } );
+    
+    nlohmann::json json = bspline_out.to_json();
+    
+    iganet::UniformBSpline<real_t, 1, 3, 4, 5, 1> bspline_in(options);
+    bspline_in.from_json(json);
+    
+    EXPECT_EQ( (bspline_in == bspline_out), true);
+    
+    // non-matching degree
+    EXPECT_THROW( (iganet::UniformBSpline<real_t, 1, 3, 4, 5, 2>{}.from_json(json)), std::runtime_error);
+    
+    // non-matching parametric dimension
+    EXPECT_THROW( (iganet::UniformBSpline<real_t, 1, 3>{}.from_json(json)), std::runtime_error);
+    EXPECT_THROW( (iganet::UniformBSpline<real_t, 1, 3, 4>{}.from_json(json)), std::runtime_error);
+    EXPECT_THROW( (iganet::UniformBSpline<real_t, 1, 3, 4, 5>{}.from_json(json)), std::runtime_error);
+    
+    // non-matching geometric dimension
+    EXPECT_THROW( (iganet::UniformBSpline<real_t, 2, 3, 4, 5, 1>{}.from_json(json)), std::runtime_error);
+    EXPECT_THROW( (iganet::UniformBSpline<real_t, 3, 3, 4, 5, 1>{}.from_json(json)), std::runtime_error);
+    EXPECT_THROW( (iganet::UniformBSpline<real_t, 4, 3, 4, 5, 1>{}.from_json(json)), std::runtime_error);  
+  }
+
+  {
+    iganet::UniformBSpline<real_t, 2, 3, 4, 5, 1> bspline_out({4,5,6,2}, iganet::init::zeros, options);
+    
+    bspline_out.transform( [](const std::array<real_t,4> xi)
+    { return std::array<real_t,2>{static_cast<real_t>(std::rand()),
+                                  static_cast<real_t>(std::rand())}; } );
+    
+    nlohmann::json json = bspline_out.to_json();
+    
+    iganet::UniformBSpline<real_t, 2, 3, 4, 5, 1> bspline_in(options);
+    bspline_in.from_json(json);
+    
+    EXPECT_EQ( (bspline_in == bspline_out), true);
+    
+    // non-matching degree
+    EXPECT_THROW( (iganet::UniformBSpline<real_t, 2, 3, 4, 5, 2>{}.from_json(json)), std::runtime_error);
+    
+    // non-matching parametric dimension
+    EXPECT_THROW( (iganet::UniformBSpline<real_t, 2, 3>{}.from_json(json)), std::runtime_error);
+    EXPECT_THROW( (iganet::UniformBSpline<real_t, 2, 3, 4>{}.from_json(json)), std::runtime_error);
+    EXPECT_THROW( (iganet::UniformBSpline<real_t, 2, 3, 4, 5>{}.from_json(json)), std::runtime_error);
+    
+    // non-matching geometric dimension
+    EXPECT_THROW( (iganet::UniformBSpline<real_t, 1, 3, 4, 5, 1>{}.from_json(json)), std::runtime_error);
+    EXPECT_THROW( (iganet::UniformBSpline<real_t, 3, 3, 4, 5, 1>{}.from_json(json)), std::runtime_error);
+    EXPECT_THROW( (iganet::UniformBSpline<real_t, 4, 3, 4, 5, 1>{}.from_json(json)), std::runtime_error);  
+  }
+
+  {
+    iganet::UniformBSpline<real_t, 3, 3, 4, 5, 1> bspline_out({4,5,6,2}, iganet::init::zeros, options);
+    
+    bspline_out.transform( [](const std::array<real_t,4> xi)
+    { return std::array<real_t,3>{static_cast<real_t>(std::rand()),
+                                  static_cast<real_t>(std::rand()),
+                                  static_cast<real_t>(std::rand())}; } );
+    
+    nlohmann::json json = bspline_out.to_json();
+    
+    iganet::UniformBSpline<real_t, 3, 3, 4, 5, 1> bspline_in(options);
+    bspline_in.from_json(json);
+    
+    EXPECT_EQ( (bspline_in == bspline_out), true);
+    
+    // non-matching degree
+    EXPECT_THROW( (iganet::UniformBSpline<real_t, 3, 3, 4, 5, 2>{}.from_json(json)), std::runtime_error);
+    
+    // non-matching parametric dimension
+    EXPECT_THROW( (iganet::UniformBSpline<real_t, 3, 3>{}.from_json(json)), std::runtime_error);
+    EXPECT_THROW( (iganet::UniformBSpline<real_t, 3, 3, 4>{}.from_json(json)), std::runtime_error);
+    EXPECT_THROW( (iganet::UniformBSpline<real_t, 3, 3, 4, 5>{}.from_json(json)), std::runtime_error);
+    
+    // non-matching geometric dimension
+    EXPECT_THROW( (iganet::UniformBSpline<real_t, 1, 3, 4, 5, 1>{}.from_json(json)), std::runtime_error);
+    EXPECT_THROW( (iganet::UniformBSpline<real_t, 2, 3, 4, 5, 1>{}.from_json(json)), std::runtime_error);
+    EXPECT_THROW( (iganet::UniformBSpline<real_t, 4, 3, 4, 5, 1>{}.from_json(json)), std::runtime_error);  
+  }
+
+  {
+    iganet::UniformBSpline<real_t, 4, 3, 4, 5, 1> bspline_out({4,5,6,2}, iganet::init::zeros, options);
+    
+    bspline_out.transform( [](const std::array<real_t,4> xi)
+    { return std::array<real_t,4>{static_cast<real_t>(std::rand()),
+                                  static_cast<real_t>(std::rand()),
+                                  static_cast<real_t>(std::rand()),
+                                  static_cast<real_t>(std::rand())}; } );
+    
+    nlohmann::json json = bspline_out.to_json();
+    
+    iganet::UniformBSpline<real_t, 4, 3, 4, 5, 1> bspline_in(options);
+    bspline_in.from_json(json);
+    
+    EXPECT_EQ( (bspline_in == bspline_out), true);
+    
+    // non-matching degree
+    EXPECT_THROW( (iganet::UniformBSpline<real_t, 4, 3, 4, 5, 2>{}.from_json(json)), std::runtime_error);
+    
+    // non-matching parametric dimension
+    EXPECT_THROW( (iganet::UniformBSpline<real_t, 4, 3>{}.from_json(json)), std::runtime_error);
+    EXPECT_THROW( (iganet::UniformBSpline<real_t, 4, 3, 4>{}.from_json(json)), std::runtime_error);
+    EXPECT_THROW( (iganet::UniformBSpline<real_t, 4, 3, 4, 5>{}.from_json(json)), std::runtime_error);
+    
+    // non-matching geometric dimension
+    EXPECT_THROW( (iganet::UniformBSpline<real_t, 1, 3, 4, 5, 1>{}.from_json(json)), std::runtime_error);
+    EXPECT_THROW( (iganet::UniformBSpline<real_t, 2, 3, 4, 5, 1>{}.from_json(json)), std::runtime_error);
+    EXPECT_THROW( (iganet::UniformBSpline<real_t, 3, 3, 4, 5, 1>{}.from_json(json)), std::runtime_error);  
+  }
 }
 
 int main(int argc, char **argv) {
