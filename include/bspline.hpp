@@ -14,6 +14,7 @@
 
 #pragma once
 
+#include <algorithm>
 #include <exception>
 #include <filesystem>
 #include <functional>
@@ -1863,7 +1864,53 @@ namespace iganet {
       return coeffs_json;
     }
 
-    /// @brief Returns the B-spline object as XML document
+    /// @brief Updates the B-spline object from JSON object
+    inline UniformBSplineCore& from_json(const nlohmann::json& json) {
+      
+      if (json["geoDim"].get<short_t>() != geoDim_)
+        throw std::runtime_error("JSON object provides incompatible geometric dimensions");
+      
+      if (json["parDim"].get<short_t>() != parDim_)
+        throw std::runtime_error("JSON object provides incompatible parametric dimensions");
+      
+      if (json["degrees"].get<std::array<short_t, parDim_>>() != degrees_)
+        throw std::runtime_error("JSON object provides incompatible degrees");
+      
+      nknots_ = json["nknots"].get<std::array<int64_t, parDim_>>();
+      ncoeffs_ = json["ncoeffs"].get<std::array<int64_t, parDim_>>();
+
+      // Reverse ncoeffs
+      ncoeffs_reverse_ = ncoeffs_;
+      std::reverse(ncoeffs_reverse_.begin(), ncoeffs_reverse_.end());
+
+      auto kv = json["knots"].get<std::array<std::vector<value_type>, parDim_>>();
+      
+      for (short_t i=0; i<parDim_; ++i) {        
+        if (options_.device() == torch::kCPU)
+          knots_[i] = torch::from_blob(static_cast<value_type *>(kv[i].data()),
+                                       kv[i].size(), options_).clone();
+        else
+          knots_[i] = torch::from_blob(static_cast<value_type *>(kv[i].data()),
+                                       kv[i].size(), options_.device(torch::kCPU))
+            .to(options_.device());
+      }
+
+      auto c = json["coeffs"].get<std::array<std::vector<value_type>, geoDim_>>();
+
+      for (short_t i=0; i<geoDim_; ++i) {        
+        if (options_.device() == torch::kCPU)
+          coeffs_[i] = torch::from_blob(static_cast<value_type *>(c[i].data()),
+                                        c[i].size(), options_).clone();
+        else
+          coeffs_[i] = torch::from_blob(static_cast<value_type *>(c[i].data()),
+                                        c[i].size(), options_.device(torch::kCPU))
+            .to(options_.device());
+      }
+      
+      return *this;
+    }
+
+    /// @brief Returns the B-spline object as XML object
     inline pugi::xml_document to_xml() const
     {
       pugi::xml_document doc;
@@ -1876,11 +1923,11 @@ namespace iganet {
     /// @brief Returns the B-spline object as XML node
     inline pugi::xml_node to_xml(pugi::xml_node& root, int id=0) const
     {
+      // add Geometry node
+      pugi::xml_node geo = root.append_child("Geometry");
+      
       // 1D parametric dimension
       if constexpr (parDim_ == 1) {
-
-        // add Geometry node
-        pugi::xml_node geo = root.append_child("Geometry");
         geo.append_attribute("type") = "BSpline";
         geo.append_attribute("id")   = id;
 
@@ -1901,9 +1948,6 @@ namespace iganet {
 
       // >1D parametric dimension
       else {
-
-        // add Geometry node
-        pugi::xml_node geo = root.append_child("Geometry");
         geo.append_attribute("type") = std::string("TensorBSpline").append(std::to_string(parDim_)).c_str();
         geo.append_attribute("id")   = id;
 
@@ -1926,75 +1970,61 @@ namespace iganet {
             ss << std::to_string(knots_accessor[i]) << (i < nknots_[index]-1 ? " " : "");
           knots.append_child(pugi::node_pcdata).set_value(ss.str().c_str());
         }
+        
+      } // parametric dimension
 
-        // add Coefs node
-        pugi::xml_node coefs = geo.append_child("coefs");
-        coefs.append_attribute("geoDim") = geoDim_;
-
-        auto coeffs_accessors = utils::to_tensorAccessor<value_type,1>(coeffs_);
-
-        if constexpr (parDim_ == 1) {
-          std::stringstream ss;
-          for (int64_t i = 0; i < ncoeffs_[0]; ++i) {
-            for (short_t g = 0; g < geoDim_; ++g) {
-              ss << std::to_string(coeffs_accessors[g][i]) << (i < ncoeffs_[0]-1 || g < geoDim_ ? " " : "");
-            }
-          }
-          coefs.append_child(pugi::node_pcdata).set_value(ss.str().c_str());
-        } else if constexpr (parDim_ == 2) {
-          std::stringstream ss;
-          for (int64_t j = 0; j < ncoeffs_[1]; ++j) {
-            for (int64_t i = 0; i < ncoeffs_[0]; ++i) {
-              for (short_t g = 0; g < geoDim_; ++g) {
-                ss << std::to_string(coeffs_accessors[g][j * ncoeffs_[0] +
+      // add Coefs node
+      pugi::xml_node coefs = geo.append_child("coefs");
+      coefs.append_attribute("geoDim") = geoDim_;
+      
+      auto coeffs_accessors = utils::to_tensorAccessor<value_type,1>(coeffs_);
+      std::stringstream ss;
+      
+      if constexpr (parDim_ == 1) {        
+        for (int64_t i = 0; i < ncoeffs_[0]; ++i)
+          for (short_t g = 0; g < geoDim_; ++g)
+            ss << std::to_string(coeffs_accessors[g][i])
+               << (i < ncoeffs_[0]-1 || g < geoDim_ ? " " : "");
+        
+      } else if constexpr (parDim_ == 2) {
+        for (int64_t j = 0; j < ncoeffs_[1]; ++j)
+          for (int64_t i = 0; i < ncoeffs_[0]; ++i)
+            for (short_t g = 0; g < geoDim_; ++g)
+              ss << std::to_string(coeffs_accessors[g][j * ncoeffs_[0] +
+                                                       i])
+                 << (i < ncoeffs_[0]-1 || j < ncoeffs_[1]-1 || g < geoDim_ ? " " : "");
+        
+      } else if constexpr (parDim_ == 3) {
+        for (int64_t k = 0; k < ncoeffs_[2]; ++k)
+          for (int64_t j = 0; j < ncoeffs_[1]; ++j)
+            for (int64_t i = 0; i < ncoeffs_[0]; ++i)
+              for (short_t g = 0; g < geoDim_; ++g)
+                ss << std::to_string(coeffs_accessors[g][k * ncoeffs_[0] * ncoeffs_[1] +
+                                                         j * ncoeffs_[0] +
                                                          i])
-                   << (i < ncoeffs_[0]-1 || j < ncoeffs_[1]-1 || g < geoDim_ ? " " : "");
-              }
-            }
-          }
-          coefs.append_child(pugi::node_pcdata).set_value(ss.str().c_str());
-        } else if constexpr (parDim_ == 3) {
-          std::stringstream ss;
-          for (int64_t k = 0; k < ncoeffs_[2]; ++k) {
-            for (int64_t j = 0; j < ncoeffs_[1]; ++j) {
-              for (int64_t i = 0; i < ncoeffs_[0]; ++i) {
-                for (short_t g = 0; g < geoDim_; ++g) {
-                  ss << std::to_string(coeffs_accessors[g][k * ncoeffs_[0] * ncoeffs_[1] +
+                   << (i < ncoeffs_[0]-1 || j < ncoeffs_[1]-1 || k < ncoeffs_[2]-1 || g < geoDim_ ? " " : "");
+        
+      } else if constexpr (parDim_ == 4) {
+        for (int64_t l = 0; l < ncoeffs_[3]; ++l)
+          for (int64_t k = 0; k < ncoeffs_[2]; ++k)
+            for (int64_t j = 0; j < ncoeffs_[1]; ++j)
+              for (int64_t i = 0; i < ncoeffs_[0]; ++i)
+                for (short_t g = 0; g < geoDim_; ++g)
+                  ss << std::to_string(coeffs_accessors[g][l * ncoeffs_[0] * ncoeffs_[1] * ncoeffs_[2] +
+                                                           k * ncoeffs_[0] * ncoeffs_[1] +
                                                            j * ncoeffs_[0] +
                                                            i])
-                     << (i < ncoeffs_[0]-1 || j < ncoeffs_[1]-1 || k < ncoeffs_[2]-1 || g < geoDim_ ? " " : "");
-                }
-              }
-            }
-          }
-          coefs.append_child(pugi::node_pcdata).set_value(ss.str().c_str());
-        } else if constexpr (parDim_ == 4) {
-          std::stringstream ss;
-          for (int64_t l = 0; l < ncoeffs_[3]; ++l) {
-            for (int64_t k = 0; k < ncoeffs_[2]; ++k) {
-              for (int64_t j = 0; j < ncoeffs_[1]; ++j) {
-                for (int64_t i = 0; i < ncoeffs_[0]; ++i) {
-                  for (short_t g = 0; g < geoDim_; ++g) {
-                    ss << std::to_string(coeffs_accessors[g][l * ncoeffs_[0] * ncoeffs_[1] * ncoeffs_[2] +
-                                                             k * ncoeffs_[0] * ncoeffs_[1] +
-                                                             j * ncoeffs_[0] +
-                                                             i])
-                       << (i < ncoeffs_[0]-1 || j < ncoeffs_[1]-1 || k < ncoeffs_[2]-1 || l < ncoeffs_[3]-1 || g < geoDim_ ? " " : "");
-                  }
-                }
-              }
-            }
-          }
-          coefs.append_child(pugi::node_pcdata).set_value(ss.str().c_str());
-        } else
-          throw std::runtime_error("Unsupported parametric dimension");
+                     << (i < ncoeffs_[0]-1 || j < ncoeffs_[1]-1 || k < ncoeffs_[2]-1 || l < ncoeffs_[3]-1 || g < geoDim_ ? " " : "");
+        
+      } else
+        throw std::runtime_error("Unsupported parametric dimension");
 
-      }
+      coefs.append_child(pugi::node_pcdata).set_value(ss.str().c_str());
 
       return root;
     }
 
-    /// @brief Updates the B-spline object from XML document
+    /// @brief Updates the B-spline object from XML object
     inline UniformBSplineCore& from_xml(const pugi::xml_document& doc, int id=0) {
       return from_xml(doc.child("xml"), id);
     }
@@ -2002,6 +2032,8 @@ namespace iganet {
     /// @brief Updates the B-spline object from XML node
     inline UniformBSplineCore& from_xml(const pugi::xml_node& root, int id=0) {
 
+      std::array<bool, parDim_> nknots_found{false}, ncoeffs_found{false};
+      
       // Loop through all geometry nodes
       for (pugi::xml_node geo : root.children("Geometry")) {
 
@@ -2035,6 +2067,9 @@ namespace iganet {
 
                 nknots_[0] = kv.size();
                 ncoeffs_[0] = nknots_[0]-degrees_[0]-1;
+
+                nknots_found[0] = true;
+                ncoeffs_found[0] = true;
 
               } // "KnotVector"
 
@@ -2085,6 +2120,9 @@ namespace iganet {
                     nknots_[index] = kv.size();
                     ncoeffs_[index] = nknots_[index]-degrees_[index]-1;
 
+                    nknots_found[index] = true;
+                    ncoeffs_found[index] = true;
+                    
                   } // "KnotVector"
 
                 } // "BSplineBasis"
@@ -2102,7 +2140,7 @@ namespace iganet {
         // Reverse ncoeffs
         ncoeffs_reverse_ = ncoeffs_;
         std::reverse(ncoeffs_reverse_.begin(), ncoeffs_reverse_.end());
-
+        
         // Fill coefficients with zeros
         int64_t size = ncumcoeffs();
         for (short_t i = 0; i < geoDim_; ++i)
@@ -2119,26 +2157,32 @@ namespace iganet {
 
             for (int64_t i = 0; i < ncoeffs_[0]; ++i)
               for (short_t g = 0; g < geoDim_; ++g) {
-                coeffs_accessors[g][i] = std::stod(value);
-                if (value != NULL)
-                  value = strtok(NULL, " ");
-                else
+                if (value == NULL)
                   throw std::runtime_error("XML object does not provide enough coefficients");
+                
+                coeffs_accessors[g][i] = static_cast<value_type>(std::stod(value));
+                value = strtok(NULL, " ");                
               }
 
+            if (value != NULL)
+              throw std::runtime_error("XML object provides too many coefficients");
+            
           } else if constexpr (parDim_ == 2) {
             auto value = strtok(&values[0], " ");
 
             for (int64_t j = 0; j < ncoeffs_[1]; ++j)
               for (int64_t i = 0; i < ncoeffs_[0]; ++i)
                 for (short_t g = 0; g < geoDim_; ++g) {
-                  coeffs_accessors[g][j * ncoeffs_[0] +
-                                      i] = std::stod(value);
-                  if (value != NULL)
-                    value = strtok(NULL, " ");
-                  else
+                  if (value == NULL)
                     throw std::runtime_error("XML object does not provide enough coefficients");
+                                  
+                  coeffs_accessors[g][j * ncoeffs_[0] +
+                                      i] = static_cast<value_type>(std::stod(value));
+                  value = strtok(NULL, " ");                
                 }
+
+            if (value != NULL)
+              throw std::runtime_error("XML object provides too many coefficients");
 
           } else if constexpr (parDim_ == 3) {
             auto value = strtok(&values[0], " ");
@@ -2147,14 +2191,17 @@ namespace iganet {
               for (int64_t j = 0; j < ncoeffs_[1]; ++j)
                 for (int64_t i = 0; i < ncoeffs_[0]; ++i)
                   for (short_t g = 0; g < geoDim_; ++g) {
+                    if (value == NULL)
+                      throw std::runtime_error("XML object does not provide enough coefficients");
+                    
                     coeffs_accessors[g][k * ncoeffs_[0] * ncoeffs_[1] +
                                         j * ncoeffs_[0] +
-                                        i] = std::stod(value);
-                    if (value != NULL)
-                      value = strtok(NULL, " ");
-                    else
-                      throw std::runtime_error("XML object does not provide enough coefficients");
+                                        i] = static_cast<value_type>(std::stod(value));
+                    value = strtok(NULL, " ");                
                   }
+
+            if (value != NULL)
+              throw std::runtime_error("XML object provides too many coefficients");
 
           } else if constexpr (parDim_ == 4) {
             auto value = strtok(&values[0], " ");
@@ -2164,20 +2211,29 @@ namespace iganet {
                 for (int64_t j = 0; j < ncoeffs_[1]; ++j)
                   for (int64_t i = 0; i < ncoeffs_[0]; ++i)
                     for (short_t g = 0; g < geoDim_; ++g) {
+                      if (value == NULL)
+                        throw std::runtime_error("XML object does not provide enough coefficients");
+                      
                       coeffs_accessors[g][l * ncoeffs_[0] * ncoeffs_[1] * ncoeffs_[2] +
                                           k * ncoeffs_[0] * ncoeffs_[1] +
                                           j * ncoeffs_[0] +
-                                          i] = std::stod(value);
-                      if (value != NULL)
-                        value = strtok(NULL, " ");
-                      else
-                        throw std::runtime_error("XML object does not provide enough coefficients");
+                                          i] = static_cast<value_type>(std::stod(value));
+                      value = strtok(NULL, " ");                
                     }
+            
+            if (value != NULL)
+              throw std::runtime_error("XML object provides too many coefficients");
+            
           } else
             throw std::runtime_error("Unsupported parametric dimension");
 
-          return *this;
-
+          if (std::all_of(std::begin(nknots_found), std::end(nknots_found), [](bool i) { return i ;}) &&
+              std::all_of(std::begin(ncoeffs_found), std::end(ncoeffs_found), [](bool i) { return i; }))              
+            return *this;
+          
+          else
+            throw std::runtime_error("XML object is not compatible with B-spline object");
+          
         } // Coefs
         else
           throw std::runtime_error("XML object does not provide coefficients");
@@ -2316,7 +2372,7 @@ namespace iganet {
       for (short_t i = 0; i < parDim_; ++i)
         result *= torch::equal(knots(i), other.knots(i));
 
-      for (short_t i = 0; i < parDim_; ++i)
+      for (short_t i = 0; i < geoDim_; ++i)
         result *= torch::equal(coeffs(i), other.coeffs(i));
 
       return result;
