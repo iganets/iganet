@@ -231,6 +231,48 @@ namespace iganet {
     template<typename real_t_>
     using real_derived_self_type_t = UniformBSplineCore<real_t_, GeoDim, Degrees...>;
 
+    /// @brief Returns the `device` property
+    torch::Device device() const noexcept
+    {
+      return options_.device();
+    }
+
+    /// @brief Returns the `device_index` property
+    int32_t device_index() const noexcept
+    {
+      return options_.device_index();
+    }
+
+    /// @brief Returns the `dtype` property
+    caffe2::TypeMeta dtype() const noexcept
+    {
+      return options_.dtype();
+    }
+
+    /// @brief Returns the `layout` property
+    torch::Layout layout() const noexcept
+    {
+      return options_.layout();
+    }
+    
+    /// @brief Returns the `requires_grad` property
+    bool requires_grad() const noexcept
+    {
+      return options_.requires_grad();
+    }
+
+    /// @brief Returns the `pinned_memory` property
+    bool pinned_memory() const noexcept
+    {
+      return options_.pinned_memory();
+    }
+
+    /// @brief Returns if the layout is sparse
+    bool is_sparse() const noexcept
+    {
+      return options_.is_sparse();
+    }
+
     /// @brief Returns true if the B-spline is uniform
     static bool is_uniform() {
       return true;
@@ -240,7 +282,7 @@ namespace iganet {
     static bool is_nonuniform() {
       return false;
     }
-
+    
     /// @brief Default constructor
     UniformBSplineCore(Options<real_t> options = Options<real_t>{})
       : options_(options)
@@ -2835,7 +2877,7 @@ namespace iganet {
           // We handle the special case 0/0:=0 by first creating a
           // mask that is 1 if t2-t1 < eps and 0 otherwise. Note that
           // we do not have to take the absolute value as t2 >= t1.
-          auto mask = (t21 < std::numeric_limits<value_type>::epsilon()).to(dtype<value_type>());
+          auto mask = (t21 < std::numeric_limits<value_type>::epsilon()).to(::iganet::dtype<value_type>());
 
           // Instead of computing (xi-t1)/(t2-t1) which is prone to
           // yielding 0/0 we compute (xi-t1-mask)/(t2-t1-mask) which
@@ -2860,7 +2902,7 @@ namespace iganet {
           // We handle the special case 0/0:=0 by first creating a
           // mask that is 1 if t2-t1 < eps and 0 otherwise. Note that
           // we do not have to take the absolute value as t2 >= t1.
-          auto mask = (t21 < std::numeric_limits<value_type>::epsilon()).to(dtype<value_type>());
+          auto mask = (t21 < std::numeric_limits<value_type>::epsilon()).to(::iganet::dtype<value_type>());
 
           // Instead of computing 1/(t2-t1) which is prone to yielding
           // 0/0 we compute (1-mask)/(t2-t1-mask) which equals the
@@ -2903,7 +2945,7 @@ namespace iganet {
         // We handle the special case 0/0:=0 by first creating a
         // mask that is 1 if t2-t1 < eps and 0 otherwise. Note that
         // we do not have to take the absolute value as t2 >= t1.
-        auto mask = (t21 < std::numeric_limits<value_type>::epsilon()).to(dtype<value_type>());
+        auto mask = (t21 < std::numeric_limits<value_type>::epsilon()).to(::iganet::dtype<value_type>());
 
         // Instead of computing (xi-t1)/(t2-t1) which is prone to
         // yielding 0/0 we compute (xi-t1-mask)/(t2-t1-mask) which
@@ -5245,6 +5287,8 @@ namespace iganet {
       else
         os << 1;
 
+      os << ", options = " << static_cast<torch::TensorOptions>(BSplineCore::options_);
+      
 #ifdef __CUDACC__
 #pragma nv_diag_default 514
 #endif

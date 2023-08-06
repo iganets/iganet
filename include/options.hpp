@@ -61,7 +61,7 @@ namespace iganet {
     Options()
       : options_(torch::TensorOptions()
                  .dtype(::iganet::dtype<real_t>())
-                 .device(torch::cuda::is_available() ? torch::kCUDA : torch::kCPU))                 
+                 .device(torch::cuda::is_available() ? torch::kCUDA : torch::kCPU))
     {}
     
   private:
