@@ -25,19 +25,19 @@ TEST(Options, Options_default)
   EXPECT_EQ(options.dtype(),         c10::ScalarType::Double);
   EXPECT_EQ(options.device(),        torch::cuda::is_available() ? torch::kCUDA : torch::kCPU);
   EXPECT_EQ(options.layout(),        torch::kStrided);
-  EXPECT_EQ(options.requires_grad(), true);
+  EXPECT_EQ(options.requires_grad(), false);
   EXPECT_EQ(options.pinned_memory(), false);
   EXPECT_EQ(options.is_sparse(),     false);  
 }
 
 TEST(Options, Options_nondefault)
 {
-  auto options = iganet::Options<float>{}.device(torch::kCPU).layout(torch::kSparse).requires_grad(false);
+  auto options = iganet::Options<float>{}.device(torch::kCPU).layout(torch::kSparse).requires_grad(true);
 
   EXPECT_EQ(options.dtype(),         c10::ScalarType::Float);
   EXPECT_EQ(options.device(),        torch::kCPU);
   EXPECT_EQ(options.layout(),        torch::kSparse);
-  EXPECT_EQ(options.requires_grad(), false);
+  EXPECT_EQ(options.requires_grad(), true);
   EXPECT_EQ(options.pinned_memory(), false);
   EXPECT_EQ(options.is_sparse(),     true);  
 }
@@ -74,14 +74,14 @@ TEST(Options, Options_clone)
 
 TEST(Options, Options_conversion)
 {
-  auto options = iganet::Options<float>{}.device(torch::kCPU).layout(torch::kSparse).requires_grad(false);
+  auto options = iganet::Options<float>{}.device(torch::kCPU).layout(torch::kSparse).requires_grad(true);
 
   torch::TensorOptions tensorOptions(options);
   
   EXPECT_EQ(tensorOptions.dtype(),         c10::ScalarType::Float);
   EXPECT_EQ(tensorOptions.device(),        torch::kCPU);
   EXPECT_EQ(tensorOptions.layout(),        torch::kSparse);
-  EXPECT_EQ(tensorOptions.requires_grad(), false);
+  EXPECT_EQ(tensorOptions.requires_grad(), true);
   EXPECT_EQ(tensorOptions.pinned_memory(), false);
   EXPECT_EQ(tensorOptions.is_sparse(),     true);
 }
