@@ -1653,7 +1653,7 @@ TEST_F(BSplineTest, UniformBSpline_to_from_json)
     // non-matching geometric dimension
     EXPECT_THROW( (iganet::UniformBSpline<real_t, 1, 3, 4, 5, 1>{}.from_json(json)), std::runtime_error);
     EXPECT_THROW( (iganet::UniformBSpline<real_t, 2, 3, 4, 5, 1>{}.from_json(json)), std::runtime_error);
-    EXPECT_THROW( (iganet::UniformBSpline<real_t, 3, 3, 4, 5, 1>{}.from_json(json)), std::runtime_error);  
+    EXPECT_THROW( (iganet::UniformBSpline<real_t, 3, 3, 4, 5, 1>{}.from_json(json)), std::runtime_error);
   }
 }
 
