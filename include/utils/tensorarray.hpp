@@ -36,14 +36,14 @@ namespace iganet {
     template<typename T>
     inline auto to_tensorArray(std::initializer_list<T>&& list,
                                torch::IntArrayRef sizes = torch::IntArrayRef{-1},
-                               const torch::TensorOptions& options = Options<T>{})
+                               const iganet::Options<T>& options = Options<T>{})
     {
       return TensorArray1({to_tensor(list, sizes, options)});
     }
 
     template<typename T>
     inline auto to_tensorArray(std::initializer_list<T>&& list,
-                               const torch::TensorOptions& options)
+                               const iganet::Options<T>& options)
     {
       return TensorArray1({to_tensor(list, torch::IntArrayRef{-1}, options)});
     }
@@ -56,7 +56,7 @@ namespace iganet {
     inline auto to_tensorArray(std::initializer_list<T>&& list0,
                                std::initializer_list<T>&& list1,
                                torch::IntArrayRef sizes = torch::IntArrayRef{-1},
-                               const torch::TensorOptions& options = Options<T>{})
+                               const iganet::Options<T>& options = Options<T>{})
     {
       return TensorArray2({to_tensor(list0, sizes, options),
           to_tensor(list1, sizes, options)});
@@ -65,7 +65,7 @@ namespace iganet {
     template<typename T>
     inline auto to_tensorArray(std::initializer_list<T>&& list0,
                                std::initializer_list<T>&& list1,
-                               const torch::TensorOptions& options)
+                               const iganet::Options<T>& options)
     {
       return TensorArray2({to_tensor(list0, torch::IntArrayRef{-1}, options),
           to_tensor(list1, torch::IntArrayRef{-1}, options)});
@@ -79,7 +79,7 @@ namespace iganet {
                                std::initializer_list<T>&& list1,
                                std::initializer_list<T>&& list2,
                                torch::IntArrayRef sizes = torch::IntArrayRef{-1},
-                               const torch::TensorOptions& options = Options<T>{})
+                               const iganet::Options<T>& options = Options<T>{})
     {
       return TensorArray3({to_tensor(list0, sizes, options),
           to_tensor(list1, sizes, options),
@@ -90,7 +90,7 @@ namespace iganet {
     inline auto to_tensorArray(std::initializer_list<T>&& list0,
                                std::initializer_list<T>&& list1,
                                std::initializer_list<T>&& list2,
-                               const torch::TensorOptions& options)
+                               const iganet::Options<T>& options)
     {
       return TensorArray3({to_tensor(list0, torch::IntArrayRef{-1}, options),
           to_tensor(list1, torch::IntArrayRef{-1}, options),
@@ -106,7 +106,7 @@ namespace iganet {
                                std::initializer_list<T>&& list2,
                                std::initializer_list<T>&& list3,
                                torch::IntArrayRef sizes = {-1},
-                               const torch::TensorOptions& options = Options<T>{})
+                               const iganet::Options<T>& options = Options<T>{})
     {
       return TensorArray4({to_tensor(list0, sizes, options),
           to_tensor(list1, sizes, options),
@@ -119,7 +119,7 @@ namespace iganet {
                                std::initializer_list<T>&& list1,
                                std::initializer_list<T>&& list2,
                                std::initializer_list<T>&& list3,
-                               const torch::TensorOptions& options)
+                               const iganet::Options<T>& options)
     {
       return TensorArray4({to_tensor(list0, torch::IntArrayRef{-1}, options),
           to_tensor(list1, torch::IntArrayRef{-1}, options),
