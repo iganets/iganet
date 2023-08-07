@@ -2035,7 +2035,7 @@ namespace iganet {
       pugi::xml_node coefs = geo.append_child("coefs");
       coefs.append_attribute("geoDim") = geoDim_;
       
-      auto coeffs_accessors = utils::to_tensorAccessor<value_type,1>(coeffs_);
+      auto [coeffs_cpu, coeffs_accessors] = utils::to_tensorAccessor<value_type,1>(coeffs_, torch::kCPU);
       std::stringstream ss;
       
       if constexpr (parDim_ == 1) {        
@@ -2128,7 +2128,7 @@ namespace iganet {
 
           } // "Bspline"
           else
-            continue; // try next "Ggeometry"
+            continue; // try next "Geometry"
         }
 
         // >1D parametric dimension
@@ -2188,13 +2188,13 @@ namespace iganet {
         // Fill coefficients with zeros
         int64_t size = ncumcoeffs();
         for (short_t i = 0; i < geoDim_; ++i)
-          coeffs_[i] = torch::zeros(size, options_);
+          coeffs_[i] = torch::zeros(size, options_.device(torch::kCPU));
 
         // Check for "coefs"
         if (pugi::xml_node coefs = geo.child("coefs")) {
 
           std::string values = std::regex_replace(coefs.text().get(), std::regex("\t|\r|\n|\a|^ +| +$|( ) +"), "$1");
-          auto [coeffs_cpu, coeffs_accessors] = utils::to_tensorAccessor<value_type, 1>(coeffs_, torch::kCPU);
+          auto coeffs_accessors = utils::to_tensorAccessor<value_type, 1>(coeffs_);
 
           if constexpr (parDim_ == 1) {
             auto value = strtok(&values[0], " ");
@@ -2271,6 +2271,10 @@ namespace iganet {
           } else
             throw std::runtime_error("Unsupported parametric dimension");
 
+	  // Copy coefficients to device (if needed)
+	  for (short_t i = 0; i < geoDim_; ++i)
+	    coeffs_[i] = coeffs_[i].to(options_.device());
+	  
           if (std::all_of(std::begin(nknots_found), std::end(nknots_found), [](bool i) { return i ;}) &&
               std::all_of(std::begin(ncoeffs_found), std::end(ncoeffs_found), [](bool i) { return i; }))              
             return *this;
