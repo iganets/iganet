@@ -60,7 +60,7 @@ namespace iganet {
       else if (bytes < 1024ull*1024ull*1024ull*1024ull)
         return std::to_string(bytes/double(1024*1024*1024)) + "gb";
       else
-        return std::to_string(bytes/double(1024*1024*1024*1024)) + "tb";
+        return std::to_string(bytes/double(1024)/double(1024)/double(1024)/double(1024)) + "tb";
     }
     
   public:
