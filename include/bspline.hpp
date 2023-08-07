@@ -197,8 +197,9 @@ namespace iganet {
     /// @brief Array storing the coefficients of the control net
     /// \f$\left(\mathbf{c}_{i_d}\right)_{i_d=1}^{n_d}\f$,
     /// \f$\mathbf{c}_{i_d}\in\mathbb{R}^{d_\text{geo}}\f$
+    
     std::array<torch::Tensor, geoDim_> coeffs_;
-
+    
     /// @brief Options
     Options<real_t> options_;
 
@@ -718,7 +719,12 @@ namespace iganet {
               coeffs[i] = torch::kron(torch::ones(ncoeffs_[j] - (interior ? 2 : 0),
                                                   options_), coeffs[i]);
           }
+
+          // Enable gradient calculation for non-leaf tensor
+          if (options_.requires_grad())
+            coeffs_[i].retain_grad();
         }
+        
         return coeffs;
       }
     }
@@ -1951,27 +1957,13 @@ namespace iganet {
 
       auto kv = json["knots"].get<std::array<std::vector<value_type>, parDim_>>();
       
-      for (short_t i=0; i<parDim_; ++i) {        
-        if (options_.device() == torch::kCPU)
-          knots_[i] = torch::from_blob(static_cast<value_type *>(kv[i].data()),
-                                       kv[i].size(), options_).clone();
-        else
-          knots_[i] = torch::from_blob(static_cast<value_type *>(kv[i].data()),
-                                       kv[i].size(), options_.device(torch::kCPU))
-            .to(options_.device());
-      }
+      for (short_t i=0; i<parDim_; ++i)
+        knots_[i] = utils::to_tensor(kv[i], options_);
 
       auto c = json["coeffs"].get<std::array<std::vector<value_type>, geoDim_>>();
-
-      for (short_t i=0; i<geoDim_; ++i) {        
-        if (options_.device() == torch::kCPU)
-          coeffs_[i] = torch::from_blob(static_cast<value_type *>(c[i].data()),
-                                        c[i].size(), options_).clone();
-        else
-          coeffs_[i] = torch::from_blob(static_cast<value_type *>(c[i].data()),
-                                        c[i].size(), options_.device(torch::kCPU))
-            .to(options_.device());
-      }
+      
+      for (short_t i=0; i<geoDim_; ++i)
+        coeffs_[i] = utils::to_tensor(c[i], options_);
       
       return *this;
     }
@@ -2123,14 +2115,7 @@ namespace iganet {
                 for (auto value = strtok(&values[0], " "); value != NULL; value = strtok(NULL, " "))
                   kv.push_back(static_cast<value_type>(std::stod(value)));
 
-                if (options_.device() == torch::kCPU)
-                  knots_[0] = torch::from_blob(static_cast<value_type *>(kv.data()),
-                                               kv.size(), options_).clone();
-                else
-                  knots_[0] = torch::from_blob(static_cast<value_type *>(kv.data()),
-                                               kv.size(), options_.device(torch::kCPU))
-                    .to(options_.device());
-
+                knots_[0] = utils::to_tensor(kv, options_);
                 nknots_[0] = kv.size();
                 ncoeffs_[0] = nknots_[0]-degrees_[0]-1;
 
@@ -2175,14 +2160,7 @@ namespace iganet {
                     for (auto value = strtok(&values[0], " "); value != NULL; value = strtok(NULL, " "))
                       kv.push_back(static_cast<value_type>(std::stod(value)));
 
-                    if (options_.device() == torch::kCPU)
-                      knots_[index] = torch::from_blob(static_cast<value_type *>(kv.data()),
-                                                       kv.size(), options_).clone();
-                    else
-                      knots_[index] = torch::from_blob(static_cast<value_type *>(kv.data()),
-                                                       kv.size(), options_.device(torch::kCPU))
-                        .to(options_.device());
-
+                    knots_[index] = utils::to_tensor(kv, options_);
                     nknots_[index] = kv.size();
                     ncoeffs_[index] = nknots_[index]-degrees_[index]-1;
 
@@ -2491,13 +2469,7 @@ namespace iganet {
         for (int64_t j = 0; j < degrees_[i]; ++j)
           kv.push_back(static_cast<value_type>(1));
 
-        if (options_.device() == torch::kCPU)
-          knots[i] = torch::from_blob(static_cast<value_type *>(kv.data()),
-                                      kv.size(), options_).clone();
-        else
-          knots[i] = torch::from_blob(static_cast<value_type *>(kv.data()),
-                                      kv.size(), options_.device(torch::kCPU))
-            .to(options_.device());
+        knots[i] = utils::to_tensor(kv, options_);
       }
 
       // The updated knot vectors have lengths \f$m_d+p_d+1\f$, where
@@ -2559,15 +2531,7 @@ namespace iganet {
         for (int64_t j = 0; j < degrees_[i]; ++j)
           kv.push_back(static_cast<value_type>(1));
 
-        if (options_.device() == torch::kCPU)
-          knots_[i] = torch::from_blob(static_cast<value_type *>(kv.data()),
-                                       kv.size(), options_).clone();
-        else
-          knots_[i] = torch::from_blob(static_cast<value_type *>(kv.data()),
-                                       kv.size(), options_.device(torch::kCPU))
-            .to(options_.device());
-
-        // Store the size of the knot vector
+        knots_[i] = utils::to_tensor(kv, options_);
         nknots_[i] = kv.size();
       }
     }
@@ -2626,6 +2590,10 @@ namespace iganet {
                                                    options_),
                                        coeffs_[i]);
           }
+
+          // Enable gradient calculation for non-leaf tensor
+          if (options_.requires_grad())
+            coeffs_[i].retain_grad();
         }
         break;
       }
@@ -2664,6 +2632,10 @@ namespace iganet {
               coeffs_[i] = torch::kron(torch::ones(ncoeffs_[j],
                                                    options_), coeffs_[i]);
           }
+
+          // Enable gradient calculation for non-leaf tensor
+          if (options_.requires_grad())
+            coeffs_[i].retain_grad();
         }
         break;
       }
@@ -3096,18 +3068,8 @@ namespace iganet {
         if (2*Base::degrees_[i]>kv[i].size()-2)
           throw std::runtime_error("Knot vector is too short for an open knot vector (n+p+1 > 2*(p+1))");
 
-        if (Base::options_.device() == torch::kCPU)
-          Base::knots_[i] = torch::from_blob(static_cast<typename Base::value_type*>(kv[i].data()),
-                                             kv[i].size(), Base::options_).clone();
-        else
-          Base::knots_[i] = torch::from_blob(static_cast<typename Base::value_type*>(kv[i].data()),
-                                             kv[i].size(), Base::options_.device(torch::kCPU))
-            .to(Base::options_.device());
-
-        // Store the size of the knot vector
+        Base::knots_[i] = utils::to_tensor(kv[i], Base::options_);
         Base::nknots_[i] = Base::knots_[i].size(0);
-
-        // Store the size of the coefficient vector
         Base::ncoeffs_[i] = Base::nknots_[i]-Base::degrees_[i]-1;
       }
     }
@@ -3291,15 +3253,7 @@ namespace iganet {
           kv.push_back(kv_accessor[j]);
         }
 
-        if (Base::options_.device() == torch::kCPU)
-          knots[i] = torch::from_blob(static_cast<typename Base::value_type *>(kv.data()),
-                                      kv.size(), Base::options_).clone();
-        else
-          knots[i] = torch::from_blob(static_cast<typename Base::value_type *>(kv.data()),
-                                      kv.size(), Base::options_.device(torch::kCPU))
-            .to(Base::options_.device());
-
-        // Store the size of the updated knot and coefficient vector
+        knots[i] = utils::to_tensor(kv, Base::options_);
         nknots[i] = kv.size();
         ncoeffs[i] = nknots[i]-Base::degrees_[i]-1;
       }
@@ -3400,15 +3354,7 @@ namespace iganet {
           kv.push_back(kv_accessor[j]);
         }
 
-        if (Base::options_.device() == torch::kCPU)
-          knots[i] = torch::from_blob(static_cast<typename Base::value_type *>(kv.data()),
-                                      kv.size(), Base::options_).clone();
-        else
-          knots[i] = torch::from_blob(static_cast<typename Base::value_type *>(kv.data()),
-                                      kv.size(), Base::options_.device(torch::kCPU))
-            .to(Base::options_.device());
-
-        // Store the size of the updated knot and coefficient vector
+        knots[i] = utils::to_tensor(kv, Base::options_);
         nknots[i] = kv.size();
         ncoeffs[i] = nknots[i]-Base::degrees_[i]-1;
       }
