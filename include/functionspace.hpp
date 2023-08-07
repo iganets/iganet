@@ -417,10 +417,10 @@ namespace iganet {
       /// knot and coefficient vectors
       template<size_t... Is>
       inline auto& uniform_refine_(std::index_sequence<Is...>,
-                                   int numRefine = 1, int dim = -1)
+                                   int numRefine = 1, int dimRefine = -1)
       {
-        (std::get<Is>(*this).uniform_refine(numRefine, dim), ...);
-        (std::get<Is>(boundary_).uniform_refine(numRefine, dim), ...);
+        (std::get<Is>(*this).uniform_refine(numRefine, dimRefine), ...);
+        (std::get<Is>(boundary_).uniform_refine(numRefine, dimRefine), ...);
         return *this;
       }
       
@@ -572,9 +572,9 @@ namespace iganet {
 
       /// @brief Returns the spline objects with uniformly refined
       /// knot and coefficient vectors
-      inline auto& uniform_refine(int numRefine = 1, int dim = -1)
+      inline auto& uniform_refine(int numRefine = 1, int dimRefine = -1)
       {
-        uniform_refine_(std::make_index_sequence<FunctionSpace::dim()>{}, numRefine, dim);
+        uniform_refine_(std::make_index_sequence<FunctionSpace::dim()>{}, numRefine, dimRefine);
         return *this;
       }
 
@@ -982,10 +982,10 @@ namespace iganet {
 
       /// @brief Returns the spline objects with uniformly refined
       /// knot and coefficient vectors
-      inline auto& uniform_refine(int numRefine = 1, int dim = -1)
+      inline auto& uniform_refine(int numRefine = 1, int dimRefine = -1)
       {
-        spline_t::uniform_refine(numRefine, dim);
-        boundary_.uniform_refine(numRefine, dim);
+        spline_t::uniform_refine(numRefine, dimRefine);
+        boundary_.uniform_refine(numRefine, dimRefine);
         return *this;
       }
 
