@@ -57,40 +57,113 @@ namespace iganet {
     {
       return std::vector<typename std::common_type<Args...>::type>{std::move(args)...};
     }
-  
+
+    /// @brief Converts an std::array to torch::Tensor
+    /// @{
+    template<typename T, std::size_t N>
+    inline auto to_tensor(const std::array<T, N>& array,
+                          torch::IntArrayRef sizes = torch::IntArrayRef{-1},
+                          const iganet::Options<T>& options = iganet::Options<T>{})
+    {
+      if (options.device() == torch::kCPU)
+        return torch::from_blob(const_cast<T*>(std::data(array)),
+                                (sizes == torch::IntArrayRef{-1}) ? array.size() : sizes,
+                                options)
+          .detach().clone().requires_grad_(options.requires_grad());
+      else
+        return torch::from_blob(const_cast<T*>(std::data(array)),
+                                (sizes == torch::IntArrayRef{-1}) ? array.size() : sizes,
+                                options.device(torch::kCPU))
+          .detach().clone().requires_grad_(options.requires_grad()).to(options.device());
+    }
+
+    template<typename T, std::size_t N>
+    inline auto to_tensor(const std::array<T, N>& array,
+                          const iganet::Options<T>& options)
+    {
+      if (options.device() == torch::kCPU)
+        return torch::from_blob(const_cast<T*>(std::data(array)),
+                                array.size(), options)
+          .detach().clone().requires_grad_(options.requires_grad());
+      else
+        return torch::from_blob(const_cast<T*>(std::data(array)),
+                                array.size(),
+                                options.device(torch::kCPU))
+          .detach().clone().requires_grad_(options.requires_grad()).to(options.device());
+    }
+    /// @}
+    
     /// @brief Converts an std::initializer_list to torch::Tensor
     /// @{
     template<typename T>
     inline auto to_tensor(std::initializer_list<T> list,
                           torch::IntArrayRef sizes = torch::IntArrayRef{-1},
-                          const torch::TensorOptions& options = iganet::Options<T>{})
+                          const iganet::Options<T>& options = iganet::Options<T>{})
     {
       if (options.device() == torch::kCPU)
         return torch::from_blob(const_cast<T*>(std::data(list)),
                                 (sizes == torch::IntArrayRef{-1}) ? list.size() : sizes,
-                                options).clone();
+                                options)
+          .detach().clone().requires_grad_(options.requires_grad());
       else
         return torch::from_blob(const_cast<T*>(std::data(list)),
                                 (sizes == torch::IntArrayRef{-1}) ? list.size() : sizes,
                                 options.device(torch::kCPU))
-          .to(options.device());
+          .detach().clone().requires_grad_(options.requires_grad()).to(options.device());
     }
 
     template<typename T>
-    inline auto to_tensor(std::initializer_list<T>&& list,
-                          const torch::TensorOptions& options)
+    inline auto to_tensor(std::initializer_list<T>& list,
+                          const iganet::Options<T>& options)
     {
       if (options.device() == torch::kCPU)
         return torch::from_blob(const_cast<T*>(std::data(list)),
-                                list.size(),
-                                options).clone();
+                                list.size(), options)
+          .detach().clone().requires_grad_(options.requires_grad());
       else
         return torch::from_blob(const_cast<T*>(std::data(list)),
                                 list.size(),
                                 options.device(torch::kCPU))
-          .to(options.device());
+          .detach().clone().requires_grad_(options.requires_grad()).to(options.device());
     }
     /// @}
+
+    /// @brief Converts an std::vector to torch::Tensor
+    /// @{
+    template<typename T>
+    inline auto to_tensor(const std::vector<T>& vector,
+                          torch::IntArrayRef sizes = torch::IntArrayRef{-1},
+                          const iganet::Options<T>& options = iganet::Options<T>{})
+    {
+      if (options.device() == torch::kCPU)
+        return torch::from_blob(const_cast<T*>(std::data(vector)),
+                                (sizes == torch::IntArrayRef{-1}) ? vector.size() : sizes,
+                                options)
+          .detach().clone().requires_grad_(options.requires_grad());
+      else
+        return torch::from_blob(const_cast<T*>(std::data(vector)),
+                                (sizes == torch::IntArrayRef{-1}) ? vector.size() : sizes,
+                                options.device(torch::kCPU))
+          .detach().clone().requires_grad_(options.requires_grad()).to(options.device());
+    }
+
+    template<typename T>
+    inline auto to_tensor(const std::vector<T>& vector,
+                          const iganet::Options<T>& options)
+    {
+      if (options.device() == torch::kCPU)
+        return torch::from_blob(const_cast<T*>(std::data(vector)),
+                                vector.size(), options)
+          .detach().clone().requires_grad_(options.requires_grad());
+      else
+        return torch::from_blob(const_cast<T*>(std::data(vector)),
+                                vector.size(),
+                                options.device(torch::kCPU))
+          .detach().clone().requires_grad_(options.requires_grad()).to(options.device());
+    }
+    /// @}
+
+    
 
     /// @brief Converts an std::array<int64_t, N> to a at::IntArrayRef object
     template<typename T, std::size_t N>
