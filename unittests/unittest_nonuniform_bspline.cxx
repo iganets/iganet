@@ -309,78 +309,78 @@ TEST_F(BSplineTest, NonUniformBSpline_init)
   {
     iganet::NonUniformBSpline<real_t, 1, 1> bspline({{{0.0, 0.0, 0.25, 0.5, 0.75, 1.0, 1.0}}},
                                                     iganet::init::zeros, options);
-    EXPECT_TRUE(torch::allclose(bspline.coeffs(0), torch::zeros(5, options)));
+    EXPECT_TRUE(torch::equal(bspline.coeffs(0), torch::zeros(5, options)));
   }
 
   {
     iganet::NonUniformBSpline<real_t, 1, 1> bspline({{{0.0, 0.0, 0.25, 0.5, 0.75, 1.0, 1.0}}},
                                                     iganet::init::ones, options);
-    EXPECT_TRUE(torch::allclose(bspline.coeffs(0), torch::ones(5, options)));
+    EXPECT_TRUE(torch::equal(bspline.coeffs(0), torch::ones(5, options)));
   }
     
   {
     iganet::NonUniformBSpline<real_t, 1, 1> bspline({{{0.0, 0.0, 0.25, 0.5, 0.75, 1.0, 1.0}}},
                                                     iganet::init::linear, options);
-    EXPECT_TRUE(torch::allclose(bspline.coeffs(0), torch::linspace(0, 1, 5, options)));
+    EXPECT_TRUE(torch::equal(bspline.coeffs(0), torch::linspace(0, 1, 5, options)));
   }
 
   {
     iganet::NonUniformBSpline<real_t, 1, 1> bspline({{{0.0, 0.0, 0.25, 0.5, 0.75, 1.0, 1.0}}},
                                                     iganet::init::greville, options);
-    EXPECT_TRUE(torch::allclose(bspline.coeffs(0), torch::linspace(0, 1, 5, options)));
+    EXPECT_TRUE(torch::equal(bspline.coeffs(0), torch::linspace(0, 1, 5, options)));
   }
 
   {
     iganet::NonUniformBSpline<real_t, 2, 1> bspline({{{0.0, 0.0, 0.25, 0.5, 0.75, 1.0, 1.0}}},
                                                     iganet::init::zeros, options);
-    EXPECT_TRUE(torch::allclose(bspline.coeffs(0), torch::zeros(5, options)));
-    EXPECT_TRUE(torch::allclose(bspline.coeffs(1), torch::zeros(5, options)));
+    EXPECT_TRUE(torch::equal(bspline.coeffs(0), torch::zeros(5, options)));
+    EXPECT_TRUE(torch::equal(bspline.coeffs(1), torch::zeros(5, options)));
   }
 
   {
     iganet::NonUniformBSpline<real_t, 2, 1> bspline({{{0.0, 0.0, 0.25, 0.5, 0.75, 1.0, 1.0}}},
                                                     iganet::init::ones, options);
-    EXPECT_TRUE(torch::allclose(bspline.coeffs(0), torch::ones(5, options)));
-    EXPECT_TRUE(torch::allclose(bspline.coeffs(1), torch::ones(5, options)));
+    EXPECT_TRUE(torch::equal(bspline.coeffs(0), torch::ones(5, options)));
+    EXPECT_TRUE(torch::equal(bspline.coeffs(1), torch::ones(5, options)));
   }
 
   {
     iganet::NonUniformBSpline<real_t, 2, 1> bspline({{{0.0, 0.0, 0.25, 0.5, 0.75, 1.0, 1.0}}},
                                                     iganet::init::linear, options);
-    EXPECT_TRUE(torch::allclose(bspline.coeffs(0), torch::linspace(0, 1, 5, options)));
-    EXPECT_TRUE(torch::allclose(bspline.coeffs(1), torch::ones(5, options)));
+    EXPECT_TRUE(torch::equal(bspline.coeffs(0), torch::linspace(0, 1, 5, options)));
+    EXPECT_TRUE(torch::equal(bspline.coeffs(1), torch::ones(5, options)));
   }
 
   {
     iganet::NonUniformBSpline<real_t, 2, 1> bspline({{{0.0, 0.0, 0.25, 0.5, 0.75, 1.0, 1.0}}},
                                                     iganet::init::greville, options);
-    EXPECT_TRUE(torch::allclose(bspline.coeffs(0), torch::linspace(0, 1, 5, options)));
-    EXPECT_TRUE(torch::allclose(bspline.coeffs(1), torch::ones(5, options)));
+    EXPECT_TRUE(torch::equal(bspline.coeffs(0), torch::linspace(0, 1, 5, options)));
+    EXPECT_TRUE(torch::equal(bspline.coeffs(1), torch::ones(5, options)));
   }
   
   {
     iganet::NonUniformBSpline<real_t, 2, 2, 2> bspline({{{0.0, 0.0, 0.0, 0.2, 0.4, 0.6, 0.8, 1.0, 1.0, 1.0},
                                                          {0.0, 0.0, 0.0, 0.5, 1.0, 1.0, 1.0}}},
       iganet::init::zeros, options);
-    EXPECT_TRUE(torch::allclose(bspline.coeffs(0), torch::zeros(28, options)));
-    EXPECT_TRUE(torch::allclose(bspline.coeffs(1), torch::zeros(28, options)));
+    EXPECT_TRUE(torch::equal(bspline.coeffs(0), torch::zeros(28, options)));
+    EXPECT_TRUE(torch::equal(bspline.coeffs(1), torch::zeros(28, options)));
   }
 
   {
     iganet::NonUniformBSpline<real_t, 2, 2, 2> bspline({{{0.0, 0.0, 0.0, 0.2, 0.4, 0.6, 0.8, 1.0, 1.0, 1.0},
                                                          {0.0, 0.0, 0.0, 0.5, 1.0, 1.0, 1.0}}},
       iganet::init::ones, options);
-    EXPECT_TRUE(torch::allclose(bspline.coeffs(0), torch::ones(28, options)));
-    EXPECT_TRUE(torch::allclose(bspline.coeffs(1), torch::ones(28, options)));
+    EXPECT_TRUE(torch::equal(bspline.coeffs(0), torch::ones(28, options)));
+    EXPECT_TRUE(torch::equal(bspline.coeffs(1), torch::ones(28, options)));
   }
 
   {
     iganet::NonUniformBSpline<real_t, 2, 2, 2> bspline({{{0.0, 0.0, 0.0, 0.2, 0.4, 0.6, 0.8, 1.0, 1.0, 1.0},
                                                          {0.0, 0.0, 0.0, 0.5, 1.0, 1.0, 1.0}}},
       iganet::init::linear, options);
-    EXPECT_TRUE(torch::allclose(bspline.coeffs(0),
+    EXPECT_TRUE(torch::equal(bspline.coeffs(0),
                                 torch::linspace(0, 1, 7, options).repeat(4)));
-    EXPECT_TRUE(torch::allclose(bspline.coeffs(1),
+    EXPECT_TRUE(torch::equal(bspline.coeffs(1),
                                 torch::linspace(0, 1, 4, options).repeat_interleave(7)));
   }
   
@@ -388,9 +388,9 @@ TEST_F(BSplineTest, NonUniformBSpline_init)
     iganet::NonUniformBSpline<real_t, 2, 1, 1> bspline({{{0.0, 0.0, 0.25, 0.5, 0.75, 1.0, 1.0},
                                                          {0.0, 0.0, 0.2, 0.4, 0.6, 0.8, 1.0, 1.0}}},
       iganet::init::greville, options);
-    EXPECT_TRUE(torch::allclose(bspline.coeffs(0),
+    EXPECT_TRUE(torch::equal(bspline.coeffs(0),
                                 torch::linspace(0, 1, 5, options).repeat(6)));
-    EXPECT_TRUE(torch::allclose(bspline.coeffs(1),
+    EXPECT_TRUE(torch::equal(bspline.coeffs(1),
                                 torch::linspace(0, 1, 6, options).repeat_interleave(5)));
   }
   
@@ -398,84 +398,84 @@ TEST_F(BSplineTest, NonUniformBSpline_init)
     iganet::NonUniformBSpline<real_t, 3, 2, 2> bspline({{{0.0, 0.0, 0.0, 0.2, 0.4, 0.6, 0.8, 1.0, 1.0, 1.0},
                                                          {0.0, 0.0, 0.0, 0.5, 1.0, 1.0, 1.0}}},
       iganet::init::zeros, options);
-    EXPECT_TRUE(torch::allclose(bspline.coeffs(0), torch::zeros(28, options)));
-    EXPECT_TRUE(torch::allclose(bspline.coeffs(1), torch::zeros(28, options)));
-    EXPECT_TRUE(torch::allclose(bspline.coeffs(2), torch::zeros(28, options)));
+    EXPECT_TRUE(torch::equal(bspline.coeffs(0), torch::zeros(28, options)));
+    EXPECT_TRUE(torch::equal(bspline.coeffs(1), torch::zeros(28, options)));
+    EXPECT_TRUE(torch::equal(bspline.coeffs(2), torch::zeros(28, options)));
   }
 
   {
     iganet::NonUniformBSpline<real_t, 3, 2, 2> bspline({{{0.0, 0.0, 0.0, 0.2, 0.4, 0.6, 0.8, 1.0, 1.0, 1.0},
                                                          {0.0, 0.0, 0.0, 0.5, 1.0, 1.0, 1.0}}},
       iganet::init::ones, options);
-    EXPECT_TRUE(torch::allclose(bspline.coeffs(0), torch::ones(28, options)));
-    EXPECT_TRUE(torch::allclose(bspline.coeffs(1), torch::ones(28, options)));
-    EXPECT_TRUE(torch::allclose(bspline.coeffs(2), torch::ones(28, options)));
+    EXPECT_TRUE(torch::equal(bspline.coeffs(0), torch::ones(28, options)));
+    EXPECT_TRUE(torch::equal(bspline.coeffs(1), torch::ones(28, options)));
+    EXPECT_TRUE(torch::equal(bspline.coeffs(2), torch::ones(28, options)));
   }
 
   {
     iganet::NonUniformBSpline<real_t, 3, 2, 2> bspline({{{0.0, 0.0, 0.0, 0.2, 0.4, 0.6, 0.8, 1.0, 1.0, 1.0},
                                                          {0.0, 0.0, 0.0, 0.5, 1.0, 1.0, 1.0}}},
       iganet::init::linear, options);
-    EXPECT_TRUE(torch::allclose(bspline.coeffs(0),
+    EXPECT_TRUE(torch::equal(bspline.coeffs(0),
                                 torch::linspace(0, 1, 7, options).repeat(4)));
-    EXPECT_TRUE(torch::allclose(bspline.coeffs(1),
+    EXPECT_TRUE(torch::equal(bspline.coeffs(1),
                                 torch::linspace(0, 1, 4, options).repeat_interleave(7)));
-    EXPECT_TRUE(torch::allclose(bspline.coeffs(2), torch::ones(28, options)));
+    EXPECT_TRUE(torch::equal(bspline.coeffs(2), torch::ones(28, options)));
   }
   
   {
     iganet::NonUniformBSpline<real_t, 3, 1, 1> bspline({{{0.0, 0.0, 0.25, 0.5, 0.75, 1.0, 1.0},
                                                          {0.0, 0.0, 0.2, 0.4, 0.6, 0.8, 1.0, 1.0}}},
       iganet::init::greville, options);
-    EXPECT_TRUE(torch::allclose(bspline.coeffs(0),
+    EXPECT_TRUE(torch::equal(bspline.coeffs(0),
                                 torch::linspace(0, 1, 5, options).repeat(6)));
-    EXPECT_TRUE(torch::allclose(bspline.coeffs(1),
+    EXPECT_TRUE(torch::equal(bspline.coeffs(1),
                                 torch::linspace(0, 1, 6, options).repeat_interleave(5)));
-    EXPECT_TRUE(torch::allclose(bspline.coeffs(2), torch::ones(30, options)));
+    EXPECT_TRUE(torch::equal(bspline.coeffs(2), torch::ones(30, options)));
   }
 
   {
     iganet::NonUniformBSpline<real_t, 4, 2, 2> bspline({{{0.0, 0.0, 0.0, 0.2, 0.4, 0.6, 0.8, 1.0, 1.0, 1.0},
                                                          {0.0, 0.0, 0.0, 0.5, 1.0, 1.0, 1.0}}},
       iganet::init::zeros, options);
-    EXPECT_TRUE(torch::allclose(bspline.coeffs(0), torch::zeros(28, options)));
-    EXPECT_TRUE(torch::allclose(bspline.coeffs(1), torch::zeros(28, options)));
-    EXPECT_TRUE(torch::allclose(bspline.coeffs(2), torch::zeros(28, options)));
-    EXPECT_TRUE(torch::allclose(bspline.coeffs(3), torch::zeros(28, options)));
+    EXPECT_TRUE(torch::equal(bspline.coeffs(0), torch::zeros(28, options)));
+    EXPECT_TRUE(torch::equal(bspline.coeffs(1), torch::zeros(28, options)));
+    EXPECT_TRUE(torch::equal(bspline.coeffs(2), torch::zeros(28, options)));
+    EXPECT_TRUE(torch::equal(bspline.coeffs(3), torch::zeros(28, options)));
   }
 
   {
     iganet::NonUniformBSpline<real_t, 4, 2, 2> bspline({{{0.0, 0.0, 0.0, 0.2, 0.4, 0.6, 0.8, 1.0, 1.0, 1.0},
                                                          {0.0, 0.0, 0.0, 0.5, 1.0, 1.0, 1.0}}},
       iganet::init::ones, options);
-    EXPECT_TRUE(torch::allclose(bspline.coeffs(0), torch::ones(28, options)));
-    EXPECT_TRUE(torch::allclose(bspline.coeffs(1), torch::ones(28, options)));
-    EXPECT_TRUE(torch::allclose(bspline.coeffs(2), torch::ones(28, options)));
-    EXPECT_TRUE(torch::allclose(bspline.coeffs(3), torch::ones(28, options)));
+    EXPECT_TRUE(torch::equal(bspline.coeffs(0), torch::ones(28, options)));
+    EXPECT_TRUE(torch::equal(bspline.coeffs(1), torch::ones(28, options)));
+    EXPECT_TRUE(torch::equal(bspline.coeffs(2), torch::ones(28, options)));
+    EXPECT_TRUE(torch::equal(bspline.coeffs(3), torch::ones(28, options)));
   }
 
   {
     iganet::NonUniformBSpline<real_t, 4, 2, 2> bspline({{{0.0, 0.0, 0.0, 0.2, 0.4, 0.6, 0.8, 1.0, 1.0, 1.0},
                                                          {0.0, 0.0, 0.0, 0.5, 1.0, 1.0, 1.0}}},
       iganet::init::linear, options);
-    EXPECT_TRUE(torch::allclose(bspline.coeffs(0),
+    EXPECT_TRUE(torch::equal(bspline.coeffs(0),
                                 torch::linspace(0, 1, 7, options).repeat(4)));
-    EXPECT_TRUE(torch::allclose(bspline.coeffs(1),
+    EXPECT_TRUE(torch::equal(bspline.coeffs(1),
                                 torch::linspace(0, 1, 4, options).repeat_interleave(7)));
-    EXPECT_TRUE(torch::allclose(bspline.coeffs(2), torch::ones(28, options)));
-    EXPECT_TRUE(torch::allclose(bspline.coeffs(3), torch::ones(28, options)));
+    EXPECT_TRUE(torch::equal(bspline.coeffs(2), torch::ones(28, options)));
+    EXPECT_TRUE(torch::equal(bspline.coeffs(3), torch::ones(28, options)));
   }
   
   {
     iganet::NonUniformBSpline<real_t, 4, 1, 1> bspline({{{0.0, 0.0, 0.25, 0.5, 0.75, 1.0, 1.0},
                                                          {0.0, 0.0, 0.2, 0.4, 0.6, 0.8, 1.0, 1.0}}},
       iganet::init::greville, options);
-    EXPECT_TRUE(torch::allclose(bspline.coeffs(0),
+    EXPECT_TRUE(torch::equal(bspline.coeffs(0),
                                 torch::linspace(0, 1, 5, options).repeat(6)));
-    EXPECT_TRUE(torch::allclose(bspline.coeffs(1),
+    EXPECT_TRUE(torch::equal(bspline.coeffs(1),
                                 torch::linspace(0, 1, 6, options).repeat_interleave(5)));
-    EXPECT_TRUE(torch::allclose(bspline.coeffs(2), torch::ones(30, options)));
-    EXPECT_TRUE(torch::allclose(bspline.coeffs(3), torch::ones(30, options)));
+    EXPECT_TRUE(torch::equal(bspline.coeffs(2), torch::ones(30, options)));
+    EXPECT_TRUE(torch::equal(bspline.coeffs(3), torch::ones(30, options)));
   } 
 }
 
@@ -1615,6 +1615,62 @@ TEST_F(BSplineTest, NonUniformBSpline_to_from_json)
     EXPECT_THROW( (iganet::NonUniformBSpline<real_t, 2, 3, 4, 5, 1>{}.from_json(json)), std::runtime_error);
     EXPECT_THROW( (iganet::NonUniformBSpline<real_t, 3, 3, 4, 5, 1>{}.from_json(json)), std::runtime_error);  
   }
+}
+
+TEST_F(BSplineTest, NonUniformBSpline_requires_grad)
+{  
+  {
+    iganet::NonUniformBSpline<real_t, 2, 3, 4> bspline({4,5}, iganet::init::greville, options);
+    
+    EXPECT_EQ(bspline.requires_grad(), false);
+    
+    for (iganet::short_t i=0; i<bspline.parDim(); ++i)
+      EXPECT_EQ(bspline.knots(i).requires_grad(), false);
+    
+    for (iganet::short_t i=0; i<bspline.geoDim(); ++i)
+      EXPECT_EQ(bspline.coeffs(i).requires_grad(), false);
+    
+    auto xi = iganet::utils::to_tensorArray<real_t>({0.0}, {0.0}, options);
+    auto values = bspline.eval(xi);
+
+    // We expect an error when calling backward() because no tensor
+    // has requires_grad = true
+    EXPECT_THROW(values[0]->backward(), c10::Error);
+    
+    xi = iganet::utils::to_tensorArray<real_t>({1.0}, {2.0}, options.requires_grad(true));   
+    values = bspline.eval(xi);
+    values.data()[0]->backward();
+    EXPECT_TRUE(torch::allclose(xi[0].grad(),
+                                iganet::utils::to_tensor<real_t>({1.0}, options)));
+  }
+  
+  {
+    iganet::NonUniformBSpline<real_t, 2, 3, 4> bspline({4,5}, iganet::init::linear, options.requires_grad(true));
+    
+    EXPECT_EQ(bspline.requires_grad(), true);
+    
+    for (iganet::short_t i=0; i<bspline.parDim(); ++i)
+      EXPECT_EQ(bspline.knots(i).requires_grad(), true);
+    
+    for (iganet::short_t i=0; i<bspline.geoDim(); ++i)
+      EXPECT_EQ(bspline.coeffs(i).requires_grad(), true);
+    
+    auto xi = iganet::utils::to_tensorArray<real_t>({0.0}, {0.0}, options);
+    auto values = bspline.eval(xi);
+    values[0]->backward({}, true); // otherwise we cannot run backward() a second time
+
+    // We expect an error because xi[0].grad() is an undefined tensor
+    EXPECT_THROW(torch::allclose(xi[0].grad(), torch::empty({})), c10::Error);
+    
+    xi = iganet::utils::to_tensorArray<real_t>({1.0}, {2.0}, options.requires_grad(true));   
+    values = bspline.eval(xi);
+    values.data()[0]->backward();
+    EXPECT_TRUE(torch::allclose(xi[0].grad(),
+                                iganet::utils::to_tensor<real_t>({1.0}, options)));
+
+    EXPECT_TRUE(torch::allclose(bspline.coeffs(0).grad(),
+                                iganet::utils::to_tensor<real_t>({1, 0, 0, 1, 0, 0, 0, -8, 0, 0, 0, 24, 0, 0, 0, -32, 0, 0, 0, 16}, options)));
+  }  
 }
 
 TEST_F(BSplineTest, NonUniformBSpline_reduce_continuity)
