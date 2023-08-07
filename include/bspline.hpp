@@ -282,6 +282,30 @@ namespace iganet {
     static bool is_nonuniform() {
       return false;
     }
+
+    /// @brief Sets the B-spline object's `requires_grad` property
+    ///
+    /// @note: It is only necessary to set `requires_grad` to true if
+    /// gradients with respect to B-spline entities, e.g., the control
+    /// points should be computed. For computing the gradients with
+    /// respect to the sampling points the B-spline's `requires_grad`
+    /// property can be false.
+    UniformBSplineCore& set_requires_grad(bool requires_grad)
+    {
+      if (options_.requires_grad() == requires_grad)
+        return *this;
+      
+      for (short_t i=0; i<parDim_; ++i)
+        knots_[i].set_requires_grad(requires_grad);
+      
+      for (short_t i=0; i<geoDim_; ++i)
+        coeffs_[i].set_requires_grad(requires_grad);
+
+      Options<real_t> tmp(options_.requires_grad(requires_grad));
+      options_.~Options<real_t>(); new (&options_) Options<real_t>(tmp);
+      
+      return *this;
+    }
     
     /// @brief Default constructor
     UniformBSplineCore(Options<real_t> options = Options<real_t>{})
