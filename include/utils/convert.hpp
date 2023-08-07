@@ -74,7 +74,7 @@ namespace iganet {
         return torch::from_blob(const_cast<T*>(std::data(array)),
                                 (sizes == torch::IntArrayRef{-1}) ? array.size() : sizes,
                                 options.device(torch::kCPU))
-          .detach().clone().requires_grad_(options.requires_grad()).to(options.device());
+          .detach().clone().to(options.device()).requires_grad_(options.requires_grad());
     }
 
     template<typename T, std::size_t N>
@@ -89,7 +89,7 @@ namespace iganet {
         return torch::from_blob(const_cast<T*>(std::data(array)),
                                 array.size(),
                                 options.device(torch::kCPU))
-          .detach().clone().requires_grad_(options.requires_grad()).to(options.device());
+          .detach().clone().to(options.device()).requires_grad_(options.requires_grad());
     }
     /// @}
     
@@ -109,7 +109,7 @@ namespace iganet {
         return torch::from_blob(const_cast<T*>(std::data(list)),
                                 (sizes == torch::IntArrayRef{-1}) ? list.size() : sizes,
                                 options.device(torch::kCPU))
-          .detach().clone().requires_grad_(options.requires_grad()).to(options.device());
+          .detach().clone().to(options.device()).requires_grad_(options.requires_grad());
     }
 
     template<typename T>
@@ -124,7 +124,7 @@ namespace iganet {
         return torch::from_blob(const_cast<T*>(std::data(list)),
                                 list.size(),
                                 options.device(torch::kCPU))
-          .detach().clone().requires_grad_(options.requires_grad()).to(options.device());
+          .detach().clone().to(options.device()).requires_grad_(options.requires_grad());
     }
     /// @}
 
@@ -144,7 +144,7 @@ namespace iganet {
         return torch::from_blob(const_cast<T*>(std::data(vector)),
                                 (sizes == torch::IntArrayRef{-1}) ? vector.size() : sizes,
                                 options.device(torch::kCPU))
-          .detach().clone().requires_grad_(options.requires_grad()).to(options.device());
+          .detach().clone().to(options.device()).requires_grad_(options.requires_grad());
     }
 
     template<typename T>
@@ -159,7 +159,7 @@ namespace iganet {
         return torch::from_blob(const_cast<T*>(std::data(vector)),
                                 vector.size(),
                                 options.device(torch::kCPU))
-          .detach().clone().requires_grad_(options.requires_grad()).to(options.device());
+          .detach().clone().to(options.device()).requires_grad_(options.requires_grad());
     }
     /// @}
 
