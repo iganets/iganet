@@ -18,6 +18,10 @@
 #include <tuple>
 #include <vector>
 
+#if _OPENMP
+#include <omp.h>
+#endif
+
 #ifdef WITH_GISMO
 #include <gismo.h>
 #endif
@@ -49,14 +53,42 @@ namespace iganet {
     inline int64_t operator""_i64(unsigned long long value) { return value; };
   }
 
+  /// @brief Get environment variable
+  template<typename T>
+  inline T getenv(const std::string& variable_name,
+                  const T&           default_value)
+  {
+    const char* value = std::getenv(variable_name.c_str());
+
+    if (value) {
+      T v; std::istringstream ( value ) >> v; return v;
+    }
+    else
+      return default_value;
+  }
+  
   /// @brief Initializes the library
   inline void init(std::ostream& os = std::clog)
-  {
-    os << "LibTorch version: "
-       << TORCH_VERSION_MAJOR << "."
-       << TORCH_VERSION_MINOR << "."
-       << TORCH_VERSION_PATCH << "\n";
+  {  
     torch::manual_seed(1);
+
+    // Set number of intraop thread pool threads
+#if _OPENMP
+    at::set_num_threads(getenv<int>("INTRAOP_NUM_THREADS", omp_get_max_threads()));
+#else
+    at::set_num_threads(getenv<int>("INTRAOP_NUM_THREADS", 1));
+#endif
+
+    // Set number of interop thread pool threads
+    at::set_num_interop_threads(getenv<int>("INTEROP_NUM_THREADS", 1));
+
+      os << "LibTorch version: "
+         << TORCH_VERSION_MAJOR << "."
+         << TORCH_VERSION_MINOR << "."
+         << TORCH_VERSION_PATCH
+         << "(#intraop threads: " << at::get_num_threads()
+         << ", #interop threads: " << at::get_num_interop_threads()
+         << ")\n";
   }
   
   /// Stream manipulator
