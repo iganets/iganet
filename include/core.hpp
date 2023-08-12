@@ -48,6 +48,7 @@ namespace iganet {
   using short_t = unsigned short int;
 
   namespace literals {
+    inline int8_t  operator""_i8 (unsigned long long value) { return value; };
     inline int16_t operator""_i16(unsigned long long value) { return value; };
     inline int32_t operator""_i32(unsigned long long value) { return value; };
     inline int64_t operator""_i64(unsigned long long value) { return value; };
@@ -56,7 +57,7 @@ namespace iganet {
   /// @brief Get environment variable
   template<typename T>
   inline T getenv(const std::string& variable_name,
-                  const T&           default_value)
+                  const T&           default_value = {})
   {
     const char* value = std::getenv(variable_name.c_str());
 
@@ -74,19 +75,19 @@ namespace iganet {
 
     // Set number of intraop thread pool threads
 #if _OPENMP
-    at::set_num_threads(getenv<int>("INTRAOP_NUM_THREADS", omp_get_max_threads()));
+    at::set_num_threads(getenv("IGANET_INTRAOP_NUM_THREADS", omp_get_max_threads()));
 #else
-    at::set_num_threads(getenv<int>("INTRAOP_NUM_THREADS", 1));
+    at::set_num_threads(getenv("IGANET_INTRAOP_NUM_THREADS", 1));
 #endif
 
     // Set number of interop thread pool threads
-    at::set_num_interop_threads(getenv<int>("INTEROP_NUM_THREADS", 1));
+    at::set_num_interop_threads(getenv("IGANET_INTEROP_NUM_THREADS", 1));
 
       os << "LibTorch version: "
          << TORCH_VERSION_MAJOR << "."
          << TORCH_VERSION_MINOR << "."
          << TORCH_VERSION_PATCH
-         << "(#intraop threads: " << at::get_num_threads()
+         << " (#intraop threads: " << at::get_num_threads()
          << ", #interop threads: " << at::get_num_interop_threads()
          << ")\n";
   }
