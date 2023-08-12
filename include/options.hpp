@@ -14,6 +14,7 @@
 
 #pragma once
 
+#include <core.hpp>
 #include <utils/fqn.hpp>
 
 #include <torch/torch.h>
@@ -61,7 +62,18 @@ namespace iganet {
     Options()
       : options_(torch::TensorOptions()
                  .dtype(::iganet::dtype<real_t>())
-                 .device(torch::cuda::is_available() ? torch::kCUDA : torch::kCPU))
+                 .device( (getenv("IGANET_DEVICE", std::string{}) == "CPU") ?
+                          torch::kCPU :
+                          (getenv("IGANET_DEVICE", std::string{}) == "CUDA") ?
+                          torch::kCUDA :
+                          (getenv("IGANET_DEVICE", std::string{}) == "HIP") ?
+                          torch::kHIP :
+                          (getenv("IGANET_DEVICE", std::string{}) == "MPS") ?
+                          torch::kMPS :
+                          (getenv("IGANET_DEVICE", std::string{}) == "XLA") ?
+                          torch::kXLA :
+                          torch::cuda::is_available() ?
+                          torch::kCUDA : torch::kCPU))
     {}
     
   private:
