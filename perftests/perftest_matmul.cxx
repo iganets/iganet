@@ -17,11 +17,12 @@
 #include <iostream>
 #include <chrono>
 
+#include <perftest_config.hpp>
 #include <gtest/gtest.h>
 
-TEST(Performance, MatmulTensorLayout_double)
+TEST(Performance, MatmulTensorLayout)
 {
-  iganet::Options<double> options = iganet::Options<double>{}.requires_grad(false);
+  iganet::Options<iganet::perftests::real_t> options = iganet::Options<iganet::perftests::real_t>{}.requires_grad(false);
 
   for (iganet::short_t n : {2, 3, 4, 5}) {
     for (int64_t m : {100, 500, 1000, 5000, 10000, 50000, 100000}) {

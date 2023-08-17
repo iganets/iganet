@@ -17,6 +17,7 @@
 #include <iostream>
 #include <chrono>
 
+#include <perftest_config.hpp>
 #include "../unittests/unittest_bsplinelib.hpp"
 #include <gtest/gtest.h>
 
@@ -24,7 +25,7 @@ class BSplinePerformanceTest
   : public ::testing::Test
 {
 protected:
-  using                          real_t           = double;
+  using                          real_t           = iganet::perftests::real_t;
   static constexpr iganet::deriv deriv            = iganet::deriv::func;
   static constexpr bool          memory_optimized = true;
   static constexpr bool          precompute       = true;
