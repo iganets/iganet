@@ -118,12 +118,13 @@ int main()
   using namespace iganet::literals;
   using optimizer_t = torch::optim::Adam;
   using real_t = double;
-  
+
+  using bspline_t   = iganet::UniformBSpline<real_t, 1, 2, 2>;
   using geometry_t  = iganet::S2<iganet::UniformBSpline<real_t, 2, 2, 2>>;
   using variable_t  = iganet::S2<iganet::UniformBSpline<real_t, 1, 2, 2>>;
 
 
-  variable_t sol( iganet::utils::to_array(7_i64, 7_i64) );
+  bspline_t sol( iganet::utils::to_array(7_i64, 7_i64) );
   
   sol.transform( [](const std::array<real_t,2> xi)
   {
@@ -131,6 +132,11 @@ int main()
   } );
   
   std::cout << sol << std::endl;
+
+  sol.to<float>();
+
+  std::cout << sol << std::endl;
+  
   exit(0);
   
   poisson<optimizer_t, geometry_t, variable_t> net(// Number of neurons per layers

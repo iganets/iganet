@@ -76,13 +76,11 @@ namespace iganet {
                           torch::kCUDA : torch::kCPU))
     {}
     
-  private:
     /// Constructor from torch::TensorOptions
-    Options(torch::TensorOptions&& options)
+    explicit Options(torch::TensorOptions&& options)
       : options_(options)
     {}
 
-  public:
     /// @brief Implicit conversion operator
     operator torch::TensorOptions() const
     {
