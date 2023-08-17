@@ -796,7 +796,6 @@ namespace iganet {
       /// @{
       FunctionSpace(const std::array<int64_t, spline_t::parDim()>& ncoeffs,
                     enum init init = init::zeros,
-                    //bool shared_boundary = false,
                     Options<value_type> options = iganet::Options<value_type>{})
         : Base(ncoeffs, init, options),
           boundary_(ncoeffs, init, options)
@@ -805,7 +804,6 @@ namespace iganet {
       FunctionSpace(std::array<std::vector<typename spline_t::value_type>,
                     spline_t::parDim()> kv,
                     enum init init = init::zeros,
-                    //bool shared_boundary = false,
                     Options<value_type> options = iganet::Options<value_type>{})
         : Base(kv, init, options),
           boundary_(kv, init, options)
