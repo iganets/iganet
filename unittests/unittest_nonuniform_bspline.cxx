@@ -16,20 +16,23 @@
 #include <filesystem>
 #include <iostream>
 
+#include <unittest_config.hpp>
 #include <gtest/gtest.h>
+
+using namespace iganet::unittests::literals;
 
 class BSplineTest
   : public ::testing::Test
 {
 protected:
-  using real_t = double;
+  using real_t = iganet::unittests::real_t;
   iganet::Options<real_t> options;
 };
 
 TEST_F(BSplineTest, NonUniformBSpline_parDim1_geoDim1_degrees1)
 {
-  EXPECT_THROW( (iganet::NonUniformBSpline<real_t, 1, 1>( {{{0.0, 0.0, 1.0}}} )), std::runtime_error);
-  iganet::NonUniformBSpline<real_t, 1, 1> bspline( {{{0.0, 0.0, 0.5, 1.0, 1.0}}} );
+  EXPECT_THROW( (iganet::NonUniformBSpline<real_t, 1, 1>( {{{0.0_r, 0.0_r, 1.0_r}}} )), std::runtime_error);
+  iganet::NonUniformBSpline<real_t, 1, 1> bspline( {{{0.0_r, 0.0_r, 0.5_r, 1.0_r, 1.0_r}}} );
   EXPECT_EQ(bspline.parDim(),     1);
   EXPECT_EQ(bspline.geoDim(),     1);
   EXPECT_EQ(bspline.degree(0),    1);
@@ -42,8 +45,8 @@ TEST_F(BSplineTest, NonUniformBSpline_parDim1_geoDim1_degrees1)
 
 TEST_F(BSplineTest, NonUniformBSpline_parDim1_geoDim2_degrees1)
 {
-  EXPECT_THROW( (iganet::NonUniformBSpline<real_t, 2, 1>( {{{0.0, 0.0, 1.0}}} )), std::runtime_error);
-  iganet::NonUniformBSpline<real_t, 2, 1> bspline( {{{0.0, 0.0, 0.5, 1.0, 1.0}}} );
+  EXPECT_THROW( (iganet::NonUniformBSpline<real_t, 2, 1>( {{{0.0_r, 0.0_r, 1.0_r}}} )), std::runtime_error);
+  iganet::NonUniformBSpline<real_t, 2, 1> bspline( {{{0.0_r, 0.0_r, 0.5_r, 1.0_r, 1.0_r}}} );
   EXPECT_EQ(bspline.parDim(),     1);
   EXPECT_EQ(bspline.geoDim(),     2);
   EXPECT_EQ(bspline.degree(0),    1);
@@ -54,8 +57,8 @@ TEST_F(BSplineTest, NonUniformBSpline_parDim1_geoDim2_degrees1)
 
 TEST_F(BSplineTest, NonUniformBSpline_parDim1_geoDim3_degrees1)
 {
-  EXPECT_THROW( (iganet::NonUniformBSpline<real_t, 3, 1>( {{{0.0, 0.0, 1.0}}} )), std::runtime_error);
-  iganet::NonUniformBSpline<real_t, 3, 1> bspline( {{{0.0, 0.0, 0.5, 1.0, 1.0}}} );
+  EXPECT_THROW( (iganet::NonUniformBSpline<real_t, 3, 1>( {{{0.0_r, 0.0_r, 1.0_r}}} )), std::runtime_error);
+  iganet::NonUniformBSpline<real_t, 3, 1> bspline( {{{0.0_r, 0.0_r, 0.5_r, 1.0_r, 1.0_r}}} );
   EXPECT_EQ(bspline.parDim(),     1);
   EXPECT_EQ(bspline.geoDim(),     3);
   EXPECT_EQ(bspline.degree(0),    1);
@@ -66,8 +69,8 @@ TEST_F(BSplineTest, NonUniformBSpline_parDim1_geoDim3_degrees1)
 
 TEST_F(BSplineTest, NonUniformBSpline_parDim1_geoDim4_degrees1)
 {
-  EXPECT_THROW( (iganet::NonUniformBSpline<real_t, 4, 1>( {{{0.0, 0.0, 1.0}}} )), std::runtime_error);
-  iganet::NonUniformBSpline<real_t, 4, 1> bspline( {{{0.0, 0.0, 0.5, 1.0, 1.0}}} );
+  EXPECT_THROW( (iganet::NonUniformBSpline<real_t, 4, 1>( {{{0.0_r, 0.0_r, 1.0_r}}} )), std::runtime_error);
+  iganet::NonUniformBSpline<real_t, 4, 1> bspline( {{{0.0_r, 0.0_r, 0.5_r, 1.0_r, 1.0_r}}} );
   EXPECT_EQ(bspline.parDim(),     1);
   EXPECT_EQ(bspline.geoDim(),     4);
   EXPECT_EQ(bspline.degree(0),    1);
@@ -78,8 +81,8 @@ TEST_F(BSplineTest, NonUniformBSpline_parDim1_geoDim4_degrees1)
 
 TEST_F(BSplineTest, NonUniformBSpline_parDim2_geoDim1_degrees12)
 {
-  iganet::NonUniformBSpline<real_t, 1, 1, 2> bspline( {{{0.0, 0.0, 0.5, 1.0, 1.0},
-                                                        {0.0, 0.0, 0.0, 1.0, 1.0, 1.0}}} );
+  iganet::NonUniformBSpline<real_t, 1, 1, 2> bspline( {{{0.0_r, 0.0_r, 0.5_r, 1.0_r, 1.0_r},
+                                                        {0.0_r, 0.0_r, 0.0_r, 1.0_r, 1.0_r, 1.0_r}}} );
   EXPECT_EQ(bspline.parDim(),     2);
   EXPECT_EQ(bspline.geoDim(),     1);
   EXPECT_EQ(bspline.degree(0),    1);
@@ -93,8 +96,8 @@ TEST_F(BSplineTest, NonUniformBSpline_parDim2_geoDim1_degrees12)
 
 TEST_F(BSplineTest, NonUniformBSpline_parDim2_geoDim2_degrees12)
 {
-  iganet::NonUniformBSpline<real_t, 2, 1, 2> bspline( {{{0.0, 0.0, 0.5, 1.0, 1.0},
-                                                        {0.0, 0.0, 0.0, 1.0, 1.0, 1.0}}} );
+  iganet::NonUniformBSpline<real_t, 2, 1, 2> bspline( {{{0.0_r, 0.0_r, 0.5_r, 1.0_r, 1.0_r},
+                                                        {0.0_r, 0.0_r, 0.0_r, 1.0_r, 1.0_r, 1.0_r}}} );
   EXPECT_EQ(bspline.parDim(),     2);
   EXPECT_EQ(bspline.geoDim(),     2);
   EXPECT_EQ(bspline.degree(0),    1);
@@ -108,8 +111,8 @@ TEST_F(BSplineTest, NonUniformBSpline_parDim2_geoDim2_degrees12)
 
 TEST_F(BSplineTest, NonUniformBSpline_parDim2_geoDim3_degrees12)
 {
-  iganet::NonUniformBSpline<real_t, 3, 1, 2> bspline( {{{0.0, 0.0, 0.5, 1.0, 1.0},
-                                                        {0.0, 0.0, 0.0, 1.0, 1.0, 1.0}}} );
+  iganet::NonUniformBSpline<real_t, 3, 1, 2> bspline( {{{0.0_r, 0.0_r, 0.5_r, 1.0_r, 1.0_r},
+                                                        {0.0_r, 0.0_r, 0.0_r, 1.0_r, 1.0_r, 1.0_r}}} );
   EXPECT_EQ(bspline.parDim(),     2);
   EXPECT_EQ(bspline.geoDim(),     3);
   EXPECT_EQ(bspline.degree(0),    1);
@@ -123,8 +126,8 @@ TEST_F(BSplineTest, NonUniformBSpline_parDim2_geoDim3_degrees12)
 
 TEST_F(BSplineTest, NonUniformBSpline_parDim2_geoDim4_degrees12)
 {
-  iganet::NonUniformBSpline<real_t, 4, 1, 2> bspline( {{{0.0, 0.0, 0.5, 1.0, 1.0},
-                                                        {0.0, 0.0, 0.0, 1.0, 1.0, 1.0}}} );
+  iganet::NonUniformBSpline<real_t, 4, 1, 2> bspline( {{{0.0_r, 0.0_r, 0.5_r, 1.0_r, 1.0_r},
+                                                        {0.0_r, 0.0_r, 0.0_r, 1.0_r, 1.0_r, 1.0_r}}} );
   EXPECT_EQ(bspline.parDim(),     2);
   EXPECT_EQ(bspline.geoDim(),     4);
   EXPECT_EQ(bspline.degree(0),    1);
@@ -138,9 +141,9 @@ TEST_F(BSplineTest, NonUniformBSpline_parDim2_geoDim4_degrees12)
 
 TEST_F(BSplineTest, NonUniformBSpline_parDim3_geoDim1_degrees123)
 {
-  iganet::NonUniformBSpline<real_t, 1, 1, 2, 3> bspline( {{{0.0, 0.0, 0.5, 1.0, 1.0},
-                                                           {0.0, 0.0, 0.0, 1.0, 1.0, 1.0},
-                                                           {0.0, 0.0, 0.0, 0.0, 0.5, 1.0, 1.0, 1.0, 1.0}}} );
+  iganet::NonUniformBSpline<real_t, 1, 1, 2, 3> bspline( {{{0.0_r, 0.0_r, 0.5_r, 1.0_r, 1.0_r},
+                                                           {0.0_r, 0.0_r, 0.0_r, 1.0_r, 1.0_r, 1.0_r},
+                                                           {0.0_r, 0.0_r, 0.0_r, 0.0_r, 0.5_r, 1.0_r, 1.0_r, 1.0_r, 1.0_r}}} );
   EXPECT_EQ(bspline.parDim(),      3);
   EXPECT_EQ(bspline.geoDim(),      1);
   EXPECT_EQ(bspline.degree(0),     1);
@@ -157,9 +160,9 @@ TEST_F(BSplineTest, NonUniformBSpline_parDim3_geoDim1_degrees123)
 
 TEST_F(BSplineTest, NonUniformBSpline_parDim3_geoDim2_degrees123)
 {
-  iganet::NonUniformBSpline<real_t, 2, 1, 2, 3> bspline( {{{0.0, 0.0, 0.5, 1.0, 1.0},
-                                                           {0.0, 0.0, 0.0, 1.0, 1.0, 1.0},
-                                                           {0.0, 0.0, 0.0, 0.0, 0.5, 1.0, 1.0, 1.0, 1.0}}} );
+  iganet::NonUniformBSpline<real_t, 2, 1, 2, 3> bspline( {{{0.0_r, 0.0_r, 0.5_r, 1.0_r, 1.0_r},
+                                                           {0.0_r, 0.0_r, 0.0_r, 1.0_r, 1.0_r, 1.0_r},
+                                                           {0.0_r, 0.0_r, 0.0_r, 0.0_r, 0.5_r, 1.0_r, 1.0_r, 1.0_r, 1.0_r}}} );
   EXPECT_EQ(bspline.parDim(),      3);
   EXPECT_EQ(bspline.geoDim(),      2);
   EXPECT_EQ(bspline.degree(0),     1);
@@ -176,9 +179,9 @@ TEST_F(BSplineTest, NonUniformBSpline_parDim3_geoDim2_degrees123)
 
 TEST_F(BSplineTest, NonUniformBSpline_parDim3_geoDim3_degrees123)
 {
-  iganet::NonUniformBSpline<real_t, 3, 1, 2, 3> bspline( {{{0.0, 0.0, 0.5, 1.0, 1.0},
-                                                           {0.0, 0.0, 0.0, 1.0, 1.0, 1.0},
-                                                           {0.0, 0.0, 0.0, 0.0, 0.5, 1.0, 1.0, 1.0, 1.0}}} );
+  iganet::NonUniformBSpline<real_t, 3, 1, 2, 3> bspline( {{{0.0_r, 0.0_r, 0.5_r, 1.0_r, 1.0_r},
+                                                           {0.0_r, 0.0_r, 0.0_r, 1.0_r, 1.0_r, 1.0_r},
+                                                           {0.0_r, 0.0_r, 0.0_r, 0.0_r, 0.5_r, 1.0_r, 1.0_r, 1.0_r, 1.0_r}}} );
   EXPECT_EQ(bspline.parDim(),      3);
   EXPECT_EQ(bspline.geoDim(),      3);
   EXPECT_EQ(bspline.degree(0),     1);
@@ -195,9 +198,9 @@ TEST_F(BSplineTest, NonUniformBSpline_parDim3_geoDim3_degrees123)
 
 TEST_F(BSplineTest, NonUniformBSpline_parDim3_geoDim4_degrees123)
 {
-  iganet::NonUniformBSpline<real_t, 4, 1, 2, 3> bspline( {{{0.0, 0.0, 0.5, 1.0, 1.0},
-                                                           {0.0, 0.0, 0.0, 1.0, 1.0, 1.0},
-                                                           {0.0, 0.0, 0.0, 0.0, 0.5, 1.0, 1.0, 1.0, 1.0}}} );
+  iganet::NonUniformBSpline<real_t, 4, 1, 2, 3> bspline( {{{0.0_r, 0.0_r, 0.5_r, 1.0_r, 1.0_r},
+                                                           {0.0_r, 0.0_r, 0.0_r, 1.0_r, 1.0_r, 1.0_r},
+                                                           {0.0_r, 0.0_r, 0.0_r, 0.0_r, 0.5_r, 1.0_r, 1.0_r, 1.0_r, 1.0_r}}} );
   EXPECT_EQ(bspline.parDim(),      3);
   EXPECT_EQ(bspline.geoDim(),      4);
   EXPECT_EQ(bspline.degree(0),     1);
@@ -214,10 +217,10 @@ TEST_F(BSplineTest, NonUniformBSpline_parDim3_geoDim4_degrees123)
 
 TEST_F(BSplineTest, NonUniformBSpline_parDim4_geoDim1_degrees1234)
 {
-  iganet::NonUniformBSpline<real_t, 1, 1, 2, 3, 4> bspline( {{{0.0, 0.0, 0.5, 1.0, 1.0},
-                                                              {0.0, 0.0, 0.0, 1.0, 1.0, 1.0},
-                                                              {0.0, 0.0, 0.0, 0.0, 0.5, 1.0, 1.0, 1.0, 1.0},
-                                                              {0.0, 0.0, 0.0, 0.0, 0.0, 0.5, 1.0, 1.0, 1.0, 1.0, 1.0}}} );
+  iganet::NonUniformBSpline<real_t, 1, 1, 2, 3, 4> bspline( {{{0.0_r, 0.0_r, 0.5_r, 1.0_r, 1.0_r},
+                                                              {0.0_r, 0.0_r, 0.0_r, 1.0_r, 1.0_r, 1.0_r},
+                                                              {0.0_r, 0.0_r, 0.0_r, 0.0_r, 0.5_r, 1.0_r, 1.0_r, 1.0_r, 1.0_r},
+                                                              {0.0_r, 0.0_r, 0.0_r, 0.0_r, 0.0_r, 0.5_r, 1.0_r, 1.0_r, 1.0_r, 1.0_r, 1.0_r}}} );
   EXPECT_EQ(bspline.parDim(),       4);
   EXPECT_EQ(bspline.geoDim(),       1);
   EXPECT_EQ(bspline.degree(0),      1);
@@ -237,10 +240,10 @@ TEST_F(BSplineTest, NonUniformBSpline_parDim4_geoDim1_degrees1234)
 
 TEST_F(BSplineTest, NonUniformBSpline_parDim4_geoDim2_degrees1234)
 {
-  iganet::NonUniformBSpline<real_t, 2, 1, 2, 3, 4> bspline( {{{0.0, 0.0, 0.5, 1.0, 1.0},
-                                                              {0.0, 0.0, 0.0, 1.0, 1.0, 1.0},
-                                                              {0.0, 0.0, 0.0, 0.0, 0.5, 1.0, 1.0, 1.0, 1.0},
-                                                              {0.0, 0.0, 0.0, 0.0, 0.0, 0.5, 1.0, 1.0, 1.0, 1.0, 1.0}}} );
+  iganet::NonUniformBSpline<real_t, 2, 1, 2, 3, 4> bspline( {{{0.0_r, 0.0_r, 0.5_r, 1.0_r, 1.0_r},
+                                                              {0.0_r, 0.0_r, 0.0_r, 1.0_r, 1.0_r, 1.0_r},
+                                                              {0.0_r, 0.0_r, 0.0_r, 0.0_r, 0.5_r, 1.0_r, 1.0_r, 1.0_r, 1.0_r},
+                                                              {0.0_r, 0.0_r, 0.0_r, 0.0_r, 0.0_r, 0.5_r, 1.0_r, 1.0_r, 1.0_r, 1.0_r, 1.0_r}}} );
   EXPECT_EQ(bspline.parDim(),       4);
   EXPECT_EQ(bspline.geoDim(),       2);
   EXPECT_EQ(bspline.degree(0),      1);
@@ -260,10 +263,10 @@ TEST_F(BSplineTest, NonUniformBSpline_parDim4_geoDim2_degrees1234)
 
 TEST_F(BSplineTest, NonUniformBSpline_parDim4_geoDim3_degrees1234)
 {
-  iganet::NonUniformBSpline<real_t, 3, 1, 2, 3, 4> bspline( {{{0.0, 0.0, 0.5, 1.0, 1.0},
-                                                              {0.0, 0.0, 0.0, 1.0, 1.0, 1.0},
-                                                              {0.0, 0.0, 0.0, 0.0, 0.5, 1.0, 1.0, 1.0, 1.0},
-                                                              {0.0, 0.0, 0.0, 0.0, 0.0, 0.5, 1.0, 1.0, 1.0, 1.0, 1.0}}} );
+  iganet::NonUniformBSpline<real_t, 3, 1, 2, 3, 4> bspline( {{{0.0_r, 0.0_r, 0.5_r, 1.0_r, 1.0_r},
+                                                              {0.0_r, 0.0_r, 0.0_r, 1.0_r, 1.0_r, 1.0_r},
+                                                              {0.0_r, 0.0_r, 0.0_r, 0.0_r, 0.5_r, 1.0_r, 1.0_r, 1.0_r, 1.0_r},
+                                                              {0.0_r, 0.0_r, 0.0_r, 0.0_r, 0.0_r, 0.5_r, 1.0_r, 1.0_r, 1.0_r, 1.0_r, 1.0_r}}} );
   EXPECT_EQ(bspline.parDim(),       4);
   EXPECT_EQ(bspline.geoDim(),       3);
   EXPECT_EQ(bspline.degree(0),      1);
@@ -283,10 +286,10 @@ TEST_F(BSplineTest, NonUniformBSpline_parDim4_geoDim3_degrees1234)
 
 TEST_F(BSplineTest, NonUniformBSpline_parDim4_geoDim4_degrees1234)
 {
-  iganet::NonUniformBSpline<real_t, 4, 1, 2, 3, 4> bspline( {{{0.0, 0.0, 0.5, 1.0, 1.0},
-                                                              {0.0, 0.0, 0.0, 1.0, 1.0, 1.0},
-                                                              {0.0, 0.0, 0.0, 0.0, 0.5, 1.0, 1.0, 1.0, 1.0},
-                                                              {0.0, 0.0, 0.0, 0.0, 0.0, 0.5, 1.0, 1.0, 1.0, 1.0, 1.0}}} );
+  iganet::NonUniformBSpline<real_t, 4, 1, 2, 3, 4> bspline( {{{0.0_r, 0.0_r, 0.5_r, 1.0_r, 1.0_r},
+                                                              {0.0_r, 0.0_r, 0.0_r, 1.0_r, 1.0_r, 1.0_r},
+                                                              {0.0_r, 0.0_r, 0.0_r, 0.0_r, 0.5_r, 1.0_r, 1.0_r, 1.0_r, 1.0_r},
+                                                              {0.0_r, 0.0_r, 0.0_r, 0.0_r, 0.0_r, 0.5_r, 1.0_r, 1.0_r, 1.0_r, 1.0_r, 1.0_r}}} );
   EXPECT_EQ(bspline.parDim(),       4);
   EXPECT_EQ(bspline.geoDim(),       4);
   EXPECT_EQ(bspline.degree(0),      1);
@@ -307,76 +310,76 @@ TEST_F(BSplineTest, NonUniformBSpline_parDim4_geoDim4_degrees1234)
 TEST_F(BSplineTest, NonUniformBSpline_init)
 {
   {
-    iganet::NonUniformBSpline<real_t, 1, 1> bspline({{{0.0, 0.0, 0.25, 0.5, 0.75, 1.0, 1.0}}},
+    iganet::NonUniformBSpline<real_t, 1, 1> bspline({{{0.0_r, 0.0_r, 0.25_r, 0.5_r, 0.75_r, 1.0_r, 1.0_r}}},
                                                     iganet::init::zeros, options);
     EXPECT_TRUE(torch::equal(bspline.coeffs(0), torch::zeros(5, options)));
   }
 
   {
-    iganet::NonUniformBSpline<real_t, 1, 1> bspline({{{0.0, 0.0, 0.25, 0.5, 0.75, 1.0, 1.0}}},
+    iganet::NonUniformBSpline<real_t, 1, 1> bspline({{{0.0_r, 0.0_r, 0.25_r, 0.5_r, 0.75_r, 1.0_r, 1.0_r}}},
                                                     iganet::init::ones, options);
     EXPECT_TRUE(torch::equal(bspline.coeffs(0), torch::ones(5, options)));
   }
     
   {
-    iganet::NonUniformBSpline<real_t, 1, 1> bspline({{{0.0, 0.0, 0.25, 0.5, 0.75, 1.0, 1.0}}},
+    iganet::NonUniformBSpline<real_t, 1, 1> bspline({{{0.0_r, 0.0_r, 0.25_r, 0.5_r, 0.75_r, 1.0_r, 1.0_r}}},
                                                     iganet::init::linear, options);
     EXPECT_TRUE(torch::equal(bspline.coeffs(0), torch::linspace(0, 1, 5, options)));
   }
 
   {
-    iganet::NonUniformBSpline<real_t, 1, 1> bspline({{{0.0, 0.0, 0.25, 0.5, 0.75, 1.0, 1.0}}},
+    iganet::NonUniformBSpline<real_t, 1, 1> bspline({{{0.0_r, 0.0_r, 0.25_r, 0.5_r, 0.75_r, 1.0_r, 1.0_r}}},
                                                     iganet::init::greville, options);
     EXPECT_TRUE(torch::equal(bspline.coeffs(0), torch::linspace(0, 1, 5, options)));
   }
 
   {
-    iganet::NonUniformBSpline<real_t, 2, 1> bspline({{{0.0, 0.0, 0.25, 0.5, 0.75, 1.0, 1.0}}},
+    iganet::NonUniformBSpline<real_t, 2, 1> bspline({{{0.0_r, 0.0_r, 0.25_r, 0.5_r, 0.75_r, 1.0_r, 1.0_r}}},
                                                     iganet::init::zeros, options);
     EXPECT_TRUE(torch::equal(bspline.coeffs(0), torch::zeros(5, options)));
     EXPECT_TRUE(torch::equal(bspline.coeffs(1), torch::zeros(5, options)));
   }
 
   {
-    iganet::NonUniformBSpline<real_t, 2, 1> bspline({{{0.0, 0.0, 0.25, 0.5, 0.75, 1.0, 1.0}}},
+    iganet::NonUniformBSpline<real_t, 2, 1> bspline({{{0.0_r, 0.0_r, 0.25_r, 0.5_r, 0.75_r, 1.0_r, 1.0_r}}},
                                                     iganet::init::ones, options);
     EXPECT_TRUE(torch::equal(bspline.coeffs(0), torch::ones(5, options)));
     EXPECT_TRUE(torch::equal(bspline.coeffs(1), torch::ones(5, options)));
   }
 
   {
-    iganet::NonUniformBSpline<real_t, 2, 1> bspline({{{0.0, 0.0, 0.25, 0.5, 0.75, 1.0, 1.0}}},
+    iganet::NonUniformBSpline<real_t, 2, 1> bspline({{{0.0_r, 0.0_r, 0.25_r, 0.5_r, 0.75_r, 1.0_r, 1.0_r}}},
                                                     iganet::init::linear, options);
     EXPECT_TRUE(torch::equal(bspline.coeffs(0), torch::linspace(0, 1, 5, options)));
     EXPECT_TRUE(torch::equal(bspline.coeffs(1), torch::ones(5, options)));
   }
 
   {
-    iganet::NonUniformBSpline<real_t, 2, 1> bspline({{{0.0, 0.0, 0.25, 0.5, 0.75, 1.0, 1.0}}},
+    iganet::NonUniformBSpline<real_t, 2, 1> bspline({{{0.0_r, 0.0_r, 0.25_r, 0.5_r, 0.75_r, 1.0_r, 1.0_r}}},
                                                     iganet::init::greville, options);
     EXPECT_TRUE(torch::equal(bspline.coeffs(0), torch::linspace(0, 1, 5, options)));
     EXPECT_TRUE(torch::equal(bspline.coeffs(1), torch::ones(5, options)));
   }
   
   {
-    iganet::NonUniformBSpline<real_t, 2, 2, 2> bspline({{{0.0, 0.0, 0.0, 0.2, 0.4, 0.6, 0.8, 1.0, 1.0, 1.0},
-                                                         {0.0, 0.0, 0.0, 0.5, 1.0, 1.0, 1.0}}},
+    iganet::NonUniformBSpline<real_t, 2, 2, 2> bspline({{{0.0_r, 0.0_r, 0.0_r, 0.2_r, 0.4_r, 0.6_r, 0.8_r, 1.0_r, 1.0_r, 1.0_r},
+                                                         {0.0_r, 0.0_r, 0.0_r, 0.5_r, 1.0_r, 1.0_r, 1.0_r}}},
       iganet::init::zeros, options);
     EXPECT_TRUE(torch::equal(bspline.coeffs(0), torch::zeros(28, options)));
     EXPECT_TRUE(torch::equal(bspline.coeffs(1), torch::zeros(28, options)));
   }
 
   {
-    iganet::NonUniformBSpline<real_t, 2, 2, 2> bspline({{{0.0, 0.0, 0.0, 0.2, 0.4, 0.6, 0.8, 1.0, 1.0, 1.0},
-                                                         {0.0, 0.0, 0.0, 0.5, 1.0, 1.0, 1.0}}},
+    iganet::NonUniformBSpline<real_t, 2, 2, 2> bspline({{{0.0_r, 0.0_r, 0.0_r, 0.2_r, 0.4_r, 0.6_r, 0.8_r, 1.0_r, 1.0_r, 1.0_r},
+                                                         {0.0_r, 0.0_r, 0.0_r, 0.5_r, 1.0_r, 1.0_r, 1.0_r}}},
       iganet::init::ones, options);
     EXPECT_TRUE(torch::equal(bspline.coeffs(0), torch::ones(28, options)));
     EXPECT_TRUE(torch::equal(bspline.coeffs(1), torch::ones(28, options)));
   }
 
   {
-    iganet::NonUniformBSpline<real_t, 2, 2, 2> bspline({{{0.0, 0.0, 0.0, 0.2, 0.4, 0.6, 0.8, 1.0, 1.0, 1.0},
-                                                         {0.0, 0.0, 0.0, 0.5, 1.0, 1.0, 1.0}}},
+    iganet::NonUniformBSpline<real_t, 2, 2, 2> bspline({{{0.0_r, 0.0_r, 0.0_r, 0.2_r, 0.4_r, 0.6_r, 0.8_r, 1.0_r, 1.0_r, 1.0_r},
+                                                         {0.0_r, 0.0_r, 0.0_r, 0.5_r, 1.0_r, 1.0_r, 1.0_r}}},
       iganet::init::linear, options);
     EXPECT_TRUE(torch::equal(bspline.coeffs(0),
                                 torch::linspace(0, 1, 7, options).repeat(4)));
@@ -385,8 +388,8 @@ TEST_F(BSplineTest, NonUniformBSpline_init)
   }
   
   {
-    iganet::NonUniformBSpline<real_t, 2, 1, 1> bspline({{{0.0, 0.0, 0.25, 0.5, 0.75, 1.0, 1.0},
-                                                         {0.0, 0.0, 0.2, 0.4, 0.6, 0.8, 1.0, 1.0}}},
+    iganet::NonUniformBSpline<real_t, 2, 1, 1> bspline({{{0.0_r, 0.0_r, 0.25_r, 0.5_r, 0.75_r, 1.0_r, 1.0_r},
+                                                         {0.0_r, 0.0_r, 0.2_r, 0.4_r, 0.6_r, 0.8_r, 1.0_r, 1.0_r}}},
       iganet::init::greville, options);
     EXPECT_TRUE(torch::equal(bspline.coeffs(0),
                                 torch::linspace(0, 1, 5, options).repeat(6)));
@@ -395,8 +398,8 @@ TEST_F(BSplineTest, NonUniformBSpline_init)
   }
   
   {
-    iganet::NonUniformBSpline<real_t, 3, 2, 2> bspline({{{0.0, 0.0, 0.0, 0.2, 0.4, 0.6, 0.8, 1.0, 1.0, 1.0},
-                                                         {0.0, 0.0, 0.0, 0.5, 1.0, 1.0, 1.0}}},
+    iganet::NonUniformBSpline<real_t, 3, 2, 2> bspline({{{0.0_r, 0.0_r, 0.0_r, 0.2_r, 0.4_r, 0.6_r, 0.8_r, 1.0_r, 1.0_r, 1.0_r},
+                                                         {0.0_r, 0.0_r, 0.0_r, 0.5_r, 1.0_r, 1.0_r, 1.0_r}}},
       iganet::init::zeros, options);
     EXPECT_TRUE(torch::equal(bspline.coeffs(0), torch::zeros(28, options)));
     EXPECT_TRUE(torch::equal(bspline.coeffs(1), torch::zeros(28, options)));
@@ -404,8 +407,8 @@ TEST_F(BSplineTest, NonUniformBSpline_init)
   }
 
   {
-    iganet::NonUniformBSpline<real_t, 3, 2, 2> bspline({{{0.0, 0.0, 0.0, 0.2, 0.4, 0.6, 0.8, 1.0, 1.0, 1.0},
-                                                         {0.0, 0.0, 0.0, 0.5, 1.0, 1.0, 1.0}}},
+    iganet::NonUniformBSpline<real_t, 3, 2, 2> bspline({{{0.0_r, 0.0_r, 0.0_r, 0.2_r, 0.4_r, 0.6_r, 0.8_r, 1.0_r, 1.0_r, 1.0_r},
+                                                         {0.0_r, 0.0_r, 0.0_r, 0.5_r, 1.0_r, 1.0_r, 1.0_r}}},
       iganet::init::ones, options);
     EXPECT_TRUE(torch::equal(bspline.coeffs(0), torch::ones(28, options)));
     EXPECT_TRUE(torch::equal(bspline.coeffs(1), torch::ones(28, options)));
@@ -413,8 +416,8 @@ TEST_F(BSplineTest, NonUniformBSpline_init)
   }
 
   {
-    iganet::NonUniformBSpline<real_t, 3, 2, 2> bspline({{{0.0, 0.0, 0.0, 0.2, 0.4, 0.6, 0.8, 1.0, 1.0, 1.0},
-                                                         {0.0, 0.0, 0.0, 0.5, 1.0, 1.0, 1.0}}},
+    iganet::NonUniformBSpline<real_t, 3, 2, 2> bspline({{{0.0_r, 0.0_r, 0.0_r, 0.2_r, 0.4_r, 0.6_r, 0.8_r, 1.0_r, 1.0_r, 1.0_r},
+                                                         {0.0_r, 0.0_r, 0.0_r, 0.5_r, 1.0_r, 1.0_r, 1.0_r}}},
       iganet::init::linear, options);
     EXPECT_TRUE(torch::equal(bspline.coeffs(0),
                                 torch::linspace(0, 1, 7, options).repeat(4)));
@@ -424,8 +427,8 @@ TEST_F(BSplineTest, NonUniformBSpline_init)
   }
   
   {
-    iganet::NonUniformBSpline<real_t, 3, 1, 1> bspline({{{0.0, 0.0, 0.25, 0.5, 0.75, 1.0, 1.0},
-                                                         {0.0, 0.0, 0.2, 0.4, 0.6, 0.8, 1.0, 1.0}}},
+    iganet::NonUniformBSpline<real_t, 3, 1, 1> bspline({{{0.0_r, 0.0_r, 0.25_r, 0.5_r, 0.75_r, 1.0_r, 1.0_r},
+                                                         {0.0_r, 0.0_r, 0.2_r, 0.4_r, 0.6_r, 0.8_r, 1.0_r, 1.0_r}}},
       iganet::init::greville, options);
     EXPECT_TRUE(torch::equal(bspline.coeffs(0),
                                 torch::linspace(0, 1, 5, options).repeat(6)));
@@ -435,8 +438,8 @@ TEST_F(BSplineTest, NonUniformBSpline_init)
   }
 
   {
-    iganet::NonUniformBSpline<real_t, 4, 2, 2> bspline({{{0.0, 0.0, 0.0, 0.2, 0.4, 0.6, 0.8, 1.0, 1.0, 1.0},
-                                                         {0.0, 0.0, 0.0, 0.5, 1.0, 1.0, 1.0}}},
+    iganet::NonUniformBSpline<real_t, 4, 2, 2> bspline({{{0.0_r, 0.0_r, 0.0_r, 0.2_r, 0.4_r, 0.6_r, 0.8_r, 1.0_r, 1.0_r, 1.0_r},
+                                                         {0.0_r, 0.0_r, 0.0_r, 0.5_r, 1.0_r, 1.0_r, 1.0_r}}},
       iganet::init::zeros, options);
     EXPECT_TRUE(torch::equal(bspline.coeffs(0), torch::zeros(28, options)));
     EXPECT_TRUE(torch::equal(bspline.coeffs(1), torch::zeros(28, options)));
@@ -445,8 +448,8 @@ TEST_F(BSplineTest, NonUniformBSpline_init)
   }
 
   {
-    iganet::NonUniformBSpline<real_t, 4, 2, 2> bspline({{{0.0, 0.0, 0.0, 0.2, 0.4, 0.6, 0.8, 1.0, 1.0, 1.0},
-                                                         {0.0, 0.0, 0.0, 0.5, 1.0, 1.0, 1.0}}},
+    iganet::NonUniformBSpline<real_t, 4, 2, 2> bspline({{{0.0_r, 0.0_r, 0.0_r, 0.2_r, 0.4_r, 0.6_r, 0.8_r, 1.0_r, 1.0_r, 1.0_r},
+                                                         {0.0_r, 0.0_r, 0.0_r, 0.5_r, 1.0_r, 1.0_r, 1.0_r}}},
       iganet::init::ones, options);
     EXPECT_TRUE(torch::equal(bspline.coeffs(0), torch::ones(28, options)));
     EXPECT_TRUE(torch::equal(bspline.coeffs(1), torch::ones(28, options)));
@@ -455,8 +458,8 @@ TEST_F(BSplineTest, NonUniformBSpline_init)
   }
 
   {
-    iganet::NonUniformBSpline<real_t, 4, 2, 2> bspline({{{0.0, 0.0, 0.0, 0.2, 0.4, 0.6, 0.8, 1.0, 1.0, 1.0},
-                                                         {0.0, 0.0, 0.0, 0.5, 1.0, 1.0, 1.0}}},
+    iganet::NonUniformBSpline<real_t, 4, 2, 2> bspline({{{0.0_r, 0.0_r, 0.0_r, 0.2_r, 0.4_r, 0.6_r, 0.8_r, 1.0_r, 1.0_r, 1.0_r},
+                                                         {0.0_r, 0.0_r, 0.0_r, 0.5_r, 1.0_r, 1.0_r, 1.0_r}}},
       iganet::init::linear, options);
     EXPECT_TRUE(torch::equal(bspline.coeffs(0),
                                 torch::linspace(0, 1, 7, options).repeat(4)));
@@ -467,8 +470,8 @@ TEST_F(BSplineTest, NonUniformBSpline_init)
   }
   
   {
-    iganet::NonUniformBSpline<real_t, 4, 1, 1> bspline({{{0.0, 0.0, 0.25, 0.5, 0.75, 1.0, 1.0},
-                                                         {0.0, 0.0, 0.2, 0.4, 0.6, 0.8, 1.0, 1.0}}},
+    iganet::NonUniformBSpline<real_t, 4, 1, 1> bspline({{{0.0_r, 0.0_r, 0.25_r, 0.5_r, 0.75_r, 1.0_r, 1.0_r},
+                                                         {0.0_r, 0.0_r, 0.2_r, 0.4_r, 0.6_r, 0.8_r, 1.0_r, 1.0_r}}},
       iganet::init::greville, options);
     EXPECT_TRUE(torch::equal(bspline.coeffs(0),
                                 torch::linspace(0, 1, 5, options).repeat(6)));
@@ -520,7 +523,7 @@ TEST_F(BSplineTest, NonUniformBSpline_copy_constructor)
   iganet::NonUniformBSpline<real_t, 3, 3, 4> bspline_copy (bspline_orig);
   
   bspline_orig.transform( [](const std::array<real_t,2> xi)
-  { return std::array<real_t,3>{0.0, 1.0, 2.0};} );
+  { return std::array<real_t,3>{0.0_r, 1.0_r, 2.0_r};} );
   
   EXPECT_EQ( (bspline_orig == bspline_copy), true);
 }
@@ -532,7 +535,7 @@ TEST_F(BSplineTest, NonUniformBSpline_clone_constructor)
   iganet::NonUniformBSpline<real_t, 3, 3, 4> bspline_clone(bspline_orig, true);
   
   bspline_orig.transform( [](const std::array<real_t,2> xi)
-  { return std::array<real_t,3>{0.0, 1.0, 2.0};} );
+  { return std::array<real_t,3>{0.0_r, 1.0_r, 2.0_r};} );
   
   EXPECT_EQ( (bspline_ref == bspline_clone), true);    
 }
@@ -551,7 +554,7 @@ TEST_F(BSplineTest, NonUniformBSpline_copy_assignment)
   auto bspline = bspline_orig;
 
   bspline_orig.transform( [](const std::array<real_t,2> xi)
-  { return std::array<real_t,3>{0.0, 1.0, 2.0};} );
+  { return std::array<real_t,3>{0.0_r, 1.0_r, 2.0_r};} );
 
   EXPECT_EQ( bspline.isclose(bspline_orig), true);
 }
@@ -570,7 +573,7 @@ TEST_F(BSplineTest, NonUniformBSpline_copy_coeffs_constructor)
   iganet::NonUniformBSpline<real_t, 3, 3, 4> bspline_copy(bspline_orig, bspline_orig.coeffs());
   
   bspline_orig.transform( [](const std::array<real_t,2> xi)
-  { return std::array<real_t,3>{0.0, 1.0, 2.0};} );
+  { return std::array<real_t,3>{0.0_r, 1.0_r, 2.0_r};} );
   
   EXPECT_EQ( (bspline_orig == bspline_copy), true);
 }
@@ -582,7 +585,7 @@ TEST_F(BSplineTest, NonUniformBSpline_clone_coeffs_constructor)
   iganet::NonUniformBSpline<real_t, 3, 3, 4> bspline_clone(bspline_orig, bspline_orig.coeffs(), true);
   
   bspline_orig.transform( [](const std::array<real_t,2> xi)
-  { return std::array<real_t,3>{0.0, 1.0, 2.0};} );
+  { return std::array<real_t,3>{0.0_r, 1.0_r, 2.0_r};} );
   
   EXPECT_EQ( (bspline_ref == bspline_clone), true);    
 }
@@ -590,9 +593,9 @@ TEST_F(BSplineTest, NonUniformBSpline_clone_coeffs_constructor)
 TEST_F(BSplineTest, NonUniformBSpline_read_write)
 {
   std::filesystem::path filename = std::filesystem::temp_directory_path() / std::to_string(rand());
-  iganet::NonUniformBSpline<real_t, 3, 1, 2, 3> bspline_out( {{{0.0, 0.0, 0.5, 1.0, 1.0},
-                                                               {0.0, 0.0, 0.0, 1.0, 1.0, 1.0},
-                                                               {0.0, 0.0, 0.0, 0.0, 0.5, 1.0, 1.0, 1.0, 1.0}}},
+  iganet::NonUniformBSpline<real_t, 3, 1, 2, 3> bspline_out( {{{0.0_r, 0.0_r, 0.5_r, 1.0_r, 1.0_r},
+                                                               {0.0_r, 0.0_r, 0.0_r, 1.0_r, 1.0_r, 1.0_r},
+                                                               {0.0_r, 0.0_r, 0.0_r, 0.0_r, 0.5_r, 1.0_r, 1.0_r, 1.0_r, 1.0_r}}},
                                                             iganet::init::greville, options);
   bspline_out.save(filename.c_str());
   iganet::NonUniformBSpline<real_t, 3, 1, 2, 3> bspline_in(options);
@@ -1118,7 +1121,7 @@ TEST_F(BSplineTest, NonUniformBSpline_load_from_xml)
     iganet::NonUniformBSpline<real_t, 3, 2> bspline_ref({3}, iganet::init::zeros, options);
     
     bspline_ref.transform( [](const std::array<real_t,1> xi)
-    { return std::array<real_t,3>{xi[0], 0.0, 0.0}; } );
+    { return std::array<real_t,3>{xi[0], 0.0_r, 0.0_r}; } );
     
     EXPECT_EQ( (bspline_in == bspline_ref), true);
   }
@@ -1630,18 +1633,18 @@ TEST_F(BSplineTest, NonUniformBSpline_requires_grad)
     for (iganet::short_t i=0; i<bspline.geoDim(); ++i)
       EXPECT_EQ(bspline.coeffs(i).requires_grad(), false);
     
-    auto xi = iganet::utils::to_tensorArray<real_t>({0.0}, {0.0}, options);
+    auto xi = iganet::utils::to_tensorArray<real_t>({0.0_r}, {0.0_r}, options);
     auto values = bspline.eval(xi);
 
     // We expect an error when calling backward() because no tensor
     // has requires_grad = true
     EXPECT_THROW(values[0]->backward(), c10::Error);
     
-    xi = iganet::utils::to_tensorArray<real_t>({1.0}, {2.0}, options.requires_grad(true));   
+    xi = iganet::utils::to_tensorArray<real_t>({1.0_r}, {2.0_r}, options.requires_grad(true));   
     values = bspline.eval(xi);
     values.data()[0]->backward();
     EXPECT_TRUE(torch::allclose(xi[0].grad(),
-                                iganet::utils::to_tensor<real_t>({1.0}, options)));
+                                iganet::utils::to_tensor<real_t>({1.0_r}, options)));
   }
   
   {
@@ -1655,18 +1658,18 @@ TEST_F(BSplineTest, NonUniformBSpline_requires_grad)
     for (iganet::short_t i=0; i<bspline.geoDim(); ++i)
       EXPECT_EQ(bspline.coeffs(i).requires_grad(), true);
     
-    auto xi = iganet::utils::to_tensorArray<real_t>({0.0}, {0.0}, options);
+    auto xi = iganet::utils::to_tensorArray<real_t>({0.0_r}, {0.0_r}, options);
     auto values = bspline.eval(xi);
     values[0]->backward({}, true); // otherwise we cannot run backward() a second time
 
     // We expect an error because xi[0].grad() is an undefined tensor
     EXPECT_THROW(torch::allclose(xi[0].grad(), torch::empty({})), c10::Error);
     
-    xi = iganet::utils::to_tensorArray<real_t>({1.0}, {2.0}, options.requires_grad(true));   
+    xi = iganet::utils::to_tensorArray<real_t>({1.0_r}, {2.0_r}, options.requires_grad(true));   
     values = bspline.eval(xi);
     values.data()[0]->backward();
     EXPECT_TRUE(torch::allclose(xi[0].grad(),
-                                iganet::utils::to_tensor<real_t>({1.0}, options)));
+                                iganet::utils::to_tensor<real_t>({1.0_r}, options)));
 
     EXPECT_TRUE(torch::allclose(bspline.coeffs(0).grad(),
                                 iganet::utils::to_tensor<real_t>({1, 0, 0, 1, 0, 0, 0, -8, 0, 0, 0, 24, 0, 0, 0, -32, 0, 0, 0, 16}, options)));
@@ -1677,8 +1680,8 @@ TEST_F(BSplineTest, NonUniformBSpline_reduce_continuity)
 {
   {
     iganet::NonUniformBSpline<real_t, 3, 3, 4> bspline({5,6});
-    iganet::NonUniformBSpline<real_t, 3, 3, 4> bspline_ref(iganet::utils::to_array(iganet::utils::to_vector(0.0, 0.0, 0.0, 0.0, 0.5, 0.5, 1.0, 1.0, 1.0, 1.0),
-                                                                                   iganet::utils::to_vector(0.0, 0.0, 0.0, 0.0, 0.0, 0.5, 0.5, 1.0, 1.0, 1.0, 1.0, 1.0)));
+    iganet::NonUniformBSpline<real_t, 3, 3, 4> bspline_ref(iganet::utils::to_array(iganet::utils::to_vector(0.0_r, 0.0_r, 0.0_r, 0.0_r, 0.5_r, 0.5_r, 1.0_r, 1.0_r, 1.0_r, 1.0_r),
+                                                                                   iganet::utils::to_vector(0.0_r, 0.0_r, 0.0_r, 0.0_r, 0.0_r, 0.5_r, 0.5_r, 1.0_r, 1.0_r, 1.0_r, 1.0_r, 1.0_r)));
     bspline.reduce_continuity();
     
     EXPECT_EQ( bspline.isclose(bspline_ref), true);
@@ -1686,8 +1689,8 @@ TEST_F(BSplineTest, NonUniformBSpline_reduce_continuity)
 
   {
     iganet::NonUniformBSpline<real_t, 3, 3, 4> bspline({5,6});
-    iganet::NonUniformBSpline<real_t, 3, 3, 4> bspline_ref(iganet::utils::to_array(iganet::utils::to_vector(0.0, 0.0, 0.0, 0.0, 0.5, 0.5, 0.5, 1.0, 1.0, 1.0, 1.0),
-                                                                                   iganet::utils::to_vector(0.0, 0.0, 0.0, 0.0, 0.0, 0.5, 0.5, 0.5, 1.0, 1.0, 1.0, 1.0, 1.0)));
+    iganet::NonUniformBSpline<real_t, 3, 3, 4> bspline_ref(iganet::utils::to_array(iganet::utils::to_vector(0.0_r, 0.0_r, 0.0_r, 0.0_r, 0.5_r, 0.5_r, 0.5_r, 1.0_r, 1.0_r, 1.0_r, 1.0_r),
+                                                                                   iganet::utils::to_vector(0.0_r, 0.0_r, 0.0_r, 0.0_r, 0.0_r, 0.5_r, 0.5_r, 0.5_r, 1.0_r, 1.0_r, 1.0_r, 1.0_r, 1.0_r)));
     bspline.reduce_continuity(2);
     
     EXPECT_EQ( bspline.isclose(bspline_ref), true);
@@ -1695,8 +1698,8 @@ TEST_F(BSplineTest, NonUniformBSpline_reduce_continuity)
 
   {
     iganet::NonUniformBSpline<real_t, 3, 3, 4> bspline({5,6});
-    iganet::NonUniformBSpline<real_t, 3, 3, 4> bspline_ref(iganet::utils::to_array(iganet::utils::to_vector(0.0, 0.0, 0.0, 0.0, 0.5, 0.5, 1.0, 1.0, 1.0, 1.0),
-                                                                                   iganet::utils::to_vector(0.0, 0.0, 0.0, 0.0, 0.0, 0.5, 0.5, 0.5, 1.0, 1.0, 1.0, 1.0, 1.0)));
+    iganet::NonUniformBSpline<real_t, 3, 3, 4> bspline_ref(iganet::utils::to_array(iganet::utils::to_vector(0.0_r, 0.0_r, 0.0_r, 0.0_r, 0.5_r, 0.5_r, 1.0_r, 1.0_r, 1.0_r, 1.0_r),
+                                                                                   iganet::utils::to_vector(0.0_r, 0.0_r, 0.0_r, 0.0_r, 0.0_r, 0.5_r, 0.5_r, 0.5_r, 1.0_r, 1.0_r, 1.0_r, 1.0_r, 1.0_r)));
     bspline.reduce_continuity(1, 0).reduce_continuity(2, 1);
     
     EXPECT_EQ( bspline.isclose(bspline_ref), true);
@@ -1707,9 +1710,9 @@ TEST_F(BSplineTest, NonUniformBSpline_insert_knots)
 {
   {
     iganet::NonUniformBSpline<real_t, 3, 3, 4> bspline({5,6});
-    iganet::NonUniformBSpline<real_t, 3, 3, 4> bspline_ref(iganet::utils::to_array(iganet::utils::to_vector(0.0, 0.0, 0.0, 0.0, 0.1, 0.3, 0.5, 1.0, 1.0, 1.0, 1.0),
-                                                                                   iganet::utils::to_vector(0.0, 0.0, 0.0, 0.0, 0.0, 0.2, 0.4, 0.5, 1.0, 1.0, 1.0, 1.0, 1.0)));
-    bspline.insert_knots(iganet::utils::to_tensorArray({0.1, 0.3}, {0.2, 0.4}));
+    iganet::NonUniformBSpline<real_t, 3, 3, 4> bspline_ref(iganet::utils::to_array(iganet::utils::to_vector(0.0_r, 0.0_r, 0.0_r, 0.0_r, 0.1_r, 0.3_r, 0.5_r, 1.0_r, 1.0_r, 1.0_r, 1.0_r),
+                                                                                   iganet::utils::to_vector(0.0_r, 0.0_r, 0.0_r, 0.0_r, 0.0_r, 0.2_r, 0.4_r, 0.5_r, 1.0_r, 1.0_r, 1.0_r, 1.0_r, 1.0_r)));
+    bspline.insert_knots(iganet::utils::to_tensorArray({0.1_r, 0.3_r}, {0.2_r, 0.4_r}));
     
     EXPECT_EQ( bspline.isclose(bspline_ref), true);
   }

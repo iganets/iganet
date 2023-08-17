@@ -1,0 +1,32 @@
+/**
+   @file unittests/unittest_config.hpp
+
+   @brief Unit tests compile-time configuration
+
+   @author Matthias Moller
+
+   @copyright This file is part of the IgANet project
+
+   This Source Code Form is subject to the terms of the Mozilla Public
+   License, v. 2.0. If a copy of the MPL was not distributed with this
+   file, You can obtain one at http://mozilla.org/MPL/2.0/.
+*/
+
+#pragma once
+
+#ifndef IGANET_UNITTESTS_COEFF_TYPE
+#define IGANET_UNITTESTS_COEFF_TYPE @IGANET_UNITTESTS_COEFF_TYPE@
+#endif
+
+namespace iganet {
+  namespace unittests {
+    
+    /// @brief Default coefficient type. */
+    using real_t = IGANET_UNITTESTS_COEFF_TYPE;
+
+    namespace literals {
+      inline real_t operator""_r(long double value) { return value; };
+    } // namespace literals
+    
+  } // namespace unittests
+} // namespace iganet

@@ -15,6 +15,7 @@
 #include <iganet.h>
 #include <iostream>
 
+#include <unittest_config.hpp>
 #include <gtest/gtest.h>
 
 template<typename optimizer_t,
@@ -42,10 +43,10 @@ public:
   }  
 };
 
-TEST(BSpline, IgANet_UniformBSpline_1d_double)
+TEST(BSpline, IgANet_UniformBSpline_1d)
 {
   using namespace iganet::literals;
-  using real_t      = double;
+  using real_t      = iganet::unittests::real_t;
   using optimizer_t = torch::optim::Adam;
   
   using geometry_t  = iganet::S1<iganet::UniformBSpline<real_t, 1, 5>>;
@@ -86,10 +87,10 @@ TEST(BSpline, IgANet_UniformBSpline_1d_double)
   EXPECT_EQ(net.outputs().ncoeffs(0), 6);
 }
 
-TEST(BSpline, IgANet_UniformBSpline_2d_double)
+TEST(BSpline, IgANet_UniformBSpline_2d)
 {
   using namespace iganet::literals;
-  using real_t      = double;
+  using real_t      = iganet::unittests::real_t;
   using optimizer_t = torch::optim::Adam;
   
   using geometry_t  = iganet::S2<iganet::UniformBSpline<real_t, 2, 3, 5>>;
@@ -153,10 +154,10 @@ TEST(BSpline, IgANet_UniformBSpline_2d_double)
   EXPECT_EQ(net.variable().boundary().side<iganet::side::north>().ncoeffs(0), 4);
 }
 
-TEST(BSpline, IgANet_UniformBSpline_3d_double)
+TEST(BSpline, IgANet_UniformBSpline_3d)
 {
   using namespace iganet::literals;
-  using real_t      = double;
+  using real_t      = iganet::unittests::real_t;
   using optimizer_t = torch::optim::Adam;
   
   using geometry_t  = iganet::S3<iganet::UniformBSpline<real_t, 3, 3, 5, 1>>;
@@ -251,10 +252,10 @@ TEST(BSpline, IgANet_UniformBSpline_3d_double)
   EXPECT_EQ(net.variable().boundary().side<iganet::side::back>().ncoeffs(1),  6);
 }
 
-TEST(BSpline, IgANet_UniformBSpline_4d_double)
+TEST(BSpline, IgANet_UniformBSpline_4d)
 {
   using namespace iganet::literals;
-  using real_t      = double;
+  using real_t      = iganet::unittests::real_t;
   using optimizer_t = torch::optim::Adam;
     
   using geometry_t  = iganet::S4<iganet::UniformBSpline<real_t, 4, 3, 5, 1, 4>>;
@@ -388,10 +389,10 @@ TEST(BSpline, IgANet_UniformBSpline_4d_double)
   EXPECT_EQ(net.variable().boundary().side<iganet::side::etime>().ncoeffs(2), 3);
 }
 
-TEST(BSpline, IgANet_NonUniformBSpline_1d_double)
+TEST(BSpline, IgANet_NonUniformBSpline_1d)
 {
   using namespace iganet::literals;
-  using real_t      = double;
+  using real_t      = iganet::unittests::real_t;
   using optimizer_t = torch::optim::Adam;
   
  
@@ -433,10 +434,10 @@ TEST(BSpline, IgANet_NonUniformBSpline_1d_double)
   EXPECT_EQ(net.outputs().ncoeffs(0), 6);
 }
 
-TEST(BSpline, IgANet_NonUniformBSpline_2d_double)
+TEST(BSpline, IgANet_NonUniformBSpline_2d)
 {
   using namespace iganet::literals;
-  using real_t      = double;
+  using real_t      = iganet::unittests::real_t;
   using optimizer_t = torch::optim::Adam; 
   
   using geometry_t  = iganet::S2<iganet::NonUniformBSpline<real_t, 2, 3, 5>>;
@@ -500,10 +501,10 @@ TEST(BSpline, IgANet_NonUniformBSpline_2d_double)
   EXPECT_EQ(net.variable().boundary().side<iganet::side::north>().ncoeffs(0), 4);
 }
 
-TEST(BSpline, IgANet_NonUniformBSpline_3d_double)
+TEST(BSpline, IgANet_NonUniformBSpline_3d)
 {
   using namespace iganet::literals;
-  using real_t      = double;
+  using real_t      = iganet::unittests::real_t;
   using optimizer_t = torch::optim::Adam;
     
   using geometry_t  = iganet::S3<iganet::NonUniformBSpline<real_t, 3, 3, 5, 1>>;
@@ -598,10 +599,10 @@ TEST(BSpline, IgANet_NonUniformBSpline_3d_double)
   EXPECT_EQ(net.variable().boundary().side<iganet::side::back>().ncoeffs(1),  6);
 }
 
-TEST(BSpline, IgANet_NonUniformBSpline_4d_double)
+TEST(BSpline, IgANet_NonUniformBSpline_4d)
 {
   using namespace iganet::literals;
-  using real_t      = double;
+  using real_t      = iganet::unittests::real_t;
   using optimizer_t = torch::optim::Adam;
     
   using geometry_t  = iganet::S4<iganet::NonUniformBSpline<real_t, 4, 3, 5, 1, 4>>;

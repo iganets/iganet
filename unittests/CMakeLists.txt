@@ -12,15 +12,33 @@
 #
 ########################################################################
 
-########################################################################
-# Force CMake version 3.24 or above
-########################################################################
-cmake_minimum_required (VERSION 3.24)
+# Set a default coefficient numeric types if not specified
+if(NOT IGANET_UNITTESTS_COEFF_TYPE)
+  set (IGANET_UNITTESTS_COEFF_TYPE "double" CACHE STRING
+    "Coefficient type(float, double)" FORCE)
+endif()
+set_property(CACHE IGANET_UNITTESTS_COEFF_TYPE PROPERTY STRINGS
+  "float" "double")
 
+########################################################################
+# Config file
+########################################################################
+configure_file(${CMAKE_CURRENT_SOURCE_DIR}/unittest_config.hpp.in
+  "${CMAKE_CURRENT_BINARY_DIR}/unittest_config.hpp" @ONLY)
+
+########################################################################
+# Include directories
+########################################################################
+include_directories(${CMAKE_CURRENT_SOURCE_DIR} ${CMAKE_CURRENT_BINARY_DIR})
+
+########################################################################
 # Define remote repositoies
+########################################################################
 include(FetchContent)
 
+########################################################################
 # GoogleTest
+########################################################################
 FetchContent_Declare(
   googletest  
   URL https://github.com/google/googletest/archive/refs/heads/main.zip
@@ -28,7 +46,9 @@ FetchContent_Declare(
 # For Windows: Prevent overriding the parent project's compiler/linker settings
 set(gtest_force_shared_crt ON CACHE BOOL "" FORCE)
 
+########################################################################
 # BSplineLib
+########################################################################
 FetchContent_Declare(
   bsplinelib
   URL https://github.com/tataratat/BSplineLib/archive/refs/heads/tataratat.zip
@@ -40,7 +60,9 @@ FetchContent_MakeAvailable(googletest bsplinelib)
 FetchContent_GetProperties(bsplinelib)
 include_directories(${bsplinelib_SOURCE_DIR}/Sources)
 
+########################################################################
 # Collect unittest sources
+########################################################################
 file(GLOB UNITTESTS *.cxx)
 
 foreach(unittest ${UNITTESTS})
@@ -75,4 +97,3 @@ foreach(unittest ${UNITTESTS})
   target_compile_definitions(${name} PUBLIC UNITTEST_DISABLE_SHORT_MACROS)
   add_test(${name} ${name})
 endforeach()
-

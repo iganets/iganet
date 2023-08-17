@@ -16,13 +16,14 @@
 #include <filesystem>
 #include <iostream>
 
+#include <unittest_config.hpp>
 #include <gtest/gtest.h>
 
 class FunctionSpaceTest
   : public ::testing::Test
 {
 protected:
-  using real_t = double;
+  using real_t = iganet::unittests::real_t;
   iganet::Options<real_t> options;
 };
 
