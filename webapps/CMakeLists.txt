@@ -36,14 +36,21 @@ include(uwebsockets)
 # Config file
 ########################################################################
 configure_file(${CMAKE_CURRENT_SOURCE_DIR}/config.hpp.in
-              "${CMAKE_CURRENT_BINARY_DIR}/config.hpp" @ONLY)
+  "${CMAKE_CURRENT_BINARY_DIR}/config.hpp" @ONLY)
+            
+########################################################################
+# Include directories
+########################################################################
+include_directories(${CMAKE_CURRENT_SOURCE_DIR} ${CMAKE_CURRENT_BINARY_DIR})
+
+########################################################################
+# Compression library
+########################################################################
+find_package(ZLIB REQUIRED)
 
 ########################################################################
 # WebApps
 ########################################################################
-find_package(ZLIB REQUIRED)
-include_directories(${CMAKE_CURRENT_SOURCE_DIR} ${CMAKE_CURRENT_BINARY_DIR})
-
 file(GLOB WEBAPPS *.cxx)
 foreach(webapp ${WEBAPPS})
   file(RELATIVE_PATH filename ${CMAKE_CURRENT_SOURCE_DIR} ${webapp})
