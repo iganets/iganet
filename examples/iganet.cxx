@@ -38,8 +38,8 @@ public:
 
   /// @brief Computes the loss function
   torch::Tensor loss(const torch::Tensor& outputs,
-                     const typename Base::geometry_samples_t& geometry_samples,
-                     const typename Base::variable_samples_t& variable_samples,
+                     const typename Base::geometry_samples_type& geometry_samples,
+                     const typename Base::variable_samples_type& variable_samples,
                      int64_t epoch, iganet::status status) override
   {
     return torch::zeros({1});

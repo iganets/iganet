@@ -48,8 +48,8 @@ public:
 
   /// @brief Computes the loss function
   torch::Tensor loss(const torch::Tensor& outputs,
-                     const typename Base::geometry_samples_t& geometry_samples,
-                     const typename Base::variable_samples_t& variable_samples,
+                     const typename Base::geometry_samples_type& geometry_samples,
+                     const typename Base::variable_samples_type& variable_samples,
                      int64_t epoch, iganet::status status) override
   {
     // Update indices and precompute basis functions for geometry
@@ -104,9 +104,9 @@ public:
 
     // Evaluate pde loss
     auto sol_ilaplace = Base::outputs_.ihess(Base::geometry_, variable_samples.first);
-    auto loss_pde     = torch::mse_loss(*sol_ilaplace[0] + *sol_ilaplace[3], *rhs[0]);
+    //auto loss_pde     = torch::mse_loss(*sol_ilaplace[0] + *sol_ilaplace[3], *rhs[0]);
 
-    return loss_pde + 0*(loss_bdr0 + loss_bdr1 + loss_bdr2 + loss_bdr3);
+    //return loss_pde + 0*(loss_bdr0 + loss_bdr1 + loss_bdr2 + loss_bdr3);
   }
 };
 
@@ -118,40 +118,21 @@ int main()
   using namespace iganet::literals;
   using optimizer_t = torch::optim::Adam;
   using real_t = double;
-
-  using bspline_t  = iganet::NonUniformBSpline<real_t, 1, 2, 2>;
-
-  iganet::Options<real_t> options;  
-  bspline_t sol(iganet::utils::to_array(7_i64, 7_i64), iganet::init::greville, options);
-  
-  bspline_t sol_copy1(sol);
-
-  auto a = sol.coeffs();
-
-  bspline_t sol_copy2(sol, a, false);
-  bspline_t sol_copy3(sol, a, true);
-
-  bspline_t sol_copy4(iganet::utils::to_array(7_i64, 7_i64), a, false, options);
-  bspline_t sol_copy5(iganet::utils::to_array(7_i64, 7_i64), a, true,  options);
-
-  iganet::Options<float> options_float;
-  auto sol_float = sol.to(options_float);
-  
-  sol.coeffs(0) *= 0;
-  
-  std::cout << "\n\nORIGINAL\n\n"            << sol       << std::endl;
-  std::cout << "\n\nSHALLOW COPY\n\n"        << sol_copy1 << std::endl;
-  std::cout << "\n\nSHALLOW COPY COEFFS\n\n" << sol_copy2 << std::endl;
-  std::cout << "\n\nDEEP COPY COEFFS\n\n"    << sol_copy3 << std::endl;
-  std::cout << "\n\nSHALLOW COPY COEFFS\n\n" << sol_copy4 << std::endl;
-  std::cout << "\n\nDEEP COPY COEFFS\n\n"    << sol_copy5 << std::endl;
-  std::cout << "\n\nTO\n\n"                  << sol_float << std::endl;
-  
-  return 0;
   
   using geometry_t  = iganet::S2<iganet::UniformBSpline<real_t, 2, 2, 2>>;
   using variable_t  = iganet::S2<iganet::UniformBSpline<real_t, 1, 2, 2>>;
 
+
+  variable_t sol( iganet::utils::to_array(7_i64, 7_i64) );
+  
+  sol.transform( [](const std::array<real_t,2> xi)
+  {
+    return std::array<real_t,1>{(xi[0]+1)*cos(M_PI*xi[1])};
+  } );
+  
+  std::cout << sol << std::endl;
+  exit(0);
+  
   poisson<optimizer_t, geometry_t, variable_t> net(// Number of neurons per layers
                                                    {50,50,50,50,50},
                                                    // Activation functions
@@ -166,7 +147,7 @@ int main()
                                                    // Number of B-spline coefficients
                                                    std::tuple(iganet::utils::to_array(7_i64, 7_i64)));
 
-  // defotm geometry
+  // deform geometry
   net.geometry().transform( [](const std::array<real_t,2> xi)
   {
     return std::array<real_t,2>{(xi[0]+1)*cos(M_PI*xi[1]),
