@@ -214,23 +214,23 @@ namespace iganet {
     /// (de-)elevate the degrees by an additive constant
     template<template<typename, short_t, short_t...> class T,
              std::make_signed<short_t>::type degree_elevate = 0>
-    using deduce_type_t = T<real_t, GeoDim, (Degrees+degree_elevate)...>;
+    using derived_type = T<real_t, GeoDim, (Degrees+degree_elevate)...>;
 
     /// @brief Deduces the self-type possibly degrees (de-)elevated by
     /// the additive constant `degree_elevate`
     template<std::make_signed<short_t>::type degree_elevate = 0>
-    using self_type_t = deduce_type_t<UniformBSplineCore, degree_elevate>;
+    using self_type = derived_type<UniformBSplineCore, degree_elevate>;
 
     /// @brief Deduces the derived self-type when exposed to different
     /// class template parameters `real_t` and `GeoDim`, and the
     /// `Degrees` parameter pack
     template<typename real_t_, short_t GeoDim_, short_t... Degrees_>
-    using derived_self_type_t = UniformBSplineCore<real_t_, GeoDim_, Degrees_...>;
+    using derived_self_type = UniformBSplineCore<real_t_, GeoDim_, Degrees_...>;
 
     /// @brief Deduces the derived self-type when exposed to a
     /// different class template parameter `real_t`
     template<typename real_t_>
-    using real_derived_self_type_t = UniformBSplineCore<real_t_, GeoDim, Degrees...>;
+    using real_derived_self_type = UniformBSplineCore<real_t_, GeoDim, Degrees...>;
 
     /// @brief Returns the `device` property
     torch::Device device() const noexcept
@@ -2271,9 +2271,9 @@ namespace iganet {
           } else
             throw std::runtime_error("Unsupported parametric dimension");
 
-	  // Copy coefficients to device (if needed)
-	  for (short_t i = 0; i < geoDim_; ++i)
-	    coeffs_[i] = coeffs_[i].to(options_.device());
+          // Copy coefficients to device (if needed)
+          for (short_t i = 0; i < geoDim_; ++i)
+            coeffs_[i] = coeffs_[i].to(options_.device());
 	  
           if (std::all_of(std::begin(nknots_found), std::end(nknots_found), [](bool i) { return i ;}) &&
               std::all_of(std::begin(ncoeffs_found), std::end(ncoeffs_found), [](bool i) { return i; }))              
@@ -2998,18 +2998,18 @@ namespace iganet {
     /// @brief Deduces the self-type possibly degrees (de-)elevated by
     /// the additive constant `degree_elevate`
     template<std::make_signed<short_t>::type degree_elevate = 0>
-    using self_type_t = typename Base::template deduce_type_t<NonUniformBSplineCore, degree_elevate>;
+    using self_type = typename Base::template derived_type<NonUniformBSplineCore, degree_elevate>;
 
     /// @brief Deduces the derived self-type when exposed to different
     /// class template parameters `real_t` and `GeoDim`, and the
     /// `Degrees` parameter pack
     template<typename real_t_, short_t GeoDim_, short_t... Degrees_>
-    using derived_self_type_t = NonUniformBSplineCore<real_t_, GeoDim_, Degrees_...>;
+    using derived_self_type = NonUniformBSplineCore<real_t_, GeoDim_, Degrees_...>;
 
     /// @brief Deduces the derived self-type when exposed to a
     /// different class template parameter `real_t`
     template<typename real_t_>
-    using real_derived_self_type_t = NonUniformBSplineCore<real_t_, GeoDim, Degrees...>;
+    using real_derived_self_type = NonUniformBSplineCore<real_t_, GeoDim, Degrees...>;
 
     /// @brief Returns true if the B-spline is uniform
     static bool is_uniform() {
@@ -3053,7 +3053,7 @@ namespace iganet {
     /// @note It is not checked whether vectors of coefficients are
     /// compatible with the given Options object if clone is false.
     NonUniformBSplineCore(std::array<std::vector<typename Base::value_type>, Base::parDim_> kv,
-                          const std::array<torch::Tensor, Base::geoDim_>&                         coeffs,
+                          const std::array<torch::Tensor, Base::geoDim_>&                   coeffs,
                           bool                                                              clone   = false,
                           Options<real_t>                                                   options = Options<real_t>{})
       : Base(std::array<int64_t, Base::parDim_>{2*Degrees...}, coeffs, clone, options)
@@ -3418,18 +3418,18 @@ namespace iganet {
     /// (de-)elevate the degrees by an additive constant
     template<template<typename, short_t, short_t...> class T,
              std::make_signed<short_t>::type degree_elevate = 0>
-    using deduce_type_t = BSplineCommon<typename BSplineCore::template deduce_type_t<T, degree_elevate>>;
+    using derived_type = BSplineCommon<typename BSplineCore::template derived_type<T, degree_elevate>>;
 
     /// @brief Deduces the self-type possibly degrees (de-)elevated by
     /// the additive constant `degree_elevate`
     template<std::make_signed<short_t>::type degree_elevate = 0>
-    using self_type_t = BSplineCommon<typename BSplineCore::template self_type_t<degree_elevate>>;
+    using self_type = BSplineCommon<typename BSplineCore::template self_type<degree_elevate>>;
 
     /// @brief Deduces the derived self-type when exposed to different
     /// class template parameters `real_t` and `GeoDim`, and the
     /// `Degrees` parameter pack
     template<typename real_t, short_t GeoDim, short_t... Degrees>
-    using derived_self_type_t = BSplineCommon<typename BSplineCore::template derived_self_type_t<real_t, GeoDim, Degrees...>>;
+    using derived_self_type = BSplineCommon<typename BSplineCore::template derived_self_type<real_t, GeoDim, Degrees...>>;
 
     /// @brief Copy constructor
     BSplineCommon(const BSplineCommon&) = default;
@@ -3508,7 +3508,7 @@ namespace iganet {
     template<typename real_t>
     inline auto to(Options<real_t> options) const
     {
-      return BSplineCommon<typename BSplineCore::template real_derived_self_type_t<real_t>>(*this, options);
+      return BSplineCommon<typename BSplineCore::template real_derived_self_type<real_t>>(*this, options);
     }
 
     /// @brief Returns a copy of the B-spline object with settings from device
@@ -3700,7 +3700,7 @@ namespace iganet {
     /// @brief Returns a block-tensor with the divergence of the
     /// B-spline object with respect to the physical variables
     ///
-    /// @tparam Geometry_t Type of the geometry B-spline object
+    /// @tparam Geometry Type of the geometry B-spline object
     ///
     /// @param[in] G B-spline geometry object
     ///
@@ -3719,26 +3719,26 @@ namespace iganet {
     /// \f]
     ///
     /// @{
-    template<bool memory_optimized = false, typename Geometry_t>
-    auto idiv(const Geometry_t& G, torch::Tensor& xi)
+    template<bool memory_optimized = false, typename Geometry>
+    auto idiv(const Geometry& G, torch::Tensor& xi)
     {
-      return idiv<memory_optimized, Geometry_t>(G, utils::TensorArray1({xi}));
+      return idiv<memory_optimized, Geometry>(G, utils::TensorArray1({xi}));
     }
 
-    template<bool memory_optimized = false, typename Geometry_t>
-    inline auto idiv(const Geometry_t& G,
+    template<bool memory_optimized = false, typename Geometry>
+    inline auto idiv(const Geometry& G,
                      const std::array<torch::Tensor, BSplineCore::parDim_>& xi) const
     {
-      return idiv<memory_optimized, Geometry_t>(G, xi,
-                                                BSplineCore::find_knot_indices(xi), G.
-                                                BSplineCore::find_knot_indices(xi));
+      return idiv<memory_optimized, Geometry>(G, xi,
+                                              BSplineCore::find_knot_indices(xi), G.
+                                              BSplineCore::find_knot_indices(xi));
     }
     /// @}
 
     /// @brief Returns a block-tensor with the divergence of the
     /// B-spline object with respect to the physical variables
     ///
-    /// @tparam Geometry_t Type of the geometry B-spline object
+    /// @tparam Geometry Type of the geometry B-spline object
     ///
     /// @param[in] G B-spline geometry object
     ///
@@ -3759,23 +3759,23 @@ namespace iganet {
     ///     \frac{\partial u_1}{\partial x_1} +
     ///     \frac{\partial u_{d_\text{geo}}}{\partial x_{d_\text{par}}}
     /// \f]
-    template<bool memory_optimized = false, typename Geometry_t>
-    inline auto idiv(const Geometry_t G,
+    template<bool memory_optimized = false, typename Geometry>
+    inline auto idiv(const Geometry G,
                      const std::array<torch::Tensor, BSplineCore::parDim_>& xi,
                      const std::array<torch::Tensor, BSplineCore::parDim_>& indices,
-                     const std::array<torch::Tensor, Geometry_t::parDim()>& indices_G) const
+                     const std::array<torch::Tensor, Geometry::parDim()>& indices_G) const
     {
-      return idiv<memory_optimized, Geometry_t>(G, xi,
-                                                indices,
-                                                BSplineCore::template find_coeff_indices<memory_optimized>(indices),
-                                                indices_G,
-                                                G.template find_coeff_indices<memory_optimized>(indices_G));
+      return idiv<memory_optimized, Geometry>(G, xi,
+                                              indices,
+                                              BSplineCore::template find_coeff_indices<memory_optimized>(indices),
+                                              indices_G,
+                                              G.template find_coeff_indices<memory_optimized>(indices_G));
     }
 
     /// @brief Returns a block-tensor with the divergence of the
     /// B-spline object with respect to the physical variables
     ///
-    /// @tparam Geometry_t Type of the geometry B-spline object
+    /// @tparam Geometry Type of the geometry B-spline object
     ///
     /// @param[in] G B-spline geometry object
     ///
@@ -3800,12 +3800,12 @@ namespace iganet {
     ///     \frac{\partial u_1}{\partial x_1} +
     ///     \frac{\partial u_{d_\text{geo}}}{\partial x_{d_\text{par}}}
     /// \f]
-    template<bool memory_optimized = false, typename Geometry_t>
-    inline auto idiv(const Geometry_t& G,
+    template<bool memory_optimized = false, typename Geometry>
+    inline auto idiv(const Geometry& G,
                      const std::array<torch::Tensor, BSplineCore::parDim_>& xi,
                      const std::array<torch::Tensor, BSplineCore::parDim_>& indices,
                      const torch::Tensor& coeff_indices,
-                     const std::array<torch::Tensor, Geometry_t::parDim()>& indices_G,
+                     const std::array<torch::Tensor, Geometry::parDim()>& indices_G,
                      const torch::Tensor& coeff_indices_G) const
     {
       return BSplineCore::template ijac<memory_optimized>(xi, indices, coeff_indices, indices_G, coeff_indices_G).trace();
@@ -3991,7 +3991,7 @@ namespace iganet {
     /// B-spline object in the points `xi` with respect to the
     /// physical variables
     ///
-    /// @tparam Geometry_t Type of the geometry B-spline object
+    /// @tparam Geometry Type of the geometry B-spline object
     ///
     /// @param[in] G B-spline geometry object
     ///
@@ -4008,19 +4008,19 @@ namespace iganet {
     /// \f]
     ///
     /// @{
-    template<bool memory_optimized = false, typename Geometry_t>
-    auto igrad(const Geometry_t& G, const torch::Tensor& xi) const
+    template<bool memory_optimized = false, typename Geometry>
+    auto igrad(const Geometry& G, const torch::Tensor& xi) const
     {
-      return igrad<memory_optimized, Geometry_t>(G, utils::TensorArray1({xi}));
+      return igrad<memory_optimized, Geometry>(G, utils::TensorArray1({xi}));
     }
 
-    template<bool memory_optimized = false, typename Geometry_t>
-    inline auto igrad(const Geometry_t& G,
+    template<bool memory_optimized = false, typename Geometry>
+    inline auto igrad(const Geometry& G,
                       const std::array<torch::Tensor, BSplineCore::parDim_>& xi) const
     {
-      return igrad<memory_optimized, Geometry_t>(G, xi,
-                                                 BSplineCore::find_knot_indices(xi),
-                                                 G.find_knot_indices(xi));
+      return igrad<memory_optimized, Geometry>(G, xi,
+                                               BSplineCore::find_knot_indices(xi),
+                                               G.find_knot_indices(xi));
     }
     /// @}
 
@@ -4028,7 +4028,7 @@ namespace iganet {
     /// B-spline object in the points `xi` with respect to the
     /// physical variables
     ///
-    /// @tparam Geometry_t Type of the geometry B-spline object
+    /// @tparam Geometry Type of the geometry B-spline object
     ///
     /// @param[in] G B-spline geometry object
     ///
@@ -4047,27 +4047,27 @@ namespace iganet {
     ///     \quad
     ///     \mathbf{x} = G(\boldsymbol{\xi})
     /// \f]
-    template<bool memory_optimized = false, typename Geometry_t>
-    inline auto igrad(const Geometry_t G,
+    template<bool memory_optimized = false, typename Geometry>
+    inline auto igrad(const Geometry G,
                       const std::array<torch::Tensor, BSplineCore::parDim_>& xi,
                       const std::array<torch::Tensor, BSplineCore::parDim_>& indices,
-                      const std::array<torch::Tensor, Geometry_t::parDim()>& indices_G) const
+                      const std::array<torch::Tensor, Geometry::parDim()>& indices_G) const
     {
       if constexpr (BSplineCore::parDim_ == 0)
         return utils::BlockTensor<torch::Tensor, 1, 1>{ torch::zeros_like(BSplineCore::coeffs_[0]) };
       else
-        return igrad<memory_optimized, Geometry_t>(G, xi,
-                                                   indices,
-                                                   BSplineCore::template find_coeff_indices<memory_optimized>(indices),
-                                                   indices_G,
-                                                   G.template find_coeff_indices<memory_optimized>(indices_G));
+        return igrad<memory_optimized, Geometry>(G, xi,
+                                                 indices,
+                                                 BSplineCore::template find_coeff_indices<memory_optimized>(indices),
+                                                 indices_G,
+                                                 G.template find_coeff_indices<memory_optimized>(indices_G));
     }
 
     /// @brief Returns a block-tensor with the gradient of the
     /// B-spline object in the points `xi` with respect to the
     /// physical variables
     ///
-    /// @tparam Geometry_t Type of the geometry B-spline object
+    /// @tparam Geometry Type of the geometry B-spline object
     ///
     /// @param[in] G B-spline geometry object
     ///
@@ -4090,12 +4090,12 @@ namespace iganet {
     ///     \quad
     ///     \mathbf{x} = G(\boldsymbol{\xi})
     /// \f]
-    template<bool memory_optimized = false, typename Geometry_t>
-    inline auto igrad(const Geometry_t& G,
+    template<bool memory_optimized = false, typename Geometry>
+    inline auto igrad(const Geometry& G,
                       const std::array<torch::Tensor, BSplineCore::parDim_>& xi,
                       const std::array<torch::Tensor, BSplineCore::parDim_>& indices,
                       const torch::Tensor& coeff_indices,
-                      const std::array<torch::Tensor, Geometry_t::parDim()>& indices_G,
+                      const std::array<torch::Tensor, Geometry::parDim()>& indices_G,
                       const torch::Tensor& coeff_indices_G) const
     {
       return grad<memory_optimized>(xi, indices, coeff_indices) *
@@ -4318,7 +4318,7 @@ namespace iganet {
     /// object in the points `xi` with respect to the physical
     /// variables
     ///
-    /// @tparam Geometry_t Type of the geometry B-spline object
+    /// @tparam Geometry Type of the geometry B-spline object
     ///
     /// @param[in] G B-spline geometry object
     ///
@@ -4341,22 +4341,22 @@ namespace iganet {
     /// \f]
     ///
     /// @{
-    template<bool memory_optimized = false, typename Geometry_t>
-    auto ihess(const Geometry_t& G, const torch::Tensor& xi) const
+    template<bool memory_optimized = false, typename Geometry>
+    auto ihess(const Geometry& G, const torch::Tensor& xi) const
     {
-      return ihess<memory_optimized, Geometry_t>(G, utils::TensorArray1({xi}));
+      return ihess<memory_optimized, Geometry>(G, utils::TensorArray1({xi}));
     }
 
-    template<bool memory_optimized = false, typename Geometry_t>
-    inline auto ihess(const Geometry_t& G,
+    template<bool memory_optimized = false, typename Geometry>
+    inline auto ihess(const Geometry& G,
                       const std::array<torch::Tensor, BSplineCore::parDim_>& xi) const
     {
       if constexpr (BSplineCore::parDim_ == 0)
         return utils::BlockTensor<torch::Tensor, 1, 1>{ torch::zeros_like(BSplineCore::coeffs_[0]) };
       else
-        return ihess<memory_optimized, Geometry_t>(G, xi,
-                                                   BSplineCore::find_knot_indices(xi),
-                                                   G.find_knot_indices(xi));
+        return ihess<memory_optimized, Geometry>(G, xi,
+                                                 BSplineCore::find_knot_indices(xi),
+                                                 G.find_knot_indices(xi));
     }
     /// @}
 
@@ -4364,7 +4364,7 @@ namespace iganet {
     /// object in the points `xi` with respect to the physical
     /// variables
     ///
-    /// @tparam Geometry_t Type of the geometry B-spline object
+    /// @tparam Geometry Type of the geometry B-spline object
     ///
     /// @param[in] G B-spline geometry object
     ///
@@ -4389,24 +4389,24 @@ namespace iganet {
     ///     \quad
     ///     \mathbf{x} = G(\boldsymbol{\xi})
     /// \f]
-    template<bool memory_optimized = false, typename Geometry_t>
-    inline auto ihess(const Geometry_t G,
+    template<bool memory_optimized = false, typename Geometry>
+    inline auto ihess(const Geometry G,
                       const std::array<torch::Tensor, BSplineCore::parDim_>& xi,
                       const std::array<torch::Tensor, BSplineCore::parDim_>& indices,
-                      const std::array<torch::Tensor, Geometry_t::parDim()>& indices_G) const
+                      const std::array<torch::Tensor, Geometry::parDim()>& indices_G) const
     {
-      return ihess<memory_optimized, Geometry_t>(G, xi,
-                                                 indices,
-                                                 BSplineCore::template find_coeff_indices<memory_optimized>(indices),
-                                                 indices_G,
-                                                 G.template find_coeff_indices<memory_optimized>(indices_G));
+      return ihess<memory_optimized, Geometry>(G, xi,
+                                               indices,
+                                               BSplineCore::template find_coeff_indices<memory_optimized>(indices),
+                                               indices_G,
+                                               G.template find_coeff_indices<memory_optimized>(indices_G));
     }
 
     /// @brief Returns a block-tensor with the Hessian of the B-spline
     /// object in the points `xi` with respect to the physical
     /// variables
     ///
-    /// @tparam Geometry_t Type of the geometry B-spline object
+    /// @tparam Geometry Type of the geometry B-spline object
     ///
     /// @param[in] G B-spline geometry object
     ///
@@ -4435,12 +4435,12 @@ namespace iganet {
     ///     \quad
     ///     \mathbf{x} = G(\boldsymbol{\xi})
     /// \f]
-    template<bool memory_optimized = false, typename Geometry_t>
-    inline auto ihess(const Geometry_t& G,
+    template<bool memory_optimized = false, typename Geometry>
+    inline auto ihess(const Geometry& G,
                       const std::array<torch::Tensor, BSplineCore::parDim_>& xi,
                       const std::array<torch::Tensor, BSplineCore::parDim_>& indices,
                       const torch::Tensor& coeff_indices,
-                      const std::array<torch::Tensor, Geometry_t::parDim()>& indices_G,
+                      const std::array<torch::Tensor, Geometry::parDim()>& indices_G,
                       const torch::Tensor& coeff_indices_G) const
     {
 
@@ -4488,7 +4488,7 @@ namespace iganet {
     ///     \end{bmatrix}
     /// \f]
     ///
-                  /// @{
+    /// @{
     template<bool memory_optimized = false>
     inline auto jac(const torch::Tensor& xi) const
     {
@@ -4656,7 +4656,7 @@ namespace iganet {
     /// B-spline object in the points `xi` with respect to the
     /// physical variables
     ///
-    /// @tparam Geometry_t Type of the geometry B-spline object
+    /// @tparam Geometry Type of the geometry B-spline object
     ///
     /// @param[in] G B-spline geometry object
     ///
@@ -4673,19 +4673,19 @@ namespace iganet {
     /// \f]
     ///
     /// @{
-    template<bool memory_optimized = false, typename Geometry_t>
-    auto ijac(const Geometry_t& G, const torch::Tensor& xi) const
+    template<bool memory_optimized = false, typename Geometry>
+    auto ijac(const Geometry& G, const torch::Tensor& xi) const
     {
-      return ijac<memory_optimized, Geometry_t>(G, utils::TensorArray1({xi}));
+      return ijac<memory_optimized, Geometry>(G, utils::TensorArray1({xi}));
     }
 
-    template<bool memory_optimized = false, typename Geometry_t>
-    inline auto ijac(const Geometry_t& G,
+    template<bool memory_optimized = false, typename Geometry>
+    inline auto ijac(const Geometry& G,
                      const std::array<torch::Tensor, BSplineCore::parDim_>& xi) const
     {
-      return ijac<memory_optimized, Geometry_t>(G, xi,
-                                                BSplineCore::find_knot_indices(xi),
-                                                G.find_knot_indices(xi));
+      return ijac<memory_optimized, Geometry>(G, xi,
+                                              BSplineCore::find_knot_indices(xi),
+                                              G.find_knot_indices(xi));
     }
     /// @}
 
@@ -4693,7 +4693,7 @@ namespace iganet {
     /// B-spline object in the points `xi` with respect to the
     /// physical variables
     ///
-    /// @tparam Geometry_t Type of the geometry B-spline object
+    /// @tparam Geometry Type of the geometry B-spline object
     ///
     /// @param[in] G B-spline geometry object
     ///
@@ -4712,27 +4712,27 @@ namespace iganet {
     ///     \quad
     ///     \mathbf{x} = G(\boldsymbol{\xi})
     /// \f]
-    template<bool memory_optimized = false, typename Geometry_t>
-    inline auto ijac(const Geometry_t G,
+    template<bool memory_optimized = false, typename Geometry>
+    inline auto ijac(const Geometry G,
                      const std::array<torch::Tensor, BSplineCore::parDim_>& xi,
                      const std::array<torch::Tensor, BSplineCore::parDim_>& indices,
-                     const std::array<torch::Tensor, Geometry_t::parDim()>& indices_G) const
+                     const std::array<torch::Tensor, Geometry::parDim()>& indices_G) const
     {
       if constexpr (BSplineCore::parDim_ == 0)
         return utils::BlockTensor<torch::Tensor, 1, 1>{ torch::zeros_like(BSplineCore::coeffs_[0]) };
       else
-        return ijac<memory_optimized, Geometry_t>(G, xi,
-                                                  indices,
-                                                  BSplineCore::template find_coeff_indices<memory_optimized>(indices),
-                                                  indices_G,
-                                                  G.template find_coeff_indices<memory_optimized>(indices_G));
+        return ijac<memory_optimized, Geometry>(G, xi,
+                                                indices,
+                                                BSplineCore::template find_coeff_indices<memory_optimized>(indices),
+                                                indices_G,
+                                                G.template find_coeff_indices<memory_optimized>(indices_G));
     }
 
     /// @brief Returns a block-tensor with the Jacobian of the
     /// B-spline object in the points `xi` with respect to the
     /// physical variables
     ///
-    /// @tparam Geometry_t Type of the geometry B-spline object
+    /// @tparam Geometry Type of the geometry B-spline object
     ///
     /// @param[in] G B-spline geometry object
     ///
@@ -4755,12 +4755,12 @@ namespace iganet {
     ///     \quad
     ///     \mathbf{x} = G(\boldsymbol{\xi})
     /// \f]
-    template<bool memory_optimized = false, typename Geometry_t>
-    inline auto ijac(const Geometry_t& G,
+    template<bool memory_optimized = false, typename Geometry>
+    inline auto ijac(const Geometry& G,
                      const std::array<torch::Tensor, BSplineCore::parDim_>& xi,
                      const std::array<torch::Tensor, BSplineCore::parDim_>& indices,
                      const torch::Tensor& coeff_indices,
-                     const std::array<torch::Tensor, Geometry_t::parDim()>& indices_G,
+                     const std::array<torch::Tensor, Geometry::parDim()>& indices_G,
                      const torch::Tensor& coeff_indices_G) const
     {
       return
@@ -4775,15 +4775,15 @@ namespace iganet {
     }
 
     /// Plots the B-spline object
-    template<typename BSplineCore_t>
-    inline auto plot(const BSplineCommon<BSplineCore_t>& color,
+    template<typename BSplineCoreColor>
+    inline auto plot(const BSplineCommon<BSplineCoreColor>& color,
                      int64_t res0=10, int64_t res1=10, int64_t res2=10) const
     {
 #ifdef WITH_MATPLOT
-      static_assert(BSplineCore::parDim() == BSplineCore_t::parDim(),
+      static_assert(BSplineCore::parDim() == BSplineCoreColor::parDim(),
                     "Parametric dimensions must match");
 
-      if ((void*)this != (void*)&color && BSplineCore_t::geoDim() > 1)
+      if ((void*)this != (void*)&color && BSplineCoreColor::geoDim() > 1)
         throw std::runtime_error("BSpline for coloring must have geoDim=1");
 
       if constexpr(BSplineCore::parDim()==1 && BSplineCore::geoDim()==1) {
@@ -4797,10 +4797,10 @@ namespace iganet {
 
         auto Coords = BSplineCore::eval(torch::linspace(0, 1, res0, BSplineCore::options_));
 #ifdef __clang__
-        auto Coords_cpu = utils::to_tensorAccessor<typename BSplineCore_t::value_type,1>(Coords(0), torch::kCPU);
+        auto Coords_cpu = utils::to_tensorAccessor<typename BSplineCoreColor::value_type,1>(Coords(0), torch::kCPU);
         auto XAccessor  = std::get<1>(Coords_cpu);
 #else
-        auto [Coords_cpu, XAccessor] = utils::to_tensorAccessor<typename BSplineCore_t::value_type,1>(Coords(0), torch::kCPU);
+        auto [Coords_cpu, XAccessor] = utils::to_tensorAccessor<typename BSplineCoreColor::value_type,1>(Coords(0), torch::kCPU);
 #endif
 
 #pragma omp parallel for simd
@@ -4808,13 +4808,13 @@ namespace iganet {
           Xfine[i] = XAccessor[i];
 
         if ((void*)this != (void*)&color) {
-          if constexpr (BSplineCore_t::geoDim_==1) {
+          if constexpr (BSplineCoreColor::geoDim_==1) {
             auto Color = color.eval(torch::linspace(0, 1, res0, BSplineCore::options_));
 #ifdef __clang__
-            auto Color_cpu = utils::to_tensorAccessor<typename BSplineCore_t::value_type,1>(Color(0), torch::kCPU);
+            auto Color_cpu = utils::to_tensorAccessor<typename BSplineCoreColor::value_type,1>(Color(0), torch::kCPU);
             auto CAccessor = std::get<1>(Color_cpu);
 #else
-            auto [Color_cpu, CAccessor] = utils::to_tensorAccessor<typename BSplineCore_t::value_type,1>(Color(0), torch::kCPU);
+            auto [Color_cpu, CAccessor] = utils::to_tensorAccessor<typename BSplineCoreColor::value_type,1>(Color(0), torch::kCPU);
 #endif
 
 #pragma omp parallel for simd
@@ -4825,7 +4825,7 @@ namespace iganet {
 
         // Plotting ...
         if ((void*)this != (void*)&color) {
-          if constexpr (BSplineCore_t::geoDim_==1) {
+          if constexpr (BSplineCoreColor::geoDim_==1) {
             matplot::plot(Xfine, Yfine, "b-")->line_width(2);
           }
         } else {
@@ -4833,10 +4833,10 @@ namespace iganet {
           matplot::vector_1d Y(BSplineCore::ncoeffs(0), 0.0);
 
 #ifdef __clang__
-          auto coeffs_cpu = utils::to_tensorAccessor<typename BSplineCore_t::value_type,1>(BSplineCore::coeffs(0), torch::kCPU);
+          auto coeffs_cpu = utils::to_tensorAccessor<typename BSplineCoreColor::value_type,1>(BSplineCore::coeffs(0), torch::kCPU);
           auto xAccessor  = std::get<1>(coeffs_cpu);
 #else
-          auto [coeffs_cpu, xAccessor] = utils::to_tensorAccessor<typename BSplineCore_t::value_type,1>(BSplineCore::coeffs(0), torch::kCPU);
+          auto [coeffs_cpu, xAccessor] = utils::to_tensorAccessor<typename BSplineCoreColor::value_type,1>(BSplineCore::coeffs(0), torch::kCPU);
 #endif
 
 #pragma omp parallel for simd
@@ -4864,7 +4864,7 @@ namespace iganet {
 
         // Plotting...
         if ((void*)this != (void*)&color) {
-          if constexpr (BSplineCore_t::geoDim()==1) {
+          if constexpr (BSplineCoreColor::geoDim()==1) {
             matplot::vector_2d Xfine(1, matplot::vector_1d(res0, 0.0));
             matplot::vector_2d Yfine(1, matplot::vector_1d(res0, 0.0));
             matplot::vector_2d Zfine(1, matplot::vector_1d(res0, 0.0));
@@ -4872,15 +4872,15 @@ namespace iganet {
             auto Coords = BSplineCore::eval(torch::linspace(0, 1, res0, BSplineCore::options_));
             auto Color  = color.eval(torch::linspace(0, 1, res0, BSplineCore::options_));
 #ifdef __clang__
-            auto Coords_cpu = utils::to_tensorAccessor<typename BSplineCore_t::value_type,1>(Coords, torch::kCPU);
-            auto Color_cpu  = utils::to_tensorAccessor<typename BSplineCore_t::value_type,1>(Color(0), torch::kCPU);
+            auto Coords_cpu = utils::to_tensorAccessor<typename BSplineCoreColor::value_type,1>(Coords, torch::kCPU);
+            auto Color_cpu  = utils::to_tensorAccessor<typename BSplineCoreColor::value_type,1>(Color(0), torch::kCPU);
             auto XAccessor  = std::get<1>(Coords_cpu)[0];
             auto YAccessor  = std::get<1>(Coords_cpu)[1];
             auto CAccessor  = std::get<1>(Color_cpu);
 #else
-            auto [Coords0_cpu, XAccessor] = utils::to_tensorAccessor<typename BSplineCore_t::value_type,1>(Coords(0), torch::kCPU);
-            auto [Coords1_cpu, YAccessor] = utils::to_tensorAccessor<typename BSplineCore_t::value_type,1>(Coords(1), torch::kCPU);
-            auto [Color_cpu,   CAccessor] = utils::to_tensorAccessor<typename BSplineCore_t::value_type,1>(Color(0),  torch::kCPU);
+            auto [Coords0_cpu, XAccessor] = utils::to_tensorAccessor<typename BSplineCoreColor::value_type,1>(Coords(0), torch::kCPU);
+            auto [Coords1_cpu, YAccessor] = utils::to_tensorAccessor<typename BSplineCoreColor::value_type,1>(Coords(1), torch::kCPU);
+            auto [Color_cpu,   CAccessor] = utils::to_tensorAccessor<typename BSplineCoreColor::value_type,1>(Color(0),  torch::kCPU);
 #endif
 
 #pragma omp parallel for simd
@@ -4898,12 +4898,12 @@ namespace iganet {
 
           auto Coords = BSplineCore::eval(torch::linspace(0, 1, res0, BSplineCore::options_));
 #ifdef __clang__
-          auto Coords_cpu = utils::to_tensorAccessor<typename BSplineCore_t::value_type,1>(Coords, torch::kCPU);
+          auto Coords_cpu = utils::to_tensorAccessor<typename BSplineCoreColor::value_type,1>(Coords, torch::kCPU);
           auto XAccessor  = std::get<1>(Coords_cpu)[0];
           auto YAccessor  = std::get<1>(Coords_cpu)[1];
 #else
-          auto [Coords0_cpu, XAccessor] = utils::to_tensorAccessor<typename BSplineCore_t::value_type,1>(Coords(0), torch::kCPU);
-          auto [Coords1_cpu, YAccessor] = utils::to_tensorAccessor<typename BSplineCore_t::value_type,1>(Coords(1), torch::kCPU);
+          auto [Coords0_cpu, XAccessor] = utils::to_tensorAccessor<typename BSplineCoreColor::value_type,1>(Coords(0), torch::kCPU);
+          auto [Coords1_cpu, YAccessor] = utils::to_tensorAccessor<typename BSplineCoreColor::value_type,1>(Coords(1), torch::kCPU);
 #endif
 
 #pragma omp parallel for simd
@@ -4916,12 +4916,12 @@ namespace iganet {
           matplot::vector_1d Y(BSplineCore::ncoeffs(0), 0.0);
 
 #ifdef __clang__
-          auto coeffs_cpu = utils::to_tensorAccessor<typename BSplineCore_t::value_type,1>(BSplineCore::coeffs(), torch::kCPU);
+          auto coeffs_cpu = utils::to_tensorAccessor<typename BSplineCoreColor::value_type,1>(BSplineCore::coeffs(), torch::kCPU);
           auto xAccessor  = std::get<1>(coeffs_cpu)[0];
           auto yAccessor  = std::get<1>(coeffs_cpu)[1];
 #else
-          auto [coeffs0_cpu, xAccessor] = utils::to_tensorAccessor<typename BSplineCore_t::value_type,1>(BSplineCore::coeffs(0), torch::kCPU);
-          auto [coeffs1_cpu, yAccessor] = utils::to_tensorAccessor<typename BSplineCore_t::value_type,1>(BSplineCore::coeffs(1), torch::kCPU);
+          auto [coeffs0_cpu, xAccessor] = utils::to_tensorAccessor<typename BSplineCoreColor::value_type,1>(BSplineCore::coeffs(0), torch::kCPU);
+          auto [coeffs1_cpu, yAccessor] = utils::to_tensorAccessor<typename BSplineCoreColor::value_type,1>(BSplineCore::coeffs(1), torch::kCPU);
 #endif
 
 #pragma omp parallel for simd
@@ -4950,7 +4950,7 @@ namespace iganet {
 
         // Plotting...
         if ((void*)this != (void*)&color) {
-          if constexpr (BSplineCore_t::geoDim()==1) {
+          if constexpr (BSplineCoreColor::geoDim()==1) {
             matplot::vector_2d Xfine(1, matplot::vector_1d(res0, 0.0));
             matplot::vector_2d Yfine(1, matplot::vector_1d(res0, 0.0));
             matplot::vector_2d Zfine(1, matplot::vector_1d(res0, 0.0));
@@ -4959,17 +4959,17 @@ namespace iganet {
             auto Coords = BSplineCore::eval(torch::linspace(0, 1, res0, BSplineCore::options_));
             auto Color  = color.eval(torch::linspace(0, 1, res0, BSplineCore::options_));
 #ifdef __clang__
-            auto Coords_cpu = utils::to_tensorAccessor<typename BSplineCore_t::value_type,1>(Coords, torch::kCPU);
-            auto Color_cpu  = utils::to_tensorAccessor<typename BSplineCore_t::value_type,1>(Color(0),  torch::kCPU);
+            auto Coords_cpu = utils::to_tensorAccessor<typename BSplineCoreColor::value_type,1>(Coords, torch::kCPU);
+            auto Color_cpu  = utils::to_tensorAccessor<typename BSplineCoreColor::value_type,1>(Color(0),  torch::kCPU);
             auto XAccessor  = std::get<1>(Coords_cpu)[0];
             auto YAccessor  = std::get<1>(Coords_cpu)[1];
             auto ZAccessor  = std::get<1>(Coords_cpu)[2];
             auto CAccessor  = std::get<1>(Color_cpu);
 #else
-            auto [Coords0_cpu, XAccessor] = utils::to_tensorAccessor<typename BSplineCore_t::value_type,1>(Coords(0), torch::kCPU);
-            auto [Coords1_cpu, YAccessor] = utils::to_tensorAccessor<typename BSplineCore_t::value_type,1>(Coords(1), torch::kCPU);
-            auto [Coords2_cpu, ZAccessor] = utils::to_tensorAccessor<typename BSplineCore_t::value_type,1>(Coords(2), torch::kCPU);
-            auto [Color_cpu,   CAccessor] = utils::to_tensorAccessor<typename BSplineCore_t::value_type,1>(Color(0),  torch::kCPU);
+            auto [Coords0_cpu, XAccessor] = utils::to_tensorAccessor<typename BSplineCoreColor::value_type,1>(Coords(0), torch::kCPU);
+            auto [Coords1_cpu, YAccessor] = utils::to_tensorAccessor<typename BSplineCoreColor::value_type,1>(Coords(1), torch::kCPU);
+            auto [Coords2_cpu, ZAccessor] = utils::to_tensorAccessor<typename BSplineCoreColor::value_type,1>(Coords(2), torch::kCPU);
+            auto [Color_cpu,   CAccessor] = utils::to_tensorAccessor<typename BSplineCoreColor::value_type,1>(Color(0),  torch::kCPU);
 #endif
 
 #pragma omp parallel for simd
@@ -4989,14 +4989,14 @@ namespace iganet {
 
           auto Coords = BSplineCore::eval(torch::linspace(0, 1, res0, BSplineCore::options_));
 #ifdef __clang__
-          auto Coords_cpu = utils::to_tensorAccessor<typename BSplineCore_t::value_type,1>(Coords, torch::kCPU);
+          auto Coords_cpu = utils::to_tensorAccessor<typename BSplineCoreColor::value_type,1>(Coords, torch::kCPU);
           auto XAccessor  = std::get<1>(Coords_cpu)[0];
           auto YAccessor  = std::get<1>(Coords_cpu)[1];
           auto ZAccessor  = std::get<1>(Coords_cpu)[2];
 #else
-          auto [Coords0_cpu, XAccessor] = utils::to_tensorAccessor<typename BSplineCore_t::value_type,1>(Coords(0), torch::kCPU);
-          auto [Coords1_cpu, YAccessor] = utils::to_tensorAccessor<typename BSplineCore_t::value_type,1>(Coords(1), torch::kCPU);
-          auto [Coords2_cpu, ZAccessor] = utils::to_tensorAccessor<typename BSplineCore_t::value_type,1>(Coords(2), torch::kCPU);
+          auto [Coords0_cpu, XAccessor] = utils::to_tensorAccessor<typename BSplineCoreColor::value_type,1>(Coords(0), torch::kCPU);
+          auto [Coords1_cpu, YAccessor] = utils::to_tensorAccessor<typename BSplineCoreColor::value_type,1>(Coords(1), torch::kCPU);
+          auto [Coords2_cpu, ZAccessor] = utils::to_tensorAccessor<typename BSplineCoreColor::value_type,1>(Coords(2), torch::kCPU);
 #endif
 
 #pragma omp parallel for simd
@@ -5011,14 +5011,14 @@ namespace iganet {
           matplot::vector_1d Z(BSplineCore::ncoeffs(0), 0.0);
 
 #ifdef __clang__
-          auto coeffs_cpu = utils::to_tensorAccessor<typename BSplineCore_t::value_type,1>(BSplineCore::coeffs(), torch::kCPU);
+          auto coeffs_cpu = utils::to_tensorAccessor<typename BSplineCoreColor::value_type,1>(BSplineCore::coeffs(), torch::kCPU);
           auto xAccessor  = std::get<1>(coeffs_cpu)[0];
           auto yAccessor  = std::get<1>(coeffs_cpu)[1];
           auto zAccessor  = std::get<1>(coeffs_cpu)[2];
 #else
-          auto [coeffs0_cpu, xAccessor] = utils::to_tensorAccessor<typename BSplineCore_t::value_type,1>(BSplineCore::coeffs(0), torch::kCPU);
-          auto [coeffs1_cpu, yAccessor] = utils::to_tensorAccessor<typename BSplineCore_t::value_type,1>(BSplineCore::coeffs(1), torch::kCPU);
-          auto [coeffs2_cpu, zAccessor] = utils::to_tensorAccessor<typename BSplineCore_t::value_type,1>(BSplineCore::coeffs(2), torch::kCPU);
+          auto [coeffs0_cpu, xAccessor] = utils::to_tensorAccessor<typename BSplineCoreColor::value_type,1>(BSplineCore::coeffs(0), torch::kCPU);
+          auto [coeffs1_cpu, yAccessor] = utils::to_tensorAccessor<typename BSplineCoreColor::value_type,1>(BSplineCore::coeffs(1), torch::kCPU);
+          auto [coeffs2_cpu, zAccessor] = utils::to_tensorAccessor<typename BSplineCoreColor::value_type,1>(BSplineCore::coeffs(2), torch::kCPU);
 #endif
 
 #pragma omp parallel for simd
@@ -5055,12 +5055,12 @@ namespace iganet {
               torch::linspace(0, 1, res1, BSplineCore::options_)}, "xy"));
         auto Coords = BSplineCore::eval(meshgrid);
 #ifdef __clang__
-        auto Coords_cpu = utils::to_tensorAccessor<typename BSplineCore_t::value_type,2>(Coords, torch::kCPU);
+        auto Coords_cpu = utils::to_tensorAccessor<typename BSplineCoreColor::value_type,2>(Coords, torch::kCPU);
         auto XAccessor  = std::get<1>(Coords_cpu)[0];
         auto YAccessor  = std::get<1>(Coords_cpu)[1];
 #else
-        auto [Coords0_cpu, XAccessor] = utils::to_tensorAccessor<typename BSplineCore_t::value_type,2>(Coords(0), torch::kCPU);
-        auto [Coords1_cpu, YAccessor] = utils::to_tensorAccessor<typename BSplineCore_t::value_type,2>(Coords(1), torch::kCPU);
+        auto [Coords0_cpu, XAccessor] = utils::to_tensorAccessor<typename BSplineCoreColor::value_type,2>(Coords(0), torch::kCPU);
+        auto [Coords1_cpu, YAccessor] = utils::to_tensorAccessor<typename BSplineCoreColor::value_type,2>(Coords(1), torch::kCPU);
 #endif
 
 #pragma omp parallel for simd collapse(2)
@@ -5071,13 +5071,13 @@ namespace iganet {
           }
 
         if ((void*)this != (void*)&color) {
-          if constexpr (BSplineCore_t::geoDim()==1) {
+          if constexpr (BSplineCoreColor::geoDim()==1) {
             auto Color = color.eval(meshgrid);
 #ifdef __clang__
-            auto Color_cpu = utils::to_tensorAccessor<typename BSplineCore_t::value_type,2>(Color, torch::kCPU);
+            auto Color_cpu = utils::to_tensorAccessor<typename BSplineCoreColor::value_type,2>(Color, torch::kCPU);
             auto CAccessor = std::get<1>(Color_cpu)[0];
 #else
-            auto [Color0_cpu, CAccessor] = utils::to_tensorAccessor<typename BSplineCore_t::value_type,2>(Color(0), torch::kCPU);
+            auto [Color0_cpu, CAccessor] = utils::to_tensorAccessor<typename BSplineCoreColor::value_type,2>(Color(0), torch::kCPU);
 #endif
 
 #pragma omp parallel for simd collapse(2)
@@ -5088,7 +5088,7 @@ namespace iganet {
         }
 
         // Plotting...
-        if ((void*)this != (void*)&color && BSplineCore_t::geoDim()==1) {
+        if ((void*)this != (void*)&color && BSplineCoreColor::geoDim()==1) {
           matplot::view(2);
           matplot::colormap(matplot::palette::hsv());
           matplot::mesh(Xfine, Yfine, Zfine)->palette_map_at_surface(true).face_alpha(0.7);
@@ -5099,12 +5099,12 @@ namespace iganet {
           matplot::vector_2d Z(BSplineCore::ncoeffs(1), matplot::vector_1d(BSplineCore::ncoeffs(0), 0.0));
 
 #ifdef __clang__
-          auto coeffs_cpu = utils::to_tensorAccessor<typename BSplineCore_t::value_type,1>(BSplineCore::coeffs(), torch::kCPU);
+          auto coeffs_cpu = utils::to_tensorAccessor<typename BSplineCoreColor::value_type,1>(BSplineCore::coeffs(), torch::kCPU);
           auto xAccessor  = std::get<1>(coeffs_cpu)[0];
           auto yAccessor  = std::get<1>(coeffs_cpu)[1];
 #else
-          auto [coeffs0_cpu, xAccessor] = utils::to_tensorAccessor<typename BSplineCore_t::value_type,1>(BSplineCore::coeffs(0), torch::kCPU);
-          auto [coeffs1_cpu, yAccessor] = utils::to_tensorAccessor<typename BSplineCore_t::value_type,1>(BSplineCore::coeffs(1), torch::kCPU);
+          auto [coeffs0_cpu, xAccessor] = utils::to_tensorAccessor<typename BSplineCoreColor::value_type,1>(BSplineCore::coeffs(0), torch::kCPU);
+          auto [coeffs1_cpu, yAccessor] = utils::to_tensorAccessor<typename BSplineCoreColor::value_type,1>(BSplineCore::coeffs(1), torch::kCPU);
 #endif
 
 #pragma omp parallel for simd collapse(2)
@@ -5141,14 +5141,14 @@ namespace iganet {
               torch::linspace(0, 1, res1, BSplineCore::options_)}, "xy"));
         auto Coords = BSplineCore::eval(meshgrid);
 #ifdef __clang__
-        auto Coords_cpu = utils::to_tensorAccessor<typename BSplineCore_t::value_type,2>(Coords, torch::kCPU);
+        auto Coords_cpu = utils::to_tensorAccessor<typename BSplineCoreColor::value_type,2>(Coords, torch::kCPU);
         auto XAccessor  = std::get<1>(Coords_cpu)[0];
         auto YAccessor  = std::get<1>(Coords_cpu)[1];
         auto ZAccessor  = std::get<1>(Coords_cpu)[2];
 #else
-        auto [Coords0_cpu, XAccessor] = utils::to_tensorAccessor<typename BSplineCore_t::value_type,2>(Coords(0), torch::kCPU);
-        auto [Coords1_cpu, YAccessor] = utils::to_tensorAccessor<typename BSplineCore_t::value_type,2>(Coords(1), torch::kCPU);
-        auto [Coords2_cpu, ZAccessor] = utils::to_tensorAccessor<typename BSplineCore_t::value_type,2>(Coords(2), torch::kCPU);
+        auto [Coords0_cpu, XAccessor] = utils::to_tensorAccessor<typename BSplineCoreColor::value_type,2>(Coords(0), torch::kCPU);
+        auto [Coords1_cpu, YAccessor] = utils::to_tensorAccessor<typename BSplineCoreColor::value_type,2>(Coords(1), torch::kCPU);
+        auto [Coords2_cpu, ZAccessor] = utils::to_tensorAccessor<typename BSplineCoreColor::value_type,2>(Coords(2), torch::kCPU);
 #endif
 
 #pragma omp parallel for simd collapse(2)
@@ -5161,15 +5161,15 @@ namespace iganet {
 
         // Plotting...
         if ((void*)this != (void*)&color) {
-          if constexpr (BSplineCore_t::geoDim()==1) {
+          if constexpr (BSplineCoreColor::geoDim()==1) {
             matplot::vector_2d Cfine(res1, matplot::vector_1d(res0, 0.0));
 
             auto Color = color.eval(meshgrid);
 #ifdef __clang__
-            auto Color_cpu = utils::to_tensorAccessor<typename BSplineCore_t::value_type,2>(Color, torch::kCPU);
+            auto Color_cpu = utils::to_tensorAccessor<typename BSplineCoreColor::value_type,2>(Color, torch::kCPU);
             auto CAccessor = std::get<1>(Color_cpu)[0];
 #else
-            auto [Color_cpu, CAccessor] = utils::to_tensorAccessor<typename BSplineCore_t::value_type,2>(Color(0), torch::kCPU);
+            auto [Color_cpu, CAccessor] = utils::to_tensorAccessor<typename BSplineCoreColor::value_type,2>(Color(0), torch::kCPU);
 #endif
 
 #pragma omp parallel for simd collapse(2)
@@ -5187,14 +5187,14 @@ namespace iganet {
           matplot::vector_2d Z(BSplineCore::ncoeffs(1), matplot::vector_1d(BSplineCore::ncoeffs(0), 0.0));
 
 #ifdef __clang__
-          auto coeffs_cpu = utils::to_tensorAccessor<typename BSplineCore_t::value_type,1>(BSplineCore::coeffs(), torch::kCPU);
+          auto coeffs_cpu = utils::to_tensorAccessor<typename BSplineCoreColor::value_type,1>(BSplineCore::coeffs(), torch::kCPU);
           auto xAccessor   = std::get<1>(coeffs_cpu)[0];
           auto yAccessor   = std::get<1>(coeffs_cpu)[1];
           auto zAccessor   = std::get<1>(coeffs_cpu)[2];
 #else
-          auto [coeffs0_cpu, xAccessor] = utils::to_tensorAccessor<typename BSplineCore_t::value_type,1>(BSplineCore::coeffs(0), torch::kCPU);
-          auto [coeffs1_cpu, yAccessor] = utils::to_tensorAccessor<typename BSplineCore_t::value_type,1>(BSplineCore::coeffs(1), torch::kCPU);
-          auto [coeffs2_cpu, zAccessor] = utils::to_tensorAccessor<typename BSplineCore_t::value_type,1>(BSplineCore::coeffs(2), torch::kCPU);
+          auto [coeffs0_cpu, xAccessor] = utils::to_tensorAccessor<typename BSplineCoreColor::value_type,1>(BSplineCore::coeffs(0), torch::kCPU);
+          auto [coeffs1_cpu, yAccessor] = utils::to_tensorAccessor<typename BSplineCoreColor::value_type,1>(BSplineCore::coeffs(1), torch::kCPU);
+          auto [coeffs2_cpu, zAccessor] = utils::to_tensorAccessor<typename BSplineCoreColor::value_type,1>(BSplineCore::coeffs(2), torch::kCPU);
 #endif
 
 #pragma omp parallel for simd collapse(2)

@@ -910,54 +910,54 @@ namespace iganet {
   /// @brief IgANet
   ///
   /// This class implements the core functionality of IgANets
-  template<typename optimizer_t,
-           typename geometry_t,
-           typename variable_t>
+  template<typename Optimizer,
+           typename Geometry,
+           typename Variable>
   class IgANet
     : public utils::Serializable, private utils::FullQualifiedName
   {
   public:
     /// @brief Value type
-    using value_type = typename std::common_type<typename geometry_t::value_type,
-                                                 typename variable_t::value_type>::type;
+    using value_type = typename std::common_type<typename Geometry::value_type,
+                                                 typename Variable::value_type>::type;
 
     /// @brief Type of the geometry samples spline objects
-    using geometry_samples_t = std::pair<typename geometry_t::eval_t,
-                                         typename geometry_t::boundary_eval_t>;
+    using geometry_samples_type = std::pair<typename Geometry::eval_type,
+                                            typename Geometry::boundary_eval_type>;
     
     /// @brief Type of the variable samples spline objects
-    using variable_samples_t = std::pair<typename variable_t::eval_t,
-                                         typename variable_t::boundary_eval_t>;
+    using variable_samples_type = std::pair<typename Variable::eval_type,
+                                            typename Variable::boundary_eval_type>;
 
   protected:
     /// @brief Spline representation of the geometry
-    geometry_t geometry_;
+    Geometry geometry_;
 
     /// @brief Spline representation of the reference data
-    variable_t variable_;
+    Variable variable_;
     
     /// @brief Spline representation of the network output
-    variable_t outputs_;
+    Variable outputs_;
     
     /// @brief IgANet generator
     IgANetGenerator<value_type> net_;
 
     /// @brief Optimizer
-    optimizer_t opt_;
+    Optimizer opt_;
 
     /// @brief Options
     IgANetOptions options_;
     
     /// @brief Constructor: number of layers, activation functions,
-    /// and number of spline coefficients (different for geometry_t
-    /// and variable_t types)
-    template<typename... geometry_spline_t, size_t... Is,
-             typename... variable_spline_t, size_t... Js>
+    /// and number of spline coefficients (different for Geometry
+    /// and Variable types)
+    template<typename... GeometrySplines, size_t... Is,
+             typename... VariableSplines, size_t... Js>
     IgANet(const std::vector<int64_t>&                layers,
            const std::vector<std::vector<std::any>>&  activations,
-           std::tuple<geometry_spline_t...>           geometry_splines,
+           std::tuple<GeometrySplines...>             geometry_splines,
            std::index_sequence<Is...>,
-           std::tuple<variable_spline_t...>           variable_splines,
+           std::tuple<VariableSplines...>             variable_splines,
            std::index_sequence<Js...>,
            IgANetOptions                              defaults = {},
            iganet::Options<value_type>                options = iganet::Options<value_type>{})
@@ -992,31 +992,31 @@ namespace iganet {
     {}
     
     /// @brief Constructor: number of layers, activation functions,
-    /// and number of spline coefficients (same for geometry_t and
-    /// variable_t types)
-    template<typename... spline_t>
+    /// and number of spline coefficients (same for Geometry and
+    /// Variable types)
+    template<typename... Splines>
     IgANet(const std::vector<int64_t>&               layers,
            const std::vector<std::vector<std::any>>& activations,
-           std::tuple<spline_t...>                   splines,
+           std::tuple<Splines...>                   splines,
            IgANetOptions                             defaults = {},
            iganet::Options<value_type>               options = iganet::Options<value_type>{})
       : IgANet(layers, activations, splines, splines, defaults, options)
     {}
 
     /// @brief Constructor: number of layers, activation functions,
-    /// and number of spline coefficients (different for geometry_t
-    /// and variable_t types)
-    template<typename... geometry_splines_t,
-             typename... variable_splines_t>
+    /// and number of spline coefficients (different for Geometry
+    /// and Variable types)
+    template<typename... GeometrySplines,
+             typename... VariableSplines>
     IgANet(const std::vector<int64_t>&               layers,
            const std::vector<std::vector<std::any>>& activations,
-           std::tuple<geometry_splines_t...>         geometry_splines,
-           std::tuple<variable_splines_t...>         variable_splines,
+           std::tuple<GeometrySplines...>            geometry_splines,
+           std::tuple<VariableSplines...>            variable_splines,
            IgANetOptions                             defaults = {},
            iganet::Options<value_type>               options = iganet::Options<value_type>{})
     : IgANet(layers, activations,
-             geometry_splines, std::make_index_sequence<sizeof...(geometry_splines_t)>{},
-             variable_splines, std::make_index_sequence<sizeof...(variable_splines_t)>{},
+             geometry_splines, std::make_index_sequence<sizeof...(GeometrySplines)>{},
+             variable_splines, std::make_index_sequence<sizeof...(VariableSplines)>{},
              defaults, options)
     {}
     
@@ -1033,55 +1033,55 @@ namespace iganet {
     }
 
     /// @brief Returns a constant reference to the optimizer
-    inline const optimizer_t& opt() const
+    inline const Optimizer& opt() const
     {
       return opt_;
     }
 
     /// @brief Returns a non-constant reference to the optimizer
-    inline optimizer_t& opt()
+    inline Optimizer& opt()
     {
       return opt_;
     }
     
     /// @brief Returns a constant reference to the spline
     /// representation of the geometry
-    inline const geometry_t& geometry() const
+    inline const Geometry& geometry() const
     {
       return geometry_;
     }
 
     /// @brief Returns a non-constant reference to the spline
     /// representation of the geometry
-    inline geometry_t& geometry()
+    inline Geometry& geometry()
     {
       return geometry_;
     }
 
     /// @brief Returns a constant reference to the spline
     /// representation of the variables
-    inline const variable_t& variable() const
+    inline const Variable& variable() const
     {
       return variable_;
     }
 
     /// @brief Returns a non-constant reference to the spline
     /// representation of the variables
-    inline variable_t& variable()
+    inline Variable& variable()
     {
       return variable_;
     }
 
     /// @brief Returns a constant reference to the spline
     /// representation of the network's output
-    inline const variable_t& outputs() const
+    inline const Variable& outputs() const
     {
       return outputs_;
     }
 
     /// @brief Returns a non-constant reference to the spline
     /// representation of the network's output
-    inline variable_t& outputs()
+    inline Variable& outputs()
     {
       return outputs_;
     }
@@ -1106,9 +1106,9 @@ namespace iganet {
     /// faces. This behavior can be changed by overriding this virtual
     /// function in a derived class.
     template<size_t... Is>
-    geometry_samples_t geometry_samples(std::index_sequence<Is...>) const
+    geometry_samples_type geometry_samples(std::index_sequence<Is...>) const
     {      
-      geometry_samples_t samples_;
+      geometry_samples_type samples_;
       
       // Get Greville abscissae inside the domain
       ((std::get<Is>(samples_.first) = std::get<Is>(geometry_).greville(/* interior */ true)), ...);
@@ -1126,9 +1126,9 @@ namespace iganet {
     /// faces. This behavior can be changed by overriding this virtual
     /// function in a derived class.
     template<size_t... Is>
-    variable_samples_t variable_samples(std::index_sequence<Is...>) const
+    variable_samples_type variable_samples(std::index_sequence<Is...>) const
     {      
-      variable_samples_t samples_;
+      variable_samples_type samples_;
       
       // Get Greville abscissae inside the domain
       ((std::get<Is>(samples_.first) = std::get<Is>(variable_).greville(/* interior */ true)), ...);
@@ -1146,12 +1146,12 @@ namespace iganet {
     /// abscissae in the interior of the domain and on the boundary
     /// faces. This behavior can be changed by overriding this virtual
     /// function in a derived class.
-    virtual geometry_samples_t geometry_samples(int64_t epoch) const
+    virtual geometry_samples_type geometry_samples(int64_t epoch) const
     {
-      if constexpr (geometry_t::dim() == 1)
+      if constexpr (Geometry::dim() == 1)
         return {geometry_.greville(/* interior */ true), geometry_.boundary().greville()};
       else
-        return geometry_samples(std::make_index_sequence<geometry_t::dim()>{});
+        return geometry_samples(std::make_index_sequence<Geometry::dim()>{});
     }
 
     /// @brief Returns the variable samples
@@ -1160,12 +1160,12 @@ namespace iganet {
     /// abscissae in the interior of the domain and on the boundary
     /// faces. This behavior can be changed by overriding this virtual
     /// function in a derived class.
-    virtual variable_samples_t variable_samples(int64_t epoch) const
+    virtual variable_samples_type variable_samples(int64_t epoch) const
     {
-      if constexpr (variable_t::dim() == 1)
+      if constexpr (Variable::dim() == 1)
         return {variable_.greville(/* interior */ true), variable_.boundary().greville()};
       else
-        return variable_samples(std::make_index_sequence<variable_t::dim()>{});
+        return variable_samples(std::make_index_sequence<Variable::dim()>{});
     }
     
     /// @brief Returns the network inputs
@@ -1184,16 +1184,16 @@ namespace iganet {
 
     /// @brief Computes the loss function
     virtual torch::Tensor loss(const torch::Tensor&,
-                               const geometry_samples_t&,
-                               const variable_samples_t&,
+                               const geometry_samples_type&,
+                               const variable_samples_type&,
                                int64_t, enum status) = 0;
     
     /// @brief Trains the IgANet
     virtual void train()
     {
       torch::Tensor inputs, outputs, loss;
-      geometry_samples_t geometry_samples;
-      variable_samples_t variable_samples;
+      geometry_samples_type geometry_samples;
+      variable_samples_type variable_samples;
       status status;
       
       // Loop over epochs
@@ -1341,11 +1341,11 @@ namespace iganet {
   };
 
   /// @brief Print (as string) a IgANet object
-  template<typename optimizer_t,
-           typename geometry_t,
-           typename variable_t>
+  template<typename Optimizer,
+           typename Geometry,
+           typename Variable>
   inline std::ostream& operator<<(std::ostream& os,
-                                  const IgANet<optimizer_t, geometry_t, variable_t>& obj)
+                                  const IgANet<Optimizer, Geometry, Variable>& obj)
   {
     obj.pretty_print(os);
     return os;
@@ -1356,70 +1356,70 @@ namespace iganet {
   /// This class implements a customizable variant of IgANets that
   /// provides types and attributes for precomputing indices and basis
   /// functions
-  template<typename optimizer_t,
-           typename geometry_t,
-           typename variable_t>
+  template<typename Optimizer,
+           typename Geometry,
+           typename Variable>
   class IgANetCustomizable
   {    
   public:
-    /// @brief Type of the knot indices of geometry_t type in the interior
-    using geometry_interior_knot_indices_t =
-      decltype(std::declval<geometry_t>().template find_knot_indices<functionspace::interior>(std::declval<typename geometry_t::eval_t>()));
+    /// @brief Type of the knot indices of Geometry type in the interior
+    using geometry_interior_knot_indices_type =
+      decltype(std::declval<Geometry>().template find_knot_indices<functionspace::interior>(std::declval<typename Geometry::eval_type>()));
 
-    /// @brief Type of the knot indices of geometry_t type at the boundary
-    using geometry_boundary_knot_indices_t =
-      decltype(std::declval<geometry_t>().template find_knot_indices<functionspace::boundary>(std::declval<typename geometry_t::boundary_eval_t>()));
+    /// @brief Type of the knot indices of Geometry type at the boundary
+    using geometry_boundary_knot_indices_type =
+      decltype(std::declval<Geometry>().template find_knot_indices<functionspace::boundary>(std::declval<typename Geometry::boundary_eval_type>()));
   
-    /// @brief Type of the knot indices of variable_t type in the interior
-    using variable_interior_knot_indices_t =
-      decltype(std::declval<variable_t>().template find_knot_indices<functionspace::interior>(std::declval<typename variable_t::eval_t>()));
+    /// @brief Type of the knot indices of Variable type in the interior
+    using variable_interior_knot_indices_type =
+      decltype(std::declval<Variable>().template find_knot_indices<functionspace::interior>(std::declval<typename Variable::eval_type>()));
   
-    /// @brief Type of the knot indices of boundary_t type at the boundary
-    using variable_boundary_knot_indices_t =
-      decltype(std::declval<variable_t>().template find_knot_indices<functionspace::boundary>(std::declval<typename variable_t::boundary_eval_t>()));
+    /// @brief Type of the knot indices of boundary_eval_type type at the boundary
+    using variable_boundary_knot_indices_type =
+      decltype(std::declval<Variable>().template find_knot_indices<functionspace::boundary>(std::declval<typename Variable::boundary_eval_type>()));
 
   protected:
-    /// @brief Knot indices of geometry_t type in the interior
-    geometry_interior_knot_indices_t geometry_interior_knot_indices_;
+    /// @brief Knot indices of Geometry type in the interior
+    geometry_interior_knot_indices_type geometry_interior_knot_indices_;
 
-    /// @brief Knot indices of geometry_t type at the boundary
-    geometry_boundary_knot_indices_t geometry_boundary_knot_indices_;
+    /// @brief Knot indices of Geometry type at the boundary
+    geometry_boundary_knot_indices_type geometry_boundary_knot_indices_;
   
-    /// @brief Knot indices of variable_t type in the interior
-    variable_interior_knot_indices_t variable_interior_knot_indices_;
+    /// @brief Knot indices of Variable type in the interior
+    variable_interior_knot_indices_type variable_interior_knot_indices_;
 
-    /// @brief Knot indices of variable_t type at the boundary
-    variable_boundary_knot_indices_t variable_boundary_knot_indices_;
+    /// @brief Knot indices of Variable type at the boundary
+    variable_boundary_knot_indices_type variable_boundary_knot_indices_;
 
   public:
-    /// @brief Type of the coefficient indices of geometry_t type in the interior
-    using geometry_interior_coeff_indices_t =
-      decltype(std::declval<geometry_t>().template find_coeff_indices<functionspace::interior>(std::declval<typename geometry_t::eval_t>()));
+    /// @brief Type of the coefficient indices of geometry type in the interior
+    using geometry_interior_coeff_indices_type =
+      decltype(std::declval<Geometry>().template find_coeff_indices<functionspace::interior>(std::declval<typename Geometry::eval_type>()));
 
-    /// @brief Type of the coefficient indices of geometry_t type at the boundary
-    using geometry_boundary_coeff_indices_t =
-      decltype(std::declval<geometry_t>().template find_coeff_indices<functionspace::boundary>(std::declval<typename geometry_t::boundary_eval_t>()));
+    /// @brief Type of the coefficient indices of geometry type at the boundary
+    using geometry_boundary_coeff_indices_type =
+      decltype(std::declval<Geometry>().template find_coeff_indices<functionspace::boundary>(std::declval<typename Geometry::boundary_eval_type>()));
   
-    /// @brief Type of the coefficient indices of variable_t type in the interior
-    using variable_interior_coeff_indices_t =
-      decltype(std::declval<variable_t>().template find_coeff_indices<functionspace::interior>(std::declval<typename variable_t::eval_t>()));
+    /// @brief Type of the coefficient indices of variable type in the interior
+    using variable_interior_coeff_indices_type =
+      decltype(std::declval<Variable>().template find_coeff_indices<functionspace::interior>(std::declval<typename Variable::eval_type>()));
   
-    /// @brief Type of the coefficient indices of variable_t type at the boundary
-    using variable_boundary_coeff_indices_t =
-      decltype(std::declval<variable_t>().template find_coeff_indices<functionspace::boundary>(std::declval<typename variable_t::boundary_eval_t>()));
+    /// @brief Type of the coefficient indices of variable type at the boundary
+    using variable_boundary_coeff_indices_type =
+      decltype(std::declval<Variable>().template find_coeff_indices<functionspace::boundary>(std::declval<typename Variable::boundary_eval_type>()));
 
   protected:
-    /// @brief Coefficient indices of geometry_t type in the interior
-    geometry_interior_coeff_indices_t geometry_interior_coeff_indices_;
+    /// @brief Coefficient indices of geometry type in the interior
+    geometry_interior_coeff_indices_type geometry_interior_coeff_indices_;
 
-    /// @brief Coefficient indices of geometry_t type at the vboundary
-    geometry_boundary_coeff_indices_t geometry_boundary_coeff_indices_;
+    /// @brief Coefficient indices of geometry type at the vboundary
+    geometry_boundary_coeff_indices_type geometry_boundary_coeff_indices_;
   
-    /// @brief Coefficient indices of variable_t type in the interior
-    variable_interior_coeff_indices_t variable_interior_coeff_indices_;
+    /// @brief Coefficient indices of variable type in the interior
+    variable_interior_coeff_indices_type variable_interior_coeff_indices_;
 
-    /// @brief Coefficient indices of variable_t type at the boundary
-    variable_boundary_coeff_indices_t variable_boundary_coeff_indices_;
+    /// @brief Coefficient indices of variable type at the boundary
+    variable_boundary_coeff_indices_type variable_boundary_coeff_indices_;
   };
   
 } // namespace iganet

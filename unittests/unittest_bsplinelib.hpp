@@ -30,11 +30,11 @@
 
 #pragma once
 
-template<typename BSpline_t>
-auto to_bsplinelib_bspline(const BSpline_t& bspline)
+template<typename Spline>
+auto to_bsplinelib_bspline(const Spline& bspline)
 {
   // B-spline construction
-  using BSpline          = bsplinelib::splines::BSpline<BSpline_t::parDim(), BSpline_t::geoDim()>;
+  using BSpline          = bsplinelib::splines::BSpline<Spline::parDim(), Spline::geoDim()>;
   using ParameterSpace   = typename BSpline::ParameterSpace_;
   using VectorSpace      = typename BSpline::VectorSpace_;
   using Coordinates      = typename VectorSpace::Coordinates_;
@@ -63,7 +63,7 @@ auto to_bsplinelib_bspline(const BSpline_t& bspline)
   for (iganet::short_t k=0; k<bspline.parDim(); ++k) {
     Knots knots_;
     for (int64_t i=0; i<bspline.nknots(k); ++i)
-      knots_.emplace_back( Knot{bspline.knots(k)[i].template item<typename BSpline_t::value_type>()} );
+      knots_.emplace_back( Knot{bspline.knots(k)[i].template item<typename Spline::value_type>()} );
     bsplinelib::SharedPointer<KnotVector> knot_vector{std::make_shared<KnotVector>(knots_)};
     knot_vectors[k] = std::move(knot_vector);
   }
@@ -74,20 +74,20 @@ auto to_bsplinelib_bspline(const BSpline_t& bspline)
   // Create coordinate vector(s)
   Coordinates coordinates;
   for (int64_t i=0; i<bspline.ncumcoeffs(); ++i)
-    if constexpr (BSpline_t::geoDim() == 1)
-      coordinates.emplace_back(Coordinate{ScalarCoordinate{bspline.coeffs(0)[i].template item<typename BSpline_t::value_type>()}} );
-    else if constexpr (BSpline_t::geoDim() == 2)
-      coordinates.emplace_back(Coordinate{ScalarCoordinate{bspline.coeffs(0)[i].template item<typename BSpline_t::value_type>()},
-                                          ScalarCoordinate{bspline.coeffs(1)[i].template item<typename BSpline_t::value_type>()}} );
-    else if constexpr (BSpline_t::geoDim() == 3)
-      coordinates.emplace_back(Coordinate{ScalarCoordinate{bspline.coeffs(0)[i].template item<typename BSpline_t::value_type>()},
-                                          ScalarCoordinate{bspline.coeffs(1)[i].template item<typename BSpline_t::value_type>()},
-                                          ScalarCoordinate{bspline.coeffs(2)[i].template item<typename BSpline_t::value_type>()}} );
-    else if constexpr (BSpline_t::geoDim() == 4)
-      coordinates.emplace_back(Coordinate{ScalarCoordinate{bspline.coeffs(0)[i].template item<typename BSpline_t::value_type>()},
-                                          ScalarCoordinate{bspline.coeffs(1)[i].template item<typename BSpline_t::value_type>()},
-                                          ScalarCoordinate{bspline.coeffs(2)[i].template item<typename BSpline_t::value_type>()},
-                                          ScalarCoordinate{bspline.coeffs(3)[i].template item<typename BSpline_t::value_type>()}} );
+    if constexpr (Spline::geoDim() == 1)
+      coordinates.emplace_back(Coordinate{ScalarCoordinate{bspline.coeffs(0)[i].template item<typename Spline::value_type>()}} );
+    else if constexpr (Spline::geoDim() == 2)
+      coordinates.emplace_back(Coordinate{ScalarCoordinate{bspline.coeffs(0)[i].template item<typename Spline::value_type>()},
+                                          ScalarCoordinate{bspline.coeffs(1)[i].template item<typename Spline::value_type>()}} );
+    else if constexpr (Spline::geoDim() == 3)
+      coordinates.emplace_back(Coordinate{ScalarCoordinate{bspline.coeffs(0)[i].template item<typename Spline::value_type>()},
+                                          ScalarCoordinate{bspline.coeffs(1)[i].template item<typename Spline::value_type>()},
+                                          ScalarCoordinate{bspline.coeffs(2)[i].template item<typename Spline::value_type>()}} );
+    else if constexpr (Spline::geoDim() == 4)
+      coordinates.emplace_back(Coordinate{ScalarCoordinate{bspline.coeffs(0)[i].template item<typename Spline::value_type>()},
+                                          ScalarCoordinate{bspline.coeffs(1)[i].template item<typename Spline::value_type>()},
+                                          ScalarCoordinate{bspline.coeffs(2)[i].template item<typename Spline::value_type>()},
+                                          ScalarCoordinate{bspline.coeffs(3)[i].template item<typename Spline::value_type>()}} );
     else
       throw std::runtime_error("Unsupported geometric dimension");
 
@@ -101,18 +101,18 @@ auto to_bsplinelib_bspline(const BSpline_t& bspline)
 }
 
 template<iganet::deriv deriv, bool memory_optimized, bool precompute,
-         typename BSpline_t, typename BSplineLibBSpline_t, typename TensorArray_t>
-void test_bspline_eval(const BSpline_t& bspline,
-                       BSplineLibBSpline_t bsplinelib_bspline,
-                       const TensorArray_t& xi, typename BSpline_t::value_type tol = 1e-12)
+         typename Spline, typename BSplineLibSpline, typename TensorArray_t>
+void test_bspline_eval(const Spline& bspline,
+                       BSplineLibSpline bsplinelib_bspline,
+                       const TensorArray_t& xi, typename Spline::value_type tol = 1e-12)
 {
   // B-spline evaluation
-  using ParametricCoordinate       = typename BSplineLibBSpline_t::ParametricCoordinate_;
+  using ParametricCoordinate       = typename BSplineLibSpline::ParametricCoordinate_;
   using ScalarParametricCoordinate = typename ParametricCoordinate::value_type;
-  using Derivative                 = typename BSplineLibBSpline_t::ParameterSpace_::Derivative_;
+  using Derivative                 = typename BSplineLibSpline::ParameterSpace_::Derivative_;
   using ScalarDerivative           = typename Derivative::value_type;
 
-  using BSplineValue_t = iganet::utils::BlockTensor<torch::Tensor, 1, BSpline_t::geoDim()>;
+  using BSplineValue_t = iganet::utils::BlockTensor<torch::Tensor, 1, Spline::geoDim()>;
 
   BSplineValue_t bspline_val;
   if constexpr (precompute) {
@@ -124,38 +124,38 @@ void test_bspline_eval(const BSpline_t& bspline,
     bspline_val        = bspline.template eval<deriv, memory_optimized>(xi);
 
   for (int64_t i=0; i<xi[0].size(0); ++i) {
-    if constexpr (BSpline_t::parDim() == 1 &&
-                  BSpline_t::geoDim() == 1)
-      EXPECT_NEAR(bspline_val(0)[i].template item<typename BSpline_t::value_type>(),
+    if constexpr (Spline::parDim() == 1 &&
+                  Spline::geoDim() == 1)
+      EXPECT_NEAR(bspline_val(0)[i].template item<typename Spline::value_type>(),
                   bsplinelib_bspline(ParametricCoordinate
                                     {
-                                      ScalarParametricCoordinate{(xi[0])[i].template item<typename BSpline_t::value_type>()}
+                                      ScalarParametricCoordinate{(xi[0])[i].template item<typename Spline::value_type>()}
                                     },
                                     Derivative
                                     {
                                       ScalarDerivative{(iganet::short_t) deriv % 10}
                                     }
                                     )[0], tol);
-    else if constexpr (BSpline_t::parDim() == 1 &&
-                       BSpline_t::geoDim() >  1)
+    else if constexpr (Spline::parDim() == 1 &&
+                       Spline::geoDim() >  1)
       for (iganet::short_t k=0; k<bspline.geoDim(); ++k)
-        EXPECT_NEAR(bspline_val(k)[i].template item<typename BSpline_t::value_type>(),
+        EXPECT_NEAR(bspline_val(k)[i].template item<typename Spline::value_type>(),
                     bsplinelib_bspline(ParametricCoordinate
                                       {
-                                        ScalarParametricCoordinate{(xi[0])[i].template item<typename BSpline_t::value_type>()}
+                                        ScalarParametricCoordinate{(xi[0])[i].template item<typename Spline::value_type>()}
                                       },
                                       Derivative
                                       {
                                         ScalarDerivative{(iganet::short_t) deriv %10}
                                       }
                                       )[k], tol);
-    else if constexpr (BSpline_t::parDim() == 2 &&
-                       BSpline_t::geoDim() == 1)
-      EXPECT_NEAR(bspline_val(0)[i].template item<typename BSpline_t::value_type>(),
+    else if constexpr (Spline::parDim() == 2 &&
+                       Spline::geoDim() == 1)
+      EXPECT_NEAR(bspline_val(0)[i].template item<typename Spline::value_type>(),
                   bsplinelib_bspline(ParametricCoordinate
                                     {
-                                      ScalarParametricCoordinate{(xi[0])[i].template item<typename BSpline_t::value_type>()},
-                                      ScalarParametricCoordinate{(xi[1])[i].template item<typename BSpline_t::value_type>()}
+                                      ScalarParametricCoordinate{(xi[0])[i].template item<typename Spline::value_type>()},
+                                      ScalarParametricCoordinate{(xi[1])[i].template item<typename Spline::value_type>()}
                                     },
                                     Derivative
                                     {
@@ -163,14 +163,14 @@ void test_bspline_eval(const BSpline_t& bspline,
                                       ScalarDerivative{((iganet::short_t)deriv/10)%10}
                                     }
                                     )[0], tol);
-    else if constexpr (BSpline_t::parDim() == 2 &&
-                       BSpline_t::geoDim() >  1)
+    else if constexpr (Spline::parDim() == 2 &&
+                       Spline::geoDim() >  1)
       for (iganet::short_t k=0; k<bspline.geoDim(); ++k)
-        EXPECT_NEAR(bspline_val(k)[i].template item<typename BSpline_t::value_type>(),
+        EXPECT_NEAR(bspline_val(k)[i].template item<typename Spline::value_type>(),
                     bsplinelib_bspline(ParametricCoordinate
                                       {
-                                        ScalarParametricCoordinate{(xi[0])[i].template item<typename BSpline_t::value_type>()},
-                                        ScalarParametricCoordinate{(xi[1])[i].template item<typename BSpline_t::value_type>()}
+                                        ScalarParametricCoordinate{(xi[0])[i].template item<typename Spline::value_type>()},
+                                        ScalarParametricCoordinate{(xi[1])[i].template item<typename Spline::value_type>()}
                                       },
                                       Derivative
                                       {
@@ -178,14 +178,14 @@ void test_bspline_eval(const BSpline_t& bspline,
                                         ScalarDerivative{((iganet::short_t)deriv/10)%10}
                                       }
                                       )[k], tol);
-    else if constexpr (BSpline_t::parDim() == 3 &&
-                       BSpline_t::geoDim() == 1)
-      EXPECT_NEAR(bspline_val(0)[i].template item<typename BSpline_t::value_type>(),
+    else if constexpr (Spline::parDim() == 3 &&
+                       Spline::geoDim() == 1)
+      EXPECT_NEAR(bspline_val(0)[i].template item<typename Spline::value_type>(),
                   bsplinelib_bspline(ParametricCoordinate
                                     {
-                                      ScalarParametricCoordinate{(xi[0])[i].template item<typename BSpline_t::value_type>()},
-                                      ScalarParametricCoordinate{(xi[1])[i].template item<typename BSpline_t::value_type>()},
-                                      ScalarParametricCoordinate{(xi[2])[i].template item<typename BSpline_t::value_type>()}
+                                      ScalarParametricCoordinate{(xi[0])[i].template item<typename Spline::value_type>()},
+                                      ScalarParametricCoordinate{(xi[1])[i].template item<typename Spline::value_type>()},
+                                      ScalarParametricCoordinate{(xi[2])[i].template item<typename Spline::value_type>()}
                                     },
                                     Derivative
                                     {
@@ -194,15 +194,15 @@ void test_bspline_eval(const BSpline_t& bspline,
                                       ScalarDerivative{((iganet::short_t)deriv/100)%10}
                                     }
                                     )[0], tol);
-    else if constexpr (BSpline_t::parDim() == 3 &&
-                       BSpline_t::geoDim() >  1)
+    else if constexpr (Spline::parDim() == 3 &&
+                       Spline::geoDim() >  1)
       for (iganet::short_t k=0; k<bspline.geoDim(); ++k)
-        EXPECT_NEAR(bspline_val(k)[i].template item<typename BSpline_t::value_type>(),
+        EXPECT_NEAR(bspline_val(k)[i].template item<typename Spline::value_type>(),
                     bsplinelib_bspline(ParametricCoordinate
                                       {
-                                        ScalarParametricCoordinate{(xi[0])[i].template item<typename BSpline_t::value_type>()},
-                                        ScalarParametricCoordinate{(xi[1])[i].template item<typename BSpline_t::value_type>()},
-                                        ScalarParametricCoordinate{(xi[2])[i].template item<typename BSpline_t::value_type>()}
+                                        ScalarParametricCoordinate{(xi[0])[i].template item<typename Spline::value_type>()},
+                                        ScalarParametricCoordinate{(xi[1])[i].template item<typename Spline::value_type>()},
+                                        ScalarParametricCoordinate{(xi[2])[i].template item<typename Spline::value_type>()}
                                       },
                                       Derivative
                                       {
@@ -211,15 +211,15 @@ void test_bspline_eval(const BSpline_t& bspline,
                                         ScalarDerivative{((iganet::short_t)deriv/100)%10}
                                       }
                                       )[k], tol);
-    else if constexpr (BSpline_t::parDim() == 4 &&
-                       BSpline_t::geoDim() == 1)
-      EXPECT_NEAR(bspline_val(0)[i].template item<typename BSpline_t::value_type>(),
+    else if constexpr (Spline::parDim() == 4 &&
+                       Spline::geoDim() == 1)
+      EXPECT_NEAR(bspline_val(0)[i].template item<typename Spline::value_type>(),
                   bsplinelib_bspline(ParametricCoordinate
                                     {
-                                      ScalarParametricCoordinate{(xi[0])[i].template item<typename BSpline_t::value_type>()},
-                                      ScalarParametricCoordinate{(xi[1])[i].template item<typename BSpline_t::value_type>()},
-                                      ScalarParametricCoordinate{(xi[2])[i].template item<typename BSpline_t::value_type>()},
-                                      ScalarParametricCoordinate{(xi[3])[i].template item<typename BSpline_t::value_type>()}
+                                      ScalarParametricCoordinate{(xi[0])[i].template item<typename Spline::value_type>()},
+                                      ScalarParametricCoordinate{(xi[1])[i].template item<typename Spline::value_type>()},
+                                      ScalarParametricCoordinate{(xi[2])[i].template item<typename Spline::value_type>()},
+                                      ScalarParametricCoordinate{(xi[3])[i].template item<typename Spline::value_type>()}
                                     },
                                     Derivative
                                     {
@@ -229,16 +229,16 @@ void test_bspline_eval(const BSpline_t& bspline,
                                       ScalarDerivative{((iganet::short_t)deriv/1000)%10}
                                     }
                                     )[0], tol);
-    else if constexpr (BSpline_t::parDim() == 4 &&
-                       BSpline_t::geoDim() >  1)
+    else if constexpr (Spline::parDim() == 4 &&
+                       Spline::geoDim() >  1)
       for (iganet::short_t k=0; k<bspline.geoDim(); ++k)
-        EXPECT_NEAR(bspline_val(k)[i].template item<typename BSpline_t::value_type>(),
+        EXPECT_NEAR(bspline_val(k)[i].template item<typename Spline::value_type>(),
                     bsplinelib_bspline(ParametricCoordinate
                                       {
-                                        ScalarParametricCoordinate{(xi[0])[i].template item<typename BSpline_t::value_type>()},
-                                        ScalarParametricCoordinate{(xi[1])[i].template item<typename BSpline_t::value_type>()},
-                                        ScalarParametricCoordinate{(xi[2])[i].template item<typename BSpline_t::value_type>()},
-                                        ScalarParametricCoordinate{(xi[3])[i].template item<typename BSpline_t::value_type>()}
+                                        ScalarParametricCoordinate{(xi[0])[i].template item<typename Spline::value_type>()},
+                                        ScalarParametricCoordinate{(xi[1])[i].template item<typename Spline::value_type>()},
+                                        ScalarParametricCoordinate{(xi[2])[i].template item<typename Spline::value_type>()},
+                                        ScalarParametricCoordinate{(xi[3])[i].template item<typename Spline::value_type>()}
                                       },
                                       Derivative
                                       {
@@ -253,12 +253,12 @@ void test_bspline_eval(const BSpline_t& bspline,
   }
 }
 
-template<bool memory_optimized, bool precompute, typename BSpline_t, typename TensorArray_t>
-void test_bspline_grad(const BSpline_t& bspline,
+template<bool memory_optimized, bool precompute, typename Spline, typename TensorArray_t>
+void test_bspline_grad(const Spline& bspline,
                        const TensorArray_t& xi,
-                       typename BSpline_t::value_type tol = 1e-12)
+                       typename Spline::value_type tol = 1e-12)
 {
-  iganet::utils::BlockTensor<torch::Tensor, 1, BSpline_t::parDim()> bspline_grad_val;
+  iganet::utils::BlockTensor<torch::Tensor, 1, Spline::parDim()> bspline_grad_val;
 
   if constexpr (precompute) {
     auto knot_indices  = bspline.find_knot_indices(xi);
@@ -267,12 +267,12 @@ void test_bspline_grad(const BSpline_t& bspline,
   } else
     bspline_grad_val   = bspline.grad(xi);
 
-  if constexpr (BSpline_t::parDim() == 1) {
+  if constexpr (Spline::parDim() == 1) {
     EXPECT_TRUE(torch::allclose(bspline_grad_val(0,0),
                                 bspline.template eval<iganet::deriv::dx, memory_optimized>(xi)(0)
                                 ));
   }
-  else if constexpr (BSpline_t::parDim() == 2) {
+  else if constexpr (Spline::parDim() == 2) {
     EXPECT_TRUE(torch::allclose(bspline_grad_val(0,0),
                                 bspline.template eval<iganet::deriv::dx, memory_optimized>(xi)(0)
                                 ));
@@ -280,7 +280,7 @@ void test_bspline_grad(const BSpline_t& bspline,
                                 bspline.template eval<iganet::deriv::dy, memory_optimized>(xi)(0)
                                 ));
   }
-  else if constexpr (BSpline_t::parDim() == 3) {
+  else if constexpr (Spline::parDim() == 3) {
     EXPECT_TRUE(torch::allclose(bspline_grad_val(0,0),
                                 bspline.template eval<iganet::deriv::dx, memory_optimized>(xi)(0)
                                 ));
@@ -291,7 +291,7 @@ void test_bspline_grad(const BSpline_t& bspline,
                                 bspline.template eval<iganet::deriv::dz, memory_optimized>(xi)(0)
                                 ));
   }
-  else if constexpr (BSpline_t::parDim() == 4) {
+  else if constexpr (Spline::parDim() == 4) {
     EXPECT_TRUE(torch::allclose(bspline_grad_val(0,0),
                                 bspline.template eval<iganet::deriv::dx, memory_optimized>(xi)(0)
                                 ));
@@ -307,13 +307,13 @@ void test_bspline_grad(const BSpline_t& bspline,
   }
 }
 
-template<bool memory_optimized, bool precompute, typename Geometry_t, typename BSpline_t, typename TensorArray_t>
+template<bool memory_optimized, bool precompute, typename Geometry_t, typename Spline, typename TensorArray_t>
 void test_bspline_igrad(const Geometry_t& geometry,
-                        const BSpline_t& bspline,
+                        const Spline& bspline,
                         const TensorArray_t& xi,
-                        typename BSpline_t::value_type tol = 1e-12)
+                        typename Spline::value_type tol = 1e-12)
 {
-  iganet::utils::BlockTensor<torch::Tensor, 1, BSpline_t::parDim()> bspline_igrad_val;
+  iganet::utils::BlockTensor<torch::Tensor, 1, Spline::parDim()> bspline_igrad_val;
 
   if constexpr (precompute) {
     auto knot_indices    = bspline.find_knot_indices(xi);
@@ -326,12 +326,12 @@ void test_bspline_igrad(const Geometry_t& geometry,
   } else
     bspline_igrad_val    = bspline.igrad(geometry, xi);
 
-  if constexpr (BSpline_t::parDim() == 1) {
+  if constexpr (Spline::parDim() == 1) {
     EXPECT_TRUE(torch::allclose(bspline_igrad_val(0,0),
                                 bspline.template eval<iganet::deriv::dx, memory_optimized>(xi)(0)
                                 ));
   }
-  else if constexpr (BSpline_t::parDim() == 2) {
+  else if constexpr (Spline::parDim() == 2) {
     EXPECT_TRUE(torch::allclose(bspline_igrad_val(0,0),
                                 bspline.template eval<iganet::deriv::dx, memory_optimized>(xi)(0)
                                 ));
@@ -339,7 +339,7 @@ void test_bspline_igrad(const Geometry_t& geometry,
                                 bspline.template eval<iganet::deriv::dy, memory_optimized>(xi)(0)
                                 ));
   }
-  else if constexpr (BSpline_t::parDim() == 3) {
+  else if constexpr (Spline::parDim() == 3) {
     EXPECT_TRUE(torch::allclose(bspline_igrad_val(0,0),
                                 bspline.template eval<iganet::deriv::dx, memory_optimized>(xi)(0)
                                 ));
@@ -350,7 +350,7 @@ void test_bspline_igrad(const Geometry_t& geometry,
                                 bspline.template eval<iganet::deriv::dz, memory_optimized>(xi)(0)
                                 ));
   }
-  else if constexpr (BSpline_t::parDim() == 4) {
+  else if constexpr (Spline::parDim() == 4) {
     EXPECT_TRUE(torch::allclose(bspline_igrad_val(0,0),
                                 bspline.template eval<iganet::deriv::dx, memory_optimized>(xi)(0)
                                 ));
@@ -366,13 +366,13 @@ void test_bspline_igrad(const Geometry_t& geometry,
   }
 }
 
-template<bool memory_optimized, bool precompute, typename BSpline_t, typename TensorArray_t>
-void test_bspline_jac(const BSpline_t& bspline,
+template<bool memory_optimized, bool precompute, typename Spline, typename TensorArray_t>
+void test_bspline_jac(const Spline& bspline,
                       const TensorArray_t& xi,
-                      typename BSpline_t::value_type tol = 1e-12)
+                      typename Spline::value_type tol = 1e-12)
 {
   iganet::utils::BlockTensor<torch::Tensor,
-                             BSpline_t::geoDim(), BSpline_t::parDim()> bspline_jac_val;
+                             Spline::geoDim(), Spline::parDim()> bspline_jac_val;
 
   if constexpr (precompute) {
     auto knot_indices  = bspline.find_knot_indices(xi);
@@ -381,43 +381,43 @@ void test_bspline_jac(const BSpline_t& bspline,
   } else
     bspline_jac_val    = bspline.jac(xi);
 
-  if constexpr (BSpline_t::parDim() >= 1) {
-    for (iganet::short_t k=0; k<BSpline_t::geoDim(); ++k)
+  if constexpr (Spline::parDim() >= 1) {
+    for (iganet::short_t k=0; k<Spline::geoDim(); ++k)
       EXPECT_TRUE(torch::allclose(bspline_jac_val(k,0),
                                   bspline.template eval<iganet::deriv::dx, memory_optimized>(xi)(k)
                                   ));
   }
 
-  if constexpr (BSpline_t::parDim() >= 2) {
-    for (iganet::short_t k=0; k<BSpline_t::geoDim(); ++k)
+  if constexpr (Spline::parDim() >= 2) {
+    for (iganet::short_t k=0; k<Spline::geoDim(); ++k)
       EXPECT_TRUE(torch::allclose(bspline_jac_val(k,1),
                                   bspline.template eval<iganet::deriv::dy, memory_optimized>(xi)(k)
                                   ));
   }
 
-  if constexpr (BSpline_t::parDim() >= 3) {
-    for (iganet::short_t k=0; k<BSpline_t::geoDim(); ++k)
+  if constexpr (Spline::parDim() >= 3) {
+    for (iganet::short_t k=0; k<Spline::geoDim(); ++k)
       EXPECT_TRUE(torch::allclose(bspline_jac_val(k,2),
                                   bspline.template eval<iganet::deriv::dz, memory_optimized>(xi)(k)
                                   ));
   }
 
-  if constexpr (BSpline_t::parDim() >= 4) {
-    for (iganet::short_t k=0; k<BSpline_t::geoDim(); ++k)
+  if constexpr (Spline::parDim() >= 4) {
+    for (iganet::short_t k=0; k<Spline::geoDim(); ++k)
       EXPECT_TRUE(torch::allclose(bspline_jac_val(k,3),
                                   bspline.template eval<iganet::deriv::dt, memory_optimized>(xi)(k)
                                   ));
   }
 }
 
-template<bool memory_optimized, bool precompute, typename Geometry_t, typename BSpline_t, typename TensorArray_t>
+template<bool memory_optimized, bool precompute, typename Geometry_t, typename Spline, typename TensorArray_t>
 void test_bspline_ijac(const Geometry_t& geometry,
-                       const BSpline_t& bspline,
+                       const Spline& bspline,
                        const TensorArray_t& xi,
-                       typename BSpline_t::value_type tol = 1e-12)
+                       typename Spline::value_type tol = 1e-12)
 {
   iganet::utils::BlockTensor<torch::Tensor,
-                             BSpline_t::geoDim(), BSpline_t::parDim()> bspline_ijac_val;
+                             Spline::geoDim(), Spline::parDim()> bspline_ijac_val;
 
   if constexpr (precompute) {
     auto knot_indices    = bspline.find_knot_indices(xi);
@@ -430,43 +430,43 @@ void test_bspline_ijac(const Geometry_t& geometry,
   } else
     bspline_ijac_val    = bspline.ijac(geometry, xi);
 
-  if constexpr (BSpline_t::parDim() >= 1) {
-    for (iganet::short_t k=0; k<BSpline_t::geoDim(); ++k)
+  if constexpr (Spline::parDim() >= 1) {
+    for (iganet::short_t k=0; k<Spline::geoDim(); ++k)
       EXPECT_TRUE(torch::allclose(bspline_ijac_val(k,0),
                                   bspline.template eval<iganet::deriv::dx, memory_optimized>(xi)(k)
                                   ));
   }
 
-  if constexpr (BSpline_t::parDim() >= 2) {
-    for (iganet::short_t k=0; k<BSpline_t::geoDim(); ++k)
+  if constexpr (Spline::parDim() >= 2) {
+    for (iganet::short_t k=0; k<Spline::geoDim(); ++k)
       EXPECT_TRUE(torch::allclose(bspline_ijac_val(k,1),
                                   bspline.template eval<iganet::deriv::dy, memory_optimized>(xi)(k)
                                   ));
   }
 
-  if constexpr (BSpline_t::parDim() >= 3) {
-    for (iganet::short_t k=0; k<BSpline_t::geoDim(); ++k)
+  if constexpr (Spline::parDim() >= 3) {
+    for (iganet::short_t k=0; k<Spline::geoDim(); ++k)
       EXPECT_TRUE(torch::allclose(bspline_ijac_val(k,2),
                                   bspline.template eval<iganet::deriv::dz, memory_optimized>(xi)(k)
                                   ));
   }
 
-  if constexpr (BSpline_t::parDim() >= 4) {
-    for (iganet::short_t k=0; k<BSpline_t::geoDim(); ++k)
+  if constexpr (Spline::parDim() >= 4) {
+    for (iganet::short_t k=0; k<Spline::geoDim(); ++k)
       EXPECT_TRUE(torch::allclose(bspline_ijac_val(k,3),
                                   bspline.template eval<iganet::deriv::dt, memory_optimized>(xi)(k)
                                   ));
   }
 }
 
-template<bool memory_optimized, bool precompute, typename BSpline_t, typename TensorArray_t>
-void test_bspline_hess(const BSpline_t& bspline,
+template<bool memory_optimized, bool precompute, typename Spline, typename TensorArray_t>
+void test_bspline_hess(const Spline& bspline,
                        const TensorArray_t& xi,
-                       typename BSpline_t::value_type tol = 1e-12)
+                       typename Spline::value_type tol = 1e-12)
 {
   iganet::utils::BlockTensor<torch::Tensor,
-                             BSpline_t::parDim(), BSpline_t::parDim(),
-                             BSpline_t::geoDim()> bspline_hess_val;
+                             Spline::parDim(), Spline::parDim(),
+                             Spline::geoDim()> bspline_hess_val;
 
   if constexpr (precompute) {
     auto knot_indices  = bspline.find_knot_indices(xi);
@@ -475,15 +475,15 @@ void test_bspline_hess(const BSpline_t& bspline,
   } else
     bspline_hess_val   = bspline.hess(xi);
 
-  if constexpr (BSpline_t::parDim() >= 1) {
-    for (iganet::short_t k=0; k<BSpline_t::geoDim(); ++k)
+  if constexpr (Spline::parDim() >= 1) {
+    for (iganet::short_t k=0; k<Spline::geoDim(); ++k)
       EXPECT_TRUE(torch::allclose(bspline_hess_val(0,0,k),
                                   bspline.template eval<iganet::deriv::dx^2, memory_optimized>(xi)(k)
                                   ));
   }
 
-  if constexpr (BSpline_t::parDim() >= 2) {
-    for (iganet::short_t k=0; k<BSpline_t::geoDim(); ++k) {
+  if constexpr (Spline::parDim() >= 2) {
+    for (iganet::short_t k=0; k<Spline::geoDim(); ++k) {
       EXPECT_TRUE(torch::allclose(bspline_hess_val(0,1,k),
                                   bspline.template eval<iganet::deriv::dx+iganet::deriv::dy, memory_optimized>(xi)(k)
                                   ));
@@ -496,8 +496,8 @@ void test_bspline_hess(const BSpline_t& bspline,
     }
   }
 
-  if constexpr (BSpline_t::parDim() >= 3) {
-    for (iganet::short_t k=0; k<BSpline_t::geoDim(); ++k) {
+  if constexpr (Spline::parDim() >= 3) {
+    for (iganet::short_t k=0; k<Spline::geoDim(); ++k) {
       EXPECT_TRUE(torch::allclose(bspline_hess_val(0,2,k),
                                   bspline.template eval<iganet::deriv::dx+iganet::deriv::dz, memory_optimized>(xi)(k)
                                   ));
@@ -516,8 +516,8 @@ void test_bspline_hess(const BSpline_t& bspline,
     }
   }
 
-  if constexpr (BSpline_t::parDim() >= 4) {
-    for (iganet::short_t k=0; k<BSpline_t::geoDim(); ++k) {
+  if constexpr (Spline::parDim() >= 4) {
+    for (iganet::short_t k=0; k<Spline::geoDim(); ++k) {
       EXPECT_TRUE(torch::allclose(bspline_hess_val(0,3,k),
                                   bspline.template eval<iganet::deriv::dx+iganet::deriv::dt, memory_optimized>(xi)(k)
                                   ));
@@ -543,15 +543,15 @@ void test_bspline_hess(const BSpline_t& bspline,
   }
 }
 
-template<bool memory_optimized, bool precompute, typename Geometry_t, typename BSpline_t, typename TensorArray_t>
+template<bool memory_optimized, bool precompute, typename Geometry_t, typename Spline, typename TensorArray_t>
 void test_bspline_ihess(const Geometry_t& geometry,
-                        const BSpline_t& bspline,
+                        const Spline& bspline,
                         const TensorArray_t& xi,
-                        typename BSpline_t::value_type tol = 1e-12)
+                        typename Spline::value_type tol = 1e-12)
 {
   iganet::utils::BlockTensor<torch::Tensor,
-                             BSpline_t::parDim(), BSpline_t::parDim(),
-                             BSpline_t::geoDim()> bspline_ihess_val;
+                             Spline::parDim(), Spline::parDim(),
+                             Spline::geoDim()> bspline_ihess_val;
 
   if constexpr (precompute) {
     auto knot_indices    = bspline.find_knot_indices(xi);
@@ -564,15 +564,15 @@ void test_bspline_ihess(const Geometry_t& geometry,
   } else
     bspline_ihess_val    = bspline.ihess(geometry, xi);
 
-  if constexpr (BSpline_t::parDim() >= 1) {
-    for (iganet::short_t k=0; k<BSpline_t::geoDim(); ++k)
+  if constexpr (Spline::parDim() >= 1) {
+    for (iganet::short_t k=0; k<Spline::geoDim(); ++k)
       EXPECT_TRUE(torch::allclose(bspline_ihess_val(0,0,k),
                                   bspline.template eval<iganet::deriv::dx^2, memory_optimized>(xi)(k)
                                   ));
   }
 
-  if constexpr (BSpline_t::parDim() >= 2) {
-    for (iganet::short_t k=0; k<BSpline_t::geoDim(); ++k) {
+  if constexpr (Spline::parDim() >= 2) {
+    for (iganet::short_t k=0; k<Spline::geoDim(); ++k) {
       EXPECT_TRUE(torch::allclose(bspline_ihess_val(0,1,k),
                                   bspline.template eval<iganet::deriv::dx+iganet::deriv::dy, memory_optimized>(xi)(k)
                                   ));
@@ -585,8 +585,8 @@ void test_bspline_ihess(const Geometry_t& geometry,
     }
   }
 
-  if constexpr (BSpline_t::parDim() >= 3) {
-    for (iganet::short_t k=0; k<BSpline_t::geoDim(); ++k) {
+  if constexpr (Spline::parDim() >= 3) {
+    for (iganet::short_t k=0; k<Spline::geoDim(); ++k) {
       EXPECT_TRUE(torch::allclose(bspline_ihess_val(0,2,k),
                                   bspline.template eval<iganet::deriv::dx+iganet::deriv::dz, memory_optimized>(xi)(k)
                                   ));
@@ -605,8 +605,8 @@ void test_bspline_ihess(const Geometry_t& geometry,
     }
   }
 
-  if constexpr (BSpline_t::parDim() >= 4) {
-    for (iganet::short_t k=0; k<BSpline_t::geoDim(); ++k) {
+  if constexpr (Spline::parDim() >= 4) {
+    for (iganet::short_t k=0; k<Spline::geoDim(); ++k) {
       EXPECT_TRUE(torch::allclose(bspline_ihess_val(0,3,k),
                                   bspline.template eval<iganet::deriv::dx+iganet::deriv::dt, memory_optimized>(xi)(k)
                                   ));
@@ -632,11 +632,11 @@ void test_bspline_ihess(const Geometry_t& geometry,
   }
 }
 
-template<typename Geometry_t, typename BSpline_t, typename TensorArray_t>
+template<typename Geometry_t, typename Spline, typename TensorArray_t>
 void test_bspline_eval(const Geometry_t& geometry,
-                       const BSpline_t& bspline,
+                       const Spline& bspline,
                        const TensorArray_t& xi,
-                       typename BSpline_t::value_type tol = 1e-12)
+                       typename Spline::value_type tol = 1e-12)
 {
   // Create B-Spline
   auto bsplinelib_bspline = to_bsplinelib_bspline(bspline);
@@ -644,28 +644,28 @@ void test_bspline_eval(const Geometry_t& geometry,
   // Evaluate function and derivatives (non-memory optimized)
   test_bspline_eval<iganet::deriv::func, false, false>(bspline, bsplinelib_bspline, xi, tol);
 
-  if constexpr (BSpline_t::parDim() == 1) {
+  if constexpr (Spline::parDim() == 1) {
     test_bspline_eval<iganet::deriv::dx,   false, false>(bspline, bsplinelib_bspline, xi, tol);
     test_bspline_eval<iganet::deriv::dx^2, false, false>(bspline, bsplinelib_bspline, xi, tol);
     test_bspline_eval<iganet::deriv::dx^3, false, false>(bspline, bsplinelib_bspline, xi, tol);
     test_bspline_eval<iganet::deriv::dx^4, false, false>(bspline, bsplinelib_bspline, xi, tol);
   }
 
-  if constexpr (BSpline_t::parDim() == 2) {
+  if constexpr (Spline::parDim() == 2) {
     test_bspline_eval<iganet::deriv::dy,   false, false>(bspline, bsplinelib_bspline, xi, tol);
     test_bspline_eval<iganet::deriv::dy^2, false, false>(bspline, bsplinelib_bspline, xi, tol);
     test_bspline_eval<iganet::deriv::dy^3, false, false>(bspline, bsplinelib_bspline, xi, tol);
     test_bspline_eval<iganet::deriv::dy^4, false, false>(bspline, bsplinelib_bspline, xi, tol);
   }
 
-  if constexpr (BSpline_t::parDim() == 3) {
+  if constexpr (Spline::parDim() == 3) {
     test_bspline_eval<iganet::deriv::dz,   false, false>(bspline, bsplinelib_bspline, xi, tol);
     test_bspline_eval<iganet::deriv::dz^2, false, false>(bspline, bsplinelib_bspline, xi, tol);
     test_bspline_eval<iganet::deriv::dz^3, false, false>(bspline, bsplinelib_bspline, xi, tol);
     test_bspline_eval<iganet::deriv::dz^4, false, false>(bspline, bsplinelib_bspline, xi, tol);
   }
 
-  if constexpr (BSpline_t::parDim() == 4) {
+  if constexpr (Spline::parDim() == 4) {
     test_bspline_eval<iganet::deriv::dt,   false, false>(bspline, bsplinelib_bspline, xi, tol);
     test_bspline_eval<iganet::deriv::dt^2, false, false>(bspline, bsplinelib_bspline, xi, tol);
     test_bspline_eval<iganet::deriv::dt^3, false, false>(bspline, bsplinelib_bspline, xi, tol);
@@ -675,28 +675,28 @@ void test_bspline_eval(const Geometry_t& geometry,
   // Evaluate function and derivatives (memory optimized)
   test_bspline_eval<iganet::deriv::func, true, false>(bspline, bsplinelib_bspline, xi, tol);
 
-  if constexpr (BSpline_t::parDim() == 1) {
+  if constexpr (Spline::parDim() == 1) {
     test_bspline_eval<iganet::deriv::dx,   true, false>(bspline, bsplinelib_bspline, xi, tol);
     test_bspline_eval<iganet::deriv::dx^2, true, false>(bspline, bsplinelib_bspline, xi, tol);
     test_bspline_eval<iganet::deriv::dx^3, true, false>(bspline, bsplinelib_bspline, xi, tol);
     test_bspline_eval<iganet::deriv::dx^4, true, false>(bspline, bsplinelib_bspline, xi, tol);
   }
 
-  if constexpr (BSpline_t::parDim() == 2) {
+  if constexpr (Spline::parDim() == 2) {
     test_bspline_eval<iganet::deriv::dy,   true, false>(bspline, bsplinelib_bspline, xi, tol);
     test_bspline_eval<iganet::deriv::dy^2, true, false>(bspline, bsplinelib_bspline, xi, tol);
     test_bspline_eval<iganet::deriv::dy^3, true, false>(bspline, bsplinelib_bspline, xi, tol);
     test_bspline_eval<iganet::deriv::dy^4, true, false>(bspline, bsplinelib_bspline, xi, tol);
   }
 
-  if constexpr (BSpline_t::parDim() == 3) {
+  if constexpr (Spline::parDim() == 3) {
     test_bspline_eval<iganet::deriv::dz,   true, false>(bspline, bsplinelib_bspline, xi, tol);
     test_bspline_eval<iganet::deriv::dz^2, true, false>(bspline, bsplinelib_bspline, xi, tol);
     test_bspline_eval<iganet::deriv::dz^3, true, false>(bspline, bsplinelib_bspline, xi, tol);
     test_bspline_eval<iganet::deriv::dz^4, true, false>(bspline, bsplinelib_bspline, xi, tol);
   }
 
-  if constexpr (BSpline_t::parDim() == 4) {
+  if constexpr (Spline::parDim() == 4) {
     test_bspline_eval<iganet::deriv::dt,   true, false>(bspline, bsplinelib_bspline, xi, tol);
     test_bspline_eval<iganet::deriv::dt^2, true, false>(bspline, bsplinelib_bspline, xi, tol);
     test_bspline_eval<iganet::deriv::dt^3, true, false>(bspline, bsplinelib_bspline, xi, tol);
@@ -706,28 +706,28 @@ void test_bspline_eval(const Geometry_t& geometry,
   // Evaluate function and derivatives from precomputed data (non-memory optimized)
   test_bspline_eval<iganet::deriv::func, false, true>(bspline, bsplinelib_bspline, xi, tol);
 
-  if constexpr (BSpline_t::parDim() == 1) {
+  if constexpr (Spline::parDim() == 1) {
     test_bspline_eval<iganet::deriv::dx,   false, true>(bspline, bsplinelib_bspline, xi, tol);
     test_bspline_eval<iganet::deriv::dx^2, false, true>(bspline, bsplinelib_bspline, xi, tol);
     test_bspline_eval<iganet::deriv::dx^3, false, true>(bspline, bsplinelib_bspline, xi, tol);
     test_bspline_eval<iganet::deriv::dx^4, false, true>(bspline, bsplinelib_bspline, xi, tol);
   }
 
-  if constexpr (BSpline_t::parDim() == 2) {
+  if constexpr (Spline::parDim() == 2) {
     test_bspline_eval<iganet::deriv::dy,   false, true>(bspline, bsplinelib_bspline, xi, tol);
     test_bspline_eval<iganet::deriv::dy^2, false, true>(bspline, bsplinelib_bspline, xi, tol);
     test_bspline_eval<iganet::deriv::dy^3, false, true>(bspline, bsplinelib_bspline, xi, tol);
     test_bspline_eval<iganet::deriv::dy^4, false, true>(bspline, bsplinelib_bspline, xi, tol);
   }
 
-  if constexpr (BSpline_t::parDim() == 3) {
+  if constexpr (Spline::parDim() == 3) {
     test_bspline_eval<iganet::deriv::dz,   false, true>(bspline, bsplinelib_bspline, xi, tol);
     test_bspline_eval<iganet::deriv::dz^2, false, true>(bspline, bsplinelib_bspline, xi, tol);
     test_bspline_eval<iganet::deriv::dz^3, false, true>(bspline, bsplinelib_bspline, xi, tol);
     test_bspline_eval<iganet::deriv::dz^4, false, true>(bspline, bsplinelib_bspline, xi, tol);
   }
 
-  if constexpr (BSpline_t::parDim() == 4) {
+  if constexpr (Spline::parDim() == 4) {
     test_bspline_eval<iganet::deriv::dt,   false, true>(bspline, bsplinelib_bspline, xi, tol);
     test_bspline_eval<iganet::deriv::dt^2, false, true>(bspline, bsplinelib_bspline, xi, tol);
     test_bspline_eval<iganet::deriv::dt^3, false, true>(bspline, bsplinelib_bspline, xi, tol);
@@ -737,28 +737,28 @@ void test_bspline_eval(const Geometry_t& geometry,
   // Evaluate function and derivatives from precomputed data (memory optimized)
   test_bspline_eval<iganet::deriv::func, true, true>(bspline, bsplinelib_bspline, xi, tol);
 
-  if constexpr (BSpline_t::parDim() == 1) {
+  if constexpr (Spline::parDim() == 1) {
     test_bspline_eval<iganet::deriv::dx,   true, true>(bspline, bsplinelib_bspline, xi, tol);
     test_bspline_eval<iganet::deriv::dx^2, true, true>(bspline, bsplinelib_bspline, xi, tol);
     test_bspline_eval<iganet::deriv::dx^3, true, true>(bspline, bsplinelib_bspline, xi, tol);
     test_bspline_eval<iganet::deriv::dx^4, true, true>(bspline, bsplinelib_bspline, xi, tol);
   }
 
-  if constexpr (BSpline_t::parDim() == 2) {
+  if constexpr (Spline::parDim() == 2) {
     test_bspline_eval<iganet::deriv::dy,   true, true>(bspline, bsplinelib_bspline, xi, tol);
     test_bspline_eval<iganet::deriv::dy^2, true, true>(bspline, bsplinelib_bspline, xi, tol);
     test_bspline_eval<iganet::deriv::dy^3, true, true>(bspline, bsplinelib_bspline, xi, tol);
     test_bspline_eval<iganet::deriv::dy^4, true, true>(bspline, bsplinelib_bspline, xi, tol);
   }
 
-  if constexpr (BSpline_t::parDim() == 3) {
+  if constexpr (Spline::parDim() == 3) {
     test_bspline_eval<iganet::deriv::dz,   true, true>(bspline, bsplinelib_bspline, xi, tol);
     test_bspline_eval<iganet::deriv::dz^2, true, true>(bspline, bsplinelib_bspline, xi, tol);
     test_bspline_eval<iganet::deriv::dz^3, true, true>(bspline, bsplinelib_bspline, xi, tol);
     test_bspline_eval<iganet::deriv::dz^4, true, true>(bspline, bsplinelib_bspline, xi, tol);
   }
 
-  if constexpr (BSpline_t::parDim() == 4) {
+  if constexpr (Spline::parDim() == 4) {
     test_bspline_eval<iganet::deriv::dt,   true, true>(bspline, bsplinelib_bspline, xi, tol);
     test_bspline_eval<iganet::deriv::dt^2, true, true>(bspline, bsplinelib_bspline, xi, tol);
     test_bspline_eval<iganet::deriv::dt^3, true, true>(bspline, bsplinelib_bspline, xi, tol);
@@ -766,7 +766,7 @@ void test_bspline_eval(const Geometry_t& geometry,
   }
 
   // Evaluate gradients
-  if constexpr (BSpline_t::geoDim() == 1) {
+  if constexpr (Spline::geoDim() == 1) {
     test_bspline_grad<false, false>(bspline, xi, tol);
     test_bspline_grad<false,  true>(bspline, xi, tol);
     test_bspline_grad<true,  false>(bspline, xi, tol);
@@ -790,7 +790,7 @@ void test_bspline_eval(const Geometry_t& geometry,
   test_bspline_ijac<true,   true>(geometry, bspline, xi, tol);
 
   /// Evaluate Hessian
-  if constexpr (BSpline_t::geoDim() == 1) {
+  if constexpr (Spline::geoDim() == 1) {
     test_bspline_hess<false, false>(bspline, xi, tol);
     test_bspline_hess<false,  true>(bspline, xi, tol);
     test_bspline_hess<true,  false>(bspline, xi, tol);

@@ -27,7 +27,7 @@ namespace iganet {
               left  = 1, right = 2, down  = 3, up    = 4, none  = 0 };
 
   /// @brief BoundaryCore
-  template<typename spline_t, short_t>
+  template<typename Spline, short_t>
   class BoundaryCore;
   
   /// @brief BoundaryCore (1d specialization)
@@ -35,27 +35,27 @@ namespace iganet {
   /// This specialization has 2 sides
   /// - west (u=0)
   /// - east (u=1)
-  template<typename spline_t>
-  class BoundaryCore<spline_t, /* parDim */1>
+  template<typename Spline>
+  class BoundaryCore<Spline, /* parDim */1>
     : public utils::Serializable, private utils::FullQualifiedName
   {
   protected:
     /// @brief Boundary spline type
-    using boundaryspline_t = typename spline_t::template
-      derived_self_type_t<typename spline_t::value_type,
-                          spline_t::geoDim()>;
+    using boundary_spline_type = typename Spline::template
+      derived_self_type<typename Spline::value_type,
+                        Spline::geoDim()>;
     
     /// @brief Tuple of splines
-    std::tuple<boundaryspline_t,
-               boundaryspline_t> bdr_;
+    std::tuple<boundary_spline_type,
+               boundary_spline_type> bdr_;
     
   public:
     /// @brief Boundary type
-    using boundary_t = decltype(bdr_);
+    using boundary_type = decltype(bdr_);
     
     /// @brief Evaluation type
-    using eval_t = std::tuple<torch::Tensor,
-                              torch::Tensor>;
+    using eval_type = std::tuple<torch::Tensor,
+                                 torch::Tensor>;
     
     /// @brief Default constructor
     BoundaryCore() = default;
@@ -63,23 +63,23 @@ namespace iganet {
     /// @brief Constructor
     BoundaryCore(const std::array<int64_t, 1>&,
                  enum init init = init::zeros,                 
-                 Options<typename spline_t::value_type> options = Options<typename spline_t::value_type>{})
+                 Options<typename Spline::value_type> options = Options<typename Spline::value_type>{})
       : bdr_(
              {
-               boundaryspline_t(std::array<int64_t, 0>{}, init, options),
-               boundaryspline_t(std::array<int64_t, 0>{}, init, options),
+               boundary_spline_type(std::array<int64_t, 0>{}, init, options),
+               boundary_spline_type(std::array<int64_t, 0>{}, init, options),
              }               
              )
     {}
 
     /// @brief Constructor
-    BoundaryCore(const std::array<std::vector<typename spline_t::value_type>, 1>&,
+    BoundaryCore(const std::array<std::vector<typename Spline::value_type>, 1>&,
                  enum init init = init::zeros,
-                 Options<typename spline_t::value_type> options = Options<typename spline_t::value_type>{})
+                 Options<typename Spline::value_type> options = Options<typename Spline::value_type>{})
       : bdr_(
              {
-               boundaryspline_t(std::array<int64_t, 0>{}, init, options),
-               boundaryspline_t(std::array<int64_t, 0>{}, init, options),
+               boundary_spline_type(std::array<int64_t, 0>{}, init, options),
+               boundary_spline_type(std::array<int64_t, 0>{}, init, options),
              }               
              )
     {}
@@ -151,10 +151,10 @@ namespace iganet {
     }
 
     /// @brief Returns the Greville abscissae
-    inline eval_t greville() const
+    inline eval_type greville() const
     {
-      return eval_t{std::get<west-1>(bdr_).greville(),
-                    std::get<east-1>(bdr_).greville()};
+      return eval_type{std::get<west-1>(bdr_).greville(),
+                       std::get<east-1>(bdr_).greville()};
     }
   };
   
@@ -165,37 +165,37 @@ namespace iganet {
   /// - east  (u=1, v  )
   /// - south (u,   v=0)
   /// - north (u,   v=1)
-  template<typename spline_t>
-  class BoundaryCore<spline_t, /* parDim */2>
+  template<typename Spline>
+  class BoundaryCore<Spline, /* parDim */2>
     : public utils::Serializable, private utils::FullQualifiedName
   {
   protected:
     /// @brief Boundary spline type
-    using boundaryspline_t = std::tuple<
-    typename spline_t::template
-    derived_self_type_t<typename spline_t::value_type,
-                        spline_t::geoDim(),
-                        spline_t::degree(1)>,
-    typename spline_t::template
-    derived_self_type_t<typename spline_t::value_type,
-                        spline_t::geoDim(),
-                        spline_t::degree(0)>>;
+    using boundary_spline_type = std::tuple<
+    typename Spline::template
+    derived_self_type<typename Spline::value_type,
+                      Spline::geoDim(),
+                      Spline::degree(1)>,
+    typename Spline::template
+    derived_self_type<typename Spline::value_type,
+                      Spline::geoDim(),
+                      Spline::degree(0)>>;
     
     /// @brief Tuple of splines
-    std::tuple<typename std::tuple_element_t<0,boundaryspline_t>,
-               typename std::tuple_element_t<0,boundaryspline_t>,
-               typename std::tuple_element_t<1,boundaryspline_t>,
-               typename std::tuple_element_t<1,boundaryspline_t>> bdr_;
+    std::tuple<typename std::tuple_element_t<0,boundary_spline_type>,
+               typename std::tuple_element_t<0,boundary_spline_type>,
+               typename std::tuple_element_t<1,boundary_spline_type>,
+               typename std::tuple_element_t<1,boundary_spline_type>> bdr_;
 
   public:
     /// @brief Boundary type
-    using boundary_t = decltype(bdr_);
+    using boundary_type = decltype(bdr_);
     
     /// @brief Evaluation type
-    using eval_t = std::tuple<std::array<torch::Tensor, 1>,
-                              std::array<torch::Tensor, 1>,
-                              std::array<torch::Tensor, 1>,
-                              std::array<torch::Tensor, 1>>;
+    using eval_type = std::tuple<std::array<torch::Tensor, 1>,
+                                 std::array<torch::Tensor, 1>,
+                                 std::array<torch::Tensor, 1>,
+                                 std::array<torch::Tensor, 1>>;
     
     /// @brief Default constructor
     BoundaryCore() = default;
@@ -203,27 +203,27 @@ namespace iganet {
     /// @brief Constructor
     BoundaryCore(const std::array<int64_t, 2>& ncoeffs,
                  enum init init = init::zeros,
-                 Options<typename spline_t::value_type> options = Options<typename spline_t::value_type>{})
+                 Options<typename Spline::value_type> options = Options<typename Spline::value_type>{})
       : bdr_(
              {
-               std::tuple_element_t<0,boundaryspline_t>(std::array<int64_t,1>({ncoeffs[1]}), init, options),
-               std::tuple_element_t<0,boundaryspline_t>(std::array<int64_t,1>({ncoeffs[1]}), init, options),
-               std::tuple_element_t<1,boundaryspline_t>(std::array<int64_t,1>({ncoeffs[0]}), init, options),
-               std::tuple_element_t<1,boundaryspline_t>(std::array<int64_t,1>({ncoeffs[0]}), init, options)
+               std::tuple_element_t<0,boundary_spline_type>(std::array<int64_t,1>({ncoeffs[1]}), init, options),
+               std::tuple_element_t<0,boundary_spline_type>(std::array<int64_t,1>({ncoeffs[1]}), init, options),
+               std::tuple_element_t<1,boundary_spline_type>(std::array<int64_t,1>({ncoeffs[0]}), init, options),
+               std::tuple_element_t<1,boundary_spline_type>(std::array<int64_t,1>({ncoeffs[0]}), init, options)
              }
              )
     {}
 
     /// @brief Constructor
-    BoundaryCore(const std::array<std::vector<typename spline_t::value_type>, 2>& kv,
+    BoundaryCore(const std::array<std::vector<typename Spline::value_type>, 2>& kv,
                  enum init init = init::zeros,
-                 Options<typename spline_t::value_type> options = Options<typename spline_t::value_type>{})
+                 Options<typename Spline::value_type> options = Options<typename Spline::value_type>{})
       : bdr_(
              {
-               std::tuple_element_t<0,boundaryspline_t>(std::array<std::vector<typename spline_t::value_type>,1>({kv[1]}), init, options),
-               std::tuple_element_t<0,boundaryspline_t>(std::array<std::vector<typename spline_t::value_type>,1>({kv[1]}), init, options),
-               std::tuple_element_t<1,boundaryspline_t>(std::array<std::vector<typename spline_t::value_type>,1>({kv[0]}), init, options),
-               std::tuple_element_t<1,boundaryspline_t>(std::array<std::vector<typename spline_t::value_type>,1>({kv[0]}), init, options)
+               std::tuple_element_t<0,boundary_spline_type>(std::array<std::vector<typename Spline::value_type>,1>({kv[1]}), init, options),
+               std::tuple_element_t<0,boundary_spline_type>(std::array<std::vector<typename Spline::value_type>,1>({kv[1]}), init, options),
+               std::tuple_element_t<1,boundary_spline_type>(std::array<std::vector<typename Spline::value_type>,1>({kv[0]}), init, options),
+               std::tuple_element_t<1,boundary_spline_type>(std::array<std::vector<typename Spline::value_type>,1>({kv[0]}), init, options)
              }
              )
     {}
@@ -301,12 +301,12 @@ namespace iganet {
     }
 
     /// @brief Returns the Greville abscissae
-    inline eval_t greville() const
+    inline eval_type greville() const
     {
-      return eval_t{std::get<west-1>(bdr_).greville(),
-                    std::get<east-1>(bdr_).greville(),
-                    std::get<south-1>(bdr_).greville(),
-                    std::get<north-1>(bdr_).greville()};
+      return eval_type{std::get<west-1>(bdr_).greville(),
+                       std::get<east-1>(bdr_).greville(),
+                       std::get<south-1>(bdr_).greville(),
+                       std::get<north-1>(bdr_).greville()};
     }
   };
 
@@ -319,45 +319,45 @@ namespace iganet {
   /// - north (u,   v=1, w)
   /// - front (u,   v,   w=0)
   /// - back  (u,   v,   w=1)
-  template<typename spline_t>
-  class BoundaryCore<spline_t, /* parDim */3>
+  template<typename Spline>
+  class BoundaryCore<Spline, /* parDim */3>
     : public utils::Serializable, private utils::FullQualifiedName
   {
   protected:
     /// @brief Boundary spline type
-    using boundaryspline_t = std::tuple<
-    typename spline_t::template
-    derived_self_type_t<typename spline_t::value_type,
-                        spline_t::geoDim(),
-                        spline_t::degree(1), spline_t::degree(2)>,
-    typename spline_t::template
-    derived_self_type_t<typename spline_t::value_type,
-                        spline_t::geoDim(),
-                        spline_t::degree(0), spline_t::degree(2)>,
-    typename spline_t::template
-    derived_self_type_t<typename spline_t::value_type,
-                        spline_t::geoDim(),
-                        spline_t::degree(0), spline_t::degree(1)>>;
+    using boundary_spline_type = std::tuple<
+    typename Spline::template
+    derived_self_type<typename Spline::value_type,
+                      Spline::geoDim(),
+                      Spline::degree(1), Spline::degree(2)>,
+    typename Spline::template
+    derived_self_type<typename Spline::value_type,
+                      Spline::geoDim(),
+                      Spline::degree(0), Spline::degree(2)>,
+    typename Spline::template
+    derived_self_type<typename Spline::value_type,
+                      Spline::geoDim(),
+                      Spline::degree(0), Spline::degree(1)>>;
 
     /// @brief Tuple of splines
-    std::tuple<typename std::tuple_element_t<0,boundaryspline_t>,
-               typename std::tuple_element_t<0,boundaryspline_t>,
-               typename std::tuple_element_t<1,boundaryspline_t>,
-               typename std::tuple_element_t<1,boundaryspline_t>,
-               typename std::tuple_element_t<2,boundaryspline_t>,
-               typename std::tuple_element_t<2,boundaryspline_t>> bdr_;
+    std::tuple<typename std::tuple_element_t<0,boundary_spline_type>,
+               typename std::tuple_element_t<0,boundary_spline_type>,
+               typename std::tuple_element_t<1,boundary_spline_type>,
+               typename std::tuple_element_t<1,boundary_spline_type>,
+               typename std::tuple_element_t<2,boundary_spline_type>,
+               typename std::tuple_element_t<2,boundary_spline_type>> bdr_;
 
   public:
     /// @brief Boundary type
-    using boundary_t = decltype(bdr_);
+    using boundary_type = decltype(bdr_);
     
     /// @brief Evaluation type
-    using eval_t = std::tuple<std::array<torch::Tensor, 2>,
-                              std::array<torch::Tensor, 2>,
-                              std::array<torch::Tensor, 2>,
-                              std::array<torch::Tensor, 2>,
-                              std::array<torch::Tensor, 2>,
-                              std::array<torch::Tensor, 2>>;
+    using eval_type = std::tuple<std::array<torch::Tensor, 2>,
+                                 std::array<torch::Tensor, 2>,
+                                 std::array<torch::Tensor, 2>,
+                                 std::array<torch::Tensor, 2>,
+                                 std::array<torch::Tensor, 2>,
+                                 std::array<torch::Tensor, 2>>;
     
     /// @brief Default constructor
     BoundaryCore() = default;
@@ -365,31 +365,31 @@ namespace iganet {
     /// @brief Constructor
     BoundaryCore(const std::array<int64_t, 3>& ncoeffs,
                  enum init init = init::zeros,
-                 Options<typename spline_t::value_type> options = Options<typename spline_t::value_type>{})
+                 Options<typename Spline::value_type> options = Options<typename Spline::value_type>{})
       : bdr_(
              {
-               std::tuple_element_t<0,boundaryspline_t>(std::array<int64_t,2>({ncoeffs[1], ncoeffs[2]}), init, options),
-               std::tuple_element_t<0,boundaryspline_t>(std::array<int64_t,2>({ncoeffs[1], ncoeffs[2]}), init, options),
-               std::tuple_element_t<1,boundaryspline_t>(std::array<int64_t,2>({ncoeffs[0], ncoeffs[2]}), init, options),
-               std::tuple_element_t<1,boundaryspline_t>(std::array<int64_t,2>({ncoeffs[0], ncoeffs[2]}), init, options),
-               std::tuple_element_t<2,boundaryspline_t>(std::array<int64_t,2>({ncoeffs[0], ncoeffs[1]}), init, options),
-               std::tuple_element_t<2,boundaryspline_t>(std::array<int64_t,2>({ncoeffs[0], ncoeffs[1]}), init, options)
+               std::tuple_element_t<0,boundary_spline_type>(std::array<int64_t,2>({ncoeffs[1], ncoeffs[2]}), init, options),
+               std::tuple_element_t<0,boundary_spline_type>(std::array<int64_t,2>({ncoeffs[1], ncoeffs[2]}), init, options),
+               std::tuple_element_t<1,boundary_spline_type>(std::array<int64_t,2>({ncoeffs[0], ncoeffs[2]}), init, options),
+               std::tuple_element_t<1,boundary_spline_type>(std::array<int64_t,2>({ncoeffs[0], ncoeffs[2]}), init, options),
+               std::tuple_element_t<2,boundary_spline_type>(std::array<int64_t,2>({ncoeffs[0], ncoeffs[1]}), init, options),
+               std::tuple_element_t<2,boundary_spline_type>(std::array<int64_t,2>({ncoeffs[0], ncoeffs[1]}), init, options)
              }
              )
     {}
 
     /// @brief Constructor
-    BoundaryCore(const std::array<std::vector<typename spline_t::value_type>, 3>& kv,
+    BoundaryCore(const std::array<std::vector<typename Spline::value_type>, 3>& kv,
                  enum init init = init::zeros,
-                 Options<typename spline_t::value_type> options = Options<typename spline_t::value_type>{})
+                 Options<typename Spline::value_type> options = Options<typename Spline::value_type>{})
       : bdr_(
              {
-               std::tuple_element_t<0,boundaryspline_t>(std::array<std::vector<typename spline_t::value_type>,2>({kv[1], kv[2]}), init, options),
-               std::tuple_element_t<0,boundaryspline_t>(std::array<std::vector<typename spline_t::value_type>,2>({kv[1], kv[2]}), init, options),
-               std::tuple_element_t<1,boundaryspline_t>(std::array<std::vector<typename spline_t::value_type>,2>({kv[0], kv[2]}), init, options),
-               std::tuple_element_t<1,boundaryspline_t>(std::array<std::vector<typename spline_t::value_type>,2>({kv[0], kv[2]}), init, options),
-               std::tuple_element_t<2,boundaryspline_t>(std::array<std::vector<typename spline_t::value_type>,2>({kv[0], kv[1]}), init, options),
-               std::tuple_element_t<2,boundaryspline_t>(std::array<std::vector<typename spline_t::value_type>,2>({kv[0], kv[1]}), init, options)
+               std::tuple_element_t<0,boundary_spline_type>(std::array<std::vector<typename Spline::value_type>,2>({kv[1], kv[2]}), init, options),
+               std::tuple_element_t<0,boundary_spline_type>(std::array<std::vector<typename Spline::value_type>,2>({kv[1], kv[2]}), init, options),
+               std::tuple_element_t<1,boundary_spline_type>(std::array<std::vector<typename Spline::value_type>,2>({kv[0], kv[2]}), init, options),
+               std::tuple_element_t<1,boundary_spline_type>(std::array<std::vector<typename Spline::value_type>,2>({kv[0], kv[2]}), init, options),
+               std::tuple_element_t<2,boundary_spline_type>(std::array<std::vector<typename Spline::value_type>,2>({kv[0], kv[1]}), init, options),
+               std::tuple_element_t<2,boundary_spline_type>(std::array<std::vector<typename Spline::value_type>,2>({kv[0], kv[1]}), init, options)
              }
              )
     {}
@@ -473,14 +473,14 @@ namespace iganet {
     }
 
     /// @brief Returns the Greville abscissae
-    inline eval_t greville() const
+    inline eval_type greville() const
     {
-      return eval_t{std::get<west-1>(bdr_).greville(),
-                    std::get<east-1>(bdr_).greville(),
-                    std::get<south-1>(bdr_).greville(),
-                    std::get<north-1>(bdr_).greville(),
-                    std::get<front-1>(bdr_).greville(),
-                    std::get<back-1>(bdr_).greville()};
+      return eval_type{std::get<west-1>(bdr_).greville(),
+                       std::get<east-1>(bdr_).greville(),
+                       std::get<south-1>(bdr_).greville(),
+                       std::get<north-1>(bdr_).greville(),
+                       std::get<front-1>(bdr_).greville(),
+                       std::get<back-1>(bdr_).greville()};
     }
   };
 
@@ -495,53 +495,53 @@ namespace iganet {
   /// - back  (u,   v,   w=1, t)
   /// - stime (u,   v,   w,   t=0)
   /// - etime (u,   v,   w,   t=1)
-  template<typename spline_t>
-  class BoundaryCore<spline_t, /* parDim */4>
+  template<typename Spline>
+  class BoundaryCore<Spline, /* parDim */4>
     : public utils::Serializable, private utils::FullQualifiedName
   {
   protected:
     /// @brief Array storing the degrees
-    using boundaryspline_t = std::tuple<
-    typename spline_t::template
-    derived_self_type_t<typename spline_t::value_type,
-                        spline_t::geoDim(),
-                        spline_t::degree(1), spline_t::degree(2), spline_t::degree(3)>,
-    typename spline_t::template
-    derived_self_type_t<typename spline_t::value_type,
-                        spline_t::geoDim(),
-                        spline_t::degree(0), spline_t::degree(2), spline_t::degree(3)>,
-    typename spline_t::template
-    derived_self_type_t<typename spline_t::value_type,
-                        spline_t::geoDim(),
-                        spline_t::degree(0), spline_t::degree(1), spline_t::degree(3)>,
-    typename spline_t::template
-    derived_self_type_t<typename spline_t::value_type,
-                        spline_t::geoDim(),
-                        spline_t::degree(0), spline_t::degree(1), spline_t::degree(2)>>;
+    using boundary_spline_type = std::tuple<
+    typename Spline::template
+    derived_self_type<typename Spline::value_type,
+                      Spline::geoDim(),
+                      Spline::degree(1), Spline::degree(2), Spline::degree(3)>,
+    typename Spline::template
+    derived_self_type<typename Spline::value_type,
+                      Spline::geoDim(),
+                      Spline::degree(0), Spline::degree(2), Spline::degree(3)>,
+    typename Spline::template
+    derived_self_type<typename Spline::value_type,
+                      Spline::geoDim(),
+                      Spline::degree(0), Spline::degree(1), Spline::degree(3)>,
+    typename Spline::template
+    derived_self_type<typename Spline::value_type,
+                      Spline::geoDim(),
+                      Spline::degree(0), Spline::degree(1), Spline::degree(2)>>;
         
     /// @brief Tuple of splines
-    std::tuple<typename std::tuple_element_t<0,boundaryspline_t>,
-               typename std::tuple_element_t<0,boundaryspline_t>,
-               typename std::tuple_element_t<1,boundaryspline_t>,
-               typename std::tuple_element_t<1,boundaryspline_t>,
-               typename std::tuple_element_t<2,boundaryspline_t>,
-               typename std::tuple_element_t<2,boundaryspline_t>,
-               typename std::tuple_element_t<3,boundaryspline_t>,
-               typename std::tuple_element_t<3,boundaryspline_t>> bdr_;
+    std::tuple<typename std::tuple_element_t<0,boundary_spline_type>,
+               typename std::tuple_element_t<0,boundary_spline_type>,
+               typename std::tuple_element_t<1,boundary_spline_type>,
+               typename std::tuple_element_t<1,boundary_spline_type>,
+               typename std::tuple_element_t<2,boundary_spline_type>,
+               typename std::tuple_element_t<2,boundary_spline_type>,
+               typename std::tuple_element_t<3,boundary_spline_type>,
+               typename std::tuple_element_t<3,boundary_spline_type>> bdr_;
 
   public:
     /// @brief Boundary type
-    using boundary_t = decltype(bdr_);
+    using boundary_type = decltype(bdr_);
     
     /// @brief Evaluation type
-    using eval_t = std::tuple<std::array<torch::Tensor, 3>,
-                              std::array<torch::Tensor, 3>,
-                              std::array<torch::Tensor, 3>,
-                              std::array<torch::Tensor, 3>,
-                              std::array<torch::Tensor, 3>,
-                              std::array<torch::Tensor, 3>,
-                              std::array<torch::Tensor, 3>,
-                              std::array<torch::Tensor, 3>>;
+    using eval_type = std::tuple<std::array<torch::Tensor, 3>,
+                                 std::array<torch::Tensor, 3>,
+                                 std::array<torch::Tensor, 3>,
+                                 std::array<torch::Tensor, 3>,
+                                 std::array<torch::Tensor, 3>,
+                                 std::array<torch::Tensor, 3>,
+                                 std::array<torch::Tensor, 3>,
+                                 std::array<torch::Tensor, 3>>;
     
     /// @brief Default constructor
     BoundaryCore() = default;
@@ -549,35 +549,35 @@ namespace iganet {
     /// @brief Constructor
     BoundaryCore(const std::array<int64_t, 4>& ncoeffs,
                  enum init init = init::zeros,
-                 Options<typename spline_t::value_type> options = Options<typename spline_t::value_type>{})
+                 Options<typename Spline::value_type> options = Options<typename Spline::value_type>{})
       : bdr_(
              {
-               std::tuple_element_t<0,boundaryspline_t>(std::array<int64_t,3>({ncoeffs[1], ncoeffs[2], ncoeffs[3]}), init, options),
-               std::tuple_element_t<0,boundaryspline_t>(std::array<int64_t,3>({ncoeffs[1], ncoeffs[2], ncoeffs[3]}), init, options),
-               std::tuple_element_t<1,boundaryspline_t>(std::array<int64_t,3>({ncoeffs[0], ncoeffs[2], ncoeffs[3]}), init, options),
-               std::tuple_element_t<1,boundaryspline_t>(std::array<int64_t,3>({ncoeffs[0], ncoeffs[2], ncoeffs[3]}), init, options),
-               std::tuple_element_t<2,boundaryspline_t>(std::array<int64_t,3>({ncoeffs[0], ncoeffs[1], ncoeffs[3]}), init, options),
-               std::tuple_element_t<2,boundaryspline_t>(std::array<int64_t,3>({ncoeffs[0], ncoeffs[1], ncoeffs[3]}), init, options),
-               std::tuple_element_t<3,boundaryspline_t>(std::array<int64_t,3>({ncoeffs[0], ncoeffs[1], ncoeffs[2]}), init, options),
-               std::tuple_element_t<3,boundaryspline_t>(std::array<int64_t,3>({ncoeffs[0], ncoeffs[1], ncoeffs[2]}), init, options)
+               std::tuple_element_t<0,boundary_spline_type>(std::array<int64_t,3>({ncoeffs[1], ncoeffs[2], ncoeffs[3]}), init, options),
+               std::tuple_element_t<0,boundary_spline_type>(std::array<int64_t,3>({ncoeffs[1], ncoeffs[2], ncoeffs[3]}), init, options),
+               std::tuple_element_t<1,boundary_spline_type>(std::array<int64_t,3>({ncoeffs[0], ncoeffs[2], ncoeffs[3]}), init, options),
+               std::tuple_element_t<1,boundary_spline_type>(std::array<int64_t,3>({ncoeffs[0], ncoeffs[2], ncoeffs[3]}), init, options),
+               std::tuple_element_t<2,boundary_spline_type>(std::array<int64_t,3>({ncoeffs[0], ncoeffs[1], ncoeffs[3]}), init, options),
+               std::tuple_element_t<2,boundary_spline_type>(std::array<int64_t,3>({ncoeffs[0], ncoeffs[1], ncoeffs[3]}), init, options),
+               std::tuple_element_t<3,boundary_spline_type>(std::array<int64_t,3>({ncoeffs[0], ncoeffs[1], ncoeffs[2]}), init, options),
+               std::tuple_element_t<3,boundary_spline_type>(std::array<int64_t,3>({ncoeffs[0], ncoeffs[1], ncoeffs[2]}), init, options)
              }
              )
     {}
 
     /// @brief Constructor
-    BoundaryCore(const std::array<std::vector<typename spline_t::value_type>, 4>& kv,
+    BoundaryCore(const std::array<std::vector<typename Spline::value_type>, 4>& kv,
                  enum init init = init::zeros,
-                 Options<typename spline_t::value_type> options = Options<typename spline_t::value_type>{})
+                 Options<typename Spline::value_type> options = Options<typename Spline::value_type>{})
       : bdr_(
              {
-               std::tuple_element_t<0,boundaryspline_t>(std::array<std::vector<typename spline_t::value_type>,3>({kv[1], kv[2], kv[3]}), init, options),
-               std::tuple_element_t<0,boundaryspline_t>(std::array<std::vector<typename spline_t::value_type>,3>({kv[1], kv[2], kv[3]}), init, options),
-               std::tuple_element_t<1,boundaryspline_t>(std::array<std::vector<typename spline_t::value_type>,3>({kv[0], kv[2], kv[3]}), init, options),
-               std::tuple_element_t<1,boundaryspline_t>(std::array<std::vector<typename spline_t::value_type>,3>({kv[0], kv[2], kv[3]}), init, options),
-               std::tuple_element_t<2,boundaryspline_t>(std::array<std::vector<typename spline_t::value_type>,3>({kv[0], kv[1], kv[3]}), init, options),
-               std::tuple_element_t<2,boundaryspline_t>(std::array<std::vector<typename spline_t::value_type>,3>({kv[0], kv[1], kv[3]}), init, options),
-               std::tuple_element_t<3,boundaryspline_t>(std::array<std::vector<typename spline_t::value_type>,3>({kv[0], kv[1], kv[2]}), init, options),
-               std::tuple_element_t<3,boundaryspline_t>(std::array<std::vector<typename spline_t::value_type>,3>({kv[0], kv[1], kv[2]}), init, options)
+               std::tuple_element_t<0,boundary_spline_type>(std::array<std::vector<typename Spline::value_type>,3>({kv[1], kv[2], kv[3]}), init, options),
+               std::tuple_element_t<0,boundary_spline_type>(std::array<std::vector<typename Spline::value_type>,3>({kv[1], kv[2], kv[3]}), init, options),
+               std::tuple_element_t<1,boundary_spline_type>(std::array<std::vector<typename Spline::value_type>,3>({kv[0], kv[2], kv[3]}), init, options),
+               std::tuple_element_t<1,boundary_spline_type>(std::array<std::vector<typename Spline::value_type>,3>({kv[0], kv[2], kv[3]}), init, options),
+               std::tuple_element_t<2,boundary_spline_type>(std::array<std::vector<typename Spline::value_type>,3>({kv[0], kv[1], kv[3]}), init, options),
+               std::tuple_element_t<2,boundary_spline_type>(std::array<std::vector<typename Spline::value_type>,3>({kv[0], kv[1], kv[3]}), init, options),
+               std::tuple_element_t<3,boundary_spline_type>(std::array<std::vector<typename Spline::value_type>,3>({kv[0], kv[1], kv[2]}), init, options),
+               std::tuple_element_t<3,boundary_spline_type>(std::array<std::vector<typename Spline::value_type>,3>({kv[0], kv[1], kv[2]}), init, options)
              }
              )
     {}
@@ -667,16 +667,16 @@ namespace iganet {
     }
 
     /// @brief Returns the Greville abscissae
-    inline eval_t greville() const
+    inline eval_type greville() const
     {
-      return eval_t{std::get<west-1>(bdr_).greville(),
-                    std::get<east-1>(bdr_).greville(),
-                    std::get<south-1>(bdr_).greville(),
-                    std::get<north-1>(bdr_).greville(),
-                    std::get<front-1>(bdr_).greville(),
-                    std::get<back-1>(bdr_).greville(),
-                    std::get<stime-1>(bdr_).greville(),
-                    std::get<etime-1>(bdr_).greville()};
+      return eval_type{std::get<west-1>(bdr_).greville(),
+                       std::get<east-1>(bdr_).greville(),
+                       std::get<south-1>(bdr_).greville(),
+                       std::get<north-1>(bdr_).greville(),
+                       std::get<front-1>(bdr_).greville(),
+                       std::get<back-1>(bdr_).greville(),
+                       std::get<stime-1>(bdr_).greville(),
+                       std::get<etime-1>(bdr_).greville()};
     }
   };
 
@@ -765,19 +765,19 @@ namespace iganet {
     /// the points `xi` @{
     template<deriv deriv = deriv::func,
              bool memory_optimized = false,
-             size_t... Is, typename... Xi_t>
+             size_t... Is, typename... Xi>
     inline auto eval_(std::index_sequence<Is...>,
-                      const std::tuple<Xi_t...>& xi) const
+                      const std::tuple<Xi...>& xi) const
     {
       return std::tuple(std::get<Is>(BoundaryCore::bdr_).template eval<deriv, memory_optimized>(std::get<Is>(xi))...);
     }
     
     template<deriv deriv = deriv::func,
              bool memory_optimized = false,
-             size_t... Is, typename... Xi_t, typename... Indices_t>
+             size_t... Is, typename... Xi, typename... Indices>
     inline auto eval_(std::index_sequence<Is...>,
-                      const std::tuple<Xi_t...>& xi,
-                      const std::tuple<Indices_t...>& indices) const
+                      const std::tuple<Xi...>& xi,
+                      const std::tuple<Indices...>& indices) const
     {
       return std::tuple(std::get<Is>(BoundaryCore::bdr_).template eval<deriv, memory_optimized>(std::get<Is>(xi),
                                                                                                 std::get<Is>(indices))...);
@@ -785,11 +785,11 @@ namespace iganet {
     
     template<deriv deriv = deriv::func,
              bool memory_optimized = false,
-             size_t... Is, typename... Xi_t, typename... Indices_t, typename... Coeff_Indices_t>
+             size_t... Is, typename... Xi, typename... Indices, typename... Coeff_Indices>
     inline auto eval_(std::index_sequence<Is...>,
-                      const std::tuple<Xi_t...>& xi,
-                      const std::tuple<Indices_t...>& indices,
-                      const std::tuple<Coeff_Indices_t...>& coeff_indices) const
+                      const std::tuple<Xi...>& xi,
+                      const std::tuple<Indices...>& indices,
+                      const std::tuple<Coeff_Indices...>& coeff_indices) const
     {
       return std::tuple(std::get<Is>(BoundaryCore::bdr_).template eval<deriv, memory_optimized>(std::get<Is>(xi),
                                                                                                 std::get<Is>(indices),
@@ -800,11 +800,11 @@ namespace iganet {
     /// @brief Returns the value of the boundary spline objects from
     /// precomputed basis function @{
     template<size_t... Is,
-             typename... Basfunc_t, typename... Coeff_Indices_t,
+             typename... Basfunc, typename... Coeff_Indices,
              typename... Numeval, typename... Sizes>
     inline auto eval_from_precomputed_(std::index_sequence<Is...>,
-                                       const std::tuple<Basfunc_t...>& basfunc,
-                                       const std::tuple<Coeff_Indices_t...>& coeff_indices,
+                                       const std::tuple<Basfunc...>& basfunc,
+                                       const std::tuple<Coeff_Indices...>& coeff_indices,
                                        const std::tuple<Numeval...>& numeval,
                                        const std::tuple<Sizes...>& sizes) const
     {
@@ -815,11 +815,11 @@ namespace iganet {
     }
 
     template<size_t... Is,
-             typename... Basfunc_t, typename... Coeff_Indices_t, typename... Xi_t>
+             typename... Basfunc, typename... Coeff_Indices, typename... Xi>
     inline auto eval_from_precomputed_(std::index_sequence<Is...>,
-                                       const std::tuple<Basfunc_t...>& basfunc,
-                                       const std::tuple<Coeff_Indices_t...>& coeff_indices,
-                                       const std::tuple<Xi_t...>& xi) const
+                                       const std::tuple<Basfunc...>& basfunc,
+                                       const std::tuple<Coeff_Indices...>& coeff_indices,
+                                       const std::tuple<Xi...>& xi) const
     {
       return std::tuple(std::get<Is>(BoundaryCore::bdr_).eval_from_precomputed(std::get<Is>(basfunc),
                                                                                std::get<Is>(coeff_indices),
@@ -830,9 +830,9 @@ namespace iganet {
 
     /// @brief Returns the knot indicies of boundary spline object's
     /// knot spans containing `xi`
-    template<size_t... Is, typename... Xi_t>
+    template<size_t... Is, typename... Xi>
     inline auto find_knot_indices_(std::index_sequence<Is...>,
-                                   const std::tuple<Xi_t...>& xi) const
+                                   const std::tuple<Xi...>& xi) const
     {
       return std::tuple(std::get<Is>(BoundaryCore::bdr_).find_knot_indices(std::get<Is>(xi))...);
     }
@@ -842,18 +842,18 @@ namespace iganet {
     /// @{
     template<deriv deriv = deriv::func,
              bool memory_optimized = false,
-             size_t... Is, typename... Xi_t>
-    inline auto eval_basfunc_(std::index_sequence<Is...>, const std::tuple<Xi_t...>& xi) const
+             size_t... Is, typename... Xi>
+    inline auto eval_basfunc_(std::index_sequence<Is...>, const std::tuple<Xi...>& xi) const
     {
       return std::tuple(std::get<Is>(BoundaryCore::bdr_).template eval_basfunc<deriv, memory_optimized>(std::get<Is>(xi))...);
     }
 
     template<deriv deriv = deriv::func,
              bool memory_optimized = false, 
-             size_t... Is, typename... Xi_t, typename... Indices_t>
+             size_t... Is, typename... Xi, typename... Indices>
     inline auto eval_basfunc_(std::index_sequence<Is...>,
-                              const std::tuple<Xi_t...>& xi,
-                              const std::tuple<Indices_t...>& indices) const
+                              const std::tuple<Xi...>& xi,
+                              const std::tuple<Indices...>& indices) const
     {
       return std::tuple(std::get<Is>(BoundaryCore::bdr_).template eval_basfunc<deriv, memory_optimized>(std::get<Is>(xi), std::get<Is>(indices))...);
     }
@@ -861,9 +861,9 @@ namespace iganet {
 
     /// @brief Returns the indices of the boundary spline object's
     /// coefficients corresponding to the knot indices `indices`
-    template<bool memory_optimized = false, size_t... Is, typename... Indices_t>
+    template<bool memory_optimized = false, size_t... Is, typename... Indices>
     inline auto find_coeff_indices_(std::index_sequence<Is...>,
-                                    const std::tuple<Indices_t...>& indices) const
+                                    const std::tuple<Indices...>& indices) const
     {
       return std::tuple(std::get<Is>(BoundaryCore::bdr_).template find_coeff_indices<memory_optimized>(std::get<Is>(indices))...);
     }
@@ -914,66 +914,66 @@ namespace iganet {
     /// @{
     template<deriv deriv = deriv::func,
              bool memory_optimized = false,
-             typename... Xi_t>
-    inline auto eval(const std::tuple<Xi_t...>& xi) const
+             typename... Xi>
+    inline auto eval(const std::tuple<Xi...>& xi) const
     {
       return eval_<deriv, memory_optimized>(std::make_index_sequence<BoundaryCore::sides()>{}, xi);
     }
     
     template<deriv deriv = deriv::func,
              bool memory_optimized = false,
-             typename... Xi_t, typename... Indices_t>
-    inline auto eval(const std::tuple<Xi_t...>& xi,
-                     const std::tuple<Indices_t...>& indices) const
+             typename... Xi, typename... Indices>
+    inline auto eval(const std::tuple<Xi...>& xi,
+                     const std::tuple<Indices...>& indices) const
     {
-      static_assert(sizeof...(Xi_t) == sizeof...(Indices_t));
+      static_assert(sizeof...(Xi) == sizeof...(Indices));
       return eval_<deriv, memory_optimized>(std::make_index_sequence<BoundaryCore::sides()>{}, xi, indices);
     }
     
     template<deriv deriv = deriv::func,
              bool memory_optimized = false,
-             typename... Xi_t, typename... Indices_t, typename... Coeff_Indices_t>
-    inline auto eval(const std::tuple<Xi_t...>& xi,
-                     const std::tuple<Indices_t...>& indices,
-                     const std::tuple<Coeff_Indices_t...>& coeff_indices) const
+             typename... Xi, typename... Indices, typename... Coeff_Indices>
+    inline auto eval(const std::tuple<Xi...>& xi,
+                     const std::tuple<Indices...>& indices,
+                     const std::tuple<Coeff_Indices...>& coeff_indices) const
     {
-      static_assert(sizeof...(Xi_t) == sizeof...(Indices_t) &&
-                    sizeof...(Xi_t) == sizeof...(Coeff_Indices_t));
+      static_assert(sizeof...(Xi) == sizeof...(Indices) &&
+                    sizeof...(Xi) == sizeof...(Coeff_Indices));
       return eval_<deriv, memory_optimized>(std::make_index_sequence<BoundaryCore::sides()>{}, xi, indices, coeff_indices);
     }
     /// @}
     
     /// @brief Returns the value of the spline objects from
     /// precomputed basis function @{
-    template<typename... Basfunc_t, typename... Coeff_Indices_t,
+    template<typename... Basfunc, typename... Coeff_Indices,
              typename... Numeval, typename... Sizes>
-    inline auto eval_from_precomputed(const std::tuple<Basfunc_t...>& basfunc,
-                                      const std::tuple<Coeff_Indices_t...>& coeff_indices,
+    inline auto eval_from_precomputed(const std::tuple<Basfunc...>& basfunc,
+                                      const std::tuple<Coeff_Indices...>& coeff_indices,
                                       const std::tuple<Numeval...>& numeval,
                                       const std::tuple<Sizes...>& sizes) const
     {
-      static_assert(sizeof...(Basfunc_t) == sizeof...(Coeff_Indices_t) &&
-                    sizeof...(Basfunc_t) == sizeof...(Numeval) &&
-                    sizeof...(Basfunc_t) == sizeof...(Sizes));
+      static_assert(sizeof...(Basfunc) == sizeof...(Coeff_Indices) &&
+                    sizeof...(Basfunc) == sizeof...(Numeval) &&
+                    sizeof...(Basfunc) == sizeof...(Sizes));
       return eval_from_precomputed_(std::make_index_sequence<BoundaryCore::sides()>{},
                                     basfunc, coeff_indices, numeval, sizes);
     }
 
-    template<typename... Basfunc_t, typename... Coeff_Indices_t, typename... Xi_t>
-    inline auto eval_from_precomputed(const std::tuple<Basfunc_t...>& basfunc,
-                                      const std::tuple<Coeff_Indices_t...>& coeff_indices,
-                                      const std::tuple<Xi_t...>& xi) const
+    template<typename... Basfunc, typename... Coeff_Indices, typename... Xi>
+    inline auto eval_from_precomputed(const std::tuple<Basfunc...>& basfunc,
+                                      const std::tuple<Coeff_Indices...>& coeff_indices,
+                                      const std::tuple<Xi...>& xi) const
     {
-      static_assert(sizeof...(Basfunc_t) == sizeof...(Coeff_Indices_t) &&
-                    sizeof...(Basfunc_t) == sizeof...(Xi_t));
+      static_assert(sizeof...(Basfunc) == sizeof...(Coeff_Indices) &&
+                    sizeof...(Basfunc) == sizeof...(Xi));
       return eval_from_precomputed_(std::make_index_sequence<BoundaryCore::sides()>{},
                                     basfunc, coeff_indices, xi);
     }
     /// @}
 
     /// @brief Returns the knot indicies of knot spans containing `xi`
-    template<typename... Xi_t>
-    inline auto find_knot_indices(const std::tuple<Xi_t...>& xi) const
+    template<typename... Xi>
+    inline auto find_knot_indices(const std::tuple<Xi...>& xi) const
     {
       return find_knot_indices_(std::make_index_sequence<BoundaryCore::sides()>{}, xi);
     }
@@ -982,27 +982,27 @@ namespace iganet {
     /// functions in the points `xi` @{
     template<deriv deriv = deriv::func,
              bool memory_optimized = false, 
-             typename... Xi_t>
-    inline auto eval_basfunc(const std::tuple<Xi_t...>& xi) const
+             typename... Xi>
+    inline auto eval_basfunc(const std::tuple<Xi...>& xi) const
     {
       return eval_basfunc_<deriv, memory_optimized>(std::make_index_sequence<BoundaryCore::sides()>{}, xi);
     }
 
     template<deriv deriv = deriv::func,
              bool memory_optimized = false, 
-             typename... Xi_t, typename... Indices_t>
-    inline auto eval_basfunc(const std::tuple<Xi_t...>& xi,
-                             const std::tuple<Indices_t...>& indices) const
+             typename... Xi, typename... Indices>
+    inline auto eval_basfunc(const std::tuple<Xi...>& xi,
+                             const std::tuple<Indices...>& indices) const
     {
-      static_assert(sizeof...(Xi_t) == sizeof...(Indices_t));
+      static_assert(sizeof...(Xi) == sizeof...(Indices));
       return eval_basfunc_<deriv, memory_optimized>(std::make_index_sequence<BoundaryCore::sides()>{}, xi, indices);
     }
     /// @}
 
     /// @brief Returns the indices of the spline objects'
     /// coefficients corresponding to the knot indices `indices`
-    template<bool memory_optimized = false, typename... Indices_t>
-    inline auto find_coeff_indices(const std::tuple<Indices_t...>& indices) const
+    template<bool memory_optimized = false, typename... Indices>
+    inline auto find_coeff_indices(const std::tuple<Indices...>& indices) const
     {
       return find_coeff_indices_<memory_optimized>(std::make_index_sequence<BoundaryCore::sides()>{}, indices);
     }
@@ -1047,47 +1047,47 @@ namespace iganet {
 
 #define GENERATE_EXPR_MACRO(r, data, name)                              \
     private:                                                            \
-      template<bool memory_optimized = false,                           \
-               size_t... Is, typename... Xi_t>                          \
-      inline auto BOOST_PP_CAT(name,_)(std::index_sequence<Is...>,      \
-                                       const std::tuple<Xi_t...>& xi) const \
-      {                                                                 \
-        return std::tuple(std::get<Is>(BoundaryCore::bdr_).             \
-                          template name<memory_optimized>(std::get<Is>(xi))...); \
-      }                                                                 \
+    template<bool memory_optimized = false,                             \
+      size_t... Is, typename... Xi>                                     \
+    inline auto BOOST_PP_CAT(name,_)(std::index_sequence<Is...>,        \
+                                     const std::tuple<Xi...>& xi) const \
+    {                                                                   \
+      return std::tuple(std::get<Is>(BoundaryCore::bdr_).               \
+                        template name<memory_optimized>(std::get<Is>(xi))...); \
+    }                                                                   \
                                                                         \
       template<bool memory_optimized = false,                           \
-               size_t... Is, typename... Xi_t, typename... Indices_t>   \
+               size_t... Is, typename... Xi, typename... Indices>       \
       inline auto BOOST_PP_CAT(name,_)(std::index_sequence<Is...>,      \
-                                       const std::tuple<Xi_t...>& xi, \
-                                       const std::tuple<Indices_t...>& indices) const \
-      {                                                                 \
-        return std::tuple(std::get<Is>(BoundaryCore::bdr_).             \
-                          template name<memory_optimized>(std::get<Is>(xi), \
-                                                          std::get<Is>(indices))...); \
-      }                                                                 \
+                                       const std::tuple<Xi...>& xi,     \
+                                       const std::tuple<Indices...>& indices) const \
+    {                                                                   \
+      return std::tuple(std::get<Is>(BoundaryCore::bdr_).               \
+                        template name<memory_optimized>(std::get<Is>(xi), \
+                                                        std::get<Is>(indices))...); \
+    }                                                                   \
                                                                         \
       template<bool memory_optimized = false,                           \
-               size_t... Is, typename... Xi_t, typename... Indices_t,   \
-               typename... Coeff_Indices_t>                             \
+               size_t... Is, typename... Xi, typename... Indices,       \
+               typename... Coeff_Indices>                               \
       inline auto BOOST_PP_CAT(name,_)(std::index_sequence<Is...>,      \
-                                       const std::tuple<Xi_t...>&  xi,  \
-                                       const std::tuple<Indices_t...>& indices, \
-                                       const std::tuple<Coeff_Indices_t...>& coeff_indices) const \
-      {                                                                 \
-        return std::tuple(std::get<Is>(BoundaryCore::bdr_).             \
-                          template name<memory_optimized>(std::get<Is>(xi), \
-                                                          std::get<Is>(indices), \
-                                                          std::get<Is>(coeff_indices))...); \
-      }                                                                 \
+                                       const std::tuple<Xi...>&  xi,    \
+                                       const std::tuple<Indices...>& indices, \
+                                       const std::tuple<Coeff_Indices...>& coeff_indices) const \
+    {                                                                   \
+      return std::tuple(std::get<Is>(BoundaryCore::bdr_).               \
+                        template name<memory_optimized>(std::get<Is>(xi), \
+                                                        std::get<Is>(indices), \
+                                                        std::get<Is>(coeff_indices))...); \
+    }                                                                   \
                                                                         \
-    public:                                                             \
-      template<bool memory_optimized = false, typename... Args_t>       \
-      inline auto name(const Args_t&... args) const                     \
-      {                                                                 \
-        return BOOST_PP_CAT(name,_)<memory_optimized>(std::make_index_sequence<BoundaryCore::sides()>{}, \
-                                                      args...);         \
-      }
+  public:                                                               \
+  template<bool memory_optimized = false, typename... Args>             \
+  inline auto name(const Args&... args) const                           \
+    {                                                                   \
+      return BOOST_PP_CAT(name,_)<memory_optimized>(std::make_index_sequence<BoundaryCore::sides()>{}, \
+                                                    args...);           \
+    }
     
     /// @brief Auto-generated functions
     /// @{
@@ -1097,54 +1097,54 @@ namespace iganet {
 
 #define GENERATE_IEXPR_MACRO(r, data, name)                             \
     private:                                                            \
-      template<bool memory_optimized = false,                           \
-               size_t... Is, typename... Geometry_t, typename... Xi_t>  \
-      inline auto BOOST_PP_CAT(name,_)(std::index_sequence<Is...>,      \
-                                       const std::tuple<Geometry_t...>& G, \
-                                       const std::tuple<Xi_t...>& xi) const \
-      {                                                                 \
-        return std::tuple(std::get<Is>(BoundaryCore::bdr_).             \
-                          template name<memory_optimized>(std::get<Is>(G), \
-                                                          std::get<Is>(xi))...); \
-      }                                                                 \
+    template<bool memory_optimized = false,                             \
+      size_t... Is, typename... Geometry, typename... Xi>               \
+    inline auto BOOST_PP_CAT(name,_)(std::index_sequence<Is...>,        \
+                                     const std::tuple<Geometry...>& G,  \
+                                     const std::tuple<Xi...>& xi) const \
+    {                                                                   \
+      return std::tuple(std::get<Is>(BoundaryCore::bdr_).               \
+                        template name<memory_optimized>(std::get<Is>(G), \
+                                                        std::get<Is>(xi))...); \
+    }                                                                   \
                                                                         \
       template<bool memory_optimized = false,                           \
-               size_t... Is, typename... Geometry_t, typename... Xi_t,  \
-               typename... Indices_t>                                   \
+               size_t... Is, typename... Geometry, typename... Xi,      \
+               typename... Indices>                                     \
       inline auto BOOST_PP_CAT(name,_)(std::index_sequence<Is...>,      \
-                                       const std::tuple<Geometry_t...>& G, \
-                                       const std::tuple<Xi_t...>& xi,   \
-                                       const std::tuple<Indices_t...>& indices) const \
-      {                                                                 \
-        return std::tuple(std::get<Is>(BoundaryCore::bdr_).             \
-                          template name<memory_optimized>(std::get<Is>(G), \
-                                                          std::get<Is>(xi), \
-                                                          std::get<Is>(indices))...); \
-      }                                                                 \
+                                       const std::tuple<Geometry...>& G, \
+                                       const std::tuple<Xi...>& xi,     \
+                                       const std::tuple<Indices...>& indices) const \
+    {                                                                   \
+      return std::tuple(std::get<Is>(BoundaryCore::bdr_).               \
+                        template name<memory_optimized>(std::get<Is>(G), \
+                                                        std::get<Is>(xi), \
+                                                        std::get<Is>(indices))...); \
+    }                                                                   \
                                                                         \
       template<bool memory_optimized = false,                           \
-               size_t... Is, typename... Geometry_t, typename... Xi_t,  \
-               typename... Indices_t, typename... Coeff_Indices_t>      \
+               size_t... Is, typename... Geometry, typename... Xi,      \
+               typename... Indices, typename... Coeff_Indices>          \
       inline auto BOOST_PP_CAT(name,_)(std::index_sequence<Is...>,      \
-                                       const std::tuple<Geometry_t...>& G, \
-                                       const std::tuple<Xi_t...>& xi,   \
-                                       const std::tuple<Indices_t...>& indices, \
-                                       const std::tuple<Coeff_Indices_t...>& coeff_indices) const \
-      {                                                                 \
-        return std::tuple(std::get<Is>(BoundaryCore::bdr_).             \
-                          template name<memory_optimized>(std::get<Is>(G), \
-                                                          std::get<Is>(xi), \
-                                                          std::get<Is>(indices), \
-                                                          std::get<Is>(coeff_indices))...); \
-      }                                                                 \
+                                       const std::tuple<Geometry...>& G, \
+                                       const std::tuple<Xi...>& xi,     \
+                                       const std::tuple<Indices...>& indices, \
+                                       const std::tuple<Coeff_Indices...>& coeff_indices) const \
+    {                                                                   \
+      return std::tuple(std::get<Is>(BoundaryCore::bdr_).               \
+                        template name<memory_optimized>(std::get<Is>(G), \
+                                                        std::get<Is>(xi), \
+                                                        std::get<Is>(indices), \
+                                                        std::get<Is>(coeff_indices))...); \
+    }                                                                   \
                                                                         \
-    public:                                                             \
-      template<bool memory_optimized = false, typename... Args_t>       \
-      inline auto name(const Args_t&... args) const                     \
-      {                                                                 \
-        return BOOST_PP_CAT(name,_)<memory_optimized>(std::make_index_sequence<BoundaryCore::sides()>{}, \
-                                                      args...);         \
-      }
+  public:                                                               \
+  template<bool memory_optimized = false, typename... Args>             \
+  inline auto name(const Args&... args) const                           \
+    {                                                                   \
+      return BOOST_PP_CAT(name,_)<memory_optimized>(std::make_index_sequence<BoundaryCore::sides()>{}, \
+                                                    args...);           \
+    }
     
     /// @brief Auto-generated functions
     /// @{
@@ -1154,13 +1154,13 @@ namespace iganet {
   };
 
   /// @brief Boundary
-  template<typename spline_t>
-  using Boundary = BoundaryCommon<BoundaryCore<spline_t, spline_t::parDim()>>;
+  template<typename Spline>
+  using Boundary = BoundaryCommon<BoundaryCore<Spline, Spline::parDim()>>;
   
   /// @brief Print (as string) a Boundary object
-  template<typename spline_t>
+  template<typename Spline>
   inline std::ostream& operator<<(std::ostream& os,
-                                  const Boundary<spline_t>& obj)
+                                  const Boundary<Spline>& obj)
   {
     obj.pretty_print(os);
     return os;

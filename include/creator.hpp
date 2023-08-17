@@ -59,17 +59,17 @@ namespace iganet {
     /// Bounds constructor
     IntervalCreator(const T& x0min, const T& x0max,
                     const T& x1min, const T& x1max)
-    : x0min_(x0min), x0max_(x0max),
-      x1min_(x1min), x1max_(x1max)
+      : x0min_(x0min), x0max_(x0max),
+        x1min_(x1min), x1max_(x1max)
     {
       std::srand(std::time(0));
     }
     
-    template<typename spline_t>
-    auto& next(spline_t& obj) const
+    template<typename Spline>
+    auto& next(Spline& obj) const
     {
-      static_assert(spline_t::parDim() == 1 &&
-                    spline_t::geoDim() == 1,
+      static_assert(Spline::parDim() == 1 &&
+                    Spline::geoDim() == 1,
                     "Interval creator requires parDim=1 and geoDim=1");
 
       T x0 = x0min_ + (x0max_-x0min_) * T(std::rand()) / T(RAND_MAX);
@@ -120,19 +120,19 @@ namespace iganet {
                      const T& x1min, const T& x1max,
                      const T& y0min, const T& y0max,
                      const T& y1min, const T& y1max)
-    : x0min_(x0min), x0max_(x0max),
-      x1min_(x1min), x1max_(x1max),
-      y0min_(y0min), y0max_(y0max),
-      y1min_(y1min), y1max_(y1max)
+      : x0min_(x0min), x0max_(x0max),
+        x1min_(x1min), x1max_(x1max),
+        y0min_(y0min), y0max_(y0max),
+        y1min_(y1min), y1max_(y1max)
     {
       std::srand(std::time(0));
     }
     
-    template<typename spline_t>
-    auto& next(spline_t& obj) const
+    template<typename Spline>
+    auto& next(Spline& obj) const
     {
-      static_assert(spline_t::parDim() == 2 &&
-                    spline_t::geoDim() == 2,
+      static_assert(Spline::parDim() == 2 &&
+                    Spline::geoDim() == 2,
                     "Interval creator requires parDim=2 and geoDim=2");
 
       T x0 = x0min_ + (x0max_-x0min_) * T(std::rand()) / T(RAND_MAX);
