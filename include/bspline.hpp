@@ -3492,13 +3492,14 @@ namespace iganet {
     {
       BSplineCommon result;
 
-      result.nknots_  = BSplineCore::nknots_;
-      result.ncoeffs_ = BSplineCore::ncoeffs_;
+      result.nknots_          = BSplineCore::nknots_;
+      result.ncoeffs_         = BSplineCore::ncoeffs_;
+      result.ncoeffs_reverse_ = BSplineCore::ncoeffs_reverse_;
 
-      for (short_t i=0; i< BSplineCore::parDim_; ++i)
+      for (short_t i=0; i<BSplineCore::parDim_; ++i)
         result.knots_[i] = BSplineCore::knots_[i].clone();
 
-      for (short_t i=0; i< BSplineCore::geoDim_; ++i)
+      for (short_t i=0; i<BSplineCore::geoDim_; ++i)
         result.coeffs_[i] = BSplineCore::coeffs_[i].clone();
 
       return result;
@@ -3516,13 +3517,14 @@ namespace iganet {
     {
       BSplineCommon result;
 
-      result.nknots_  = BSplineCore::nknots_;
-      result.ncoeffs_ = BSplineCore::ncoeffs_;
+      result.nknots_          = BSplineCore::nknots_;
+      result.ncoeffs_         = BSplineCore::ncoeffs_;
+      result.ncoeffs_reverse_ = BSplineCore::ncoeffs_reverse_;
 
-      for (short_t i=0; i< BSplineCore::parDim_; ++i)
+      for (short_t i=0; i<BSplineCore::parDim_; ++i)
         result.knots_[i] = BSplineCore::knots_[i].to(device);
 
-      for (short_t i=0; i< BSplineCore::geoDim_; ++i)
+      for (short_t i=0; i<BSplineCore::geoDim_; ++i)
         result.coeffs_[i] = BSplineCore::coeffs_[i].to(device);
 
       return result;
