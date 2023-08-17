@@ -145,7 +145,7 @@ namespace iganet {
     template<typename other_t>
     Options<other_t> dtype() const noexcept
     {
-      return Options<other_t>(options_.dtype(::iganet::dtype<real_t>()));
+      return Options<other_t>(options_.dtype(::iganet::dtype<other_t>()));
     }
     
     /// @brief Returns a new Options object with the `layout` property as given
