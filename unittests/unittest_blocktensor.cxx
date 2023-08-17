@@ -17,7 +17,7 @@
 
 #include <gtest/gtest.h>
 
-TEST(BlockTensor, BlockTensor_double)
+TEST(BlockTensor, BlockTensor)
 {
   iganet::utils::BlockTensor<torch::Tensor, 2, 1> A (   torch::ones({5,5}), 2*torch::ones({5,5}) );
   iganet::utils::BlockTensor<torch::Tensor, 2, 1> B ( 3*torch::ones({5,5}), 4*torch::ones({5,5}) );
@@ -153,7 +153,7 @@ TEST(BlockTensor, BlockTensor_double)
   EXPECT_TRUE( torch::equal(iganet::utils::op((A), (B), (C), ##__VA_ARGS__)(0,0), \
                             torch::special::op((A)(0,0), (B)(0,0), (C)(0,0), ##__VA_ARGS__)) )
 
-TEST(BlockTensor, BlockTensor_ops_double)
+TEST(BlockTensor, BlockTensor_ops)
 {
   
   iganet::utils::BlockTensor<torch::Tensor, 1, 1>
