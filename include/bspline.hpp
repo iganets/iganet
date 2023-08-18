@@ -164,6 +164,9 @@ namespace iganet {
   class UniformBSplineCore
     : public utils::Serializable
   {
+    /// @brief Enable access to private members
+    template<typename BSplineCore> friend class BSplineCommon;
+
   protected:
     /// @brief Dimension of the parametric space
     /// \f$\hat\Omega=[0,1]^{d_\text{par}}\f$
@@ -197,9 +200,9 @@ namespace iganet {
     /// @brief Array storing the coefficients of the control net
     /// \f$\left(\mathbf{c}_{i_d}\right)_{i_d=1}^{n_d}\f$,
     /// \f$\mathbf{c}_{i_d}\in\mathbb{R}^{d_\text{geo}}\f$
-    
+
     std::array<torch::Tensor, geoDim_> coeffs_;
-    
+
     /// @brief Options
     Options<real_t> options_;
 
@@ -255,7 +258,7 @@ namespace iganet {
     {
       return options_.layout();
     }
-    
+
     /// @brief Returns the `requires_grad` property
     bool requires_grad() const noexcept
     {
@@ -295,19 +298,19 @@ namespace iganet {
     {
       if (options_.requires_grad() == requires_grad)
         return *this;
-      
+
       for (short_t i=0; i<parDim_; ++i)
         knots_[i].set_requires_grad(requires_grad);
-      
+
       for (short_t i=0; i<geoDim_; ++i)
         coeffs_[i].set_requires_grad(requires_grad);
 
       Options<real_t> tmp(options_.requires_grad(requires_grad));
       options_.~Options<real_t>(); new (&options_) Options<real_t>(tmp);
-      
+
       return *this;
     }
-    
+
     /// @brief Default constructor
     UniformBSplineCore(Options<real_t> options = Options<real_t>{})
       : options_(options)
@@ -724,7 +727,7 @@ namespace iganet {
           if (options_.requires_grad())
             coeffs_[i].retain_grad();
         }
-        
+
         return coeffs;
       }
     }
@@ -1938,16 +1941,16 @@ namespace iganet {
 
     /// @brief Updates the B-spline object from JSON object
     inline UniformBSplineCore& from_json(const nlohmann::json& json) {
-      
+
       if (json["geoDim"].get<short_t>() != geoDim_)
         throw std::runtime_error("JSON object provides incompatible geometric dimensions");
-      
+
       if (json["parDim"].get<short_t>() != parDim_)
         throw std::runtime_error("JSON object provides incompatible parametric dimensions");
-      
+
       if (json["degrees"].get<std::array<short_t, parDim_>>() != degrees_)
         throw std::runtime_error("JSON object provides incompatible degrees");
-      
+
       nknots_ = json["nknots"].get<std::array<int64_t, parDim_>>();
       ncoeffs_ = json["ncoeffs"].get<std::array<int64_t, parDim_>>();
 
@@ -1956,15 +1959,15 @@ namespace iganet {
       std::reverse(ncoeffs_reverse_.begin(), ncoeffs_reverse_.end());
 
       auto kv = json["knots"].get<std::array<std::vector<value_type>, parDim_>>();
-      
+
       for (short_t i=0; i<parDim_; ++i)
         knots_[i] = utils::to_tensor(kv[i], options_);
 
       auto c = json["coeffs"].get<std::array<std::vector<value_type>, geoDim_>>();
-      
+
       for (short_t i=0; i<geoDim_; ++i)
         coeffs_[i] = utils::to_tensor(c[i], options_);
-      
+
       return *this;
     }
 
@@ -1983,7 +1986,7 @@ namespace iganet {
     {
       // add Geometry node
       pugi::xml_node geo = root.append_child("Geometry");
-      
+
       // 1D parametric dimension
       if constexpr (parDim_ == 1) {
         geo.append_attribute("type") = "BSpline";
@@ -2028,22 +2031,22 @@ namespace iganet {
             ss << std::to_string(knots_accessor[i]) << (i < nknots_[index]-1 ? " " : "");
           knots.append_child(pugi::node_pcdata).set_value(ss.str().c_str());
         }
-        
+
       } // parametric dimension
 
       // add Coefs node
       pugi::xml_node coefs = geo.append_child("coefs");
       coefs.append_attribute("geoDim") = geoDim_;
-      
+
       auto [coeffs_cpu, coeffs_accessors] = utils::to_tensorAccessor<value_type,1>(coeffs_, torch::kCPU);
       std::stringstream ss;
-      
-      if constexpr (parDim_ == 1) {        
+
+      if constexpr (parDim_ == 1) {
         for (int64_t i = 0; i < ncoeffs_[0]; ++i)
           for (short_t g = 0; g < geoDim_; ++g)
             ss << std::to_string(coeffs_accessors[g][i])
                << (i < ncoeffs_[0]-1 || g < geoDim_ ? " " : "");
-        
+
       } else if constexpr (parDim_ == 2) {
         for (int64_t j = 0; j < ncoeffs_[1]; ++j)
           for (int64_t i = 0; i < ncoeffs_[0]; ++i)
@@ -2051,7 +2054,7 @@ namespace iganet {
               ss << std::to_string(coeffs_accessors[g][j * ncoeffs_[0] +
                                                        i])
                  << (i < ncoeffs_[0]-1 || j < ncoeffs_[1]-1 || g < geoDim_ ? " " : "");
-        
+
       } else if constexpr (parDim_ == 3) {
         for (int64_t k = 0; k < ncoeffs_[2]; ++k)
           for (int64_t j = 0; j < ncoeffs_[1]; ++j)
@@ -2061,7 +2064,7 @@ namespace iganet {
                                                          j * ncoeffs_[0] +
                                                          i])
                    << (i < ncoeffs_[0]-1 || j < ncoeffs_[1]-1 || k < ncoeffs_[2]-1 || g < geoDim_ ? " " : "");
-        
+
       } else if constexpr (parDim_ == 4) {
         for (int64_t l = 0; l < ncoeffs_[3]; ++l)
           for (int64_t k = 0; k < ncoeffs_[2]; ++k)
@@ -2073,7 +2076,7 @@ namespace iganet {
                                                            j * ncoeffs_[0] +
                                                            i])
                      << (i < ncoeffs_[0]-1 || j < ncoeffs_[1]-1 || k < ncoeffs_[2]-1 || l < ncoeffs_[3]-1 || g < geoDim_ ? " " : "");
-        
+
       } else
         throw std::runtime_error("Unsupported parametric dimension");
 
@@ -2091,7 +2094,7 @@ namespace iganet {
     inline UniformBSplineCore& from_xml(const pugi::xml_node& root, int id=0) {
 
       std::array<bool, parDim_> nknots_found{false}, ncoeffs_found{false};
-      
+
       // Loop through all geometry nodes
       for (pugi::xml_node geo : root.children("Geometry")) {
 
@@ -2166,7 +2169,7 @@ namespace iganet {
 
                     nknots_found[index] = true;
                     ncoeffs_found[index] = true;
-                    
+
                   } // "KnotVector"
 
                 } // "BSplineBasis"
@@ -2184,7 +2187,7 @@ namespace iganet {
         // Reverse ncoeffs
         ncoeffs_reverse_ = ncoeffs_;
         std::reverse(ncoeffs_reverse_.begin(), ncoeffs_reverse_.end());
-        
+
         // Fill coefficients with zeros
         int64_t size = ncumcoeffs();
         for (short_t i = 0; i < geoDim_; ++i)
@@ -2203,14 +2206,14 @@ namespace iganet {
               for (short_t g = 0; g < geoDim_; ++g) {
                 if (value == NULL)
                   throw std::runtime_error("XML object does not provide enough coefficients");
-                
+
                 coeffs_accessors[g][i] = static_cast<value_type>(std::stod(value));
-                value = strtok(NULL, " ");                
+                value = strtok(NULL, " ");
               }
 
             if (value != NULL)
               throw std::runtime_error("XML object provides too many coefficients");
-            
+
           } else if constexpr (parDim_ == 2) {
             auto value = strtok(&values[0], " ");
 
@@ -2219,10 +2222,10 @@ namespace iganet {
                 for (short_t g = 0; g < geoDim_; ++g) {
                   if (value == NULL)
                     throw std::runtime_error("XML object does not provide enough coefficients");
-                                  
+
                   coeffs_accessors[g][j * ncoeffs_[0] +
                                       i] = static_cast<value_type>(std::stod(value));
-                  value = strtok(NULL, " ");                
+                  value = strtok(NULL, " ");
                 }
 
             if (value != NULL)
@@ -2237,11 +2240,11 @@ namespace iganet {
                   for (short_t g = 0; g < geoDim_; ++g) {
                     if (value == NULL)
                       throw std::runtime_error("XML object does not provide enough coefficients");
-                    
+
                     coeffs_accessors[g][k * ncoeffs_[0] * ncoeffs_[1] +
                                         j * ncoeffs_[0] +
                                         i] = static_cast<value_type>(std::stod(value));
-                    value = strtok(NULL, " ");                
+                    value = strtok(NULL, " ");
                   }
 
             if (value != NULL)
@@ -2257,31 +2260,31 @@ namespace iganet {
                     for (short_t g = 0; g < geoDim_; ++g) {
                       if (value == NULL)
                         throw std::runtime_error("XML object does not provide enough coefficients");
-                      
+
                       coeffs_accessors[g][l * ncoeffs_[0] * ncoeffs_[1] * ncoeffs_[2] +
                                           k * ncoeffs_[0] * ncoeffs_[1] +
                                           j * ncoeffs_[0] +
                                           i] = static_cast<value_type>(std::stod(value));
-                      value = strtok(NULL, " ");                
+                      value = strtok(NULL, " ");
                     }
-            
+
             if (value != NULL)
               throw std::runtime_error("XML object provides too many coefficients");
-            
+
           } else
             throw std::runtime_error("Unsupported parametric dimension");
 
           // Copy coefficients to device (if needed)
           for (short_t i = 0; i < geoDim_; ++i)
             coeffs_[i] = coeffs_[i].to(options_.device());
-	  
+
           if (std::all_of(std::begin(nknots_found), std::end(nknots_found), [](bool i) { return i ;}) &&
-              std::all_of(std::begin(ncoeffs_found), std::end(ncoeffs_found), [](bool i) { return i; }))              
+              std::all_of(std::begin(ncoeffs_found), std::end(ncoeffs_found), [](bool i) { return i; }))
             return *this;
-          
+
           else
             throw std::runtime_error("XML object is not compatible with B-spline object");
-          
+
         } // Coefs
         else
           throw std::runtime_error("XML object does not provide coefficients");
@@ -2375,8 +2378,11 @@ namespace iganet {
     }
 
     /// @brief Returns true if both B-spline objects are close up to the given tolerance
-    bool isclose(const UniformBSplineCore& other, real_t rtol = real_t{1e-5}, real_t atol = real_t{1e-8}) const
+    template<typename real_t_, short_t GeoDim_, short_t... Degrees_>
+    bool isclose(const UniformBSplineCore<real_t_, GeoDim_, Degrees_...>& other,
+		 real_t rtol = real_t{1e-5}, real_t atol = real_t{1e-8}) const
     {
+      if constexpr (!std::is_same<real_t, real_t_>::value) return false;
       bool result(true);
 
       result *= (parDim_ == other.parDim());
@@ -2401,12 +2407,16 @@ namespace iganet {
     }
 
     /// @brief Returns true if both B-spline objects are the same
-    bool operator==(const UniformBSplineCore& other) const
+    template<typename real_t_, short_t GeoDim_, short_t... Degrees_>
+    bool operator==(const UniformBSplineCore<real_t_, GeoDim_, Degrees_...>& other) const
     {
+      if constexpr (!std::is_same<real_t, real_t_>::value) return false;
       bool result(true);
 
       result *= (parDim_ == other.parDim());
       result *= (geoDim_ == other.geoDim());
+
+      if (!result) return result;
 
       for (short_t i = 0; i < parDim_; ++i)
         result *= (degree(i) == other.degree(i));
@@ -2427,7 +2437,8 @@ namespace iganet {
     }
 
     /// @brief Returns true if both B-spline objects are different
-    bool operator!=(const UniformBSplineCore& other) const {
+    template<typename real_t_, short_t GeoDim_, short_t... Degrees_>
+    bool operator!=(const UniformBSplineCore<real_t_, GeoDim_, Degrees_...>& other) const {
       return !(*this==other); // Do not change this to (*this != other) is it does not work
     }
 
@@ -3509,13 +3520,25 @@ namespace iganet {
     template<typename real_t>
     inline auto to(Options<real_t> options) const
     {
-      return BSplineCommon<typename BSplineCore::template real_derived_self_type<real_t>>(*this, options);
+      BSplineCommon<typename BSplineCore::template real_derived_self_type<real_t>> result(options);
+
+      result.nknots_          = BSplineCore::nknots_;
+      result.ncoeffs_         = BSplineCore::ncoeffs_;
+      result.ncoeffs_reverse_ = BSplineCore::ncoeffs_reverse_;
+
+      for (short_t i=0; i<BSplineCore::parDim_; ++i)
+	result.knots_[i] = BSplineCore::knots_[i].to(options);
+
+      for (short_t i=0; i<BSplineCore::geoDim_; ++i)
+	result.coeffs_[i] = BSplineCore::coeffs_[i].to(options);
+
+      return result;
     }
 
     /// @brief Returns a copy of the B-spline object with settings from device
     inline auto to(torch::Device device) const
     {
-      BSplineCommon result;
+      BSplineCommon result(BSplineCore::options_.device(device));
 
       result.nknots_          = BSplineCore::nknots_;
       result.ncoeffs_         = BSplineCore::ncoeffs_;
@@ -5264,7 +5287,7 @@ namespace iganet {
         os << 1;
 
       os << ", options = " << static_cast<torch::TensorOptions>(BSplineCore::options_);
-      
+
 #ifdef __CUDACC__
 #pragma nv_diag_default 514
 #endif
