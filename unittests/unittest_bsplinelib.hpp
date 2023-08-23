@@ -112,9 +112,9 @@ void test_bspline_eval(const Spline& bspline,
   using Derivative                 = typename BSplineLibSpline::ParameterSpace_::Derivative_;
   using ScalarDerivative           = typename Derivative::value_type;
 
-  using BSplineValue_t = iganet::utils::BlockTensor<torch::Tensor, 1, Spline::geoDim()>;
+  using BSplineValue_type = iganet::utils::BlockTensor<torch::Tensor, 1, Spline::geoDim()>;
 
-  BSplineValue_t bspline_val;
+  BSplineValue_type bspline_val;
   if constexpr (precompute) {
     auto knot_indices  = bspline.find_knot_indices(xi);
     auto basfunc       = bspline.template eval_basfunc<deriv>(xi, knot_indices);

@@ -32,9 +32,9 @@ TEST_F(FunctionSpaceTest, S1_geoDim1_degrees2)
   using iganet::side;
   using iganet::deriv;
   using iganet::functionspace;
-  using BSpline_t = iganet::UniformBSpline<real_t, 1, 2>;
-  iganet::S1<BSpline_t> functionspace({5}, iganet::init::greville, options);
-  BSpline_t                   bspline({5}, iganet::init::greville, options);
+  using BSpline = iganet::UniformBSpline<real_t, 1, 2>;
+  iganet::S1<BSpline> functionspace({5}, iganet::init::greville, options);
+  BSpline                   bspline({5}, iganet::init::greville, options);
 
   { // Interior
 
@@ -214,12 +214,12 @@ TEST_F(FunctionSpaceTest, S2_geoDim1_degrees23)
   using iganet::side;
   using iganet::deriv;
   using iganet::functionspace;
-  using BSpline_t  = iganet::UniformBSpline<real_t, 1, 2, 3>;
-  using Geometry_t = iganet::UniformBSpline<real_t, 2, 2, 3>;
-  iganet::S2<BSpline_t> functionspace({5, 4}, iganet::init::greville, options);
-  iganet::S2<Geometry_t>  S2_geometry({5, 4}, iganet::init::greville, options);
-  BSpline_t                   bspline({5, 4}, iganet::init::greville, options);
-  Geometry_t                 geometry({5, 4}, iganet::init::greville, options);
+  using BSpline  = iganet::UniformBSpline<real_t, 1, 2, 3>;
+  using Geometry = iganet::UniformBSpline<real_t, 2, 2, 3>;
+  iganet::S2<BSpline> functionspace({5, 4}, iganet::init::greville, options);
+  iganet::S2<Geometry>  S2_geometry({5, 4}, iganet::init::greville, options);
+  BSpline                   bspline({5, 4}, iganet::init::greville, options);
+  Geometry                 geometry({5, 4}, iganet::init::greville, options);
 
   { // Interior
 
@@ -569,12 +569,12 @@ TEST_F(FunctionSpaceTest, S3_geoDim1_degrees234)
   using iganet::side;
   using iganet::deriv;
   using iganet::functionspace;
-  using BSpline_t  = iganet::UniformBSpline<real_t, 1, 2, 3, 4>;
-  using Geometry_t = iganet::UniformBSpline<real_t, 3, 2, 3, 4>;
-  iganet::S3<BSpline_t> functionspace({5, 4, 7}, iganet::init::greville, options);
-  iganet::S3<Geometry_t>  S3_geometry({5, 4, 7}, iganet::init::greville, options);
-  BSpline_t                   bspline({5, 4, 7}, iganet::init::greville, options);
-  Geometry_t                 geometry({5, 4, 7}, iganet::init::greville, options);
+  using BSpline  = iganet::UniformBSpline<real_t, 1, 2, 3, 4>;
+  using Geometry = iganet::UniformBSpline<real_t, 3, 2, 3, 4>;
+  iganet::S3<BSpline> functionspace({5, 4, 7}, iganet::init::greville, options);
+  iganet::S3<Geometry>  S3_geometry({5, 4, 7}, iganet::init::greville, options);
+  BSpline                   bspline({5, 4, 7}, iganet::init::greville, options);
+  Geometry                 geometry({5, 4, 7}, iganet::init::greville, options);
 
   { // Interior
 
@@ -1165,12 +1165,12 @@ TEST_F(FunctionSpaceTest, S4_geoDim1_degrees2341)
   using iganet::side;
   using iganet::deriv;
   using iganet::functionspace;
-  using BSpline_t  = iganet::UniformBSpline<real_t, 1, 2, 3, 4, 1>;
-  using Geometry_t = iganet::UniformBSpline<real_t, 4, 2, 3, 4, 1>;
-  iganet::S4<BSpline_t> functionspace({5, 4, 7, 3}, iganet::init::greville, options);
-  iganet::S4<Geometry_t>  S4_geometry({5, 4, 7, 3}, iganet::init::greville, options);
-  BSpline_t                   bspline({5, 4, 7, 3}, iganet::init::greville, options);
-  Geometry_t                 geometry({5, 4, 7, 3}, iganet::init::greville, options);
+  using BSpline  = iganet::UniformBSpline<real_t, 1, 2, 3, 4, 1>;
+  using Geometry = iganet::UniformBSpline<real_t, 4, 2, 3, 4, 1>;
+  iganet::S4<BSpline> functionspace({5, 4, 7, 3}, iganet::init::greville, options);
+  iganet::S4<Geometry>  S4_geometry({5, 4, 7, 3}, iganet::init::greville, options);
+  BSpline                   bspline({5, 4, 7, 3}, iganet::init::greville, options);
+  Geometry                 geometry({5, 4, 7, 3}, iganet::init::greville, options);
 
   { // Interior
 
@@ -2115,10 +2115,10 @@ TEST_F(FunctionSpaceTest, RT1_geoDim1_degrees2)
   using iganet::side;
   using iganet::deriv;
   using iganet::functionspace;
-  using BSpline_t  = iganet::NonUniformBSpline<real_t, 1, 2>;
-  using Geometry_t = iganet::NonUniformBSpline<real_t, 1, 2>;
-  iganet::RT1<BSpline_t> functionspace({5}, iganet::init::greville, options);
-  iganet::RT1<Geometry_t> RT1_geometry({5}, iganet::init::greville, options);
+  using BSpline  = iganet::NonUniformBSpline<real_t, 1, 2>;
+  using Geometry = iganet::NonUniformBSpline<real_t, 1, 2>;
+  iganet::RT1<BSpline> functionspace({5}, iganet::init::greville, options);
+  iganet::RT1<Geometry> RT1_geometry({5}, iganet::init::greville, options);
 
   iganet::NonUniformBSpline<real_t, 1, 3>  bspline0({5+1}, iganet::init::greville, options);
   iganet::NonUniformBSpline<real_t, 1, 2>  bspline1({5},   iganet::init::greville, options);
@@ -2252,10 +2252,10 @@ TEST_F(FunctionSpaceTest, RT2_geoDim1_degrees23)
   using iganet::side;
   using iganet::deriv;
   using iganet::functionspace;
-  using BSpline_t  = iganet::NonUniformBSpline<real_t, 1, 2, 3>;
-  using Geometry_t = iganet::NonUniformBSpline<real_t, 2, 2, 3>;
-  iganet::RT2<BSpline_t> functionspace({5, 6}, iganet::init::greville, options);
-  iganet::RT2<Geometry_t> RT2_geometry({5, 6}, iganet::init::greville, options);
+  using BSpline  = iganet::NonUniformBSpline<real_t, 1, 2, 3>;
+  using Geometry = iganet::NonUniformBSpline<real_t, 2, 2, 3>;
+  iganet::RT2<BSpline> functionspace({5, 6}, iganet::init::greville, options);
+  iganet::RT2<Geometry> RT2_geometry({5, 6}, iganet::init::greville, options);
 
   iganet::NonUniformBSpline<real_t, 1, 3, 3>  bspline0({5+1, 6}, iganet::init::greville, options);
   iganet::NonUniformBSpline<real_t, 1, 2, 4>  bspline1({5, 6+1}, iganet::init::greville, options);
@@ -2476,10 +2476,10 @@ TEST_F(FunctionSpaceTest, RT3_geoDim1_degrees234)
   using iganet::side;
   using iganet::deriv;
   using iganet::functionspace;
-  using BSpline_t  = iganet::NonUniformBSpline<real_t, 1, 2, 3, 4>;
-  using Geometry_t = iganet::NonUniformBSpline<real_t, 3, 2, 3, 4>;
-  iganet::RT3<BSpline_t> functionspace({5, 6, 7}, iganet::init::greville, options);
-  iganet::RT3<Geometry_t> RT3_geometry({5, 6, 7}, iganet::init::greville, options);
+  using BSpline  = iganet::NonUniformBSpline<real_t, 1, 2, 3, 4>;
+  using Geometry = iganet::NonUniformBSpline<real_t, 3, 2, 3, 4>;
+  iganet::RT3<BSpline> functionspace({5, 6, 7}, iganet::init::greville, options);
+  iganet::RT3<Geometry> RT3_geometry({5, 6, 7}, iganet::init::greville, options);
 
   iganet::NonUniformBSpline<real_t, 1, 3, 3, 4>  bspline0({5+1, 6, 7}, iganet::init::greville, options);
   iganet::NonUniformBSpline<real_t, 1, 2, 4, 4>  bspline1({5, 6+1, 7}, iganet::init::greville, options);
@@ -2832,10 +2832,10 @@ TEST_F(FunctionSpaceTest, RT4_geoDim1_degrees2341)
   using iganet::side;
   using iganet::deriv;
   using iganet::functionspace;
-  using BSpline_t  = iganet::NonUniformBSpline<real_t, 1, 2, 3, 4, 1>;
-  using Geometry_t = iganet::NonUniformBSpline<real_t, 4, 2, 3, 4, 1>;
-  iganet::RT4<BSpline_t> functionspace({5, 6, 7, 4}, iganet::init::greville, options);
-  iganet::RT4<Geometry_t> RT4_geometry({5, 6, 7, 4}, iganet::init::greville, options);
+  using BSpline  = iganet::NonUniformBSpline<real_t, 1, 2, 3, 4, 1>;
+  using Geometry = iganet::NonUniformBSpline<real_t, 4, 2, 3, 4, 1>;
+  iganet::RT4<BSpline> functionspace({5, 6, 7, 4}, iganet::init::greville, options);
+  iganet::RT4<Geometry> RT4_geometry({5, 6, 7, 4}, iganet::init::greville, options);
 
   iganet::NonUniformBSpline<real_t, 1, 3, 3, 4, 1>  bspline0({5+1, 6, 7, 4}, iganet::init::greville, options);
   iganet::NonUniformBSpline<real_t, 1, 2, 4, 4, 1>  bspline1({5, 6+1, 7, 4}, iganet::init::greville, options);

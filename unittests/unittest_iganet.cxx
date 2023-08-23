@@ -18,16 +18,16 @@
 #include <unittest_config.hpp>
 #include <gtest/gtest.h>
 
-template<typename optimizer_t,
-         typename geometry_t,
-         typename variable_t>
-class IgANet : public iganet::IgANet<optimizer_t, geometry_t, variable_t>
+template<typename Optimizer,
+         typename Geometry,
+         typename Variable>
+class IgANet : public iganet::IgANet<Optimizer, Geometry, Variable>
 {
 private:
-  using Base = iganet::IgANet<optimizer_t, geometry_t, variable_t>;
+  using Base = iganet::IgANet<Optimizer, Geometry, Variable>;
   
 public:
-  using iganet::IgANet<optimizer_t, geometry_t, variable_t>::IgANet;
+  using iganet::IgANet<Optimizer, Geometry, Variable>::IgANet;
   
   iganet::status epoch(int64_t epoch) override
   {
@@ -46,13 +46,13 @@ public:
 TEST(BSpline, IgANet_UniformBSpline_1d)
 {
   using namespace iganet::literals;
-  using real_t      = iganet::unittests::real_t;
-  using optimizer_t = torch::optim::Adam;
+  using real_t    = iganet::unittests::real_t;
+  using Optimizer = torch::optim::Adam;
   
-  using geometry_t  = iganet::S1<iganet::UniformBSpline<real_t, 1, 5>>;
-  using variable_t  = iganet::S1<iganet::UniformBSpline<real_t, 1, 5>>;
+  using Geometry  = iganet::S1<iganet::UniformBSpline<real_t, 1, 5>>;
+  using Variable  = iganet::S1<iganet::UniformBSpline<real_t, 1, 5>>;
 
-  IgANet<optimizer_t, geometry_t, variable_t> net(// Number of neurons per layers
+  IgANet<Optimizer, Geometry, Variable> net(// Number of neurons per layers
                                                   {50,30,70},
                                                   // Activation functions
                                                   {
@@ -90,13 +90,13 @@ TEST(BSpline, IgANet_UniformBSpline_1d)
 TEST(BSpline, IgANet_UniformBSpline_2d)
 {
   using namespace iganet::literals;
-  using real_t      = iganet::unittests::real_t;
-  using optimizer_t = torch::optim::Adam;
+  using real_t    = iganet::unittests::real_t;
+  using Optimizer = torch::optim::Adam;
   
-  using geometry_t  = iganet::S2<iganet::UniformBSpline<real_t, 2, 3, 5>>;
-  using variable_t  = iganet::S2<iganet::UniformBSpline<real_t, 1, 3, 5>>;
+  using Geometry  = iganet::S2<iganet::UniformBSpline<real_t, 2, 3, 5>>;
+  using Variable  = iganet::S2<iganet::UniformBSpline<real_t, 1, 3, 5>>;
 
-  IgANet<optimizer_t, geometry_t, variable_t> net(// Number of neurons per layers
+  IgANet<Optimizer, Geometry, Variable> net(// Number of neurons per layers
                                                   {50,30,70},
                                                   // Activation functions
                                                   {
@@ -157,13 +157,13 @@ TEST(BSpline, IgANet_UniformBSpline_2d)
 TEST(BSpline, IgANet_UniformBSpline_3d)
 {
   using namespace iganet::literals;
-  using real_t      = iganet::unittests::real_t;
-  using optimizer_t = torch::optim::Adam;
+  using real_t    = iganet::unittests::real_t;
+  using Optimizer = torch::optim::Adam;
   
-  using geometry_t  = iganet::S3<iganet::UniformBSpline<real_t, 3, 3, 5, 1>>;
-  using variable_t  = iganet::S3<iganet::UniformBSpline<real_t, 1, 3, 5, 1>>;
+  using Geometry  = iganet::S3<iganet::UniformBSpline<real_t, 3, 3, 5, 1>>;
+  using Variable  = iganet::S3<iganet::UniformBSpline<real_t, 1, 3, 5, 1>>;
 
-  IgANet<optimizer_t, geometry_t, variable_t> net(// Number of neurons per layers
+  IgANet<Optimizer, Geometry, Variable> net(// Number of neurons per layers
                                                   {50,30,70},
                                                   // Activation functions
                                                   {
@@ -255,13 +255,13 @@ TEST(BSpline, IgANet_UniformBSpline_3d)
 TEST(BSpline, IgANet_UniformBSpline_4d)
 {
   using namespace iganet::literals;
-  using real_t      = iganet::unittests::real_t;
-  using optimizer_t = torch::optim::Adam;
+  using real_t    = iganet::unittests::real_t;
+  using Optimizer = torch::optim::Adam;
     
-  using geometry_t  = iganet::S4<iganet::UniformBSpline<real_t, 4, 3, 5, 1, 4>>;
-  using variable_t  = iganet::S4<iganet::UniformBSpline<real_t, 1, 3, 5, 1, 4>>;
+  using Geometry  = iganet::S4<iganet::UniformBSpline<real_t, 4, 3, 5, 1, 4>>;
+  using Variable  = iganet::S4<iganet::UniformBSpline<real_t, 1, 3, 5, 1, 4>>;
 
-  IgANet<optimizer_t, geometry_t, variable_t> net(// Number of neurons per layers
+  IgANet<Optimizer, Geometry, Variable> net(// Number of neurons per layers
                                                   {50,30,70},
                                                   // Activation functions
                                                   {
@@ -392,14 +392,14 @@ TEST(BSpline, IgANet_UniformBSpline_4d)
 TEST(BSpline, IgANet_NonUniformBSpline_1d)
 {
   using namespace iganet::literals;
-  using real_t      = iganet::unittests::real_t;
-  using optimizer_t = torch::optim::Adam;
+  using real_t    = iganet::unittests::real_t;
+  using Optimizer = torch::optim::Adam;
   
  
-  using geometry_t  = iganet::S1<iganet::UniformBSpline<real_t, 1, 5>>;
-  using variable_t  = iganet::S1<iganet::NonUniformBSpline<real_t, 1, 5>>;
+  using Geometry  = iganet::S1<iganet::UniformBSpline<real_t, 1, 5>>;
+  using Variable  = iganet::S1<iganet::NonUniformBSpline<real_t, 1, 5>>;
 
-  IgANet<optimizer_t, geometry_t, variable_t> net(// Number of neurons per layers
+  IgANet<Optimizer, Geometry, Variable> net(// Number of neurons per layers
                                                   {50,30,70},
                                                   // Activation functions
                                                   {
@@ -437,13 +437,13 @@ TEST(BSpline, IgANet_NonUniformBSpline_1d)
 TEST(BSpline, IgANet_NonUniformBSpline_2d)
 {
   using namespace iganet::literals;
-  using real_t      = iganet::unittests::real_t;
-  using optimizer_t = torch::optim::Adam; 
+  using real_t    = iganet::unittests::real_t;
+  using Optimizer = torch::optim::Adam; 
   
-  using geometry_t  = iganet::S2<iganet::NonUniformBSpline<real_t, 2, 3, 5>>;
-  using variable_t  = iganet::S2<iganet::NonUniformBSpline<real_t, 1, 3, 5>>;
+  using Geometry  = iganet::S2<iganet::NonUniformBSpline<real_t, 2, 3, 5>>;
+  using Variable  = iganet::S2<iganet::NonUniformBSpline<real_t, 1, 3, 5>>;
 
-  IgANet<optimizer_t, geometry_t, variable_t> net(// Number of neurons per layers
+  IgANet<Optimizer, Geometry, Variable> net(// Number of neurons per layers
                                                   {50,30,70},
                                                   // Activation functions
                                                   {
@@ -504,13 +504,13 @@ TEST(BSpline, IgANet_NonUniformBSpline_2d)
 TEST(BSpline, IgANet_NonUniformBSpline_3d)
 {
   using namespace iganet::literals;
-  using real_t      = iganet::unittests::real_t;
-  using optimizer_t = torch::optim::Adam;
+  using real_t    = iganet::unittests::real_t;
+  using Optimizer = torch::optim::Adam;
     
-  using geometry_t  = iganet::S3<iganet::NonUniformBSpline<real_t, 3, 3, 5, 1>>;
-  using variable_t  = iganet::S3<iganet::NonUniformBSpline<real_t, 1, 3, 5, 1>>;
+  using Geometry  = iganet::S3<iganet::NonUniformBSpline<real_t, 3, 3, 5, 1>>;
+  using Variable  = iganet::S3<iganet::NonUniformBSpline<real_t, 1, 3, 5, 1>>;
 
-  IgANet<optimizer_t, geometry_t, variable_t> net(// Number of neurons per layers
+  IgANet<Optimizer, Geometry, Variable> net(// Number of neurons per layers
                                                   {50,30,70},
                                                   // Activation functions
                                                   {
@@ -602,13 +602,13 @@ TEST(BSpline, IgANet_NonUniformBSpline_3d)
 TEST(BSpline, IgANet_NonUniformBSpline_4d)
 {
   using namespace iganet::literals;
-  using real_t      = iganet::unittests::real_t;
-  using optimizer_t = torch::optim::Adam;
+  using real_t    = iganet::unittests::real_t;
+  using Optimizer = torch::optim::Adam;
     
-  using geometry_t  = iganet::S4<iganet::NonUniformBSpline<real_t, 4, 3, 5, 1, 4>>;
-  using variable_t  = iganet::S4<iganet::NonUniformBSpline<real_t, 1, 3, 5, 1, 4>>;
+  using Geometry  = iganet::S4<iganet::NonUniformBSpline<real_t, 4, 3, 5, 1, 4>>;
+  using Variable  = iganet::S4<iganet::NonUniformBSpline<real_t, 1, 3, 5, 1, 4>>;
 
-  IgANet<optimizer_t, geometry_t, variable_t> net(// Number of neurons per layers
+  IgANet<Optimizer, Geometry, Variable> net(// Number of neurons per layers
                                                   {50,30,70},
                                                   // Activation functions
                                                   {
