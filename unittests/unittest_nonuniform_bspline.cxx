@@ -1620,6 +1620,21 @@ TEST_F(BSplineTest, NonUniformBSpline_to_from_json)
   }
 }
 
+TEST_F(BSplineTest, NonUniformBSpline_query_property)
+{
+  iganet::NonUniformBSpline<real_t, 2, 3, 4> bspline({4,5}, iganet::init::greville, options);
+
+  EXPECT_FALSE(bspline.is_uniform());
+  EXPECT_TRUE(bspline.is_nonuniform());
+
+  EXPECT_EQ(bspline.device(),        options.device());
+  EXPECT_EQ(bspline.device_index(),  options.device_index());
+  EXPECT_EQ(bspline.dtype(),         options.dtype());
+  EXPECT_EQ(bspline.is_sparse(),     options.is_sparse());
+  EXPECT_EQ(bspline.layout(),        options.layout());
+  EXPECT_EQ(bspline.pinned_memory(), options.pinned_memory());
+}
+
 TEST_F(BSplineTest, NonUniformBSpline_requires_grad)
 {  
   {
@@ -1640,9 +1655,9 @@ TEST_F(BSplineTest, NonUniformBSpline_requires_grad)
     // has requires_grad = true
     EXPECT_THROW(values[0]->backward(), c10::Error);
     
-    xi = iganet::utils::to_tensorArray<real_t>({1.0_r}, {2.0_r}, options.requires_grad(true));   
+    xi = iganet::utils::to_tensorArray<real_t>({1.0_r}, {2.0_r}, options.requires_grad(true));
     values = bspline.eval(xi);
-    values.data()[0]->backward();
+    values[0]->backward();
     EXPECT_TRUE(torch::allclose(xi[0].grad(),
                                 iganet::utils::to_tensor<real_t>({1.0_r}, options)));
   }
@@ -1667,13 +1682,80 @@ TEST_F(BSplineTest, NonUniformBSpline_requires_grad)
     
     xi = iganet::utils::to_tensorArray<real_t>({1.0_r}, {2.0_r}, options.requires_grad(true));   
     values = bspline.eval(xi);
-    values.data()[0]->backward();
+    values[0]->backward();
     EXPECT_TRUE(torch::allclose(xi[0].grad(),
                                 iganet::utils::to_tensor<real_t>({1.0_r}, options)));
 
     EXPECT_TRUE(torch::allclose(bspline.coeffs(0).grad(),
                                 iganet::utils::to_tensor<real_t>({1, 0, 0, 1, 0, 0, 0, -8, 0, 0, 0, 24, 0, 0, 0, -32, 0, 0, 0, 16}, options)));
   }  
+}
+
+TEST_F(BSplineTest, NonUniformBSpline_to_dtype)
+{
+  {
+    iganet::NonUniformBSpline<real_t, 2, 3, 4> bspline({4,5}, iganet::init::greville, options);
+    
+    auto bspline_double = bspline.to<double>();
+    auto bspline_float  = bspline.to<float>();
+    
+    if constexpr (std::is_same<real_t, double>::value)
+      EXPECT_TRUE(bspline == bspline_double);
+    else
+      EXPECT_TRUE(bspline != bspline_double);
+    
+    if constexpr (std::is_same<real_t, float>::value)
+      EXPECT_TRUE(bspline == bspline_float);
+    else
+      EXPECT_TRUE(bspline != bspline_float);
+  }
+
+  {
+    iganet::NonUniformBSpline<real_t, 2, 3, 4> bspline({4,5}, iganet::init::greville, options);
+   
+    auto bspline_double = bspline.to(iganet::Options<double>{});
+    auto bspline_float  = bspline.to(iganet::Options<float>{});
+    
+    if constexpr (std::is_same<real_t, double>::value)
+      EXPECT_TRUE(bspline == bspline_double);
+    else
+      EXPECT_TRUE(bspline != bspline_double);
+    
+    if constexpr (std::is_same<real_t, float>::value)
+      EXPECT_TRUE(bspline == bspline_float);
+    else
+      EXPECT_TRUE(bspline != bspline_float);
+  }
+}
+
+TEST_F(BSplineTest, NonUniformBSpline_to_device)
+{
+  {
+    iganet::Options<real_t> options = iganet::Options<real_t>{}.device(torch::kCPU);
+    iganet::NonUniformBSpline<real_t, 2, 3, 4> bspline({4,5}, iganet::init::greville, options);
+
+    auto bspline_cpu = bspline.to(torch::kCPU);
+    EXPECT_TRUE(bspline == bspline_cpu);
+    
+    if (torch::cuda::is_available()) {
+      auto bspline_cuda = bspline.to(torch::kCUDA);
+      EXPECT_THROW((void)(bspline == bspline_cuda), c10::Error);
+    } else
+      EXPECT_THROW(bspline.to(torch::kCUDA), c10::Error);
+    
+    if (at::hasHIP()) {
+      auto bspline_hip = bspline.to(torch::kHIP);
+      EXPECT_THROW((void)(bspline == bspline_hip), c10::Error);
+    } else
+      EXPECT_THROW(bspline.to(torch::kHIP), c10::Error);
+
+    if (at::hasMPS() && // will become torch::mps::is_available()
+        (options.dtype() != iganet::dtype<double>())) { 
+      auto bspline_mps = bspline.to(torch::kMPS);
+      EXPECT_THROW((void)(bspline == bspline_mps), c10::Error);
+    } else
+      EXPECT_THROW(bspline.to(torch::kMPS), c10::Error);
+  }
 }
 
 TEST_F(BSplineTest, NonUniformBSpline_reduce_continuity)
