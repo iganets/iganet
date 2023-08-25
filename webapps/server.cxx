@@ -266,7 +266,9 @@ int main(int argc, char const* argv[])
         /* Handlers */
         .upgrade = nullptr,
         .open = [](auto *ws) {
+#ifndef NDEBUG    
           std::clog << "Connection has been opened\n";
+#endif
         },
         .message = [](auto *ws, std::string_view message, uWS::OpCode opCode) {
           try {
@@ -279,9 +281,11 @@ int main(int argc, char const* argv[])
             response["request"] = request["id"];
             response["status"]  = iganet::webapp::status::success;
 
+#ifndef NDEBUG
             for (auto const& token : tokens)
               std::clog << token << "/";
             std::clog << std::endl;
+#endif
             
             // Dispatch request
             if (tokens[0] == "get") {
@@ -399,10 +403,10 @@ int main(int argc, char const* argv[])
                 response["data"] = model->updateAttribute("", tokens[3], request);
                 ws->send(response.dump(), uWS::OpCode::TEXT, true);
 
-                // Broadcast update of model
+                // Broadcast update of model instance
                 nlohmann::json broadcast;
                 broadcast["id"] = session->getUUID();
-                broadcast["request"] = "create/model";
+                broadcast["request"] = "update/instance";
                 broadcast["data"]["id"] = stoi(tokens[2]);
                 broadcast["data"]["component"] = "";
                 broadcast["data"]["attribute"] = tokens[3];
@@ -424,10 +428,10 @@ int main(int argc, char const* argv[])
                 response["data"] = model->updateAttribute(tokens[3], tokens[4], request);
                 ws->send(response.dump(), uWS::OpCode::TEXT, true);
 
-                // Broadcast update of model
+                // Broadcast update of model instance
                 nlohmann::json broadcast;
                 broadcast["id"] = session->getUUID();
-                broadcast["request"] = "create/model";
+                broadcast["request"] = "update/instance";
                 broadcast["data"]["id"] = stoi(tokens[2]);
                 broadcast["data"]["component"] = tokens[3];
                 broadcast["data"]["attribute"] = tokens[4];
@@ -477,16 +481,16 @@ int main(int argc, char const* argv[])
                               session->models.crbegin()->first+1 : 0);
 
                 try {
-                  // Create a new model
+                  // Create a new model instance
                   session->models[id] = ws->getUserData()->models.create(tokens[2], request);
                   response["data"]["id"] = std::to_string(id);
                   response["data"]["model"] = session->models[id]->getModel();
                   ws->send(response.dump(), uWS::OpCode::TEXT, true);
                   
-                  // Broadcast creation of a new model
+                  // Broadcast creation of a new model instance
                   nlohmann::json broadcast;
                   broadcast["id"] = session->getUUID();
-                  broadcast["request"] = "create/model";
+                  broadcast["request"] = "create/instance";
                   broadcast["data"]["id"] = id;
                   broadcast["data"]["model"] = session->models[id]->getModel();
                   ws->publish(session->getUUID(), broadcast.dump(), uWS::OpCode::TEXT);
@@ -538,10 +542,10 @@ int main(int argc, char const* argv[])
                 auto model = session->removeModel(stoi(tokens[2]));
                 ws->send(response.dump(), uWS::OpCode::TEXT, true);
 
-                // Broadcast removal of model
+                // Broadcast removal of model instance
                 nlohmann::json broadcast;
                 broadcast["id"] = session->getUUID();
-                broadcast["request"] = "remove/model";
+                broadcast["request"] = "remove/instance";
                 broadcast["data"]["id"] = stoi(tokens[2]);
                 ws->publish(session->getUUID(), broadcast.dump(), uWS::OpCode::TEXT);
               }
@@ -658,16 +662,16 @@ int main(int argc, char const* argv[])
                               session->models.crbegin()->first+1 : 0);
 
                 try {
-                  // Create a new model from binary data stream
+                  // Create a new model instance from binary data stream
                   session->models[id] = ws->getUserData()->models.load(request);
                   response["data"]["id"] = std::to_string(id);
                   response["data"]["model"] = session->models[id]->getModel();
                   ws->send(response.dump(), uWS::OpCode::TEXT, true);
                   
-                  // Broadcast creation of a new model
+                  // Broadcast creation of a new model instance
                   nlohmann::json broadcast;
                   broadcast["id"] = session->getUUID();
-                  broadcast["request"] = "create/model";
+                  broadcast["request"] = "create/instance";
                   broadcast["data"]["id"] = id;
                   broadcast["data"]["model"] = session->models[id]->getModel();
                   ws->publish(session->getUUID(), broadcast.dump(), uWS::OpCode::TEXT);
@@ -764,14 +768,15 @@ int main(int argc, char const* argv[])
                 }
                 ws->send(response.dump(), uWS::OpCode::TEXT, true);
 
-                // Broadcast update of models
+                // Broadcast update of model instances
                 std::vector<int64_t> ids;
                 for (const auto& model : session->models)
                   ids.push_back(model.first);
-                               
+
+                // Broadcast update of model instance
                 nlohmann::json broadcast;
                 broadcast["id"] = session->getUUID();
-                broadcast["request"] = "create/model";
+                broadcast["request"] = "update/instance";
                 broadcast["data"]["ids"] = ids;
                 ws->publish(session->getUUID(), broadcast.dump(), uWS::OpCode::TEXT);
               }
@@ -796,10 +801,10 @@ int main(int argc, char const* argv[])
                 }
                 ws->send(response.dump(), uWS::OpCode::TEXT, true);
 
-                // Broadcast update of model
+                // Broadcast update of model instance
                 nlohmann::json broadcast;
                 broadcast["id"] = session->getUUID();
-                broadcast["request"] = "create/model";
+                broadcast["request"] = "update/instance";
                 broadcast["data"]["id"] = stoi(tokens[2]);
                 ws->publish(session->getUUID(), broadcast.dump(), uWS::OpCode::TEXT);
               }
@@ -824,10 +829,10 @@ int main(int argc, char const* argv[])
                 }
                 ws->send(response.dump(), uWS::OpCode::TEXT, true);
                 
-                // Broadcast update of model
+                // Broadcast update of model instance
                 nlohmann::json broadcast;
                 broadcast["id"] = session->getUUID();
-                broadcast["request"] = "create/model";
+                broadcast["request"] = "update/instance";
                 broadcast["data"]["id"] = stoi(tokens[2]);
                 ws->publish(session->getUUID(), broadcast.dump(), uWS::OpCode::TEXT);
               }
@@ -864,10 +869,10 @@ int main(int argc, char const* argv[])
                 }
                 ws->send(response.dump(), uWS::OpCode::TEXT, true);
 
-                // Broadcast refinement of model
+                // Broadcast refinement of model instance
                 nlohmann::json broadcast;
                 broadcast["id"] = session->getUUID();
-                broadcast["request"] = "refine/model";
+                broadcast["request"] = "refine/instance";
                 broadcast["data"]["id"] = stoi(tokens[2]);
                 ws->publish(session->getUUID(), broadcast.dump(), uWS::OpCode::TEXT);
               }
@@ -998,7 +1003,9 @@ int main(int argc, char const* argv[])
         },
         .close = [](auto *ws, int code, std::string_view message) {
           /* You may access ws->getUserData() here */
+#ifndef NDEBUG
           std::clog << "Connection has been closed\n";
+#endif
         }
         }).listen(port_option->value(), [&port_option](auto *listen_socket) {
         if (listen_socket) {
