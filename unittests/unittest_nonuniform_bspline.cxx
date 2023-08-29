@@ -542,8 +542,8 @@ TEST_F(BSplineTest, NonUniformBSpline_clone_constructor)
 
 TEST_F(BSplineTest, NonUniformBSpline_move_constructor)
 {
-  iganet::NonUniformBSpline<real_t, 3, 3, 4> bspline_ref({7,8});
-  auto bspline(iganet::NonUniformBSpline<real_t, 3, 3, 4>({4,5}).uniform_refine(2));
+  iganet::NonUniformBSpline<real_t, 3, 3, 4> bspline_ref({7,8}, iganet::init::greville, options);
+  auto bspline(iganet::NonUniformBSpline<real_t, 3, 3, 4>({4,5}, iganet::init::greville, options).uniform_refine(2));
 
   EXPECT_EQ( bspline.isclose(bspline_ref), true);
 }
@@ -642,7 +642,8 @@ TEST_F(BSplineTest, NonUniformBSpline_to_from_xml)
     iganet::NonUniformBSpline<real_t, 2, 3> bspline_out({4}, iganet::init::zeros, options);
     
     bspline_out.transform( [](const std::array<real_t,1> xi)
-    { return std::array<real_t,2>{static_cast<real_t>(std::rand()), static_cast<real_t>(std::rand())}; } );
+    { return std::array<real_t,2>{static_cast<real_t>(std::rand()),
+                                  static_cast<real_t>(std::rand())}; } );
     
     pugi::xml_document doc = bspline_out.to_xml();
     
@@ -767,7 +768,8 @@ TEST_F(BSplineTest, NonUniformBSpline_to_from_xml)
     iganet::NonUniformBSpline<real_t, 2, 3, 4> bspline_out({4,5}, iganet::init::zeros, options);
     
     bspline_out.transform( [](const std::array<real_t,2> xi)
-    { return std::array<real_t,2>{static_cast<real_t>(std::rand()), static_cast<real_t>(std::rand())}; } );
+    { return std::array<real_t,2>{static_cast<real_t>(std::rand()),
+                                  static_cast<real_t>(std::rand())}; } );
     
     pugi::xml_document doc = bspline_out.to_xml();
     
@@ -892,7 +894,8 @@ TEST_F(BSplineTest, NonUniformBSpline_to_from_xml)
     iganet::NonUniformBSpline<real_t, 2, 3, 4, 5> bspline_out({4,5,6}, iganet::init::zeros, options);
     
     bspline_out.transform( [](const std::array<real_t,3> xi)
-    { return std::array<real_t,2>{static_cast<real_t>(std::rand()), static_cast<real_t>(std::rand())}; } );
+    { return std::array<real_t,2>{static_cast<real_t>(std::rand()),
+                                  static_cast<real_t>(std::rand())}; } );
     
     pugi::xml_document doc = bspline_out.to_xml();
     
@@ -1017,7 +1020,8 @@ TEST_F(BSplineTest, NonUniformBSpline_to_from_xml)
     iganet::NonUniformBSpline<real_t, 2, 3, 4, 5, 1> bspline_out({4,5,6,2}, iganet::init::zeros, options);
     
     bspline_out.transform( [](const std::array<real_t,4> xi)
-    { return std::array<real_t,2>{static_cast<real_t>(std::rand()), static_cast<real_t>(std::rand())}; } );
+    { return std::array<real_t,2>{static_cast<real_t>(std::rand()),
+                                  static_cast<real_t>(std::rand())}; } );
     
     pugi::xml_document doc = bspline_out.to_xml();
     
@@ -1648,14 +1652,14 @@ TEST_F(BSplineTest, NonUniformBSpline_requires_grad)
     for (iganet::short_t i=0; i<bspline.geoDim(); ++i)
       EXPECT_EQ(bspline.coeffs(i).requires_grad(), false);
     
-    auto xi = iganet::utils::to_tensorArray<real_t>({0.0_r}, {0.0_r}, options);
+    auto xi = iganet::utils::to_tensorArray<real_t>({0.5_r}, {0.5_r}, options);
     auto values = bspline.eval(xi);
 
     // We expect an error when calling backward() because no tensor
     // has requires_grad = true
     EXPECT_THROW(values[0]->backward(), c10::Error);
     
-    xi = iganet::utils::to_tensorArray<real_t>({1.0_r}, {2.0_r}, options.requires_grad(true));
+    xi = iganet::utils::to_tensorArray<real_t>({0.5_r}, {0.5_r}, options.requires_grad(true));
     values = bspline.eval(xi);
     values[0]->backward();
     EXPECT_TRUE(torch::allclose(xi[0].grad(),
@@ -1673,22 +1677,41 @@ TEST_F(BSplineTest, NonUniformBSpline_requires_grad)
     for (iganet::short_t i=0; i<bspline.geoDim(); ++i)
       EXPECT_EQ(bspline.coeffs(i).requires_grad(), true);
     
-    auto xi = iganet::utils::to_tensorArray<real_t>({0.0_r}, {0.0_r}, options);
+    auto xi = iganet::utils::to_tensorArray<real_t>({0.5_r}, {0.5_r}, options);
     auto values = bspline.eval(xi);
     values[0]->backward({}, true); // otherwise we cannot run backward() a second time
 
     // We expect an error because xi[0].grad() is an undefined tensor
     EXPECT_THROW(torch::allclose(xi[0].grad(), torch::empty({})), c10::Error);
     
-    xi = iganet::utils::to_tensorArray<real_t>({1.0_r}, {2.0_r}, options.requires_grad(true));   
+    xi = iganet::utils::to_tensorArray<real_t>({0.5_r}, {0.5_r}, options.requires_grad(true));   
     values = bspline.eval(xi);
     values[0]->backward();
     EXPECT_TRUE(torch::allclose(xi[0].grad(),
                                 iganet::utils::to_tensor<real_t>({1.0_r}, options)));
 
     EXPECT_TRUE(torch::allclose(bspline.coeffs(0).grad(),
-                                iganet::utils::to_tensor<real_t>({1, 0, 0, 1, 0, 0, 0, -8, 0, 0, 0, 24, 0, 0, 0, -32, 0, 0, 0, 16}, options)));
-  }  
+                                iganet::utils::to_tensor<real_t>({0.015625_r,
+                                                                  0.046875_r,
+                                                                  0.046875_r,
+                                                                  0.015625_r,
+                                                                  0.0625_r,
+                                                                  0.1875_r,
+                                                                  0.1875_r,
+                                                                  0.0625_r,
+                                                                  0.09375_r,
+                                                                  0.28125_r,
+                                                                  0.28125_r,
+                                                                  0.09375_r,
+                                                                  0.0625_r,
+                                                                  0.1875_r,
+                                                                  0.1875_r,
+                                                                  0.0625_r,
+                                                                  0.015625_r,
+                                                                  0.046875_r,
+                                                                  0.046875_r,
+                                                                  0.015625_r}, options)));
+  }
 }
 
 TEST_F(BSplineTest, NonUniformBSpline_to_dtype)

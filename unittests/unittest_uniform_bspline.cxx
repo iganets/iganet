@@ -19,6 +19,8 @@
 #include <unittest_config.hpp>
 #include <gtest/gtest.h>
 
+using namespace iganet::unittests::literals;
+
 class BSplineTest
   : public ::testing::Test
 {
@@ -559,7 +561,7 @@ TEST_F(BSplineTest, UniformBSpline_copy_constructor)
   iganet::UniformBSpline<real_t, 3, 3, 4> bspline_copy(bspline_orig);
 
   bspline_orig.transform( [](const std::array<real_t,2> xi)
-  { return std::array<real_t,3>{0.0, 1.0, 2.0};} );
+  { return std::array<real_t,3>{0.0_r, 1.0_r, 2.0_r};} );
 
   EXPECT_EQ( (bspline_orig == bspline_copy), true);
 }
@@ -571,7 +573,7 @@ TEST_F(BSplineTest, UniformBSpline_clone_constructor)
   iganet::UniformBSpline<real_t, 3, 3, 4> bspline_clone(bspline_orig, true);
 
   bspline_orig.transform( [](const std::array<real_t,2> xi)
-  { return std::array<real_t,3>{0.0, 1.0, 2.0};} );
+  { return std::array<real_t,3>{0.0_r, 1.0_r, 2.0_r};} );
 
   EXPECT_EQ( (bspline_ref == bspline_clone), true);
 }
@@ -590,7 +592,7 @@ TEST_F(BSplineTest, UniformBSpline_copy_assignment)
   auto bspline = bspline_orig;
 
   bspline_orig.transform( [](const std::array<real_t,2> xi)
-  { return std::array<real_t,3>{0.0, 1.0, 2.0};} );
+  { return std::array<real_t,3>{0.0_r, 1.0_r, 2.0_r};} );
 
   EXPECT_EQ( bspline.isclose(bspline_orig), true);
 }
@@ -609,7 +611,7 @@ TEST_F(BSplineTest, UniformBSpline_copy_coeffs_constructor)
   iganet::UniformBSpline<real_t, 3, 3, 4> bspline_copy(bspline_orig, bspline_orig.coeffs());
 
   bspline_orig.transform( [](const std::array<real_t,2> xi)
-  { return std::array<real_t,3>{0.0, 1.0, 2.0};} );
+  { return std::array<real_t,3>{0.0_r, 1.0_r, 2.0_r};} );
 
   EXPECT_EQ( (bspline_orig == bspline_copy), true);
 }
@@ -621,7 +623,7 @@ TEST_F(BSplineTest, UniformBSpline_clone_coeffs_constructor)
   iganet::UniformBSpline<real_t, 3, 3, 4> bspline_clone(bspline_orig, bspline_orig.coeffs(), true);
 
   bspline_orig.transform( [](const std::array<real_t,2> xi)
-  { return std::array<real_t,3>{0.0, 1.0, 2.0};} );
+  { return std::array<real_t,3>{0.0_r, 1.0_r, 2.0_r};} );
 
   EXPECT_EQ( (bspline_ref == bspline_clone), true);
 }
@@ -1159,7 +1161,7 @@ TEST_F(BSplineTest, UniformBSpline_load_from_xml)
     iganet::UniformBSpline<real_t, 3, 2> bspline_ref({3}, iganet::init::zeros, options);
     
     bspline_ref.transform( [](const std::array<real_t,1> xi)
-    { return std::array<real_t,3>{xi[0], 0.0, 0.0}; } );
+    { return std::array<real_t,3>{xi[0], 0.0_r, 0.0_r}; } );
     
     EXPECT_EQ( (bspline_in == bspline_ref), true);
   }
@@ -1686,14 +1688,14 @@ TEST_F(BSplineTest, UniformBSpline_requires_grad)
     for (iganet::short_t i=0; i<bspline.geoDim(); ++i)
       EXPECT_EQ(bspline.coeffs(i).requires_grad(), false);
     
-    auto xi = iganet::utils::to_tensorArray<real_t>({0.0_r}, {0.0_r}, options);
+    auto xi = iganet::utils::to_tensorArray<real_t>({0.5_r}, {0.5_r}, options);
     auto values = bspline.eval(xi);
-
+    
     // We expect an error when calling backward() because no tensor
     // has requires_grad = true
     EXPECT_THROW(values[0]->backward(), c10::Error);
     
-    xi = iganet::utils::to_tensorArray<real_t>({1.0_r}, {2.0_r}, options.requires_grad(true));
+    xi = iganet::utils::to_tensorArray<real_t>({0.5_r}, {0.5_r}, options.requires_grad(true));
     values = bspline.eval(xi);
     values[0]->backward();
     EXPECT_TRUE(torch::allclose(xi[0].grad(),
@@ -1711,22 +1713,41 @@ TEST_F(BSplineTest, UniformBSpline_requires_grad)
     for (iganet::short_t i=0; i<bspline.geoDim(); ++i)
       EXPECT_EQ(bspline.coeffs(i).requires_grad(), true);
     
-    auto xi = iganet::utils::to_tensorArray<real_t>({0.0_r}, {0.0_r}, options);
+    auto xi = iganet::utils::to_tensorArray<real_t>({0.5_r}, {0.5_r}, options);
     auto values = bspline.eval(xi);
     values[0]->backward({}, true); // otherwise we cannot run backward() a second time
 
     // We expect an error because xi[0].grad() is an undefined tensor
     EXPECT_THROW(torch::allclose(xi[0].grad(), torch::empty({})), c10::Error);
     
-    xi = iganet::utils::to_tensorArray<real_t>({1.0_r}, {2.0_r}, options.requires_grad(true));   
+    xi = iganet::utils::to_tensorArray<real_t>({0.5_r}, {0.5_r}, options.requires_grad(true));   
     values = bspline.eval(xi);
     values[0]->backward();
     EXPECT_TRUE(torch::allclose(xi[0].grad(),
                                 iganet::utils::to_tensor<real_t>({1.0_r}, options)));
-
+    
     EXPECT_TRUE(torch::allclose(bspline.coeffs(0).grad(),
-                                iganet::utils::to_tensor<real_t>({1, 0, 0, 1, 0, 0, 0, -8, 0, 0, 0, 24, 0, 0, 0, -32, 0, 0, 0, 16}, options)));
-  }  
+                                iganet::utils::to_tensor<real_t>({0.015625_r,
+                                                                  0.046875_r,
+                                                                  0.046875_r,
+                                                                  0.015625_r,
+                                                                  0.0625_r,
+                                                                  0.1875_r,
+                                                                  0.1875_r,
+                                                                  0.0625_r,
+                                                                  0.09375_r,
+                                                                  0.28125_r,
+                                                                  0.28125_r,
+                                                                  0.09375_r,
+                                                                  0.0625_r,
+                                                                  0.1875_r,
+                                                                  0.1875_r,
+                                                                  0.0625_r,
+                                                                  0.015625_r,
+                                                                  0.046875_r,
+                                                                  0.046875_r,
+                                                                  0.015625_r}, options)));
+  }
 }
 
 TEST_F(BSplineTest, UniformBSpline_to_dtype)
