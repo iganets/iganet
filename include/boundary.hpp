@@ -702,6 +702,17 @@ namespace iganet {
       return torch::cat({std::get<Is>(BoundaryCore::bdr_).as_tensor()...});
     }
 
+  public:    
+    /// @brief Returns all coefficients of all spline objects as a
+    /// single tensor
+    ///
+    /// @result Tensor of coefficients
+    inline torch::Tensor as_tensor() const
+    {
+      return as_tensor_(std::make_index_sequence<BoundaryCore::sides()>{});
+    }
+
+  private:
     /// @brief Returns the size of the single tensor representation of
     /// all spline objects
     ///
@@ -709,10 +720,21 @@ namespace iganet {
     template<std::size_t... Is>
     inline int64_t as_tensor_size_(std::index_sequence<Is...>) const
     {
-      return std::apply([]( auto... v ){ return ( v + ... ); },
+      return std::apply([]( auto... size ){ return ( size + ... ); },
                         std::make_tuple(std::get<Is>(BoundaryCore::bdr_).as_tensor_size()...));
     }
 
+  public:
+    /// @brief Returns the size of the single tensor representation of
+    /// all spline objects
+    //
+    /// @result Size of the tensor
+    inline int64_t as_tensor_size() const
+    {
+      return as_tensor_size_(std::make_index_sequence<BoundaryCore::sides()>{});
+    }
+
+  private:
     /// @brief Sets all coefficients of all spline objects from a
     /// single tensor
     ///
@@ -732,25 +754,7 @@ namespace iganet {
       return *this;
     }
 
-  public:    
-    /// @brief Returns all coefficients of all spline objects as a
-    /// single tensor
-    ///
-    /// @result Tensor of coefficients
-    inline torch::Tensor as_tensor() const
-    {
-      return as_tensor_(std::make_index_sequence<BoundaryCore::sides()>{});
-    }
-
-    /// @brief Returns the size of the single tensor representation of
-    /// all spline objects
-    //
-    /// @result Size of the tensor
-    inline int64_t as_tensor_size() const
-    {
-      return as_tensor_size_(std::make_index_sequence<BoundaryCore::sides()>{});
-    }
-    
+  public:
     /// @brief Sets all coefficients of all spline objects from a
     /// single tensor
     ///
@@ -796,119 +800,7 @@ namespace iganet {
                                                                                                 std::get<Is>(coeff_indices))...);
     }
     /// @}
-    
-    /// @brief Returns the value of the boundary spline objects from
-    /// precomputed basis function @{
-    template<size_t... Is,
-             typename... Basfunc, typename... Coeff_Indices,
-             typename... Numeval, typename... Sizes>
-    inline auto eval_from_precomputed_(std::index_sequence<Is...>,
-                                       const std::tuple<Basfunc...>& basfunc,
-                                       const std::tuple<Coeff_Indices...>& coeff_indices,
-                                       const std::tuple<Numeval...>& numeval,
-                                       const std::tuple<Sizes...>& sizes) const
-    {
-      return std::tuple(std::get<Is>(BoundaryCore::bdr_).eval_from_precomputed(std::get<Is>(basfunc),
-                                                                               std::get<Is>(coeff_indices),
-                                                                               std::get<Is>(numeval),
-                                                                               std::get<Is>(sizes))...);
-    }
 
-    template<size_t... Is,
-             typename... Basfunc, typename... Coeff_Indices, typename... Xi>
-    inline auto eval_from_precomputed_(std::index_sequence<Is...>,
-                                       const std::tuple<Basfunc...>& basfunc,
-                                       const std::tuple<Coeff_Indices...>& coeff_indices,
-                                       const std::tuple<Xi...>& xi) const
-    {
-      return std::tuple(std::get<Is>(BoundaryCore::bdr_).eval_from_precomputed(std::get<Is>(basfunc),
-                                                                               std::get<Is>(coeff_indices),
-                                                                               std::get<Is>(xi)[0].numel(),
-                                                                               std::get<Is>(xi)[0].sizes())...);
-    }
-    /// @}
-
-    /// @brief Returns the knot indicies of boundary spline object's
-    /// knot spans containing `xi`
-    template<size_t... Is, typename... Xi>
-    inline auto find_knot_indices_(std::index_sequence<Is...>,
-                                   const std::tuple<Xi...>& xi) const
-    {
-      return std::tuple(std::get<Is>(BoundaryCore::bdr_).find_knot_indices(std::get<Is>(xi))...);
-    }
-
-    /// @brief Returns the values of the boundary spline spline
-    /// object's basis functions in the points `xi`
-    /// @{
-    template<deriv deriv = deriv::func,
-             bool memory_optimized = false,
-             size_t... Is, typename... Xi>
-    inline auto eval_basfunc_(std::index_sequence<Is...>, const std::tuple<Xi...>& xi) const
-    {
-      return std::tuple(std::get<Is>(BoundaryCore::bdr_).template eval_basfunc<deriv, memory_optimized>(std::get<Is>(xi))...);
-    }
-
-    template<deriv deriv = deriv::func,
-             bool memory_optimized = false, 
-             size_t... Is, typename... Xi, typename... Indices>
-    inline auto eval_basfunc_(std::index_sequence<Is...>,
-                              const std::tuple<Xi...>& xi,
-                              const std::tuple<Indices...>& indices) const
-    {
-      return std::tuple(std::get<Is>(BoundaryCore::bdr_).template eval_basfunc<deriv, memory_optimized>(std::get<Is>(xi), std::get<Is>(indices))...);
-    }
-    /// @}
-
-    /// @brief Returns the indices of the boundary spline object's
-    /// coefficients corresponding to the knot indices `indices`
-    template<bool memory_optimized = false, size_t... Is, typename... Indices>
-    inline auto find_coeff_indices_(std::index_sequence<Is...>,
-                                    const std::tuple<Indices...>& indices) const
-    {
-      return std::tuple(std::get<Is>(BoundaryCore::bdr_).template find_coeff_indices<memory_optimized>(std::get<Is>(indices))...);
-    }
-
-    /// @brief Returns the boundary spline object with uniformly
-    /// refined knot and coefficient vectors
-    template<size_t... Is>
-    inline auto& uniform_refine_(std::index_sequence<Is...>,
-                                 int numRefine = 1, int dim = -1)
-    {
-      (std::get<Is>(BoundaryCore::bdr_).uniform_refine(numRefine, dim), ...);
-      return *this;
-    }
-
-    /// @brief Returns true if both boundary spline objects are the
-    /// same
-    template<size_t... Is>
-    inline bool is_equal(std::index_sequence<Is...>,
-                         const BoundaryCommon& other) const
-    {
-      return ((std::get<Is>(BoundaryCore::bdr_) == std::get<Is>(other.coeffs())) &&  ...);
-    }
-    
-    /// @brief Writes the boundary spline object into a
-    /// torch::serialize::OutputArchive object
-    template<size_t... Is>
-    inline torch::serialize::OutputArchive& write_(std::index_sequence<Is...>,
-                                                   torch::serialize::OutputArchive& archive,
-                                                   const std::string& key="boundary") const
-    {
-      (std::get<Is>(BoundaryCore::bdr_).write(archive, key+".bdr["+std::to_string(Is)+"]"), ...);
-      return archive;
-    }
-    
-    /// @brief Loads the function space object from a
-    /// torch::serialize::InputArchive object
-    template<size_t... Is>
-    inline torch::serialize::InputArchive& read_(std::index_sequence<Is...>,
-                                                 torch::serialize::InputArchive& archive,
-                                                 const std::string& key="boundary")
-    {
-      (std::get<Is>(BoundaryCore::bdr_).read(archive, key+".bdr["+std::to_string(Is)+"]"), ...);
-      return archive;
-    }
-    
   public:
     /// @brief Returns the values of the spline objects in the points `xi`
     /// @{
@@ -942,7 +834,40 @@ namespace iganet {
       return eval_<deriv, memory_optimized>(std::make_index_sequence<BoundaryCore::sides()>{}, xi, indices, coeff_indices);
     }
     /// @}
-    
+
+  private:
+    /// @brief Returns the value of the boundary spline objects from
+    /// precomputed basis function @{
+    template<size_t... Is,
+             typename... Basfunc, typename... Coeff_Indices,
+             typename... Numeval, typename... Sizes>
+    inline auto eval_from_precomputed_(std::index_sequence<Is...>,
+                                       const std::tuple<Basfunc...>& basfunc,
+                                       const std::tuple<Coeff_Indices...>& coeff_indices,
+                                       const std::tuple<Numeval...>& numeval,
+                                       const std::tuple<Sizes...>& sizes) const
+    {
+      return std::tuple(std::get<Is>(BoundaryCore::bdr_).eval_from_precomputed(std::get<Is>(basfunc),
+                                                                               std::get<Is>(coeff_indices),
+                                                                               std::get<Is>(numeval),
+                                                                               std::get<Is>(sizes))...);
+    }
+
+    template<size_t... Is,
+             typename... Basfunc, typename... Coeff_Indices, typename... Xi>
+    inline auto eval_from_precomputed_(std::index_sequence<Is...>,
+                                       const std::tuple<Basfunc...>& basfunc,
+                                       const std::tuple<Coeff_Indices...>& coeff_indices,
+                                       const std::tuple<Xi...>& xi) const
+    {
+      return std::tuple(std::get<Is>(BoundaryCore::bdr_).eval_from_precomputed(std::get<Is>(basfunc),
+                                                                               std::get<Is>(coeff_indices),
+                                                                               std::get<Is>(xi)[0].numel(),
+                                                                               std::get<Is>(xi)[0].sizes())...);
+    }
+    /// @}
+
+  public:    
     /// @brief Returns the value of the spline objects from
     /// precomputed basis function @{
     template<typename... Basfunc, typename... Coeff_Indices,
@@ -971,6 +896,17 @@ namespace iganet {
     }
     /// @}
 
+  private:
+    /// @brief Returns the knot indicies of boundary spline object's
+    /// knot spans containing `xi`
+    template<size_t... Is, typename... Xi>
+    inline auto find_knot_indices_(std::index_sequence<Is...>,
+                                   const std::tuple<Xi...>& xi) const
+    {
+      return std::tuple(std::get<Is>(BoundaryCore::bdr_).find_knot_indices(std::get<Is>(xi))...);
+    }
+
+  public:
     /// @brief Returns the knot indicies of knot spans containing `xi`
     template<typename... Xi>
     inline auto find_knot_indices(const std::tuple<Xi...>& xi) const
@@ -978,6 +914,30 @@ namespace iganet {
       return find_knot_indices_(std::make_index_sequence<BoundaryCore::sides()>{}, xi);
     }
 
+  private:
+    /// @brief Returns the values of the boundary spline spline
+    /// object's basis functions in the points `xi`
+    /// @{
+    template<deriv deriv = deriv::func,
+             bool memory_optimized = false,
+             size_t... Is, typename... Xi>
+    inline auto eval_basfunc_(std::index_sequence<Is...>, const std::tuple<Xi...>& xi) const
+    {
+      return std::tuple(std::get<Is>(BoundaryCore::bdr_).template eval_basfunc<deriv, memory_optimized>(std::get<Is>(xi))...);
+    }
+
+    template<deriv deriv = deriv::func,
+             bool memory_optimized = false, 
+             size_t... Is, typename... Xi, typename... Indices>
+    inline auto eval_basfunc_(std::index_sequence<Is...>,
+                              const std::tuple<Xi...>& xi,
+                              const std::tuple<Indices...>& indices) const
+    {
+      return std::tuple(std::get<Is>(BoundaryCore::bdr_).template eval_basfunc<deriv, memory_optimized>(std::get<Is>(xi), std::get<Is>(indices))...);
+    }
+    /// @}
+
+  public:
     /// @brief Returns the values of the spline objects' basis
     /// functions in the points `xi` @{
     template<deriv deriv = deriv::func,
@@ -999,6 +959,17 @@ namespace iganet {
     }
     /// @}
 
+  private:
+    /// @brief Returns the indices of the boundary spline object's
+    /// coefficients corresponding to the knot indices `indices`
+    template<bool memory_optimized = false, size_t... Is, typename... Indices>
+    inline auto find_coeff_indices_(std::index_sequence<Is...>,
+                                    const std::tuple<Indices...>& indices) const
+    {
+      return std::tuple(std::get<Is>(BoundaryCore::bdr_).template find_coeff_indices<memory_optimized>(std::get<Is>(indices))...);
+    }
+
+  public:
     /// @brief Returns the indices of the spline objects'
     /// coefficients corresponding to the knot indices `indices`
     template<bool memory_optimized = false, typename... Indices>
@@ -1007,6 +978,18 @@ namespace iganet {
       return find_coeff_indices_<memory_optimized>(std::make_index_sequence<BoundaryCore::sides()>{}, indices);
     }
 
+  private:    
+    /// @brief Returns the boundary spline object with uniformly
+    /// refined knot and coefficient vectors
+    template<size_t... Is>
+    inline auto& uniform_refine_(std::index_sequence<Is...>,
+                                 int numRefine = 1, int dim = -1)
+    {
+      (std::get<Is>(BoundaryCore::bdr_).uniform_refine(numRefine, dim), ...);
+      return *this;
+    }
+
+  public:
     /// @brief Returns the spline objects with uniformly refined
     /// knot and coefficient vectors
     inline auto& uniform_refine(int numRefine = 1, int dim = -1)
@@ -1015,6 +998,61 @@ namespace iganet {
       return *this;
     }
 
+  public:
+    /// @brief Returns true if both boundary spline objects are the
+    /// same
+    template<size_t... Is>
+    inline bool is_equal(std::index_sequence<Is...>,
+                         const BoundaryCommon& other) const
+    {
+      return ((std::get<Is>(BoundaryCore::bdr_) == std::get<Is>(other.coeffs())) &&  ...);
+    }
+
+  private:
+    /// @brief Writes the boundary spline object into a
+    /// torch::serialize::OutputArchive object
+    template<size_t... Is>
+    inline torch::serialize::OutputArchive& write_(std::index_sequence<Is...>,
+                                                   torch::serialize::OutputArchive& archive,
+                                                   const std::string& key="boundary") const
+    {
+      (std::get<Is>(BoundaryCore::bdr_).write(archive, key+".bdr["+std::to_string(Is)+"]"), ...);
+      return archive;
+    }
+
+  public:
+    /// @brief Writes the boundary spline object into a
+    /// torch::serialize::OutputArchive object
+    inline torch::serialize::OutputArchive& write(torch::serialize::OutputArchive& archive,
+                                                  const std::string& key="boundary") const
+    {
+      write_(std::make_index_sequence<BoundaryCore::sides()>{}, archive, key);
+      return archive;
+    }
+    
+  private:
+    /// @brief Loads the function space object from a
+    /// torch::serialize::InputArchive object
+    template<size_t... Is>
+    inline torch::serialize::InputArchive& read_(std::index_sequence<Is...>,
+                                                 torch::serialize::InputArchive& archive,
+                                                 const std::string& key="boundary")
+    {
+      (std::get<Is>(BoundaryCore::bdr_).read(archive, key+".bdr["+std::to_string(Is)+"]"), ...);
+      return archive;
+    }
+
+  public:
+    /// @brief Loads the boundary spline object from a
+    /// torch::serialize::InputArchive object
+    inline torch::serialize::InputArchive& read(torch::serialize::InputArchive& archive,
+                                                const std::string& key="boundary")
+    {
+      read_(std::make_index_sequence<BoundaryCore::sides()>{}, archive, key);
+      return archive;
+    }
+    
+  public:
     /// @brief Returns true if both boundary objects are the same
     inline bool operator==(const BoundaryCommon& other) const
     {
@@ -1025,24 +1063,6 @@ namespace iganet {
     inline bool operator!=(const BoundaryCommon& other) const
     {
       return *this != other;
-    }
-
-    /// @brief Writes the boundary spline object into a
-    /// torch::serialize::OutputArchive object
-    inline torch::serialize::OutputArchive& write(torch::serialize::OutputArchive& archive,
-                                                  const std::string& key="boundary") const
-    {
-      write_(std::make_index_sequence<BoundaryCore::sides()>{}, archive, key);
-      return archive;
-    }
-    
-    /// @brief Loads the boundary spline object from a
-    /// torch::serialize::InputArchive object
-    inline torch::serialize::InputArchive& read(torch::serialize::InputArchive& archive,
-                                                const std::string& key="boundary")
-    {
-      read_(std::make_index_sequence<BoundaryCore::sides()>{}, archive, key);
-      return archive;
     }
 
 #define GENERATE_EXPR_MACRO(r, data, name)                              \
@@ -1151,6 +1171,69 @@ namespace iganet {
     BOOST_PP_SEQ_FOR_EACH(GENERATE_IEXPR_MACRO, _, GENERATE_IEXPR_SEQ)
     /// @}
 #undef GENERATE_IEXPR_MACRO
+
+    /// @brief Returns the `device` property of all splines
+    auto device() const noexcept
+    {
+      return std::apply([]( auto... bspline ){ return std::make_tuple(bspline.device()...); },
+                        BoundaryCore::bdr_);
+    }
+
+    /// @brief Returns the `device_index` property of all splines
+    auto device_index() const noexcept
+    {
+      return std::apply([]( auto... bspline ){ return std::make_tuple(bspline.device_index()...); },
+                        BoundaryCore::bdr_);
+    }
+
+    /// @brief Returns the `dtype` property of all splines
+    auto dtype() const noexcept
+    {
+      return std::apply([]( auto... bspline ){ return std::make_tuple(bspline.dtype()...); },
+                        BoundaryCore::bdr_);
+    }
+
+    /// @brief Returns the `layout` property of all splines
+    auto layout() const noexcept
+    {
+      return std::apply([]( auto... bspline ){ return std::make_tuple(bspline.layout()...); },
+                        BoundaryCore::bdr_);
+    }
+    
+    /// @brief Returns the `requires_grad` property of all splines
+    auto requires_grad() const noexcept
+    {
+      return std::apply([]( auto... bspline ){ return std::make_tuple(bspline.requires_grad()...); },
+                        BoundaryCore::bdr_);
+    }
+
+    /// @brief Returns the `pinned_memory` property of all splines
+    auto pinned_memory() const noexcept
+    {
+      return std::apply([]( auto... bspline ){ return std::make_tuple(bspline.pinned_memory()...); },
+                        BoundaryCore::bdr_);
+    }
+
+    /// @brief Returns if the layout is sparse of all splines
+    auto is_sparse() const noexcept
+    {
+      return std::apply([]( auto... bspline ){ return std::make_tuple(bspline.is_sparse()...); },
+                        BoundaryCore::bdr_);
+    }
+
+    /// @brief Returns true if the B-spline is uniform of all splines
+    auto is_uniform() const noexcept {
+      return std::apply([]( auto... bspline ){ return std::make_tuple(bspline.is_uniform()...); },
+                        BoundaryCore::bdr_);
+    }
+
+    /// @brief Returns true if the B-spline is non-uniform if all splines
+    auto is_nonuniform() const noexcept {
+      return std::apply([]( auto... bspline ){ return std::make_tuple(bspline.is_nonuniform()...); },
+                        BoundaryCore::bdr_);
+    }
+
+    
   };
 
   /// @brief Boundary
