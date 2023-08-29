@@ -488,9 +488,9 @@ The following `data` can be passed during [model creation](protocol.md#Create-a-
             "init"       : <integer> valid values are 
                                      0 zeros,
                                      1 ones,
-                                     2 linear (default),
+                                     2 linear,
                                      3 random,
-                                     4 Greville
+                                     4 Greville (default)
             "ncoeffs"    : [<comma-separated list of integers>]
                                      [4,...] (default)
             "nonuniform" : <bool>    valid values are
