@@ -700,7 +700,7 @@ int main(int argc, char const* argv[])
 
               if (tokens.size() == 2) {
                 //
-                // request: load/<session-id>
+                // request: save/<session-id>
                 //
 
                 // Get session
@@ -719,7 +719,7 @@ int main(int argc, char const* argv[])
 
               else if (tokens.size() == 3) {
                 //
-                // request: load/<session-id>/<model-instance>
+                // request: save/<session-id>/<model-instance>
                 //
 
                 // Get session
@@ -909,7 +909,6 @@ int main(int argc, char const* argv[])
                 for (const auto& model : session->models) {
                   if (auto m = std::dynamic_pointer_cast<iganet::ModelXML>(model.second)) {
                     xml = m->exportXML(xml, "", model.first);
-                    //xml.push_back(m->exportXML("", model.first));
                   }
                   else {
                     response["status"] = iganet::webapp::status::invalidExportRequest;
