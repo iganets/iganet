@@ -229,7 +229,7 @@ namespace iganet {
       /// @brief Returns the model's inputs
       std::string getInputs() const override {
         return "["
-          "{\"name\" : \"geomerty\","
+          "{\"name\" : \"geometry\","
           " \"description\" : \"Geometry\","
           " \"type\" : 2}"
           "]";
