@@ -57,6 +57,16 @@ def connect_session(ws: WebSocket, session_id: str):
     if result["status"] != 0:
         raise Exception(result["reason"])
 
+def export_session_xml(ws: WebSocket, session_id: str):
+    """Export session as XML"""
+    ws.send(request("exportxml/" + session_id))
+    result = json.loads(ws.recv())
+
+    if result["status"] == 0:
+        return result["data"]
+    else:
+        raise Exception(result["reason"])
+
 def disconnect_session(ws: WebSocket, session_id: str):
     """Disconnect from an active session"""
     ws.send(request("disconnect/" + session_id))
@@ -174,6 +184,41 @@ def put_model_attribute(ws: WebSocket, session_id: str, instance: str, component
     else:
         raise Exception(result["reason"])
 
+def export_model_xml(ws: WebSocket, session_id: str, instance: str):
+    """Export model as XML"""
+    ws.send(request("exportxml/" + session_id + "/" + instance))
+    result = json.loads(ws.recv())
+
+    if result["status"] == 0:
+        return result["data"]
+    else:
+        raise Exception(result["reason"])
+
+def export_model_component_xml(ws: WebSocket, session_id: str, instance: str, component: str = ""):
+    """Export model component as XML"""
+    ws.send(request("exportxml/" + session_id + "/" + instance + "/" + component))
+    result = json.loads(ws.recv())
+
+    if result["status"] == 0:
+        return result["data"]
+    else:
+        raise Exception(result["reason"])
+
+def import_model_xml(ws: WebSocket, session_id: str, instance: str, data: dict = {}):
+    """Export model as XML"""
+    ws.send(request("importxml/" + session_id + "/" + instance, data))
+    result = json.loads(ws.recv())
+    
+    if result["status"] != 0:
+        raise Exception(result["reason"])
+
+def import_model_component_xml(ws: WebSocket, session_id: str, instance: str, component: str = "", data: dict = {}):
+    """Export model as XML"""
+    ws.send(request("importxml/" + session_id + "/" + instance + "/" + component, data))
+    result = json.loads(ws.recv())
+    
+    if result["status"] != 0:
+        raise Exception(result["reason"])    
     
 def main():
     """Main function"""
