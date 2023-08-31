@@ -601,6 +601,10 @@ int main(int argc, char const* argv[])
                 auto session = ws->getUserData()->getSession(tokens[1]);
 
                 // Disconnect from an existing session
+                response["data"]["id"] = session->getUUID();
+                ws->send(response.dump(), uWS::OpCode::TEXT, true);
+
+                // Unsubscribe from existing session
                 ws->unsubscribe(session->getUUID());
               }
 
