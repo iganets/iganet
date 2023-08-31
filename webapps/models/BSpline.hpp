@@ -568,7 +568,7 @@ namespace iganet {
             pugi::xml_parse_result result = doc.load_buffer(xml.c_str(), xml.size());
 
             if(pugi::xml_node root = doc.child("xml"))
-              exportXML(root, component, id);
+              importXML(root, component, id);
             else
               throw std::runtime_error("No \"xml\" node in XML object");
             
@@ -584,7 +584,7 @@ namespace iganet {
                      const std::string& component,
                      std::size_t id) override {
         
-        BSpline_t::from_xml(root, id);
+        BSpline_t::from_xml(root, id, component);
       }
       
       /// @brief Exports the model to XML (as JSON object)
@@ -607,8 +607,8 @@ namespace iganet {
       pugi::xml_node& exportXML(pugi::xml_node& root,
                                 const std::string& component,
                                 std::size_t id) override {
-
-        BSpline_t::to_xml(root, id);
+        
+        BSpline_t::to_xml(root, id, component);
         return root;
       }
     };    
