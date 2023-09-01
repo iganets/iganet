@@ -77,7 +77,9 @@ build-unittests-gcc:
 build-pyiganet-gcc:
   stage: build
   script:
-    - python setup.py develop
+    - apt-get update -y
+    - apt-get install python3 -y
+    - python3 setup.py develop
   only:
     changes:
       - .gitlab-ci.yml
