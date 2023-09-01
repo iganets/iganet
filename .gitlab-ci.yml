@@ -19,18 +19,6 @@ stages:
 
 default:
   image: ubuntu:22.04
-  only:
-    changes:
-      - .gitlab-ci.yml
-      - CMakeLists.txt
-      - cmake/*
-      - docs/*
-      - include/*
-      - examples/*
-      - perftests/*
-      - pyiganet/*
-      - unittests/*
-      - server/*
       
 #
 # Create Doxygen documentation
@@ -46,6 +34,18 @@ pages:
     - make Doxygen
     - mv docs/doxygen/html ../public
     - mv docs/doxygen/*.xml ../public 
+  only:
+    changes:
+      - .gitlab-ci.yml
+      - CMakeLists.txt
+      - cmake/*
+      - docs/*
+      - include/*
+      - examples/*
+      - perftests/*
+      - pyiganet/*
+      - unittests/*
+      - webapps/*
   artifacts:
     paths:
       - public
@@ -60,6 +60,13 @@ build-unittests-gcc:
     - cd build
     - CC=gcc CXX=g++ cmake .. -DIGANET_BUILD_UNITTESTS=ON -DTorch_DIR=/opt/libtorch/share/cmake/Torch -DIGANET_WITH_MATPLOT=OFF
     - make
+  only:
+    changes:
+      - .gitlab-ci.yml
+      - CMakeLists.txt
+      - cmake/*
+      - include/*
+      - unittests/*
   artifacts:
     paths:
       - build
@@ -74,6 +81,13 @@ build-webapps-gcc:
     - cd build
     - CC=gcc CXX=g++ cmake .. -DIGANET_BUILD_WEBAPPS=ON -DIGANET_BUILD_EXAMPLES=OFF -DTorch_DIR=/opt/libtorch/share/cmake/Torch -DIGANET_WITH_MATPLOT=OFF
     - make
+  only:
+    changes:
+      - .gitlab-ci.yml
+      - CMakeLists.txt
+      - cmake/*
+      - include/*
+      - webapps/*
   artifacts:
     paths:
       - build
@@ -87,6 +101,13 @@ test-unittests-gcc:
   script:
     - cd build
     - make test
+  only:
+    changes:
+      - .gitlab-ci.yml
+      - CMakeLists.txt
+      - cmake/*
+      - include/*
+      - unittests/*
     
 #
 # Build unittests with Clang compiler
@@ -100,6 +121,13 @@ build-unittests-clang:
     - cd build
     - CC=clang CXX=clang++ cmake .. -DIGANET_BUILD_UNITTESTS=ON -DTorch_DIR=/opt/libtorch/share/cmake/Torch -DIGANET_WITH_MATPLOT=OFF -DOpenMP_C_FLAGS="-Xpreprocessor -fopenmp -I/usr/lib/llvm-14/lib/clang/14.0.0/include" -DOpenMP_C_LIB_NAMES=libomp -DOpenMP_CXX_FLAGS="-Xpreprocessor -fopenmp -I/usr/lib/llvm-14/lib/clang/14.0.0/include" -DOpenMP_CXX_LIB_NAMES=libomp -DOpenMP_libomp_LIBRARY=/usr/lib/llvm-14/lib/libomp.so
     - make
+  only:
+    changes:
+      - .gitlab-ci.yml
+      - CMakeLists.txt
+      - cmake/*
+      - include/*
+      - unittests/*
   artifacts:
     paths:
       - build
@@ -116,6 +144,13 @@ build-webapps-clang:
     - cd build
     - CC=clang CXX=clang++ cmake .. -DIGANET_BUILD_WEBAPPS=ON -DIGANET_BUILD_EXAMPLES=OFF -DTorch_DIR=/opt/libtorch/share/cmake/Torch -DIGANET_WITH_MATPLOT=OFF -DOpenMP_C_FLAGS="-Xpreprocessor -fopenmp -I/usr/lib/llvm-14/lib/clang/14.0.0/include" -DOpenMP_C_LIB_NAMES=libomp -DOpenMP_CXX_FLAGS="-Xpreprocessor -fopenmp -I/usr/lib/llvm-14/lib/clang/14.0.0/include" -DOpenMP_CXX_LIB_NAMES=libomp -DOpenMP_libomp_LIBRARY=/usr/lib/llvm-14/lib/libomp.so
     - make
+  only:
+    changes:
+      - .gitlab-ci.yml
+      - CMakeLists.txt
+      - cmake/*
+      - include/*
+      - webapps/*
   artifacts:
     paths:
       - build
@@ -129,3 +164,10 @@ test-unittests-clang:
   script:
     - cd build
     - make test
+  only:
+    changes:
+      - .gitlab-ci.yml
+      - CMakeLists.txt
+      - cmake/*
+      - include/*
+      - unittests/*
