@@ -78,8 +78,8 @@ build-pyiganet-gcc:
   stage: build
   script:
     - apt-get update -y
-    - apt-get install python3 -y
-    - python3 setup.py develop
+    - apt-get install python3 python3-setuptools -y
+    - Torch_DIR=/opt/libtorch/share/cmake/Torch python3 setup.py develop
   only:
     changes:
       - .gitlab-ci.yml
