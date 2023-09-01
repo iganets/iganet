@@ -15,22 +15,10 @@ before_script:
 
 stages:
   - build
+  - test
 
-#
-# Create Doxygen documentation
-#
-pages:
-  stage: build
+default:
   image: ubuntu:22.04
-  script:
-    - apt-get update -y
-    - apt-get install doxygen texlive-binaries texlive-font-utils -y
-    - mkdir -p build
-    - cd build
-    - CC=gcc CXX=g++ cmake .. -DIGANET_BUILD_DOCS=ON -DTorch_DIR=/opt/libtorch/share/cmake/Torch -DIGANET_WITH_MATPLOT=OFF
-    - make Doxygen
-    - mv docs/doxygen/html ../public
-    - mv docs/doxygen/*.xml ../public
   only:
     changes:
       - .gitlab-ci.yml
@@ -43,40 +31,69 @@ pages:
       - pyiganet/*
       - unittests/*
       - server/*
+      
+#
+# Create Doxygen documentation
+#
+pages:
+  stage: build
+  script:
+    - apt-get update -y
+    - apt-get install doxygen texlive-binaries texlive-font-utils -y
+    - mkdir -p build
+    - cd build
+    - CC=gcc CXX=g++ cmake .. -DIGANET_BUILD_DOCS=ON -DTorch_DIR=/opt/libtorch/share/cmake/Torch -DIGANET_WITH_MATPLOT=OFF
+    - make Doxygen
+    - mv docs/doxygen/html ../public
+    - mv docs/doxygen/*.xml ../public 
   artifacts:
     paths:
       - public
 
 #
-# Compile and run unittests with GNU compiler collection
+# Build UnitTests with GNU compiler collection
 #
-unittests-gcc:
+build-unittests-gcc:
   stage: build
-  image: ubuntu:22.04
   script:
     - mkdir -p build
     - cd build
     - CC=gcc CXX=g++ cmake .. -DIGANET_BUILD_UNITTESTS=ON -DTorch_DIR=/opt/libtorch/share/cmake/Torch -DIGANET_WITH_MATPLOT=OFF
     - make
-    - make test
-  only:
-    changes:
-      - .gitlab-ci.yml
-      - CMakeLists.txt
-      - cmake/*
-      - include/*
-      - examples/*
-      - perftests/*
-      - pyiganet/*
-      - unittests/*
-      - server/*
+  artifacts:
+    paths:
+      - build
 
 #
-# Compile and run unittests with Clang compiler
+# Build WebApps with GNU compiler collection
 #
-unittests-clang:
+build-webapps-gcc:
   stage: build
-  image: ubuntu:22.04
+  script:
+    - mkdir -p build
+    - cd build
+    - CC=gcc CXX=g++ cmake .. -DIGANET_BUILD_WEBAPPS=ON
+    -DIGANET_BUILD_EXAMPLES=OFF -DTorch_DIR=/opt/libtorch/share/cmake/Torch -DIGANET_WITH_MATPLOT=OFF
+    - make
+  artifacts:
+    paths:
+      - build
+
+#
+# Run UnitTests with GNU compiler collection
+#
+test-unittests-gcc:
+  stage: test
+  needs: [build-unittests-gcc]
+  script:
+    - cd build
+    - make test
+    
+#
+# Build unittests with Clang compiler
+#
+build-unittests-clang:
+  stage: build
   script:
     - apt-get update -y
     - apt-get install clang libomp-dev -y
@@ -84,15 +101,32 @@ unittests-clang:
     - cd build
     - CC=clang CXX=clang++ cmake .. -DIGANET_BUILD_UNITTESTS=ON -DTorch_DIR=/opt/libtorch/share/cmake/Torch -DIGANET_WITH_MATPLOT=OFF -DOpenMP_C_FLAGS="-Xpreprocessor -fopenmp -I/usr/lib/llvm-14/lib/clang/14.0.0/include" -DOpenMP_C_LIB_NAMES=libomp -DOpenMP_CXX_FLAGS="-Xpreprocessor -fopenmp -I/usr/lib/llvm-14/lib/clang/14.0.0/include" -DOpenMP_CXX_LIB_NAMES=libomp -DOpenMP_libomp_LIBRARY=/usr/lib/llvm-14/lib/libomp.so
     - make
+  artifacts:
+    paths:
+      - build
+
+#
+# Build WebApps with Clang compiler
+#
+build-webapps-clang:
+  stage: build
+  script:
+    - apt-get update -y
+    - apt-get install clang libomp-dev -y
+    - mkdir -p build
+    - cd build
+    - CC=clang CXX=clang++ cmake .. -DIGANET_BUILD_WEBAPPS=ON -DIGANET_BUILD_EXAMPLES=OFF -DTorch_DIR=/opt/libtorch/share/cmake/Torch -DIGANET_WITH_MATPLOT=OFF -DOpenMP_C_FLAGS="-Xpreprocessor -fopenmp -I/usr/lib/llvm-14/lib/clang/14.0.0/include" -DOpenMP_C_LIB_NAMES=libomp -DOpenMP_CXX_FLAGS="-Xpreprocessor -fopenmp -I/usr/lib/llvm-14/lib/clang/14.0.0/include" -DOpenMP_CXX_LIB_NAMES=libomp -DOpenMP_libomp_LIBRARY=/usr/lib/llvm-14/lib/libomp.so
+    - make
+  artifacts:
+    paths:
+      - build
+      
+#
+# Run unittests with Clang compiler
+#
+test-unittests-clang:
+  stage: test
+  needs: [build-unittests-clang]
+  script:
+    - cd build
     - make test
-  only:
-    changes:
-      - .gitlab-ci.yml
-      - CMakeLists.txt
-      - cmake/*
-      - include/*
-      - examples/*
-      - perftests/*
-      - pyiganet/*
-      - unittests/*
-      - server/*
