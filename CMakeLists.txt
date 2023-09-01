@@ -105,7 +105,7 @@ option(IGANET_BUILD_PERFTESTS   "Build perftests"           OFF)
 option(IGANET_BUILD_UNITTESTS   "Build unittests"           OFF)
 option(IGANET_BUILD_WEBAPPS     "Build WebApps"             OFF)
 option(IGANET_WITH_GISMO        "With G+Smo support"        OFF)
-option(IGANET_WITH_MATPLOT      "With Matplot support"      ON )
+option(IGANET_WITH_MATPLOT      "With Matplot support"      OFF)
 option(IGANET_WITH_OPENMP       "With OpenMP support"       ON )
 
 ########################################################################
