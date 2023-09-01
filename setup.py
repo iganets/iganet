@@ -48,10 +48,8 @@ class CMakeBuild(build_ext):
             f"-DCMAKE_LIBRARY_OUTPUT_DIRECTORY={extdir}{os.sep}",
             f"-DPYTHON_EXECUTABLE={sys.executable}",
             f"-DCMAKE_BUILD_TYPE={cfg}",  # not used on MSVC, but no harm
-            #f"-DCMAKE_PREFIX_PATH=../install/share/cmake/",
             f"-DIGANET_BUILD_EXAMPLES=OFF",
             f"-DIGANET_BUILD_PYIGANET=ON",
-            f"-DIGANET_WITH_MATPLOT=ON",
             f"-DIGANET_WITH_OPENMP=ON",
         ]
         build_args = []
