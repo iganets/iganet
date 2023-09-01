@@ -72,6 +72,25 @@ build-unittests-gcc:
       - build
 
 #
+# Build PyIgaNet with GNU compiler collection
+#
+build-pyiganet-gcc:
+  stage: build
+  script:
+    - python setup.py develop
+  only:
+    changes:
+      - .gitlab-ci.yml
+      - CMakeLists.txt
+      - cmake/*
+      - include/*
+      - pyiganet/*
+  artifacts:
+    paths:
+      - build
+      - pyiganet.egg-info
+
+#
 # Build WebApps with GNU compiler collection
 #
 build-webapps-gcc:
@@ -162,6 +181,8 @@ test-unittests-clang:
   stage: test
   needs: [build-unittests-clang]
   script:
+    - apt-get update -y
+    - apt-get install clang libomp-dev -y
     - cd build
     - make test
   only:
