@@ -72,8 +72,7 @@ build-webapps-gcc:
   script:
     - mkdir -p build
     - cd build
-    - CC=gcc CXX=g++ cmake .. -DIGANET_BUILD_WEBAPPS=ON
-    -DIGANET_BUILD_EXAMPLES=OFF -DTorch_DIR=/opt/libtorch/share/cmake/Torch -DIGANET_WITH_MATPLOT=OFF
+    - CC=gcc CXX=g++ cmake .. -DIGANET_BUILD_WEBAPPS=ON -DIGANET_BUILD_EXAMPLES=OFF -DTorch_DIR=/opt/libtorch/share/cmake/Torch -DIGANET_WITH_MATPLOT=OFF
     - make
   artifacts:
     paths:
