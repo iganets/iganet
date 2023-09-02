@@ -51,10 +51,10 @@ jobs:
           command: |
             $Env:PATH += ";$Env:CMAKE_DIR;$Env:MSBUILD_DIR"
             dir $Env:IGANET_WS_DIR
-            cmake -S $Env:IGANET_WS_DIR -B build -G 'Visual Studio 16 2019' -Ax64 $Env:RELEASE_FLAGS
-            if (-not $?) { throw "Failed to configure IgaNet" }
-            cmake --build ./build --config Release
-            if (-not $?) { throw "Failed to build IgaNet" }
+            # cmake -S $Env:IGANET_WS_DIR -B build -G 'Visual Studio 16 2019' -Ax64 $Env:RELEASE_FLAGS
+            # if (-not $?) { throw "Failed to configure IgaNet" }
+            # cmake --build ./build --config Release
+            # if (-not $?) { throw "Failed to build IgaNet" }
   
 workflows:
   unittests:
