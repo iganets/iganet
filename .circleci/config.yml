@@ -40,7 +40,14 @@ jobs:
             Invoke-WebRequest -Uri "https://download.pytorch.org/libtorch/cpu/libtorch-win-shared-with-deps-2.0.1%2Bcpu.zip" -OutFile "libtorch.zip"
             Expand-Archive -Path "libtorch.zip" -DestinationPath "C:\Users\circleci"
             Remove-Item -Path "libtorch.zip"
-      
+      - run:
+          name: Build Windows CLI
+          command: |
+            $Env:PATH += ";$Env:MSBUILD_DIR"
+            cmake -S . -B build -G 'Visual Studio 16 2019' -Ax64 $Env:RELEASE_FLAGS
+            if (-not $?) { throw "Failed to configure IgaNet" }
+            cmake --build ./build --config Release
+            if (-not $?) { throw "Failed to build IgaNet" }
   
 workflows:
   unittests:
