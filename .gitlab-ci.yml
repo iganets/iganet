@@ -15,7 +15,6 @@ before_script:
 
 stages:
   - build
-  - test
 
 default:
   image: ubuntu:22.04
@@ -51,15 +50,16 @@ pages:
       - public
 
 #
-# Build UnitTests with GNU compiler collection
+# Build and run UnitTests with GNU compiler collection
 #
-build-unittests-gcc:
+unittests-gcc:
   stage: build
   script:
     - mkdir -p build
     - cd build
     - CC=gcc CXX=g++ cmake .. -DIGANET_BUILD_UNITTESTS=ON -DTorch_DIR=/opt/libtorch/share/cmake/Torch
     - make
+    - make test
   only:
     changes:
       - .gitlab-ci.yml
@@ -67,18 +67,15 @@ build-unittests-gcc:
       - cmake/*
       - include/*
       - unittests/*
-  artifacts:
-    paths:
-      - build
 
 #
-# Build PyIgaNet with GNU compiler collection
+# Build and test PyIgaNet with GNU compiler collection
 #
-build-pyiganet-gcc:
+pyiganet-gcc:
   stage: build
   script:
     - apt-get update -y
-    - apt-get install python3 python3-setuptools -y
+    - apt-get install python3-dev python3-setuptools -y
     - Torch_DIR=/opt/libtorch/share/cmake/Torch python3 setup.py develop
   only:
     changes:
@@ -87,15 +84,11 @@ build-pyiganet-gcc:
       - cmake/*
       - include/*
       - pyiganet/*
-  artifacts:
-    paths:
-      - build
-      - pyiganet.egg-info
 
 #
-# Build WebApps with GNU compiler collection
+# Build and test WebApps with GNU compiler collection
 #
-build-webapps-gcc:
+webapps-gcc:
   stage: build
   script:
     - mkdir -p build
@@ -109,31 +102,11 @@ build-webapps-gcc:
       - cmake/*
       - include/*
       - webapps/*
-  artifacts:
-    paths:
-      - build
-
-#
-# Run UnitTests with GNU compiler collection
-#
-test-unittests-gcc:
-  stage: test
-  needs: [build-unittests-gcc]
-  script:
-    - cd build
-    - make test
-  only:
-    changes:
-      - .gitlab-ci.yml
-      - CMakeLists.txt
-      - cmake/*
-      - include/*
-      - unittests/*
     
 #
-# Build unittests with Clang compiler
+# Build and test UnitTests with Clang compiler
 #
-build-unittests-clang:
+unittests-clang:
   stage: build
   script:
     - apt-get update -y
@@ -142,6 +115,7 @@ build-unittests-clang:
     - cd build
     - CC=clang CXX=clang++ cmake .. -DIGANET_BUILD_UNITTESTS=ON -DTorch_DIR=/opt/libtorch/share/cmake/Torch -DOpenMP_C_FLAGS="-Xpreprocessor -fopenmp -I/usr/lib/llvm-14/lib/clang/14.0.0/include" -DOpenMP_C_LIB_NAMES=libomp -DOpenMP_CXX_FLAGS="-Xpreprocessor -fopenmp -I/usr/lib/llvm-14/lib/clang/14.0.0/include" -DOpenMP_CXX_LIB_NAMES=libomp -DOpenMP_libomp_LIBRARY=/usr/lib/llvm-14/lib/libomp.so
     - make
+    - make test
   only:
     changes:
       - .gitlab-ci.yml
@@ -149,14 +123,11 @@ build-unittests-clang:
       - cmake/*
       - include/*
       - unittests/*
-  artifacts:
-    paths:
-      - build
 
 #
-# Build WebApps with Clang compiler
+# Build and test WebApps with Clang compiler
 #
-build-webapps-clang:
+webapps-clang:
   stage: build
   script:
     - apt-get update -y
@@ -172,25 +143,3 @@ build-webapps-clang:
       - cmake/*
       - include/*
       - webapps/*
-  artifacts:
-    paths:
-      - build
-      
-#
-# Run unittests with Clang compiler
-#
-test-unittests-clang:
-  stage: test
-  needs: [build-unittests-clang]
-  script:
-    - apt-get update -y
-    - apt-get install clang libomp-dev -y
-    - cd build
-    - make test
-  only:
-    changes:
-      - .gitlab-ci.yml
-      - CMakeLists.txt
-      - cmake/*
-      - include/*
-      - unittests/*
