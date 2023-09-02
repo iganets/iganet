@@ -2,7 +2,7 @@ from typing import List
 from websocket import create_connection, WebSocket
 import json
 import uuid
-    
+
 def request(request: str, data: dict = {}):
     """Format request"""
     if not bool(data):
@@ -12,7 +12,7 @@ def request(request: str, data: dict = {}):
                 "request" : request
             }
         )
-    else:            
+    else:
         return json.dumps(
             {
                 "id" : str(uuid.uuid4()),
@@ -67,6 +67,14 @@ def export_session_xml(ws: WebSocket, session_id: str):
     else:
         raise Exception(result["reason"])
 
+def import_session_xml(ws: WebSocket, session_id: str, data: dict = {}):
+    """Import session from XML"""
+    ws.send(request("importxml/" + session_id, data))
+    result = json.loads(ws.recv())
+
+    if result["status"] != 0:
+        raise Exception(result["reason"])
+
 def disconnect_session(ws: WebSocket, session_id: str):
     """Disconnect from an active session"""
     ws.send(request("disconnect/" + session_id))
@@ -91,7 +99,7 @@ def create_BSplineCurve(ws: WebSocket, session_id: str,
         return result["data"]["id"], result["data"]["model"]
     else:
         raise Exception(result["reason"])
-    
+
 def create_BSplineSurface(ws: WebSocket, session_id: str,
                           degree: int = 1, init: int = 4, ncoeffs: List[int] = [4, 4], nonuniform: bool = False):
     """Create BSpline surface"""
@@ -133,7 +141,7 @@ def remove_model(ws: WebSocket, session_id: str, instance: str):
 
     if result["status"] != 0:
         raise Exception(result["reason"])
-    
+
 def get_models(ws, session_id):
     """Get list of active models in session"""
     ws.send(request("get/" + session_id))
@@ -143,7 +151,7 @@ def get_models(ws, session_id):
         return result["data"]["ids"]
     else:
         raise Exception(result["reason"])
-    
+
 def get_model(ws: WebSocket, session_id: str, instance: str):
     """Get model data"""
     ws.send(request("get/" + session_id + "/" + instance))
@@ -205,35 +213,55 @@ def export_model_component_xml(ws: WebSocket, session_id: str, instance: str, co
         raise Exception(result["reason"])
 
 def import_model_xml(ws: WebSocket, session_id: str, instance: str, data: dict = {}):
-    """Export model as XML"""
+    """Import model from XML"""
     ws.send(request("importxml/" + session_id + "/" + instance, data))
     result = json.loads(ws.recv())
-    
+
     if result["status"] != 0:
         raise Exception(result["reason"])
 
 def import_model_component_xml(ws: WebSocket, session_id: str, instance: str, component: str = "", data: dict = {}):
-    """Export model as XML"""
+    """Import model component from XML"""
     ws.send(request("importxml/" + session_id + "/" + instance + "/" + component, data))
     result = json.loads(ws.recv())
-    
+
     if result["status"] != 0:
-        raise Exception(result["reason"])    
-    
+        raise Exception(result["reason"])
+
+def save_model(ws: WebSocket, session_id: str, instance: str):
+    """Save model as binary data"""
+    ws.send(request("save/" + session_id + "/" + instance))
+    result = json.loads(ws.recv())
+
+    if result["status"] == 0:
+        return result["data"]
+    else:
+        raise Exception(result["reason"])
+
+def load_model(ws: WebSocket, session_id: str, data: dict = {}):
+    """Load  model from binary data"""
+    ws.send(request("load/" + session_id, data))
+    result = json.loads(ws.recv())
+
+    if result["status"] == 0:
+        return result["data"]["id"], result["data"]["model"]
+    else:
+        raise Exception(result["reason"])
+
 def main():
     """Main function"""
-    
+
     # Establish connection
     ws = create_connection("ws://localhost:9001")
-    
+
     for session_id in get_sessions(ws):
         print("Session id: {}".format(session_id))
-        
+
         for instance in get_models(ws, session_id):
             model = get_model(ws, session_id, instance)
-            
+
             print("  {} {}".format(instance, model["model"]["description"]))
-    
+
     ws.close()
 
 if __name__ == "__main__":

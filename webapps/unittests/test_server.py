@@ -20,7 +20,7 @@ class TestSession(unittest.TestCase):
 
         # Remove session
         remove_session(self.ws, self.session_id)
-        
+
         # Check that list of sessions has not changed
         self.assertEqual(self.session_ids, get_sessions(self.ws))
 
@@ -28,9 +28,9 @@ class TestSession(unittest.TestCase):
         self.ws.close()
 
     def test_create_remove(self):
-    
+
         # Check that list of sessions has changed
-        self.assertNotEqual(self.session_ids, get_sessions(self.ws))        
+        self.assertNotEqual(self.session_ids, get_sessions(self.ws))
 
     def test_connect_disconnect(self):
 
@@ -62,7 +62,7 @@ class TestSession(unittest.TestCase):
 
         # Disconnect from session
         disconnect_session(self.ws, self.session_id)
-        
+
         # Close connection
         ws.close()
 
@@ -72,19 +72,56 @@ class TestSession(unittest.TestCase):
         model0, _ = create_BSplineSurface(self.ws, self.session_id)
         model1, _ = create_BSplineCurve(self.ws, self.session_id)
         model2, _ = create_BSplineVolume(self.ws, self.session_id)
-        
-        data = export_session_xml(self.ws, self.session_id)        
+
+        data = export_session_xml(self.ws, self.session_id)
         xml1 = ET.fromstring(data["xml"])
 
         xml2 = ET.parse(os.path.join(os.path.dirname(__file__), "Session.xml"))
 
-        self.assertEqual(ET.tostring(xml1), ET.tostring(xml2.getroot()))    
+        self.assertEqual(ET.tostring(xml1), ET.tostring(xml2.getroot()))
 
         # Remove model instances
         remove_model(self.ws, self.session_id, model0)
         remove_model(self.ws, self.session_id, model1)
         remove_model(self.ws, self.session_id, model2)
-        
+
+    def test_importxml(self):
+
+        # Create three new BSpline objects
+        model0, data0 = create_BSplineSurface(self.ws, self.session_id)
+        model1, data1 = create_BSplineCurve(self.ws, self.session_id)
+        model2, data2 = create_BSplineVolume(self.ws, self.session_id)
+
+        # Change coefficients
+        put_model_attribute(self.ws, self.session_id, model0, data0["inputs"][0]["name"], "coeffs", { "indices" : [0, 3],
+                                                                                                      "coeffs"  : [[0.0, 0.0, 0.0], [0.5, 1.0, 0.5]]} )
+        put_model_attribute(self.ws, self.session_id, model1, data1["inputs"][0]["name"], "coeffs", { "indices" : [0, 3],
+                                                                                                      "coeffs"  : [[0.0, 0.0, 0.0], [0.5, 1.0, 0.5]]} )
+        put_model_attribute(self.ws, self.session_id, model2, data2["inputs"][0]["name"], "coeffs", { "indices" : [0, 3],
+                                                                                                      "coeffs"  : [[0.0, 0.0, 0.0], [0.5, 1.0, 0.5]]} )
+
+        # Export session from XML
+        data = export_session_xml(self.ws, self.session_id)
+        xml1 = ET.fromstring(data["xml"])
+
+        xml2 = ET.parse(os.path.join(os.path.dirname(__file__), "Session.xml"))
+
+        self.assertNotEqual(ET.tostring(xml1), ET.tostring(xml2.getroot()))
+
+        # Import session from XML
+        result = import_session_xml(self.ws, self.session_id, { "xml" : str(ET.tostring(xml2.getroot())) })
+
+        # Export session from XML
+        data = export_session_xml(self.ws, self.session_id)
+        xml1 = ET.fromstring(data["xml"])
+
+        self.assertEqual(ET.tostring(xml1), ET.tostring(xml2.getroot()))
+
+        # Remove model instances
+        remove_model(self.ws, self.session_id, model0)
+        remove_model(self.ws, self.session_id, model1)
+        remove_model(self.ws, self.session_id, model2)
+
 class TestBSplineSurface(unittest.TestCase):
 
     def setUp(self):
@@ -111,19 +148,19 @@ class TestBSplineSurface(unittest.TestCase):
 
         # Remove model instances
         remove_model(self.ws, self.session_id, self.model)
-        
+
         # Check that list of model instances has not changed
         self.assertEqual(self.models, get_models(self.ws, self.session_id))
 
         # Remove session
         remove_session(self.ws, self.session_id)
-        
+
         # Check that list of sessions has not changed
         self.assertEqual(self.session_ids, get_sessions(self.ws))
 
         # Close connection
         self.ws.close()
-    
+
     def test_create_remove(self):
 
         # Check that list of model instances has changed
@@ -161,7 +198,7 @@ class TestBSplineSurface(unittest.TestCase):
                          [[0.0, 0.0, 0.5, 1.0, 1.0], [0.0, 0.0, 1.0, 1.0]])
 
     def test_put_attributes(self):
-        
+
         # Check coefficients
         self.assertEqual(get_model_attribute(self.ws, self.session_id, self.model, self.component, "coeffs")["coeffs"],
                          [[0.0, 0.5, 1.0, 0.0, 0.5, 1.0],
@@ -191,7 +228,7 @@ class TestBSplineSurface(unittest.TestCase):
 
         # Export model component to XML
         data = export_model_component_xml(self.ws, self.session_id, self.model, "geometry")
-        xml1 = ET.fromstring(data["xml"])        
+        xml1 = ET.fromstring(data["xml"])
         xml2 = ET.parse(os.path.join(os.path.dirname(__file__), "BSplineSurfaceComponent.xml"))
 
         self.assertEqual(ET.tostring(xml1), ET.tostring(xml2.getroot()))
@@ -209,7 +246,7 @@ class TestBSplineSurface(unittest.TestCase):
 
         self.assertNotEqual(ET.tostring(xml1), ET.tostring(xml2.getroot()))
 
-        # Import model from XML        
+        # Import model from XML
         result = import_model_xml(self.ws, self.session_id, self.model, { "xml" : str(ET.tostring(xml2.getroot())) })
 
         # Export model to XML
@@ -231,7 +268,7 @@ class TestBSplineSurface(unittest.TestCase):
 
         self.assertNotEqual(ET.tostring(xml1), ET.tostring(xml2.getroot()))
 
-        # Import model from XML        
+        # Import model from XML
         result = import_model_component_xml(self.ws, self.session_id, self.model, "geometry", { "xml" : str(ET.tostring(xml2.getroot())) })
 
         # Export model to XML
@@ -239,6 +276,51 @@ class TestBSplineSurface(unittest.TestCase):
         xml1 = ET.fromstring(data["xml"])
 
         self.assertEqual(ET.tostring(xml1), ET.tostring(xml2.getroot()))
-        
+
+    def test_save(self):
+        import filecmp
+
+        # Save model to binary data
+        data = save_model(self.ws, self.session_id, self.model)
+
+        # Open binary reference file for writing
+        file = open("BSplineSurface_tmp.pt", "wb")
+        for byte in data["binary"]:
+            file.write(byte.to_bytes(1, byteorder='big'))
+        file.close()
+
+        self.assertTrue(filecmp.cmp("BSplineSurface_tmp.pt",
+                                    os.path.join(os.path.dirname(__file__), "BSplineSurface.pt")))
+
+        os.remove("BSplineSurface_tmp.pt")
+
+    def test_load(self):
+        import filecmp
+
+        # Open binary file for reading
+        file = open(os.path.join(os.path.dirname(__file__), "BSplineSurface.pt"), "rb")
+        data = file.read()
+        file.close()
+
+        # Load model from binary data
+        binary = [int(byte) for byte in data]
+        model, _ = load_model(self.ws, self.session_id, { "binary" : binary })
+
+        # Save model to binary data
+        data = save_model(self.ws, self.session_id, model)
+
+        # Open binary reference file for writing
+        file = open("BSplineSurface_tmp.pt", "wb")
+        for byte in data["binary"]:
+            file.write(byte.to_bytes(1, byteorder='big'))
+        file.close()
+
+        self.assertTrue(filecmp.cmp("BSplineSurface_tmp.pt",
+                                    os.path.join(os.path.dirname(__file__), "BSplineSurface.pt")))
+
+        os.remove("BSplineSurface_tmp.pt")
+
+        remove_model(self.ws, self.session_id, model)
+
 if __name__ == '__main__':
     unittest.main()

@@ -29,7 +29,7 @@ namespace iganet {
         quartic   = 4, /*!<   quartic B-Spline basis functions */
         quintic   = 5  /*!<   quintic B-Spline basis functions */
       };
-  
+
     /// @brief B-spline model
     template<class BSpline_t>
     class BSplineModel : public Model,
@@ -46,8 +46,8 @@ namespace iganet {
       torch::Tensor rotation_;
 
       /// @brief "fake" solution vector
-      BSpline_t solution_;      
-      
+      BSpline_t solution_;
+
     public:
       /// @brief Default constructor
       BSplineModel() = default;
@@ -80,10 +80,10 @@ namespace iganet {
                                                                                     std::sin(M_PI*xi[2])), 0.0, 0.0 };
           } );
       }
-      
+
       /// @brief Destructor
       ~BSplineModel() {}
-      
+
       /// @brief Returns the model's name
       std::string getName() const override {
         if constexpr (BSpline_t::parDim() == 1)
@@ -97,7 +97,7 @@ namespace iganet {
         else
           return "{ INVALID REQUEST }";
       }
-      
+
       /// @brief Returns the model's description
       std::string getDescription() const override {
         if constexpr (BSpline_t::parDim() == 1)
@@ -109,7 +109,7 @@ namespace iganet {
         else if constexpr (BSpline_t::parDim() == 4)
           return "B-spline hypervolume";
         else
-          return "{ INVALID REQUEST }";        
+          return "{ INVALID REQUEST }";
       }
 
       /// @brief Returns the model's options
@@ -253,7 +253,7 @@ namespace iganet {
             " \"type\" : 2}"
             "]";
       }
-    
+
       /// @brief Serializes the model to JSON
       nlohmann::json to_json(const std::string& component,
                              const std::string& attribute) const override {
@@ -272,7 +272,7 @@ namespace iganet {
           else if (attribute == "knots")
             data["knots"] = this->knots_to_json();
           else if (attribute == "coeffs")
-            data["coeffs"] = this->coeffs_to_json();          
+            data["coeffs"] = this->coeffs_to_json();
           return data;
         } else
           return BSpline_t::to_json();
@@ -288,10 +288,10 @@ namespace iganet {
           if (!json["data"].contains("indices") ||
               !json["data"].contains("coeffs"))
             throw InvalidModelAttributeException();
-          
+
           auto indices    = json["data"]["indices"].get<std::vector<int64_t>>();
           auto coeffs_cpu = utils::to_tensorAccessor<typename BSpline_t::value_type,1>(BSpline_t::coeffs(), torch::kCPU);
-          
+
           switch (BSpline_t::geoDim()) {
           case (1): {
             auto coords    = json["data"]["coeffs"].get<std::vector<std::tuple<typename BSpline_t::value_type>>>();
@@ -313,7 +313,7 @@ namespace iganet {
             for (const auto& [index, coord] : iganet::utils::zip(indices, coords)) {
               if (index < 0 || index >= BSpline_t::ncumcoeffs())
                 throw IndexOutOfBoundsException();
-              
+
               xAccessor[index] = std::get<0>(coord);
               yAccessor[index] = std::get<1>(coord);
             }
@@ -330,7 +330,7 @@ namespace iganet {
             for (const auto& [index, coord] : iganet::utils::zip(indices, coords)) {
               if (index < 0 || index >= BSpline_t::ncumcoeffs())
                 throw IndexOutOfBoundsException();
-              
+
               xAccessor[index] = std::get<0>(coord);
               yAccessor[index] = std::get<1>(coord);
               zAccessor[index] = std::get<2>(coord);
@@ -350,7 +350,7 @@ namespace iganet {
             for (const auto& [index, coord] : iganet::utils::zip(indices, coords)) {
               if (index < 0 || index >= BSpline_t::ncumcoeffs())
                 throw IndexOutOfBoundsException();
-              
+
               xAccessor[index] = std::get<0>(coord);
               yAccessor[index] = std::get<1>(coord);
               zAccessor[index] = std::get<2>(coord);
@@ -366,18 +366,18 @@ namespace iganet {
         else
           return "{ INVALID REQUEST }";
       }
-      
+
       /// @brief Evaluates the model
       nlohmann::json eval(const std::string& component,
                           const nlohmann::json& json) const override {
-        
+
         if constexpr (BSpline_t::parDim() == 1) {
 
-          std::array<int64_t, 1> res({25});          
+          std::array<int64_t, 1> res({25});
           if (json.contains("data"))
             if (json["data"].contains("resolution"))
               res = json["data"]["resolution"].get<std::array<int64_t,1>>();
-          
+
           utils::TensorArray1 xi = {torch::linspace(0, 1, res[0])};
 
           if (component == "ValueFieldMagnitude") {
@@ -392,16 +392,16 @@ namespace iganet {
             return result;
           }
           else
-            return "{ INVALID REQUEST }";          
+            return "{ INVALID REQUEST }";
         }
-        
+
         else if constexpr (BSpline_t::parDim() == 2) {
 
-          std::array<int64_t, 2> res({25, 25});          
+          std::array<int64_t, 2> res({25, 25});
           if (json.contains("data"))
             if (json["data"].contains("resolution"))
               res = json["data"]["resolution"].get<std::array<int64_t,2>>();
-          
+
           utils::TensorArray2 xi = utils::convert<2>(torch::meshgrid({
                 torch::linspace(0, 1, res[0],
                                 Options<typename BSpline_t::value_type>{}),
@@ -422,22 +422,22 @@ namespace iganet {
           else
             return "{ INVALID REQUEST }";
         }
-        
+
         else if constexpr (BSpline_t::parDim() == 3) {
 
-          std::array<int64_t, 3> res({25, 25, 25});          
+          std::array<int64_t, 3> res({25, 25, 25});
           if (json.contains("data"))
             if (json["data"].contains("resolution"))
               res = json["data"]["resolution"].get<std::array<int64_t,3>>();
 
           utils::TensorArray3 xi = utils::convert<3>(torch::meshgrid({
                 torch::linspace(0, 1, res[0],
-                                Options<typename BSpline_t::value_type>{}),                
+                                Options<typename BSpline_t::value_type>{}),
                 torch::linspace(0, 1, res[1],
                                 Options<typename BSpline_t::value_type>{}),
                 torch::linspace(0, 1, res[2],
                                 Options<typename BSpline_t::value_type>{})}, "xy"));
-          
+
           if (component == "ValueFieldMagnitude") {
             return nlohmann::json::array()
               .emplace_back(utils::to_json<iganet::real_t,3>(*(solution_.eval(xi)[0])));
@@ -452,24 +452,24 @@ namespace iganet {
           else
             return "{ INVALID REQUEST }";
         }
-        
+
         else if constexpr (BSpline_t::parDim() == 4) {
 
-          std::array<int64_t, 4> res({25, 25, 25, 25});          
+          std::array<int64_t, 4> res({25, 25, 25, 25});
           if (json.contains("data"))
             if (json["data"].contains("resolution"))
               res = json["data"]["resolution"].get<std::array<int64_t,4>>();
 
           utils::TensorArray4 xi = utils::convert<4>(torch::meshgrid({
                 torch::linspace(0, 1, res[0],
-                                Options<typename BSpline_t::value_type>{}),                
+                                Options<typename BSpline_t::value_type>{}),
                 torch::linspace(0, 1, res[1],
                                 Options<typename BSpline_t::value_type>{}),
                 torch::linspace(0, 1, res[2],
                                 Options<typename BSpline_t::value_type>{}),
                 torch::linspace(0, 1, res[3],
                                 Options<typename BSpline_t::value_type>{})}, "xy"));
-          
+
           if (component == "ValueFieldMagnitude") {
             return nlohmann::json::array()
               .emplace_back(utils::to_json<iganet::real_t,4>(*(solution_.eval(xi)[0])));
@@ -489,15 +489,15 @@ namespace iganet {
       /// @brief Refines the model
       void refine(const nlohmann::json& json = NULL) override {
         int numRefine = 1, dim = -1;
-        
+
         if (json.contains("data")) {
           if (json["data"].contains("numRefine"))
             numRefine = json["data"]["numRefine"].get<int>();
-          
+
           if (json["data"].contains("dim"))
             dim = json["data"]["dim"].get<int>();
         }
-        
+
         BSpline_t::uniform_refine(numRefine, dim);
       }
 
@@ -506,6 +506,8 @@ namespace iganet {
 
         if (json.contains("data")) {
           if (json["data"].contains("binary")) {
+
+            std::cout << json.dump(2) << std::endl;
 
             // get binary vector from JSON object
             std::vector<std::uint8_t> binary = json["data"]["binary"];
@@ -521,9 +523,9 @@ namespace iganet {
           }
         }
 
-        throw InvalidModelException();        
+        throw InvalidModelException();
       }
-      
+
       /// @brief Saves model to LibTorch file
       nlohmann::json save() const override {
 
@@ -531,21 +533,31 @@ namespace iganet {
         torch::serialize::OutputArchive archive;
         archive.write("model", static_cast<int64_t>(std::hash<std::string>{}(getName())));
         archive.write("nonuniform", static_cast<bool>(BSpline_t::is_nonuniform()));
-        
+
         BSpline_t::write(archive, "geometry");
         solution_.write(archive, "solution");
 
         // store output archive in binary vector
         std::vector<std::uint8_t> binary;
-        
+
         archive.save_to([&binary](const void* data, size_t size) mutable -> std::size_t {
           auto data_ = reinterpret_cast<const std::uint8_t*>(data);
 
           for (std::size_t i=0; i<size; ++i)
             binary.push_back(data_[i]);
-          
+
           return size;
         });
+
+        // // convert binary vector to hex string
+        // std::string hexstring;
+        // hexstring.resize(binary.size() * 2);
+        // const char letters[] = "0123456789ABCDEF";
+        // char* current_hex_char = &hexstring[0];
+        // for (std::uint8_t b : binary) {
+        //   *current_hex_char++ = letters[b >> 4];
+        //   *current_hex_char++ = letters[b & 0xf];
+        // }
 
         // attach binary vector to JSON object
         nlohmann::json json;
@@ -553,15 +565,15 @@ namespace iganet {
 
         return json;
       }
-      
+
       /// @brief Imports the model from XML (as JSON object)
       void importXML(const nlohmann::json& json,
                      const std::string& component,
                      std::size_t id) override {
-        
+
         if (json.contains("data")) {
           if (json["data"].contains("xml")) {
-            
+
             std::string xml = json["data"]["xml"].get<std::string>();
 
             pugi::xml_document doc;
@@ -571,11 +583,11 @@ namespace iganet {
               importXML(root, component, id);
             else
               throw std::runtime_error("No \"xml\" node in XML object");
-            
+
             return;
           }
         }
-        
+
         throw std::runtime_error("No XML node in JSON object");
       }
 
@@ -583,35 +595,35 @@ namespace iganet {
       void importXML(const pugi::xml_node& root,
                      const std::string& component,
                      std::size_t id) override {
-        
+
         BSpline_t::from_xml(root, id, component);
       }
-      
+
       /// @brief Exports the model to XML (as JSON object)
       nlohmann::json exportXML(const std::string& component,
                                std::size_t id) override {
-        
+
         // serialize to XML
         pugi::xml_document doc;
         pugi::xml_node root = doc.append_child("xml");
         root = exportXML(root, component, id);
-        
+
         // serialize to JSON
         std::ostringstream oss;
         doc.save(oss);
-        
+
         return oss.str();
-      }      
-      
+      }
+
       /// @brief Exports the model to XML (as XML object)
       pugi::xml_node& exportXML(pugi::xml_node& root,
                                 const std::string& component,
                                 std::size_t id) override {
-        
+
         BSpline_t::to_xml(root, id, component);
         return root;
       }
-    };    
+    };
 
   } // namespace webapp
 } // namespace iganet
