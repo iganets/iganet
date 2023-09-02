@@ -98,15 +98,14 @@ webapps-gcc:
   stage: build
   script:
     - apt-get update -y
-    - apt-get install python3-setuptools -y
+    - apt-get install python3-pip python3-setuptools -y
     - pip3 install websocket-client
     - mkdir -p build
     - cd build
     - CC=gcc CXX=g++ cmake .. -DIGANET_BUILD_EXAMPLES=OFF -DIGANET_BUILD_WEBAPPS=ON -DTorch_DIR=/opt/libtorch/share/cmake/Torch
     - make
     - ./webapps/server &
-    - cd ..
-    - python3 -m unittest discover unittests
+    - python3 -m unittest discover ../webapps/unittests
   only:
     changes:
       - .gitlab-ci.yml
