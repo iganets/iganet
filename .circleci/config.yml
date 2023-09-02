@@ -23,6 +23,12 @@ jobs:
   unittests-windows:
     executor:
       name: win/default
+    environment:
+      - HERMES_WS_DIR: 'C:\Users\circleci\project\IgaNet'
+      - LIBTORCH_URL: "https://download.pytorch.org/libtorch/cpu/libtorch-win-shared-with-deps-2.0.1%2Bcpu.zip"
+      - MSBUILD_DIR: 'C:\Program Files (x86)\Microsoft Visual Studio\2019\BuildTools\MSBuild\Current\Bin'
+      - CMAKE_DIR: 'C:\Program Files\CMake\bin'
+      - RELEASE_FLAGS: -DCMAKE_BUILD_TYPE=Release -DIGANET_BUILD_UNITTESTS=ON
     working_directory: C:\Users\circleci\project\IgaNet
     steps:
       - add_ssh_keys:
@@ -37,13 +43,13 @@ jobs:
             if (-not $?) { throw "Failed to install CMake" }
             choco install --no-progress python3 -y
             if (-not $?) { throw "Failed to install Python" }
-            Invoke-WebRequest -Uri "https://download.pytorch.org/libtorch/cpu/libtorch-win-shared-with-deps-2.0.1%2Bcpu.zip" -OutFile "libtorch.zip"
+            Invoke-WebRequest -Uri $Env:LIBTORCH_URL -OutFile "libtorch.zip"
             Expand-Archive -Path "libtorch.zip" -DestinationPath "C:\Users\circleci"
             Remove-Item -Path "libtorch.zip"
       - run:
           name: Build Windows CLI
           command: |
-            $Env:PATH += ";$Env:MSBUILD_DIR"
+            $Env:PATH += ";$Env:CMAKE_DIR;$Env:MSBUILD_DIR"
             cmake -S . -B build -G 'Visual Studio 16 2019' -Ax64 $Env:RELEASE_FLAGS
             if (-not $?) { throw "Failed to configure IgaNet" }
             cmake --build ./build --config Release
