@@ -141,15 +141,15 @@ if (IGANET_WITH_OPENMP)
       CMAKE_CXX_COMPILER_ID STREQUAL "Clang" AND ${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
     find_path(OpenMP_C_INCLUDE_DIR
       NAMES "omp.h"
-      PATHS /usr/local /usr/local/opt /opt /opt/local /opt/homebrew/opt/libomp
+      PATHS /usr/local /usr/local/opt/libomp /opt /opt/local /opt/homebrew/opt/libomp
       PATH_SUFFIXES include)
     find_path(OpenMP_CXX_INCLUDE_DIR
       NAMES "omp.h"
-      PATHS /usr/local /usr/local/opt /opt /opt/local /opt/homebrew/opt/libomp
+      PATHS /usr/local /usr/local/opt/libomp /opt /opt/local /opt/homebrew/opt/libomp
       PATH_SUFFIXES include)
     find_library(OpenMP_libomp_LIBRARY
       NAMES "omp"
-      PATHS /usr/local /usr/local/opt /opt /opt/local /opt/homebrew/opt/libomp
+      PATHS /usr/local /usr/local/opt/libomp /opt /opt/local /opt/homebrew/opt/libomp
       PATH_SUFFIXES lib)
     set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Xclang -fopenmp -I${OpenMP_C_INCLUDE_DIR}")
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Xclang -fopenmp -I${OpenMP_CXX_INCLUDE_DIR}")
