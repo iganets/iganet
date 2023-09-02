@@ -25,6 +25,9 @@ jobs:
       name: win/default
     working_directory: C:\Users\circleci\project\IgaNet
     steps:
+      - add_ssh_keys:
+          fingerprints:
+            - "29:67:b0:6b:94:43:da:41:22:00:a2:df:4e:88:f3:dc"
       - checkout:
           path: C:\Users\circleci\project
       
