@@ -32,5 +32,8 @@ jobs:
 workflows:
   unittests:
     jobs:
-      - unittests-macos
+      - unittests-macos:
+        filters:
+            branches:
+              only: master
       - unittests-windows
