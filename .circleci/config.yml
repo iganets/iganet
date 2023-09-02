@@ -30,13 +30,16 @@ jobs:
             - "29:67:b0:6b:94:43:da:41:22:00:a2:df:4e:88:f3:dc"
       - checkout:
           path: C:\Users\circleci\project
+      - run:
+          name: Install dependencies
+          command: |
+            choco install --no-progress cmake --version 3.24.4 --installargs 'ADD_CMAKE_TO_PATH=System'
+            if (-not $?) { throw "Failed to install CMake" }
+            choco install --no-progress python3
+            if (-not $?) { throw "Failed to install Python" }
       
   
 workflows:
   unittests:
     jobs:
-      - unittests-macos:
-        filters:
-            branches:
-              only: master
       - unittests-windows
