@@ -24,7 +24,7 @@ jobs:
     executor:
       name: win/default
     environment:
-      - HERMES_WS_DIR: 'C:\Users\circleci\project\IgaNet'
+      - IGANET_WS_DIR: 'C:\Users\circleci\project\IgaNet'
       - LIBTORCH_URL: "https://download.pytorch.org/libtorch/cpu/libtorch-win-shared-with-deps-2.0.1%2Bcpu.zip"
       - MSBUILD_DIR: 'C:\Program Files (x86)\Microsoft Visual Studio\2019\BuildTools\MSBuild\Current\Bin'
       - CMAKE_DIR: 'C:\Program Files\CMake\bin'
@@ -50,7 +50,7 @@ jobs:
           name: Build Windows CLI
           command: |
             $Env:PATH += ";$Env:CMAKE_DIR;$Env:MSBUILD_DIR"
-            cmake -S iganet -B build -G 'Visual Studio 16 2019' -Ax64 $Env:RELEASE_FLAGS
+            cmake -S $Env:IGANET_WS_DIR -B build -G 'Visual Studio 16 2019' -Ax64 $Env:RELEASE_FLAGS
             if (-not $?) { throw "Failed to configure IgaNet" }
             cmake --build ./build --config Release
             if (-not $?) { throw "Failed to build IgaNet" }
