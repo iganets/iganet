@@ -99,7 +99,7 @@ webapps-gcc:
   script:
     - apt-get update -y
     - apt-get install python3-setuptools -y
-    - pip install websocket-client
+    - pip3 install websocket-client
     - mkdir -p build
     - cd build
     - CC=gcc CXX=g++ cmake .. -DIGANET_BUILD_EXAMPLES=OFF -DIGANET_BUILD_WEBAPPS=ON -DTorch_DIR=/opt/libtorch/share/cmake/Torch
