@@ -37,6 +37,9 @@ jobs:
             if (-not $?) { throw "Failed to install CMake" }
             choco install --no-progress python3 -y
             if (-not $?) { throw "Failed to install Python" }
+            Invoke-WebRequest -Uri "https://download.pytorch.org/libtorch/cpu/libtorch-win-shared-with-deps-2.0.1%2Bcpu.zip" -OutFile "libtorch.zip"
+            Expand-Archive -Path "libtorch.zip" -DestinationPath "C:\Users\circleci"
+            Remove-Item -Path "libtorch.zip"
       
   
 workflows:
