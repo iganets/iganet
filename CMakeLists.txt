@@ -114,7 +114,7 @@ option(IGANET_WITH_OPENMP       "With OpenMP support"       ON )
 find_package(Torch REQUIRED)
 list(APPEND CMAKE_CXX_FLAGS ${TORCH_CXX_FLAGS})
 
-find_package(ZLIB REQUIRED)
+#find_package(ZLIB REQUIRED)
 
 include(boost_preprocessor)
 include(nlohmann_json)
