@@ -24,18 +24,17 @@ jobs:
     executor:
       name: win/default
     environment:
-      - IGANET_WS_DIR: 'C:\Users\circleci\project\IgaNet'
       - LIBTORCH_URL: "https://download.pytorch.org/libtorch/cpu/libtorch-win-shared-with-deps-2.0.1%2Bcpu.zip"
       - MSBUILD_DIR: 'C:\Program Files (x86)\Microsoft Visual Studio\2019\BuildTools\MSBuild\Current\Bin'
       - CMAKE_DIR: 'C:\Program Files\CMake\bin'
       - RELEASE_FLAGS: -DCMAKE_BUILD_TYPE=Release -DIGANET_BUILD_UNITTESTS=ON
-    working_directory: C:\Users\circleci\project\IgaNet
+    working_directory: C:\Users\circleci\project
     steps:
       - add_ssh_keys:
           fingerprints:
             - "29:67:b0:6b:94:43:da:41:22:00:a2:df:4e:88:f3:dc"
       - checkout:
-          path: C:\Users\circleci\project
+          path: C:\Users\circleci\project\iganet
       - run:
           name: Install dependencies
           command: |
@@ -50,7 +49,7 @@ jobs:
           name: Build Windows CLI
           command: |
             $Env:PATH += ";$Env:CMAKE_DIR;$Env:MSBUILD_DIR"
-            cmake -S C:\Users\circleci\project\IgaNet\IgaNet -B build -G 'Visual Studio 16 2019' -Ax64 $Env:RELEASE_FLAGS
+            cmake -S iganet -B build -G 'Visual Studio 16 2019' -Ax64 $Env:RELEASE_FLAGS
             if (-not $?) { throw "Failed to configure IgaNet" }
             cmake --build ./build --config Release
             if (-not $?) { throw "Failed to build IgaNet" }
