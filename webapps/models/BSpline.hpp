@@ -507,8 +507,6 @@ namespace iganet {
         if (json.contains("data")) {
           if (json["data"].contains("binary")) {
 
-            std::cout << json.dump(2) << std::endl;
-
             // get binary vector from JSON object
             std::vector<std::uint8_t> binary = json["data"]["binary"];
 
