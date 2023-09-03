@@ -49,7 +49,7 @@ jobs:
           name: Build Windows CLI
           command: |
             $Env:PATH += ";$Env:CMAKE_DIR;$Env:MSBUILD_DIR"
-            cmake -S iganet -B build -G 'Visual Studio 16 2019' -Ax64 $Env:RELEASE_FLAGS -DTorch_DIR=C:\Users\circleci\libtoch\share\cmake\Torch
+            cmake -S iganet -B build -G 'Visual Studio 16 2019' -Ax64 $Env:RELEASE_FLAGS -DTorch_DIR=C:\Users\circleci\libtoch\share\cmake\Torch -DCMAKE_PREFIX_PATH=C:\Users\circleci\libtoch\cmake
             if (-not $?) { throw "Failed to configure IgaNet" }
             cmake --build ./build --config Release
             if (-not $?) { throw "Failed to build IgaNet" }
