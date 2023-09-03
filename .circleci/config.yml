@@ -48,7 +48,7 @@ jobs:
       - run:
           name: List Directory Contents
           command: |
-            dir /s C:\Users\circleci
+            Get-ChildItem -Path C:\Users\circleci -Recurse
       - run:
           name: Build Windows CLI
           command: |
