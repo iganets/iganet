@@ -666,8 +666,6 @@ int main(int argc, char const* argv[])
                               session->models.crbegin()->first+1 : 0);
 
                 try {
-                  std::cout << request.dump(2) << std::endl;
-                  
                   // Create a new model instance from binary data stream
                   session->models[id] = ws->getUserData()->models.load(request);
                   response["data"]["id"] = std::to_string(id);
