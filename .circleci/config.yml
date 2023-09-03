@@ -46,6 +46,10 @@ jobs:
             Expand-Archive -Path "libtorch.zip" -DestinationPath "C:\Users\circleci"
             Remove-Item -Path "libtorch.zip"
       - run:
+          name: List Directory Contents
+          command: |
+            dir /s C:\Users\circleci
+      - run:
           name: Build Windows CLI
           command: |
             $Env:PATH += ";$Env:CMAKE_DIR;$Env:MSBUILD_DIR"
