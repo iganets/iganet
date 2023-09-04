@@ -105,7 +105,7 @@ webapps-gcc:
     - CC=gcc CXX=g++ cmake .. -DIGANET_BUILD_EXAMPLES=OFF -DIGANET_BUILD_WEBAPPS=ON -DTorch_DIR=/opt/libtorch/share/cmake/Torch
     - make
     - ./webapps/server &
-    - python3 -m unittest discover ../webapps/unittests
+    - HOSTNAME=172.17.0.2 python3 -m unittest discover ../webapps/unittests
   only:
     changes:
       - .gitlab-ci.yml
