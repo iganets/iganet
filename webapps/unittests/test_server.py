@@ -69,15 +69,15 @@ class TestSession(unittest.TestCase):
     def test_exportxml(self):
 
         # Create three new BSpline objects
-        model0, _ = create_BSplineSurface(self.ws, self.session_id)
-        model1, _ = create_BSplineCurve(self.ws, self.session_id)
+        model0, _ = create_BSplineCurve(self.ws, self.session_id)
+        model1, _ = create_BSplineSurface(self.ws, self.session_id)
         model2, _ = create_BSplineVolume(self.ws, self.session_id)
 
         data = export_session_xml(self.ws, self.session_id)
         xml1 = ET.fromstring(data["xml"])
 
         xml2 = ET.parse(os.path.join(os.path.dirname(__file__), "Session.xml"))
-
+        
         self.assertEqual(ET.tostring(xml1), ET.tostring(xml2.getroot()))
 
         # Remove model instances
@@ -88,8 +88,8 @@ class TestSession(unittest.TestCase):
     def test_importxml(self):
 
         # Create three new BSpline objects
-        model0, data0 = create_BSplineSurface(self.ws, self.session_id)
-        model1, data1 = create_BSplineCurve(self.ws, self.session_id)
+        model0, data0 = create_BSplineCurve(self.ws, self.session_id)
+        model1, data1 = create_BSplineSurface(self.ws, self.session_id)
         model2, data2 = create_BSplineVolume(self.ws, self.session_id)
 
         # Change coefficients
@@ -121,6 +121,30 @@ class TestSession(unittest.TestCase):
         remove_model(self.ws, self.session_id, model0)
         remove_model(self.ws, self.session_id, model1)
         remove_model(self.ws, self.session_id, model2)
+
+    def test_save(self):
+        import filecmp
+
+        # Create three new BSpline objects
+        model0, data0 = create_BSplineCurve(self.ws, self.session_id)
+        model1, data1 = create_BSplineSurface(self.ws, self.session_id)
+        model2, data2 = create_BSplineVolume(self.ws, self.session_id)
+        
+        # Save session to binary data
+        data = save_session(self.ws, self.session_id)
+
+        for index in range(0, len(data)):
+            
+            # Open binary reference file for writing
+            file = open("Session_tmp." + str(index) + ".pt", "wb")
+            for byte in data[index]["binary"]:
+                file.write(byte.to_bytes(1, byteorder='big'))
+            file.close()
+
+            self.assertTrue(filecmp.cmp("Session_tmp." + str(index) + ".pt",
+                                        os.path.join(os.path.dirname(__file__), "Session." + str(index) + ".pt")))
+
+            os.remove("Session_tmp." +str(index) + ".pt")
 
 class TestBSplineSurface(unittest.TestCase):
 

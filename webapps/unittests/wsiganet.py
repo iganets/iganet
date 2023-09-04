@@ -75,6 +75,16 @@ def import_session_xml(ws: WebSocket, session_id: str, data: dict = {}):
     if result["status"] != 0:
         raise Exception(result["reason"])
 
+def save_session(ws: WebSocket, session_id: str):
+    """Save session as binary data"""
+    ws.send(request("save/" + session_id))
+    result = json.loads(ws.recv())
+
+    if result["status"] == 0:
+        return result["data"]
+    else:
+        raise Exception(result["reason"])
+    
 def disconnect_session(ws: WebSocket, session_id: str):
     """Disconnect from an active session"""
     ws.send(request("disconnect/" + session_id))

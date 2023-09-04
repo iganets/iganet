@@ -1,6 +1,12 @@
 <?xml version="1.0"?>
 <xml>
-	<Geometry type="TensorBSpline2" id="0">
+	<Geometry type="BSpline" id="0">
+		<Basis type="BSplineBasis">
+			<KnotVector degree="1">0.000000 0.000000 0.333333 0.666667 1.000000 1.000000</KnotVector>
+		</Basis>
+		<coefs geoDim="3">0.000000 1.000000 1.000000 0.333333 1.000000 1.000000 0.666667 1.000000 1.000000 1.000000 1.000000 1.000000 </coefs>
+	</Geometry>
+	<Geometry type="TensorBSpline2" id="1">
 		<Basis type="TensorBSplineBasis2">
 			<Basis type="BSplineBasis" index="0">
 				<KnotVector degree="1">0.000000 0.000000 0.333333 0.666667 1.000000 1.000000</KnotVector>
@@ -10,12 +16,6 @@
 			</Basis>
 		</Basis>
 		<coefs geoDim="3">0.000000 0.000000 1.000000 0.333333 0.000000 1.000000 0.666667 0.000000 1.000000 1.000000 0.000000 1.000000 0.000000 0.333333 1.000000 0.333333 0.333333 1.000000 0.666667 0.333333 1.000000 1.000000 0.333333 1.000000 0.000000 0.666667 1.000000 0.333333 0.666667 1.000000 0.666667 0.666667 1.000000 1.000000 0.666667 1.000000 0.000000 1.000000 1.000000 0.333333 1.000000 1.000000 0.666667 1.000000 1.000000 1.000000 1.000000 1.000000 </coefs>
-	</Geometry>
-	<Geometry type="BSpline" id="1">
-		<Basis type="BSplineBasis">
-			<KnotVector degree="1">0.000000 0.000000 0.333333 0.666667 1.000000 1.000000</KnotVector>
-		</Basis>
-		<coefs geoDim="3">0.000000 1.000000 1.000000 0.333333 1.000000 1.000000 0.666667 1.000000 1.000000 1.000000 1.000000 1.000000 </coefs>
 	</Geometry>
 	<Geometry type="TensorBSpline3" id="2">
 		<Basis type="TensorBSplineBasis3">
