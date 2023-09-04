@@ -84,7 +84,17 @@ def save_session(ws: WebSocket, session_id: str):
         return result["data"]
     else:
         raise Exception(result["reason"])
-    
+
+def load_session(ws: WebSocket, data: dict = {}):
+    """Load session from binary data"""
+    ws.send(request("load/session", data))
+    result = json.loads(ws.recv())
+
+    if result["status"] == 0:
+        return result["data"]["id"], result["data"]["models"]
+    else:
+        raise Exception(result["reason"])
+
 def disconnect_session(ws: WebSocket, session_id: str):
     """Disconnect from an active session"""
     ws.send(request("disconnect/" + session_id))
@@ -128,7 +138,7 @@ def create_BSplineSurface(ws: WebSocket, session_id: str,
         raise Exception(result["reason"])
 
 def create_BSplineVolume(ws: WebSocket, session_id: str,
-                          degree: int = 1, init: int = 4, ncoeffs: List[int] = [4, 4, 4], nonuniform: bool = False):
+                         degree: int = 1, init: int = 4, ncoeffs: List[int] = [4, 4, 4], nonuniform: bool = False):
     """Create BSpline volume"""
     data = {
         "degree"     : degree,
@@ -249,7 +259,7 @@ def save_model(ws: WebSocket, session_id: str, instance: str):
         raise Exception(result["reason"])
 
 def load_model(ws: WebSocket, session_id: str, data: dict = {}):
-    """Load  model from binary data"""
+    """Load model from binary data"""
     ws.send(request("load/" + session_id, data))
     result = json.loads(ws.recv())
 

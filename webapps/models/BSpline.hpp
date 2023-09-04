@@ -590,11 +590,11 @@ namespace iganet {
       }
 
       /// @brief Imports the model from XML (as XML object)
-      void importXML(const pugi::xml_node& root,
+      void importXML(const pugi::xml_node& xml,
                      const std::string& component,
                      std::size_t id) override {
 
-        BSpline_t::from_xml(root, id, component);
+        BSpline_t::from_xml(xml, id, component);
       }
 
       /// @brief Exports the model to XML (as JSON object)
@@ -603,8 +603,8 @@ namespace iganet {
 
         // serialize to XML
         pugi::xml_document doc;
-        pugi::xml_node root = doc.append_child("xml");
-        root = exportXML(root, component, id);
+        pugi::xml_node xml = doc.append_child("xml");
+        xml = exportXML(xml, component, id);
 
         // serialize to JSON
         std::ostringstream oss;
@@ -614,12 +614,12 @@ namespace iganet {
       }
 
       /// @brief Exports the model to XML (as XML object)
-      pugi::xml_node& exportXML(pugi::xml_node& root,
+      pugi::xml_node& exportXML(pugi::xml_node& xml,
                                 const std::string& component,
                                 std::size_t id) override {
 
-        BSpline_t::to_xml(root, id, component);
-        return root;
+        BSpline_t::to_xml(xml, id, component);
+        return xml;
       }
     };
 

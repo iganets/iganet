@@ -83,4 +83,105 @@ extern "C"
       else
         return std::make_shared<iganet::webapp::BSplineModel<iganet::   UniformBSpline<iganet::real_t, 3, 1>>>(ncoeffs, init);
   }
+
+  /// @brief Load a B-spline curve
+  std::shared_ptr<iganet::Model> load(const nlohmann::json& json) {
+    
+    if (json.contains("data")) {
+      if (json["data"].contains("binary")) {
+        
+        // get binary vector from JSON object
+        auto binary = json["data"]["binary"].get<std::vector<std::uint8_t>>();
+        
+        // recover input archive from binary vector
+        torch::serialize::InputArchive archive;
+        archive.load_from(reinterpret_cast<const char*>(binary.data()), binary.size());
+        
+        try {
+          // get model hash
+          c10::IValue model;
+          archive.read("model", model);
+          
+          // check if model can be processed
+          if (model.toInt() ==
+              static_cast<int64_t>(std::hash<std::string>{}("BSplineCurve"))) {
+
+            torch::Tensor tensor;
+
+            // get parametric and geometric dimensions
+            archive.read("geometry.parDim", tensor); iganet::short_t parDim = tensor.item<int64_t>();
+            archive.read("geometry.geoDim", tensor); iganet::short_t geoDim = tensor.item<int64_t>();
+
+            if (parDim != 1)
+              throw iganet::InvalidModelException();
+            
+            // get degrees
+            std::array<iganet::short_t, 1> degrees;
+            for (iganet::short_t i = 0; i < parDim; ++i) {
+              archive.read("geometry.degree[" + std::to_string(i) + "]", tensor);
+              degrees[i] = tensor.item<int64_t>();
+            }
+
+            bool nonuniform = false;           
+            std::shared_ptr<iganet::Model> m;
+
+            if (nonuniform) {
+
+              // Non-uniform B-splines
+              switch (static_cast<enum iganet::webapp::degree>(degrees[0])) {
+              case iganet::webapp::degree::constant:
+                m = std::make_shared<iganet::webapp::BSplineModel<iganet::NonUniformBSpline<iganet::real_t, 3, 0>>>(); break;
+              case iganet::webapp::degree::linear:
+                m = std::make_shared<iganet::webapp::BSplineModel<iganet::NonUniformBSpline<iganet::real_t, 3, 1>>>(); break;
+              case iganet::webapp::degree::quadratic:
+                m = std::make_shared<iganet::webapp::BSplineModel<iganet::NonUniformBSpline<iganet::real_t, 3, 2>>>(); break;                
+              case iganet::webapp::degree::cubic:
+                m = std::make_shared<iganet::webapp::BSplineModel<iganet::NonUniformBSpline<iganet::real_t, 3, 3>>>(); break;
+              case iganet::webapp::degree::quartic:
+                m = std::make_shared<iganet::webapp::BSplineModel<iganet::NonUniformBSpline<iganet::real_t, 3, 4>>>(); break;
+              case iganet::webapp::degree::quintic:
+                m = std::make_shared<iganet::webapp::BSplineModel<iganet::NonUniformBSpline<iganet::real_t, 3, 5>>>(); break;
+              default:
+                throw std::runtime_error("Invalid degree");
+              }
+              
+            } else {
+
+              // Uniform B-splines
+              switch (static_cast<enum iganet::webapp::degree>(degrees[0])) {
+              case iganet::webapp::degree::constant:
+                m = std::make_shared<iganet::webapp::BSplineModel<iganet::UniformBSpline<iganet::real_t, 3, 0>>>(); break;
+              case iganet::webapp::degree::linear:
+                m = std::make_shared<iganet::webapp::BSplineModel<iganet::UniformBSpline<iganet::real_t, 3, 1>>>(); break;
+              case iganet::webapp::degree::quadratic:
+                m = std::make_shared<iganet::webapp::BSplineModel<iganet::UniformBSpline<iganet::real_t, 3, 2>>>(); break;                
+              case iganet::webapp::degree::cubic:
+                m = std::make_shared<iganet::webapp::BSplineModel<iganet::UniformBSpline<iganet::real_t, 3, 3>>>(); break;
+              case iganet::webapp::degree::quartic:
+                m = std::make_shared<iganet::webapp::BSplineModel<iganet::UniformBSpline<iganet::real_t, 3, 4>>>(); break;
+              case iganet::webapp::degree::quintic:
+                m = std::make_shared<iganet::webapp::BSplineModel<iganet::UniformBSpline<iganet::real_t, 3, 5>>>(); break;
+              default:
+                throw std::runtime_error("Invalid degree");
+ }
+ 
+            }
+
+            if (auto m_ = std::dynamic_pointer_cast<iganet::ModelSerialize>(m))
+              m_->load(json);
+            return m;
+          }
+
+          else {
+            throw iganet::InvalidModelException();
+          }
+
+        } catch(...) {
+          throw iganet::InvalidModelException();
+        }
+      }
+    }
+
+    throw iganet::InvalidModelException();
+  }
 }

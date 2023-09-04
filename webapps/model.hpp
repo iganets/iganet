@@ -111,7 +111,7 @@ namespace iganet {
                            std::size_t id) = 0;
 
     /// @brief Imports model from XML (as XML object)
-    virtual void importXML(const pugi::xml_node& root,
+    virtual void importXML(const pugi::xml_node& xml,
                            const std::string& component,
                            std::size_t id) = 0;
     

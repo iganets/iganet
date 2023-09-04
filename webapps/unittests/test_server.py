@@ -4,11 +4,15 @@ from wsiganet import *
 import xml.etree.ElementTree as ET
 
 class TestSession(unittest.TestCase):
-
+    
     def setUp(self):
 
+        self.protocol = os.environ.get("PROTOCOL", "ws")
+        self.hostname = os.environ.get("HOSTNAME", "localhost")
+        self.port     = os.environ.get("PORT",     "9001")
+        
         # Establish connection
-        self.ws = create_connection("ws://localhost:9001")
+        self.ws = create_connection(self.protocol + "://" + self.hostname + ":" + self.port)
 
         # Get list of sessions
         self.session_ids = get_sessions(self.ws)
@@ -49,7 +53,7 @@ class TestSession(unittest.TestCase):
     def test_broadcast(self):
 
         # Establish connection
-        ws = create_connection("ws://localhost:9001")
+        ws = create_connection(self.protocol + "://" + self.hostname + ":" + self.port)
 
         # Connect to existing session
         connect_session(ws, self.session_id)
@@ -76,8 +80,8 @@ class TestSession(unittest.TestCase):
         data = export_session_xml(self.ws, self.session_id)
         xml1 = ET.fromstring(data["xml"])
 
-        xml2 = ET.parse(os.path.join(os.path.dirname(__file__), "Session.xml"))
-        
+        xml2 = ET.parse(os.path.join(os.path.dirname(__file__), "../filedata/xml/Session.xml"))
+
         self.assertEqual(ET.tostring(xml1), ET.tostring(xml2.getroot()))
 
         # Remove model instances
@@ -104,7 +108,7 @@ class TestSession(unittest.TestCase):
         data = export_session_xml(self.ws, self.session_id)
         xml1 = ET.fromstring(data["xml"])
 
-        xml2 = ET.parse(os.path.join(os.path.dirname(__file__), "Session.xml"))
+        xml2 = ET.parse(os.path.join(os.path.dirname(__file__), "../filedata/xml/Session.xml"))
 
         self.assertNotEqual(ET.tostring(xml1), ET.tostring(xml2.getroot()))
 
@@ -129,29 +133,75 @@ class TestSession(unittest.TestCase):
         model0, data0 = create_BSplineCurve(self.ws, self.session_id)
         model1, data1 = create_BSplineSurface(self.ws, self.session_id)
         model2, data2 = create_BSplineVolume(self.ws, self.session_id)
-        
+
         # Save session to binary data
         data = save_session(self.ws, self.session_id)
 
+        # Create XML root
+        xml = ET.Element('Session')
+
         for index in range(0, len(data)):
-            
+
+            # Add to XML root
+            model = ET.SubElement(xml, 'Model', part=str(index), file="Session." + str(index) + ".pt")
+
             # Open binary reference file for writing
-            file = open("Session_tmp." + str(index) + ".pt", "wb")
-            for byte in data[index]["binary"]:
-                file.write(byte.to_bytes(1, byteorder='big'))
-            file.close()
+            with open("Session_tmp." + str(index) + ".pt", "wb") as file:
+                for byte in data[index]["binary"]:
+                    file.write(byte.to_bytes(1, byteorder='big'))
 
             self.assertTrue(filecmp.cmp("Session_tmp." + str(index) + ".pt",
-                                        os.path.join(os.path.dirname(__file__), "Session." + str(index) + ".pt")))
+                                        os.path.join(os.path.dirname(__file__), "../filedata/pytorch/Session." + str(index) + ".pt")))
 
+            # Remove model file
             os.remove("Session_tmp." +str(index) + ".pt")
 
-class TestBSplineSurface(unittest.TestCase):
+        # Write session file
+        ET.ElementTree(xml).write('Session_tmp.ptc')
 
+        xml1 = ET.parse("Session_tmp.ptc")
+        xml2 = ET.parse(os.path.join(os.path.dirname(__file__), "../filedata/pytorch/Session.ptc"))
+
+        self.assertEqual(ET.tostring(xml1.getroot()), ET.tostring(xml2.getroot()))
+
+        os.remove("Session_tmp.ptc")
+
+    def test_load(self):
+        import filecmp
+
+        # Open and read session file
+        xml = ET.parse(os.path.join(os.path.dirname(__file__), "../filedata/pytorch/Session.ptc"))
+
+        binary = []
+        # Load binary files
+        for model in xml.getroot():
+            with open(os.path.join(os.path.dirname(__file__), "../filedata/pytorch/" + model.attrib["file"]), "rb") as file:
+                data = file.read()
+                binary.append([int(byte) for byte in data])
+
+        # Load session from binary data
+        session_id, _ = load_session(self.ws, { "binary" : binary })
+
+        # Get list of model instances
+        models = get_models(self.ws, session_id)
+
+        # Remove model instances
+        for model in models:
+            remove_model(self.ws, session_id, str(model))
+
+        # Remove session
+        remove_session(self.ws, session_id)
+
+class TestBSplineSurface(unittest.TestCase):
+    
     def setUp(self):
 
+        self.protocol = os.environ.get("PROTOCOL", "ws")
+        self.hostname = os.environ.get("HOSTNAME", "localhost")
+        self.port     = os.environ.get("PORT",     "9001")
+        
         # Establish connection
-        self.ws = create_connection("ws://localhost:9001")
+        self.ws = create_connection(self.protocol + "://" + self.hostname + ":" + self.port)
 
         # Get list of sessions
         self.session_ids = get_sessions(self.ws)
@@ -170,7 +220,7 @@ class TestBSplineSurface(unittest.TestCase):
 
     def tearDown(self):
 
-        # Remove model instances
+        # Remove model instance
         remove_model(self.ws, self.session_id, self.model)
 
         # Check that list of model instances has not changed
@@ -244,7 +294,7 @@ class TestBSplineSurface(unittest.TestCase):
         # Export model to XML
         data = export_model_xml(self.ws, self.session_id, self.model)
         xml1 = ET.fromstring(data["xml"])
-        xml2 = ET.parse(os.path.join(os.path.dirname(__file__), "BSplineSurface.xml"))
+        xml2 = ET.parse(os.path.join(os.path.dirname(__file__), "../filedata/xml/BSplineSurface.xml"))
 
         self.assertEqual(ET.tostring(xml1), ET.tostring(xml2.getroot()))
 
@@ -253,7 +303,7 @@ class TestBSplineSurface(unittest.TestCase):
         # Export model component to XML
         data = export_model_component_xml(self.ws, self.session_id, self.model, "geometry")
         xml1 = ET.fromstring(data["xml"])
-        xml2 = ET.parse(os.path.join(os.path.dirname(__file__), "BSplineSurfaceComponent.xml"))
+        xml2 = ET.parse(os.path.join(os.path.dirname(__file__), "../filedata/xml/BSplineSurfaceComponent.xml"))
 
         self.assertEqual(ET.tostring(xml1), ET.tostring(xml2.getroot()))
 
@@ -266,7 +316,7 @@ class TestBSplineSurface(unittest.TestCase):
         # Export model to XML
         data = export_model_xml(self.ws, self.session_id, self.model)
         xml1 = ET.fromstring(data["xml"])
-        xml2 = ET.parse(os.path.join(os.path.dirname(__file__), "BSplineSurface.xml"))
+        xml2 = ET.parse(os.path.join(os.path.dirname(__file__), "../filedata/xml/BSplineSurface.xml"))
 
         self.assertNotEqual(ET.tostring(xml1), ET.tostring(xml2.getroot()))
 
@@ -288,7 +338,7 @@ class TestBSplineSurface(unittest.TestCase):
         # Export model to XML
         data = export_model_xml(self.ws, self.session_id, self.model)
         xml1 = ET.fromstring(data["xml"])
-        xml2 = ET.parse(os.path.join(os.path.dirname(__file__), "BSplineSurfaceComponent.xml"))
+        xml2 = ET.parse(os.path.join(os.path.dirname(__file__), "../filedata/xml/BSplineSurfaceComponent.xml"))
 
         self.assertNotEqual(ET.tostring(xml1), ET.tostring(xml2.getroot()))
 
@@ -308,13 +358,12 @@ class TestBSplineSurface(unittest.TestCase):
         data = save_model(self.ws, self.session_id, self.model)
 
         # Open binary reference file for writing
-        file = open("BSplineSurface_tmp.pt", "wb")
-        for byte in data["binary"]:
-            file.write(byte.to_bytes(1, byteorder='big'))
-        file.close()
+        with open("BSplineSurface_tmp.pt", "wb") as file:
+            for byte in data["binary"]:
+                file.write(byte.to_bytes(1, byteorder='big'))
 
         self.assertTrue(filecmp.cmp("BSplineSurface_tmp.pt",
-                                    os.path.join(os.path.dirname(__file__), "BSplineSurface.pt")))
+                                    os.path.join(os.path.dirname(__file__), "../filedata/pytorch/BSplineSurface.pt")))
 
         os.remove("BSplineSurface_tmp.pt")
 
@@ -322,7 +371,7 @@ class TestBSplineSurface(unittest.TestCase):
         import filecmp
 
         # Open binary file for reading
-        file = open(os.path.join(os.path.dirname(__file__), "BSplineSurface.pt"), "rb")
+        file = open(os.path.join(os.path.dirname(__file__), "../filedata/pytorch/BSplineSurface.pt"), "rb")
         data = file.read()
         file.close()
 
@@ -334,13 +383,12 @@ class TestBSplineSurface(unittest.TestCase):
         data = save_model(self.ws, self.session_id, model)
 
         # Open binary reference file for writing
-        file = open("BSplineSurface_tmp.pt", "wb")
-        for byte in data["binary"]:
-            file.write(byte.to_bytes(1, byteorder='big'))
-        file.close()
+        with open("BSplineSurface_tmp.pt", "wb") as file:
+            for byte in data["binary"]:
+                file.write(byte.to_bytes(1, byteorder='big'))
 
         self.assertTrue(filecmp.cmp("BSplineSurface_tmp.pt",
-                                    os.path.join(os.path.dirname(__file__), "BSplineSurface.pt")))
+                                    os.path.join(os.path.dirname(__file__), "../filedata/pytorch/BSplineSurface.pt")))
 
         os.remove("BSplineSurface_tmp.pt")
 

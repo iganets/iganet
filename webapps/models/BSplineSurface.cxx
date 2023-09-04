@@ -96,12 +96,12 @@ extern "C"
         // recover input archive from binary vector
         torch::serialize::InputArchive archive;
         archive.load_from(reinterpret_cast<const char*>(binary.data()), binary.size());
-        
+
         try {
           // get model hash
           c10::IValue model;
           archive.read("model", model);
-          
+
           // check if model can be processed
           if (model.toInt() ==
               static_cast<int64_t>(std::hash<std::string>{}("BSplineSurface"))) {
@@ -114,7 +114,7 @@ extern "C"
 
             if (parDim != 2)
               throw iganet::InvalidModelException();
-            
+
             // get degrees
             std::array<iganet::short_t, 2> degrees;
             for (iganet::short_t i = 0; i < parDim; ++i) {
@@ -122,143 +122,27 @@ extern "C"
               degrees[i] = tensor.item<int64_t>();
             }
 
-            bool nonuniform = false;           
+            bool nonuniform = false;
             std::shared_ptr<iganet::Model> m;
 
             if (nonuniform) {
 
-              // // Non-uniform B-splines
-              // switch (static_cast<enum iganet::webapp::degree>(degrees[0])) {
-              // case iganet::webapp::degree::constant:
-              //   switch (static_cast<enum iganet::webapp::degree>(degrees[1])) {
-              //   case iganet::webapp::degree::constant:
-              //     m = std::make_shared<iganet::webapp::BSplineModel<iganet::NonUniformBSpline<iganet::real_t, 3, 0,0>>>(); break;
-              //   case iganet::webapp::degree::linear:
-              //     m = std::make_shared<iganet::webapp::BSplineModel<iganet::NonUniformBSpline<iganet::real_t, 3, 0,1>>>(); break;
-              //   case iganet::webapp::degree::quadratic:
-              //     m = std::make_shared<iganet::webapp::BSplineModel<iganet::NonUniformBSpline<iganet::real_t, 3, 0,2>>>(); break;
-              //   case iganet::webapp::degree::cubic:
-              //     m = std::make_shared<iganet::webapp::BSplineModel<iganet::NonUniformBSpline<iganet::real_t, 3, 0,3>>>(); break;
-              //   case iganet::webapp::degree::quartic:
-              //     m = std::make_shared<iganet::webapp::BSplineModel<iganet::NonUniformBSpline<iganet::real_t, 3, 0,4>>>(); break;
-              //   case iganet::webapp::degree::quintic:
-              //     m = std::make_shared<iganet::webapp::BSplineModel<iganet::NonUniformBSpline<iganet::real_t, 3, 0,5>>>(); break;
-              //   default:
-              //     throw std::runtime_error("Invalid degree");
-              //   }
-              //   break;
-              // case iganet::webapp::degree::linear:
-              //   switch (static_cast<enum iganet::webapp::degree>(degrees[1])) {
-              //   case iganet::webapp::degree::constant:
-              //     m = std::make_shared<iganet::webapp::BSplineModel<iganet::NonUniformBSpline<iganet::real_t, 3, 1,0>>>(); break;
-              //   case iganet::webapp::degree::linear:
-              //     m = std::make_shared<iganet::webapp::BSplineModel<iganet::NonUniformBSpline<iganet::real_t, 3, 1,1>>>(); break;
-              //   case iganet::webapp::degree::quadratic:
-              //     m = std::make_shared<iganet::webapp::BSplineModel<iganet::NonUniformBSpline<iganet::real_t, 3, 1,2>>>(); break;
-              //   case iganet::webapp::degree::cubic:
-              //     m = std::make_shared<iganet::webapp::BSplineModel<iganet::NonUniformBSpline<iganet::real_t, 3, 1,3>>>(); break;
-              //   case iganet::webapp::degree::quartic:
-              //     m = std::make_shared<iganet::webapp::BSplineModel<iganet::NonUniformBSpline<iganet::real_t, 3, 1,4>>>(); break;
-              //   case iganet::webapp::degree::quintic:
-              //     m = std::make_shared<iganet::webapp::BSplineModel<iganet::NonUniformBSpline<iganet::real_t, 3, 1,5>>>(); break;
-              //   default:
-              //     throw std::runtime_error("Invalid degree");
-              //   }
-              //   break;
-              // case iganet::webapp::degree::quadratic:
-              //   switch (static_cast<enum iganet::webapp::degree>(degrees[1])) {
-              //   case iganet::webapp::degree::constant:
-              //     m = std::make_shared<iganet::webapp::BSplineModel<iganet::NonUniformBSpline<iganet::real_t, 3, 2,0>>>(); break;
-              //   case iganet::webapp::degree::linear:
-              //     m = std::make_shared<iganet::webapp::BSplineModel<iganet::NonUniformBSpline<iganet::real_t, 3, 2,1>>>(); break;
-              //   case iganet::webapp::degree::quadratic:
-              //     m = std::make_shared<iganet::webapp::BSplineModel<iganet::NonUniformBSpline<iganet::real_t, 3, 2,2>>>(); break;
-              //   case iganet::webapp::degree::cubic:
-              //     m = std::make_shared<iganet::webapp::BSplineModel<iganet::NonUniformBSpline<iganet::real_t, 3, 2,3>>>(); break;
-              //   case iganet::webapp::degree::quartic:
-              //     m = std::make_shared<iganet::webapp::BSplineModel<iganet::NonUniformBSpline<iganet::real_t, 3, 2,4>>>(); break;
-              //   case iganet::webapp::degree::quintic:
-              //     m = std::make_shared<iganet::webapp::BSplineModel<iganet::NonUniformBSpline<iganet::real_t, 3, 2,5>>>(); break;
-              //   default:
-              //     throw std::runtime_error("Invalid degree");
-              //   }
-              //   break;
-              // case iganet::webapp::degree::cubic:
-              //   switch (static_cast<enum iganet::webapp::degree>(degrees[1])) {
-              //   case iganet::webapp::degree::constant:
-              //     m = std::make_shared<iganet::webapp::BSplineModel<iganet::NonUniformBSpline<iganet::real_t, 3, 3,0>>>(); break;
-              //   case iganet::webapp::degree::linear:
-              //     m = std::make_shared<iganet::webapp::BSplineModel<iganet::NonUniformBSpline<iganet::real_t, 3, 3,1>>>(); break;
-              //   case iganet::webapp::degree::quadratic:
-              //     m = std::make_shared<iganet::webapp::BSplineModel<iganet::NonUniformBSpline<iganet::real_t, 3, 3,2>>>(); break;
-              //   case iganet::webapp::degree::cubic:
-              //     m = std::make_shared<iganet::webapp::BSplineModel<iganet::NonUniformBSpline<iganet::real_t, 3, 3,3>>>(); break;
-              //   case iganet::webapp::degree::quartic:
-              //     m = std::make_shared<iganet::webapp::BSplineModel<iganet::NonUniformBSpline<iganet::real_t, 3, 3,4>>>(); break;
-              //   case iganet::webapp::degree::quintic:
-              //     m = std::make_shared<iganet::webapp::BSplineModel<iganet::NonUniformBSpline<iganet::real_t, 3, 3,5>>>(); break;
-              //   default:
-              //     throw std::runtime_error("Invalid degree");
-              //   }
-              //   break;
-              // case iganet::webapp::degree::quartic:
-              //   switch (static_cast<enum iganet::webapp::degree>(degrees[1])) {
-              //   case iganet::webapp::degree::constant:
-              //     m = std::make_shared<iganet::webapp::BSplineModel<iganet::NonUniformBSpline<iganet::real_t, 3, 4,0>>>(); break;
-              //   case iganet::webapp::degree::linear:
-              //     m = std::make_shared<iganet::webapp::BSplineModel<iganet::NonUniformBSpline<iganet::real_t, 3, 4,1>>>(); break;
-              //   case iganet::webapp::degree::quadratic:
-              //     m = std::make_shared<iganet::webapp::BSplineModel<iganet::NonUniformBSpline<iganet::real_t, 3, 4,2>>>(); break;
-              //   case iganet::webapp::degree::cubic:
-              //     m = std::make_shared<iganet::webapp::BSplineModel<iganet::NonUniformBSpline<iganet::real_t, 3, 4,3>>>(); break;
-              //   case iganet::webapp::degree::quartic:
-              //     m = std::make_shared<iganet::webapp::BSplineModel<iganet::NonUniformBSpline<iganet::real_t, 3, 4,4>>>(); break;
-              //   case iganet::webapp::degree::quintic:
-              //     m = std::make_shared<iganet::webapp::BSplineModel<iganet::NonUniformBSpline<iganet::real_t, 3, 4,5>>>(); break;
-              //   default:
-              //     throw std::runtime_error("Invalid degree");
-              //   }
-              //   break;
-              // case iganet::webapp::degree::quintic:
-              //   switch (static_cast<enum iganet::webapp::degree>(degrees[1])) {
-              //   case iganet::webapp::degree::constant:
-              //     m = std::make_shared<iganet::webapp::BSplineModel<iganet::NonUniformBSpline<iganet::real_t, 3, 5,0>>>(); break;
-              //   case iganet::webapp::degree::linear:
-              //     m = std::make_shared<iganet::webapp::BSplineModel<iganet::NonUniformBSpline<iganet::real_t, 3, 5,1>>>(); break;
-              //   case iganet::webapp::degree::quadratic:
-              //     m = std::make_shared<iganet::webapp::BSplineModel<iganet::NonUniformBSpline<iganet::real_t, 3, 5,2>>>(); break;
-              //   case iganet::webapp::degree::cubic:
-              //     m = std::make_shared<iganet::webapp::BSplineModel<iganet::NonUniformBSpline<iganet::real_t, 3, 5,3>>>(); break;
-              //   case iganet::webapp::degree::quartic:
-              //     m = std::make_shared<iganet::webapp::BSplineModel<iganet::NonUniformBSpline<iganet::real_t, 3, 5,4>>>(); break;
-              //   case iganet::webapp::degree::quintic:
-              //     m = std::make_shared<iganet::webapp::BSplineModel<iganet::NonUniformBSpline<iganet::real_t, 3, 5,5>>>(); break;
-              //   default:
-              //     throw std::runtime_error("Invalid degree");
-              //   }
-              //   break;
-              // default:
-              //   throw std::runtime_error("Invalid degree");
-              // }
-              
-            } else {
-
-              // Uniform B-splines
+              // Non-uniform B-splines
               switch (static_cast<enum iganet::webapp::degree>(degrees[0])) {
               case iganet::webapp::degree::constant:
                 switch (static_cast<enum iganet::webapp::degree>(degrees[1])) {
                 case iganet::webapp::degree::constant:
-                  m = std::make_shared<iganet::webapp::BSplineModel<iganet::UniformBSpline<iganet::real_t, 3, 0,0>>>(); break;
+                  m = std::make_shared<iganet::webapp::BSplineModel<iganet::NonUniformBSpline<iganet::real_t, 3, 0, 0>>>(); break;
                 case iganet::webapp::degree::linear:
-                  m = std::make_shared<iganet::webapp::BSplineModel<iganet::UniformBSpline<iganet::real_t, 3, 0,1>>>(); break;
+                  m = std::make_shared<iganet::webapp::BSplineModel<iganet::NonUniformBSpline<iganet::real_t, 3, 0, 1>>>(); break;
                 case iganet::webapp::degree::quadratic:
-                  m = std::make_shared<iganet::webapp::BSplineModel<iganet::UniformBSpline<iganet::real_t, 3, 0,2>>>(); break;
+                  m = std::make_shared<iganet::webapp::BSplineModel<iganet::NonUniformBSpline<iganet::real_t, 3, 0, 2>>>(); break;
                 case iganet::webapp::degree::cubic:
-                  m = std::make_shared<iganet::webapp::BSplineModel<iganet::UniformBSpline<iganet::real_t, 3, 0,3>>>(); break;
+                  m = std::make_shared<iganet::webapp::BSplineModel<iganet::NonUniformBSpline<iganet::real_t, 3, 0, 3>>>(); break;
                 case iganet::webapp::degree::quartic:
-                  m = std::make_shared<iganet::webapp::BSplineModel<iganet::UniformBSpline<iganet::real_t, 3, 0,4>>>(); break;
+                  m = std::make_shared<iganet::webapp::BSplineModel<iganet::NonUniformBSpline<iganet::real_t, 3, 0, 4>>>(); break;
                 case iganet::webapp::degree::quintic:
-                  m = std::make_shared<iganet::webapp::BSplineModel<iganet::UniformBSpline<iganet::real_t, 3, 0,5>>>(); break;
+                  m = std::make_shared<iganet::webapp::BSplineModel<iganet::NonUniformBSpline<iganet::real_t, 3, 0, 5>>>(); break;
                 default:
                   throw std::runtime_error("Invalid degree");
                 }
@@ -266,17 +150,17 @@ extern "C"
               case iganet::webapp::degree::linear:
                 switch (static_cast<enum iganet::webapp::degree>(degrees[1])) {
                 case iganet::webapp::degree::constant:
-                  m = std::make_shared<iganet::webapp::BSplineModel<iganet::UniformBSpline<iganet::real_t, 3, 1,0>>>(); break;
+                  m = std::make_shared<iganet::webapp::BSplineModel<iganet::NonUniformBSpline<iganet::real_t, 3, 1, 0>>>(); break;
                 case iganet::webapp::degree::linear:
-                  m = std::make_shared<iganet::webapp::BSplineModel<iganet::UniformBSpline<iganet::real_t, 3, 1,1>>>(); break;
+                  m = std::make_shared<iganet::webapp::BSplineModel<iganet::NonUniformBSpline<iganet::real_t, 3, 1, 1>>>(); break;
                 case iganet::webapp::degree::quadratic:
-                  m = std::make_shared<iganet::webapp::BSplineModel<iganet::UniformBSpline<iganet::real_t, 3, 1,2>>>(); break;
+                  m = std::make_shared<iganet::webapp::BSplineModel<iganet::NonUniformBSpline<iganet::real_t, 3, 1, 2>>>(); break;
                 case iganet::webapp::degree::cubic:
-                  m = std::make_shared<iganet::webapp::BSplineModel<iganet::UniformBSpline<iganet::real_t, 3, 1,3>>>(); break;
+                  m = std::make_shared<iganet::webapp::BSplineModel<iganet::NonUniformBSpline<iganet::real_t, 3, 1, 3>>>(); break;
                 case iganet::webapp::degree::quartic:
-                  m = std::make_shared<iganet::webapp::BSplineModel<iganet::UniformBSpline<iganet::real_t, 3, 1,4>>>(); break;
+                  m = std::make_shared<iganet::webapp::BSplineModel<iganet::NonUniformBSpline<iganet::real_t, 3, 1, 4>>>(); break;
                 case iganet::webapp::degree::quintic:
-                  m = std::make_shared<iganet::webapp::BSplineModel<iganet::UniformBSpline<iganet::real_t, 3, 1,5>>>(); break;
+                  m = std::make_shared<iganet::webapp::BSplineModel<iganet::NonUniformBSpline<iganet::real_t, 3, 1, 5>>>(); break;
                 default:
                   throw std::runtime_error("Invalid degree");
                 }
@@ -284,17 +168,17 @@ extern "C"
               case iganet::webapp::degree::quadratic:
                 switch (static_cast<enum iganet::webapp::degree>(degrees[1])) {
                 case iganet::webapp::degree::constant:
-                  m = std::make_shared<iganet::webapp::BSplineModel<iganet::UniformBSpline<iganet::real_t, 3, 2,0>>>(); break;
+                  m = std::make_shared<iganet::webapp::BSplineModel<iganet::NonUniformBSpline<iganet::real_t, 3, 2, 0>>>(); break;
                 case iganet::webapp::degree::linear:
-                  m = std::make_shared<iganet::webapp::BSplineModel<iganet::UniformBSpline<iganet::real_t, 3, 2,1>>>(); break;
+                  m = std::make_shared<iganet::webapp::BSplineModel<iganet::NonUniformBSpline<iganet::real_t, 3, 2, 1>>>(); break;
                 case iganet::webapp::degree::quadratic:
-                  m = std::make_shared<iganet::webapp::BSplineModel<iganet::UniformBSpline<iganet::real_t, 3, 2,2>>>(); break;
+                  m = std::make_shared<iganet::webapp::BSplineModel<iganet::NonUniformBSpline<iganet::real_t, 3, 2, 2>>>(); break;
                 case iganet::webapp::degree::cubic:
-                  m = std::make_shared<iganet::webapp::BSplineModel<iganet::UniformBSpline<iganet::real_t, 3, 2,3>>>(); break;
+                  m = std::make_shared<iganet::webapp::BSplineModel<iganet::NonUniformBSpline<iganet::real_t, 3, 2, 3>>>(); break;
                 case iganet::webapp::degree::quartic:
-                  m = std::make_shared<iganet::webapp::BSplineModel<iganet::UniformBSpline<iganet::real_t, 3, 2,4>>>(); break;
+                  m = std::make_shared<iganet::webapp::BSplineModel<iganet::NonUniformBSpline<iganet::real_t, 3, 2, 4>>>(); break;
                 case iganet::webapp::degree::quintic:
-                  m = std::make_shared<iganet::webapp::BSplineModel<iganet::UniformBSpline<iganet::real_t, 3, 2,5>>>(); break;
+                  m = std::make_shared<iganet::webapp::BSplineModel<iganet::NonUniformBSpline<iganet::real_t, 3, 2, 5>>>(); break;
                 default:
                   throw std::runtime_error("Invalid degree");
                 }
@@ -302,17 +186,17 @@ extern "C"
               case iganet::webapp::degree::cubic:
                 switch (static_cast<enum iganet::webapp::degree>(degrees[1])) {
                 case iganet::webapp::degree::constant:
-                  m = std::make_shared<iganet::webapp::BSplineModel<iganet::UniformBSpline<iganet::real_t, 3, 3,0>>>(); break;
+                  m = std::make_shared<iganet::webapp::BSplineModel<iganet::NonUniformBSpline<iganet::real_t, 3, 3, 0>>>(); break;
                 case iganet::webapp::degree::linear:
-                  m = std::make_shared<iganet::webapp::BSplineModel<iganet::UniformBSpline<iganet::real_t, 3, 3,1>>>(); break;
+                  m = std::make_shared<iganet::webapp::BSplineModel<iganet::NonUniformBSpline<iganet::real_t, 3, 3, 1>>>(); break;
                 case iganet::webapp::degree::quadratic:
-                  m = std::make_shared<iganet::webapp::BSplineModel<iganet::UniformBSpline<iganet::real_t, 3, 3,2>>>(); break;
+                  m = std::make_shared<iganet::webapp::BSplineModel<iganet::NonUniformBSpline<iganet::real_t, 3, 3, 2>>>(); break;
                 case iganet::webapp::degree::cubic:
-                  m = std::make_shared<iganet::webapp::BSplineModel<iganet::UniformBSpline<iganet::real_t, 3, 3,3>>>(); break;
+                  m = std::make_shared<iganet::webapp::BSplineModel<iganet::NonUniformBSpline<iganet::real_t, 3, 3, 3>>>(); break;
                 case iganet::webapp::degree::quartic:
-                  m = std::make_shared<iganet::webapp::BSplineModel<iganet::UniformBSpline<iganet::real_t, 3, 3,4>>>(); break;
+                  m = std::make_shared<iganet::webapp::BSplineModel<iganet::NonUniformBSpline<iganet::real_t, 3, 3, 4>>>(); break;
                 case iganet::webapp::degree::quintic:
-                  m = std::make_shared<iganet::webapp::BSplineModel<iganet::UniformBSpline<iganet::real_t, 3, 3,5>>>(); break;
+                  m = std::make_shared<iganet::webapp::BSplineModel<iganet::NonUniformBSpline<iganet::real_t, 3, 3, 5>>>(); break;
                 default:
                   throw std::runtime_error("Invalid degree");
                 }
@@ -320,17 +204,17 @@ extern "C"
               case iganet::webapp::degree::quartic:
                 switch (static_cast<enum iganet::webapp::degree>(degrees[1])) {
                 case iganet::webapp::degree::constant:
-                  m = std::make_shared<iganet::webapp::BSplineModel<iganet::UniformBSpline<iganet::real_t, 3, 4,0>>>(); break;
+                  m = std::make_shared<iganet::webapp::BSplineModel<iganet::NonUniformBSpline<iganet::real_t, 3, 4, 0>>>(); break;
                 case iganet::webapp::degree::linear:
-                  m = std::make_shared<iganet::webapp::BSplineModel<iganet::UniformBSpline<iganet::real_t, 3, 4,1>>>(); break;
+                  m = std::make_shared<iganet::webapp::BSplineModel<iganet::NonUniformBSpline<iganet::real_t, 3, 4, 1>>>(); break;
                 case iganet::webapp::degree::quadratic:
-                  m = std::make_shared<iganet::webapp::BSplineModel<iganet::UniformBSpline<iganet::real_t, 3, 4,2>>>(); break;
+                  m = std::make_shared<iganet::webapp::BSplineModel<iganet::NonUniformBSpline<iganet::real_t, 3, 4, 2>>>(); break;
                 case iganet::webapp::degree::cubic:
-                  m = std::make_shared<iganet::webapp::BSplineModel<iganet::UniformBSpline<iganet::real_t, 3, 4,3>>>(); break;
+                  m = std::make_shared<iganet::webapp::BSplineModel<iganet::NonUniformBSpline<iganet::real_t, 3, 4, 3>>>(); break;
                 case iganet::webapp::degree::quartic:
-                  m = std::make_shared<iganet::webapp::BSplineModel<iganet::UniformBSpline<iganet::real_t, 3, 4,4>>>(); break;
+                  m = std::make_shared<iganet::webapp::BSplineModel<iganet::NonUniformBSpline<iganet::real_t, 3, 4, 4>>>(); break;
                 case iganet::webapp::degree::quintic:
-                  m = std::make_shared<iganet::webapp::BSplineModel<iganet::UniformBSpline<iganet::real_t, 3, 4,5>>>(); break;
+                  m = std::make_shared<iganet::webapp::BSplineModel<iganet::NonUniformBSpline<iganet::real_t, 3, 4, 5>>>(); break;
                 default:
                   throw std::runtime_error("Invalid degree");
                 }
@@ -338,24 +222,140 @@ extern "C"
               case iganet::webapp::degree::quintic:
                 switch (static_cast<enum iganet::webapp::degree>(degrees[1])) {
                 case iganet::webapp::degree::constant:
-                  m = std::make_shared<iganet::webapp::BSplineModel<iganet::UniformBSpline<iganet::real_t, 3, 5,0>>>(); break;
+                  m = std::make_shared<iganet::webapp::BSplineModel<iganet::NonUniformBSpline<iganet::real_t, 3, 5, 0>>>(); break;
                 case iganet::webapp::degree::linear:
-                  m = std::make_shared<iganet::webapp::BSplineModel<iganet::UniformBSpline<iganet::real_t, 3, 5,1>>>(); break;
+                  m = std::make_shared<iganet::webapp::BSplineModel<iganet::NonUniformBSpline<iganet::real_t, 3, 5, 1>>>(); break;
                 case iganet::webapp::degree::quadratic:
-                  m = std::make_shared<iganet::webapp::BSplineModel<iganet::UniformBSpline<iganet::real_t, 3, 5,2>>>(); break;
+                  m = std::make_shared<iganet::webapp::BSplineModel<iganet::NonUniformBSpline<iganet::real_t, 3, 5, 2>>>(); break;
                 case iganet::webapp::degree::cubic:
-                  m = std::make_shared<iganet::webapp::BSplineModel<iganet::UniformBSpline<iganet::real_t, 3, 5,3>>>(); break;
+                  m = std::make_shared<iganet::webapp::BSplineModel<iganet::NonUniformBSpline<iganet::real_t, 3, 5, 3>>>(); break;
                 case iganet::webapp::degree::quartic:
-                  m = std::make_shared<iganet::webapp::BSplineModel<iganet::UniformBSpline<iganet::real_t, 3, 5,4>>>(); break;
+                  m = std::make_shared<iganet::webapp::BSplineModel<iganet::NonUniformBSpline<iganet::real_t, 3, 5, 4>>>(); break;
                 case iganet::webapp::degree::quintic:
-                  m = std::make_shared<iganet::webapp::BSplineModel<iganet::UniformBSpline<iganet::real_t, 3, 5,5>>>(); break;
+                  m = std::make_shared<iganet::webapp::BSplineModel<iganet::NonUniformBSpline<iganet::real_t, 3, 5, 5>>>(); break;
                 default:
                   throw std::runtime_error("Invalid degree");
                 }
                 break;
               default:
                 throw std::runtime_error("Invalid degree");
-              }              
+              }
+
+            } else {
+
+              // Uniform B-splines
+              switch (static_cast<enum iganet::webapp::degree>(degrees[0])) {
+              case iganet::webapp::degree::constant:
+                switch (static_cast<enum iganet::webapp::degree>(degrees[1])) {
+                case iganet::webapp::degree::constant:
+                  m = std::make_shared<iganet::webapp::BSplineModel<iganet::UniformBSpline<iganet::real_t, 3, 0, 0>>>(); break;
+                case iganet::webapp::degree::linear:
+                  m = std::make_shared<iganet::webapp::BSplineModel<iganet::UniformBSpline<iganet::real_t, 3, 0, 1>>>(); break;
+                case iganet::webapp::degree::quadratic:
+                  m = std::make_shared<iganet::webapp::BSplineModel<iganet::UniformBSpline<iganet::real_t, 3, 0, 2>>>(); break;
+                case iganet::webapp::degree::cubic:
+                  m = std::make_shared<iganet::webapp::BSplineModel<iganet::UniformBSpline<iganet::real_t, 3, 0, 3>>>(); break;
+                case iganet::webapp::degree::quartic:
+                  m = std::make_shared<iganet::webapp::BSplineModel<iganet::UniformBSpline<iganet::real_t, 3, 0, 4>>>(); break;
+                case iganet::webapp::degree::quintic:
+                  m = std::make_shared<iganet::webapp::BSplineModel<iganet::UniformBSpline<iganet::real_t, 3, 0, 5>>>(); break;
+                default:
+                  throw std::runtime_error("Invalid degree");
+                }
+                break;
+              case iganet::webapp::degree::linear:
+                switch (static_cast<enum iganet::webapp::degree>(degrees[1])) {
+                case iganet::webapp::degree::constant:
+                  m = std::make_shared<iganet::webapp::BSplineModel<iganet::UniformBSpline<iganet::real_t, 3, 1, 0>>>(); break;
+                case iganet::webapp::degree::linear:
+                  m = std::make_shared<iganet::webapp::BSplineModel<iganet::UniformBSpline<iganet::real_t, 3, 1, 1>>>(); break;
+                case iganet::webapp::degree::quadratic:
+                  m = std::make_shared<iganet::webapp::BSplineModel<iganet::UniformBSpline<iganet::real_t, 3, 1, 2>>>(); break;
+                case iganet::webapp::degree::cubic:
+                  m = std::make_shared<iganet::webapp::BSplineModel<iganet::UniformBSpline<iganet::real_t, 3, 1, 3>>>(); break;
+                case iganet::webapp::degree::quartic:
+                  m = std::make_shared<iganet::webapp::BSplineModel<iganet::UniformBSpline<iganet::real_t, 3, 1, 4>>>(); break;
+                case iganet::webapp::degree::quintic:
+                  m = std::make_shared<iganet::webapp::BSplineModel<iganet::UniformBSpline<iganet::real_t, 3, 1, 5>>>(); break;
+                default:
+                  throw std::runtime_error("Invalid degree");
+                }
+                break;
+              case iganet::webapp::degree::quadratic:
+                switch (static_cast<enum iganet::webapp::degree>(degrees[1])) {
+                case iganet::webapp::degree::constant:
+                  m = std::make_shared<iganet::webapp::BSplineModel<iganet::UniformBSpline<iganet::real_t, 3, 2, 0>>>(); break;
+                case iganet::webapp::degree::linear:
+                  m = std::make_shared<iganet::webapp::BSplineModel<iganet::UniformBSpline<iganet::real_t, 3, 2, 1>>>(); break;
+                case iganet::webapp::degree::quadratic:
+                  m = std::make_shared<iganet::webapp::BSplineModel<iganet::UniformBSpline<iganet::real_t, 3, 2, 2>>>(); break;
+                case iganet::webapp::degree::cubic:
+                  m = std::make_shared<iganet::webapp::BSplineModel<iganet::UniformBSpline<iganet::real_t, 3, 2, 3>>>(); break;
+                case iganet::webapp::degree::quartic:
+                  m = std::make_shared<iganet::webapp::BSplineModel<iganet::UniformBSpline<iganet::real_t, 3, 2, 4>>>(); break;
+                case iganet::webapp::degree::quintic:
+                  m = std::make_shared<iganet::webapp::BSplineModel<iganet::UniformBSpline<iganet::real_t, 3, 2, 5>>>(); break;
+                default:
+                  throw std::runtime_error("Invalid degree");
+                }
+                break;
+              case iganet::webapp::degree::cubic:
+                switch (static_cast<enum iganet::webapp::degree>(degrees[1])) {
+                case iganet::webapp::degree::constant:
+                  m = std::make_shared<iganet::webapp::BSplineModel<iganet::UniformBSpline<iganet::real_t, 3, 3, 0>>>(); break;
+                case iganet::webapp::degree::linear:
+                  m = std::make_shared<iganet::webapp::BSplineModel<iganet::UniformBSpline<iganet::real_t, 3, 3, 1>>>(); break;
+                case iganet::webapp::degree::quadratic:
+                  m = std::make_shared<iganet::webapp::BSplineModel<iganet::UniformBSpline<iganet::real_t, 3, 3, 2>>>(); break;
+                case iganet::webapp::degree::cubic:
+                  m = std::make_shared<iganet::webapp::BSplineModel<iganet::UniformBSpline<iganet::real_t, 3, 3, 3>>>(); break;
+                case iganet::webapp::degree::quartic:
+                  m = std::make_shared<iganet::webapp::BSplineModel<iganet::UniformBSpline<iganet::real_t, 3, 3, 4>>>(); break;
+                case iganet::webapp::degree::quintic:
+                  m = std::make_shared<iganet::webapp::BSplineModel<iganet::UniformBSpline<iganet::real_t, 3, 3, 5>>>(); break;
+                default:
+                  throw std::runtime_error("Invalid degree");
+                }
+                break;
+              case iganet::webapp::degree::quartic:
+                switch (static_cast<enum iganet::webapp::degree>(degrees[1])) {
+                case iganet::webapp::degree::constant:
+                  m = std::make_shared<iganet::webapp::BSplineModel<iganet::UniformBSpline<iganet::real_t, 3, 4, 0>>>(); break;
+                case iganet::webapp::degree::linear:
+                  m = std::make_shared<iganet::webapp::BSplineModel<iganet::UniformBSpline<iganet::real_t, 3, 4, 1>>>(); break;
+                case iganet::webapp::degree::quadratic:
+                  m = std::make_shared<iganet::webapp::BSplineModel<iganet::UniformBSpline<iganet::real_t, 3, 4, 2>>>(); break;
+                case iganet::webapp::degree::cubic:
+                  m = std::make_shared<iganet::webapp::BSplineModel<iganet::UniformBSpline<iganet::real_t, 3, 4, 3>>>(); break;
+                case iganet::webapp::degree::quartic:
+                  m = std::make_shared<iganet::webapp::BSplineModel<iganet::UniformBSpline<iganet::real_t, 3, 4, 4>>>(); break;
+                case iganet::webapp::degree::quintic:
+                  m = std::make_shared<iganet::webapp::BSplineModel<iganet::UniformBSpline<iganet::real_t, 3, 4, 5>>>(); break;
+                default:
+                  throw std::runtime_error("Invalid degree");
+                }
+                break;
+              case iganet::webapp::degree::quintic:
+                switch (static_cast<enum iganet::webapp::degree>(degrees[1])) {
+                case iganet::webapp::degree::constant:
+                  m = std::make_shared<iganet::webapp::BSplineModel<iganet::UniformBSpline<iganet::real_t, 3, 5, 0>>>(); break;
+                case iganet::webapp::degree::linear:
+                  m = std::make_shared<iganet::webapp::BSplineModel<iganet::UniformBSpline<iganet::real_t, 3, 5, 1>>>(); break;
+                case iganet::webapp::degree::quadratic:
+                  m = std::make_shared<iganet::webapp::BSplineModel<iganet::UniformBSpline<iganet::real_t, 3, 5, 2>>>(); break;
+                case iganet::webapp::degree::cubic:
+                  m = std::make_shared<iganet::webapp::BSplineModel<iganet::UniformBSpline<iganet::real_t, 3, 5, 3>>>(); break;
+                case iganet::webapp::degree::quartic:
+                  m = std::make_shared<iganet::webapp::BSplineModel<iganet::UniformBSpline<iganet::real_t, 3, 5, 4>>>(); break;
+                case iganet::webapp::degree::quintic:
+                  m = std::make_shared<iganet::webapp::BSplineModel<iganet::UniformBSpline<iganet::real_t, 3, 5, 5>>>(); break;
+                default:
+                  throw std::runtime_error("Invalid degree");
+                }
+                break;
+              default:
+                throw std::runtime_error("Invalid degree");
+              }
             }
 
             if (auto m_ = std::dynamic_pointer_cast<iganet::ModelSerialize>(m))
