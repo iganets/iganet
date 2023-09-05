@@ -31,3 +31,9 @@ if(NOT ${CMAKE_VERSION} VERSION_LESS "3.16.0")
 
   target_precompile_headers(iganet_pch PUBLIC iganet.h PRIVATE ${HEADERS})
 endif()
+
+file(GLOB SOURCES *.hpp *.h)
+install(FILES ${SOURCES} DESTINATION include/iganet)
+
+file(GLOB SOURCES utils/*.hpp utils/*.h)
+install(FILES ${SOURCES} DESTINATION include/iganet/utils)

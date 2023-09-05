@@ -13,7 +13,7 @@
 ########################################################################
 
 ########################################################################
-# Modles
+# Models
 ########################################################################
 file(GLOB MODELS *.cxx)
 foreach(model ${MODELS})
@@ -22,4 +22,9 @@ foreach(model ${MODELS})
   add_library(${name} SHARED ${filename})
   target_link_libraries(${name} PUBLIC ${TORCH_LIBRARIES})
   target_link_libraries(${name} PUBLIC pugixml)
+
+  install(TARGETS ${name} DESTINATION models)
 endforeach()
+
+file(GLOB SOURCES *.hpp)
+install(FILES ${SOURCES} DESTINATION include/iganet/webapp/models)

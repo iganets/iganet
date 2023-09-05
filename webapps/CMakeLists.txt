@@ -36,7 +36,10 @@ include(uwebsockets)
 # Config file
 ########################################################################
 configure_file(${CMAKE_CURRENT_SOURCE_DIR}/config.hpp.in
-  "${CMAKE_CURRENT_BINARY_DIR}/config.hpp" @ONLY)
+  ${CMAKE_CURRENT_BINARY_DIR}/config.hpp @ONLY)
+
+install(FILES ${CMAKE_CURRENT_BINARY_DIR}/config.hpp
+  DESTINATION include/iganet/webapp)
             
 ########################################################################
 # Include directories
@@ -61,6 +64,13 @@ foreach(webapp ${WEBAPPS})
   target_link_libraries(${name} PUBLIC ${CMAKE_DL_LIBS})
   target_link_libraries(${name} PUBLIC usockets)
   target_link_libraries(${name} PUBLIC pugixml)
+
+  install(TARGETS ${name} DESTINATION bin)
 endforeach()
+
+install(FILES server.cfg DESTINATION etc)
+
+file(GLOB SOURCES *.hpp)
+install(FILES ${SOURCES} DESTINATION include/iganet/webapp)
 
 add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/models)
