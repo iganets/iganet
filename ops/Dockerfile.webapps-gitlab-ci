@@ -1,0 +1,32 @@
+FROM ubuntu:22.04
+
+# Install dependencies
+RUN apt-get update && apt-get install -y --no-install-recommends \
+        build-essential locales unzip wget zlib1g-dev libstdc++-11-dev \
+        python3-pip python3-setuptools
+
+RUN pip3 install websocket-client
+
+# Create locales
+RUN locale-gen --purge en_US.UTF-8
+RUN echo -e 'LANG="en_US.UTF-8"\nLANGUAGE="en_US:en"\n' > /etc/default/locale
+RUN export LANG=en_US.UTF-8
+RUN export LC_ALL=en_US.UTF-8
+
+# Install CMake
+ARG CMAKE_VERSION=3.24.4
+ARG CMAKE_OS=linux
+ARG CMAKE_ARCH=x86_64
+WORKDIR /opt
+RUN curl -fsSL --insecure -o cmake-${CMAKE_VERSION}-${CMAKE_OS}-${CMAKE_ARCH}.tar.gz https://github.com/Kitware/CMake/releases/download/v${CMAKE_VERSION}/cmake-${CMAKE_VERSION}-${CMAKE_OS}-${CMAKE_ARCH}.tar.gz \
+        && tar xvzf cmake-${CMAKE_VERSION}-${CMAKE_OS}-${CMAKE_ARCH}.tar.gz \
+        && rm cmake-${CMAKE_VERSION}-${CMAKE_OS}-${CMAKE_ARCH}.tar.gz
+
+ENV PATH="$PATH:/opt/cmake-${CMAKE_VERSION}-${CMAKE_OS}-${CMAKE_ARCH}/bin"
+
+# Install Torch
+ARG LIBTORCH_URL=https://download.pytorch.org/libtorch/cpu/libtorch-cxx11-abi-shared-with-deps-2.0.1%2Bcpu.zip
+WORKDIR /opt
+RUN curl -fsSL --insecure -o libtorch.zip ${LIBTORCH_URL} \
+        && unzip -q libtorch.zip \
+        && rm libtorch.zip
