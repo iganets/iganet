@@ -54,11 +54,23 @@ find_package(ZLIB REQUIRED)
 ########################################################################
 # WebApps
 ########################################################################
+
 file(GLOB WEBAPPS *.cxx)
+
 foreach(webapp ${WEBAPPS})
   file(RELATIVE_PATH filename ${CMAKE_CURRENT_SOURCE_DIR} ${webapp})
+
+  if (CMAKE_CUDA_COMPILER)
+    set_source_files_properties(${filename} PROPERTIES LANGUAGE CUDA)
+  endif()
+
   string(REPLACE ".cxx" "" name ${filename})
   add_executable(${name} ${filename})
+
+  if(NOT WIN32 AND NOT ${CMAKE_VERSION} VERSION_LESS "3.16.0")
+    target_precompile_headers(${name} REUSE_FROM iganet_pch)
+  endif()
+
   target_link_libraries(${name} PUBLIC ${TORCH_LIBRARIES})
   target_link_libraries(${name} PUBLIC ${ZLIB_LIBRARIES})
   target_link_libraries(${name} PUBLIC ${CMAKE_DL_LIBS})
