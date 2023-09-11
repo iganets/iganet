@@ -1304,11 +1304,11 @@ namespace iganet {
                                   derived_self_type<typename Spline::value_type,
                                                     Spline::geoDim(),
                                                     Spline::degree(0)+1>>,
-      S1<typename Spline::template
-         derived_self_type<typename Spline::value_type,
-                           Spline::geoDim(),
-                           Spline::degree(0)>>>;
-
+                               S1<typename Spline::template
+                                  derived_self_type<typename Spline::value_type,
+                                                    Spline::geoDim(),
+                                                    Spline::degree(0)>>>;
+    
     /// @brief Constructor
     /// @{
     TH1() = default;
@@ -1365,11 +1365,11 @@ namespace iganet {
                                                     Spline::geoDim(),
                                                     Spline::degree(0)+1,
                                                     Spline::degree(1)+1>>,
-      S2<typename Spline::template
-         derived_self_type<typename Spline::value_type,
-                           Spline::geoDim(),
-                           Spline::degree(0)+1,
-                           Spline::degree(1)+1>>,
+                               S2<typename Spline::template
+                                  derived_self_type<typename Spline::value_type,
+                                                    Spline::geoDim(),
+                                                    Spline::degree(0)+1,
+                                                    Spline::degree(1)+1>>,
                                S2<typename Spline::template
                                   derived_self_type<typename Spline::value_type,
                                                     Spline::geoDim(),
@@ -1446,12 +1446,12 @@ namespace iganet {
                                                     Spline::degree(0)+1,
                                                     Spline::degree(1)+1,
                                                     Spline::degree(2)+1>>,
-      S3<typename Spline::template
-         derived_self_type<typename Spline::value_type,
-                           Spline::geoDim(),
-                           Spline::degree(0)+1,
-                           Spline::degree(1)+1,
-                           Spline::degree(2)+1>>,
+                               S3<typename Spline::template
+                                  derived_self_type<typename Spline::value_type,
+                                                    Spline::geoDim(),
+                                                    Spline::degree(0)+1,
+                                                    Spline::degree(1)+1,
+                                                    Spline::degree(2)+1>>,
                                S3<typename Spline::template
                                   derived_self_type<typename Spline::value_type,
                                                     Spline::geoDim(),
@@ -1551,13 +1551,13 @@ namespace iganet {
                                                     Spline::degree(1)+1,
                                                     Spline::degree(2)+1,
                                                     Spline::degree(3)+1>>,
-      S4<typename Spline::template
-         derived_self_type<typename Spline::value_type,
-                           Spline::geoDim(),
-                           Spline::degree(0)+1,
-                           Spline::degree(1)+1,
-                           Spline::degree(2)+1,
-                           Spline::degree(3)+1>>,
+                               S4<typename Spline::template
+                                  derived_self_type<typename Spline::value_type,
+                                                    Spline::geoDim(),
+                                                    Spline::degree(0)+1,
+                                                    Spline::degree(1)+1,
+                                                    Spline::degree(2)+1,
+                                                    Spline::degree(3)+1>>,
                                S4<typename Spline::template
                                   derived_self_type<typename Spline::value_type,
                                                     Spline::geoDim(),
@@ -1635,10 +1635,10 @@ namespace iganet {
                                   derived_self_type<typename Spline::value_type,
                                                     Spline::geoDim(),
                                                     Spline::degree(0)+1>>,
-      S1<typename Spline::template
-         derived_self_type<typename Spline::value_type,
-                           Spline::geoDim(),
-                           Spline::degree(0)>>>;
+                               S1<typename Spline::template
+                                  derived_self_type<typename Spline::value_type,
+                                                    Spline::geoDim(),
+                                                    Spline::degree(0)>>>;
 
     /// @brief Constructor
     /// @{
@@ -1694,11 +1694,11 @@ namespace iganet {
                                                     Spline::geoDim(),
                                                     Spline::degree(0)+1,
                                                     Spline::degree(1)+1>>,
-      S2<typename Spline::template
-         derived_self_type<typename Spline::value_type,
-                           Spline::geoDim(),
-                           Spline::degree(0)+1,
-                           Spline::degree(1)+1>>,
+                               S2<typename Spline::template
+                                  derived_self_type<typename Spline::value_type,
+                                                    Spline::geoDim(),
+                                                    Spline::degree(0)+1,
+                                                    Spline::degree(1)+1>>,
                                S2<typename Spline::template
                                   derived_self_type<typename Spline::value_type,
                                                     Spline::geoDim(),
@@ -1775,12 +1775,12 @@ namespace iganet {
                                                     Spline::degree(0)+1,
                                                     Spline::degree(1)+1,
                                                     Spline::degree(2)+1>>,
-      S3<typename Spline::template
-         derived_self_type<typename Spline::value_type,
-                           Spline::geoDim(),
-                           Spline::degree(0)+1,
-                           Spline::degree(1)+1,
-                           Spline::degree(2)+1>>,
+                               S3<typename Spline::template
+                                  derived_self_type<typename Spline::value_type,
+                                                    Spline::geoDim(),
+                                                    Spline::degree(0)+1,
+                                                    Spline::degree(1)+1,
+                                                    Spline::degree(2)+1>>,
                                S3<typename Spline::template
                                   derived_self_type<typename Spline::value_type,
                                                     Spline::geoDim(),
@@ -1880,13 +1880,13 @@ namespace iganet {
                                                     Spline::degree(1)+1,
                                                     Spline::degree(2)+1,
                                                     Spline::degree(3)+1>>,
-      S4<typename Spline::template
-         derived_self_type<typename Spline::value_type,
-                           Spline::geoDim(),
-                           Spline::degree(0)+1,
-                           Spline::degree(1)+1,
-                           Spline::degree(2)+1,
-                           Spline::degree(3)+1>>,
+                               S4<typename Spline::template
+                                  derived_self_type<typename Spline::value_type,
+                                                    Spline::geoDim(),
+                                                    Spline::degree(0)+1,
+                                                    Spline::degree(1)+1,
+                                                    Spline::degree(2)+1,
+                                                    Spline::degree(3)+1>>,
                                S4<typename Spline::template
                                   derived_self_type<typename Spline::value_type,
                                                     Spline::geoDim(),
@@ -2023,11 +2023,11 @@ namespace iganet {
                                                     Spline::geoDim(),
                                                     Spline::degree(0)+1,
                                                     Spline::degree(1)>>,
-      S2<typename Spline::template
-         derived_self_type<typename Spline::value_type,
-                           Spline::geoDim(),
-                           Spline::degree(0),
-                           Spline::degree(1)+1>>,
+                               S2<typename Spline::template
+                                  derived_self_type<typename Spline::value_type,
+                                                    Spline::geoDim(),
+                                                    Spline::degree(0),
+                                                    Spline::degree(1)+1>>,
                                S2<typename Spline::template
                                   derived_self_type<typename Spline::value_type,
                                                     Spline::geoDim(),
@@ -2100,12 +2100,12 @@ namespace iganet {
                                                     Spline::degree(0)+1,
                                                     Spline::degree(1),
                                                     Spline::degree(2)>>,
-      S3<typename Spline::template
-         derived_self_type<typename Spline::value_type,
-                           Spline::geoDim(),
-                           Spline::degree(0),
-                           Spline::degree(1)+1,
-                           Spline::degree(2)>>,
+                               S3<typename Spline::template
+                                  derived_self_type<typename Spline::value_type,
+                                                    Spline::geoDim(),
+                                                    Spline::degree(0),
+                                                    Spline::degree(1)+1,
+                                                    Spline::degree(2)>>,
                                S3<typename Spline::template
                                   derived_self_type<typename Spline::value_type,
                                                     Spline::geoDim(),
@@ -2199,13 +2199,13 @@ namespace iganet {
                                                     Spline::degree(1),
                                                     Spline::degree(2),
                                                     Spline::degree(3)>>,
-      S4<typename Spline::template
-         derived_self_type<typename Spline::value_type,
-                           Spline::geoDim(),
-                           Spline::degree(0),
-                           Spline::degree(1)+1,
-                           Spline::degree(2),
-                           Spline::degree(3)>>,
+                               S4<typename Spline::template
+                                  derived_self_type<typename Spline::value_type,
+                                                    Spline::geoDim(),
+                                                    Spline::degree(0),
+                                                    Spline::degree(1)+1,
+                                                    Spline::degree(2),
+                                                    Spline::degree(3)>>,
                                S4<typename Spline::template
                                   derived_self_type<typename Spline::value_type,
                                                     Spline::geoDim(),
