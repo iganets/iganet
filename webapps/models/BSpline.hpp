@@ -594,7 +594,17 @@ namespace iganet {
                      const std::string& component,
                      std::size_t id) override {
 
-        BSpline_t::from_xml(xml, id, component);
+        if (component.empty()) {
+          BSpline_t::from_xml(xml, id, "geometry");
+          solution_.from_xml(xml, id, "solution");
+        } else {
+          if (component == "geometry")
+            BSpline_t::from_xml(xml, id, "geometry");
+          else if (component == "solution")
+            solution_.from_xml(xml, id, "solution");
+          else
+            throw std::runtime_error("Unsupported component");
+                }
       }
 
       /// @brief Exports the model to XML (as JSON object)
@@ -618,7 +628,17 @@ namespace iganet {
                                 const std::string& component,
                                 std::size_t id) override {
 
-        BSpline_t::to_xml(xml, id, component);
+        if (component.empty()) {
+          BSpline_t::to_xml(xml, id, "geometry");
+          solution_.to_xml(xml, id, "solution");
+        } else {
+          if (component == "geometry")
+            BSpline_t::to_xml(xml, id, "geometry");
+          else if (component == "solution")
+            solution_.to_xml(xml, id, "solution");
+          else
+            throw std::runtime_error("Unsupported component");
+        }
         return xml;
       }
     };
