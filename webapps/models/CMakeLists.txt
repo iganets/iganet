@@ -28,3 +28,17 @@ endforeach()
 
 file(GLOB SOURCES *.hpp)
 install(FILES ${SOURCES} DESTINATION include/iganet/webapp/models)
+
+########################################################################
+# Include directories
+########################################################################
+include_directories(${CMAKE_CURRENT_SOURCE_DIR} ${CMAKE_CURRENT_BINARY_DIR})
+
+########################################################################
+# JIT compiler
+########################################################################
+include("${PROJECT_SOURCE_DIR}/cmake/genJIT.cmake")
+genJITCompiler("${CMAKE_CURRENT_BINARY_DIR}/jit.hpp.in")
+
+install(FILES ${CMAKE_CURRENT_BINARY_DIR}/jit.hpp
+  DESTINATION include/iganet/webapp)

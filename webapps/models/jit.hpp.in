@@ -1,0 +1,237 @@
+/**
+   @file webapps/jit.hpp
+
+   @brief Just-in-time compiler
+
+   @author Matthias Moller
+
+   @copyright This file is part of the IgANet project
+
+   This Source Code Form is subject to the terms of the Mozilla Public
+   License, v. 2.0. If a copy of the MPL was not distributed with this
+   file, You can obtain one at http://mozilla.org/MPL/2.0/.
+*/
+
+#pragma once
+
+#include <unistd.h>
+
+#if defined(_WIN32)
+#include <direct.h>
+#include <windows.h>
+#else
+#include <dlfcn.h>
+#include <sys/stat.h>
+#endif
+
+#include <utils/fqn.hpp>
+
+namespace iganet {
+
+  class jit : protected utils::FullQualifiedName
+  {
+  public:
+    /// @brief Default constructor
+    jit()
+      : temp(getTempPath()),
+        cmd("@JIT_CXX_COMPILER@"),
+#if defined(_WIN32)      
+        flags("@JIT_CXX_FLAGS@ @JIT_INCLUDE_DIRECTORIES_WIN32@ @JIT_LIBRARIES_WIN32@"),
+        out("/Fo") // no space
+#else
+        flags("@JIT_CXX_FLAGS@ @JIT_INCLUDE_DIRECTORIES@ @JIT_LIBRARIES@"),
+        out("-o ")
+#endif        
+    {
+      char *env = std::getenv ("JIT_COMPILER_CMD");
+      if (env!=NULL) cmd = env;
+      
+      env = std::getenv ("JIT_COMPILER_FLAGS");
+      if (env!=NULL) flags = env;
+      
+      env = std::getenv ("JIT_COMPILER_TEMP");
+      if (env!=NULL) temp = env;
+    }
+
+    /// @brief Compile dynamical library
+    inline std::string compile(const std::string& src, const std::string& name) const {
+
+      // Determine library name and suffix
+      std::string hash = std::to_string(std::hash<std::string>()(src + cmd + flags));
+      std::string libname = temp + "lib" + name + hash;
+#if defined(_WIN32)
+      libname.append(".dll");      
+#elif defined(__APPLE__)
+      libname.append(".dylib");
+#elif defined(unix) || defined(__unix__) || defined(__unix)
+      libname.append(".so");
+#else
+#     error("Unsupported operating system")
+#endif
+      
+      // Create source file (if required)
+      std::ifstream libfile(libname.c_str());
+      if(!libfile) {
+
+        // Check if output directory exists
+        switch (fileExists(temp.c_str())) {
+          case (0) : // does not exist, create
+#if defined(_WIN32)
+            if (mkdir(temp.c_str()) != 0)
+              throw std::runtime_error("An error occured while creating the output directory");
+#else
+            if (mkdir(temp.c_str(), S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH) == -1)
+              throw std::runtime_error("An error occured while creating the output directory");
+#endif
+            break;
+        case (2) : // exists as a file
+          throw std::runtime_error("File with the same name exists");
+          break;
+        }
+
+        // Write source code to file
+        std::string srcname = temp + "lib" + name + hash + ".cxx";
+        std::ofstream srcfile(srcname.c_str());
+        
+        srcfile 
+          << "#ifdef _WIN32\n"
+          << "extern \"C\" __declspec(dllexport)\n"
+          << "#else\n"
+          << "extern \"C\"\n"
+          << "#endif\n"
+          << src;
+        srcfile.close();
+
+#ifdef _WIN32
+        // double quotes are better than single quotes..
+        std::string syscall = "\"\"" +
+          cmd + "\" " +
+          flags + " \"" +
+          srcname + "\" " +
+          + out + "\"" +
+          libname + "\"\"";
+#else
+        std::string syscall = "\"" +
+          cmd + "\" " +
+          flags + " \"" +
+          srcname + "\" " +
+          out + "\"" +
+          libname + "\"";
+#endif
+        std::cout << syscall << std::endl;
+      }
+      
+      return libname;
+    }
+      
+      
+    /// @brief Prints the object as a string
+    inline void pretty_print(std::ostream &os = std::cout) const noexcept override
+    {
+      os << name()
+         << "(\ncmd = " << cmd
+         << ", flags = " << flags
+         << ", output flag = " << out
+         << ", tempdir = " << temp << "\n)";      
+    }
+    
+  private:    
+    /// @brief Returns the native TEMP directory path
+    inline static std::string getTempPath()
+    {
+#if defined(_WIN32)
+      TCHAR temp[MAXPATH];
+      (void)GetTempPath(MAXPATH, // length of the buffer
+                        temp);    // buffer for path
+      return std::string(temp);
+#else      
+      // Typically, we should consider TMPDIR
+      //   http://pubs.opengroup.org/onlinepubs/9699919799/basedefs/V1_chap08.html#tag_08_03
+      //   https://en.wikipedia.org/wiki/TMPDIR&oldid=728654758
+      char* temp = std::getenv("TMPDIR");
+      
+      // getenv returns NULL ptr if the variable is unknown
+      // (http://en.cppreference.com/w/cpp/utility/program/getenv). If it is an
+      // empty string, we should also exclude it.
+      if (temp != NULL && temp[0] != '\0') {
+        // note: env variable needs no free
+        std::string path(temp);
+        makePath(path);
+        return path;
+      }
+      
+      // Okey, if first choice did not work, try this:
+      temp = std::getenv("TEMP");
+      if (temp != NULL && temp[0] != '\0') {
+        // note: env variable needs no free
+        std::string path(temp);
+        makePath(path);
+        return path;
+      }
+      
+      // And as third choice, use just current directory
+      // http://man7.org/linux/man-pages/man2/getcwd.2.html
+      temp = getcwd(NULL, 0);
+      if (NULL == temp)
+        throw std::runtime_error("getcwd returned NULL.");
+      
+      // The string is allocated using malloc, see the reference above
+      std::string path(temp);
+      std::free(temp);
+      makePath(path);
+      return path;
+#endif
+    }
+    
+    /// @brief Sets last character to the native path separator
+    inline static void makePath(std::string& str)
+    {
+      if (str.length() == 0)
+        str.push_back('.');
+      if (str[str.length() - 1] != getNativePathSeparator())
+        str.push_back(getNativePathSeparator());
+    }
+
+    /// @brief Returns an integer specifying the status if the given directory path exists
+    inline static int fileExists(const char* path)
+    {
+      struct stat info;
+      
+      if (stat(path, &info) != 0)
+        return 0; // does not exist
+      else if (info.st_mode & S_IFDIR)
+        return 1; // is directory
+      else
+        return 2; // is file
+    }
+
+    /// @brief  Returns all valid path separators
+    inline static const std::string& getValidPathSeparators()
+    {
+#if defined _WIN32 || defined __CYGWIN__
+      static const std::string ps("\\/");
+#else
+      static const std::string ps("/");
+#endif
+      return ps;
+    }
+    
+    /// @brief Returns the native path separator
+    inline static char getNativePathSeparator()
+    {
+      return getValidPathSeparators()[0];
+    }
+
+  private:
+    /// Strings
+    std::string temp, cmd, flags, out;
+  };
+
+  /// Print (as string) a jit object
+  std::ostream &operator<<(std::ostream &os, const jit& obj)
+  {
+    obj.pretty_print(os);
+    return os;
+  }
+  
+} // namespace iganet

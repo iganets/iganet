@@ -26,6 +26,7 @@
 #include <sys/stat.h>
 #endif
 
+#include <jit.hpp>
 #include <model.hpp>
 
 namespace iganet {
