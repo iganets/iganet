@@ -605,6 +605,98 @@ TEST_F(BoundaryTest, Boundary_parDim3_geoDim1_degrees234)
                            *(bspline_bdrFB.eval<deriv::dy+deriv::dz, false>(std::get<side::back-1>(xi))[0])));
 }
 
+TEST_F(BoundaryTest, Boundary_init)
+{
+  {
+    using iganet::side;
+    using BSpline = iganet::UniformBSpline<real_t, 1, 2, 3>;
+    iganet::Boundary<BSpline> boundary({5, 4}, iganet::init::zeros, options);
+
+    EXPECT_TRUE(torch::equal(boundary.side<side::west>().coeffs(0), torch::zeros(4, options)));
+    EXPECT_TRUE(torch::equal(boundary.side<side::east>().coeffs(0), torch::zeros(4, options)));
+
+    EXPECT_TRUE(torch::equal(boundary.side<side::north>().coeffs(0), torch::zeros(5, options)));
+    EXPECT_TRUE(torch::equal(boundary.side<side::south>().coeffs(0), torch::zeros(5, options)));
+  }
+
+  {
+    using iganet::side;
+    using BSpline = iganet::UniformBSpline<real_t, 1, 2, 3>;
+    iganet::Boundary<BSpline> boundary({5, 4}, iganet::init::ones, options);
+
+    EXPECT_TRUE(torch::equal(boundary.side<side::west>().coeffs(0), torch::ones(4, options)));
+    EXPECT_TRUE(torch::equal(boundary.side<side::east>().coeffs(0), torch::ones(4, options)));
+
+    EXPECT_TRUE(torch::equal(boundary.side<side::north>().coeffs(0), torch::ones(5, options)));
+    EXPECT_TRUE(torch::equal(boundary.side<side::south>().coeffs(0), torch::ones(5, options)));
+  }
+
+  {
+    using iganet::side;
+    using BSpline = iganet::UniformBSpline<real_t, 1, 2, 3>;
+    iganet::Boundary<BSpline> boundary({5, 4}, iganet::init::linear, options);
+    
+    EXPECT_TRUE(torch::equal(boundary.side<side::west>().coeffs(0), torch::linspace(0, 1, 4, options) ));
+    EXPECT_TRUE(torch::equal(boundary.side<side::east>().coeffs(0), torch::linspace(0, 1, 4, options)));
+
+    EXPECT_TRUE(torch::equal(boundary.side<side::north>().coeffs(0), torch::linspace(0, 1, 5, options)));
+    EXPECT_TRUE(torch::equal(boundary.side<side::south>().coeffs(0), torch::linspace(0, 1, 5, options)));
+  }
+
+  {
+    using iganet::side;
+    using BSpline = iganet::UniformBSpline<real_t, 1, 2, 3>;
+    iganet::Boundary<BSpline> boundary({5, 4}, iganet::init::greville, options);
+    
+    EXPECT_TRUE(torch::equal(boundary.side<side::west>().coeffs(0), torch::linspace(0, 1, 4, options) ));
+    EXPECT_TRUE(torch::equal(boundary.side<side::east>().coeffs(0), torch::linspace(0, 1, 4, options)));
+
+    EXPECT_TRUE(torch::equal(boundary.side<side::north>().coeffs(0), torch::linspace(0, 1, 5, options)));
+    EXPECT_TRUE(torch::equal(boundary.side<side::south>().coeffs(0), torch::linspace(0, 1, 5, options)));
+  }
+    
+}
+
+TEST_F(BoundaryTest, Boundary_refine)
+{
+}
+
+TEST_F(BoundaryTest, Boundary_copy_constructor)
+{
+}
+
+TEST_F(BoundaryTest, Boundary_clone_constructor)
+{
+}
+
+TEST_F(BoundaryTest, Boundary_move_constructor)
+{
+}
+
+TEST_F(BoundaryTest, Boundary_copy_assignment)
+{
+}
+
+TEST_F(BoundaryTest, Boundary_move_assignment)
+{
+}
+
+TEST_F(BoundaryTest, Boundary_read_write)
+{
+}
+
+TEST_F(BoundaryTest, Boundary_to_from_xml)
+{
+}
+
+TEST_F(BoundaryTest, Boundary_load_from_xml)
+{
+}
+
+TEST_F(BoundaryTest, Boundary_to_from_json)
+{
+}
+
 TEST_F(BoundaryTest, Boundary_query_property)
 {
   using BSpline = iganet::UniformBSpline<real_t, 1, 2, 3, 4>;
@@ -635,7 +727,7 @@ TEST_F(BoundaryTest, Boundary_requires_grad)
     using iganet::side;
     using BSpline = iganet::UniformBSpline<real_t, 1, 2, 3, 4>;
     iganet::Boundary<BSpline> boundary({5, 4, 7}, iganet::init::greville, options);
-
+ 
     EXPECT_FALSE( std::apply( []( auto... requires_grad ){ return (requires_grad || ...); },
                               boundary.requires_grad() ) );
 
@@ -680,26 +772,98 @@ TEST_F(BoundaryTest, Boundary_requires_grad)
       
       auto check = []( auto values ) {
         values[0]->operator[](0).backward();
-        //std::cout << xi[0].grad() << std::endl;
+        //std::cout << values[0].grad() << std::endl;
       };
       (check(values), ...);
       
     }, values);
-    exit(0);
+    //exit(0);
     
-    std::get<side::north-1>(values)[0]->operator[](0).backward();
-    std::cout << std::get<side::north-1>(xi)[0].grad() << std::endl;
+    // std::get<side::north-1>(values)[0]->operator[](0).backward();
+    // std::cout << std::get<side::north-1>(xi)[0].grad() << std::endl;
 
-    exit(0);
-    EXPECT_TRUE(torch::allclose(std::get<side::north-1>(xi)[0].grad(),
-                                iganet::utils::to_tensor<real_t>({1.0_r}, options)));
+    // exit(0);
+    // EXPECT_TRUE(torch::allclose(std::get<side::north-1>(xi)[0].grad(),
+    //                             iganet::utils::to_tensor<real_t>({1.0_r}, options)));
 
-    std::get<side::south-1>(values)[0]->operator[](0).backward();
-    EXPECT_TRUE(torch::allclose(std::get<side::south-1>(xi)[0].grad(),
-                                iganet::utils::to_tensor<real_t>({1.0_r}, options)));
+    // std::get<side::south-1>(values)[0]->operator[](0).backward();
+    // EXPECT_TRUE(torch::allclose(std::get<side::south-1>(xi)[0].grad(),
+    //                             iganet::utils::to_tensor<real_t>({1.0_r}, options)));
   }
 }
 
+TEST_F(BoundaryTest, Boundary_to_dtype)
+{
+  {
+    using iganet::side;
+    using BSpline = iganet::UniformBSpline<real_t, 1, 2, 3, 4>;
+    iganet::Boundary<BSpline> boundary({5, 4, 7}, iganet::init::greville, options);
+
+    auto boundary_double = boundary.to<double>();
+    auto boundary_float  = boundary.to<float>();
+
+    if constexpr (std::is_same<real_t, double>::value)
+      EXPECT_TRUE(boundary == boundary_double);
+    else
+      EXPECT_TRUE(boundary != boundary_double);
+    
+    if constexpr (std::is_same<real_t, float>::value)
+      EXPECT_TRUE(boundary == boundary_float);
+    else
+      EXPECT_TRUE(boundary != boundary_float);    
+  }
+
+  {
+    using iganet::side;
+    using BSpline = iganet::UniformBSpline<real_t, 1, 2, 3, 4>;
+    iganet::Boundary<BSpline> boundary({5, 4, 7}, iganet::init::greville, options);
+
+    auto boundary_double = boundary.to(iganet::Options<double>{});
+    auto boundary_float  = boundary.to(iganet::Options<float>{});
+
+    if constexpr (std::is_same<real_t, double>::value)
+      EXPECT_TRUE(boundary == boundary_double);
+    else
+      EXPECT_TRUE(boundary != boundary_double);
+    
+    if constexpr (std::is_same<real_t, float>::value)
+      EXPECT_TRUE(boundary == boundary_float);
+    else
+      EXPECT_TRUE(boundary != boundary_float);    
+  }
+}
+
+TEST_F(BoundaryTest, Boundary_to_device)
+{
+  {
+    using iganet::side;
+    using BSpline = iganet::UniformBSpline<real_t, 1, 2, 3, 4>;
+    iganet::Options<real_t> options = iganet::Options<real_t>{}.device(torch::kCPU);
+    iganet::Boundary<BSpline> boundary({5, 4, 7}, iganet::init::greville, options);
+
+    auto boundary_cpu = boundary.to(torch::kCPU);
+    EXPECT_TRUE(boundary == boundary_cpu);
+    
+    if (torch::cuda::is_available()) {
+      auto boundary_cuda = boundary.to(torch::kCUDA);
+      EXPECT_THROW((void)(boundary == boundary_cuda), c10::Error);
+    } else
+      EXPECT_THROW(boundary.to(torch::kCUDA), c10::Error);
+    
+    if (at::hasHIP()) {
+      auto boundary_hip = boundary.to(torch::kHIP);
+      EXPECT_THROW((void)(boundary == boundary_hip), c10::Error);
+    } else
+      EXPECT_THROW(boundary.to(torch::kHIP), c10::Error);
+    
+    if (at::hasMPS() && // will become torch::mps::is_available()
+        (options.dtype() != iganet::dtype<double>())) {
+      auto boundary_mps = boundary.to(torch::kMPS);
+      EXPECT_THROW((void)(boundary == boundary_mps), c10::Error);
+    } else
+      EXPECT_THROW(boundary.to(torch::kMPS), c10::Error);    
+  }
+}
 
 int main(int argc, char **argv) {
   ::testing::InitGoogleTest(&argc, argv);

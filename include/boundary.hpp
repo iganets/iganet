@@ -39,10 +39,23 @@ namespace iganet {
   class BoundaryCore<Spline, /* parDim */1>
     : public utils::Serializable, private utils::FullQualifiedName
   {
+    /// @brief Enable access to private members
+    template<typename BoundaryCore> friend class BoundaryCommon;
+    
   protected:
+    /// @brief Spline type
+    using spline_type = Spline;
+    
     /// @brief Boundary spline type
     using boundary_spline_type = typename Spline::template
       derived_self_type<typename Spline::value_type,
+                        Spline::geoDim()>;
+
+    /// @brief Deduces the derived boundary spline type when exposed
+    /// to a different class template parameter `real_t`
+    template<typename real_t>
+    using real_derived_boundary_spline_type = typename Spline::template
+      derived_self_type<real_t,
                         Spline::geoDim()>;
     
     /// @brief Tuple of splines
@@ -59,6 +72,16 @@ namespace iganet {
     
     /// @brief Default constructor
     BoundaryCore() = default;
+
+    /// @brief Copy constructor
+    BoundaryCore(const boundary_type& bdr_)
+      : bdr_(bdr_)
+    {}
+
+    /// @brief Move constructor
+    BoundaryCore(boundary_type&& bdr_)
+      : bdr_(bdr_)
+    {}
 
     /// @brief Constructor
     BoundaryCore(const std::array<int64_t, 1>&,
@@ -169,7 +192,13 @@ namespace iganet {
   class BoundaryCore<Spline, /* parDim */2>
     : public utils::Serializable, private utils::FullQualifiedName
   {
+    /// @brief Enable access to private members
+    template<typename BoundaryCore> friend class BoundaryCommon;
+    
   protected:
+    /// @brief Spline type
+    using spline_type = Spline;
+    
     /// @brief Boundary spline type
     using boundary_spline_type = std::tuple<
     typename Spline::template
@@ -178,6 +207,19 @@ namespace iganet {
                       Spline::degree(1)>,
     typename Spline::template
     derived_self_type<typename Spline::value_type,
+                      Spline::geoDim(),
+                      Spline::degree(0)>>;
+
+    /// @brief Deduces the derived boundary spline type when exposed
+    /// to a different class template parameter `real_t`
+    template<typename real_t>
+    using real_derived_boundary_spline_type = std::tuple<
+    typename Spline::template
+    derived_self_type<real_t,
+                      Spline::geoDim(),
+                      Spline::degree(1)>,
+    typename Spline::template
+    derived_self_type<real_t,
                       Spline::geoDim(),
                       Spline::degree(0)>>;
     
@@ -199,6 +241,16 @@ namespace iganet {
     
     /// @brief Default constructor
     BoundaryCore() = default;
+
+    /// @brief Copy constructor
+    BoundaryCore(const boundary_type& bdr_)
+      : bdr_(bdr_)
+    {}
+
+    /// @brief Move constructor
+    BoundaryCore(boundary_type&& bdr_)
+      : bdr_(bdr_)
+    {}
     
     /// @brief Constructor
     BoundaryCore(const std::array<int64_t, 2>& ncoeffs,
@@ -323,7 +375,13 @@ namespace iganet {
   class BoundaryCore<Spline, /* parDim */3>
     : public utils::Serializable, private utils::FullQualifiedName
   {
+    /// @brief Enable access to private members
+    template<typename BoundaryCore> friend class BoundaryCommon;
+    
   protected:
+    /// @brief Spline type
+    using spline_type = Spline;
+    
     /// @brief Boundary spline type
     using boundary_spline_type = std::tuple<
     typename Spline::template
@@ -339,6 +397,23 @@ namespace iganet {
                       Spline::geoDim(),
                       Spline::degree(0), Spline::degree(1)>>;
 
+    /// @brief Deduces the derived boundary spline type when exposed
+    /// to a different class template parameter `real_t`
+    template<typename real_t>
+    using real_derived_boundary_spline_type = std::tuple<
+    typename Spline::template
+    derived_self_type<real_t,
+                      Spline::geoDim(),
+                      Spline::degree(1), Spline::degree(2)>,
+    typename Spline::template
+    derived_self_type<real_t,
+                      Spline::geoDim(),
+                      Spline::degree(0), Spline::degree(2)>,
+    typename Spline::template
+    derived_self_type<real_t,
+                      Spline::geoDim(),
+                      Spline::degree(0), Spline::degree(1)>>;
+    
     /// @brief Tuple of splines
     std::tuple<typename std::tuple_element_t<0,boundary_spline_type>,
                typename std::tuple_element_t<0,boundary_spline_type>,
@@ -361,6 +436,16 @@ namespace iganet {
     
     /// @brief Default constructor
     BoundaryCore() = default;
+
+    /// @brief Copy constructor
+    BoundaryCore(const boundary_type& bdr_)
+      : bdr_(bdr_)
+    {}
+
+    /// @brief Move constructor
+    BoundaryCore(boundary_type&& bdr_)
+      : bdr_(bdr_)
+    {}
     
     /// @brief Constructor
     BoundaryCore(const std::array<int64_t, 3>& ncoeffs,
@@ -499,7 +584,13 @@ namespace iganet {
   class BoundaryCore<Spline, /* parDim */4>
     : public utils::Serializable, private utils::FullQualifiedName
   {
+    /// @brief Enable access to private members
+    template<typename BoundaryCore> friend class BoundaryCommon;
+    
   protected:
+    /// @brief Spline type
+    using spline_type = Spline;
+    
     /// @brief Array storing the degrees
     using boundary_spline_type = std::tuple<
     typename Spline::template
@@ -518,7 +609,28 @@ namespace iganet {
     derived_self_type<typename Spline::value_type,
                       Spline::geoDim(),
                       Spline::degree(0), Spline::degree(1), Spline::degree(2)>>;
-        
+
+    /// @brief Deduces the derived boundary spline type when exposed
+    /// to a different class template parameter `real_t`
+    template<typename real_t>
+    using real_derived_boundary_spline_type = std::tuple<
+    typename Spline::template
+    derived_self_type<real_t,
+                      Spline::geoDim(),
+                      Spline::degree(1), Spline::degree(2), Spline::degree(3)>,
+    typename Spline::template
+    derived_self_type<real_t,
+                      Spline::geoDim(),
+                      Spline::degree(0), Spline::degree(2), Spline::degree(3)>,
+    typename Spline::template
+    derived_self_type<real_t,
+                      Spline::geoDim(),
+                      Spline::degree(0), Spline::degree(1), Spline::degree(3)>,
+    typename Spline::template
+    derived_self_type<real_t,
+                      Spline::geoDim(),
+                      Spline::degree(0), Spline::degree(1), Spline::degree(2)>>;
+    
     /// @brief Tuple of splines
     std::tuple<typename std::tuple_element_t<0,boundary_spline_type>,
                typename std::tuple_element_t<0,boundary_spline_type>,
@@ -545,6 +657,16 @@ namespace iganet {
     
     /// @brief Default constructor
     BoundaryCore() = default;
+
+    /// @brief Copy constructor
+    BoundaryCore(const boundary_type& bdr_)
+      : bdr_(bdr_)
+    {}
+
+    /// @brief Move constructor
+    BoundaryCore(boundary_type&& bdr_)
+      : bdr_(bdr_)
+    {}
     
     /// @brief Constructor
     BoundaryCore(const std::array<int64_t, 4>& ncoeffs,
@@ -1001,9 +1123,9 @@ namespace iganet {
   public:
     /// @brief Returns true if both boundary spline objects are the
     /// same
-    template<size_t... Is>
+    template<typename BoundaryCore_, size_t... Is>
     inline bool is_equal(std::index_sequence<Is...>,
-                         const BoundaryCommon& other) const
+                         const BoundaryCommon<BoundaryCore_>& other) const
     {
       return ((std::get<Is>(BoundaryCore::bdr_) == std::get<Is>(other.coeffs())) &&  ...);
     }
@@ -1054,15 +1176,17 @@ namespace iganet {
     
   public:
     /// @brief Returns true if both boundary objects are the same
-    inline bool operator==(const BoundaryCommon& other) const
+    template<typename BoundaryCore_>
+    inline bool operator==(const BoundaryCommon<BoundaryCore_>& other) const
     {
       return is_equal(std::make_index_sequence<BoundaryCore::sides()>{}, other);
     }
 
-    /// @brief Returns true if both boundaryt objects are different
-    inline bool operator!=(const BoundaryCommon& other) const
+    /// @brief Returns true if both boundary objects are different
+    template<typename BoundaryCore_>
+    inline bool operator!=(const BoundaryCommon<BoundaryCore_>& other) const
     {
-      return *this != other;
+      return !(*this==other); // Do not change this to (*this != other) is it does not work
     }
 
 #define GENERATE_EXPR_MACRO(r, data, name)                              \
@@ -1175,64 +1299,105 @@ namespace iganet {
     /// @brief Returns the `device` property of all splines
     auto device() const noexcept
     {
-      return std::apply([]( auto... bspline ){ return std::make_tuple(bspline.device()...); },
+      return std::apply([](const auto&... bspline){ return std::make_tuple(bspline.device()...); },
                         BoundaryCore::bdr_);
     }
 
     /// @brief Returns the `device_index` property of all splines
     auto device_index() const noexcept
     {
-      return std::apply([]( auto... bspline ){ return std::make_tuple(bspline.device_index()...); },
+      return std::apply([](const auto&... bspline){ return std::make_tuple(bspline.device_index()...); },
                         BoundaryCore::bdr_);
     }
 
     /// @brief Returns the `dtype` property of all splines
     auto dtype() const noexcept
     {
-      return std::apply([]( auto... bspline ){ return std::make_tuple(bspline.dtype()...); },
+      return std::apply([](const auto&... bspline){ return std::make_tuple(bspline.dtype()...); },
                         BoundaryCore::bdr_);
     }
 
     /// @brief Returns the `layout` property of all splines
     auto layout() const noexcept
     {
-      return std::apply([]( auto... bspline ){ return std::make_tuple(bspline.layout()...); },
+      return std::apply([](const auto&... bspline){ return std::make_tuple(bspline.layout()...); },
                         BoundaryCore::bdr_);
     }
     
     /// @brief Returns the `requires_grad` property of all splines
     auto requires_grad() const noexcept
     {
-      return std::apply([]( auto... bspline ){ return std::make_tuple(bspline.requires_grad()...); },
+      return std::apply([](const auto&... bspline){ return std::make_tuple(bspline.requires_grad()...); },
                         BoundaryCore::bdr_);
     }
 
     /// @brief Returns the `pinned_memory` property of all splines
     auto pinned_memory() const noexcept
     {
-      return std::apply([]( auto... bspline ){ return std::make_tuple(bspline.pinned_memory()...); },
+      return std::apply([](const auto&... bspline){ return std::make_tuple(bspline.pinned_memory()...); },
                         BoundaryCore::bdr_);
     }
 
     /// @brief Returns if the layout is sparse of all splines
     auto is_sparse() const noexcept
     {
-      return std::apply([]( auto... bspline ){ return std::make_tuple(bspline.is_sparse()...); },
+      return std::apply([](const auto&... bspline){ return std::make_tuple(bspline.is_sparse()...); },
                         BoundaryCore::bdr_);
     }
 
     /// @brief Returns true if the B-spline is uniform of all splines
     auto is_uniform() const noexcept {
-      return std::apply([]( auto... bspline ){ return std::make_tuple(bspline.is_uniform()...); },
+      return std::apply([](const auto&... bspline){ return std::make_tuple(bspline.is_uniform()...); },
                         BoundaryCore::bdr_);
     }
 
     /// @brief Returns true if the B-spline is non-uniform if all splines
     auto is_nonuniform() const noexcept {
-      return std::apply([]( auto... bspline ){ return std::make_tuple(bspline.is_nonuniform()...); },
+      return std::apply([](const auto&... bspline){ return std::make_tuple(bspline.is_nonuniform()...); },
                         BoundaryCore::bdr_);
     }
 
+    /// @brief Sets the boundary object's `requires_grad` property
+    BoundaryCommon& set_requires_grad(bool requires_grad)
+    {
+      std::apply([requires_grad](const auto&... bspline){ (bspline.set_requires_grad(requires_grad), ...); },
+                 BoundaryCore::bdr_);
+
+      return *this;
+    }
+
+    /// @brief Returns a copy of the boundary object with settings from options
+    template<typename real_t>
+    inline auto to(Options<real_t> options) const
+    {
+      using boundary_type =
+        BoundaryCommon<iganet::BoundaryCore<decltype(typename
+                                                     BoundaryCore::spline_type{}.template to(options)),
+                                            BoundaryCore::spline_type::parDim()>>;
+      
+      return boundary_type(std::apply([&options](const auto&... bspline){ return std::make_tuple(bspline.template to(options)...); },
+                                      BoundaryCore::bdr_));      
+    }
+
+    /// @brief Returns a copy of the boundary object with settings from device
+    inline auto to(torch::Device device) const
+    {     
+      return BoundaryCommon(std::apply([&device](const auto&... bspline){ return std::make_tuple(bspline.to(device)...); },
+                                       BoundaryCore::bdr_));      
+    }
+
+    /// @brief Returns a copy of the boundary object with real_t type
+    template<typename real_t>
+    inline auto to() const
+    {
+      using boundary_type =
+        BoundaryCommon<iganet::BoundaryCore<decltype(typename
+                                                     BoundaryCore::spline_type{}.template to<real_t>()),
+                                            BoundaryCore::spline_type::parDim()>>;
+
+      return boundary_type(std::apply([](const auto&... bspline){ return std::make_tuple(bspline.template to<real_t>()...); },
+                                      BoundaryCore::bdr_));
+    }
     
   };
 
