@@ -1,6 +1,6 @@
 # WebApp protocol
 
-_Version: 0.10 (05-09-2023)_
+_Version: 0.11 (025-09-2023)_
 
 ## Table of content
 
@@ -22,15 +22,16 @@ _Version: 0.10 (05-09-2023)_
     *   [Get all attributes of all components of a specific model](protocol.md#get-all-attributes-of-all-components-of-a-specific-model)
     *   [Get all attributes of a specific component of a specific instance](protocol.md#get-all-attributes-of-a-specific-component-of-a-specific-instance)
     *   [Get a specific attribute of a specific component of a specific instance](protocol.md#get-a-specific-attribute-of-a-specific-component-of-a-specific-instance)
-    *   [Update a specific model instance](protocol.md#update-a-specific-model-instance)
+    *   [Update a global attribute of a specific model instance](protocol.md#update-a-global-attribute-of-a-specific-model-instance)
     *   [Update a specific attribute of a specific component of a specific model instance](protocol.md#update-a-specific-attribute-of-a-specific-component-of-a-specific-model-instance)
     *   [Evaluate a specific component of a specific model instance](protocol.md#evaluate-a-specific-component-of-a-specific-model-instance)
     *   [Refine a specific model instance](protocol.md#refine-a-specific-model-instance)
-    *   [Update a specific models of a session by importing data from an XML file](protocol.md#update-a-specific-models-of-a-session-by-importing-data-from-an-xml-file)
+    *   [Update a specific component of a specific model instance by importing data from an XML file](protocol.md#update-a-specific-component-of-a-specific-model-instance-by-importing-data-from-an-xml-file)
     *   [Export a specific model instance as XML file](protocol.md#export-a-specific-model-instance-as-xml-file)
     *   [Export a specific component of a specific model instance as XML file](protocol.md#export-a-specific-component-of-a-specific-model-instance-as-xml-file)
 
 5.  [Models](protocol.md#models)
+    *   [Global model attributes](protocol.md#global-model-attributes)
     *   [B-spline models](protocol.md#b-spline-models)
         *   [B-spline model options](protocol.md#b-spline-model-options)
         *   [B-spline model attributes](protocol.md#b-spline-model-attributes)
@@ -476,7 +477,7 @@ or
 ```
 The `data` will be formatted in the same format as in the _get all attributes_ case.
 
-### Update a specific model instance
+### Update a global attribute of a specific model instance
 
 _Client request_
 ```json
@@ -709,17 +710,38 @@ or
 
 All models support the following global attributes:
 
+#### Transform
+
+The [transformation matrix](https://en.wikipedia.org/wiki/Transformation_matrix) is a [4x4 matrix](https://threejs.org/docs/#api/en/math/Matrix4) from which the global translation and rotation of the model can be computed.
+
+Each model stores this matrix internally and returns its values upon request:
+
+_Client request_
 ```json
-"data" : { 
-            "offset"   : [<comma-separated list of floats>],
-            "rotation" : [<comma-separated list of floats>]
-         }
+"request" : "get/<session-id>/<instance>/transform"
 ```
--   The attribute `offset` gets/sets the global offset of the model instance from the origin `[0,0,0]` in the form `[x-offset, y-offset, z-offset]`.
 
--   The attribute `rotation` gets/sets the global rotation of the model instance from the original in the form `[x-offset, y-offset, z-offset]`.
+_Server response_
+```json
+"status" : success(0),
+"data"   : { 
+              "elements" : [<comma-separated list of floats>]
+           }
+```
 
+The model's internal transformation matrix can be updated by the following request:
+_Client request_
+```json
+"request" : "put/<session-id>/<instance>/transform",
+"data"    : { 
+               "elements" : [<comma-separated list of floats>]
+            }
+```
 
+_Server response_
+```json
+"status" : success(0)
+```
 
 ### B-spline models
 
@@ -856,7 +878,3 @@ The `iotype descriptor` must be one of the following
  | `importXML`   | import object from XML file | 201 |
  | `exportXML`   | export object to XML file   | 202 |
 ---
-
-# TODO
-
-2. global translate and rotate parameter
