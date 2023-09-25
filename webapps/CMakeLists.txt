@@ -35,12 +35,12 @@ include(uwebsockets)
 ########################################################################
 # Config file
 ########################################################################
-configure_file(${CMAKE_CURRENT_SOURCE_DIR}/config.hpp.in
-  ${CMAKE_CURRENT_BINARY_DIR}/config.hpp @ONLY)
+configure_file(${PROJECT_SOURCE_DIR}/webapps/config.hpp.in
+  ${PROJECT_BINARY_DIR}/webapps/config.hpp @ONLY)
 
-install(FILES ${CMAKE_CURRENT_BINARY_DIR}/config.hpp
+install(FILES ${PROJECT_BINARY_DIR}/webapps/config.hpp
   DESTINATION include/iganet/webapp)
-            
+
 ########################################################################
 # Include directories
 ########################################################################
