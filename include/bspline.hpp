@@ -2388,7 +2388,7 @@ namespace iganet {
     /// @brief Returns true if both B-spline objects are close up to the given tolerance
     template<typename real_t_, short_t GeoDim_, short_t... Degrees_>
     bool isclose(const UniformBSplineCore<real_t_, GeoDim_, Degrees_...>& other,
-		 real_t rtol = real_t{1e-5}, real_t atol = real_t{1e-8}) const
+                 real_t rtol = real_t{1e-5}, real_t atol = real_t{1e-8}) const
     {
       if constexpr (!std::is_same<real_t, real_t_>::value) return false;
       bool result(true);
@@ -3535,10 +3535,10 @@ namespace iganet {
       result.ncoeffs_reverse_ = BSplineCore::ncoeffs_reverse_;
 
       for (short_t i=0; i<BSplineCore::parDim_; ++i)
-	result.knots_[i] = BSplineCore::knots_[i].to(options);
+        result.knots_[i] = BSplineCore::knots_[i].to(options);
 
       for (short_t i=0; i<BSplineCore::geoDim_; ++i)
-	result.coeffs_[i] = BSplineCore::coeffs_[i].to(options);
+        result.coeffs_[i] = BSplineCore::coeffs_[i].to(options);
 
       return result;
     }
@@ -3561,7 +3561,7 @@ namespace iganet {
       return result;
     }
 
-    /// @brief Returns a copy of the B-spline object with settings from device
+    /// @brief Returns a copy of the B-spline object with real_t type
     template<typename real_t>
     inline auto to() const
     {
