@@ -349,6 +349,10 @@ int main(int argc, char const* argv[])
                   //
                   // request: get/<session-id>/<model-instance>/<model-component>
                   //
+                  // or
+                  //
+                  // request: get/<session-id>/<model-instance>/<global-attribute>
+                  //
                   
                   // Get session
                   auto session = ws->getUserData()->getSession(tokens[1]);
