@@ -1,5 +1,5 @@
 /**
-   @file models/BSpline.hpp
+   @file models/BSplineModel.hpp
 
    @brief BSpline model
 
@@ -257,25 +257,53 @@ namespace iganet {
       /// @brief Serializes the model to JSON
       nlohmann::json to_json(const std::string& component,
                              const std::string& attribute) const override {
-        if (attribute != "") {
-          nlohmann::json data;
-          if (attribute == "degrees")
-            data["degrees"] = this->degrees();
-          else if (attribute == "geoDim")
-            data["geoDim"] = this->geoDim();
-          else if (attribute == "parDim")
-            data["parDim"] = this->parDim();
-          else if (attribute == "ncoeffs")
-            data["ncoeffs"] = this->ncoeffs();
-          else if (attribute == "nknots")
-            data["nknots"] = this->nknots();
-          else if (attribute == "knots")
-            data["knots"] = this->knots_to_json();
-          else if (attribute == "coeffs")
-            data["coeffs"] = this->coeffs_to_json();
-          return data;
-        } else
-          return BSpline_t::to_json();
+
+        if (component == "geometry" || component == "" /* might be removed in the future */) {
+          if (attribute != "") {
+            nlohmann::json data;
+            if (attribute == "degrees")
+              data["degrees"] = this->degrees();
+            else if (attribute == "geoDim")
+              data["geoDim"] = this->geoDim();
+            else if (attribute == "parDim")
+              data["parDim"] = this->parDim();
+            else if (attribute == "ncoeffs")
+              data["ncoeffs"] = this->ncoeffs();
+            else if (attribute == "nknots")
+              data["nknots"] = this->nknots();
+            else if (attribute == "knots")
+              data["knots"] = this->knots_to_json();
+            else if (attribute == "coeffs")
+              data["coeffs"] = this->coeffs_to_json();
+            return data;
+          } else
+            return BSpline_t::to_json();
+        }          
+
+        else if (component == "solution") {
+          if (attribute != "") {
+            nlohmann::json data;
+            if (attribute == "degrees")
+              data["degrees"] = solution_.degrees();
+            else if (attribute == "geoDim")
+              data["geoDim"] = solution_.geoDim();
+            else if (attribute == "parDim")
+              data["parDim"] = solution_.parDim();
+            else if (attribute == "ncoeffs")
+              data["ncoeffs"] = solution_.ncoeffs();
+            else if (attribute == "nknots")
+              data["nknots"] = solution_.nknots();
+            else if (attribute == "knots")
+              data["knots"] = solution_.knots_to_json();
+            else if (attribute == "coeffs")
+              data["coeffs"] = solution_.coeffs_to_json();
+            return data;
+          } else
+            return solution_.to_json();
+        }
+
+        else
+          return Model::to_json(component, attribute);
       }
 
       /// @brief Updates the attributes of the model
@@ -361,10 +389,10 @@ namespace iganet {
           default:
             throw InvalidModelAttributeException();
           }
-          return to_json(component, "coeffs");
+          return "{}";
         }
         else
-          return "{ INVALID REQUEST }";
+          return Model::updateAttribute(component, attribute, json);
       }
 
       /// @brief Evaluates the model

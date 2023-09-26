@@ -12,8 +12,7 @@
    file, You can obtain one at http://mozilla.org/MPL/2.0/.
 */
 
-#include "BSpline.hpp"
-#include <model.hpp>
+#include <BSplineModel.hpp>
 
 #ifdef _WIN32
 extern "C" __declspec(dllexport)

@@ -38,7 +38,7 @@ include_directories(${CMAKE_CURRENT_SOURCE_DIR} ${CMAKE_CURRENT_BINARY_DIR})
 # JIT compiler
 ########################################################################
 include("${PROJECT_SOURCE_DIR}/cmake/genJIT.cmake")
-genJITCompiler("${CMAKE_CURRENT_BINARY_DIR}/jit.hpp.in")
+genJITCompiler("jit.hpp.in")
 
 install(FILES ${CMAKE_CURRENT_BINARY_DIR}/jit.hpp
   DESTINATION include/iganet/webapp)

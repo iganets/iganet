@@ -12,8 +12,8 @@
    file, You can obtain one at http://mozilla.org/MPL/2.0/.
 */
 
-#include "BSpline.hpp"
-#include <model.hpp>
+#include <BSplineModel.hpp>
+#include <jit.hpp>
 
 #ifdef _WIN32
 extern "C" __declspec(dllexport)
@@ -42,6 +42,32 @@ extern "C"
       if (json["data"].contains("nonuniform"))
         nonuniform = json["data"]["nonuniform"].get<bool>();
 
+      // Generate source code
+      std::string src =
+        "#include <BSplineModel.hpp>\n"
+        "std::shared_ptr<iganet::Model> create()\n{\n";
+
+      if (nonuniform)
+        src.append("return std::make_shared<iganet::webapp::BSplineModel<iganet::NonUniformBSpline<iganet::real_t, ");
+      else
+        src.append("return std::make_shared<iganet::webapp::BSplineModel<iganet::UniformBSpline<iganet::real_t, ");
+
+      // geoDim
+      src.append("3, ");
+      
+      // degree
+      src.append(std::to_string((int)degree) + ", " + std::to_string((int)degree) + ">>>(");
+
+      // ncoeffs
+      src.append("{" + std::to_string(ncoeffs[0]) + ", " + std::to_string(ncoeffs[1]) + "}, ");
+
+      // init      
+      src.append("iganet::init(" + std::to_string((int)init) + "));\n};\n");
+
+      // Create source file
+      iganet::jit jit;
+      jit.compile(src, "BSplineSurface");
+      
       switch (degree) {
       case iganet::webapp::degree::constant:
         if (nonuniform)

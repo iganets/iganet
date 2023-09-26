@@ -21,22 +21,27 @@ namespace iganet {
   /// @brief Enumerator for specifying the capabilities
   enum class capability
     {
-      eval      =   0, /*!< evaluates object */
-      refine    =   1, /*!< h-refines object */
-      elevate   =   2, /*!< p-refines object */
+      /*! Model create/remove */
+      create    =      0, /*!< create object */
+      remove    =      1, /*!< remove object */
+
+      /*!< Model evaluation and adaption */
+      eval      =      2, /*!< evaluates object */
+      refine    =      3, /*!< h-refines object */
+      elevate   =      4, /*!< p-refines object */
             
       /*!< Model loading/saving */
-      load      = 101, /*!< loads model from PyTorch file    */
-      save      = 102, /*!< saves model to PyTorch file    */
+      load      =      5, /*!< loads model from PyTorch file */
+      save      =      6, /*!< saves model to PyTorch file */
 
       /*!< Model import/export */
-      importXML = 201, /*!< imports object from G+Smo XML file */     
-      exportXML = 202, /*!< exports object to G+Smo XML file */
+      importXML = 7, /*!< imports object from G+Smo XML file */     
+      exportXML =      8, /*!< exports object to G+Smo XML file */
 
       /*!< Error computation */
-      computeL1error = 301, /*!< computes model's L1-error */
-      computeL2error = 302, /*!< computes model's L2-error */
-      computeH1error = 303  /*!< computes model's H1-error */      
+      computeL1error =  9, /*!< computes model's L1-error */
+      computeL2error = 10, /*!< computes model's L2-error */
+      computeH1error = 11  /*!< computes model's H1-error */      
     };
 
   /// @brief Enumerator for specifying the output type
@@ -49,6 +54,27 @@ namespace iganet {
       vectorfield_boundary = 4  /*!< vector field at the boundary */
     };
 
+  /// @brief IndexOutOfBounds exception
+  struct IndexOutOfBoundsException : public std::exception {
+    const char * what() const throw() {
+      return "Index is out of bounds";
+    }
+  };
+
+  /// @brief InvalidModel exception
+  struct InvalidModelException : public std::exception {
+    const char * what() const throw() {
+      return "Invalid model name";
+    }
+  };
+
+  /// @brief InvalidModelAttribute exception
+  struct InvalidModelAttributeException : public std::exception {
+    const char * what() const throw() {
+      return "Invalid model attribute";
+    }
+  };
+  
   /// @brief Model elevation
   class ModelElevate {
   public:
@@ -134,6 +160,11 @@ namespace iganet {
   /// @brief Model interface
   class Model {
   public:
+    /// @brief Constructor
+    Model()
+      : transform(torch::zeros({4,4}))
+    {};
+    
     /// @brief Destructor
     virtual ~Model() {};
 
@@ -166,6 +197,8 @@ namespace iganet {
     virtual nlohmann::json getCapabilities() const {
 
       std::vector<std::string> capabilities;
+      capabilities.push_back("create");
+      capabilities.push_back("remove");
 
       if (auto m = dynamic_cast<const ModelElevate*>(this))
         for (auto const& capability : m->getCapabilities())
@@ -195,33 +228,53 @@ namespace iganet {
     
     /// @brief Serializes the model to JSON
     virtual nlohmann::json to_json(const std::string& component,
-                                   const std::string& attribute) const = 0;
+                                   const std::string& attribute) const
+    {
+      if (component == "transform") {
+
+        nlohmann::json data;
+        data["elements"] = utils::to_json<iganet::real_t, 1>(transform.flatten());
+
+        return data;        
+      }
+      
+      else
+        return "{ INVALID REQUEST }";
+    }
 
     /// @brief Updates the attributes of the model
     virtual nlohmann::json updateAttribute(const std::string& component,
                                            const std::string& attribute,
-                                           const nlohmann::json& json) = 0;
-  };
+                                           const nlohmann::json& json)
+    {
+      if (attribute == "transform") {
+        if (!json.contains("data"))
+          throw InvalidModelAttributeException();
+        if (!json["data"].contains("elements"))
+          throw InvalidModelAttributeException();
 
-  /// @brief IndexOutOfBounds exception
-  struct IndexOutOfBoundsException : public std::exception {
-    const char * what() const throw() {
-      return "Index is out of bounds";
+        auto elements = json["data"]["elements"].get<std::vector<iganet::real_t>>();
+        
+        if (elements.size() != 16)
+          throw IndexOutOfBoundsException();
+        
+        auto transform_cpu = utils::to_tensorAccessor<iganet::real_t,2>(transform, torch::kCPU);
+        auto transformAccessor = std::get<1>(transform_cpu);
+        
+        std::size_t index(0);
+        for (const auto& element : elements)
+          transformAccessor[index%4][index++/4] = element;
+        
+        return "{}";        
+      }
+      
+      else
+        return "{ INVALID REQUEST }";
     }
-  };
 
-  /// @brief InvalidModel exception
-  struct InvalidModelException : public std::exception {
-    const char * what() const throw() {
-      return "Invalid model name";
-    }
-  };
-
-  /// @brief InvalidModelAttribute exception
-  struct InvalidModelAttributeException : public std::exception {
-    const char * what() const throw() {
-      return "Invalid model attribute";
-    }
+  protected:
+    /// @brief Global transformation matrix
+    torch::Tensor transform;
   };
 
 } // namespace iganet
