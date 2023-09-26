@@ -71,11 +71,11 @@ namespace iganet {
     auto to_json(const torch::Tensor& tensor)
     {
       if (tensor.is_cuda()) {
-	auto [tensor_cpu, accessor] = to_tensorAccessor<T, N>(tensor, torch::kCPU);
-	return to_json(accessor);
+        auto [tensor_cpu, accessor] = to_tensorAccessor<T, N>(tensor, torch::kCPU);
+        return to_json(accessor);
       } else {
-	auto accessor = to_tensorAccessor<T, N>(tensor);
-	return to_json(accessor);
+        auto accessor = to_tensorAccessor<T, N>(tensor);
+        return to_json(accessor);
       }
     }
 
@@ -87,13 +87,13 @@ namespace iganet {
       auto json = nlohmann::json::array();
       
       for (std::size_t i = 0; i < M; ++i) {
-	if (tensors[i].is_cuda()) {
-	  auto [tensor_cpu, accessor] = to_tensorAccessor<T, N>(tensors[i], torch::kCPU);
-	  json.push_back(to_json<T, N>(accessor));
-	} else {
-	  auto accessor = to_tensorAccessor<T, N>(tensors[i]);
-	  json.push_back(to_json<T, N>(accessor));
-	}
+        if (tensors[i].is_cuda()) {
+          auto [tensor_cpu, accessor] = to_tensorAccessor<T, N>(tensors[i], torch::kCPU);
+          json.push_back(to_json<T, N>(accessor));
+        } else {
+          auto accessor = to_tensorAccessor<T, N>(tensors[i]);
+          json.push_back(to_json<T, N>(accessor));
+        }
       }
       
       return json;
