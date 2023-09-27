@@ -122,7 +122,8 @@ namespace iganet {
       for (const auto& path : paths) {
         const std::filesystem::path fspath{path};
         for (const auto& entry : std::filesystem::directory_iterator{fspath}) {
-          if (entry.path().extension() == ".dylib" ||
+          if (entry.path().extension() == ".dll"   ||
+              entry.path().extension() == ".dylib" ||
               entry.path().extension() == ".so") {
             auto handler = std::make_shared<ModelHandler>(entry.path().c_str());
             std::shared_ptr<Model> (*create)(const nlohmann::json&);

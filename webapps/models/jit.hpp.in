@@ -35,22 +35,20 @@ namespace iganet {
     jit()
       : temp(getTempPath()),
         cmd("@JIT_CXX_COMPILER@"),
-#if defined(_WIN32)      
-        flags("@JIT_CXX_FLAGS@ @JIT_INCLUDE_DIRECTORIES_WIN32@ @JIT_LIBRARIES_WIN32@"),
-        out("/Fo") // no space
-#else
         flags("@JIT_CXX_FLAGS@ @JIT_INCLUDE_DIRECTORIES@ @JIT_LIBRARIES@"),
-        out("-o ")
-#endif        
+        out("@JIT_CXX_OUTPUT_FLAG@")
     {
-      char *env = std::getenv ("JIT_COMPILER_CMD");
-      if (env!=NULL) cmd = env;
+      char *env = std::getenv ("JIT_CXX_COMPILER");
+      if (env != NULL) cmd = env;
       
-      env = std::getenv ("JIT_COMPILER_FLAGS");
-      if (env!=NULL) flags = env;
+      env = std::getenv ("JIT_CXX_FLAGS");
+      if (env != NULL) flags = env;
+
+      env = std::getenv ("JIT_CXX_OUTPUT_FLAG");
+      if (env != NULL) out = env;
       
-      env = std::getenv ("JIT_COMPILER_TEMP");
-      if (env!=NULL) temp = env;
+      env = std::getenv ("JIT_CXX_TEMP");
+      if (env != NULL) temp = env;
     }
 
     /// @brief Compile dynamical library
@@ -118,6 +116,9 @@ namespace iganet {
           out + "\"" +
           libname + "\"";
 #endif
+        
+        if (std::system(syscall.c_str()) != 0)
+          throw std::runtime_error("An error occured while compiling the kernel source code");
         std::cout << syscall << std::endl;
       }
       

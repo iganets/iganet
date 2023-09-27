@@ -9,7 +9,7 @@
 # This Source Code Form is subject to the terms of the Mozilla Public
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
-# 
+#
 ########################################################################
 
 #
@@ -18,32 +18,68 @@
 # Remark: The source files must be given with relative paths
 #
 function(genJITCompiler SOURCE_FILES)
-  
+
+  #
   # Set JIT compiler command
+  #
   set(JIT_CXX_COMPILER ${CMAKE_CXX_COMPILER})
 
+  # ====================================================================
+
+  #
+  # Set JIT compiler input/output flag
+  #
+  if (MSVC)
+    set(JIT_CXX_INCLUDE_FLAG       "/I")
+    set(JIT_CXX_LINKER_FLAG        "/l")
+    set(JIT_CXX_LINKER_SEARCH_FLAG "/L")
+    set(JIT_CXX_OUTPUT_FLAG        "/Fo")
+  else()
+    set(JIT_CXX_INCLUDE_FLAG       "-I")
+    set(JIT_CXX_LINKER_FLAG        "-l")
+    set(JIT_CXX_LINKER_SEARCH_FLAG "-L")
+    set(JIT_CXX_OUTPUT_FLAG        "-o ")
+  endif()
+
+  # ====================================================================
+  
   # Get build-type as upper-case string
   string(TOUPPER ${CMAKE_BUILD_TYPE} JIT_BUILD_TYPE)
 
   # Set JIT compiler flags (build-type dependent)
   set(JIT_CXX_FLAGS ${CMAKE_CXX_FLAGS_${JIT_BUILD_TYPE}})
 
-  # Set additional global compile flags
-  get_directory_property(JIT_COMPILE_DEFINITIONS COMPILE_DEFINITIONS)  
+  # Set additional global compile definitions
+  get_directory_property(JIT_COMPILE_DEFINITIONS COMPILE_DEFINITIONS)
   if (JIT_COMPILE_DEFINITIONS)
     foreach (flag ${JIT_COMPILE_DEFINITIONS})
       set (JIT_CXX_FLAGS "${JIT_CXX_FLAGS} -D${flag}")
     endforeach()
   endif()
+
+  # Set additional global compile options
+  get_directory_property(JIT_COMPILE_OPTIONS COMPILE_OPTIONS)
+  if (JIT_COMPILE_OPTIONS)
+    foreach (flag ${JIT_COMPILE_OPTIONS})
+      set (JIT_CXX_FLAGS "${JIT_CXX_FLAGS} -D${flag}")
+    endforeach()
+  endif()
   
-  # Set additional target-specific compile flags (if available)
+  # Set additional target-specific compile definitions and options (if available)
   if (TARGET iganet_pch)
+    get_target_property(JIT_COMPILE_DEFINITIONS iganet_pch COMPILE_DEFINITIONS)
+    if (JIT_COMPILE_DEFINITIONS)
+      foreach (flag ${JIT_COMPILE_DEFINITIONS})
+        set (JIT_CXX_FLAGS "${JIT_CXX_FLAGS} ${flag}")
+      endforeach()
+    endif()
+    
     get_target_property(JIT_COMPILE_OPTIONS iganet_pch COMPILE_OPTIONS)
     if (JIT_COMPILE_OPTIONS)
       foreach (flag ${JIT_COMPILE_OPTIONS})
         set (JIT_CXX_FLAGS "${JIT_CXX_FLAGS} ${flag}")
       endforeach()
-    endif()   
+    endif()
   endif()
 
   # Set Torch-specific compile flags
@@ -52,11 +88,15 @@ function(genJITCompiler SOURCE_FILES)
       set (JIT_CXX_FLAGS "${JIT_CXX_FLAGS} ${flag}")
     endforeach()
   endif()
+
+  # ====================================================================
   
   # Set SYSROOT on MacOS
   if (APPLE)
     set(JIT_CXX_FLAGS "${JIT_CXX_FLAGS} -isysroot ${CMAKE_OSX_SYSROOT}")
   endif()
+
+  # ====================================================================
   
   # Create a set of shared library variable specific to C++
   # For 90% of the systems, these are the same flags as the C versions
@@ -77,12 +117,15 @@ function(genJITCompiler SOURCE_FILES)
   # Fix visibility
   string(REPLACE "-fvisibility=hidden"         "" JIT_CXX_FLAGS ${JIT_CXX_FLAGS})
   string(REPLACE "-fvisibility-inlines-hidden" "" JIT_CXX_FLAGS ${JIT_CXX_FLAGS})
+
+  # ====================================================================
   
   # Generate list of global include directories
   get_property(IGANET_INCLUDE_DIRECTORIES DIRECTORY PROPERTY INCLUDE_DIRECTORIES)
   if(IGANET_INCLUDE_DIRECTORIES)
-    string(REPLACE ";" " -I" JIT_INCLUDE_DIRECTORIES "-I${IGANET_INCLUDE_DIRECTORIES}")
-    string(REPLACE ";" " /I" JIT_INCLUDE_DIRECTORIES_WIN32 "/I${IGANET_INCLUDE_DIRECTORIES}")
+    string(REPLACE ";" " ${JIT_CXX_INCLUDE_FLAG}"
+      JIT_INCLUDE_DIRECTORIES
+      "${JIT_CXX_INCLUDE_FLAG}${IGANET_INCLUDE_DIRECTORIES}")
   endif()
 
   # Generate list of target-specific include directories (if available)
@@ -90,25 +133,28 @@ function(genJITCompiler SOURCE_FILES)
     get_target_property(IGANET_INCLUDE_DIRECTORIES iganet_pch INCLUDE_DIRECTORIES)
     if (IGANET_INCLUDE_DIRECTORIES)
       foreach (dir ${IGANET_INCLUDE_DIRECTORIES})
-        set (JIT_INCLUDE_DIRECTORIES "${JIT_INCLUDE_DIRECTORIES} -I${dir}")
-        set (JIT_INCLUDE_DIRECTORIES_WIN32 "${JIT_INCLUDE_DIRECTORIES_WIN32} /I${dir}")
+        set (JIT_INCLUDE_DIRECTORIES
+          "${JIT_INCLUDE_DIRECTORIES} ${JIT_CXX_INCLUDE_FLAG}${dir}")
       endforeach()
-    endif()   
+    endif()
   endif()
 
   # Add Torch-specific include directories
   if (TORCH_INCLUDE_DIRS)
     foreach (dir ${TORCH_INCLUDE_DIRS})
-      set (JIT_INCLUDE_DIRECTORIES "${JIT_INCLUDE_DIRECTORIES} -I${dir}")
-      set (JIT_INCLUDE_DIRECTORIES_WIN32 "${JIT_INCLUDE_DIRECTORIES_WIN32} /I${dir}")
+      set (JIT_INCLUDE_DIRECTORIES
+        "${JIT_INCLUDE_DIRECTORIES} ${JIT_CXX_INCLUDE_FLAG}${dir}")
     endforeach()
   endif()
   
+  # ====================================================================
+
   # Generate list of global external libraries
-  get_property(IGANET_LINK_DIRECTORIES DIRECTORY PROPERTY LINK_DIRECTORIES)  
+  get_property(IGANET_LINK_DIRECTORIES DIRECTORY PROPERTY LINK_DIRECTORIES)
   if(IGANET_LINK_DIRECTORIES)
-    string(REPLACE ";" " -L" JIT_LIBRARIES "-L${IGANET__LINK_DIRECTORIES}")
-    string(REPLACE ";" " /L" JIT_LIBRARIES_WIN32 "/L${IGANET_LINK_DIRECTORIES}")
+    string(REPLACE ";" " ${JIT_CXX_LINKER_SEARCH_FLAG}"
+      JIT_LIBRARIES
+      "${JIT_CXX_LINKER_SEARCH_FLAG}${IGANET_LINK_DIRECTORIES}")
   endif()
 
   # Generate list of target-specific external libraries
@@ -116,40 +162,72 @@ function(genJITCompiler SOURCE_FILES)
     get_target_property(IGANET_LINK_LIBRARIES iganet_pch LINK_DIRECTORIES)
     if (IGANET_LINK_LIBRARIES)
       foreach (lib ${IGANET_LINK_LIBRARIES})
-        set (JIT_LIBRARIES "${JIT_LIBRARIES} -L${lib}")
-        set (JIT_LIBRARIES_WIN32 "${JIT_LIBRARIES_WIN32} /L${lib}")
+        set (JIT_LIBRARIES
+          "${JIT_LIBRARIES} ${JIT_CXX_LINKER_SEARCH_FLAG}${lib}")
       endforeach()
     endif()
   endif()
-    
+
   # Generate list of target-specific external libraries
   if (TARGET iganet_pch)
     get_target_property(IGANET_LINK_LIBRARIES iganet_pch LINK_LIBRARIES)
     if (IGANET_LINK_LIBRARIES)
       foreach (lib ${IGANET_LINK_LIBRARIES})
+
+        if (lib STREQUAL "torch")
+          if (WIN32)
+            set(JIT_LIBRARIES
+              "${JIT_LIBRARIES} ${JIT_CXX_LINKER_SEARCH_FLAG}${Torch_DIR}\\..\\..\\..\\lib ${JIT_CXX_LINKER_FLAG}torch")            
+          else()
+            set(JIT_LIBRARIES
+              "${JIT_LIBRARIES} ${JIT_CXX_LINKER_SEARCH_FLAG}${Torch_DIR}/../../../lib ${JIT_CXX_LINKER_FLAG}torch")            
+          endif()
+          continue()
+          
+        elseif(lib STREQUAL "torch_library")
+          if (Torch_CUDA_FOUND)
+            if (WIN32)
+              set(JIT_LIBRARIES
+                "${JIT_LIBRARIES} ${JIT_CXX_LINKER_SEARCH_FLAG}${Torch_DIR}\\..\\..\\..\\lib ${JIT_CXX_LINKER_SEARCH_FLAG}torch_cuda")
+            else()
+              set(JIT_LIBRARIES
+                "${JIT_LIBRARIES} ${JIT_CXX_LINKER_SEARCH_FLAG}${Torch_DIR}/../../../lib ${JIT_CXX_LINKER_FLAG}torch_cuda")              
+            endif()
+            continue()
+            
+          else()
+            if (WIN32)
+              set(JIT_LIBRARIES
+                "${JIT_LIBRARIES} ${JIT_CXX_LINKER_SEARCH_FLAG}${Torch_DIR}\\..\\..\\..\\lib ${JIT_CXX_LINKER_FLAG}torch_cpu")
+            else()
+              set(JIT_LIBRARIES
+                "${JIT_LIBRARIES} ${JIT_CXX_LINKER_SEARCH_FLAG}${Torch_DIR}/../../../lib ${JIT_CXX_LINKER_FLAG}torch_cpu")
+            endif()
+          endif()
+          continue()
+          
+        elseif(lib STREQUAL "pugixml")
+          set(JIT_LIBRARIES
+            "${JIT_LIBRARIES} ${JIT_CXX_LINKER_SEARCH_FLAG}${pugixml_BINARY_DIR} ${JIT_CXX_LINKER_FLAG}${lib}")
+          continue()
+        endif()
+
         if (NOT IS_ABSOLUTE ${lib})
-          set(JIT_LIBRARIES "${JIT_LIBRARIES} -l${lib}")
-          set(JIT_LIBRARIES_WIN32 "${JIT_LIBRARIES_WIN32} /l${lib}")
+          set(JIT_LIBRARIES
+            "${JIT_LIBRARIES} ${JIT_CXX_LINKER_FLAG}${lib}")
         else()
-          set(JIT_LIBRARIES "${JIT_LIBRARIES} ${lib}")
-          set(JIT_LIBRARIES_WIN32 "${JIT_LIBRARIES_WIN32} ${lib}")
+          set(JIT_LIBRARIES
+            "${JIT_LIBRARIES} ${lib}")
         endif()
       endforeach()
     endif()
   endif()
+  
+  # ====================================================================
 
-  # Add Torch-specific external libraries
-  if (TORCH_LIBRARIES)
-    foreach (lib ${TORCH_LIBRARIES})
-      if (NOT IS_ABSOLUTE ${lib})
-        set(JIT_LIBRARIES "${JIT_LIBRARIES} -l${lib}")
-        set(JIT_LIBRARIES_WIN32 "${JIT_LIBRARIES_WIN32} /l${lib}")
-      else()
-        set(JIT_LIBRARIES "${JIT_LIBRARIES} ${lib}")
-        set(JIT_LIBRARIES_WIN32 "${JIT_LIBRARIES_WIN32} ${lib}")
-      endif()
-    endforeach()
-  endif()
+#  message(${TORCH_CXX_FLAGS})
+#  message(${TORCH_LIBRARIES})
+#  message(${TORCH_INCLUDE_DIRS})
   
   if (0)
     # -DBSplineCurve_EXPORTS
@@ -164,10 +242,10 @@ function(genJITCompiler SOURCE_FILES)
     # -isystem /opt/homebrew/Cellar/protobuf@21/21.12/include
     # -arch arm64
   endif()
-   
+
   # Generate source files
   foreach (input_file ${SOURCE_FILES})
-    get_filename_component(output_file ${input_file} NAME_WLE)    
+    get_filename_component(output_file ${input_file} NAME_WLE)
     configure_file(${CMAKE_CURRENT_SOURCE_DIR}/${input_file}
       ${CMAKE_CURRENT_BINARY_DIR}/${output_file} @ONLY)
   endforeach()
