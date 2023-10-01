@@ -93,6 +93,11 @@ foreach(unittest ${UNITTESTS})
   if (IGANET_WITH_MATPLOT)
     target_link_libraries(${name} PUBLIC Matplot++::matplot)
   endif()
+
+  if (IGANET_WITH_OPENMP)
+    target_link_libraries(${name} PUBLIC OpenMP::OpenMP_CXX)
+  endif()
+  
   target_compile_definitions(${name} PUBLIC UNITTEST_DISABLE_SHORT_MACROS)
   add_test(${name} ${name})
 endforeach()

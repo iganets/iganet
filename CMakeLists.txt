@@ -153,24 +153,15 @@ if (IGANET_WITH_OPENMP)
       NAMES "omp"
       PATHS /usr/local /usr/local/opt/libomp /opt /opt/local /opt/homebrew/opt/libomp
       PATH_SUFFIXES lib)
-    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Xclang -fopenmp -I${OpenMP_C_INCLUDE_DIR}")
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Xclang -fopenmp -I${OpenMP_CXX_INCLUDE_DIR}")
-    set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} ${OpenMP_libomp_LIBRARY}")
-    set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} ${OpenMP_libomp_LIBRARY}")
-  else() 
-    find_package(OpenMP QUIET REQUIRED)
-    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${OpenMP_C_FLAGS}")
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${OpenMP_CXX_FLAGS}")
-    set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} ${OpenMP_libomp_LIBRARY}")
-    set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} ${OpenMP_libomp_LIBRARY}")
   endif()
+  find_package(OpenMP REQUIRED)
 endif()
 
 ########################################################################
 # Doxygen
 ########################################################################
 if(IGANET_BUILD_DOCS)
-  find_package(Doxygen QUIET)
+  find_package(Doxygen)
   if(DOXYGEN_FOUND)
     set(DOXYGEN_OUTPUT_DIR ${PROJECT_BINARY_DIR}/docs/doxygen)
     set(DOXYGEN_TAGFILE ${PROJECT_BINARY_DIR}/docs/doxygen/iganet-doxygen.tag.xml)  
@@ -193,7 +184,7 @@ endif()
 # Sphinx
 ########################################################################
 if(IGANET_BUILD_DOCS)
-  find_package(Sphinx QUIET)
+  find_package(Sphinx)
   if(SPHINX_FOUND)
     set(SPHINX_SOURCE ${PROJECT_SOURCE_DIR}/docs)
     set(SPHINX_BUILD ${PROJECT_BINARY_DIR}/docs/sphinx)

@@ -29,6 +29,10 @@ if(NOT ${CMAKE_VERSION} VERSION_LESS "3.16.0")
     target_link_libraries(iganet_pch PUBLIC Matplot++::matplot)
   endif()
 
+  if (IGANET_WITH_OPENMP)
+    target_link_libraries(iganet_pch PUBLIC OpenMP::OpenMP_CXX)
+  endif()
+
   target_precompile_headers(iganet_pch PUBLIC iganet.h PRIVATE ${HEADERS})
 endif()
 
