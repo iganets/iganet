@@ -17,7 +17,7 @@
 #
 # Remark: The source files must be given with relative paths
 #
-function(genJITCompiler SOURCE_FILES)
+function(genJITCompiler SOURCE_FILES SOURCE_TARGET)
 
   #
   # Set JIT compiler command
@@ -42,7 +42,7 @@ function(genJITCompiler SOURCE_FILES)
   endif()
 
   # ====================================================================
-  
+
   # Get build-type as upper-case string
   string(TOUPPER ${CMAKE_BUILD_TYPE} JIT_BUILD_TYPE)
 
@@ -64,17 +64,17 @@ function(genJITCompiler SOURCE_FILES)
       set (JIT_CXX_FLAGS "${JIT_CXX_FLAGS} -D${flag}")
     endforeach()
   endif()
-  
+
   # Set additional target-specific compile definitions and options (if available)
-  if (TARGET iganet_pch)
-    get_target_property(JIT_COMPILE_DEFINITIONS iganet_pch COMPILE_DEFINITIONS)
+  if (TARGET ${SOURCE_TARGET})
+    get_target_property(JIT_COMPILE_DEFINITIONS ${SOURCE_TARGET} COMPILE_DEFINITIONS)
     if (JIT_COMPILE_DEFINITIONS)
       foreach (flag ${JIT_COMPILE_DEFINITIONS})
         set (JIT_CXX_FLAGS "${JIT_CXX_FLAGS} ${flag}")
       endforeach()
     endif()
-    
-    get_target_property(JIT_COMPILE_OPTIONS iganet_pch COMPILE_OPTIONS)
+
+    get_target_property(JIT_COMPILE_OPTIONS ${SOURCE_TARGET} COMPILE_OPTIONS)
     if (JIT_COMPILE_OPTIONS)
       foreach (flag ${JIT_COMPILE_OPTIONS})
         set (JIT_CXX_FLAGS "${JIT_CXX_FLAGS} ${flag}")
@@ -90,14 +90,14 @@ function(genJITCompiler SOURCE_FILES)
   endif()
 
   # ====================================================================
-  
+
   # Set SYSROOT on MacOS
   if (APPLE)
     set(JIT_CXX_FLAGS "${JIT_CXX_FLAGS} -isysroot ${CMAKE_OSX_SYSROOT}")
   endif()
 
   # ====================================================================
-  
+
   # Create a set of shared library variable specific to C++
   # For 90% of the systems, these are the same flags as the C versions
   # so if these are not set just copy the flags from the C version
@@ -119,7 +119,7 @@ function(genJITCompiler SOURCE_FILES)
   string(REPLACE "-fvisibility-inlines-hidden" "" JIT_CXX_FLAGS ${JIT_CXX_FLAGS})
 
   # ====================================================================
-  
+
   # Generate list of global include directories
   get_property(IGANET_INCLUDE_DIRECTORIES DIRECTORY PROPERTY INCLUDE_DIRECTORIES)
   if(IGANET_INCLUDE_DIRECTORIES)
@@ -129,8 +129,8 @@ function(genJITCompiler SOURCE_FILES)
   endif()
 
   # Generate list of target-specific include directories (if available)
-  if (TARGET iganet_pch)
-    get_target_property(IGANET_INCLUDE_DIRECTORIES iganet_pch INCLUDE_DIRECTORIES)
+  if (TARGET ${SOURCE_TARGET})
+    get_target_property(IGANET_INCLUDE_DIRECTORIES ${SOURCE_TARGET} INCLUDE_DIRECTORIES)
     if (IGANET_INCLUDE_DIRECTORIES)
       foreach (dir ${IGANET_INCLUDE_DIRECTORIES})
         set (JIT_INCLUDE_DIRECTORIES
@@ -146,7 +146,7 @@ function(genJITCompiler SOURCE_FILES)
         "${JIT_INCLUDE_DIRECTORIES} ${JIT_CXX_INCLUDE_FLAG}${dir}")
     endforeach()
   endif()
-  
+
   # ====================================================================
 
   # Generate list of global external libraries
@@ -158,8 +158,8 @@ function(genJITCompiler SOURCE_FILES)
   endif()
 
   # Generate list of target-specific external libraries
-  if (TARGET iganet_pch)
-    get_target_property(IGANET_LINK_LIBRARIES iganet_pch LINK_DIRECTORIES)
+  if (TARGET ${SOURCE_TARGET})
+    get_target_property(IGANET_LINK_LIBRARIES ${SOURCE_TARGET} LINK_DIRECTORIES)
     if (IGANET_LINK_LIBRARIES)
       foreach (lib ${IGANET_LINK_LIBRARIES})
         set (JIT_LIBRARIES
@@ -169,49 +169,53 @@ function(genJITCompiler SOURCE_FILES)
   endif()
 
   # Generate list of target-specific external libraries
-  if (TARGET iganet_pch)
-    get_target_property(IGANET_LINK_LIBRARIES iganet_pch LINK_LIBRARIES)
+  if (TARGET ${SOURCE_TARGET})
+    get_target_property(IGANET_LINK_LIBRARIES ${SOURCE_TARGET} LINK_LIBRARIES)
     if (IGANET_LINK_LIBRARIES)
       foreach (lib ${IGANET_LINK_LIBRARIES})
 
         if (lib STREQUAL "torch")
           if (WIN32)
             set(JIT_LIBRARIES
-              "${JIT_LIBRARIES} ${JIT_CXX_LINKER_SEARCH_FLAG}${Torch_DIR}\\..\\..\\..\\lib ${JIT_CXX_LINKER_FLAG}torch")            
+              "${JIT_LIBRARIES} ${JIT_CXX_LINKER_SEARCH_FLAG}${Torch_DIR}\\..\\..\\..\\lib")
           else()
             set(JIT_LIBRARIES
-              "${JIT_LIBRARIES} ${JIT_CXX_LINKER_SEARCH_FLAG}${Torch_DIR}/../../../lib ${JIT_CXX_LINKER_FLAG}torch")            
+              "${JIT_LIBRARIES} ${JIT_CXX_LINKER_SEARCH_FLAG}${Torch_DIR}/../../../lib")
           endif()
-          continue()
-          
+
         elseif(lib STREQUAL "torch_library")
           if (Torch_CUDA_FOUND)
+            set(lib torch_cuda)
             if (WIN32)
               set(JIT_LIBRARIES
-                "${JIT_LIBRARIES} ${JIT_CXX_LINKER_SEARCH_FLAG}${Torch_DIR}\\..\\..\\..\\lib ${JIT_CXX_LINKER_SEARCH_FLAG}torch_cuda")
+                "${JIT_LIBRARIES} ${JIT_CXX_LINKER_SEARCH_FLAG}${Torch_DIR}\\..\\..\\..\\lib")
             else()
               set(JIT_LIBRARIES
-                "${JIT_LIBRARIES} ${JIT_CXX_LINKER_SEARCH_FLAG}${Torch_DIR}/../../../lib ${JIT_CXX_LINKER_FLAG}torch_cuda")              
+                "${JIT_LIBRARIES} ${JIT_CXX_LINKER_SEARCH_FLAG}${Torch_DIR}/../../../lib")
             endif()
-            continue()
-            
+
           else()
+            set(lib torch_cpu)
             if (WIN32)
               set(JIT_LIBRARIES
-                "${JIT_LIBRARIES} ${JIT_CXX_LINKER_SEARCH_FLAG}${Torch_DIR}\\..\\..\\..\\lib ${JIT_CXX_LINKER_FLAG}torch_cpu")
+                "${JIT_LIBRARIES} ${JIT_CXX_LINKER_SEARCH_FLAG}${Torch_DIR}\\..\\..\\..\\lib")
             else()
               set(JIT_LIBRARIES
-                "${JIT_LIBRARIES} ${JIT_CXX_LINKER_SEARCH_FLAG}${Torch_DIR}/../../../lib ${JIT_CXX_LINKER_FLAG}torch_cpu")
+                "${JIT_LIBRARIES} ${JIT_CXX_LINKER_SEARCH_FLAG}${Torch_DIR}/../../../lib")
             endif()
           endif()
-          continue()
-          
+
         elseif(lib STREQUAL "pugixml")
           set(JIT_LIBRARIES
-            "${JIT_LIBRARIES} ${JIT_CXX_LINKER_SEARCH_FLAG}${pugixml_BINARY_DIR} ${JIT_CXX_LINKER_FLAG}${lib}")
-          continue()
-        endif()
+            "${JIT_LIBRARIES} ${JIT_CXX_LINKER_SEARCH_FLAG}${pugixml_BINARY_DIR}")
 
+        elseif(lib STREQUAL "OpenMP::OpenMP_CXX")
+          set(lib ${OpenMP_libomp_LIBRARY})
+          set(JIT_LIBRARIES
+            "${JIT_LIBRARIES} ${JIT_CXX_INCLUDE_FLAG}${OpenMP_CXX_INCLUDE_DIR}")
+
+        endif()
+        
         if (NOT IS_ABSOLUTE ${lib})
           set(JIT_LIBRARIES
             "${JIT_LIBRARIES} ${JIT_CXX_LINKER_FLAG}${lib}")
@@ -219,16 +223,17 @@ function(genJITCompiler SOURCE_FILES)
           set(JIT_LIBRARIES
             "${JIT_LIBRARIES} ${lib}")
         endif()
+        
       endforeach()
     endif()
   endif()
-  
+
   # ====================================================================
 
 #  message(${TORCH_CXX_FLAGS})
 #  message(${TORCH_LIBRARIES})
 #  message(${TORCH_INCLUDE_DIRS})
-  
+
   if (0)
     # -DBSplineCurve_EXPORTS
     # -DPROTOBUF_USE_DLLS
