@@ -52,7 +52,9 @@ namespace iganet {
     }
 
     /// @brief Compile dynamical library
-    inline std::string compile(const std::string& src, const std::string& name) const {
+    inline std::string compile(const std::string& includes,
+                               const std::string& src,
+                               const std::string& name) const {
 
       // Determine library name and suffix
       std::string hash = std::to_string(std::hash<std::string>()(src + cmd + flags));
@@ -91,13 +93,16 @@ namespace iganet {
         std::string srcname = temp + "lib" + name + hash + ".cxx";
         std::ofstream srcfile(srcname.c_str());
         
-        srcfile 
+        srcfile
+          << includes << "\n\n"
           << "#ifdef _WIN32\n"
           << "extern \"C\" __declspec(dllexport)\n"
           << "#else\n"
           << "extern \"C\"\n"
           << "#endif\n"
-          << src;
+          << "\n{\n"
+          << src
+          << "\n}\n";
         srcfile.close();
 
 #ifdef _WIN32
@@ -116,16 +121,13 @@ namespace iganet {
           out + "\"" +
           libname + "\"";
 #endif
-        
         if (std::system(syscall.c_str()) != 0)
-          throw std::runtime_error("An error occured while compiling the kernel source code");
-        std::cout << syscall << std::endl;
+          throw std::runtime_error("An error occured while compiling the source code");
       }
       
       return libname;
     }
-      
-      
+    
     /// @brief Prints the object as a string
     inline void pretty_print(std::ostream &os = std::cout) const noexcept override
     {
