@@ -26,73 +26,76 @@
 #include <sys/stat.h>
 #endif
 
+#include <utils/fqn.hpp>
 #include <model.hpp>
 
 namespace iganet {
+
+  /// @brief Model handler
+  ///
+  /// This class implements the model handler
+  class ModelHandler {
+  public:
+
+    /// @brief Default constructor deleted
+    ModelHandler() = delete;
+    ModelHandler(ModelHandler&&) = delete;
+    ModelHandler(const ModelHandler&) = delete;
+
+    /// @brief Constructor from file
+    ModelHandler(const char * filename, int flags = RTLD_NOW) {
+#if defined(_WIN32)
+      static_cast<void>(flags);
+      HMODULE dl = LoadLibrary(filename);
+      if (!dl)
+        throw std::runtime_error( "LoadLibrary - error: " + GetLastError() );
+      handle.reset(dl, FreeLibrary);
+#elif defined(__APPLE__) || defined(__linux__) || defined(__unix)
+      void * dl = ::dlopen(filename, flags);
+      if (!dl)
+        throw std::runtime_error( ::dlerror() );
+      handle.reset(dl, ::dlclose);
+#else
+#error("Unsupported operating system")
+#endif
+    }
+
+    /// @brief Gets symbol from dynamic library
+    void* getSymbol(const char* name) const
+    {
+      if (!handle)
+        throw std::runtime_error("An error occured while accessing the dynamic library");
+
+      void *symbol = NULL;
+#if defined(_WIN32)
+      *(void **)(&symbol) = (void*)GetProcAddress(handle.get(), name );
+#elif defined(__APPLE__) || defined(__linux__) || defined(__unix)
+      *(void **)(&symbol) = ::dlsym( handle.get(), name );
+#endif
+      if (!symbol)
+        throw std::runtime_error("An error occured while getting the symbol from the dynamic library");
+
+      return symbol;
+    }
+
+    /// @brief Checks if handle is assigned
+    operator bool() const { return (bool)handle; }
+
+  private:
+
+    /// @brief Handle to dynamic library object
+#if defined(_WIN32)
+    std::shared_ptr< std::remove_pointer<HMODULE>::type > handle;
+#elif defined(__APPLE__) || defined(__linux__) || defined(__unix)
+    std::shared_ptr<void> handle;
+#endif
+  };
   
   /// @brief Model manager
   ///
   /// This class implements the model manager
-  class ModelManager {
+  class ModelManager : protected utils::FullQualifiedName {
   private:
-
-    /// @brief ModelHandler
-    class ModelHandler {
-    public:
-
-      /// @brief Default constructor deleted
-      ModelHandler() = delete;
-      ModelHandler(ModelHandler&&) = delete;
-      ModelHandler(const ModelHandler&) = delete;
-
-      /// @brief Constructor from file
-      ModelHandler(const char * filename, int flags = RTLD_NOW) {
-#if defined(_WIN32)
-        static_cast<void>(flags);
-        HMODULE dl = LoadLibrary(filename);
-        if (!dl)
-          throw std::runtime_error( "LoadLibrary - error: " + GetLastError() );
-        handle.reset(dl, FreeLibrary);
-#elif defined(__APPLE__) || defined(__linux__) || defined(__unix)
-        void * dl = ::dlopen(filename, flags);
-        if (!dl)
-          throw std::runtime_error( ::dlerror() );
-        handle.reset(dl, ::dlclose);
-#else
-#error("Unsupported operating system")
-#endif
-      }
-
-      /// @brief Gets symbol from dynamic library
-      void* getSymbol(const char* name) const
-      {
-        if (!handle)
-          throw std::runtime_error("An error occured while accessing the dynamic library");
-
-        void *symbol = NULL;
-#if defined(_WIN32)
-        *(void **)(&symbol) = (void*)GetProcAddress(handle.get(), name );
-#elif defined(__APPLE__) || defined(__linux__) || defined(__unix)
-        *(void **)(&symbol) = ::dlsym( handle.get(), name );
-#endif
-        if (!symbol)
-          throw std::runtime_error("An error occured while getting the symbol from the dynamic library");
-
-        return symbol;
-      }
-
-      /// @brief Checks if handle is assigned
-      operator bool() const { return (bool)handle; }
-
-    private:
-
-      /// @brief Handle to dynamic library object
-#if defined(_WIN32)
-      std::shared_ptr< std::remove_pointer<HMODULE>::type > handle;
-#elif defined(__APPLE__) || defined(__linux__) || defined(__unix)
-      std::shared_ptr<void> handle;
-#endif
-    };
 
     /// @brief List of models
     std::map<std::string, std::shared_ptr<ModelHandler>> models;
@@ -174,6 +177,20 @@ namespace iganet {
         data.push_back(create(model.first)->getModel());
       return data;
     }
-  };
 
-} // namespace
+    /// @brief Returns a string representation of the model manager object
+    inline virtual void pretty_print(std::ostream& os = std::cout) const noexcept override
+    {
+      os << name();
+    }
+  };
+  
+  /// @brief Print (as string) a model manager object
+  inline std::ostream& operator<<(std::ostream& os,
+                                  const ModelManager& obj)
+  {
+    obj.pretty_print(os);
+    return os;
+  }
+  
+} // namespace iganet
