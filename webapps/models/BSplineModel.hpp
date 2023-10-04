@@ -632,7 +632,7 @@ namespace iganet {
             solution_.from_xml(xml, id, "solution");
           else
             throw std::runtime_error("Unsupported component");
-                }
+        }
       }
 
       /// @brief Exports the model to XML (as JSON object)

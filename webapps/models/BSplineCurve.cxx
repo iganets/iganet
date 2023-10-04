@@ -13,6 +13,8 @@
 */
 
 #include <BSplineModel.hpp>
+#include <jit.hpp>
+#include <modelmanager.hpp>
 
 #ifdef _WIN32
 extern "C" __declspec(dllexport)
@@ -20,6 +22,9 @@ extern "C" __declspec(dllexport)
 extern "C"
 #endif
 {
+  /// @brief List of JIT-compiled model handlers
+  static std::map<std::string, std::shared_ptr<iganet::ModelHandler>> models;
+  
   /// @brief Create a B-spline curve
   std::shared_ptr<iganet::Model> create(const nlohmann::json& json) {
     enum iganet::webapp::degree degree = iganet::webapp::degree::linear;
@@ -41,41 +46,44 @@ extern "C"
       if (json["data"].contains("nonuniform"))
         nonuniform = json["data"]["nonuniform"].get<bool>();
 
-      switch (degree) {
-      case iganet::webapp::degree::constant:
+      try {
+        // generate list of include files
+        std::string includes =
+          "#include <BSplineModel.hpp>\n";
+        
+        // generate source code
+        std::string src =
+          "std::shared_ptr<iganet::Model> create(const std::array<int64_t, 1>& ncoeffs, enum iganet::init init)\n{\n";
+        
         if (nonuniform)
-          return std::make_shared<iganet::webapp::BSplineModel<iganet::NonUniformBSpline<iganet::real_t, 3, 0>>>(ncoeffs, init);
+          src.append("return std::make_shared<iganet::webapp::BSplineModel<iganet::NonUniformBSpline<iganet::real_t, ");
         else
-          return std::make_shared<iganet::webapp::BSplineModel<iganet::   UniformBSpline<iganet::real_t, 3, 0>>>(ncoeffs, init);
-      case iganet::webapp::degree::linear:
-        if (nonuniform)
-          return std::make_shared<iganet::webapp::BSplineModel<iganet::NonUniformBSpline<iganet::real_t, 3, 1>>>(ncoeffs, init);
-        else
-          return std::make_shared<iganet::webapp::BSplineModel<iganet::   UniformBSpline<iganet::real_t, 3, 1>>>(ncoeffs, init);
-      case iganet::webapp::degree::quadratic:
-        if (nonuniform)
-          return std::make_shared<iganet::webapp::BSplineModel<iganet::NonUniformBSpline<iganet::real_t, 3, 2>>>(ncoeffs, init);
-        else
-          return std::make_shared<iganet::webapp::BSplineModel<iganet::   UniformBSpline<iganet::real_t, 3, 2>>>(ncoeffs, init);
-      case iganet::webapp::degree::cubic:
-        if (nonuniform)
-          return std::make_shared<iganet::webapp::BSplineModel<iganet::NonUniformBSpline<iganet::real_t, 3, 3>>>(ncoeffs, init);
-        else
-          return std::make_shared<iganet::webapp::BSplineModel<iganet::   UniformBSpline<iganet::real_t, 3, 3>>>(ncoeffs, init);
-      case iganet::webapp::degree::quartic:
-        if (nonuniform)
-          return std::make_shared<iganet::webapp::BSplineModel<iganet::NonUniformBSpline<iganet::real_t, 3, 4>>>(ncoeffs, init);
-        else
-          return std::make_shared<iganet::webapp::BSplineModel<iganet::   UniformBSpline<iganet::real_t, 3, 4>>>(ncoeffs, init);
-      case iganet::webapp::degree::quintic:
-        if (nonuniform)
-          return std::make_shared<iganet::webapp::BSplineModel<iganet::NonUniformBSpline<iganet::real_t, 3, 5>>>(ncoeffs, init);
-        else
-          return std::make_shared<iganet::webapp::BSplineModel<iganet::   UniformBSpline<iganet::real_t, 3, 5>>>(ncoeffs, init);
-      default:
-        throw std::runtime_error("Invalid degree");
+          src.append("return std::make_shared<iganet::webapp::BSplineModel<iganet::UniformBSpline<iganet::real_t, ");
+        
+        // geoDim
+        src.append("3, ");
+        
+        // degree
+        src.append(std::to_string((int)degree) + ">>>(ncoeffs, init);\n}\n");
+        
+        // compile dynamic library
+        auto libname = iganet::jit{}.compile(includes, src, "BSplineCurve");
+        
+        // Search for library name
+        auto model = models.find(libname);
+        if (model == models.end()) {
+          models[libname] = std::make_shared<iganet::ModelHandler>(libname.c_str());
+          model = models.find(libname);
+        }
+        
+        // create model instance
+        std::shared_ptr<iganet::Model> (*create)(const std::array<int64_t, 1>&, enum iganet::init);        
+        create = reinterpret_cast<std::shared_ptr<iganet::Model> (*)(const std::array<int64_t, 1>&, enum iganet::init)> (model->second->getSymbol("create"));
+        return create(ncoeffs, init);
+      }  catch(...) {
+        throw iganet::InvalidModelException();
       }
-    }
+    }    
     else
       if (nonuniform)
         return std::make_shared<iganet::webapp::BSplineModel<iganet::NonUniformBSpline<iganet::real_t, 3, 1>>>(ncoeffs, init);
@@ -107,9 +115,13 @@ extern "C"
 
             torch::Tensor tensor;
 
-            // get parametric and geometric dimensions
-            archive.read("geometry.parDim", tensor); iganet::short_t parDim = tensor.item<int64_t>();
-            archive.read("geometry.geoDim", tensor); iganet::short_t geoDim = tensor.item<int64_t>();
+            // get parametric dimension
+            archive.read("geometry.parDim", tensor);
+            iganet::short_t parDim = tensor.item<int64_t>();
+
+            // get geometric dimension
+            archive.read("geometry.geoDim", tensor);
+            iganet::short_t geoDim = tensor.item<int64_t>();
 
             if (parDim != 1)
               throw iganet::InvalidModelException();
@@ -121,66 +133,70 @@ extern "C"
               degrees[i] = tensor.item<int64_t>();
             }
 
-            bool nonuniform = false;           
-            std::shared_ptr<iganet::Model> m;
+            // generate list of include files
+            std::string includes =
+              "#include <BSplineModel.hpp>\n";
+            
+            // generate source code
+            std::string src =
+              "std::shared_ptr<iganet::Model> create_uniform()\n{\n"
+              "return std::make_shared<iganet::webapp::BSplineModel<iganet::UniformBSpline<iganet::real_t, ";
+            
+            // geoDim
+            src.append("3, ");
+            
+            // degree
+            src.append(std::to_string((int)degrees[0]) + ">>>();\n}\n");
+            
+            src.append("std::shared_ptr<iganet::Model> create_nonuniform()\n{\n"
+                       "return std::make_shared<iganet::webapp::BSplineModel<iganet::NonUniformBSpline<iganet::real_t, ");
+            
+            // geoDim
+            src.append("3, ");
+            
+            // degree
+            src.append(std::to_string((int)degrees[0]) + ">>>();\n}\n");
+            
+            // compile dynamic library
+            auto libname = iganet::jit{}.compile(includes, src, "BSplineCurve");
 
-            if (nonuniform) {
-
-              // Non-uniform B-splines
-              switch (static_cast<enum iganet::webapp::degree>(degrees[0])) {
-              case iganet::webapp::degree::constant:
-                m = std::make_shared<iganet::webapp::BSplineModel<iganet::NonUniformBSpline<iganet::real_t, 3, 0>>>(); break;
-              case iganet::webapp::degree::linear:
-                m = std::make_shared<iganet::webapp::BSplineModel<iganet::NonUniformBSpline<iganet::real_t, 3, 1>>>(); break;
-              case iganet::webapp::degree::quadratic:
-                m = std::make_shared<iganet::webapp::BSplineModel<iganet::NonUniformBSpline<iganet::real_t, 3, 2>>>(); break;                
-              case iganet::webapp::degree::cubic:
-                m = std::make_shared<iganet::webapp::BSplineModel<iganet::NonUniformBSpline<iganet::real_t, 3, 3>>>(); break;
-              case iganet::webapp::degree::quartic:
-                m = std::make_shared<iganet::webapp::BSplineModel<iganet::NonUniformBSpline<iganet::real_t, 3, 4>>>(); break;
-              case iganet::webapp::degree::quintic:
-                m = std::make_shared<iganet::webapp::BSplineModel<iganet::NonUniformBSpline<iganet::real_t, 3, 5>>>(); break;
-              default:
-                throw std::runtime_error("Invalid degree");
-              }
-              
-            } else {
-
-              // Uniform B-splines
-              switch (static_cast<enum iganet::webapp::degree>(degrees[0])) {
-              case iganet::webapp::degree::constant:
-                m = std::make_shared<iganet::webapp::BSplineModel<iganet::UniformBSpline<iganet::real_t, 3, 0>>>(); break;
-              case iganet::webapp::degree::linear:
-                m = std::make_shared<iganet::webapp::BSplineModel<iganet::UniformBSpline<iganet::real_t, 3, 1>>>(); break;
-              case iganet::webapp::degree::quadratic:
-                m = std::make_shared<iganet::webapp::BSplineModel<iganet::UniformBSpline<iganet::real_t, 3, 2>>>(); break;                
-              case iganet::webapp::degree::cubic:
-                m = std::make_shared<iganet::webapp::BSplineModel<iganet::UniformBSpline<iganet::real_t, 3, 3>>>(); break;
-              case iganet::webapp::degree::quartic:
-                m = std::make_shared<iganet::webapp::BSplineModel<iganet::UniformBSpline<iganet::real_t, 3, 4>>>(); break;
-              case iganet::webapp::degree::quintic:
-                m = std::make_shared<iganet::webapp::BSplineModel<iganet::UniformBSpline<iganet::real_t, 3, 5>>>(); break;
-              default:
-                throw std::runtime_error("Invalid degree");
- }
- 
+            // Search for library name
+            auto model = models.find(libname);
+            if (model == models.end()) {
+              models[libname] = std::make_shared<iganet::ModelHandler>(libname.c_str());
+              model = models.find(libname);
             }
 
-            if (auto m_ = std::dynamic_pointer_cast<iganet::ModelSerialize>(m))
-              m_->load(json);
-            return m;
-          }
-
+            // create model instance and load data
+            try {
+              std::shared_ptr<iganet::Model> (*create_uniform)();
+              create_uniform = reinterpret_cast<std::shared_ptr<iganet::Model> (*)()> (model->second->getSymbol("create_uniform"));
+              auto m = create_uniform();
+              if (auto m_ = std::dynamic_pointer_cast<iganet::ModelSerialize>(m))
+                m_->load(json);
+              else
+                throw iganet::InvalidModelException();
+              return m;
+            } catch(...) {
+              std::shared_ptr<iganet::Model> (*create_nonuniform)();
+              create_nonuniform = reinterpret_cast<std::shared_ptr<iganet::Model> (*)()> (model->second->getSymbol("create_nonuniform"));
+              auto m = create_nonuniform();
+              if (auto m_ = std::dynamic_pointer_cast<iganet::ModelSerialize>(m))
+                m_->load(json);
+              else
+                throw iganet::InvalidModelException();
+              return m;
+            }
+          }          
           else {
             throw iganet::InvalidModelException();
-          }
-
+          }          
         } catch(...) {
           throw iganet::InvalidModelException();
         }
       }
     }
-
+    
     throw iganet::InvalidModelException();
   }
 }
