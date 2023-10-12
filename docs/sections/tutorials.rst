@@ -17,13 +17,13 @@ This tutorial shows how to create a simple LibKet expression, the Bell circuit.
     }
     \begin{quantikz}[row sep={0.75cm,between origins}, column sep=0.2cm, transparent]
         \lstick{$q_0$} & \gate{H}   & \ctrl{1}  & \meter{} \\
-        \lstick{$q_1$} & \qw 		& \targ{}   & \meter{} 
-    \end{quantikz}};	
+        \lstick{$q_1$} & \qw 		& \targ{}   & \meter{}
+    \end{quantikz}};
     :libs:quantikz
 
 **Tutorial 2: Quantum Teleportation**
 
-This tutorial implements the quantum teleportation circuit, which teleports the state of the first qubit to the third qubit by using measurements taken from the first two qubits. 
+This tutorial implements the quantum teleportation circuit, which teleports the state of the first qubit to the third qubit by using measurements taken from the first two qubits.
 
 .. tikz:: Quantum Teleportation circuit
 
@@ -35,7 +35,7 @@ This tutorial implements the quantum teleportation circuit, which teleports the 
         \lstick{$\ket{\psi}$} & \qw      & \qw      & \ctrl{1} & \gate{H} & \meter{} & \cw        & \cwbend{2} \\
         \lstick{$\ket{0}$}    & \gate{H} & \ctrl{1} & \targ{}  & \qw      & \meter{} & \cwbend{1} \\
         \lstick{$\ket{0}$}    & \qw      & \targ{}  & \qw      & \qw      & \qw      & \gate{X}   & \gate{Z} & \qw \rstick{$\ket{\psi}$}
-    \end{quantikz}};    
+    \end{quantikz}};
     :libs:quantikz
 
 **Tutorial 3: Advanced**
@@ -51,8 +51,8 @@ This tutorial shows the use of more advanced filters and gates to create this ar
     \begin{quantikz}[row sep={0.75cm,between origins}, column sep=0.2cm, transparent]
         \lstick{$q_0$} & \gate{R_y(1)}  & \ctrl{1}            & \ctrl{1}                      & \qw      & \meter{} \\
         \lstick{$q_1$} & \gate{H}       &\phase{U_1(\pi)} \qw &\phase{U_1(\frac{\pi}{4})} \qw & \gate{H} & \meter{}
-     
-    \end{quantikz}};    
+
+    \end{quantikz}};
     :libs:quantikz
 
 **Tutorial 4: Static_for with graph**
@@ -68,32 +68,32 @@ This tutorial shows how to implement the :code:`static_for` function in combinat
         \lstick{$q_2$} & \qw      & \targ{}  & \ctrl{1} & \qw      & \qw      & \meter{} \\
         \lstick{$q_3$} & \qw      & \qw      & \targ{}  & \ctrl{1} & \qw      & \meter{} \\
         \lstick{$q_4$} & \qw      & \qw      & \qw      & \targ{}  & \ctrl{-4}& \meter{}
-     
-    \end{quantikz}};    
+
+    \end{quantikz}};
     :libs:quantikz
 
 **Tutorial 5: QPU execution**
 
 In this tutorial, three methods of retrieving QPU results are shown:
-    
+
 - Asynchronous execution
 - Synchronous execution
 - Evaluation
 
 Both asynchronous and synchrounous execution return a pointer to the quantum job. The asynchronous option does not interrupt the code exection and the QPU execution will run in the background, so you can run code while the quantum expression is being evaluated. The synchronous option waits until the QPU has finished evaluating the quantum expression before contuing with the main code. For both methods, results can be retreived using the :code:`job->get()` function.
 
-The evaluation method is similar to the sychronous execution, but directly returns results in JSON format instead of the :code:`QObj` pointer. The circuit belows shows the simple quantum expression used in this tutorial:    
+The evaluation method is similar to the sychronous execution, but directly returns results in JSON format instead of the :code:`QObj` pointer. The circuit belows shows the simple quantum expression used in this tutorial:
 
-.. tikz:: Simple quantum expression 
+.. tikz:: Simple quantum expression
 
     \node at (0,0) []{
     \begin{quantikz}[row sep={0.75cm,between origins}, column sep=0.2cm, transparent]
         \lstick{$q_0$} & \gate{X} & \gate{Y} & \meter{} \\
         \lstick{$q_1$} & \gate{X} & \qw      & \meter{} \\
         \lstick{$q_2$} & \gate{X} & \gate{Y} & \meter{} \\
-        \lstick{$q_3$} & \gate{X} & \qw      & \meter{} 
-     
-    \end{quantikz}};    
+        \lstick{$q_3$} & \gate{X} & \qw      & \meter{}
+
+    \end{quantikz}};
     :libs:quantikz
 
 **Tutorial 6: Quantum Fourier Transform**
@@ -109,9 +109,9 @@ Here, the LibKet circuit QFT is used to construct a QFT circuit with allswap at 
         \lstick{$q_2$} & \qw      & \qw      & \qw      & \ctrl{-2}& \gate{H} & \gate{S}      & \qw      & \gate{T}       & \qw      & \gate{Z^{1/8}} & \qw      & \swap{1} & \qw      & \qw      & \meter{}  \\
         \lstick{$q_3$} & \qw      & \qw      & \qw      & \qw      & \qw      & \ctrl{-3}     & \gate{H} & \gate{S}       & \qw      & \gate{T}       & \qw      & \targX{} & \qw      & \qw      & \meter{}  \\
         \lstick{$q_4$} & \qw      & \qw      & \qw      & \qw      & \qw      & \qw           & \qw      & \ctrl{-4}      & \gate{H} & \gate{S}       & \qw      & \qw      & \targX{} & \qw      & \meter{}  \\
-        \lstick{$q_5$} & \qw      & \qw      & \qw      & \qw      & \qw      & \qw           & \qw      & \qw            & \qw      & \ctrl{-5}      & \gate{H} & \qw      & \qw      & \targX{} & \meter{}  
+        \lstick{$q_5$} & \qw      & \qw      & \qw      & \qw      & \qw      & \qw           & \qw      & \qw            & \qw      & \ctrl{-5}      & \gate{H} & \qw      & \qw      & \targX{} & \meter{}
     \end{quantikz}};
-    :libs: quantikz 
+    :libs: quantikz
 
 **Tutorial 7: Arbitrary Control Circuit**
 
@@ -125,12 +125,12 @@ The following circuit implements the arbitrary control circuit. It takes four pa
         \lstick{$q_1$} & \ctrl{4} & \qw      & \qw      & \qw      & \qw      & \qw      & \ctrl{4} & \meter{} \\
         \lstick{$q_2$} & \qw      & \ctrl{3} & \qw      & \qw      & \qw      & \ctrl{3} & \qw      & \meter{} \\
         \lstick{$q_3$} & \qw      & \qw      & \ctrl{3} & \qw      & \ctrl{3} & \qw      & \qw      & \meter{} \\
-        \lstick{$q_4$} & \qw      & \qw      & \qw      & \gate{X} & \qw      & \qw      & \qw      & \meter{} \\ 
+        \lstick{$q_4$} & \qw      & \qw      & \qw      & \gate{X} & \qw      & \qw      & \qw      & \meter{} \\
         \lstick{$q_5$} & \targ{}  & \ctrl{1} & \qw      & \qw      & \qw      & \ctrl{1} & \targ{}  & \meter{} \\
         \lstick{$q_6$} & \qw      & \targ{}  & \ctrl{1} & \qw      & \ctrl{1} & \targ{}  & \qw      & \meter{} \\
-        \lstick{$q_7$} & \qw      & \qw      & \targ{}  & \ctrl{-3}& \targ{}  & \qw      & \qw      & \meter{}    
+        \lstick{$q_7$} & \qw      & \qw      & \targ{}  & \ctrl{-3}& \targ{}  & \qw      & \qw      & \meter{}
     \end{quantikz}};
-    :libs: quantikz 
+    :libs: quantikz
 
 **Tutorial 8: Allswap**
 
@@ -143,11 +143,11 @@ The Allswap circuit creates a quantum expression where the qubit order in a give
         \lstick{$q_0$} & \qw      & \qw      & \swap{5} & \qw      & \meter{} \\
         \lstick{$q_1$} & \qw      & \swap{3} & \qw      & \qw      & \meter{} \\
         \lstick{$q_2$} & \swap{1} & \qw      & \qw      & \qw      & \meter{} \\
-        \lstick{$q_3$} & \targX{} & \qw      & \qw      & \qw      & \meter{} \\ 
+        \lstick{$q_3$} & \targX{} & \qw      & \qw      & \qw      & \meter{} \\
         \lstick{$q_4$} & \qw      & \targX{} & \qw      & \qw      & \meter{} \\
-        \lstick{$q_5$} & \qw      & \qw      & \targX{} & \qw      & \meter{}  
+        \lstick{$q_5$} & \qw      & \qw      & \targX{} & \qw      & \meter{}
     \end{quantikz}};
-    :libs: quantikz 
+    :libs: quantikz
 
 **Tutorial 9: QAOA**
 
@@ -160,11 +160,11 @@ This tutorial shows the implementation of a QAOA circuit for the Maximum Cut pro
         \lstick{$q_0$} & \gate{H} & \ctrl{1} & \qw                & \ctrl{1} & \ctrl{4} & \qw               & \ctrl{4} & \qw      & \qw               & \qw      & \qw      & \qw               & \qw      & \qw      & \qw               & \qw      & \gate{R_x(\beta)} & \meter{} \\
         \lstick{$q_1$} & \gate{H} & \targ{}  & \gate{R_z(\gamma)} & \targ{1} & \qw      & \qw               & \qw      & \ctrl{1} & \qw               & \ctrl{1} & \ctrl{3} & \qw               & \ctrl{3} & \qw      & \qw               & \qw      & \gate{R_x(\beta)} & \meter{} \\
         \lstick{$q_2$} & \gate{H} & \qw      & \qw                & \qw      & \qw      & \qw               & \qw      & \targ{}  & \gate{R_z(\gamma)}& \targ{}  & \qw      & \qw               & \qw      & \ctrl{1} & \qw               & \ctrl{1} & \gate{R_x(\beta)} & \meter{} \\
-        \lstick{$q_3$} & \gate{H} & \qw      & \qw                & \qw      & \qw      & \qw               & \qw      & \qw      & \qw               & \qw      & \qw      & \qw               & \qw      & \targ{}  & \gate{R_z(\gamma)}& \targ{}  & \gate{R_x(\beta)} & \meter{} \\ 
+        \lstick{$q_3$} & \gate{H} & \qw      & \qw                & \qw      & \qw      & \qw               & \qw      & \qw      & \qw               & \qw      & \qw      & \qw               & \qw      & \targ{}  & \gate{R_z(\gamma)}& \targ{}  & \gate{R_x(\beta)} & \meter{} \\
         \lstick{$q_4$} & \gate{H} & \qw      & \qw                & \qw      & \targ{}  & \gate{R_z(\gamma)}& \targ{}  & \qw      & \qw               & \qw      & \targ{}  & \gate{R_z(\gamma)}& \targ{}  & \qw      & \qw               & \qw      & \gate{R_x(\beta)} & \meter{} \\
-        \lstick{$q_5$} & \gate{H} & \qw      & \qw                & \qw      & \qw      & \qw               & \qw      & \qw      & \qw               & \qw      & \qw      & \qw               & \qw      & \qw      & \qw               & \qw      & \gate{R_x(\beta)} & \meter{}  
+        \lstick{$q_5$} & \gate{H} & \qw      & \qw                & \qw      & \qw      & \qw               & \qw      & \qw      & \qw               & \qw      & \qw      & \qw               & \qw      & \qw      & \qw               & \qw      & \gate{R_x(\beta)} & \meter{}
     \end{quantikz}};
-    :libs: quantikz 
+    :libs: quantikz
 
 **Tutorial 10: Hook**
 
@@ -179,9 +179,9 @@ This tutorial illustrates the usage of the hook gate, which is able to reference
         \lstick{$q_2$} & \gate{H} & \meter{} \\
         \lstick{$q_3$} & \gate{H} & \meter{} \\
         \lstick{$q_4$} & \gate{H} & \meter{} \\
-        \lstick{$q_5$} & \gate{H} & \meter{} 
+        \lstick{$q_5$} & \gate{H} & \meter{}
     \end{quantikz}};
-    :libs: quantikz 
+    :libs: quantikz
 
 **Tutorial 11: Just-In-Time Compilation**
 
@@ -201,9 +201,9 @@ The init script imports the necessary packages for the qiksit visualization. Aft
         \lstick{$q_0$} & \gate{H} & \meter{} \\
         \lstick{$q_1$} & \qw      & \meter{} \\
         \lstick{$q_2$} & \gate{H} & \meter{} \\
-        \lstick{$q_3$} & \qw      & \meter{} 
-     
-    \end{quantikz}};    
+        \lstick{$q_3$} & \qw      & \meter{}
+
+    \end{quantikz}};
     :libs:quantikz
 
 **Tutorial 13: Unitary decomposition**
@@ -212,12 +212,12 @@ This tutorial illustrates the basic usage of the built-in decomposition of a con
 unitary matrix :math:`U` as input and performs the ZYZ decomposition of :math:`U`. For example the following unitary matrix is used:
 
 .. math::
-    
+
    U = \frac{1}{\sqrt{2}}
     \begin{pmatrix}
     1 & -1\\
     1 & 1
-    \end{pmatrix}    
+    \end{pmatrix}
 
 The decomposition created the following quantum circuit:
 
@@ -230,7 +230,7 @@ The decomposition created the following quantum circuit:
         \lstick{$q_2$} & \gate{R_z(0)} & \gate{R_y(\frac{\pi}{2})} & \gate{R_z(0)} & \meter{} \\
         \lstick{$q_3$} & \gate{R_z(0)} & \gate{R_y(\frac{\pi}{2})} & \gate{R_z(0)} & \meter{}
     \end{quantikz}};
-    :libs: quantikz 
+    :libs: quantikz
 
 
 
@@ -239,12 +239,12 @@ The decomposition created the following quantum circuit:
 This tutorial implementes the controlled unitary decomposition, which is similar the the previous tutorial on the decomposed unitary. In this case, a control qubit is incluced to form a binary gate which controls the rotations of the unitary. For example the following unitary matrix is used:
 
 .. math::
-    
+
    U = \frac{1}{\sqrt{2}}
     \begin{pmatrix}
     1 & -1\\
     1 & 1
-    \end{pmatrix}    
+    \end{pmatrix}
 
 The controlled decomposition created the following quantum circuit:
 
@@ -253,14 +253,14 @@ The controlled decomposition created the following quantum circuit:
     \node at (0,0) []{
     \begin{quantikz}[row sep={0.75cm,between origins}, column sep=0.2cm]
         \lstick{$q_0$} & \ctrl{1}      & \ctrl{1}                  & \ctrl{1}      & \meter{} \\
-        \lstick{$q_1$} & \gate{R_z(0)} & \gate{R_y(\frac{\pi}{2})} & \gate{R_z(0)} & \meter{} 
+        \lstick{$q_1$} & \gate{R_z(0)} & \gate{R_y(\frac{\pi}{2})} & \gate{R_z(0)} & \meter{}
 
     \end{quantikz}};
-    :libs: quantikz 
+    :libs: quantikz
 
 **Tutorial 15: Quantum Program**
 
-The quantum program allows for a linear approach to constructing a quantum expression, as often seen in QASM languages. Here, qubit gates and operations are added sequantially and are translated to a quantum expression. 
+The quantum program allows for a linear approach to constructing a quantum expression, as often seen in QASM languages. Here, qubit gates and operations are added sequantially and are translated to a quantum expression.
 
 
 .. tikz:: Circuit created by using the QProgram
@@ -275,9 +275,9 @@ The quantum program allows for a linear approach to constructing a quantum expre
         \lstick{$q_5$} & \gate{R_x(3.141)} & \qw               & \ctrl{3} & \qw      & \meter{} \\
         \lstick{$q_6$} & \qw               & \qw               & \qw      & \targ{}  & \meter{} \\
         \lstick{$q_7$} & \qw               & \targ{}           & \qw      & \qw      & \meter{} \\
-        \lstick{$q_8$} & \qw               & \qw               & \targ{}  & \qw      & \meter{} 
+        \lstick{$q_8$} & \qw               & \qw               & \targ{}  & \qw      & \meter{}
     \end{quantikz}};
-    :libs: quantikz 
+    :libs: quantikz
 
 **Tutorial 16: HHL Algorithm**
 
@@ -287,27 +287,27 @@ This tutorial shows the implementation of the Harrow-Hassidim-Lloyd (HHL) algori
 
    A \vec{x} = \vec{b}
 
-where A is an :math:`N_{b}×N_{b}` Hermitian matrix and :math:`\vec{x}` and :math:`\vec{b}` are :math:`N_b`-dimensional vectors. In this example, :math:`A` and :math:`\vec{b}` are set to:   
+where A is an :math:`N_{b}×N_{b}` Hermitian matrix and :math:`\vec{x}` and :math:`\vec{b}` are :math:`N_b`-dimensional vectors. In this example, :math:`A` and :math:`\vec{b}` are set to:
 
 .. math::
-    
+
    A =
     \begin{pmatrix}
     1 & -\frac{1}{3}\\
     -\frac{1}{3} & 1
     \end{pmatrix}\\
 
-  \vec{b} = \begin{pmatrix} 0 \\ 1\end{pmatrix}   
+  \vec{b} = \begin{pmatrix} 0 \\ 1\end{pmatrix}
 
 The controlled unitary evolution is computed to be:
 
 .. math::
-    
+
    U = e^{iAt} = e^{iA\frac{3\pi}{4}} = \frac{1}{2}
     \begin{pmatrix}
     -1+i & 1+i\\
      1+1 & -1+i
-    \end{pmatrix}\\ 
+    \end{pmatrix}\\
 
 Which results in the following circuit example:
 
@@ -321,7 +321,7 @@ Which results in the following circuit example:
         \lstick{$b_0$}       & \gate{X} & \qw      & \gate{U} & \gate{U^2} & \qw      & \qw      & \qw      & \qw      & \qw              & \qw                & \qw      & \qw      & \qw      & \qw       & \qw       & \gate{U^2} & \gate{U} & \qw      & \meter{} \\
 
     \end{quantikz}};
-    :libs: quantikz     
+    :libs: quantikz
 
 
 The output result indeed confirms the expected ratio found in the HHL paper, which should be around :math:`prob(b_0)` : :math:`prob(b_1)` =  1 : 9.

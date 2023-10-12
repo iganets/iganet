@@ -40,7 +40,7 @@ include(FetchContent)
 # GoogleTest
 ########################################################################
 FetchContent_Declare(
-  googletest  
+  googletest
   URL https://github.com/google/googletest/archive/refs/heads/main.zip
   )
 # For Windows: Prevent overriding the parent project's compiler/linker settings
@@ -70,7 +70,7 @@ foreach(unittest ${UNITTESTS})
   if (CMAKE_CUDA_COMPILER)
     set_source_files_properties(${filename} PROPERTIES LANGUAGE CUDA)
   endif()
-  
+
   string(REPLACE ".cxx" "" name ${filename})
   add_executable(${name} ${filename})
 
@@ -79,7 +79,7 @@ foreach(unittest ${UNITTESTS})
   endif()
 
   target_compile_options(${name} PUBLIC "-DIGANET_DATA_DIR=\"${PROJECT_SOURCE_DIR}/filedata/\"")
-  
+
   # LibTorch
   target_link_libraries(${name} PUBLIC "${TORCH_LIBRARIES}")
 
@@ -89,7 +89,7 @@ foreach(unittest ${UNITTESTS})
 
   # Google test
   target_link_libraries(${name} PUBLIC gtest_main)
-  
+
   if (IGANET_WITH_MATPLOT)
     target_link_libraries(${name} PUBLIC Matplot++::matplot)
   endif()
@@ -97,7 +97,7 @@ foreach(unittest ${UNITTESTS})
   if (IGANET_WITH_OPENMP)
     target_link_libraries(${name} PUBLIC OpenMP::OpenMP_CXX)
   endif()
-  
+
   target_compile_definitions(${name} PUBLIC UNITTEST_DISABLE_SHORT_MACROS)
   add_test(${name} ${name})
 endforeach()

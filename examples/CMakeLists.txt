@@ -16,11 +16,11 @@ file(GLOB EXAMPLES *.cxx)
 
 foreach(example ${EXAMPLES})
   file(RELATIVE_PATH filename ${CMAKE_CURRENT_SOURCE_DIR} ${example})
-  
+
   if (CMAKE_CUDA_COMPILER)
     set_source_files_properties(${filename} PROPERTIES LANGUAGE CUDA)
   endif()
-  
+
   string(REPLACE ".cxx" "" name ${filename})
   add_executable(${name} ${filename})
 
@@ -36,7 +36,7 @@ foreach(example ${EXAMPLES})
     target_compile_definitions(${name} PUBLIC WITH_GISMO)
     target_link_libraries(${name} PUBLIC gismo)
   endif()
-  
+
   if (IGANET_WITH_MATPLOT)
     target_compile_definitions(${name} PUBLIC WITH_MATPLOT)
     target_link_libraries(${name} PUBLIC Matplot++::matplot)

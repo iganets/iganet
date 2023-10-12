@@ -1,5 +1,6 @@
 from pyiganet import pyiganet_core as _pyiganet_core
 
+
 def UniformBSpline(geo, degrees, ncoeffs, init=None, core=None):
     """
     Creator function for uniform splines. Based on the input, a corresponding
@@ -17,7 +18,7 @@ def UniformBSpline(geo, degrees, ncoeffs, init=None, core=None):
 
     Returns
     -------
-    uniform_bspline: UniformBSpline 
+    uniform_bspline: UniformBSpline
     """
     geo_str = f"{geo}d"
     deg_str = ""
@@ -31,5 +32,7 @@ def UniformBSpline(geo, degrees, ncoeffs, init=None, core=None):
 
     if core is None:
         core = _pyiganet_core.core.Core
-        
-    return eval(f"_pyiganet_core.splines.UniformBSpline{geo_str}{deg_str}")(ncoeffs, init)
+
+    return eval(f"_pyiganet_core.splines.UniformBSpline{geo_str}{deg_str}")(
+        ncoeffs, init
+    )

@@ -164,7 +164,7 @@ if(IGANET_BUILD_DOCS)
   find_package(Doxygen)
   if(DOXYGEN_FOUND)
     set(DOXYGEN_OUTPUT_DIR ${PROJECT_BINARY_DIR}/docs/doxygen)
-    set(DOXYGEN_TAGFILE ${PROJECT_BINARY_DIR}/docs/doxygen/iganet-doxygen.tag.xml)  
+    set(DOXYGEN_TAGFILE ${PROJECT_BINARY_DIR}/docs/doxygen/iganet-doxygen.tag.xml)
     configure_file(${PROJECT_SOURCE_DIR}/docs/Doxyfile.in ${PROJECT_BINARY_DIR}/docs/doxygen/Doxyfile @ONLY)
     add_custom_target(Doxygen
       COMMAND
@@ -172,7 +172,7 @@ if(IGANET_BUILD_DOCS)
       WORKING_DIRECTORY ${PROJECT_BINARY_DIR}
       COMMENT "Generating documentation with Doxygen"
       )
-    
+
   else()
     add_custom_target(Doxygen
       ${CMAKE_COMMAND} -E cmake_echo_color --cyan "Please install doxygen, and run cmake . \\&\\& make Doxygen to generate the Doxygen documentation."

@@ -10,7 +10,7 @@ directly from within LibKet. Instructions on how to :ref:`install
 prerequisites<LibKet Installing prerequisites>`, :ref:`download LibKet<LibKet
 Downloading LibKet>`, and :ref:`configure and
 build<LibKet Configuring and building LibKet>` it can be found
-below. 
+below.
 
 .. _LibKet Installing prerequisites:
 
@@ -42,7 +42,7 @@ Next, install CMake3 and Doxygen (optional) and Python 3.x
 run
 
 .. code-block:: bash
-                
+
     sudo yum install cmake3 doxygen git python3 python3-devel python3-libs
 
 Releases prior to 7.7 do not provide Python 3.x and require to install
@@ -55,14 +55,14 @@ too old to compile **LibKet** and needs to be updated from the
 `Software Collections <https://www.softwarecollections.org/en/>`_
 
 .. code-block:: bash
-                
+
     sudo yum install centos-release-scl
     sudo yum install devtoolset-7
 
 From now on, GCC v7.x can be used by running
 
 .. code-block:: bash
-                
+
     scl enable devtoolset-7 bash
 
 Linux Ubuntu 18.x (or better)
@@ -71,7 +71,7 @@ Linux Ubuntu 18.x (or better)
 All prerequisites can be installed by running the following oneliner
 
 .. code-block:: bash
-                
+
     sudo apt-get update
     sudo apt install build-essential cmake doxygen git python3-dev python3-pip --fix-missing
 
@@ -96,9 +96,9 @@ by running
 Once that is done you can install the prerequisites as follows
 
 .. code-block:: bash
-                
+
     brew update
-    brew install cmake doxygen gcc python 
+    brew install cmake doxygen gcc python
 
 Note that the `QX` simulator does not run under Apple Silicon
 (M1). Moreover, some Python packages might not install correctly. We
@@ -144,15 +144,15 @@ A better way to obtain the latest revision from `GitLab
 convenience to receive updates of the code is to use Git.
 
 On **Linux**/**macOS**, you may checkout the latest revision using
-        
+
 .. code-block:: bash
-                
+
     git clone https://gitlab.com/libket/LibKet.git
 
 or
 
 .. code-block:: bash
-                
+
     git clone git@gitlab.com:libket/LibKet.git
 
 
@@ -170,24 +170,24 @@ LibKet code switch to the `develop` branch once you the initial
 cloning of the Git repository succeeded
 
 .. code-block:: bash
-                
+
     cd LibKet
     git checkout --track origin/develop
 
-    
+
 .. _LibKet Configuring and building LibKet:
 
 Configuring and building LibKet
 -------------------------------
 
-Assuming that LibKet has been downloaded to the source folder 
+Assuming that LibKet has been downloaded to the source folder
 ``LibKet`` the following sequence of commands will compile all
 examples with the `common Quantum Assembly Language (CQASM) v1.0
 <https://arxiv.org/abs/1805.09607>`_ (cQASMv1) backend enabled and
 execute the program ``tutorial01_simple``.
 
 .. code-block:: bash
-                
+
    cd LibKet
    mkdir build
    cd build
@@ -197,8 +197,8 @@ execute the program ``tutorial01_simple``.
    [100%] Built
    ./examples/tutorial01_simple
 
-Please note that the so-compiled tutorials try to establish a connection with the 
-remote QI-Simulator. Details on how to configure LibKet for the QI-backend can be 
+Please note that the so-compiled tutorials try to establish a connection with the
+remote QI-Simulator. Details on how to configure LibKet for the QI-backend can be
 found in :ref:`LibKet Activating additional quantum backends<LibKet Activating additional quantum backends>`
 
 The following configuration options can be used with the :code:`cmake` :code:`-D` flag:
@@ -299,7 +299,7 @@ LibKet supports the following quantum computing backends
 
    .. code-block:: bash
 
-      pip3 install cirq      # installs Cirq in the global environment 
+      pip3 install cirq      # installs Cirq in the global environment
       make install-cirq-venv # installs Cirq in a virtual environment
       make install-cirq      # installs Cirq in the global environment
 
@@ -325,8 +325,8 @@ LibKet supports the following quantum computing backends
    have a user account, which can be created free-of-charge `here
    <https://www.quantum-inspire.com/account/create>`_. Once you created a
    free user account it suffices to set the following environment
-   variables:   
-   
+   variables:
+
    **Bash**
 
    .. code-block:: bash
@@ -339,11 +339,11 @@ LibKet supports the following quantum computing backends
    .. code-block:: bash
 
     setenv QI_USERNAME <your username>
-    setenv QI_PASSWORD <your password>  
+    setenv QI_PASSWORD <your password>
 
    LibKet will use this information to establish the connection
    with the remote QI simulator.
- 
+
 4. For using the full functionality of the ``openQASMv2`` backend you need to have the ``qiskit`` Python package installed (see above for an explanation of the following commands).
 
    .. code-block:: bash
@@ -352,7 +352,7 @@ LibKet supports the following quantum computing backends
         make install-qiskit-venv
         make install-qiskit
 
-    
+
 
    For additional use of the IonQ simulator, an additional qiskit package needs to be installed
 
@@ -364,7 +364,7 @@ LibKet supports the following quantum computing backends
 
    IBMQ and IonQ's remote devices can be accessed by creating an account for their services and obtaining an API tokens. Keys can be exported using terminal command:
 
-   .. code-block:: bash 
+   .. code-block:: bash
 
     export IBMQ_API_TOKEN="<Your IBMQ token>"
     export IONQ_API_TOKEN="<Your IonQ token>"
@@ -439,8 +439,8 @@ additional configuration options.
 
 Generating the LibKet documentation
 -----------------------------------
-Libket supports the generation of project documentations with `Doxygen <http://www.doxygen.org/>`_ 
-and `Sphinx <https://www.sphinx-doc.org/>`_. Make sure to set the :code:`-DLIBKET_BUILD_DOCS=ON` flag 
+Libket supports the generation of project documentations with `Doxygen <http://www.doxygen.org/>`_
+and `Sphinx <https://www.sphinx-doc.org/>`_. Make sure to set the :code:`-DLIBKET_BUILD_DOCS=ON` flag
 when configuring :code:`cmake`.
 
 
@@ -448,7 +448,7 @@ If `Doxygen <http://www.doxygen.org/>`_ is available on your system,
 you can generate and open the Doxygen HTML pages by executing
 
 .. code-block:: bash
-                
+
     cd build
     make Doxygen
     ...
@@ -460,7 +460,7 @@ If `Sphinx <https://www.sphinx-doc.org/>`_ is available on your
 system, you can generate and open the Sphinx HTML pages by executing
 
 .. code-block:: bash
-                
+
     cd build
     make Sphinx
     ...

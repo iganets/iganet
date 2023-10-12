@@ -53,10 +53,10 @@ foreach(ROWS RANGE 1 4)
     list(APPEND init_core "init_BlockTensor${SUFFIX}")
 
     configure_file(${CMAKE_CURRENT_SOURCE_DIR}/pyblocktensor.cxx.in
-      ${CMAKE_CURRENT_BINARY_DIR}/pyblocktensor${SUFFIX}.cxx @ONLY)    
+      ${CMAKE_CURRENT_BINARY_DIR}/pyblocktensor${SUFFIX}.cxx @ONLY)
   endforeach()
 endforeach()
-  
+
 # Create list of PyBind11 init subroutines
 list(APPEND init_splines "init_bspline")
 
@@ -68,14 +68,14 @@ foreach(GEODIM RANGE 1 4)
 #      "3" "3,3" "3,3,3" "3,3,3,3"
 #      "4" "4,4" "4,4,4" "4,4,4,4"
 #      "5" "5,5" "5,5,5" "5,5,5,5")
-    
+
     set(SUFFIX "${GEODIM}d_${DEGREES}")
-    string(REPLACE "," "_" SUFFIX ${SUFFIX})   
+    string(REPLACE "," "_" SUFFIX ${SUFFIX})
     list(APPEND init_splines "init_UniformBSpline${SUFFIX}")
 
     string(REPLACE "," ";" PARDIM ${DEGREES})
     list(LENGTH PARDIM PARDIM)
-    
+
     configure_file(${CMAKE_CURRENT_SOURCE_DIR}/pybspline.cxx.in
       ${CMAKE_CURRENT_BINARY_DIR}/pybspline${SUFFIX}.cxx @ONLY)
   endforeach()
@@ -110,7 +110,7 @@ endforeach()
 
 file(APPEND ${CMAKE_CURRENT_BINARY_DIR}/pyiganet.cxx
   "\n\n/**
-   @brief Creates IgANet Python module 
+   @brief Creates IgANet Python module
 */
 
 PYBIND11_MODULE(pyiganet_core, m) {\n

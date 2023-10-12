@@ -1,18 +1,20 @@
 import os
 import unittest
-from wsiganet import *
 import xml.etree.ElementTree as ET
 
-class TestSession(unittest.TestCase):
-    
-    def setUp(self):
+from wsiganet import *
 
+
+class TestSession(unittest.TestCase):
+    def setUp(self):
         self.protocol = os.environ.get("PROTOCOL", "ws")
         self.hostname = os.environ.get("HOSTNAME", "localhost")
-        self.port     = os.environ.get("PORT",     "9001")
-        
+        self.port = os.environ.get("PORT", "9001")
+
         # Establish connection
-        self.ws = create_connection(self.protocol + "://" + self.hostname + ":" + self.port)
+        self.ws = create_connection(
+            self.protocol + "://" + self.hostname + ":" + self.port
+        )
 
         # Get list of sessions
         self.session_ids = get_sessions(self.ws)
@@ -21,7 +23,6 @@ class TestSession(unittest.TestCase):
         self.session_id, _ = create_session(self.ws)
 
     def tearDown(self):
-
         # Remove session
         remove_session(self.ws, self.session_id)
 
@@ -32,12 +33,10 @@ class TestSession(unittest.TestCase):
         self.ws.close()
 
     def test_create_remove(self):
-
         # Check that list of sessions has changed
         self.assertNotEqual(self.session_ids, get_sessions(self.ws))
 
     def test_connect_disconnect(self):
-
         # Check that list of sessions has changed
         self.assertNotEqual(self.session_ids, get_sessions(self.ws))
 
@@ -51,9 +50,10 @@ class TestSession(unittest.TestCase):
         connect_session(self.ws, self.session_id)
 
     def test_broadcast(self):
-
         # Establish connection
-        ws = create_connection(self.protocol + "://" + self.hostname + ":" + self.port)
+        ws = create_connection(
+            self.protocol + "://" + self.hostname + ":" + self.port
+        )
 
         # Connect to existing session
         connect_session(ws, self.session_id)
@@ -71,7 +71,6 @@ class TestSession(unittest.TestCase):
         ws.close()
 
     def test_exportxml(self):
-
         # Create three new BSpline objects
         model0, _ = create_BSplineCurve(self.ws, self.session_id)
         model1, _ = create_BSplineSurface(self.ws, self.session_id)
@@ -80,7 +79,11 @@ class TestSession(unittest.TestCase):
         data = export_session_xml(self.ws, self.session_id)
         xml1 = ET.fromstring(data["xml"])
 
-        xml2 = ET.parse(os.path.join(os.path.dirname(__file__), "../filedata/xml/Session.xml"))
+        xml2 = ET.parse(
+            os.path.join(
+                os.path.dirname(__file__), "../filedata/xml/Session.xml"
+            )
+        )
 
         self.assertEqual(ET.tostring(xml1), ET.tostring(xml2.getroot()))
 
@@ -90,30 +93,53 @@ class TestSession(unittest.TestCase):
         remove_model(self.ws, self.session_id, model2)
 
     def test_importxml(self):
-
         # Create three new BSpline objects
         model0, data0 = create_BSplineCurve(self.ws, self.session_id)
         model1, data1 = create_BSplineSurface(self.ws, self.session_id)
         model2, data2 = create_BSplineVolume(self.ws, self.session_id)
 
         # Change coefficients
-        put_model_attribute(self.ws, self.session_id, model0, data0["inputs"][0]["name"], "coeffs", { "indices" : [0, 3],
-                                                                                                      "coeffs"  : [[0.0, 0.0, 0.0], [0.5, 1.0, 0.5]]} )
-        put_model_attribute(self.ws, self.session_id, model1, data1["inputs"][0]["name"], "coeffs", { "indices" : [0, 3],
-                                                                                                      "coeffs"  : [[0.0, 0.0, 0.0], [0.5, 1.0, 0.5]]} )
-        put_model_attribute(self.ws, self.session_id, model2, data2["inputs"][0]["name"], "coeffs", { "indices" : [0, 3],
-                                                                                                      "coeffs"  : [[0.0, 0.0, 0.0], [0.5, 1.0, 0.5]]} )
+        put_model_attribute(
+            self.ws,
+            self.session_id,
+            model0,
+            data0["inputs"][0]["name"],
+            "coeffs",
+            {"indices": [0, 3], "coeffs": [[0.0, 0.0, 0.0], [0.5, 1.0, 0.5]]},
+        )
+        put_model_attribute(
+            self.ws,
+            self.session_id,
+            model1,
+            data1["inputs"][0]["name"],
+            "coeffs",
+            {"indices": [0, 3], "coeffs": [[0.0, 0.0, 0.0], [0.5, 1.0, 0.5]]},
+        )
+        put_model_attribute(
+            self.ws,
+            self.session_id,
+            model2,
+            data2["inputs"][0]["name"],
+            "coeffs",
+            {"indices": [0, 3], "coeffs": [[0.0, 0.0, 0.0], [0.5, 1.0, 0.5]]},
+        )
 
         # Export session from XML
         data = export_session_xml(self.ws, self.session_id)
         xml1 = ET.fromstring(data["xml"])
 
-        xml2 = ET.parse(os.path.join(os.path.dirname(__file__), "../filedata/xml/Session.xml"))
+        xml2 = ET.parse(
+            os.path.join(
+                os.path.dirname(__file__), "../filedata/xml/Session.xml"
+            )
+        )
 
         self.assertNotEqual(ET.tostring(xml1), ET.tostring(xml2.getroot()))
 
         # Import session from XML
-        result = import_session_xml(self.ws, self.session_id, { "xml" : str(ET.tostring(xml2.getroot())) })
+        result = import_session_xml(
+            self.ws, self.session_id, {"xml": str(ET.tostring(xml2.getroot()))}
+        )
 
         # Export session from XML
         data = export_session_xml(self.ws, self.session_id)
@@ -138,31 +164,48 @@ class TestSession(unittest.TestCase):
         data = save_session(self.ws, self.session_id)
 
         # Create XML root
-        xml = ET.Element('Session')
+        xml = ET.Element("Session")
 
         for index in range(0, len(data)):
-
             # Add to XML root
-            model = ET.SubElement(xml, 'Model', part=str(index), file="Session." + str(index) + ".pt")
+            model = ET.SubElement(
+                xml,
+                "Model",
+                part=str(index),
+                file="Session." + str(index) + ".pt",
+            )
 
             # Open binary reference file for writing
             with open("Session_tmp." + str(index) + ".pt", "wb") as file:
                 for byte in data[index]["binary"]:
-                    file.write(byte.to_bytes(1, byteorder='big'))
+                    file.write(byte.to_bytes(1, byteorder="big"))
 
-            self.assertTrue(filecmp.cmp("Session_tmp." + str(index) + ".pt",
-                                        os.path.join(os.path.dirname(__file__), "../filedata/pytorch/Session." + str(index) + ".pt")))
+            self.assertTrue(
+                filecmp.cmp(
+                    "Session_tmp." + str(index) + ".pt",
+                    os.path.join(
+                        os.path.dirname(__file__),
+                        "../filedata/pytorch/Session." + str(index) + ".pt",
+                    ),
+                )
+            )
 
             # Remove model file
-            os.remove("Session_tmp." +str(index) + ".pt")
+            os.remove("Session_tmp." + str(index) + ".pt")
 
         # Write session file
-        ET.ElementTree(xml).write('Session_tmp.ptc')
+        ET.ElementTree(xml).write("Session_tmp.ptc")
 
         xml1 = ET.parse("Session_tmp.ptc")
-        xml2 = ET.parse(os.path.join(os.path.dirname(__file__), "../filedata/pytorch/Session.ptc"))
+        xml2 = ET.parse(
+            os.path.join(
+                os.path.dirname(__file__), "../filedata/pytorch/Session.ptc"
+            )
+        )
 
-        self.assertEqual(ET.tostring(xml1.getroot()), ET.tostring(xml2.getroot()))
+        self.assertEqual(
+            ET.tostring(xml1.getroot()), ET.tostring(xml2.getroot())
+        )
 
         os.remove("Session_tmp.ptc")
 
@@ -170,17 +213,27 @@ class TestSession(unittest.TestCase):
         import filecmp
 
         # Open and read session file
-        xml = ET.parse(os.path.join(os.path.dirname(__file__), "../filedata/pytorch/Session.ptc"))
+        xml = ET.parse(
+            os.path.join(
+                os.path.dirname(__file__), "../filedata/pytorch/Session.ptc"
+            )
+        )
 
         binary = []
         # Load binary files
         for model in xml.getroot():
-            with open(os.path.join(os.path.dirname(__file__), "../filedata/pytorch/" + model.attrib["file"]), "rb") as file:
+            with open(
+                os.path.join(
+                    os.path.dirname(__file__),
+                    "../filedata/pytorch/" + model.attrib["file"],
+                ),
+                "rb",
+            ) as file:
                 data = file.read()
                 binary.append([int(byte) for byte in data])
 
         # Load session from binary data
-        session_id, _ = load_session(self.ws, { "binary" : binary })
+        session_id, _ = load_session(self.ws, {"binary": binary})
 
         # Get list of model instances
         models = get_models(self.ws, session_id)
@@ -192,16 +245,17 @@ class TestSession(unittest.TestCase):
         # Remove session
         remove_session(self.ws, session_id)
 
-class TestBSplineSurface(unittest.TestCase):
-    
-    def setUp(self):
 
+class TestBSplineSurface(unittest.TestCase):
+    def setUp(self):
         self.protocol = os.environ.get("PROTOCOL", "ws")
         self.hostname = os.environ.get("HOSTNAME", "localhost")
-        self.port     = os.environ.get("PORT",     "9001")
-        
+        self.port = os.environ.get("PORT", "9001")
+
         # Establish connection
-        self.ws = create_connection(self.protocol + "://" + self.hostname + ":" + self.port)
+        self.ws = create_connection(
+            self.protocol + "://" + self.hostname + ":" + self.port
+        )
 
         # Get list of sessions
         self.session_ids = get_sessions(self.ws)
@@ -213,13 +267,14 @@ class TestBSplineSurface(unittest.TestCase):
         self.models = get_models(self.ws, self.session_id)
 
         # Create a new BSpline surface
-        self.model, self.data = create_BSplineSurface(self.ws, self.session_id, degree = 1, init = 4, ncoeffs = [3, 2])
+        self.model, self.data = create_BSplineSurface(
+            self.ws, self.session_id, degree=1, init=4, ncoeffs=[3, 2]
+        )
 
         # Get component name
         self.component = self.data["inputs"][0]["name"]
 
     def tearDown(self):
-
         # Remove model instance
         remove_model(self.ws, self.session_id, self.model)
 
@@ -236,92 +291,153 @@ class TestBSplineSurface(unittest.TestCase):
         self.ws.close()
 
     def test_create_remove(self):
-
         # Check that list of model instances has changed
         self.assertNotEqual(self.models, get_models(self.ws, self.session_id))
 
     def test_get_component(self):
-
         # Get component
-        component = get_model_component(self.ws, self.session_id, self.model, self.component)
+        component = get_model_component(
+            self.ws, self.session_id, self.model, self.component
+        )
 
         self.assertTrue(component)
 
     def test_get_attributes(self):
-
         # Check degrees
-        self.assertEqual(get_model_attribute(self.ws, self.session_id, self.model, self.component, "degrees")["degrees"],
-                         [1, 1])
+        self.assertEqual(
+            get_model_attribute(
+                self.ws, self.session_id, self.model, self.component, "degrees"
+            )["degrees"],
+            [1, 1],
+        )
 
         # Check number of coefficients
-        self.assertEqual(get_model_attribute(self.ws, self.session_id, self.model, self.component, "ncoeffs")["ncoeffs"],
-                         [3, 2])
+        self.assertEqual(
+            get_model_attribute(
+                self.ws, self.session_id, self.model, self.component, "ncoeffs"
+            )["ncoeffs"],
+            [3, 2],
+        )
 
         # Check number of knots
-        self.assertEqual(get_model_attribute(self.ws, self.session_id, self.model, self.component, "nknots")["nknots"],
-                         [5, 4])
+        self.assertEqual(
+            get_model_attribute(
+                self.ws, self.session_id, self.model, self.component, "nknots"
+            )["nknots"],
+            [5, 4],
+        )
 
         # Check coefficients
-        self.assertEqual(get_model_attribute(self.ws, self.session_id, self.model, self.component, "coeffs")["coeffs"],
-                         [[0.0, 0.5, 1.0, 0.0, 0.5, 1.0],
-                          [0.0, 0.0, 0.0, 1.0, 1.0, 1.0],
-                          [1.0, 1.0, 1.0, 1.0, 1.0, 1.0]])
+        self.assertEqual(
+            get_model_attribute(
+                self.ws, self.session_id, self.model, self.component, "coeffs"
+            )["coeffs"],
+            [
+                [0.0, 0.5, 1.0, 0.0, 0.5, 1.0],
+                [0.0, 0.0, 0.0, 1.0, 1.0, 1.0],
+                [1.0, 1.0, 1.0, 1.0, 1.0, 1.0],
+            ],
+        )
 
         # Check knots
-        self.assertEqual(get_model_attribute(self.ws, self.session_id, self.model, self.component, "knots")["knots"],
-                         [[0.0, 0.0, 0.5, 1.0, 1.0], [0.0, 0.0, 1.0, 1.0]])
+        self.assertEqual(
+            get_model_attribute(
+                self.ws, self.session_id, self.model, self.component, "knots"
+            )["knots"],
+            [[0.0, 0.0, 0.5, 1.0, 1.0], [0.0, 0.0, 1.0, 1.0]],
+        )
 
     def test_put_attributes(self):
-
         # Check coefficients
-        self.assertEqual(get_model_attribute(self.ws, self.session_id, self.model, self.component, "coeffs")["coeffs"],
-                         [[0.0, 0.5, 1.0, 0.0, 0.5, 1.0],
-                          [0.0, 0.0, 0.0, 1.0, 1.0, 1.0],
-                          [1.0, 1.0, 1.0, 1.0, 1.0, 1.0]])
+        self.assertEqual(
+            get_model_attribute(
+                self.ws, self.session_id, self.model, self.component, "coeffs"
+            )["coeffs"],
+            [
+                [0.0, 0.5, 1.0, 0.0, 0.5, 1.0],
+                [0.0, 0.0, 0.0, 1.0, 1.0, 1.0],
+                [1.0, 1.0, 1.0, 1.0, 1.0, 1.0],
+            ],
+        )
 
         # Change coefficients
-        put_model_attribute(self.ws, self.session_id, self.model, self.component, "coeffs", { "indices" : [0, 3],
-                                                                                              "coeffs"  : [[0.0, 0.0, 0.0], [0.5, 1.0, 0.5]]} )
+        put_model_attribute(
+            self.ws,
+            self.session_id,
+            self.model,
+            self.component,
+            "coeffs",
+            {"indices": [0, 3], "coeffs": [[0.0, 0.0, 0.0], [0.5, 1.0, 0.5]]},
+        )
 
         # Check updated coefficients
-        self.assertEqual(get_model_attribute(self.ws, self.session_id, self.model, self.component, "coeffs")["coeffs"],
-                         [[0.0, 0.5, 1.0, 0.5, 0.5, 1.0],
-                          [0.0, 0.0, 0.0, 1.0, 1.0, 1.0],
-                          [0.0, 1.0, 1.0, 0.5, 1.0, 1.0]])
+        self.assertEqual(
+            get_model_attribute(
+                self.ws, self.session_id, self.model, self.component, "coeffs"
+            )["coeffs"],
+            [
+                [0.0, 0.5, 1.0, 0.5, 0.5, 1.0],
+                [0.0, 0.0, 0.0, 1.0, 1.0, 1.0],
+                [0.0, 1.0, 1.0, 0.5, 1.0, 1.0],
+            ],
+        )
 
     def test_exportxml(self):
-
         # Export model to XML
         data = export_model_xml(self.ws, self.session_id, self.model)
         xml1 = ET.fromstring(data["xml"])
-        xml2 = ET.parse(os.path.join(os.path.dirname(__file__), "../filedata/xml/BSplineSurface.xml"))
+        xml2 = ET.parse(
+            os.path.join(
+                os.path.dirname(__file__), "../filedata/xml/BSplineSurface.xml"
+            )
+        )
 
         self.assertEqual(ET.tostring(xml1), ET.tostring(xml2.getroot()))
 
     def test_exportxml_component(self):
-
         # Export model component to XML
-        data = export_model_component_xml(self.ws, self.session_id, self.model, "geometry")
+        data = export_model_component_xml(
+            self.ws, self.session_id, self.model, "geometry"
+        )
         xml1 = ET.fromstring(data["xml"])
-        xml2 = ET.parse(os.path.join(os.path.dirname(__file__), "../filedata/xml/BSplineSurfaceComponent.xml"))
+        xml2 = ET.parse(
+            os.path.join(
+                os.path.dirname(__file__),
+                "../filedata/xml/BSplineSurfaceComponent.xml",
+            )
+        )
 
         self.assertEqual(ET.tostring(xml1), ET.tostring(xml2.getroot()))
 
     def test_importxml(self):
-
         # Change coefficients
-        put_model_attribute(self.ws, self.session_id, self.model, self.component, "coeffs", { "indices" : [0, 3],
-                                                                                              "coeffs"  : [[0.0, 0.0, 0.0], [0.5, 1.0, 0.5]]} )
+        put_model_attribute(
+            self.ws,
+            self.session_id,
+            self.model,
+            self.component,
+            "coeffs",
+            {"indices": [0, 3], "coeffs": [[0.0, 0.0, 0.0], [0.5, 1.0, 0.5]]},
+        )
 
         # Export model to XML
         data = export_model_xml(self.ws, self.session_id, self.model)
         xml1 = ET.fromstring(data["xml"])
-        xml2 = ET.parse(os.path.join(os.path.dirname(__file__), "../filedata/xml/BSplineSurface.xml"))
+        xml2 = ET.parse(
+            os.path.join(
+                os.path.dirname(__file__), "../filedata/xml/BSplineSurface.xml"
+            )
+        )
 
         self.assertNotEqual(ET.tostring(xml1), ET.tostring(xml2.getroot()))
 
         # Import model from XML
-        result = import_model_xml(self.ws, self.session_id, self.model, { "xml" : str(ET.tostring(xml2.getroot())) })
+        result = import_model_xml(
+            self.ws,
+            self.session_id,
+            self.model,
+            {"xml": str(ET.tostring(xml2.getroot()))},
+        )
 
         # Export model to XML
         data = export_model_xml(self.ws, self.session_id, self.model)
@@ -330,23 +446,41 @@ class TestBSplineSurface(unittest.TestCase):
         self.assertEqual(ET.tostring(xml1), ET.tostring(xml2.getroot()))
 
     def test_importxml_component(self):
-
         # Change coefficients
-        put_model_attribute(self.ws, self.session_id, self.model, self.component, "coeffs", { "indices" : [0, 3],
-                                                                                              "coeffs"  : [[0.0, 0.0, 0.0], [0.5, 1.0, 0.5]]} )
+        put_model_attribute(
+            self.ws,
+            self.session_id,
+            self.model,
+            self.component,
+            "coeffs",
+            {"indices": [0, 3], "coeffs": [[0.0, 0.0, 0.0], [0.5, 1.0, 0.5]]},
+        )
 
         # Export model to XML
         data = export_model_xml(self.ws, self.session_id, self.model)
         xml1 = ET.fromstring(data["xml"])
-        xml2 = ET.parse(os.path.join(os.path.dirname(__file__), "../filedata/xml/BSplineSurfaceComponent.xml"))
+        xml2 = ET.parse(
+            os.path.join(
+                os.path.dirname(__file__),
+                "../filedata/xml/BSplineSurfaceComponent.xml",
+            )
+        )
 
         self.assertNotEqual(ET.tostring(xml1), ET.tostring(xml2.getroot()))
 
         # Import model from XML
-        result = import_model_component_xml(self.ws, self.session_id, self.model, "geometry", { "xml" : str(ET.tostring(xml2.getroot())) })
+        result = import_model_component_xml(
+            self.ws,
+            self.session_id,
+            self.model,
+            "geometry",
+            {"xml": str(ET.tostring(xml2.getroot()))},
+        )
 
         # Export model to XML
-        data = export_model_component_xml(self.ws, self.session_id, self.model, "geometry")
+        data = export_model_component_xml(
+            self.ws, self.session_id, self.model, "geometry"
+        )
         xml1 = ET.fromstring(data["xml"])
 
         self.assertEqual(ET.tostring(xml1), ET.tostring(xml2.getroot()))
@@ -360,10 +494,17 @@ class TestBSplineSurface(unittest.TestCase):
         # Open binary reference file for writing
         with open("BSplineSurface_tmp.pt", "wb") as file:
             for byte in data["binary"]:
-                file.write(byte.to_bytes(1, byteorder='big'))
+                file.write(byte.to_bytes(1, byteorder="big"))
 
-        self.assertTrue(filecmp.cmp("BSplineSurface_tmp.pt",
-                                    os.path.join(os.path.dirname(__file__), "../filedata/pytorch/BSplineSurface.pt")))
+        self.assertTrue(
+            filecmp.cmp(
+                "BSplineSurface_tmp.pt",
+                os.path.join(
+                    os.path.dirname(__file__),
+                    "../filedata/pytorch/BSplineSurface.pt",
+                ),
+            )
+        )
 
         os.remove("BSplineSurface_tmp.pt")
 
@@ -371,13 +512,19 @@ class TestBSplineSurface(unittest.TestCase):
         import filecmp
 
         # Open binary file for reading
-        file = open(os.path.join(os.path.dirname(__file__), "../filedata/pytorch/BSplineSurface.pt"), "rb")
+        file = open(
+            os.path.join(
+                os.path.dirname(__file__),
+                "../filedata/pytorch/BSplineSurface.pt",
+            ),
+            "rb",
+        )
         data = file.read()
         file.close()
 
         # Load model from binary data
         binary = [int(byte) for byte in data]
-        model, _ = load_model(self.ws, self.session_id, { "binary" : binary })
+        model, _ = load_model(self.ws, self.session_id, {"binary": binary})
 
         # Save model to binary data
         data = save_model(self.ws, self.session_id, model)
@@ -385,14 +532,22 @@ class TestBSplineSurface(unittest.TestCase):
         # Open binary reference file for writing
         with open("BSplineSurface_tmp.pt", "wb") as file:
             for byte in data["binary"]:
-                file.write(byte.to_bytes(1, byteorder='big'))
+                file.write(byte.to_bytes(1, byteorder="big"))
 
-        self.assertTrue(filecmp.cmp("BSplineSurface_tmp.pt",
-                                    os.path.join(os.path.dirname(__file__), "../filedata/pytorch/BSplineSurface.pt")))
+        self.assertTrue(
+            filecmp.cmp(
+                "BSplineSurface_tmp.pt",
+                os.path.join(
+                    os.path.dirname(__file__),
+                    "../filedata/pytorch/BSplineSurface.pt",
+                ),
+            )
+        )
 
         os.remove("BSplineSurface_tmp.pt")
 
         remove_model(self.ws, self.session_id, model)
 
-if __name__ == '__main__':
+
+if __name__ == "__main__":
     unittest.main()

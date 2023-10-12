@@ -22,14 +22,14 @@ foreach(model ${MODELS})
   if (CMAKE_CUDA_COMPILER)
     set_source_files_properties(${filename} PROPERTIES LANGUAGE CUDA)
   endif()
-  
+
   string(REPLACE ".cxx" "" name ${filename})
   add_library(${name} SHARED ${filename})
 
   if(NOT WIN32 AND NOT ${CMAKE_VERSION} VERSION_LESS "3.16.0")
     target_precompile_headers(${name} REUSE_FROM iganet_pch)
   endif()
-  
+
   target_link_libraries(${name} PUBLIC ${TORCH_LIBRARIES})
   target_link_libraries(${name} PUBLIC ${ZLIB_LIBRARIES})
   target_link_libraries(${name} PUBLIC ${CMAKE_DL_LIBS})
@@ -38,7 +38,7 @@ foreach(model ${MODELS})
   if (IGANET_WITH_OPENMP)
     target_link_libraries(${name} PUBLIC OpenMP::OpenMP_CXX)
   endif()
-  
+
   install(TARGETS ${name} DESTINATION models)
 endforeach()
 

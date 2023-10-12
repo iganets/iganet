@@ -1,5 +1,5 @@
 .. _LibKet API Documentation:
-   
+
 API documentation
 =================
 
@@ -43,4 +43,3 @@ Python API:
 .. -------
 ..
    .. doxygengroup:: devices
-   

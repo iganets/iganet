@@ -28,7 +28,7 @@ namespace py = pybind11;
 
 void init_BlockTensor@SUFFIX@(py::module_ &m) {
   py::class_<iganet::utils::BlockTensor<torch::Tensor, @ROWS@, @COLS@>>(m, "BlockTensor@SUFFIX@")
-    
+
     // Constructors
     .def(py::init<>())
 
@@ -37,15 +37,15 @@ void init_BlockTensor@SUFFIX@(py::module_ &m) {
                 &iganet::utils::BlockTensor<torch::Tensor, @ROWS@, @COLS@>::dims,
                 "Returns all dimensions as array")
     .def_static("dim",
-                [](std::size_t i) {                  
+                [](std::size_t i) {
                   switch(i) {
-                    
+
 #define           MACRO(r, elem, data)                \
                     case (elem):                      \
                       return iganet::utils::BlockTensor<torch::Tensor, @ROWS@, @COLS@>::dim<elem>();
                   BOOST_PP_REPEAT( 16, MACRO, _ )
 #undef            MACRO
-                    
+
                   default:
                       throw std::runtime_error("Unsupported block tensor dimension");
                   }
@@ -66,12 +66,12 @@ void init_BlockTensor@SUFFIX@(py::module_ &m) {
     .def("__setitem__",
          [](iganet::utils::BlockTensor<torch::Tensor, @ROWS@, @COLS@>& blockvector,
             std::size_t idx, torch::Tensor value)
-         { return blockvector(idx) = value; },         
+         { return blockvector(idx) = value; },
          "Returns a constant reference to entry")
-    
+
     // Print
     .def("print",
          &iganet::utils::BlockTensor<torch::Tensor, @ROWS@, @COLS@>::pretty_print,
-         "Prints (as string) a compile-time block tensor object")    
+         "Prints (as string) a compile-time block tensor object")
     ;
 }

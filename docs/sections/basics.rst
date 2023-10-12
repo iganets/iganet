@@ -35,7 +35,7 @@ This can simply be done with:
 
   auto expr = init();
 
-Which creates an empty expression object. Notice that the number of qubits does not need to 
+Which creates an empty expression object. Notice that the number of qubits does not need to
 be specified yet and will be derived from the quantum device setup later.
 
 .. _LibKet Filters:
@@ -49,7 +49,7 @@ the input expression and can be combined to filter chains.
 
 Filter functions
 """"""""""""""""
-      
+
 LibKet provides the following filter functions
 
 - ``all([expr])`` resets all previous filters and selects *all* qubits
@@ -62,7 +62,7 @@ LibKet provides the following filter functions
 
 For a detailed description check the :ref:`Library <LibKet
 Library Filters>`.
-  
+
 Here and below ``[expr]`` means that the function can be called with
 and without an expression ``expr`` as will become clear from the
 following example.
@@ -103,7 +103,7 @@ Filter tags
 """""""""""
 
 The current selection can be saved using the ``tag<id>([expr])``
-function and restored at any later time via ``gototag<id>([expr])``. 
+function and restored at any later time via ``gototag<id>([expr])``.
 
 **Example**
 
@@ -165,11 +165,11 @@ single-qubit gate like the *Hadamard* (H) gate when applied to an
 
    H^{\otimes n}\lvert\psi\rangle = H\lvert\psi_0\rangle\otimes\cdots\otimes H\lvert\psi_{n-1}\rangle
 
-.. _LibKet Gates Unary: 
+.. _LibKet Gates Unary:
 
 Unary (One qubit) Gates
 """""""""""""""""""""""
-This gate set includes all one-qubit operations, such as Pauli operations, arbitrary rotations 
+This gate set includes all one-qubit operations, such as Pauli operations, arbitrary rotations
 around the X-, Y- or Z-axis and measurements. Examples are:
 
 .. code-block:: cpp
@@ -178,11 +178,11 @@ around the X-, Y- or Z-axis and measurements. Examples are:
   auto e1 = rz([theta], [expr]);  //Applies a Z-rotation to all qubits in [expr] by angle [theta]
 
 
-.. _LibKet Gates Binary: 
+.. _LibKet Gates Binary:
 
 Binary (Two qubit) Gates
 """"""""""""""""""""""""
-This gate set includes all two-gubit operations, such as CNOT, CPHASE or other controlled 
+This gate set includes all two-gubit operations, such as CNOT, CPHASE or other controlled
 rotations. Examples are:
 
 .. code-block:: cpp
@@ -190,7 +190,7 @@ rotations. Examples are:
   auto e0 = cnot(sel<0>(), sel<1>([expr]));            //CNOT gate on qubit 0 (control) and qubit 1 (target) in [expr]
   auto e1 = cphase([theta], sel<0>(), sel<1>([expr])); //CPhase gate on qubit 0 (control) and qubit 1 (target) in [expr] by angle [theta]
 
-.. _LibKet Gates Ternary: 
+.. _LibKet Gates Ternary:
 
 Ternary (Three qubit) Gates
 """""""""""""""""""""""""""
@@ -209,7 +209,7 @@ With this convention in mind we are ready to write our first quantum algorithm
 
   auto e0 = init();
   auto e1 = sel<0,2>(e0);
-  auto e2 = h(e1); 
+  auto e2 = h(e1);
   auto e3 = all(e2);
   auto e4 = cnot(sel<0,2>(), sel<1,4>(e3));
   auto e5 = measure(all(e4));
@@ -226,7 +226,7 @@ which corresponds to the following quantum circuit
         \lstick{$q_3$} & \qw      & \qw      & \meter{} \\
         \lstick{$q_4$} & \qw      & \targ{}  & \meter{}
     \end{quantikz}};
-   :libs: quantikz  
+   :libs: quantikz
 
 In LibKet we have provided as standard implementation of many of the
 quantum gates commonly used in quantum algorithms. For all gates, see the Library section :ref:`LibKet Library Gates`.
@@ -240,7 +240,7 @@ Certain quantum circuits are used in the implementation of many quantum algorith
 
 **Example: Quantum Fourier Transform**
 
-The code below can be used to apply the Quantum Fourier Transform on qubits 0 to n. 
+The code below can be used to apply the Quantum Fourier Transform on qubits 0 to n.
 
 .. code-block:: cpp
 
@@ -256,9 +256,9 @@ This generates the following circuit for :math:`n = 5`:
         \lstick{$q_1$} & \qw      & \swap{2} & \qw      & \ctrl{-1}& \gate{H} & \gate{S} & \qw      & \gate{T}      & \qw      & \gate{Z^{1/8}} & \qw      & \qw      \\
         \lstick{$q_2$} & \qw      & \qw      & \qw      & \qw      & \qw      & \ctrl{-2}& \gate{H} & \gate{S}      & \qw      & \gate{T}       & \qw      & \qw     \\
         \lstick{$q_3$} & \qw      & \targX{} & \qw      & \qw      & \qw      & \qw      & \qw      & \ctrl{-3}     & \gate{H} & \gate{S}       & \qw      & \qw          \\
-        \lstick{$q_4$} & \targX{} & \qw      & \qw      & \qw      & \qw      & \qw      & \qw      & \qw           & \qw      & \ctrl{-4}      & \gate{H} & \qw     
+        \lstick{$q_4$} & \targX{} & \qw      & \qw      & \qw      & \qw      & \qw      & \qw      & \qw           & \qw      & \ctrl{-4}      & \gate{H} & \qw
     \end{quantikz}};
-    :libs: quantikz    
+    :libs: quantikz
 
 Apart from QFT LibKet also has a standard implementation of other quantum circuits. See section :ref:`Libket Library Circuits` for all available circuits currently implemented in LibKet.
 
@@ -271,7 +271,7 @@ This is where the power of LibKet shows, by reinterpeting the generic quantum ex
 the device specific quantum assembly language. For all quantum devices see the Library section
 :ref:`LibKet Library Devices`.
 
-A quantum device can be initialised with the ``QDevice<QDeviceType, Qubits>`` class. The generic 
+A quantum device can be initialised with the ``QDevice<QDeviceType, Qubits>`` class. The generic
 quantum expression can then we loaded onto the device (Note: The number of qubits used in the quantum
 expression must not exceed the number of qubits set to the ``QDevice``). Then the device can evaluate
 the quantum expression for a given number of shots. Here an example is given to evaluate a quantum expression
@@ -291,17 +291,17 @@ Retrieving the results differs slightly from device to device. For Python orient
 
 .. code-block:: cpp
 
-  utils::json result = device.eval(shots);                                           
-  std::cout << "Job ID     : " << device.get<QResultType::id>(result)               << std::endl; 
-  std::cout << "Time stamp : " << device.get<QResultType::timestamp>(result)        << std::endl; 
+  utils::json result = device.eval(shots);
+  std::cout << "Job ID     : " << device.get<QResultType::id>(result)               << std::endl;
+  std::cout << "Time stamp : " << device.get<QResultType::timestamp>(result)        << std::endl;
   std::cout << "Histogram  : " << device.get<QResultType::histogram>(result)        << std::endl;
-  std::cout << "Duration   : " << device.get<QResultType::duration>(result).count() << std::endl; 
-  std::cout << "Best       : " << device.get<QResultType::best>(result)             << std::endl; 
+  std::cout << "Duration   : " << device.get<QResultType::duration>(result).count() << std::endl;
+  std::cout << "Best       : " << device.get<QResultType::best>(result)             << std::endl;
 
 Alternatively, the entire content of the JSON object can be dumped to the output with:
 
 .. code-block:: cpp
-    
+
    std::cout << result << std::endl;          //Print without formatting
    std::cout << result.dump(2) << std::endl;  //Use pretty print with indent 2
 
@@ -314,17 +314,17 @@ The following code print the results for a QuEST or QX device. An example output
 QuEST example:
 
 .. code-block:: cpp
-    
+
     auto expr = h(init());
 
     //QuEST Simulator
     QDevice<QDeviceType::quest, 1> quest;
     quest(expr);
-    quest.eval(1);                                   
+    quest.eval(1);
     std::cout << quest.reg()           << std::endl; //Returns exact quantum state
     std::cout << quest.probabilities() << std::endl; //Returns probalities of quantum states
     std::cout << quest.creg()          << std::endl; //Returns a classical measurement
-    
+
 Output:
 
 .. code-block:: php
@@ -339,11 +339,11 @@ Output:
 QX example:
 
 .. code-block:: cpp
-    
+
     auto expr = h(init());
 
     //QX Simulator
-    QDevice<QDeviceType::qx, 1> qx;                  
+    QDevice<QDeviceType::qx, 1> qx;
     qx(expr);
     qx.eval(1);
     qx.reg().dump();  //Prints execution time, quantum state and measurement data
@@ -363,7 +363,7 @@ Output:
   [>>] measurement prediction               :  |         X |
   -------------------------------------------
   [>>] measurement register                 :  |         0 |
-  ------------------------------------------- 
+  -------------------------------------------
 
 
 .. _LibKet Visualization:
@@ -382,7 +382,7 @@ looks like or you want to debug your expression use the
 **Qasm2Circ**
 
 The ``qasm2tex_visualizer`` device can load an expression and output a LaTeX file
-which in combination with the `xyqcirc.tex <https://github.com/eschmidgall/qasm2circ/blob/master/xyqcirc.tex>`_ file 
+which in combination with the `xyqcirc.tex <https://github.com/eschmidgall/qasm2circ/blob/master/xyqcirc.tex>`_ file
 can create a LaTeX image of the quantum circuit. Example:
 
 .. code-block:: cpp
@@ -403,7 +403,7 @@ to a LaTeX code string. This string can then be printed to the standard output:
 
 **Terminal Visualisation**
 
-The Qiskit, Cirq and IBMQ devices also provide a terminal ASCII art visualisation of the quantum 
+The Qiskit, Cirq and IBMQ devices also provide a terminal ASCII art visualisation of the quantum
 expression. This can be directly printed on the command-line interface, negating the need for
 a LaTeX interpreter
 

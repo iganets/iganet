@@ -1,5 +1,5 @@
 .. _LibKet FAQ:
-   
+
 Frequently Asked Questions
 ==========================
 
@@ -9,7 +9,7 @@ Frequently Asked Questions
    Library and is an allusion to the famous `bra-ket notation
    <https://en.wikipedia.org/wiki/Bra–ket_notation>`_ since the Dutch
    spelling of the word `Quantum` is `Kwantum`.
-      
+
 #. **Can you add support for the quantum device X?**
 
    Sure, as long as there exists either a Python package or a C/C++

@@ -16,53 +16,48 @@
 #include <iostream>
 
 /// @brief IgANet for Poisson's equation
-template<typename optimizer_t,
-         typename geometry_t,
-         typename variable_t>
-class poisson : public iganet::IgANet<optimizer_t, geometry_t, variable_t>
-{
+template <typename optimizer_t, typename geometry_t, typename variable_t>
+class poisson : public iganet::IgANet<optimizer_t, geometry_t, variable_t> {
 private:
   /// @brief Type of the base class
   using Base = iganet::IgANet<optimizer_t, geometry_t, variable_t>;
-  
+
 public:
   /// @brief Constructors from the base class
   using iganet::IgANet<optimizer_t, geometry_t, variable_t>::IgANet;
 
   /// @brief Initializes the epoch
-  iganet::status epoch(int64_t epoch) override
-  {
+  iganet::status epoch(int64_t epoch) override {
     std::cout << "Epoch " << std::to_string(epoch) << ": ";
     return iganet::status(0);
   }
 
   /// @brief Computes the loss function
-  torch::Tensor loss(const torch::Tensor& outputs,
-                     const typename Base::geometry_samples_type& geometry_samples,
-                     const typename Base::variable_samples_type& variable_samples,
-                     int64_t epoch, iganet::status status) override
-  {
+  torch::Tensor
+  loss(const torch::Tensor &outputs,
+       const typename Base::geometry_samples_type &geometry_samples,
+       const typename Base::variable_samples_type &variable_samples,
+       int64_t epoch, iganet::status status) override {
     return torch::zeros({1});
-  }  
+  }
 };
 
-int main()
-{
+int main() {
   iganet::init();
   iganet::verbose(std::cout);
 
   torch::autograd::AnomalyMode::set_enabled(true);
-  
+
   using namespace iganet::literals;
   using optimizer_t = torch::optim::Adam;
-  using real_t      = float;
+  using real_t = float;
 
 #if 0
   {
-    using UniformBSpline_t = iganet::UniformBSpline<real_t, 1, 3>;    
+    using UniformBSpline_t = iganet::UniformBSpline<real_t, 1, 3>;
     using geometry_t       = iganet::S1<UniformBSpline_t>;
     using variable_t       = iganet::RT1<UniformBSpline_t>;
-    
+
     poisson<optimizer_t, geometry_t, variable_t> net(// Number of neurons per layers
                                                      {100,100},
                                                      // Activation functions
@@ -73,77 +68,74 @@ int main()
                                                      },
                                                      // Number of B-spline coefficients
                                                      std::tuple(iganet::utils::to_array(5_i64)));
-    
+
     net.options().max_epoch(1000);
     net.options().min_loss(1e-8);
-    
+
     net.train();
   }
 #endif
-  
+
   {
-    using UniformBSpline_t = iganet::UniformBSpline<real_t, 1, 3,3>;    
-    using geometry_t       = iganet::S2<UniformBSpline_t>;
-    using variable_t       = iganet::RT2<UniformBSpline_t>;
-    
-    poisson<optimizer_t, geometry_t, variable_t> net(// Number of neurons per layers
-                                                     {100,100},
-                                                     // Activation functions
-                                                     {
-                                                       {iganet::activation::relu},
-                                                       {iganet::activation::relu},
-                                                       {iganet::activation::none}
-                                                     },
-                                                     // Number of B-spline coefficients
-                                                     std::tuple(iganet::utils::to_array(5_i64, 5_i64)));
-    
+    using UniformBSpline_t = iganet::UniformBSpline<real_t, 1, 3, 3>;
+    using geometry_t = iganet::S2<UniformBSpline_t>;
+    using variable_t = iganet::RT2<UniformBSpline_t>;
+
+    poisson<optimizer_t, geometry_t, variable_t>
+        net( // Number of neurons per layers
+            {100, 100},
+            // Activation functions
+            {{iganet::activation::relu},
+             {iganet::activation::relu},
+             {iganet::activation::none}},
+            // Number of B-spline coefficients
+            std::tuple(iganet::utils::to_array(5_i64, 5_i64)));
+
     net.options().max_epoch(1000);
     net.options().min_loss(1e-8);
-    
+
     net.train();
   }
 
   {
-    using UniformBSpline_t = iganet::UniformBSpline<real_t, 1, 3,3,3>;    
-    using geometry_t       = iganet::S3<UniformBSpline_t>;
-    using variable_t       = iganet::RT3<UniformBSpline_t>;
-    
-    poisson<optimizer_t, geometry_t, variable_t> net(// Number of neurons per layers
-                                                     {100,100},
-                                                     // Activation functions
-                                                     {
-                                                       {iganet::activation::relu},
-                                                       {iganet::activation::relu},
-                                                       {iganet::activation::none}
-                                                     },
-                                                     // Number of B-spline coefficients
-                                                     std::tuple(iganet::utils::to_array(5_i64, 5_i64, 5_i64)));
-    
+    using UniformBSpline_t = iganet::UniformBSpline<real_t, 1, 3, 3, 3>;
+    using geometry_t = iganet::S3<UniformBSpline_t>;
+    using variable_t = iganet::RT3<UniformBSpline_t>;
+
+    poisson<optimizer_t, geometry_t, variable_t>
+        net( // Number of neurons per layers
+            {100, 100},
+            // Activation functions
+            {{iganet::activation::relu},
+             {iganet::activation::relu},
+             {iganet::activation::none}},
+            // Number of B-spline coefficients
+            std::tuple(iganet::utils::to_array(5_i64, 5_i64, 5_i64)));
+
     net.options().max_epoch(1000);
     net.options().min_loss(1e-8);
-    
+
     net.train();
   }
 
   {
-    using UniformBSpline_t = iganet::UniformBSpline<real_t, 1, 3,3,3,3>;    
-    using geometry_t       = iganet::S4<UniformBSpline_t>;
-    using variable_t       = iganet::RT4<UniformBSpline_t>;
-    
-    poisson<optimizer_t, geometry_t, variable_t> net(// Number of neurons per layers
-                                                     {100,100},
-                                                     // Activation functions
-                                                     {
-                                                       {iganet::activation::relu},
-                                                       {iganet::activation::relu},
-                                                       {iganet::activation::none}
-                                                     },
-                                                     // Number of B-spline coefficients
-                                                     std::tuple(iganet::utils::to_array(5_i64, 5_i64, 5_i64, 5_i64)));
-    
+    using UniformBSpline_t = iganet::UniformBSpline<real_t, 1, 3, 3, 3, 3>;
+    using geometry_t = iganet::S4<UniformBSpline_t>;
+    using variable_t = iganet::RT4<UniformBSpline_t>;
+
+    poisson<optimizer_t, geometry_t, variable_t>
+        net( // Number of neurons per layers
+            {100, 100},
+            // Activation functions
+            {{iganet::activation::relu},
+             {iganet::activation::relu},
+             {iganet::activation::none}},
+            // Number of B-spline coefficients
+            std::tuple(iganet::utils::to_array(5_i64, 5_i64, 5_i64, 5_i64)));
+
     net.options().max_epoch(1000);
     net.options().min_loss(1e-8);
-    
+
     net.train();
   }
 

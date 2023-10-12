@@ -20,6 +20,7 @@
 #include <direct.h>
 #include <windows.h>
 #else
+#include <fstream>
 #include <dlfcn.h>
 #include <sys/stat.h>
 #endif
@@ -40,13 +41,13 @@ namespace iganet {
     {
       char *env = std::getenv ("JIT_CXX_COMPILER");
       if (env != NULL) cmd = env;
-      
+
       env = std::getenv ("JIT_CXX_FLAGS");
       if (env != NULL) flags = env;
 
       env = std::getenv ("JIT_CXX_OUTPUT_FLAG");
       if (env != NULL) out = env;
-      
+
       env = std::getenv ("JIT_CXX_TEMP");
       if (env != NULL) temp = env;
     }
@@ -60,7 +61,7 @@ namespace iganet {
       std::string hash = std::to_string(std::hash<std::string>()(src + cmd + flags));
       std::string libname = temp + "lib" + name + hash;
 #if defined(_WIN32)
-      libname.append(".dll");      
+      libname.append(".dll");
 #elif defined(__APPLE__)
       libname.append(".dylib");
 #elif defined(unix) || defined(__unix__) || defined(__unix)
@@ -68,7 +69,7 @@ namespace iganet {
 #else
 #     error("Unsupported operating system")
 #endif
-      
+
       // Create source file (if required)
       std::ifstream libfile(libname.c_str());
       if(!libfile) {
@@ -92,7 +93,7 @@ namespace iganet {
         // Write source code to file
         std::string srcname = temp + "lib" + name + hash + ".cxx";
         std::ofstream srcfile(srcname.c_str());
-        
+
         srcfile
           << includes << "\n\n"
           << "#ifdef _WIN32\n"
@@ -124,10 +125,10 @@ namespace iganet {
         if (std::system(syscall.c_str()) != 0)
           throw std::runtime_error("An error occured while compiling the source code");
       }
-      
+
       return libname;
     }
-    
+
     /// @brief Prints the object as a string
     inline void pretty_print(std::ostream &os = std::cout) const noexcept override
     {
@@ -135,10 +136,10 @@ namespace iganet {
          << "(\ncmd = " << cmd
          << ", flags = " << flags
          << ", output flag = " << out
-         << ", tempdir = " << temp << "\n)";      
+         << ", tempdir = " << temp << "\n)";
     }
-    
-  private:    
+
+  private:
     /// @brief Returns the native TEMP directory path
     inline static std::string getTempPath()
     {
@@ -147,12 +148,12 @@ namespace iganet {
       (void)GetTempPath(MAXPATH, // length of the buffer
                         temp);    // buffer for path
       return std::string(temp);
-#else      
+#else
       // Typically, we should consider TMPDIR
       //   http://pubs.opengroup.org/onlinepubs/9699919799/basedefs/V1_chap08.html#tag_08_03
       //   https://en.wikipedia.org/wiki/TMPDIR&oldid=728654758
       char* temp = std::getenv("TMPDIR");
-      
+
       // getenv returns NULL ptr if the variable is unknown
       // (http://en.cppreference.com/w/cpp/utility/program/getenv). If it is an
       // empty string, we should also exclude it.
@@ -162,7 +163,7 @@ namespace iganet {
         makePath(path);
         return path;
       }
-      
+
       // Okey, if first choice did not work, try this:
       temp = std::getenv("TEMP");
       if (temp != NULL && temp[0] != '\0') {
@@ -171,13 +172,13 @@ namespace iganet {
         makePath(path);
         return path;
       }
-      
+
       // And as third choice, use just current directory
       // http://man7.org/linux/man-pages/man2/getcwd.2.html
       temp = getcwd(NULL, 0);
       if (NULL == temp)
         throw std::runtime_error("getcwd returned NULL.");
-      
+
       // The string is allocated using malloc, see the reference above
       std::string path(temp);
       std::free(temp);
@@ -185,7 +186,7 @@ namespace iganet {
       return path;
 #endif
     }
-    
+
     /// @brief Sets last character to the native path separator
     inline static void makePath(std::string& str)
     {
@@ -199,7 +200,7 @@ namespace iganet {
     inline static int fileExists(const char* path)
     {
       struct stat info;
-      
+
       if (stat(path, &info) != 0)
         return 0; // does not exist
       else if (info.st_mode & S_IFDIR)
@@ -218,7 +219,7 @@ namespace iganet {
 #endif
       return ps;
     }
-    
+
     /// @brief Returns the native path separator
     inline static char getNativePathSeparator()
     {
@@ -236,5 +237,5 @@ namespace iganet {
     obj.pretty_print(os);
     return os;
   }
-  
+
 } // namespace iganet

@@ -42,9 +42,9 @@ Measurements
 Single Qubit Gates
 """"""""""""""""""
 
-.. doxygengroup:: pauli_x  
+.. doxygengroup:: pauli_x
 
-.. doxygengroup:: pauli_y  
+.. doxygengroup:: pauli_y
 
 .. doxygengroup:: pauli_z
 
@@ -155,7 +155,7 @@ Circuits
 Quantum Fourier Transform
 """""""""""""""""""""""""
 
-The code below can be used to apply the Quantum Fourier Transform on qubits 0 to n. 
+The code below can be used to apply the Quantum Fourier Transform on qubits 0 to n.
 
 .. code-block:: cpp
 
@@ -171,9 +171,9 @@ This generates the following circuit for :math:`n = 5`:
         \lstick{$q_1$} & \qw      & \swap{2} & \qw      & \ctrl{-1}& \gate{H} & \gate{S} & \qw      & \gate{T}      & \qw      & \gate{Z^{1/8}} & \qw      & \qw \\
         \lstick{$q_2$} & \qw      & \qw      & \qw      & \qw      & \qw      & \ctrl{-2}& \gate{H} & \gate{S}      & \qw      & \gate{T}       & \qw      & \qw \\
         \lstick{$q_3$} & \qw      & \targX{} & \qw      & \qw      & \qw      & \qw      & \qw      & \ctrl{-3}     & \gate{H} & \gate{S}       & \qw      & \qw \\
-        \lstick{$q_4$} & \targX{} & \qw      & \qw      & \qw      & \qw      & \qw      & \qw      & \qw           & \qw      & \ctrl{-4}      & \gate{H} & \qw     
+        \lstick{$q_4$} & \targX{} & \qw      & \qw      & \qw      & \qw      & \qw      & \qw      & \qw           & \qw      & \ctrl{-4}      & \gate{H} & \qw
     \end{quantikz}};
-    :libs: quantikz  
+    :libs: quantikz
 
 Inverse QFT is called using function :code:`qftdag()`.
 
@@ -182,7 +182,7 @@ Inverse QFT is called using function :code:`qftdag()`.
 AllSwap
 """""""
 
-The LibKet AllSwap circuit swaps all qubits in a given selection. The LibKet AllSwap circuit can be applied to the first n qubits of your register as follows: 
+The LibKet AllSwap circuit swaps all qubits in a given selection. The LibKet AllSwap circuit can be applied to the first n qubits of your register as follows:
 
 .. code-block:: cpp
 
@@ -199,9 +199,9 @@ This creates the following circuit for n = 5:
         \lstick{$q_1$} & \qw      & \swap{2} & \qw \\
         \lstick{$q_2$} & \qw      & \qw      & \qw \\
         \lstick{$q_3$} & \qw      & \targX{} & \qw \\
-        \lstick{$q_4$} & \targX{} & \qw      & \qw     
+        \lstick{$q_4$} & \targX{} & \qw      & \qw
     \end{quantikz}};
-    :libs: quantikz 
+    :libs: quantikz
 
 Arbitrary Control
 """""""""""""""""
@@ -226,12 +226,12 @@ This generates the following circuit:
         \lstick{$q_1$} & \ctrl{3} & \qw      & \qw      & \qw      & \qw      & \qw      & \ctrl{3} & \qw \\
         \lstick{$q_2$} & \qw      & \ctrl{2} & \qw      & \qw      & \qw      & \ctrl{2} & \qw      & \qw \\
         \lstick{$q_3$} & \qw      & \qw      & \ctrl{2} & \qw      & \ctrl{2} & \qw      & \qw      & \qw \\
-        \lstick{$q_4$} & \targ{}  & \ctrl{1} & \qw      & \qw      & \qw      & \ctrl{1} & \targ{}  & \qw \\ 
+        \lstick{$q_4$} & \targ{}  & \ctrl{1} & \qw      & \qw      & \qw      & \ctrl{1} & \targ{}  & \qw \\
         \lstick{$q_5$} & \qw      & \targ{}  & \ctrl{1} & \qw      & \ctrl{1} & \targ{}  & \qw      & \qw \\
         \lstick{$q_6$} & \qw      & \qw      & \targ{}  & \ctrl{1} & \targ{}  & \qw      & \qw      & \qw \\
-        \lstick{$q_7$} & \qw      & \qw      & \qw      & \targ{}  & \qw      & \qw      & \qw      & \qw    
+        \lstick{$q_7$} & \qw      & \qw      & \qw      & \targ{}  & \qw      & \qw      & \qw      & \qw
     \end{quantikz}};
-    :libs: quantikz 
+    :libs: quantikz
 
 Quantum Phase Estimation
 """"""""""""""""""""""""
@@ -307,7 +307,7 @@ Available QDevices in LibKet:
   qiskit_london_simulator       /**< Qiskit   5-qubit local simulator                  */
   qiskit_manhattan_simulator    /**< Qiskit  65-qubit local simulator                  */
   qiskit_manila_simulator       /**< Qiskit   5-qubit local simulator                  */
-  qiskit_melbourne_simulator    /**< Qiskit  15-qubit local simulator                  */    
+  qiskit_melbourne_simulator    /**< Qiskit  15-qubit local simulator                  */
   qiskit_montreal_simulator     /**< Qiskit  27-qubit local simulator                  */
   qiskit_mumbai_simulator       /**< Qiskit  27-qubit local simulator                  */
   qiskit_nairobi_simulator      /**< Qiskit   7-qubit local simulator                  */
@@ -377,7 +377,7 @@ Available QDevices in LibKet:
   ibmq_london_simulator       /**< IBM-Q   5-qubit remote simulator                  */
   ibmq_manhattan_simulator    /**< IBM-Q  65-qubit remote simulator                  */
   ibmq_manila_simulator       /**< IBM-Q   5-qubit remote simulator                  */
-  ibmq_melbourne_simulator    /**< IBM-Q  15-qubit remote simulator                  */    
+  ibmq_melbourne_simulator    /**< IBM-Q  15-qubit remote simulator                  */
   ibmq_montreal_simulator     /**< IBM-Q  27-qubit remote simulator                  */
   ibmq_mumbai_simulator       /**< IBM-Q  27-qubit remote simulator                  */
   ibmq_nairobi_simulator      /**< IBM-Q   7-qubit remote simulator                  */
@@ -400,7 +400,7 @@ Available QDevices in LibKet:
   ibmq_yorktown_simulator     /**< IBM-Q   5-qubit remote simulator                  */
   ibmq_washington_simulator   /**< IBM-Q 127-qubit remote simulator                  */
   ibmq_perth_simulator        /**< IBM-Q   7-qubit remote simulator                  */
-  
+
   ibmq_qasm_simulator         /**< IBM-Q universal remote simulator                  */
 
   ibmq_almaden                /**< IBM-Q  20-qubit processor                         */
@@ -426,7 +426,7 @@ Available QDevices in LibKet:
   ibmq_london                 /**< IBM-Q   5-qubit processor                         */
   ibmq_manhattan              /**< IBM-Q  65-qubit processor                         */
   ibmq_manila                 /**< IBM-Q   5-qubit processor                         */
-  ibmq_melbourne              /**< IBM-Q  15-qubit processor                         */    
+  ibmq_melbourne              /**< IBM-Q  15-qubit processor                         */
   ibmq_montreal               /**< IBM-Q  27-qubit processor                         */
   ibmq_mumbai                 /**< IBM-Q  27-qubit processor                         */
   ibmq_nairobi                /**< IBM-Q   7-qubit processor                         */
@@ -467,7 +467,7 @@ This class executes quantum circuits remotely on the Quantum-Inspire simulator m
 Rigetti
 """""""
 
-This class executes quantum circuits remotely on physical quantum devices made accessible through Rigetti's Quantum Cloud Service (QCS). It adopts Rigetti's Quantum Instruction Language. Rigetti builds quantum computers and the superconducting quantum processors that power them: `Rigetti Website <https://www.rigetti.com/about-rigetti-computing>`_ 
+This class executes quantum circuits remotely on physical quantum devices made accessible through Rigetti's Quantum Cloud Service (QCS). It adopts Rigetti's Quantum Instruction Language. Rigetti builds quantum computers and the superconducting quantum processors that power them: `Rigetti Website <https://www.rigetti.com/about-rigetti-computing>`_
 
 Available QDevices in LibKet:
 
@@ -492,17 +492,17 @@ Available QDevices in LibKet:
 
   ionq_simulator    /**< IonQ Simulator           */
   ionq_qpu          /**< IonQ Trapped-Ion QPU     */
-  
+
 
 QuEST
 """""
 
-The Quantum Exact Simulation Toolkit is a high performance simulator of quantum circuits, state-vectors and density matrices. QuEST implements multiple useful feathuers such as multithreading, GPU acceleration and distribution: `QuEST Website <https://quest.qtechtheory.org/>`_ 
+The Quantum Exact Simulation Toolkit is a high performance simulator of quantum circuits, state-vectors and density matrices. QuEST implements multiple useful feathuers such as multithreading, GPU acceleration and distribution: `QuEST Website <https://quest.qtechtheory.org/>`_
 
 Available QDevices in LibKet:
 
 .. code-block:: cpp
-    
+
     quest   /**< QuEST simulator                                   */
 
 QX

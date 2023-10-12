@@ -9,7 +9,7 @@
 # This Source Code Form is subject to the terms of the Mozilla Public
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
-# 
+#
 ########################################################################
 
 ########################################################################
@@ -36,7 +36,7 @@ if (IGANET_WITH_OPENSSL)
   find_package(OpenSSL REQUIRED)
   target_compile_definitions(usockets PUBLIC LIBUS_USE_OPENSSL)
   target_include_directories(usockets PUBLIC ${OPENSSL_INCLUDE_DIR})
-  target_link_libraries(usockets ${OPENSSL_LIBRARIES}) 
+  target_link_libraries(usockets ${OPENSSL_LIBRARIES})
 else()
   target_compile_definitions(usockets PUBLIC LIBUS_NO_SSL)
 endif()

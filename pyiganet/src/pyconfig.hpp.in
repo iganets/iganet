@@ -15,7 +15,7 @@
 #pragma once
 
 namespace pyiganet {
-    
+
     using real_t = @PYIGANET_COEFF_TYPE@;
-    
+
 } // namespace pyiganet

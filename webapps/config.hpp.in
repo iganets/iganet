@@ -19,7 +19,7 @@
 #endif
 
 namespace iganet {
-  
+
   /// @brief Default coefficient type
   using real_t = IGANET_WEBAPPS_COEFF_TYPE;
 

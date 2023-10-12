@@ -21,21 +21,21 @@ a for loop will become a necessaty. Looping over quantum expressions can thus be
          	 index_t for_step,
          	 template<index_t start, index_t end, index_t step, index_t index> class functor,
          	 typename functor_return_type,
-         	 typename... functor_types>	
-	inline auto 
+         	 typename... functor_types>
+	inline auto
 	constexpr_for(functor_return_type&& functor_return_arg,
            	   functor_types&&... functor_args)
 
-Below is a small example on how to use the :code:`constexpr_for()` function. First, a **functor** 
+Below is a small example on how to use the :code:`constexpr_for()` function. First, a **functor**
 needs to be created, which represents the loop's body:
 
 .. code-block:: cpp
 
 	template<index_t start, index_t end, index_t step, index_t index>
-	struct ftor 
+	struct ftor
 	{
 	    template<typename Expr>
-	    inline constexpr auto operator()(Expr&& expr) noexcept 
+	    inline constexpr auto operator()(Expr&& expr) noexcept
 	    {
 	        // Returns the controlled phase shift gate with angle
 	        // theta = pi/2^(index+1) between qubits index and index+1
@@ -45,8 +45,8 @@ needs to be created, which represents the loop's body:
 	    }
 	};
 
-To loop through this functor (at compile time) we call the :code:`utils::constexpr_for<start, end, step, body>(...)` function as follows. 
-Note the usefulness of the tag/gototag mechanism to restore the original filter settings easily. 
+To loop through this functor (at compile time) we call the :code:`utils::constexpr_for<start, end, step, body>(...)` function as follows.
+Note the usefulness of the tag/gototag mechanism to restore the original filter settings easily.
 
 .. code-block:: cpp
 
@@ -66,8 +66,8 @@ This then generates the following 6 qubit circuit with only one line of code! No
         \lstick{$q_2$} & \qw                  & \qw & \phase{U_2(\frac{\pi}{2})} \qw & \qw & \ctrl{1}                       & \qw & \qw                            & \qw & \qw                             & \qw \\
         \lstick{$q_3$} & \qw                  & \qw & \qw                            & \qw & \phase{U_3(\frac{\pi}{4})} \qw & \qw & \ctrl{1}                       & \qw & \qw                             & \qw \\
         \lstick{$q_4$} & \qw                  & \qw & \qw                            & \qw & \qw                            & \qw & \phase{U_4(\frac{\pi}{8})} \qw & \qw & \ctrl{1}                        & \qw \\
-        \lstick{$q_5$} & \qw                  & \qw & \qw                            & \qw & \qw                            & \qw & \qw                            & \qw & \phase{U_5(\frac{\pi}{16})} \qw & \qw 
-    \end{quantikz}};	
+        \lstick{$q_5$} & \qw                  & \qw & \qw                            & \qw & \qw                            & \qw & \qw                            & \qw & \phase{U_5(\frac{\pi}{16})} \qw & \qw
+    \end{quantikz}};
     :libs:quantikz
 
 .. _LibKet computational offloading:
@@ -120,13 +120,13 @@ Execution Scripts
 
 The optional hooks :code:`ftor_init`, :code:`ftor_before`, and :code:`ftor_after` make it possible to inject user-defined code at three different locations of the execution process:
 
-:code:`script_init` 
+:code:`script_init`
 	This functor is performed before any other code of the execution process. It can be used for importing additional Python modules.
 
-:code:`script_before` 
+:code:`script_before`
 	This functor is performed just before sending the instructions to the quantum device. It can be used to pre-process the quantum circuit, e.g., to perform user-specific optimizations on the raw quantum circuit, before it runs through the backend-specific pipeline
 
-:code:`script_after` 
+:code:`script_after`
 	Performed just after receiving the result from the quantum device. It can be used to post-process the raw results received from the quantum device, e.g., to generate histograms or other types of visualizations
 
 Let's inject a simple statement after the execution that collects the histogram data of the experiment using Qiskit's :code:`get_count()` function.
@@ -151,6 +151,6 @@ It should be noted that the code injections are idented automatically and must n
 Parameterized circuits [WIP]
 ----------------------------
 
-The creating of parameteterized circuits is still under development. When finished, 
+The creating of parameteterized circuits is still under development. When finished,
 LibKet will be able to support platforms that use parameterised circuits, such
 as `Qiskit Runtime <https://quantumcomputing.com/strangeworks/qiskit-runtime>`_.

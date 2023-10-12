@@ -17,163 +17,128 @@
 
 #include <gtest/gtest.h>
 
-TEST(BlockTensor, BlockTensor)
-{
-  iganet::utils::BlockTensor<torch::Tensor, 2, 1> A (   torch::ones({5,5}), 2*torch::ones({5,5}) );
-  iganet::utils::BlockTensor<torch::Tensor, 2, 1> B ( 3*torch::ones({5,5}), 4*torch::ones({5,5}) );
-  
-  EXPECT_EQ(A+B,
-            (iganet::utils::BlockTensor<torch::Tensor, 2, 1>( 4*torch::ones({5,5}),
-                                                              6*torch::ones({5,5}))) );
+TEST(BlockTensor, BlockTensor) {
+  iganet::utils::BlockTensor<torch::Tensor, 2, 1> A(torch::ones({5, 5}),
+                                                    2 * torch::ones({5, 5}));
+  iganet::utils::BlockTensor<torch::Tensor, 2, 1> B(3 * torch::ones({5, 5}),
+                                                    4 * torch::ones({5, 5}));
 
-  EXPECT_EQ(A-B,
-            (iganet::utils::BlockTensor<torch::Tensor, 2, 1>( -2*torch::ones({5,5}),
-                                                              -2*torch::ones({5,5}))) );
-  EXPECT_EQ(A.tr(),
-            (iganet::utils::BlockTensor<torch::Tensor, 1, 2>(   torch::ones({5,5}),
-                                                                2*torch::ones({5,5}))) );
+  EXPECT_EQ(A + B, (iganet::utils::BlockTensor<torch::Tensor, 2, 1>(
+                       4 * torch::ones({5, 5}), 6 * torch::ones({5, 5}))));
 
-  EXPECT_EQ(B.tr(),
-            (iganet::utils::BlockTensor<torch::Tensor, 1, 2>( 3*torch::ones({5,5}),
-                                                              4*torch::ones({5,5}))) );
-  
-  EXPECT_EQ(A*B.tr(),
-            (iganet::utils::BlockTensor<torch::Tensor, 2, 2>( 3*torch::ones({5,5}),
-                                                              4*torch::ones({5,5}),
-                                                              6*torch::ones({5,5}),
-                                                              8*torch::ones({5,5}))) );
-  
-  EXPECT_EQ(A.tr()*B,
-            (iganet::utils::BlockTensor<torch::Tensor, 1, 1>( 11*torch::ones({5,5}))) );
+  EXPECT_EQ(A - B, (iganet::utils::BlockTensor<torch::Tensor, 2, 1>(
+                       -2 * torch::ones({5, 5}), -2 * torch::ones({5, 5}))));
+  EXPECT_EQ(A.tr(), (iganet::utils::BlockTensor<torch::Tensor, 1, 2>(
+                        torch::ones({5, 5}), 2 * torch::ones({5, 5}))));
 
-  
-  iganet::utils::BlockTensor<torch::Tensor, 1, 1> C( 5*torch::ones({5,5}) );
+  EXPECT_EQ(B.tr(), (iganet::utils::BlockTensor<torch::Tensor, 1, 2>(
+                        3 * torch::ones({5, 5}), 4 * torch::ones({5, 5}))));
 
-  EXPECT_EQ(C.inv(),
-            (iganet::utils::BlockTensor<torch::Tensor, 1, 1>( 0.2*torch::ones({5,5}))) );
+  EXPECT_EQ(A * B.tr(), (iganet::utils::BlockTensor<torch::Tensor, 2, 2>(
+                            3 * torch::ones({5, 5}), 4 * torch::ones({5, 5}),
+                            6 * torch::ones({5, 5}), 8 * torch::ones({5, 5}))));
+
+  EXPECT_EQ(A.tr() * B, (iganet::utils::BlockTensor<torch::Tensor, 1, 1>(
+                            11 * torch::ones({5, 5}))));
+
+  iganet::utils::BlockTensor<torch::Tensor, 1, 1> C(5 * torch::ones({5, 5}));
+
+  EXPECT_EQ(C.inv(), (iganet::utils::BlockTensor<torch::Tensor, 1, 1>(
+                         0.2 * torch::ones({5, 5}))));
 
   EXPECT_EQ(C.invtr(), C.inv().tr());
-  
-  iganet::utils::BlockTensor<torch::Tensor, 2, 2> D(   torch::ones({5,5}),
-                                                     2*torch::ones({5,5}),
-                                                     3*torch::ones({5,5}),
-                                                     4*torch::ones({5,5}));
-  
-  EXPECT_EQ(D.inv(),
-            (iganet::utils::BlockTensor<torch::Tensor, 2, 2>( -2.0*torch::ones({5,5}),
-                                                               1.5*torch::ones({5,5}),
-                                                               1.0*torch::ones({5,5}),
-                                                              -0.5*torch::ones({5,5}))) );
-  
-  EXPECT_EQ(D.invtr(), D.inv().tr());
-  
-  iganet::utils::BlockTensor<torch::Tensor, 3, 3> E(   torch::ones({5,5}),
-                                                     2*torch::ones({5,5}),
-                                                     3*torch::ones({5,5}),
-                                                       torch::zeros({5,5}),
-                                                       torch::ones({5,5}),
-                                                     4*torch::ones({5,5}),
-                                                     5*torch::ones({5,5}),
-                                                     6*torch::ones({5,5}),
-                                                       torch::zeros({5,5}));
 
-  EXPECT_EQ(E.inv(),
-            (iganet::utils::BlockTensor<torch::Tensor, 3, 3>( -24*torch::ones({5,5}),
-                                                               18*torch::ones({5,5}),
-                                                                5*torch::ones({5,5}),
-                                                               20*torch::ones({5,5}),
-                                                              -15*torch::ones({5,5}),
-                                                              - 4*torch::ones({5,5}),
-                                                              - 5*torch::ones({5,5}),
-                                                                4*torch::ones({5,5}),
-                                                                  torch::ones({5,5}))) );
-  
+  iganet::utils::BlockTensor<torch::Tensor, 2, 2> D(
+      torch::ones({5, 5}), 2 * torch::ones({5, 5}), 3 * torch::ones({5, 5}),
+      4 * torch::ones({5, 5}));
+
+  EXPECT_EQ(D.inv(),
+            (iganet::utils::BlockTensor<torch::Tensor, 2, 2>(
+                -2.0 * torch::ones({5, 5}), 1.5 * torch::ones({5, 5}),
+                1.0 * torch::ones({5, 5}), -0.5 * torch::ones({5, 5}))));
+
+  EXPECT_EQ(D.invtr(), D.inv().tr());
+
+  iganet::utils::BlockTensor<torch::Tensor, 3, 3> E(
+      torch::ones({5, 5}), 2 * torch::ones({5, 5}), 3 * torch::ones({5, 5}),
+      torch::zeros({5, 5}), torch::ones({5, 5}), 4 * torch::ones({5, 5}),
+      5 * torch::ones({5, 5}), 6 * torch::ones({5, 5}), torch::zeros({5, 5}));
+
+  EXPECT_EQ(E.inv(), (iganet::utils::BlockTensor<torch::Tensor, 3, 3>(
+                         -24 * torch::ones({5, 5}), 18 * torch::ones({5, 5}),
+                         5 * torch::ones({5, 5}), 20 * torch::ones({5, 5}),
+                         -15 * torch::ones({5, 5}), -4 * torch::ones({5, 5}),
+                         -5 * torch::ones({5, 5}), 4 * torch::ones({5, 5}),
+                         torch::ones({5, 5}))));
+
   EXPECT_EQ(E.invtr(), E.inv().tr());
 
-  iganet::utils::BlockTensor<torch::Tensor, 4, 4> F( 5*torch::ones({5,5}),
-                                                     6*torch::ones({5,5}),
-                                                     6*torch::ones({5,5}),
-                                                     8*torch::ones({5,5}),
-                                                     2*torch::ones({5,5}),
-                                                     2*torch::ones({5,5}),
-                                                     2*torch::ones({5,5}),
-                                                     8*torch::ones({5,5}),
-                                                     6*torch::ones({5,5}),
-                                                     6*torch::ones({5,5}),
-                                                     2*torch::ones({5,5}),
-                                                     8*torch::ones({5,5}),
-                                                     2*torch::ones({5,5}),
-                                                     3*torch::ones({5,5}),
-                                                     6*torch::ones({5,5}),
-                                                     7*torch::ones({5,5}));
+  iganet::utils::BlockTensor<torch::Tensor, 4, 4> F(
+      5 * torch::ones({5, 5}), 6 * torch::ones({5, 5}), 6 * torch::ones({5, 5}),
+      8 * torch::ones({5, 5}), 2 * torch::ones({5, 5}), 2 * torch::ones({5, 5}),
+      2 * torch::ones({5, 5}), 8 * torch::ones({5, 5}), 6 * torch::ones({5, 5}),
+      6 * torch::ones({5, 5}), 2 * torch::ones({5, 5}), 8 * torch::ones({5, 5}),
+      2 * torch::ones({5, 5}), 3 * torch::ones({5, 5}), 6 * torch::ones({5, 5}),
+      7 * torch::ones({5, 5}));
 
   EXPECT_EQ(F.inv(),
-            (iganet::utils::BlockTensor<torch::Tensor, 4, 4>( -17.00*torch::ones({5,5}),
-                                                              - 9.00*torch::ones({5,5}),
-                                                               12.00*torch::ones({5,5}),
-                                                               16.00*torch::ones({5,5}),
-                                                               17.00*torch::ones({5,5}),
-                                                                8.75*torch::ones({5,5}),
-                                                              -11.75*torch::ones({5,5}),
-                                                              -16.00*torch::ones({5,5}),
-                                                              - 4.00*torch::ones({5,5}),
-                                                              - 2.25*torch::ones({5,5}),
-                                                                2.75*torch::ones({5,5}),
-                                                                4.00*torch::ones({5,5}),
-                                                                     torch::ones({5,5}),
-                                                                0.75*torch::ones({5,5}),
-                                                              - 0.75*torch::ones({5,5}),
-                                                              - 1.00*torch::ones({5,5}))) );
-  
-  EXPECT_EQ(F.invtr(), F.inv().tr());
+            (iganet::utils::BlockTensor<torch::Tensor, 4, 4>(
+                -17.00 * torch::ones({5, 5}), -9.00 * torch::ones({5, 5}),
+                12.00 * torch::ones({5, 5}), 16.00 * torch::ones({5, 5}),
+                17.00 * torch::ones({5, 5}), 8.75 * torch::ones({5, 5}),
+                -11.75 * torch::ones({5, 5}), -16.00 * torch::ones({5, 5}),
+                -4.00 * torch::ones({5, 5}), -2.25 * torch::ones({5, 5}),
+                2.75 * torch::ones({5, 5}), 4.00 * torch::ones({5, 5}),
+                torch::ones({5, 5}), 0.75 * torch::ones({5, 5}),
+                -0.75 * torch::ones({5, 5}), -1.00 * torch::ones({5, 5}))));
 
+  EXPECT_EQ(F.invtr(), F.inv().tr());
 }
 
-#define test_unary_op(op, A, ...)                                       \
-  EXPECT_TRUE( torch::equal(iganet::utils::op((A), ##__VA_ARGS__)(0,0), \
-                            torch::op((A)(0,0), ##__VA_ARGS__)) )
+#define test_unary_op(op, A, ...)                                              \
+  EXPECT_TRUE(torch::equal(iganet::utils::op((A), ##__VA_ARGS__)(0, 0),        \
+                           torch::op((A)(0, 0), ##__VA_ARGS__)))
 
-#define test_unary_special_op(op, A, ...)                               \
-  EXPECT_TRUE( torch::equal(iganet::utils::op((A), ##__VA_ARGS__)(0,0), \
-                            torch::special::op((A)(0,0), ##__VA_ARGS__)) )
+#define test_unary_special_op(op, A, ...)                                      \
+  EXPECT_TRUE(torch::equal(iganet::utils::op((A), ##__VA_ARGS__)(0, 0),        \
+                           torch::special::op((A)(0, 0), ##__VA_ARGS__)))
 
-#define test_binary_op(op, A, B, ...)                                   \
-  EXPECT_TRUE( torch::equal(iganet::utils::op((A), (B), ##__VA_ARGS__)(0,0), \
-                            torch::op((A)(0,0), (B)(0,0), ##__VA_ARGS__)) )
+#define test_binary_op(op, A, B, ...)                                          \
+  EXPECT_TRUE(torch::equal(iganet::utils::op((A), (B), ##__VA_ARGS__)(0, 0),   \
+                           torch::op((A)(0, 0), (B)(0, 0), ##__VA_ARGS__)))
 
-#define test_binary_special_op(op, A, B, ...)                           \
-  EXPECT_TRUE( torch::equal(iganet::utils::op((A), (B), ##__VA_ARGS__)(0,0), \
-                            torch::special::op((A)(0,0), (B)(0,0), ##__VA_ARGS__)) )
+#define test_binary_special_op(op, A, B, ...)                                  \
+  EXPECT_TRUE(                                                                 \
+      torch::equal(iganet::utils::op((A), (B), ##__VA_ARGS__)(0, 0),           \
+                   torch::special::op((A)(0, 0), (B)(0, 0), ##__VA_ARGS__)))
 
-#define test_ternary_op(op, A, B, C, ...)                               \
-  EXPECT_TRUE( torch::equal(iganet::utils::op((A), (B), (C), ##__VA_ARGS__)(0,0), \
-                            torch::op((A)(0,0), (B)(0,0), (C)(0,0), ##__VA_ARGS__)) )
+#define test_ternary_op(op, A, B, C, ...)                                      \
+  EXPECT_TRUE(                                                                 \
+      torch::equal(iganet::utils::op((A), (B), (C), ##__VA_ARGS__)(0, 0),      \
+                   torch::op((A)(0, 0), (B)(0, 0), (C)(0, 0), ##__VA_ARGS__)))
 
-#define test_ternary_special_op(op, A, B, C, ...)                       \
-  EXPECT_TRUE( torch::equal(iganet::utils::op((A), (B), (C), ##__VA_ARGS__)(0,0), \
-                            torch::special::op((A)(0,0), (B)(0,0), (C)(0,0), ##__VA_ARGS__)) )
+#define test_ternary_special_op(op, A, B, C, ...)                              \
+  EXPECT_TRUE(torch::equal(                                                    \
+      iganet::utils::op((A), (B), (C), ##__VA_ARGS__)(0, 0),                   \
+      torch::special::op((A)(0, 0), (B)(0, 0), (C)(0, 0), ##__VA_ARGS__)))
 
-TEST(BlockTensor, BlockTensor_ops)
-{
-  
-  iganet::utils::BlockTensor<torch::Tensor, 1, 1>
-    A( -torch::rand({5,5}) ),
-    B(  torch::rand({5,5}) ),
-    C(  torch::rand({5,5}) ),
-    I(  torch::rand({5,5}).to(at::kInt) ),
-    J(  torch::rand({5,5}).to(at::kInt) ),
-    K(  torch::rand({5,5}).to(at::kBool) ),
-    L(  torch::rand({5,5}).to(at::kBool) ),
-    X(  torch::rand({5,5}).to(at::kComplexDouble) );
-  
+TEST(BlockTensor, BlockTensor_ops) {
+
+  iganet::utils::BlockTensor<torch::Tensor, 1, 1> A(-torch::rand({5, 5})),
+      B(torch::rand({5, 5})), C(torch::rand({5, 5})),
+      I(torch::rand({5, 5}).to(at::kInt)), J(torch::rand({5, 5}).to(at::kInt)),
+      K(torch::rand({5, 5}).to(at::kBool)),
+      L(torch::rand({5, 5}).to(at::kBool)),
+      X(torch::rand({5, 5}).to(at::kComplexDouble));
+
   test_unary_op(abs, A);
   test_unary_op(absolute, A);
   test_unary_op(acos, A);
   test_unary_op(arccos, A);
-  test_unary_op(acosh, B+1);
-  test_unary_op(acosh, 1+B);
-  test_unary_op(arccosh, B+1);
-  test_unary_op(arccosh, 1+B);
+  test_unary_op(acosh, B + 1);
+  test_unary_op(acosh, 1 + B);
+  test_unary_op(arccosh, B + 1);
+  test_unary_op(arccosh, 1 + B);
   test_binary_op(add, A, B, 0.5);
   test_ternary_op(addcdiv, A, B, C, 0.5);
   test_ternary_op(addcmul, A, B, C, 0.5);

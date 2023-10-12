@@ -6,7 +6,7 @@ default:
 
 variables:
   OMP_NUM_THREAD: 2
-  
+
 #
 # Install dependencies
 #
@@ -24,7 +24,7 @@ before_script:
    - echo -e 'LANG="en_US.UTF-8"\nLANGUAGE="en_US:en"\n' > /etc/default/locale
    - export LANG=en_US.UTF-8
    - export LC_ALL=en_US.UTF-8
-  
+
 #
 # Create Doxygen documentation
 #
@@ -38,7 +38,7 @@ pages:
     - CC=gcc CXX=g++ cmake .. -DIGANET_BUILD_DOCS=ON -DTorch_DIR=/opt/libtorch/share/cmake/Torch
     - make Doxygen
     - mv docs/doxygen/html ../public
-    - mv docs/doxygen/*.xml ../public 
+    - mv docs/doxygen/*.xml ../public
   only:
     changes:
       - .gitlab-ci.yml
@@ -113,7 +113,7 @@ webapps-gcc:
       - cmake/*
       - include/*
       - webapps/*
-    
+
 #
 # Build and test UnitTests with Clang compiler
 #

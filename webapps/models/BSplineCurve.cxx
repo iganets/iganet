@@ -24,9 +24,9 @@ extern "C"
 {
   /// @brief List of JIT-compiled model handlers
   static std::map<std::string, std::shared_ptr<iganet::ModelHandler>> models;
-  
+
   /// @brief Create a B-spline curve
-  std::shared_ptr<iganet::Model> create(const nlohmann::json& json) {
+  std::shared_ptr<iganet::Model> create(const nlohmann::json &json) {
     enum iganet::webapp::degree degree = iganet::webapp::degree::linear;
     enum iganet::init init = iganet::init::linear;
     std::array<int64_t, 1> ncoeffs = {4};
@@ -41,71 +41,80 @@ extern "C"
         init = json["data"]["init"].get<enum iganet::init>();
 
       if (json["data"].contains("ncoeffs"))
-        ncoeffs = json["data"]["ncoeffs"].get<std::array<int64_t,1>>();
+        ncoeffs = json["data"]["ncoeffs"].get<std::array<int64_t, 1>>();
 
       if (json["data"].contains("nonuniform"))
         nonuniform = json["data"]["nonuniform"].get<bool>();
 
       try {
         // generate list of include files
-        std::string includes =
-          "#include <BSplineModel.hpp>\n";
-        
+        std::string includes = "#include <BSplineModel.hpp>\n";
+
         // generate source code
         std::string src =
-          "std::shared_ptr<iganet::Model> create(const std::array<int64_t, 1>& ncoeffs, enum iganet::init init)\n{\n";
-        
+            "std::shared_ptr<iganet::Model> create(const std::array<int64_t, "
+            "1>& ncoeffs, enum iganet::init init)\n{\n";
+
         if (nonuniform)
-          src.append("return std::make_shared<iganet::webapp::BSplineModel<iganet::NonUniformBSpline<iganet::real_t, ");
+          src.append("return "
+                     "std::make_shared<iganet::webapp::BSplineModel<iganet::"
+                     "NonUniformBSpline<iganet::real_t, ");
         else
-          src.append("return std::make_shared<iganet::webapp::BSplineModel<iganet::UniformBSpline<iganet::real_t, ");
-        
+          src.append("return "
+                     "std::make_shared<iganet::webapp::BSplineModel<iganet::"
+                     "UniformBSpline<iganet::real_t, ");
+
         src.append("3, ");
         src.append(std::to_string((int)degree) + ">>>(ncoeffs, init);\n}\n");
-        
+
         // compile dynamic library
         auto libname = iganet::jit{}.compile(includes, src, "BSplineCurve");
-        
+
         // Search for library name
         auto model = models.find(libname);
         if (model == models.end()) {
-          models[libname] = std::make_shared<iganet::ModelHandler>(libname.c_str());
+          models[libname] =
+              std::make_shared<iganet::ModelHandler>(libname.c_str());
           model = models.find(libname);
         }
-        
+
         // create model instance
-        std::shared_ptr<iganet::Model> (*create)(const std::array<int64_t, 1>&, enum iganet::init);        
-        create = reinterpret_cast<std::shared_ptr<iganet::Model> (*)(const std::array<int64_t, 1>&, enum iganet::init)> (model->second->getSymbol("create"));
+        std::shared_ptr<iganet::Model> (*create)(const std::array<int64_t, 1> &,
+                                                 enum iganet::init);
+        create = reinterpret_cast<std::shared_ptr<iganet::Model> (*)(
+            const std::array<int64_t, 1> &, enum iganet::init)>(
+            model->second->getSymbol("create"));
         return create(ncoeffs, init);
-      }  catch(...) {
+      } catch (...) {
         throw iganet::InvalidModelException();
       }
-    }    
+    } else if (nonuniform)
+      return std::make_shared<iganet::webapp::BSplineModel<
+          iganet::NonUniformBSpline<iganet::real_t, 3, 1>>>(ncoeffs, init);
     else
-      if (nonuniform)
-        return std::make_shared<iganet::webapp::BSplineModel<iganet::NonUniformBSpline<iganet::real_t, 3, 1>>>(ncoeffs, init);
-      else
-        return std::make_shared<iganet::webapp::BSplineModel<iganet::   UniformBSpline<iganet::real_t, 3, 1>>>(ncoeffs, init);
+      return std::make_shared<iganet::webapp::BSplineModel<
+          iganet::UniformBSpline<iganet::real_t, 3, 1>>>(ncoeffs, init);
   }
 
   /// @brief Load a B-spline curve
-  std::shared_ptr<iganet::Model> load(const nlohmann::json& json) {
-    
+  std::shared_ptr<iganet::Model> load(const nlohmann::json &json) {
+
     if (json.contains("data")) {
       if (json["data"].contains("binary")) {
-        
+
         // get binary vector from JSON object
         auto binary = json["data"]["binary"].get<std::vector<std::uint8_t>>();
-        
+
         // recover input archive from binary vector
         torch::serialize::InputArchive archive;
-        archive.load_from(reinterpret_cast<const char*>(binary.data()), binary.size());
-        
+        archive.load_from(reinterpret_cast<const char *>(binary.data()),
+                          binary.size());
+
         try {
           // get model hash
           c10::IValue model;
           archive.read("model", model);
-          
+
           // check if model can be processed
           if (model.toInt() ==
               static_cast<int64_t>(std::hash<std::string>{}("BSplineCurve"))) {
@@ -113,7 +122,7 @@ extern "C"
             // get (non)uniform attribute
             archive.read("nonuniform", model);
             bool nonuniform = model.toBool();
-            
+
             torch::Tensor tensor;
 
             // get parametric dimension
@@ -126,68 +135,78 @@ extern "C"
 
             if (parDim != 1)
               throw iganet::InvalidModelException();
-            
+
             // get degrees
             std::array<iganet::short_t, 1> degrees;
             for (iganet::short_t i = 0; i < parDim; ++i) {
-              archive.read("geometry.degree[" + std::to_string(i) + "]", tensor);
+              archive.read("geometry.degree[" + std::to_string(i) + "]",
+                           tensor);
               degrees[i] = tensor.item<int64_t>();
             }
 
             // get ncoeffs
             std::array<int64_t, 1> ncoeffs;
             for (iganet::short_t i = 0; i < parDim; ++i) {
-              archive.read("geometry.ncoeffs[" + std::to_string(i) + "]", tensor);
+              archive.read("geometry.ncoeffs[" + std::to_string(i) + "]",
+                           tensor);
               ncoeffs[i] = tensor.item<int64_t>();
             }
 
             // generate list of include files
-            std::string includes =
-              "#include <BSplineModel.hpp>\n";
-            
+            std::string includes = "#include <BSplineModel.hpp>\n";
+
             // generate source code
             std::string src =
-              "std::shared_ptr<iganet::Model> create(const std::array<int64_t, 1>& ncoeffs, enum iganet::init init)\n{\n";
+                "std::shared_ptr<iganet::Model> create(const "
+                "std::array<int64_t, 1>& ncoeffs, enum iganet::init init)\n{\n";
 
             if (nonuniform)
-              src.append("return std::make_shared<iganet::webapp::BSplineModel<iganet::NonUniformBSpline<iganet::real_t, ");
+              src.append("return "
+                         "std::make_shared<iganet::webapp::BSplineModel<iganet:"
+                         ":NonUniformBSpline<iganet::real_t, ");
             else
-              src.append("return std::make_shared<iganet::webapp::BSplineModel<iganet::UniformBSpline<iganet::real_t, ");
+              src.append("return "
+                         "std::make_shared<iganet::webapp::BSplineModel<iganet:"
+                         ":UniformBSpline<iganet::real_t, ");
 
             src.append("3, ");
-            src.append(std::to_string((int)degrees[0]) + ">>>(ncoeffs, init);\n}\n");
-                        
+            src.append(std::to_string((int)degrees[0]) +
+                       ">>>(ncoeffs, init);\n}\n");
+
             // compile dynamic library
             auto libname = iganet::jit{}.compile(includes, src, "BSplineCurve");
 
             // Search for library name
             auto model = models.find(libname);
             if (model == models.end()) {
-              models[libname] = std::make_shared<iganet::ModelHandler>(libname.c_str());
+              models[libname] =
+                  std::make_shared<iganet::ModelHandler>(libname.c_str());
               model = models.find(libname);
             }
 
             // create model instance and load data
-            std::shared_ptr<iganet::Model> (*create)(const std::array<int64_t, 1>&, enum iganet::init);
-            create = reinterpret_cast<std::shared_ptr<iganet::Model> (*)(const std::array<int64_t, 1>&, enum iganet::init)> (model->second->getSymbol("create"));
+            std::shared_ptr<iganet::Model> (*create)(
+                const std::array<int64_t, 1> &, enum iganet::init);
+            create = reinterpret_cast<std::shared_ptr<iganet::Model> (*)(
+                const std::array<int64_t, 1> &, enum iganet::init)>(
+                model->second->getSymbol("create"));
 
             auto m = create(ncoeffs, iganet::init::greville);
             if (auto m_ = std::dynamic_pointer_cast<iganet::ModelSerialize>(m))
               m_->load(json);
             else
               throw iganet::InvalidModelException();
-            
+
             return m;
-          }          
-          else {
+          } else {
             throw iganet::InvalidModelException();
-          }          
-        } catch(...) {
+          }
+        } catch (...) {
           throw iganet::InvalidModelException();
         }
       }
     }
-    
+
     throw iganet::InvalidModelException();
   }
 }

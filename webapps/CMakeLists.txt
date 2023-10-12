@@ -80,7 +80,7 @@ foreach(webapp ${WEBAPPS})
   if (IGANET_WITH_OPENMP)
     target_link_libraries(${name} PUBLIC OpenMP::OpenMP_CXX)
   endif()
-  
+
   install(TARGETS ${name} DESTINATION bin)
 endforeach()
 

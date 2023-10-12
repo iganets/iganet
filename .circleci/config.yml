@@ -17,7 +17,7 @@ jobs:
           command: |
             mkdir build
             cd build
-            cmake .. -DIGANET_BUILD_UNITTESTS=ON -DTorch_DIR=/usr/local/Cellar/pytorch/2.0.1/share/cmake/Torch -DCMAKE_PREFIX_PATH=/usr/local/Cellar/protobuf@21/21.12/ 
+            cmake .. -DIGANET_BUILD_UNITTESTS=ON -DTorch_DIR=/usr/local/Cellar/pytorch/2.0.1/share/cmake/Torch -DCMAKE_PREFIX_PATH=/usr/local/Cellar/protobuf@21/21.12/
             make
             make test
   unittests-windows:
@@ -27,8 +27,8 @@ jobs:
     steps:
       - checkout:
           path: C:\Users\circleci\project
-      
-  
+
+
 workflows:
   unittests:
     jobs:

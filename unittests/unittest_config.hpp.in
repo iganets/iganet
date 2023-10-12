@@ -20,13 +20,13 @@
 
 namespace iganet {
   namespace unittests {
-    
+
     /// @brief Default coefficient type. */
     using real_t = IGANET_UNITTESTS_COEFF_TYPE;
 
     namespace literals {
       inline real_t operator""_r(long double value) { return value; };
     } // namespace literals
-    
+
   } // namespace unittests
 } // namespace iganet
