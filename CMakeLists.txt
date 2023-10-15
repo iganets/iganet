@@ -14,6 +14,7 @@
 #
 # IGANET_BUILD_DOCS
 # IGANET_BUILD_EXAMPLES
+# IGANET_BUILD_PCH
 # IGANET_BUILD_PERFTESTS
 # IGANET_BUILD_PYIGANET
 # IGANET_BUILD_UNITTESTS
@@ -100,6 +101,7 @@ list(APPEND CMAKE_MODULE_PATH "${PROJECT_SOURCE_DIR}/cmake")
 ########################################################################
 option(IGANET_BUILD_DOCS        "Build documentation"       OFF)
 option(IGANET_BUILD_EXAMPLES    "Build examples"            ON )
+option(IGANET_BUILD_PCH         "Build precompiled headers" ON )
 option(IGANET_BUILD_PYIGANET    "Build Python bindings"     OFF)
 option(IGANET_BUILD_PERFTESTS   "Build perftests"           OFF)
 option(IGANET_BUILD_UNITTESTS   "Build unittests"           OFF)
@@ -271,6 +273,7 @@ message("")
 message("Options:")
 message("IGANET_BUILD_DOCS..................: ${IGANET_BUILD_DOCS}")
 message("IGANET_BUILD_EXAMPLES..............: ${IGANET_BUILD_EXAMPLES}")
+message("IGANET_BUILD_PCH...................: ${IGANET_BUILD_PCH}")
 message("IGANET_BUILD_PERFTESTS.............: ${IGANET_BUILD_PERFTESTS}")
 message("IGANET_BUILD_PYIGANET..............: ${IGANET_BUILD_PYIGANET}")
 message("IGANET_BUILD_UNITTESTS.............: ${IGANET_BUILD_UNITTESTS}")
