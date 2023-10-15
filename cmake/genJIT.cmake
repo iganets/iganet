@@ -89,6 +89,13 @@ function(genJITCompiler SOURCE_FILES SOURCE_TARGET)
     endforeach()
   endif()
 
+  # Set OpenMP-specific compiler flags
+  if (OpenMP_CXX_FLAGS)
+    foreach (flag ${OpenMP_CXX_FLAGS})
+      set (JIT_CXX_FLAGS "${JIT_CXX_FLAGS} ${flag}")
+    endforeach()
+  endif()
+  
   # ====================================================================
 
   # Set SYSROOT on MacOS
@@ -172,8 +179,10 @@ function(genJITCompiler SOURCE_FILES SOURCE_TARGET)
   if (TARGET ${SOURCE_TARGET})
     get_target_property(IGANET_LINK_LIBRARIES ${SOURCE_TARGET} LINK_LIBRARIES)
     if (IGANET_LINK_LIBRARIES)
-      foreach (lib ${IGANET_LINK_LIBRARIES})
 
+      # Generate include and link directories
+      foreach (lib ${IGANET_LINK_LIBRARIES})
+        
         if (lib STREQUAL "torch")
           if (WIN32)
             set(JIT_LIBRARIES
@@ -183,9 +192,11 @@ function(genJITCompiler SOURCE_FILES SOURCE_TARGET)
               "${JIT_LIBRARIES} ${JIT_CXX_LINKER_SEARCH_FLAG}${Torch_DIR}/../../../lib")
           endif()
 
+          list(APPEND LIBS torch)
+          
         elseif(lib STREQUAL "torch_library")
           if (Torch_CUDA_FOUND)
-            set(lib torch_cuda)
+
             if (WIN32)
               set(JIT_LIBRARIES
                 "${JIT_LIBRARIES} ${JIT_CXX_LINKER_SEARCH_FLAG}${Torch_DIR}\\..\\..\\..\\lib")
@@ -194,8 +205,10 @@ function(genJITCompiler SOURCE_FILES SOURCE_TARGET)
                 "${JIT_LIBRARIES} ${JIT_CXX_LINKER_SEARCH_FLAG}${Torch_DIR}/../../../lib")
             endif()
 
+            list(APPEND LIBS torch_cuda)
+
           else()
-            set(lib torch_cpu)
+
             if (WIN32)
               set(JIT_LIBRARIES
                 "${JIT_LIBRARIES} ${JIT_CXX_LINKER_SEARCH_FLAG}${Torch_DIR}\\..\\..\\..\\lib")
@@ -203,25 +216,57 @@ function(genJITCompiler SOURCE_FILES SOURCE_TARGET)
               set(JIT_LIBRARIES
                 "${JIT_LIBRARIES} ${JIT_CXX_LINKER_SEARCH_FLAG}${Torch_DIR}/../../../lib")
             endif()
+
+            list(APPEND LIBS torch_cpu)
           endif()
 
         elseif(lib STREQUAL "pugixml")
           set(JIT_LIBRARIES
             "${JIT_LIBRARIES} ${JIT_CXX_LINKER_SEARCH_FLAG}${pugixml_BINARY_DIR}")
 
+          list(APPEND LIBS pugixml)
+          
         elseif(lib STREQUAL "OpenMP::OpenMP_CXX")
-          set(lib ${OpenMP_libomp_LIBRARY})
-          set(JIT_LIBRARIES
-            "${JIT_LIBRARIES} ${JIT_CXX_INCLUDE_FLAG}${OpenMP_CXX_INCLUDE_DIR}")
 
-        endif()
-        
-        if (NOT IS_ABSOLUTE ${lib})
-          set(JIT_LIBRARIES
-            "${JIT_LIBRARIES} ${JIT_CXX_LINKER_FLAG}${lib}")
+          if (OpenMP_CXX_INCLUDE_DIR)
+            set(JIT_LIBRARIES
+              "${JIT_LIBRARIES} ${JIT_CXX_INCLUDE_FLAG}${OpenMP_CXX_INCLUDE_DIR}")
+          endif()
+          
+          foreach (libname ${OpenMP_CXX_LIB_NAMES})
+            list(APPEND LIBS ${OpenMP_${libname}_LIBRARY})
+          endforeach()
+
         else()
-          set(JIT_LIBRARIES
-            "${JIT_LIBRARIES} ${lib}")
+
+          list(APPEND LIBS ${lib})
+          
+        endif()
+
+      endforeach()
+
+      # Generate linking directives
+      foreach(lib ${LIBS})
+      
+        if (IS_ABSOLUTE ${lib})
+
+          if ((lib STREQUAL "pugixml") AND (CMAKE_CXX_COMPILER_ID MATCHES "GNU"))
+            set(JIT_LIBRARIES
+              "${JIT_LIBRARIES} -Wl,--whole-archive ${lib} -Wl,--no-whole-archive")
+          else()
+            set(JIT_LIBRARIES
+              "${JIT_LIBRARIES} ${lib}")
+          endif()
+          
+        else()
+
+          if ((lib STREQUAL "pugixml") AND (CMAKE_CXX_COMPILER_ID MATCHES "GNU"))
+            set(JIT_LIBRARIES
+              "${JIT_LIBRARIES} -Wl,--whole-archive ${JIT_CXX_LINKER_FLAG}${lib} -Wl,--no-whole-archive")
+          else()
+            set(JIT_LIBRARIES
+              "${JIT_LIBRARIES} ${JIT_CXX_LINKER_FLAG}${lib}")
+          endif()
         endif()
         
       endforeach()
