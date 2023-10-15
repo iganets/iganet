@@ -1,14 +1,15 @@
 # Build stage
 FROM ubuntu:22.04 as build-stage
 
-ARG IGANET_BUILD_WEBAPPS=ON
 ARG IGANET_BUILD_EXAMPLES=OFF
-ARG IGANET_BUILD_UNITTESTS=OFF
+ARG IGANET_BUILD_PCH=OFF
 ARG IGANET_BUILD_PERFTESTS=OFF
+ARG IGANET_BUILD_UNITTESTS=OFF
+ARG IGANET_BUILD_WEBAPPS=ON
 ARG IGANET_WITH_GISMO=OFF
 ARG IGANET_WITH_LIBUV=OFF
 ARG IGANET_WITH_MATPLOT=OFF
-ARG IGANET_WITH_OPENMP=OFF
+ARG IGANET_WITH_OPENMP=ON
 ARG IGANET_WITH_OPENSSL=ON
 
 # Install dependencies
@@ -19,12 +20,13 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
         curl \
         libcurl4-openssl-dev \
         libgflags-dev \
+        libomp-dev \
         libssl-dev \
         libz-dev \
         unzip
 
 # Install CMake
-ARG CMAKE_VERSION=3.26.4
+ARG CMAKE_VERSION=3.27.7
 ARG CMAKE_OS=linux
 ARG CMAKE_ARCH=x86_64
 WORKDIR /opt
@@ -34,8 +36,8 @@ RUN curl -fsSL --insecure -o cmake-${CMAKE_VERSION}-${CMAKE_OS}-${CMAKE_ARCH}.ta
 
 ENV PATH="$PATH:/opt/cmake-${CMAKE_VERSION}-${CMAKE_OS}-${CMAKE_ARCH}/bin"
 
-# Install Torch
-ARG LIBTORCH_URL=https://download.pytorch.org/libtorch/cpu/libtorch-cxx11-abi-shared-with-deps-2.0.1%2Bcpu.zip
+# Install LibTorch
+ARG LIBTORCH_URL=https://download.pytorch.org/libtorch/cpu/libtorch-cxx11-abi-shared-with-deps-2.1.0%2Bcpu.zip
 WORKDIR /opt
 RUN curl -fsSL --insecure -o libtorch.zip ${LIBTORCH_URL} \
         && unzip -q libtorch.zip \
@@ -48,10 +50,11 @@ WORKDIR /opt/iganet/build
 RUN rm -rf * \
         && CC=clang CXX=clang++ cmake /opt/iganet \
         -DTorch_DIR=/opt/libtorch/share/cmake/Torch \
-        -DIGANET_BUILD_WEBAPPS=$IGANET_BUILD_WEBAPPS \
         -DIGANET_BUILD_EXAMPLES=$IGANET_BUILD_EXAMPLES \
-        -DIGANET_BUILD_UNITTESTS=$IGANET_BUILD_UNITTESTS \
+        -DIGANET_BUILD_PCH=$IGANET_BUILD_PCH \
         -DIGANET_BUILD_PERFTESTS=$IGANET_BUILD_PERFTESTS \
+        -DIGANET_BUILD_UNITTESTS=$IGANET_BUILD_UNITTESTS \
+        -DIGANET_BUILD_WEBAPPS=$IGANET_BUILD_WEBAPPS \
         -DIGANET_WITH_GISMO=$IGANET_WITH_GISMO \
         -DIGANET_WITH_LIBUV=$IGANET_WITH_LIBUV \
         -DIGANET_WITH_MATPLOT=$IGANET_WITH_MATPLOT \
@@ -61,13 +64,34 @@ RUN rm -rf * \
 
 # Production stage
 FROM ubuntu:22.04 as production-stage
+RUN apt-get update && apt-get install -y --no-install-recommends \
+        clang libomp-dev libz-dev
+
+# Copy LibTorch installation
 COPY --from=build-stage /opt/libtorch /opt/libtorch
-COPY --from=build-stage /opt/iganet/build/webapps/server /webapps/
-COPY --from=build-stage /opt/iganet/build/webapps/models/lib* /webapps/models/
-COPY ./cert.pem /
-COPY ./key.pem /
-COPY ./webapps/server.cfg /
-WORKDIR /
+ENV LD_LIBRARY_PATH=/opt/libtorch/lib:$LD_LIBRARY_PATH
+
+# Copy IgANet installation
+COPY --from=build-stage /opt/iganet/build/_deps/boost_preprocessor-src/include /opt/iganet/include
+COPY --from=build-stage /opt/iganet/build/_deps/nlohmann_json-src/single_include /opt/iganet/include
+COPY --from=build-stage /opt/iganet/build/_deps/pugixml-build/libpugixml.a /usr/lib/
+COPY --from=build-stage /opt/iganet/build/_deps/pugixml-src/src/*.hpp /opt/iganet/include/
+COPY --from=build-stage /opt/iganet/build/webapps/*.hpp /opt/iganet/webapps/
+COPY --from=build-stage /opt/iganet/build/webapps/models/*.hpp /opt/iganet/webapps/models/
+COPY --from=build-stage /opt/iganet/build/webapps/models/lib* /opt/iganet/webapps/models/
+COPY --from=build-stage /opt/iganet/build/webapps/server /opt/iganet/webapps/
+COPY --from=build-stage /opt/iganet/include/*.cuh /opt/iganet/include/
+COPY --from=build-stage /opt/iganet/include/*.h /opt/iganet/include/
+COPY --from=build-stage /opt/iganet/include/*.hpp /opt/iganet/include/
+COPY --from=build-stage /opt/iganet/include/utils/*.hpp /opt/iganet/include/utils/
+COPY --from=build-stage /opt/iganet/webapps/*.hpp /opt/iganet/webapps/
+COPY --from=build-stage /opt/iganet/webapps/models/*.hpp /opt/iganet/webapps/models/
+
+# Copy SSL files and server configuration
+COPY ./cert.pem /opt/iganet/webapps/
+COPY ./key.pem /opt/iganet/webapps/
+COPY ./webapps/config/server.cfg /opt/iganet/webapps/
 
 # Start server
-ENTRYPOINT ["/webapps/server", "-k", "/key.pem", "-c", "/cert.pem", "-f", "/server.cfg", "-p", "9001"]
+WORKDIR /opt/iganet
+ENTRYPOINT ["/opt/iganet/webapps/server", "-k", "/opt/iganet/webapps/key.pem", "-c", "/opt/iganet/webapps/cert.pem", "-f", "/opt/iganet/webapps/server.cfg", "-p", "9001"]
