@@ -74,7 +74,7 @@ foreach(unittest ${UNITTESTS})
   string(REPLACE ".cxx" "" name ${filename})
   add_executable(${name} ${filename})
 
-  if(NOT WIN32 AND NOT ${CMAKE_VERSION} VERSION_LESS "3.16.0")
+  if(IGANET_BUILD_PCH AND NOT WIN32 AND NOT ${CMAKE_VERSION} VERSION_LESS "3.16.0")
     target_precompile_headers(${name} REUSE_FROM iganet_pch)
   endif()
 
