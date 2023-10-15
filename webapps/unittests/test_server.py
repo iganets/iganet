@@ -10,10 +10,18 @@ class TestSession(unittest.TestCase):
         self.protocol = os.environ.get("PROTOCOL", "ws")
         self.hostname = os.environ.get("HOSTNAME", "localhost")
         self.port = os.environ.get("PORT", "9001")
-
+        self.certfile = os.environ.get("CERTFILE", "cert.pem")
+        self.keyfile = os.environ.get("KEYFILE", "key.pem")
+        self.password = os.environ.get("PASSWORD", "")
+        
         # Establish connection
         self.ws = create_connection(
-            self.protocol + "://" + self.hostname + ":" + self.port
+            self.protocol + "://" + self.hostname + ":" + self.port,
+            sslopt={"certfile": self.certfile,
+                    "keyfile": self.keyfile,
+                    "password": self.password,
+                    "cert_reqs": ssl.CERT_NONE,
+                    "check_hostname": False,
         )
 
         # Get list of sessions
