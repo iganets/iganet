@@ -250,7 +250,7 @@ function(genJITCompiler SOURCE_FILES SOURCE_TARGET)
       
         if (IS_ABSOLUTE ${lib})
 
-          if ((lib STREQUAL "pugixml") AND (CMAKE_CXX_COMPILER_ID MATCHES "GNU"))
+          if (lib STREQUAL "pugixml" AND UNIX AND NOT APPLE)
             set(JIT_LIBRARIES
               "${JIT_LIBRARIES} -Wl,--whole-archive ${lib} -Wl,--no-whole-archive")
           else()
@@ -260,7 +260,7 @@ function(genJITCompiler SOURCE_FILES SOURCE_TARGET)
           
         else()
 
-          if ((lib STREQUAL "pugixml") AND (CMAKE_CXX_COMPILER_ID MATCHES "GNU"))
+          if (lib STREQUAL "pugixml" AND UNIX AND NOT APPLE)
             set(JIT_LIBRARIES
               "${JIT_LIBRARIES} -Wl,--whole-archive ${JIT_CXX_LINKER_FLAG}${lib} -Wl,--no-whole-archive")
           else()
@@ -274,24 +274,6 @@ function(genJITCompiler SOURCE_FILES SOURCE_TARGET)
   endif()
 
   # ====================================================================
-
-#  message(${TORCH_CXX_FLAGS})
-#  message(${TORCH_LIBRARIES})
-#  message(${TORCH_INCLUDE_DIRS})
-
-  if (0)
-    # -DBSplineCurve_EXPORTS
-    # -DPROTOBUF_USE_DLLS
-    # -DUSE_C10D_GLOO
-    # -DUSE_DISTRIBUTED
-    # -DUSE_RPC
-    # -DUSE_TENSORPIPE
-    # -isystem /opt/homebrew/Cellar/pytorch/2.0.1/include
-    # -isystem /opt/homebrew/Cellar/pytorch/2.0.1/include/torch/csrc/api/include
-    # -isystem /opt/homebrew/include
-    # -isystem /opt/homebrew/Cellar/protobuf@21/21.12/include
-    # -arch arm64
-  endif()
 
   # Generate source files
   foreach (input_file ${SOURCE_FILES})
