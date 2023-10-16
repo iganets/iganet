@@ -21,7 +21,7 @@ class TestSession(unittest.TestCase):
                     "keyfile": self.keyfile,
                     "password": self.password,
                     "cert_reqs": ssl.CERT_NONE,
-                    "check_hostname": False,
+                    "check_hostname": False}
         )
 
         # Get list of sessions
