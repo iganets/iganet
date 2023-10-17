@@ -168,12 +168,16 @@ int main(int argc, char const *argv[]) {
   op.parse(argc, argv);
 
   // Print auto-generated help message
-  if (help_option->count() == 1)
+  if (help_option->count() == 1) {
     std::cout << op << std::endl;
-  else if (help_option->count() == 2)
+    exit(0);
+  } else if (help_option->count() == 2) {
     std::cout << op.help(popl::Attribute::advanced) << std::endl;
-  else if (help_option->count() > 2)
+    exit(0);
+  } else if (help_option->count() > 2) {
     std::cout << op.help(popl::Attribute::expert) << std::endl;
+    exit(0);
+  }
 
   // Initialize backend
   iganet::init();

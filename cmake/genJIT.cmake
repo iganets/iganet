@@ -95,7 +95,7 @@ function(genJITCompiler SOURCE_FILES SOURCE_TARGET)
       set (JIT_CXX_FLAGS "${JIT_CXX_FLAGS} ${flag}")
     endforeach()
   endif()
-  
+
   # ====================================================================
 
   # Set SYSROOT on MacOS
@@ -182,7 +182,7 @@ function(genJITCompiler SOURCE_FILES SOURCE_TARGET)
 
       # Generate include and link directories
       foreach (lib ${IGANET_LINK_LIBRARIES})
-        
+
         if (lib STREQUAL "torch")
           if (WIN32)
             set(JIT_LIBRARIES
@@ -193,7 +193,7 @@ function(genJITCompiler SOURCE_FILES SOURCE_TARGET)
           endif()
 
           list(APPEND LIBS torch)
-          
+
         elseif(lib STREQUAL "torch_library")
           if (Torch_CUDA_FOUND)
 
@@ -225,14 +225,14 @@ function(genJITCompiler SOURCE_FILES SOURCE_TARGET)
             "${JIT_LIBRARIES} ${JIT_CXX_LINKER_SEARCH_FLAG}${pugixml_BINARY_DIR}")
 
           list(APPEND LIBS pugixml)
-          
+
         elseif(lib STREQUAL "OpenMP::OpenMP_CXX")
 
           if (OpenMP_CXX_INCLUDE_DIR)
             set(JIT_LIBRARIES
               "${JIT_LIBRARIES} ${JIT_CXX_INCLUDE_FLAG}${OpenMP_CXX_INCLUDE_DIR}")
           endif()
-          
+
           foreach (libname ${OpenMP_CXX_LIB_NAMES})
             list(APPEND LIBS ${OpenMP_${libname}_LIBRARY})
           endforeach()
@@ -240,14 +240,14 @@ function(genJITCompiler SOURCE_FILES SOURCE_TARGET)
         else()
 
           list(APPEND LIBS ${lib})
-          
+
         endif()
 
       endforeach()
 
       # Generate linking directives
       foreach(lib ${LIBS})
-      
+
         if (IS_ABSOLUTE ${lib})
 
           if (lib STREQUAL "pugixml" AND UNIX AND NOT APPLE)
@@ -257,7 +257,7 @@ function(genJITCompiler SOURCE_FILES SOURCE_TARGET)
             set(JIT_LIBRARIES
               "${JIT_LIBRARIES} ${lib}")
           endif()
-          
+
         else()
 
           if (lib STREQUAL "pugixml" AND UNIX AND NOT APPLE)
@@ -268,7 +268,7 @@ function(genJITCompiler SOURCE_FILES SOURCE_TARGET)
               "${JIT_LIBRARIES} ${JIT_CXX_LINKER_FLAG}${lib}")
           endif()
         endif()
-        
+
       endforeach()
     endif()
   endif()

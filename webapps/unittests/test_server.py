@@ -13,15 +13,20 @@ class TestSession(unittest.TestCase):
         self.certfile = os.environ.get("CERTFILE", "cert.pem")
         self.keyfile = os.environ.get("KEYFILE", "key.pem")
         self.password = os.environ.get("PASSWORD", "")
-        
+
         # Establish connection
+        context = ssl._create_unverified_context()
         self.ws = create_connection(
             self.protocol + "://" + self.hostname + ":" + self.port,
-            sslopt={"certfile": self.certfile,
-                    "keyfile": self.keyfile,
-                    "password": self.password,
-                    "cert_reqs": ssl.CERT_NONE,
-                    "check_hostname": False}
+            sslopt={
+                "certfile": self.certfile,
+                "keyfile": self.keyfile,
+                "password": self.password,
+                "cert_reqs": ssl.CERT_NONE,
+                "check_hostname": False,
+                "context": context,
+                "verify": False,
+            },
         )
 
         # Get list of sessions
