@@ -567,6 +567,7 @@ public:
         archive.load_from(reinterpret_cast<const char *>(binary.data()),
                           binary.size());
 
+        archive.read("transform", transform);
         BSpline_t::read(archive, "geometry");
         solution_.read(archive, "solution");
 
@@ -585,7 +586,8 @@ public:
     archive.write("model",
                   static_cast<int64_t>(std::hash<std::string>{}(getName())));
     archive.write("nonuniform", static_cast<bool>(BSpline_t::is_nonuniform()));
-
+    archive.write("transform", transform);
+    
     BSpline_t::write(archive, "geometry");
     solution_.write(archive, "solution");
 
@@ -601,16 +603,6 @@ public:
 
           return size;
         });
-
-    // // convert binary vector to hex string
-    // std::string hexstring;
-    // hexstring.resize(binary.size() * 2);
-    // const char letters[] = "0123456789ABCDEF";
-    // char* current_hex_char = &hexstring[0];
-    // for (std::uint8_t b : binary) {
-    //   *current_hex_char++ = letters[b >> 4];
-    //   *current_hex_char++ = letters[b & 0xf];
-    // }
 
     // attach binary vector to JSON object
     nlohmann::json json;
