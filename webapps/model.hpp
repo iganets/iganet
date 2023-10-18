@@ -218,7 +218,7 @@ public:
     if (component == "transform") {
 
       nlohmann::json data;
-      data["elements"] = utils::to_json<iganet::real_t, 1>(transform.flatten());
+      data["matrix"] = utils::to_json<iganet::real_t, 1>(transform.flatten());
 
       return data;
     }
@@ -234,13 +234,13 @@ public:
     if (attribute == "transform") {
       if (!json.contains("data"))
         throw InvalidModelAttributeException();
-      if (!json["data"].contains("elements"))
+      if (!json["data"].contains("matrix"))
         throw InvalidModelAttributeException();
 
-      auto elements =
-          json["data"]["elements"].get<std::vector<iganet::real_t>>();
+      auto matrix =
+          json["data"]["matrix"].get<std::vector<iganet::real_t>>();
 
-      if (elements.size() != 16)
+      if (matrix.size() != 16)
         throw IndexOutOfBoundsException();
 
       auto transform_cpu =
@@ -248,8 +248,8 @@ public:
       auto transformAccessor = std::get<1>(transform_cpu);
 
       std::size_t index(0);
-      for (const auto &element : elements)
-        transformAccessor[index % 4][index++ / 4] = element;
+      for (const auto &entry : matrix)
+        transformAccessor[index % 4][index++ / 4] = entry;
 
       return "{}";
     }
