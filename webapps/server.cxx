@@ -400,7 +400,7 @@ int main(int argc, char const *argv[]) {
                            // or
                            //
                            // request:
-                           // get/<session-id>/<model-instance>/<global-attribute>
+                           // get/<session-id>/<model-instance>/<attribute>
                            //
 
                            // Get session
