@@ -145,51 +145,51 @@ or
 -   The `models` list describes the models supported by the server.
 
       -   Each list entry has the form
-         ```json
-         { "name"        : <string>,
-            "description" : <string>,
-            "options"     : [<comma-separated list of options>],
-            "inputs"      : [<comma-separated list of inputs>],
-            "outputs"     : [<comma-separated list of outputs>] }
-         ```
-         The model's `name` is used for creating a specific type.
+          ```json
+          { "name"        : <string>,
+             "description" : <string>,
+             "options"     : [<comma-separated list of options>],
+             "inputs"      : [<comma-separated list of inputs>],
+             "outputs"     : [<comma-separated list of outputs>] }
+          ```
+          The model's `name` is used for creating a specific type.
       -   Each entry in the `options` list has the form
-         ```json
-         { "name"        : <string>,
-            "description" : <string>,
-            "type"        : <optiontype descriptor>,
-            "value"       : <values>,
-            "default"     : <default value>
-            "uiid"        : <integer specifying the position in the UI> }
-         ```
-         This information can be used to generate UI elements dynamically based on the capabilities of the server. See [`optiontype descriptor`](protocol.md#optiontype-descriptor) for details.
+          ```json
+          { "name"        : <string>,
+             "description" : <string>,
+             "type"        : <optiontype descriptor>,
+             "value"       : <values>,
+             "default"     : <default value>
+             "uiid"        : <integer specifying the position in the UI> }
+          ```
+          This information can be used to generate UI elements dynamically based on the capabilities of the server. See [`optiontype descriptor`](protocol.md#optiontype-descriptor) for details.
 
-         _Example:_
-         ```json
-         { "name"        : "ncoeffs",
-            "description" : "Number of coefficients",
-            "type"        : [int,int],
-            "value"       : [5,5],
-            "default"     : [5,5],
-            "uiid"        : 0 }
-         ```
-         or
-         ```json
-         { "name"        : "init",
-            "description" : "Initialization of the coefficients",
-            "type"        : "select",
-            "value"       : ["zeros", "ones", "linear", "random", "greville"],
-            "default"     : 2,
-            "uiid"        : 1 }
-         ```
+          _Example:_
+          ```json
+          { "name"        : "ncoeffs",
+             "description" : "Number of coefficients",
+             "type"        : [int,int],
+             "value"       : [5,5],
+             "default"     : [5,5],
+             "uiid"        : 0 }
+          ```
+          or
+          ```json
+          { "name"        : "init",
+             "description" : "Initialization of the coefficients",
+             "type"        : "select",
+             "value"       : ["zeros", "ones", "linear", "random", "greville"],
+             "default"     : 2,
+             "uiid"        : 1 }
+          ```
 
       -   Each entry in the `inputs` and `outputs` lists has the form
-         ```json
-         { "name"        : <string>,
-            "description" : <string>,
-            "type"        : <iotype descriptor> }
-         ```
-         whereby the `iotype descriptor` must be one of the options given in
+          ```json
+          { "name"        : <string>,
+             "description" : <string>,
+             "type"        : <iotype descriptor> }
+          ```
+          whereby the `iotype descriptor` must be one of the options given in
 
 ### Remove an existing session
 
