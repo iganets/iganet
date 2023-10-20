@@ -249,7 +249,7 @@ public:
 
       std::size_t index(0);
       for (const auto &entry : matrix)
-        transformAccessor[index % 4][index++ / 4] = entry;
+        transformAccessor[index / 4][index++ % 4] = entry;
 
       return "{}";
     }
