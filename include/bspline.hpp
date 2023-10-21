@@ -2148,7 +2148,7 @@ public:
 
         // Check for "BSpline" with given id
         if (geo.attribute("type").value() == std::string("BSpline") &&
-            geo.attribute("id").as_int() == id &&
+            (id >= 0 ? geo.attribute("id").as_int() == id : true) &&
             (!label.empty() ? geo.attribute("label").value() == label : true)) {
 
           // Check for "BSplineBasis"
@@ -2188,7 +2188,7 @@ public:
         // Check for "TensorBSpline<parDim>" with given id
         if (geo.attribute("type").value() ==
                 std::string("TensorBSpline").append(std::to_string(parDim_)) &&
-            geo.attribute("id").as_int() == id &&
+            (id >= 0 ? geo.attribute("id").as_int() == id : true) &&
             (!label.empty() ? geo.attribute("label").value() == label : true)) {
 
           // Check for "TensorBSplineBasis<parDim>"
