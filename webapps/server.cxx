@@ -809,49 +809,7 @@ int main(int argc, char const *argv[]) {
 
                        try {
 
-                         if (tokens.size() == 2 && tokens[1] == "session") {
-                           //
-                           // request: load/session
-                           //
-
-                           // Create a new session
-                           auto session = std::make_shared<
-                               iganet::webapp::Session<iganet::real_t>>();
-                           std::string uuid = session->getUUID();
-                           ws->getUserData()->sessions[uuid] = session;
-                           response["data"]["id"] = uuid;
-                           response["data"]["models"] =
-                               ws->getUserData()->models.getModels();
-
-                           // Create a new model instance from binary data
-                           // stream
-                           auto models = request["data"]["binary"];
-
-                           for (const auto &model : models) {
-
-                             // Get new model's id
-                             int64_t id =
-                                 (session->models.size() > 0
-                                      ? session->models.crbegin()->first + 1
-                                      : 0);
-
-                             nlohmann::json request;
-                             request["data"]["binary"] = model;
-
-                             // Create a new model instance from binary data
-                             // stream
-                             session->models[id] =
-                                 ws->getUserData()->models.load(request);
-                           }
-
-                           // Send response
-                           ws->send(response.dump(), uWS::OpCode::TEXT, true);
-
-                           // Subscribe to new session
-                           ws->subscribe(uuid);
-                         }
-
-                         else if (tokens.size() == 2) {
+                         if (tokens.size() == 2) {
                            //
                            // request: load/<session-id>
                            //
@@ -860,30 +818,40 @@ int main(int argc, char const *argv[]) {
                            auto session =
                                ws->getUserData()->getSession(tokens[1]);
 
-                           // Get new model's id
-                           int64_t id =
+                           // Get binary data
+                           auto instances = request["data"]["instances"];
+
+                           // Loop over all instances
+                           for (const auto &instance : instances) {
+                             
+                             // Get new model's id
+                             int64_t id =
                                (session->models.size() > 0
-                                    ? session->models.crbegin()->first + 1
-                                    : 0);
-
-                           // Create a new model instance from binary data
-                           // stream
-                           session->models[id] =
+                                ? session->models.crbegin()->first + 1
+                                : 0);
+                             
+                             nlohmann::json request;
+                             request["data"]["binary"] = instance;
+                             
+                             // Create a new model instance from binary data
+                             // stream
+                             session->models[id] =
                                ws->getUserData()->models.load(request);
-                           response["data"]["id"] = std::to_string(id);
-                           response["data"]["model"] =
+                             response["data"]["id"] = std::to_string(id);
+                             response["data"]["model"] =
                                session->models[id]->getModel();
-                           ws->send(response.dump(), uWS::OpCode::TEXT, true);
-
-                           // Broadcast creation of a new model instance
-                           nlohmann::json broadcast;
-                           broadcast["id"] = session->getUUID();
-                           broadcast["request"] = "create/instance";
-                           broadcast["data"]["id"] = id;
-                           broadcast["data"]["model"] =
+                             ws->send(response.dump(), uWS::OpCode::TEXT, true);
+                             
+                             // Broadcast creation of a new model instance
+                             nlohmann::json broadcast;
+                             broadcast["id"] = session->getUUID();
+                             broadcast["request"] = "create/instance";
+                             broadcast["data"]["id"] = id;
+                             broadcast["data"]["model"] =
                                session->models[id]->getModel();
-                           ws->publish(session->getUUID(), broadcast.dump(),
-                                       uWS::OpCode::TEXT);
+                             ws->publish(session->getUUID(), broadcast.dump(),
+                                         uWS::OpCode::TEXT);
+                           }
                          }
 
                          else
@@ -1038,7 +1006,7 @@ int main(int argc, char const *argv[]) {
                            if (auto m =
                                    std::dynamic_pointer_cast<iganet::ModelXML>(
                                        model))
-                             m->importXML(request, "", stoi(tokens[2]));
+                             m->importXML(request, "", -1);
                            else {
                              response["status"] =
                                  iganet::webapp::status::invalidImportRequest;
@@ -1074,11 +1042,11 @@ int main(int argc, char const *argv[]) {
                            // Get model
                            auto model = session->getModel(stoi(tokens[2]));
 
-                           // Import an existing model from XML
+                           // Import an existing model component from XML
                            if (auto m =
                                    std::dynamic_pointer_cast<iganet::ModelXML>(
                                        model))
-                             m->importXML(request, tokens[3], stoi(tokens[2]));
+                             m->importXML(request, tokens[3], -1);
                            else {
                              response["status"] =
                                  iganet::webapp::status::invalidImportRequest;
