@@ -962,6 +962,31 @@ TEST_F(BoundaryTest, Boundary_query_property) {
       boundary.pinned_memory()));
 }
 
+template <typename Values, typename Xi, std::size_t... Is>
+inline void check_requires_grad(std::index_sequence<Is...>, const Values& values, const Xi& xi, const iganet::Options<iganet::unittests::real_t> & options)
+{
+  auto check = [&options](const auto & values, const auto & xi)
+  {
+    values[0]->operator[](0).backward();
+    EXPECT_TRUE(torch::allclose(xi[0].grad(),
+                                iganet::utils::to_tensor<iganet::unittests::real_t>({1.0_r}, options)));
+  };
+
+  (check(std::get<Is>(values), std::get<Is>(xi)), ...);
+}
+
+template <typename Values, typename Xi, std::size_t... Is>
+inline void check_requires_grad_throw(std::index_sequence<Is...>, const Values& values, const Xi& xi, const iganet::Options<iganet::unittests::real_t> & options)
+{
+  auto check = [&options](const auto & values, const auto & xi)
+  {
+    values[0]->operator[](0).backward({}, true); // otherwise we cannot run backward() a second time
+    EXPECT_THROW(torch::allclose(xi[0].grad(), torch::empty({})), c10::Error);                                 
+  };
+
+  (check(std::get<Is>(values), std::get<Is>(xi)), ...);
+}
+
 TEST_F(BoundaryTest, Boundary_requires_grad) {
   {
     using iganet::side;
@@ -991,8 +1016,8 @@ TEST_F(BoundaryTest, Boundary_requires_grad) {
     // We expect an error when calling backward() because no tensor
     // has requires_grad = true
     std::apply(
-        [](auto... values) {
-          auto check = [](auto values) {
+        [](const auto &... values) {
+          auto check = [](const auto & values) {
             EXPECT_THROW(values[0]->backward(), c10::Error);
           };
           (check(values), ...);
@@ -1019,29 +1044,66 @@ TEST_F(BoundaryTest, Boundary_requires_grad) {
                         options.requires_grad(true)) /* back  */};
     values = boundary.eval(xi);
 
-    std::apply(
-        [](auto... values) {
-          auto check = [](auto values) {
-            values[0]->operator[](0).backward();
-            // std::cout << values[0].grad() << std::endl;
-          };
-          (check(values), ...);
-        },
-        values);
-    // exit(0);
+    // Note that this check cannot be implemented using std::apply as
+    // this functions only accepts one tuple as argument whereas here
+    // both values and xi need to be passed
+    check_requires_grad(std::make_index_sequence<iganet::Boundary<BSpline>::sides()>{},
+                        values, xi, options);
+  }
 
-    // std::get<side::north-1>(values)[0]->operator[](0).backward();
-    // std::cout << std::get<side::north-1>(xi)[0].grad() << std::endl;
+  {
+    using iganet::side;
+    using BSpline = iganet::UniformBSpline<real_t, 1, 2, 3, 4>;
+    iganet::Boundary<BSpline> boundary({5, 4, 7}, iganet::init::greville,
+                                       options.requires_grad(true));
 
-    // exit(0);
-    // EXPECT_TRUE(torch::allclose(std::get<side::north-1>(xi)[0].grad(),
-    //                             iganet::utils::to_tensor<real_t>({1.0_r},
-    //                             options)));
+    EXPECT_TRUE(
+        std::apply([](auto... requires_grad) { return (requires_grad && ...); },
+                   boundary.requires_grad()));
 
-    // std::get<side::south-1>(values)[0]->operator[](0).backward();
-    // EXPECT_TRUE(torch::allclose(std::get<side::south-1>(xi)[0].grad(),
-    //                             iganet::utils::to_tensor<real_t>({1.0_r},
-    //                             options)));
+    auto xi = std::tuple{
+      iganet::utils::to_tensorArray<real_t>({0.5_r} /* v */, {0.5_r} /* w */,
+                                            options) /* west  */,
+      iganet::utils::to_tensorArray<real_t>({0.5_r} /* v */, {0.5_r} /* w */,
+                                            options) /* east  */,
+      iganet::utils::to_tensorArray<real_t>({0.5_r} /* u */, {0.5_r} /* w */,
+                                            options) /* south */,
+      iganet::utils::to_tensorArray<real_t>({0.5_r} /* u */, {0.5_r} /* w */,
+                                            options) /* north */,
+      iganet::utils::to_tensorArray<real_t>({0.5_r} /* u */, {0.5_r} /* v */,
+                                            options) /* front */,
+      iganet::utils::to_tensorArray<real_t>({0.5_r} /* u */, {0.5_r} /* v */,
+                                            options) /* back  */};    
+    auto values = boundary.eval(xi);
+
+    // We expect an error because xi[0].grad() is an undefined tensor
+    //
+    // Note that this check cannot be implemented using std::apply as
+    // this functions only accepts one tuple as argument whereas here
+    // both values and xi need to be passed
+    check_requires_grad_throw(std::make_index_sequence<iganet::Boundary<BSpline>::sides()>{},
+                              values, xi, options);
+
+    xi = std::tuple{
+      iganet::utils::to_tensorArray<real_t>({0.5_r} /* v */, {0.5_r} /* w */,
+                                            options.requires_grad(true)) /* west  */,
+      iganet::utils::to_tensorArray<real_t>({0.5_r} /* v */, {0.5_r} /* w */,
+                                            options.requires_grad(true)) /* east  */,
+      iganet::utils::to_tensorArray<real_t>({0.5_r} /* u */, {0.5_r} /* w */,
+                                            options.requires_grad(true)) /* south */,
+      iganet::utils::to_tensorArray<real_t>({0.5_r} /* u */, {0.5_r} /* w */,
+                                            options.requires_grad(true)) /* north */,
+      iganet::utils::to_tensorArray<real_t>({0.5_r} /* u */, {0.5_r} /* v */,
+                                            options.requires_grad(true)) /* front */,
+      iganet::utils::to_tensorArray<real_t>({0.5_r} /* u */, {0.5_r} /* v */,
+                                            options.requires_grad(true)) /* back  */};    
+    values = boundary.eval(xi);
+
+    // Note that this check cannot be implemented using std::apply as
+    // this functions only accepts one tuple as argument whereas here
+    // both values and xi need to be passed
+    check_requires_grad(std::make_index_sequence<iganet::Boundary<BSpline>::sides()>{},
+                        values, xi, options);
   }
 }
 
