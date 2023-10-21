@@ -2449,7 +2449,7 @@ public:
   }
 
   /// @brief Returns true if both B-spline objects are close up to the given
-  /// tolerance
+  /// tolerances
   template <typename real_t_, short_t GeoDim_, short_t... Degrees_>
   bool isclose(const UniformBSplineCore<real_t_, GeoDim_, Degrees_...> &other,
                real_t rtol = real_t{1e-5}, real_t atol = real_t{1e-8}) const {
