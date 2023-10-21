@@ -293,8 +293,11 @@ public:
         else if (attribute == "coeffs")
           data["coeffs"] = this->coeffs_to_json();
         return data;
-      } else
-        return BSpline_t::to_json();
+      } else {
+        auto json = BSpline_t::to_json();
+        json.update(Model::to_json("transform", ""), true);
+        return json;
+      }
     }
 
     else if (component == "solution") {
