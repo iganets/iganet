@@ -124,20 +124,20 @@ class ModelXML {
 public:
   /// @brief Imports model from XML (as JSON object)
   virtual void importXML(const nlohmann::json &json,
-                         const std::string &component, std::size_t id) = 0;
+                         const std::string &component, int id) = 0;
 
   /// @brief Imports model from XML (as XML object)
   virtual void importXML(const pugi::xml_node &xml,
-                         const std::string &component, std::size_t id) = 0;
+                         const std::string &component, int id) = 0;
 
   /// @brief Exports model to XML (as JSON object)
   virtual nlohmann::json exportXML(const std::string &component,
-                                   std::size_t id) = 0;
+                                   int id) = 0;
 
   /// @brief Exports model to XML (as XML object)
   virtual pugi::xml_node &exportXML(pugi::xml_node &root,
                                     const std::string &component,
-                                    std::size_t id) = 0;
+                                    int id) = 0;
 
   // @brief Returns model capabilities
   std::vector<std::string> getCapabilities() const {

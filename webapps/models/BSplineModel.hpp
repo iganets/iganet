@@ -616,7 +616,7 @@ public:
 
   /// @brief Imports the model from XML (as JSON object)
   void importXML(const nlohmann::json &json, const std::string &component,
-                 std::size_t id) override {
+                 int id) override {
 
     if (json.contains("data")) {
       if (json["data"].contains("xml")) {
@@ -641,7 +641,7 @@ public:
 
   /// @brief Imports the model from XML (as XML object)
   void importXML(const pugi::xml_node &xml, const std::string &component,
-                 std::size_t id) override {
+                 int id) override {
 
     if (component.empty()) {
       BSpline_t::from_xml(xml, id, "geometry");
@@ -658,7 +658,7 @@ public:
 
   /// @brief Exports the model to XML (as JSON object)
   nlohmann::json exportXML(const std::string &component,
-                           std::size_t id) override {
+                           int id) override {
 
     // serialize to XML
     pugi::xml_document doc;
@@ -674,7 +674,7 @@ public:
 
   /// @brief Exports the model to XML (as XML object)
   pugi::xml_node &exportXML(pugi::xml_node &xml, const std::string &component,
-                            std::size_t id) override {
+                            int id) override {
 
     if (component.empty()) {
       BSpline_t::to_xml(xml, id, "geometry");
