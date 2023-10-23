@@ -85,21 +85,21 @@ public:
 
   /// @brief Imports the model from XML (as JSON object)
   void importXML(const nlohmann::json &json, const std::string &component,
-                 std::size_t id = 0) override {}
+                 int id = 0) override {}
 
   /// @brief Imports the model from XML (as XML object)
   void importXML(const pugi::xml_node &root, const std::string &component,
-                 std::size_t id = 0) override {}
+                 int id = 0) override {}
 
   /// @brief Exports the model to XML (as JSON object)
   nlohmann::json exportXML(const std::string &component,
-                           std::size_t id) override {
+                           int id) override {
     return "\"reason\" : \"Not implemented yet\"";
   }
 
   /// @brief Exports the model to XML (as XML object)
   pugi::xml_node &exportXML(pugi::xml_node &root, const std::string &component,
-                            std::size_t id) override {
+                            int id) override {
     return root;
   }
 };
