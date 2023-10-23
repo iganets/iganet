@@ -149,7 +149,7 @@ public:
 class Model {
 public:
   /// @brief Constructor
-  Model() : transform(torch::zeros({4, 4})){};
+  Model() : transform(torch::eye(4)){};
 
   /// @brief Destructor
   virtual ~Model(){};
