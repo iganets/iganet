@@ -821,6 +821,10 @@ int main(int argc, char const *argv[]) {
                            // Get binary data
                            auto instances = request["data"]["instances"];
 
+                           // Create vector if ids and array of models
+                           std::vector<int64_t> ids;
+                           auto models = nlohmann::json::array();
+                           
                            // Loop over all instances
                            for (const auto &instance : instances) {
                              
@@ -837,10 +841,8 @@ int main(int argc, char const *argv[]) {
                              // stream
                              session->models[id] =
                                ws->getUserData()->models.load(request);
-                             response["data"]["id"] = std::to_string(id);
-                             response["data"]["model"] =
-                               session->models[id]->getModel();
-                             ws->send(response.dump(), uWS::OpCode::TEXT, true);
+                             ids.push_back(id);
+                             models.push_back(session->models[id]->getModel());
                              
                              // Broadcast creation of a new model instance
                              nlohmann::json broadcast;
@@ -852,6 +854,10 @@ int main(int argc, char const *argv[]) {
                              ws->publish(session->getUUID(), broadcast.dump(),
                                          uWS::OpCode::TEXT);
                            }
+
+                           response["data"]["ids"] = ids;
+                           response["data"]["models"] = models;
+                           ws->send(response.dump(), uWS::OpCode::TEXT, true);
                          }
 
                          else
