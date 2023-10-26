@@ -129,9 +129,16 @@ auto to_tensorAccessor(const torch::Tensor &tensor) {
 template <typename T, std::size_t N>
 auto to_tensorAccessor(const torch::Tensor &tensor,
                        c10::DeviceType deviceType) {
-  auto tensor_device = tensor.to(deviceType);
-  auto accessor = tensor_device.template accessor<T, N>();
-  return std::tuple(tensor_device, accessor);
+
+  if (deviceType != tensor.device().type()) {
+    auto tensor_device = tensor.to(deviceType);
+    auto accessor = tensor_device.template accessor<T, N>();
+    return std::tuple(tensor_device, accessor);
+  } else {
+    auto accessor = tensor.template accessor<T, N>();
+    return std::tuple(tensor, accessor);    
+  }
+      
 }
 /// @}
 
