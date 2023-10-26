@@ -646,10 +646,12 @@ public:
     if (component.empty()) {
       BSpline_t::from_xml(xml, id, "geometry");
       solution_.from_xml(xml, id, "solution");
+      iganet::utils::from_xml<iganet::real_t, 2>(xml, transform, "Matrix", id, "transform", false);      
     } else {
-      if (component == "geometry")
+      if (component == "geometry") {
         BSpline_t::from_xml(xml, id, "geometry");
-      else if (component == "solution")
+        iganet::utils::from_xml<iganet::real_t, 2>(xml, transform, "Matrix", id, "transform", false);
+      } else if (component == "solution")
         solution_.from_xml(xml, id, "solution");
       else
         throw std::runtime_error("Unsupported component");
@@ -679,10 +681,12 @@ public:
     if (component.empty()) {
       BSpline_t::to_xml(xml, id, "geometry");
       solution_.to_xml(xml, id, "solution");
+      iganet::utils::to_xml<iganet::real_t, 2>(transform, xml, "Matrix", id, "transform");
     } else {
-      if (component == "geometry")
+      if (component == "geometry") {
         BSpline_t::to_xml(xml, id, "geometry");
-      else if (component == "solution")
+        iganet::utils::to_xml<iganet::real_t, 2>(transform, xml, "Matrix", id, "transform");
+      } else if (component == "solution")
         solution_.to_xml(xml, id, "solution");
       else
         throw std::runtime_error("Unsupported component");
