@@ -1993,24 +1993,30 @@ public:
   }
 
   /// @brief Returns the B-spline object as XML object
-  inline pugi::xml_document to_xml() const {
+  inline pugi::xml_document to_xml(int id = 0,
+                                   std::string label = "", int index = -1) const {
     pugi::xml_document doc;
-    pugi::xml_node node = doc.append_child("xml");
-    to_xml(node);
+    pugi::xml_node root = doc.append_child("xml");
+    to_xml(root, id, label, index);
 
     return doc;
   }
 
   /// @brief Returns the B-spline object as XML node
-  inline pugi::xml_node to_xml(pugi::xml_node &root, int id = 0,
-                               std::string label = "") const {
+  inline pugi::xml_node &to_xml(pugi::xml_node &root, int id = 0,
+                                std::string label = "", int index = -1) const {
     // add Geometry node
     pugi::xml_node geo = root.append_child("Geometry");
 
     // 1D parametric dimension
     if constexpr (parDim_ == 1) {
       geo.append_attribute("type") = "BSpline";
-      geo.append_attribute("id") = id;
+
+      if (id >= 0)
+        geo.append_attribute("id") = id;
+
+      if (index >= 0)
+        geo.append_attribute("index") = index;
 
       if (!label.empty())
         geo.append_attribute("label") = label.c_str();
@@ -2130,13 +2136,13 @@ public:
 
   /// @brief Updates the B-spline object from XML object
   inline UniformBSplineCore &from_xml(const pugi::xml_document &doc, int id = 0,
-                                      std::string label = "") {
-    return from_xml(doc.child("xml"), id, label);
+                                      std::string label = "", int index = -1) {
+    return from_xml(doc.child("xml"), id, label, index);
   }
 
   /// @brief Updates the B-spline object from XML node
   inline UniformBSplineCore &from_xml(const pugi::xml_node &root, int id = 0,
-                                      std::string label = "") {
+                                      std::string label = "", int index = -1) {
 
     std::array<bool, parDim_> nknots_found{false}, ncoeffs_found{false};
 
@@ -2146,9 +2152,10 @@ public:
       // 1D parametric dimension
       if constexpr (parDim_ == 1) {
 
-        // Check for "BSpline" with given id
+        // Check for "BSpline" with given id, index, label
         if (geo.attribute("type").value() == std::string("BSpline") &&
             (id >= 0 ? geo.attribute("id").as_int() == id : true) &&
+            (index >= 0 ? geo.attribute("index").as_int() == index : true) &&
             (!label.empty() ? geo.attribute("label").value() == label : true)) {
 
           // Check for "BSplineBasis"
@@ -2185,7 +2192,7 @@ public:
       // >1D parametric dimension
       else {
 
-        // Check for "TensorBSpline<parDim>" with given id
+        // Check for "TensorBSpline<parDim>" with given id, index, label
         if (geo.attribute("type").value() ==
                 std::string("TensorBSpline").append(std::to_string(parDim_)) &&
             (id >= 0 ? geo.attribute("id").as_int() == id : true) &&
@@ -2362,7 +2369,7 @@ public:
     } // "Geometry"
 
     throw std::runtime_error(
-        "XML object does not provide geometry with given id");
+        "XML object does not provide geometry with given id, index, and/or label");
     return *this;
   }
 
