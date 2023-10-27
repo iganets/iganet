@@ -1060,17 +1060,6 @@ public:
     return *this;
   }
 
-public:
-  /// @brief Returns true if both boundary spline objects are the
-  /// same
-  template <typename BoundaryCore_, size_t... Is>
-  inline bool is_equal(std::index_sequence<Is...>,
-                       const BoundaryCommon<BoundaryCore_> &other) const {
-    return (
-        (std::get<Is>(BoundaryCore::bdr_) == std::get<Is>(other.coeffs())) &&
-        ...);
-  }
-
 private:
   /// @brief Writes the boundary spline object into a
   /// torch::serialize::OutputArchive object
@@ -1117,11 +1106,22 @@ public:
     return archive;
   }
 
+private:
+  /// @brief Returns true if both boundary spline objects are the
+  /// same
+  template <typename BoundaryCore_, size_t... Is>
+  inline bool isequal_(std::index_sequence<Is...>,
+                       const BoundaryCommon<BoundaryCore_> &other) const {
+    return (
+        (std::get<Is>(BoundaryCore::bdr_) == std::get<Is>(other.coeffs())) &&
+        ...);
+  }
+  
 public:
   /// @brief Returns true if both boundary objects are the same
   template <typename BoundaryCore_>
   inline bool operator==(const BoundaryCommon<BoundaryCore_> &other) const {
-    return is_equal(std::make_index_sequence<BoundaryCore::sides()>{}, other);
+    return isequal_(std::make_index_sequence<BoundaryCore::sides()>{}, other);
   }
 
   /// @brief Returns true if both boundary objects are different
@@ -1130,6 +1130,29 @@ public:
     return !(
         *this ==
         other); // Do not change this to (*this != other) is it does not work
+  }
+
+private:
+  /// @brief Returns true if both boundary spline objects are close up to the given tolerances
+  template <typename BoundaryCore_, size_t... Is>
+  inline bool isclose_(std::index_sequence<Is...>,
+                       const BoundaryCommon<BoundaryCore_> &other,
+                       typename BoundaryCore::spline_type::value_type rtol,
+                       typename BoundaryCore::spline_type::value_type atol) const {
+    return (
+            (std::get<Is>(BoundaryCore::bdr_) == std::get<Is>(other.coeffs())) &&
+            ...);
+  }
+
+public:
+  /// @brief Returns true if both boundary objects are close up to the given tolerances
+  template <typename BoundaryCore_>
+  inline bool isclose(const BoundaryCommon<BoundaryCore_> &other,
+                      typename BoundaryCore::spline_type::value_type rtol =
+                      typename BoundaryCore::spline_type::value_type{1e-5},
+                      typename BoundaryCore::spline_type::value_type atol =
+                      typename BoundaryCore::spline_type::value_type{1e-8}) const {
+    return isclose_(std::make_index_sequence<BoundaryCore::sides()>{}, other, rtol, atol);
   }
 
 #define GENERATE_EXPR_MACRO(r, data, name)                                     \
