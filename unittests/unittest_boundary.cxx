@@ -904,7 +904,18 @@ TEST_F(BoundaryTest, Boundary_init) {
   }
 }
 
-TEST_F(BoundaryTest, Boundary_refine) {}
+TEST_F(BoundaryTest, Boundary_refine) {
+  {
+    using BSpline = iganet::UniformBSpline<real_t, 1, 2, 3, 4>;
+    iganet::Boundary<BSpline> boundary({5, 4, 7}, iganet::init::greville,
+                                       options);
+    iganet::Boundary<BSpline> boundary_ref({8, 5, 10}, iganet::init::greville,
+                                           options);    
+    boundary.uniform_refine();    
+    EXPECT_TRUE(boundary.isclose(boundary_ref));
+  }
+  
+}
 
 TEST_F(BoundaryTest, Boundary_copy_constructor) {}
 
