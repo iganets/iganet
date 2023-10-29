@@ -905,16 +905,218 @@ TEST_F(BoundaryTest, Boundary_init) {
 }
 
 TEST_F(BoundaryTest, Boundary_refine) {
+
+  // parDim == 2
+  
+  {
+    using BSpline = iganet::UniformBSpline<real_t, 1, 2, 3>;
+    iganet::Boundary<BSpline> boundary({5, 4}, iganet::init::greville,
+                                       options);
+    iganet::Boundary<BSpline> boundary_ref({8, 5}, iganet::init::greville,
+                                           options);    
+    boundary.uniform_refine();    
+    EXPECT_TRUE(boundary.isclose(boundary_ref));
+  }
+  
+  {
+    using BSpline = iganet::UniformBSpline<real_t, 1, 2, 3>;
+    iganet::Boundary<BSpline> boundary({5, 4}, iganet::init::greville,
+                                       options);
+    iganet::Boundary<BSpline> boundary_ref({14, 7}, iganet::init::greville,
+                                           options);    
+    boundary.uniform_refine(2);
+    EXPECT_TRUE(boundary.isclose(boundary_ref));
+  }
+  
+  {
+    using BSpline = iganet::UniformBSpline<real_t, 1, 2, 3>;
+    iganet::Boundary<BSpline> boundary({5, 4}, iganet::init::greville,
+                                       options);
+    iganet::Boundary<BSpline> boundary_ref({8, 4}, iganet::init::greville,
+                                           options);    
+    boundary.uniform_refine(1, 0);    
+    EXPECT_TRUE(boundary.isclose(boundary_ref));
+  }
+
+  {
+    using BSpline = iganet::UniformBSpline<real_t, 1, 2, 3>;
+    iganet::Boundary<BSpline> boundary({5, 4}, iganet::init::greville,
+                                       options);
+    iganet::Boundary<BSpline> boundary_ref({5, 5}, iganet::init::greville,
+                                           options);    
+    boundary.uniform_refine(1, 1);    
+    EXPECT_TRUE(boundary.isclose(boundary_ref));
+  }
+
+  {
+    using BSpline = iganet::UniformBSpline<real_t, 1, 2, 3>;
+    iganet::Boundary<BSpline> boundary({5, 4}, iganet::init::greville,
+                                       options);
+    EXPECT_THROW((boundary.uniform_refine(1, 2)), std::runtime_error);
+    EXPECT_THROW((boundary.uniform_refine(1, 3)), std::runtime_error);
+    EXPECT_THROW((boundary.uniform_refine(1, 4)), std::runtime_error);    
+  }
+
+  {
+    using BSpline = iganet::UniformBSpline<real_t, 1, 2, 3>;
+    iganet::Boundary<BSpline> boundary({5, 4}, iganet::init::greville,
+                                       options);
+    iganet::Boundary<BSpline> boundary_ref({14, 5}, iganet::init::greville,
+                                           options);    
+    boundary.uniform_refine(2, 0).uniform_refine(1, 1);
+    EXPECT_TRUE(boundary.isclose(boundary_ref));
+  }
+
+  // parDim == 3
+  
   {
     using BSpline = iganet::UniformBSpline<real_t, 1, 2, 3, 4>;
     iganet::Boundary<BSpline> boundary({5, 4, 7}, iganet::init::greville,
                                        options);
     iganet::Boundary<BSpline> boundary_ref({8, 5, 10}, iganet::init::greville,
                                            options);    
-    boundary.uniform_refine();    
+    boundary.uniform_refine();
     EXPECT_TRUE(boundary.isclose(boundary_ref));
   }
   
+  {
+    using BSpline = iganet::UniformBSpline<real_t, 1, 2, 3, 4>;
+    iganet::Boundary<BSpline> boundary({5, 4, 7}, iganet::init::greville,
+                                       options);
+    iganet::Boundary<BSpline> boundary_ref({14, 7, 16}, iganet::init::greville,
+                                           options);    
+    boundary.uniform_refine(2);
+    EXPECT_TRUE(boundary.isclose(boundary_ref));
+  }
+
+  {
+    using BSpline = iganet::UniformBSpline<real_t, 1, 2, 3, 4>;
+    iganet::Boundary<BSpline> boundary({5, 4, 7}, iganet::init::greville,
+                                       options);
+    iganet::Boundary<BSpline> boundary_ref({8, 4, 7}, iganet::init::greville,
+                                           options);    
+    boundary.uniform_refine(1, 0);
+    EXPECT_TRUE(boundary.isclose(boundary_ref));
+  }
+
+  {
+    using BSpline = iganet::UniformBSpline<real_t, 1, 2, 3, 4>;
+    iganet::Boundary<BSpline> boundary({5, 4, 7}, iganet::init::greville,
+                                       options);
+    iganet::Boundary<BSpline> boundary_ref({5, 5, 7}, iganet::init::greville,
+                                           options);    
+    boundary.uniform_refine(1, 1);
+    EXPECT_TRUE(boundary.isclose(boundary_ref));
+  }
+
+  {
+    using BSpline = iganet::UniformBSpline<real_t, 1, 2, 3, 4>;
+    iganet::Boundary<BSpline> boundary({5, 4, 7}, iganet::init::greville,
+                                       options);
+    iganet::Boundary<BSpline> boundary_ref({5, 4, 10}, iganet::init::greville,
+                                           options);    
+    boundary.uniform_refine(1, 2);
+    EXPECT_TRUE(boundary.isclose(boundary_ref));
+  }
+
+  {
+    using BSpline = iganet::UniformBSpline<real_t, 1, 2, 3, 4>;
+    iganet::Boundary<BSpline> boundary({5, 4, 7}, iganet::init::greville,
+                                       options);
+    iganet::Boundary<BSpline> boundary_ref({5, 4, 10}, iganet::init::greville,
+                                           options);    
+    EXPECT_THROW((boundary.uniform_refine(1, 3)), std::runtime_error);
+    EXPECT_THROW((boundary.uniform_refine(1, 4)), std::runtime_error);
+  }
+
+  {
+    using BSpline = iganet::UniformBSpline<real_t, 1, 2, 3, 4>;
+    iganet::Boundary<BSpline> boundary({5, 4, 7}, iganet::init::greville,
+                                       options);
+    iganet::Boundary<BSpline> boundary_ref({8, 7, 10}, iganet::init::greville,
+                                           options);    
+    boundary.uniform_refine(1, 0).uniform_refine(2, 1).uniform_refine(1, 2);
+    EXPECT_TRUE(boundary.isclose(boundary_ref));
+  }
+
+  // parDim == 4
+  
+  {
+    using BSpline = iganet::UniformBSpline<real_t, 1, 2, 3, 4, 5>;
+    iganet::Boundary<BSpline> boundary({5, 4, 7, 8}, iganet::init::greville,
+                                       options);
+    iganet::Boundary<BSpline> boundary_ref({8, 5, 10, 11}, iganet::init::greville,
+                                           options);    
+    boundary.uniform_refine();
+    EXPECT_TRUE(boundary.isclose(boundary_ref));
+  }
+
+  {
+    using BSpline = iganet::UniformBSpline<real_t, 1, 2, 3, 4, 5>;
+    iganet::Boundary<BSpline> boundary({5, 4, 7, 8}, iganet::init::greville,
+                                       options);
+    iganet::Boundary<BSpline> boundary_ref({14, 7, 16, 17}, iganet::init::greville,
+                                           options);    
+    boundary.uniform_refine(2);
+    EXPECT_TRUE(boundary.isclose(boundary_ref));
+  }
+
+  {
+    using BSpline = iganet::UniformBSpline<real_t, 1, 2, 3, 4, 5>;
+    iganet::Boundary<BSpline> boundary({5, 4, 7, 8}, iganet::init::greville,
+                                       options);
+    iganet::Boundary<BSpline> boundary_ref({8, 4, 7, 8}, iganet::init::greville,
+                                           options);    
+    boundary.uniform_refine(1, 0);
+    EXPECT_TRUE(boundary.isclose(boundary_ref));
+  }
+
+  {
+    using BSpline = iganet::UniformBSpline<real_t, 1, 2, 3, 4, 5>;
+    iganet::Boundary<BSpline> boundary({5, 4, 7, 8}, iganet::init::greville,
+                                       options);
+    iganet::Boundary<BSpline> boundary_ref({5, 5, 7, 8}, iganet::init::greville,
+                                           options);    
+    boundary.uniform_refine(1, 1);
+    EXPECT_TRUE(boundary.isclose(boundary_ref));
+  }
+
+  {
+    using BSpline = iganet::UniformBSpline<real_t, 1, 2, 3, 4, 5>;
+    iganet::Boundary<BSpline> boundary({5, 4, 7, 8}, iganet::init::greville,
+                                       options);
+    iganet::Boundary<BSpline> boundary_ref({5, 4, 10, 8}, iganet::init::greville,
+                                           options);
+    boundary.uniform_refine(1, 2);
+    EXPECT_TRUE(boundary.isclose(boundary_ref));
+  }
+
+  {
+    using BSpline = iganet::UniformBSpline<real_t, 1, 2, 3, 4, 5>;
+    iganet::Boundary<BSpline> boundary({5, 4, 7, 8}, iganet::init::greville,
+                                       options);
+    iganet::Boundary<BSpline> boundary_ref({5, 4, 7, 11}, iganet::init::greville,
+                                           options);    
+    boundary.uniform_refine(1, 3);
+    EXPECT_TRUE(boundary.isclose(boundary_ref));
+  }
+
+  {
+    using BSpline = iganet::UniformBSpline<real_t, 1, 2, 3, 4, 5>;
+    iganet::Boundary<BSpline> boundary({5, 4, 7, 8}, iganet::init::greville,
+                                       options);
+    EXPECT_THROW((boundary.uniform_refine(1, 4)), std::runtime_error);
+  }
+  
+  {
+    using BSpline = iganet::UniformBSpline<real_t, 1, 2, 3, 4, 5>;
+    iganet::Boundary<BSpline> boundary({5, 4, 7, 8}, iganet::init::greville,
+                                       options);
+    iganet::Boundary<BSpline> boundary_ref({8, 7, 10, 17}, iganet::init::greville,
+                                           options);    
+    boundary.uniform_refine(1, 0).uniform_refine(2, 1).uniform_refine(1, 2).uniform_refine(2, 3);
+    EXPECT_TRUE(boundary.isclose(boundary_ref));
+  }
 }
 
 TEST_F(BoundaryTest, Boundary_copy_constructor) {}

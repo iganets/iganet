@@ -1056,7 +1056,91 @@ public:
   /// @brief Returns the spline objects with uniformly refined
   /// knot and coefficient vectors
   inline auto &uniform_refine(int numRefine = 1, int dim = -1) {
-    uniform_refine_(std::make_index_sequence<BoundaryCore::sides()>{});
+    if (dim == -1)
+      uniform_refine_(std::make_index_sequence<BoundaryCore::sides()>{}, numRefine, dim);
+    else if (dim == 0) {
+      if constexpr (BoundaryCore::sides() == 2) {}
+      else if constexpr (BoundaryCore::sides() == 4) {
+        std::get<side::south-1>(BoundaryCore::bdr_).uniform_refine(numRefine, 0);
+        std::get<side::north-1>(BoundaryCore::bdr_).uniform_refine(numRefine, 0);
+      }
+      else if constexpr (BoundaryCore::sides() == 6) {
+        std::get<side::south-1>(BoundaryCore::bdr_).uniform_refine(numRefine, 0);
+        std::get<side::north-1>(BoundaryCore::bdr_).uniform_refine(numRefine, 0);
+        std::get<side::front-1>(BoundaryCore::bdr_).uniform_refine(numRefine, 0);
+        std::get<side::back -1>(BoundaryCore::bdr_).uniform_refine(numRefine, 0);
+      }
+      else if constexpr (BoundaryCore::sides() == 8) {
+        std::get<side::south-1>(BoundaryCore::bdr_).uniform_refine(numRefine, 0);
+        std::get<side::north-1>(BoundaryCore::bdr_).uniform_refine(numRefine, 0);
+        std::get<side::front-1>(BoundaryCore::bdr_).uniform_refine(numRefine, 0);
+        std::get<side::back -1>(BoundaryCore::bdr_).uniform_refine(numRefine, 0);
+        std::get<side::stime-1>(BoundaryCore::bdr_).uniform_refine(numRefine, 0);
+        std::get<side::etime-1>(BoundaryCore::bdr_).uniform_refine(numRefine, 0);
+      }
+      else
+        throw std::runtime_error(
+                                 "Invalid dimension");
+    }
+    else if (dim == 1) {
+      if constexpr (BoundaryCore::sides() == 4) {
+        std::get<side::east-1>(BoundaryCore::bdr_).uniform_refine(numRefine, 0);
+        std::get<side::west-1>(BoundaryCore::bdr_).uniform_refine(numRefine, 0);
+      }
+      else if constexpr (BoundaryCore::sides() == 6) {
+        std::get<side::east -1>(BoundaryCore::bdr_).uniform_refine(numRefine, 0);
+        std::get<side::west -1>(BoundaryCore::bdr_).uniform_refine(numRefine, 0);
+        std::get<side::front-1>(BoundaryCore::bdr_).uniform_refine(numRefine, 1);
+        std::get<side::back -1>(BoundaryCore::bdr_).uniform_refine(numRefine, 1);
+        
+      }
+      else if constexpr (BoundaryCore::sides() == 8) {
+        std::get<side::east -1>(BoundaryCore::bdr_).uniform_refine(numRefine, 0);
+        std::get<side::west -1>(BoundaryCore::bdr_).uniform_refine(numRefine, 0);
+        std::get<side::front-1>(BoundaryCore::bdr_).uniform_refine(numRefine, 1);
+        std::get<side::back -1>(BoundaryCore::bdr_).uniform_refine(numRefine, 1);
+        std::get<side::stime-1>(BoundaryCore::bdr_).uniform_refine(numRefine, 1);
+        std::get<side::etime-1>(BoundaryCore::bdr_).uniform_refine(numRefine, 1);
+      }
+      else
+        throw std::runtime_error(
+                                 "Invalid dimension");
+    }
+    else if (dim == 2) {
+      if constexpr (BoundaryCore::sides() == 6) {
+        std::get<side::east -1>(BoundaryCore::bdr_).uniform_refine(numRefine, 1);
+        std::get<side::west -1>(BoundaryCore::bdr_).uniform_refine(numRefine, 1);
+        std::get<side::north-1>(BoundaryCore::bdr_).uniform_refine(numRefine, 1);
+        std::get<side::south-1>(BoundaryCore::bdr_).uniform_refine(numRefine, 1);
+      }
+      else if constexpr (BoundaryCore::sides() == 8) {
+        std::get<side::west -1>(BoundaryCore::bdr_).uniform_refine(numRefine, 1);
+        std::get<side::east -1>(BoundaryCore::bdr_).uniform_refine(numRefine, 1);
+        std::get<side::south-1>(BoundaryCore::bdr_).uniform_refine(numRefine, 1);
+        std::get<side::north-1>(BoundaryCore::bdr_).uniform_refine(numRefine, 1);
+        std::get<side::stime-1>(BoundaryCore::bdr_).uniform_refine(numRefine, 2);
+        std::get<side::etime-1>(BoundaryCore::bdr_).uniform_refine(numRefine, 2);
+      }
+      else
+        throw std::runtime_error(
+                                 "Invalid dimension");
+    }
+    else if (dim == 3) {
+      if constexpr (BoundaryCore::sides() == 8) {
+        std::get<side::west -1>(BoundaryCore::bdr_).uniform_refine(numRefine, 2);
+        std::get<side::east -1>(BoundaryCore::bdr_).uniform_refine(numRefine, 2);
+        std::get<side::south-1>(BoundaryCore::bdr_).uniform_refine(numRefine, 2);
+        std::get<side::north-1>(BoundaryCore::bdr_).uniform_refine(numRefine, 2);
+        std::get<side::front-1>(BoundaryCore::bdr_).uniform_refine(numRefine, 2);
+        std::get<side::back -1>(BoundaryCore::bdr_).uniform_refine(numRefine, 2);
+      }
+      else
+        throw std::runtime_error(
+                                 "Invalid dimension");
+    }
+    else
+      throw std::runtime_error(
+                               "Invalid dimension");
     return *this;
   }
 
@@ -1140,7 +1224,7 @@ private:
                        typename BoundaryCore::spline_type::value_type rtol,
                        typename BoundaryCore::spline_type::value_type atol) const {
     return (
-            (std::get<Is>(BoundaryCore::bdr_) == std::get<Is>(other.coeffs())) &&
+            (std::get<Is>(BoundaryCore::bdr_).isclose(std::get<Is>(other.coeffs()))) &&
             ...);
   }
 
