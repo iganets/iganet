@@ -2478,8 +2478,8 @@ public:
 
     for (short_t i = 0; i < parDim_; ++i)
       result *= torch::allclose(knots(i), other.knots(i), rtol, atol);
-
-    for (short_t i = 0; i < parDim_; ++i)
+    
+    for (short_t i = 0; i < geoDim_; ++i)
       result *= torch::allclose(coeffs(i), other.coeffs(i), rtol, atol);
 
     return result;
