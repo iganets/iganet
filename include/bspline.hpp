@@ -1822,7 +1822,6 @@ public:
       for (int64_t i = 0; i < ncoeffs_[0]; ++i) {
         auto c = transformation(
             std::array<value_type, 1>{i / value_type(ncoeffs_[0] - 1)});
-#pragma omp simd
         for (short_t d = 0; d < geoDim_; ++d)
           coeffs_[d].detach()[i] = c[d];
       }
@@ -1836,7 +1835,6 @@ public:
           auto c = transformation(
               std::array<value_type, 2>{i / value_type(ncoeffs_[0] - 1),
                                         j / value_type(ncoeffs_[1] - 1)});
-#pragma omp simd
           for (short_t d = 0; d < geoDim_; ++d)
             coeffs_[d].detach()[j * ncoeffs_[0] + i] = c[d];
         }
@@ -1853,7 +1851,6 @@ public:
                 std::array<value_type, 3>{i / value_type(ncoeffs_[0] - 1),
                                           j / value_type(ncoeffs_[1] - 1),
                                           k / value_type(ncoeffs_[2] - 1)});
-#pragma omp simd
             for (short_t d = 0; d < geoDim_; ++d)
               coeffs_[d].detach()[k * ncoeffs_[0] * ncoeffs_[1] +
                                   j * ncoeffs_[0] + i] = c[d];
@@ -1874,7 +1871,6 @@ public:
                                             j / value_type(ncoeffs_[1] - 1),
                                             k / value_type(ncoeffs_[2] - 1),
                                             l / value_type(ncoeffs_[3] - 1)});
-#pragma omp simd
               for (short_t d = 0; d < geoDim_; ++d)
                 coeffs_[d]
                     .detach()[l * ncoeffs_[0] * ncoeffs_[1] * ncoeffs_[2] +
