@@ -1157,7 +1157,21 @@ TEST_F(BoundaryTest, Boundary_move_constructor) {
   EXPECT_EQ(boundary.isclose(boundary_ref), true);
 }
 
-TEST_F(BoundaryTest, Boundary_read_write) {}
+TEST_F(BoundaryTest, Boundary_read_write) {
+  std::filesystem::path filename =
+    std::filesystem::temp_directory_path() / std::to_string(rand());
+  using BSpline = iganet::UniformBSpline<real_t, 1, 2, 3>;
+  iganet::Boundary<BSpline> boundary_out({5, 4}, iganet::init::greville,
+                                         options);
+  boundary_out.save(filename.c_str());
+
+  iganet::Boundary<BSpline> boundary_in(options);
+  boundary_in.load(filename.c_str());
+  std::filesystem::remove(filename);
+
+  EXPECT_EQ((boundary_in == boundary_out), true);
+  EXPECT_EQ((boundary_in != boundary_out), false);
+}
 
 TEST_F(BoundaryTest, Boundary_to_from_xml) {}
 
