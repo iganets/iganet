@@ -78,7 +78,11 @@ public:
   using eval_type = std::tuple<torch::Tensor, torch::Tensor>;
 
   /// @brief Default constructor
-  BoundaryCore() = default;
+  BoundaryCore(Options<typename Spline::value_type> options = Options<typename Spline::value_type>{})
+    : bdr_({
+        boundary_spline_type(options),
+        boundary_spline_type(options)
+      }) {}
 
   /// @brief Copy constructor
   BoundaryCore(const boundary_type &bdr_) : bdr_(bdr_) {}
@@ -102,7 +106,7 @@ public:
                    Options<typename Spline::value_type>{})
       : bdr_({
             boundary_spline_type(std::array<int64_t, 0>{}, init, options),
-            boundary_spline_type(std::array<int64_t, 0>{}, init, options),
+            boundary_spline_type(std::array<int64_t, 0>{}, init, options)
         }) {}
 
   /// @brief Constructor
@@ -112,7 +116,7 @@ public:
                    Options<typename Spline::value_type>{})
       : bdr_({
             boundary_spline_type(std::array<int64_t, 0>{}, init, options),
-            boundary_spline_type(std::array<int64_t, 0>{}, init, options),
+            boundary_spline_type(std::array<int64_t, 0>{}, init, options)
         }) {}
 
   /// @brief Returns the number of sides
@@ -221,7 +225,13 @@ public:
                  std::array<torch::Tensor, 1>, std::array<torch::Tensor, 1>>;
 
   /// @brief Default constructor
-  BoundaryCore() = default;
+  BoundaryCore(Options<typename Spline::value_type> options = Options<typename Spline::value_type>{})
+    : bdr_({
+        std::tuple_element_t<0, boundary_spline_type>(options),
+        std::tuple_element_t<0, boundary_spline_type>(options),
+        std::tuple_element_t<1, boundary_spline_type>(options),
+        std::tuple_element_t<1, boundary_spline_type>(options)
+      }) {}
 
   /// @brief Copy constructor
   BoundaryCore(const boundary_type &bdr_) : bdr_(bdr_) {}
@@ -402,7 +412,15 @@ public:
                  std::array<torch::Tensor, 2>, std::array<torch::Tensor, 2>>;
 
   /// @brief Default constructor
-  BoundaryCore() = default;
+  BoundaryCore(Options<typename Spline::value_type> options = Options<typename Spline::value_type>{})
+    : bdr_({
+        std::tuple_element_t<0, boundary_spline_type>(options),
+        std::tuple_element_t<0, boundary_spline_type>(options),
+        std::tuple_element_t<1, boundary_spline_type>(options),
+        std::tuple_element_t<1, boundary_spline_type>(options),
+        std::tuple_element_t<2, boundary_spline_type>(options),
+        std::tuple_element_t<2, boundary_spline_type>(options)
+      }) {}
 
   /// @brief Copy constructor
   BoundaryCore(const boundary_type &bdr_) : bdr_(bdr_) {}
@@ -623,7 +641,17 @@ public:
                  std::array<torch::Tensor, 3>, std::array<torch::Tensor, 3>>;
 
   /// @brief Default constructor
-  BoundaryCore() = default;
+  BoundaryCore(Options<typename Spline::value_type> options = Options<typename Spline::value_type>{})
+    : bdr_({
+        std::tuple_element_t<0, boundary_spline_type>(options),
+        std::tuple_element_t<0, boundary_spline_type>(options),
+        std::tuple_element_t<1, boundary_spline_type>(options),
+        std::tuple_element_t<1, boundary_spline_type>(options),
+        std::tuple_element_t<2, boundary_spline_type>(options),
+        std::tuple_element_t<2, boundary_spline_type>(options),
+        std::tuple_element_t<3, boundary_spline_type>(options),
+        std::tuple_element_t<3, boundary_spline_type>(options)
+      }) {}
 
   /// @brief Copy constructor
   BoundaryCore(const boundary_type &bdr_) : bdr_(bdr_) {}
@@ -1198,6 +1226,13 @@ private:
   }
 
 public:
+  /// @brief Saves the boundary spline to file
+  inline void save(const std::string &filename,
+                   const std::string &key = "boundary") const {
+    torch::serialize::OutputArchive archive;
+    write(archive, key).save_to(filename);
+  }
+  
   /// @brief Writes the boundary spline object into a
   /// torch::serialize::OutputArchive object
   inline torch::serialize::OutputArchive &
@@ -1221,6 +1256,14 @@ private:
   }
 
 public:
+  /// @brief Loads the boundary spline object from file
+  inline void load(const std::string &filename,
+                   const std::string &key = "boundary") {
+    torch::serialize::InputArchive archive;
+    archive.load_from(filename);
+    read(archive, key);
+  }
+  
   /// @brief Loads the boundary spline object from a
   /// torch::serialize::InputArchive object
   inline torch::serialize::InputArchive &
