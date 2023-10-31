@@ -1119,15 +1119,43 @@ TEST_F(BoundaryTest, Boundary_refine) {
   }
 }
 
-TEST_F(BoundaryTest, Boundary_copy_constructor) {}
+TEST_F(BoundaryTest, Boundary_copy_constructor) {
+  using BSpline = iganet::UniformBSpline<real_t, 1, 2, 3>;
+  iganet::Boundary<BSpline> boundary_orig({5, 4}, iganet::init::greville,
+                                          options);
+  iganet::Boundary<BSpline> boundary_copy(boundary_orig);
+  
+  boundary_orig.side<iganet::side::north>().transform([](const std::array<real_t, 1> xi) {
+    return std::array<real_t, 1>{0.0_r};
+  });
+  
+  EXPECT_EQ((boundary_orig == boundary_copy), true);
+}
 
-TEST_F(BoundaryTest, Boundary_clone_constructor) {}
+TEST_F(BoundaryTest, Boundary_clone_constructor) {
+  using BSpline = iganet::UniformBSpline<real_t, 1, 2, 3>;
+  iganet::Boundary<BSpline> boundary_ref({5, 4}, iganet::init::greville,
+                                          options);
+  iganet::Boundary<BSpline> boundary_orig({5, 4}, iganet::init::greville,
+                                          options);
+  iganet::Boundary<BSpline> boundary_clone(boundary_orig, true);
+  
+  boundary_orig.side<iganet::side::north>().transform([](const std::array<real_t, 1> xi) {
+    return std::array<real_t, 1>{0.0_r};
+  });
+  
+  EXPECT_EQ((boundary_ref == boundary_clone), true);
+}
 
-TEST_F(BoundaryTest, Boundary_move_constructor) {}
-
-TEST_F(BoundaryTest, Boundary_copy_assignment) {}
-
-TEST_F(BoundaryTest, Boundary_move_assignment) {}
+TEST_F(BoundaryTest, Boundary_move_constructor) {
+  using BSpline = iganet::UniformBSpline<real_t, 1, 2, 3>;
+  iganet::Boundary<BSpline> boundary_ref({14, 7}, iganet::init::greville,
+                                         options);    
+  auto boundary(iganet::Boundary<BSpline>({5, 4}, iganet::init::greville,
+                                          options).uniform_refine(2));
+  
+  EXPECT_EQ(boundary.isclose(boundary_ref), true);
+}
 
 TEST_F(BoundaryTest, Boundary_read_write) {}
 
