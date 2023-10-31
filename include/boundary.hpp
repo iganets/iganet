@@ -86,6 +86,16 @@ public:
   /// @brief Move constructor
   BoundaryCore(boundary_type &&bdr_) : bdr_(bdr_) {}
 
+  /// @brief Copy/clone constructor
+  BoundaryCore(const BoundaryCore &other, bool clone)
+    : bdr_(clone ?
+           std::apply([](const auto &...bspline) {
+             return std::make_tuple(bspline.clone()...);
+           },
+             other.coeffs()) :
+           other.coeffs())
+  {}
+
   /// @brief Constructor
   BoundaryCore(const std::array<int64_t, 1> &, enum init init = init::zeros,
                Options<typename Spline::value_type> options =
@@ -219,6 +229,16 @@ public:
   /// @brief Move constructor
   BoundaryCore(boundary_type &&bdr_) : bdr_(bdr_) {}
 
+  /// @brief Copy/clone constructor
+  BoundaryCore(const BoundaryCore &other, bool clone)
+    : bdr_(clone ?
+           std::apply([](const auto &...bspline) {
+             return std::make_tuple(bspline.clone()...);
+           },
+             other.coeffs()) :
+           other.coeffs())
+  {}
+  
   /// @brief Constructor
   BoundaryCore(const std::array<int64_t, 2> &ncoeffs,
                enum init init = init::zeros,
@@ -390,6 +410,16 @@ public:
   /// @brief Move constructor
   BoundaryCore(boundary_type &&bdr_) : bdr_(bdr_) {}
 
+  /// @brief Copy/clone constructor
+  BoundaryCore(const BoundaryCore &other, bool clone)
+    : bdr_(clone ?
+           std::apply([](const auto &...bspline) {
+             return std::make_tuple(bspline.clone()...);
+           },
+             other.coeffs()) :
+           other.coeffs())
+  {}
+  
   /// @brief Constructor
   BoundaryCore(const std::array<int64_t, 3> &ncoeffs,
                enum init init = init::zeros,
@@ -601,6 +631,16 @@ public:
   /// @brief Move constructor
   BoundaryCore(boundary_type &&bdr_) : bdr_(bdr_) {}
 
+  /// @brief Copy/clone constructor
+  BoundaryCore(const BoundaryCore &other, bool clone)
+    : bdr_(clone ?
+           std::apply([](const auto &...bspline) {
+             return std::make_tuple(bspline.clone()...);
+           },
+             other.coeffs()) :
+           other.coeffs())
+  {}
+  
   /// @brief Constructor
   BoundaryCore(const std::array<int64_t, 4> &ncoeffs,
                enum init init = init::zeros,
@@ -757,7 +797,7 @@ template <typename BoundaryCore> class BoundaryCommon : public BoundaryCore {
 public:
   /// @brief Constructors from the base class
   using BoundaryCore::BoundaryCore;
-
+  
 private:
   /// @brief Returns all coefficients of all spline objects as a
   /// single tensor
