@@ -3631,12 +3631,6 @@ public:
       BSplineCore::coeffs_[i] = std::move(coeffs[i]);
   }
 
-  /// @brief Copy assignment operator
-  BSplineCommon &operator=(const BSplineCommon &) = default;
-
-  /// @brief Move assignment operator
-  BSplineCommon &operator=(BSplineCommon &&) = default;
-
   /// @brief Returns the B-spline object with uniformly refined knot
   /// and coefficient vectors
   ///

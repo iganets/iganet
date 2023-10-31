@@ -600,28 +600,6 @@ TEST_F(BSplineTest, NonUniformBSpline_move_constructor) {
   EXPECT_EQ(bspline.isclose(bspline_ref), true);
 }
 
-TEST_F(BSplineTest, NonUniformBSpline_copy_assignment) {
-  iganet::NonUniformBSpline<real_t, 3, 3, 4> bspline_orig(
-      {4, 5}, iganet::init::greville, options);
-  auto bspline = bspline_orig;
-
-  bspline_orig.transform([](const std::array<real_t, 2> xi) {
-    return std::array<real_t, 3>{0.0_r, 1.0_r, 2.0_r};
-  });
-
-  EXPECT_EQ(bspline.isclose(bspline_orig), true);
-}
-
-TEST_F(BSplineTest, NonUniformBSpline_move_assignment) {
-  iganet::NonUniformBSpline<real_t, 3, 3, 4> bspline_ref(
-      {7, 8}, iganet::init::greville, options);
-  auto bspline = iganet::NonUniformBSpline<real_t, 3, 3, 4>(
-                     {4, 5}, iganet::init::greville, options)
-                     .uniform_refine(2);
-
-  EXPECT_EQ(bspline.isclose(bspline_ref), true);
-}
-
 TEST_F(BSplineTest, NonUniformBSpline_copy_coeffs_constructor) {
   iganet::NonUniformBSpline<real_t, 3, 3, 4> bspline_orig(
       {4, 5}, iganet::init::greville, options);
