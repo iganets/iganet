@@ -1273,6 +1273,73 @@ public:
     return archive;
   }
 
+  /// @brief Returns the boundary object as XML object
+  inline pugi::xml_document to_xml(int id = 0,
+                                   std::string label = "", int index = -1) const {
+    pugi::xml_document doc;
+    pugi::xml_node root = doc.append_child("xml");
+    to_xml(root, id, label, index);
+
+    return doc;
+  }
+  
+  /// @brief Returns the boundary object as XML node
+  inline pugi::xml_node &to_xml(pugi::xml_node &root, int id = 0,
+                                std::string label = "", int index = -1) const {
+    // add Boundary node
+    pugi::xml_node bdr = root.append_child("Boundary");
+
+    if (id >= 0)
+      bdr.append_attribute("id") = id;
+    
+    if (index >= 0)
+      bdr.append_attribute("index") = index;
+    
+    if (!label.empty())
+      bdr.append_attribute("label") = label.c_str();
+
+    int index_ = 0;
+    std::apply([&bdr, &id, &label, &index_](const auto &...bspline) {
+      (bspline.to_xml(bdr, id, label, index_++),...);
+    }, BoundaryCore::bdr_);
+
+    return root;
+  }
+
+  /// @brief Updates the boundary object from XML object
+  inline BoundaryCommon &from_xml(const pugi::xml_document &doc, int id = 0,
+                                  std::string label = "", int index = -1) {
+    return from_xml(doc.child("xml"), id, label, index);
+  }
+  
+  /// @brief Updates the boundary object from XML node
+  inline BoundaryCommon &from_xml(const pugi::xml_node &root, int id = 0,
+                                  std::string label = "", int index = -1) {
+
+    // Loop through all boundary nodes
+    for (pugi::xml_node bdr : root.children("Boundary")) {
+
+      // Check for "Boundary" with given id, index, label
+      if ((id >= 0 ? bdr.attribute("id").as_int() == id : true) &&
+          (index >= 0 ? bdr.attribute("index").as_int() == index : true) &&
+          (!label.empty() ? bdr.attribute("label").value() == label : true)) {
+
+        int index_ = 0;
+        std::apply([&bdr, &id, &label, &index_](auto &...bspline) {
+          (bspline.from_xml(bdr, id, label, index_++),...);
+        }, BoundaryCore::bdr_);
+        
+        return *this;
+      }
+      else
+        continue; // try next "Boundary"
+    }
+
+    throw std::runtime_error(
+                             "XML object does not provide geometry with given id, index, and/or label");
+    return *this;
+  }
+
 private:
   /// @brief Returns true if both boundary spline objects are the
   /// same
