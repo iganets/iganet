@@ -642,7 +642,7 @@ public:
                   knots_[j].template packed_accessor64<value_type, 1>();
               const int num_mp =
                   at::cuda::getCurrentDeviceProperties()->multiProcessorCount;
-              cuda::greville_cuda_kernel<<<32 * num_mp, 256>>>(
+              cuda::greville_cuda_kernel<<<32 * num_mp, 2048>>>(
                   greville, knots, ncoeffs_[j], degrees_[j], interior);
 #else
               throw std::runtime_error(
