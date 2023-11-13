@@ -2877,6 +2877,7 @@ protected:
   }
   /// @}
 
+  //  clang-format off
   /// @brief Returns the vector of univariate B-spline basis
   /// functions (or their derivatives) evaluated in the point `xi`
   ///
@@ -2913,10 +2914,10 @@ protected:
   ///   \begin{pmatrix}
   ///     \frac{t_{i_p+1} - \xi_d}{t_{i_p+1} - t_{i_p+1-k}} & \frac{\xi_d -
   ///     t_{i_p+1-k}}{t_{i_p+1} - t_{i_p+1-k}} & 0 & \cdots & 0 \\
-    ///     0 & \frac{t_{i_p+2} - \xi_d}{t_{i_p+2} - t_{i_p+2-k}} & \frac{\xi_d -
+  ///     0 & \frac{t_{i_p+2} - \xi_d}{t_{i_p+2} - t_{i_p+2-k}} & \frac{\xi_d -
   ///     t_{i_p+2-k}}{t_{i_p+2} - t_{i_p+1-k}} & \cdots & 0 \\
-    ///     \vdots & \vdots & \ddots & \ddots & \vdots \\
-    ///     0 & 0 & \cdots & \frac{t_{i_p+k} - \xi_d}{t_{i_p+k} - t_{i_p}} &
+  ///     \vdots & \vdots & \ddots & \ddots & \vdots \\
+  ///     0 & 0 & \cdots & \frac{t_{i_p+k} - \xi_d}{t_{i_p+k} - t_{i_p}} &
   ///     \frac{\xi_d - t_{i_p}}{t_{i_p+k} - t_{i_p}}
   ///   \end{pmatrix}
   /// \f]
@@ -2928,10 +2929,10 @@ protected:
   ///   \begin{pmatrix}
   ///     \frac{-1}{t_{i_p+1} - t_{i_p+1-k}} & \frac{1}{t_{i_p+1} - t_{i_p+1-k}}
   ///     & 0 & \cdots & 0 \\
-    ///     0 & \frac{-1}{t_{i_p+2} - t_{i_p+2-k}} & \frac{1}{t_{i_p+2} -
+  ///     0 & \frac{-1}{t_{i_p+2} - t_{i_p+2-k}} & \frac{1}{t_{i_p+2} -
   ///     t_{i_p+1-k}} & \cdots & 0 \\
-    ///     \vdots & \vdots & \ddots & \ddots & \vdots \\
-    ///     0 & 0 & \cdots & \frac{-1}{t_{i_p+k} - t_{i_p}} & \frac{1}{t_{i_p+k} -
+  ///     \vdots & \vdots & \ddots & \ddots & \vdots \\
+  ///     0 & 0 & \cdots & \frac{-1}{t_{i_p+k} - t_{i_p}} & \frac{1}{t_{i_p+k} -
   ///     t_{i_p}}
   ///   \end{pmatrix}.
   /// \f]
@@ -2980,6 +2981,7 @@ protected:
   ///
   /// where \f$\div\f$ and \f$\odot\f$ denote the element-wise
   /// division and multiplication of vectors, respectively.
+  //  clang-format on
   template <short_t degree, short_t dim, short_t deriv>
   inline auto eval_univariate(const torch::Tensor &xi,
                               const torch::Tensor &indices) const {
@@ -4288,6 +4290,7 @@ public:
                .ginv();
   }
 
+  //  clang-format off
   /// @brief Returns a block-tensor with the Hessian of the B-spline
   /// object in the points `xi` with respect to the parametric
   /// variables
@@ -4309,8 +4312,8 @@ public:
   ///           \dots&
   ///           \frac{\partial^2 u}{\partial \xi_1\partial \xi_{d_\text{par}}}
   ///           \\
-    ///           \vdots& \vdots & \ddots & \vdots \\
-    ///           \frac{\partial^2 u}{\partial \xi_{d_\text{par}}\partial \xi_0}&
+  ///           \vdots& \vdots & \ddots & \vdots \\
+  ///           \frac{\partial^2 u}{\partial \xi_{d_\text{par}}\partial \xi_0}&
   ///           \frac{\partial^2 u}{\partial \xi_{d_\text{par}}\partial \xi_1}&
   ///           \dots&
   ///           \frac{\partial^2 u}{\partial^2 \xi_{d_\text{par}}}
@@ -4320,6 +4323,7 @@ public:
   /// @note If the B-spline object has geometric dimension larger
   /// then one then all Hessian matrices are returned as slices of a
   /// rank-3 tensor.
+  //  clang-format on
   ///
   /// @{
   template <bool memory_optimized = false>
@@ -4338,6 +4342,7 @@ public:
   }
   /// @}
 
+  //  clang-format off
   /// @brief Returns a block-tensor with the Hessian of the B-spline
   /// object in the points `xi` with respect to the parametric
   /// variables
@@ -4361,8 +4366,8 @@ public:
   ///           \dots&
   ///           \frac{\partial^2 u}{\partial \xi_1\partial \xi_{d_\text{par}}}
   ///           \\
-    ///           \vdots& \vdots & \ddots & \vdots \\
-    ///           \frac{\partial^2 u}{\partial \xi_{d_\text{par}}\partial \xi_0}&
+  ///           \vdots& \vdots & \ddots & \vdots \\
+  ///           \frac{\partial^2 u}{\partial \xi_{d_\text{par}}\partial \xi_0}&
   ///           \frac{\partial^2 u}{\partial \xi_{d_\text{par}}\partial \xi_1}&
   ///           \dots&
   ///           \frac{\partial^2 u}{\partial^2 \xi_{d_\text{par}}}
@@ -4372,6 +4377,7 @@ public:
   /// @note If the B-spline object has geometric dimension larger
   /// then one then all Hessian matrices are returned as slices of a
   /// rank-3 tensor.
+  //  clang-format on
   template <bool memory_optimized = false>
   inline auto
   hess(const std::array<torch::Tensor, BSplineCore::parDim_> &xi,
@@ -4381,6 +4387,7 @@ public:
         BSplineCore::template find_coeff_indices<memory_optimized>(indices));
   }
 
+  //  clang-format off
   /// @brief Returns a block-tensor with the Hessian of the B-spline
   /// object in the points `xi` with respect to the parametric
   /// variables
@@ -4406,8 +4413,8 @@ public:
   ///           \dots&
   ///           \frac{\partial^2 u}{\partial \xi_1\partial \xi_{d_\text{par}}}
   ///           \\
-    ///           \vdots& \vdots & \ddots & \vdots \\
-    ///           \frac{\partial^2 u}{\partial \xi_{d_\text{par}}\partial \xi_0}&
+  ///           \vdots& \vdots & \ddots & \vdots \\
+  ///           \frac{\partial^2 u}{\partial \xi_{d_\text{par}}\partial \xi_0}&
   ///           \frac{\partial^2 u}{\partial \xi_{d_\text{par}}\partial \xi_1}&
   ///           \dots&
   ///           \frac{\partial^2 u}{\partial^2 \xi_{d_\text{par}}}
@@ -4418,6 +4425,7 @@ public:
   /// @note If the B-spline object has geometric dimension larger
   /// then one then all Hessian matrices are returned as slices of a
   /// rank-3 tensor.
+  //  clang-format on
   ///
   /// @{
   template <bool memory_optimized = false>
@@ -4703,6 +4711,7 @@ public:
     return jacInv.tr() * hessu * jacInv;
   }
 
+  //  clang-format off
   /// @brief Returns a block-tensor with the Jacobian of the
   /// B-spline object in the points `xi` with respect to the
   /// parametric variables
@@ -4719,17 +4728,18 @@ public:
   ///           \frac{\partial u_0}{\partial \xi_1}&
   ///           \dots&
   ///           \frac{\partial u_0}{\partial \xi_{d_\text{par}}} \\
-    ///           \frac{\partial u_1}{\partial \xi_0}&
+  ///           \frac{\partial u_1}{\partial \xi_0}&
   ///           \frac{\partial u_1}{\partial \xi_1}&
   ///           \dots&
   ///           \frac{\partial u_1}{\partial \xi_{d_\text{par}}} \\
-    ///           \vdots& \vdots & \ddots & \vdots \\
-    ///           \frac{\partial u_{d_\text{geo}}}{\partial \xi_0}&
+  ///           \vdots& \vdots & \ddots & \vdots \\
+  ///           \frac{\partial u_{d_\text{geo}}}{\partial \xi_0}&
   ///           \frac{\partial u_{d_\text{geo}}}{\partial \xi_1}&
   ///           \dots&
   ///           \frac{\partial u_{d_\text{geo}}}{\partial \xi_{d_\text{par}}}
   ///     \end{bmatrix}
   /// \f]
+  //  clang-format on
   ///
   /// @{
   template <bool memory_optimized = false>
@@ -4748,6 +4758,7 @@ public:
   }
   /// @}
 
+  //  clang-format off
   /// @brief Returns a block-tensor with the Jacobian of the
   /// B-spline object in the points `xi` with respect to the
   /// parametric variables
@@ -4766,17 +4777,18 @@ public:
   ///           \frac{\partial u_0}{\partial \xi_1}&
   ///           \dots&
   ///           \frac{\partial u_0}{\partial \xi_{d_\text{par}}} \\
-    ///           \frac{\partial u_1}{\partial \xi_0}&
+  ///           \frac{\partial u_1}{\partial \xi_0}&
   ///           \frac{\partial u_1}{\partial \xi_1}&
   ///           \dots&
   ///           \frac{\partial u_1}{\partial \xi_{d_\text{par}}} \\
-    ///           \vdots& \vdots & \ddots & \vdots \\
-    ///           \frac{\partial u_{d_\text{geo}}}{\partial \xi_0}&
+  ///           \vdots& \vdots & \ddots & \vdots \\
+  ///           \frac{\partial u_{d_\text{geo}}}{\partial \xi_0}&
   ///           \frac{\partial u_{d_\text{geo}}}{\partial \xi_1}&
   ///           \dots&
   ///           \frac{\partial u_{d_\text{geo}}}{\partial \xi_{d_\text{par}}}
   ///     \end{bmatrix}
   /// \f]
+  //  clang-format on
   template <bool memory_optimized = false>
   inline auto
   jac(const std::array<torch::Tensor, BSplineCore::parDim_> &xi,
@@ -4786,6 +4798,7 @@ public:
         BSplineCore::template find_coeff_indices<memory_optimized>(indices));
   }
 
+  //  clang-format off
   /// @brief Returns a block-tensor with the Jacobian of the
   /// B-spline object in the points `xi` with respect to the
   /// parametric variables
@@ -4807,12 +4820,12 @@ public:
   ///           \frac{\partial u_0}{\partial \xi_1}&
   ///           \dots&
   ///           \frac{\partial u_0}{\partial \xi_{d_\text{par}}} \\
-    ///           \frac{\partial u_1}{\partial \xi_0}&
+  ///           \frac{\partial u_1}{\partial \xi_0}&
   ///           \frac{\partial u_1}{\partial \xi_1}&
   ///           \dots&
   ///           \frac{\partial u_1}{\partial \xi_{d_\text{par}}} \\
-    ///           \vdots& \vdots & \ddots & \vdots \\
-    ///           \frac{\partial u_{d_\text{geo}}}{\partial \xi_0}&
+  ///           \vdots& \vdots & \ddots & \vdots \\
+  ///           \frac{\partial u_{d_\text{geo}}}{\partial \xi_0}&
   ///           \frac{\partial u_{d_\text{geo}}}{\partial \xi_1}&
   ///           \dots&
   ///           \frac{\partial u_{d_\text{geo}}}{\partial \xi_{d_\text{par}}}
@@ -4823,6 +4836,7 @@ public:
   /// specified derivatives for all variables simultaneously we
   /// compute the transpose of the Jacobian and return its
   /// tranposed, hence, the Jacobian.
+  //  clang-format on
   /// @{
   template <bool memory_optimized = false>
   inline auto jac(const utils::TensorArray1 &xi,
