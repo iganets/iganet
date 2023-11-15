@@ -31,14 +31,13 @@
 #pragma once
 
 template <typename Spline> auto to_bsplinelib_bspline(const Spline &bspline) {
+  static_assert(Spline::geoDim() < 5, "Unsupported geometric dimension");
+
   // B-spline construction
-  using BSpline =
-      bsplinelib::splines::BSpline<Spline::parDim(), Spline::geoDim()>;
+  using BSpline = bsplinelib::splines::BSpline<Spline::parDim()>;
   using ParameterSpace = typename BSpline::ParameterSpace_;
   using VectorSpace = typename BSpline::VectorSpace_;
   using Coordinates = typename VectorSpace::Coordinates_;
-  using Coordinate = typename Coordinates::value_type;
-  using ScalarCoordinate = typename Coordinate::value_type;
   using Degrees = typename ParameterSpace::Degrees_;
   using Degree = typename Degrees::value_type;
   using KnotVectors = typename ParameterSpace::KnotVectors_;
@@ -74,41 +73,17 @@ template <typename Spline> auto to_bsplinelib_bspline(const Spline &bspline) {
       std::make_shared<ParameterSpace>(knot_vectors, degrees)};
 
   // Create coordinate vector(s)
-  Coordinates coordinates;
-  for (int64_t i = 0; i < bspline.ncumcoeffs(); ++i)
-    if constexpr (Spline::geoDim() == 1)
-      coordinates.emplace_back(Coordinate{ScalarCoordinate{
-          bspline.coeffs(0)[i].template item<typename Spline::value_type>()}});
-    else if constexpr (Spline::geoDim() == 2)
-      coordinates.emplace_back(Coordinate{
-          ScalarCoordinate{bspline.coeffs(0)[i]
-                               .template item<typename Spline::value_type>()},
-          ScalarCoordinate{bspline.coeffs(1)[i]
-                               .template item<typename Spline::value_type>()}});
-    else if constexpr (Spline::geoDim() == 3)
-      coordinates.emplace_back(Coordinate{
-          ScalarCoordinate{bspline.coeffs(0)[i]
-                               .template item<typename Spline::value_type>()},
-          ScalarCoordinate{bspline.coeffs(1)[i]
-                               .template item<typename Spline::value_type>()},
-          ScalarCoordinate{bspline.coeffs(2)[i]
-                               .template item<typename Spline::value_type>()}});
-    else if constexpr (Spline::geoDim() == 4)
-      coordinates.emplace_back(Coordinate{
-          ScalarCoordinate{bspline.coeffs(0)[i]
-                               .template item<typename Spline::value_type>()},
-          ScalarCoordinate{bspline.coeffs(1)[i]
-                               .template item<typename Spline::value_type>()},
-          ScalarCoordinate{bspline.coeffs(2)[i]
-                               .template item<typename Spline::value_type>()},
-          ScalarCoordinate{bspline.coeffs(3)[i]
-                               .template item<typename Spline::value_type>()}});
-    else
-      throw std::runtime_error("Unsupported geometric dimension");
+  Coordinates coordinates(bspline.ncumcoeffs(), Spline::geoDim());
+  for (int64_t i = 0; i < bspline.ncumcoeffs(); ++i) {
+    for (int64_t j = 0; j < Spline::geoDim(); ++j) {
+      coordinates(i, j) =
+          bspline.coeffs(j)[i].template item<typename Spline::value_type>();
+    }
+  }
 
   // Create vector space
   bsplinelib::SharedPointer<VectorSpace> vector_space{
-      std::make_shared<VectorSpace>(coordinates)};
+      std::make_shared<VectorSpace>(std::move(coordinates))};
 
   // Create B-Spline
   BSpline bsplinelib_bspline{parameter_space, vector_space};
@@ -122,11 +97,13 @@ void test_bspline_eval(const Spline &bspline,
                        BSplineLibSpline bsplinelib_bspline,
                        const TensorArray_t &xi,
                        typename Spline::value_type tol = 1e-12) {
+  static_assert(Spline::parDim() < 5, "Unsupported parametric dimension");
+
   // B-spline evaluation
-  using ParametricCoordinate = typename BSplineLibSpline::ParametricCoordinate_;
-  using ScalarParametricCoordinate = typename ParametricCoordinate::value_type;
   using Derivative = typename BSplineLibSpline::ParameterSpace_::Derivative_;
   using ScalarDerivative = typename Derivative::value_type;
+  using Coordinate = typename BSplineLibSpline::Coordinate_;
+  using ScalarCoordinate = typename Coordinate::value_type;
 
   using BSplineValue_type =
       iganet::utils::BlockTensor<torch::Tensor, 1, Spline::geoDim()>;
@@ -141,134 +118,40 @@ void test_bspline_eval(const Spline &bspline,
   } else
     bspline_val = bspline.template eval<deriv, memory_optimized>(xi);
 
+  Coordinate bsplinelib_query(Spline::parDim());
+  auto query = [&](const int64_t &i) -> ScalarCoordinate * {
+    for (iganet::short_t j = 0; j < Spline::parDim(); ++j) {
+      bsplinelib_query[j] =
+          (xi[j])[i].template item<typename Spline::value_type>();
+    }
+    return bsplinelib_query.data();
+  };
+
+  auto ten_pow = [](const iganet::short_t &p) {
+    iganet::short_t value{1};
+    for (iganet::short_t i = 0; i < p; ++i) {
+      value *= 10;
+    }
+    return value;
+  };
+
+  const Derivative bsplinelib_deriv = [&ten_pow]() {
+    Derivative d_query;
+    for (iganet::short_t i = 0; i < Spline::parDim(); ++i) {
+      d_query[i] = ((iganet::short_t)deriv / ((i == 0) ? 1 : ten_pow(i))) % 10;
+    }
+    return d_query;
+  }();
+
+  Coordinate bsplinelib_val(Spline::geoDim());
   for (int64_t i = 0; i < xi[0].size(0); ++i) {
-    if constexpr (Spline::parDim() == 1 && Spline::geoDim() == 1)
+    bsplinelib_bspline.EvaluateDerivative(query(i), bsplinelib_deriv.data(),
+                                          bsplinelib_val.data());
+    for (iganet::short_t j = 0; j < Spline::geoDim(); ++j) {
       EXPECT_NEAR(
-          bspline_val(0)[i].template item<typename Spline::value_type>(),
-          bsplinelib_bspline(
-              ParametricCoordinate{ScalarParametricCoordinate{
-                  (xi[0])[i].template item<typename Spline::value_type>()}},
-              Derivative{ScalarDerivative{(iganet::short_t)deriv % 10}})[0],
-          tol);
-    else if constexpr (Spline::parDim() == 1 && Spline::geoDim() > 1)
-      for (iganet::short_t k = 0; k < bspline.geoDim(); ++k)
-        EXPECT_NEAR(
-            bspline_val(k)[i].template item<typename Spline::value_type>(),
-            bsplinelib_bspline(
-                ParametricCoordinate{ScalarParametricCoordinate{
-                    (xi[0])[i].template item<typename Spline::value_type>()}},
-                Derivative{ScalarDerivative{(iganet::short_t)deriv % 10}})[k],
-            tol);
-    else if constexpr (Spline::parDim() == 2 && Spline::geoDim() == 1)
-      EXPECT_NEAR(
-          bspline_val(0)[i].template item<typename Spline::value_type>(),
-          bsplinelib_bspline(
-              ParametricCoordinate{
-                  ScalarParametricCoordinate{
-                      (xi[0])[i].template item<typename Spline::value_type>()},
-                  ScalarParametricCoordinate{
-                      (xi[1])[i].template item<typename Spline::value_type>()}},
-              Derivative{
-                  ScalarDerivative{(iganet::short_t)deriv % 10},
-                  ScalarDerivative{((iganet::short_t)deriv / 10) % 10}})[0],
-          tol);
-    else if constexpr (Spline::parDim() == 2 && Spline::geoDim() > 1)
-      for (iganet::short_t k = 0; k < bspline.geoDim(); ++k)
-        EXPECT_NEAR(
-            bspline_val(k)[i].template item<typename Spline::value_type>(),
-            bsplinelib_bspline(
-                ParametricCoordinate{
-                    ScalarParametricCoordinate{
-                        (xi[0])[i]
-                            .template item<typename Spline::value_type>()},
-                    ScalarParametricCoordinate{
-                        (xi[1])[i]
-                            .template item<typename Spline::value_type>()}},
-                Derivative{
-                    ScalarDerivative{(iganet::short_t)deriv % 10},
-                    ScalarDerivative{((iganet::short_t)deriv / 10) % 10}})[k],
-            tol);
-    else if constexpr (Spline::parDim() == 3 && Spline::geoDim() == 1)
-      EXPECT_NEAR(
-          bspline_val(0)[i].template item<typename Spline::value_type>(),
-          bsplinelib_bspline(
-              ParametricCoordinate{
-                  ScalarParametricCoordinate{
-                      (xi[0])[i].template item<typename Spline::value_type>()},
-                  ScalarParametricCoordinate{
-                      (xi[1])[i].template item<typename Spline::value_type>()},
-                  ScalarParametricCoordinate{
-                      (xi[2])[i].template item<typename Spline::value_type>()}},
-              Derivative{
-                  ScalarDerivative{(iganet::short_t)deriv % 10},
-                  ScalarDerivative{((iganet::short_t)deriv / 10) % 10},
-                  ScalarDerivative{((iganet::short_t)deriv / 100) % 10}})[0],
-          tol);
-    else if constexpr (Spline::parDim() == 3 && Spline::geoDim() > 1)
-      for (iganet::short_t k = 0; k < bspline.geoDim(); ++k)
-        EXPECT_NEAR(
-            bspline_val(k)[i].template item<typename Spline::value_type>(),
-            bsplinelib_bspline(
-                ParametricCoordinate{
-                    ScalarParametricCoordinate{
-                        (xi[0])[i]
-                            .template item<typename Spline::value_type>()},
-                    ScalarParametricCoordinate{
-                        (xi[1])[i]
-                            .template item<typename Spline::value_type>()},
-                    ScalarParametricCoordinate{
-                        (xi[2])[i]
-                            .template item<typename Spline::value_type>()}},
-                Derivative{
-                    ScalarDerivative{(iganet::short_t)deriv % 10},
-                    ScalarDerivative{((iganet::short_t)deriv / 10) % 10},
-                    ScalarDerivative{((iganet::short_t)deriv / 100) % 10}})[k],
-            tol);
-    else if constexpr (Spline::parDim() == 4 && Spline::geoDim() == 1)
-      EXPECT_NEAR(
-          bspline_val(0)[i].template item<typename Spline::value_type>(),
-          bsplinelib_bspline(
-              ParametricCoordinate{
-                  ScalarParametricCoordinate{
-                      (xi[0])[i].template item<typename Spline::value_type>()},
-                  ScalarParametricCoordinate{
-                      (xi[1])[i].template item<typename Spline::value_type>()},
-                  ScalarParametricCoordinate{
-                      (xi[2])[i].template item<typename Spline::value_type>()},
-                  ScalarParametricCoordinate{
-                      (xi[3])[i].template item<typename Spline::value_type>()}},
-              Derivative{
-                  ScalarDerivative{(iganet::short_t)deriv % 10},
-                  ScalarDerivative{((iganet::short_t)deriv / 10) % 10},
-                  ScalarDerivative{((iganet::short_t)deriv / 100) % 10},
-                  ScalarDerivative{((iganet::short_t)deriv / 1000) % 10}})[0],
-          tol);
-    else if constexpr (Spline::parDim() == 4 && Spline::geoDim() > 1)
-      for (iganet::short_t k = 0; k < bspline.geoDim(); ++k)
-        EXPECT_NEAR(
-            bspline_val(k)[i].template item<typename Spline::value_type>(),
-            bsplinelib_bspline(
-                ParametricCoordinate{
-                    ScalarParametricCoordinate{
-                        (xi[0])[i]
-                            .template item<typename Spline::value_type>()},
-                    ScalarParametricCoordinate{
-                        (xi[1])[i]
-                            .template item<typename Spline::value_type>()},
-                    ScalarParametricCoordinate{
-                        (xi[2])[i]
-                            .template item<typename Spline::value_type>()},
-                    ScalarParametricCoordinate{
-                        (xi[3])[i]
-                            .template item<typename Spline::value_type>()}},
-                Derivative{
-                    ScalarDerivative{(iganet::short_t)deriv % 10},
-                    ScalarDerivative{((iganet::short_t)deriv / 10) % 10},
-                    ScalarDerivative{((iganet::short_t)deriv / 100) % 10},
-                    ScalarDerivative{((iganet::short_t)deriv / 1000) % 10}})[k],
-            tol);
-    else
-      throw std::runtime_error("Unsupported parametric/ geometric dimension");
+          bspline_val(j)[i].template item<typename Spline::value_type>(),
+          bsplinelib_val[j], tol);
+    }
   }
 }
 
