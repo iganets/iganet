@@ -21,7 +21,7 @@ if(NOT ${CMAKE_VERSION} VERSION_LESS "3.16.0")
 
   if (IGANET_WITH_GISMO)
     target_compile_definitions(iganet_pch PUBLIC WITH_GISMO)
-    target_link_libraries(iganet_pch PUBLIC gismo)
+    target_link_libraries(iganet_pch PUBLIC gismo_static)
   endif()
 
   if (IGANET_WITH_MATPLOT)
