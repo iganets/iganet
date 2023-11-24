@@ -1299,8 +1299,8 @@ public:
       bdr.append_attribute("label") = label.c_str();
 
     int index_ = 0;
-    std::apply([&bdr, &id, &label, &index_](const auto &...bspline) {
-      (bspline.to_xml(bdr, id, label, index_++),...);
+    std::apply([&bdr, &index_](const auto &...bspline) {
+      (bspline.to_xml(bdr, -1, "", index_++),...);
     }, BoundaryCore::bdr_);
 
     return root;
@@ -1325,8 +1325,8 @@ public:
           (!label.empty() ? bdr.attribute("label").value() == label : true)) {
 
         int index_ = 0;
-        std::apply([&bdr, &id, &label, &index_](auto &...bspline) {
-          (bspline.from_xml(bdr, id, label, index_++),...);
+        std::apply([&bdr, &index_](auto &...bspline) {
+          (bspline.from_xml(bdr, -1, "", index_++),...);
         }, BoundaryCore::bdr_);
         
         return *this;

@@ -2037,8 +2037,13 @@ public:
     // >1D parametric dimension
     else {
       geo.append_attribute("type") =
-          std::string("TensorBSpline").append(std::to_string(parDim_)).c_str();
-      geo.append_attribute("id") = id;
+        std::string("TensorBSpline").append(std::to_string(parDim_)).c_str();
+
+      if (id >= 0)
+        geo.append_attribute("id") = id;
+      
+      if (index >= 0)
+        geo.append_attribute("index") = index;
 
       if (!label.empty())
         geo.append_attribute("label") = label.c_str();
@@ -2192,6 +2197,7 @@ public:
         if (geo.attribute("type").value() ==
                 std::string("TensorBSpline").append(std::to_string(parDim_)) &&
             (id >= 0 ? geo.attribute("id").as_int() == id : true) &&
+            (index >= 0 ? geo.attribute("index").as_int() == index : true) &&
             (!label.empty() ? geo.attribute("label").value() == label : true)) {
 
           // Check for "TensorBSplineBasis<parDim>"
@@ -3098,6 +3104,97 @@ protected:
 
     return b.view({degree + 1, indices.numel()});
   }
+
+#ifdef WITH_GISMO
+  /// @brief Returns a gsTensorBSpline object
+  auto to_gismo() const
+  {
+    if constexpr (parDim_ == 1) {
+
+      auto [knots0_cpu, knots0_accessor] =
+          utils::to_tensorAccessor<value_type, 1>(knots_[0], torch::kCPU);
+      auto knots0_cpu_ptr = knots0_cpu.template data_ptr<value_type>();
+      std::vector<value_type> knots0{knots0_cpu_ptr, knots0_cpu_ptr+knots0_cpu.size(0)};
+
+      gismo::gsKnotVector<value_type> kv0(knots0, degrees_[0]);
+      
+    }
+    else if constexpr (parDim_ == 2) {
+
+      auto [knots0_cpu, knots0_accessor] =
+        utils::to_tensorAccessor<value_type, 1>(knots_[0], torch::kCPU);
+      auto knots0_cpu_ptr = knots0_cpu.template data_ptr<value_type>();
+      std::vector<value_type> knots0{knots0_cpu_ptr, knots0_cpu_ptr+knots0_cpu.size(0)};
+      
+      gismo::gsKnotVector<value_type> kv0(knots0, degrees_[0]);
+      
+      auto [knots1_cpu, knots1_accessor] =
+        utils::to_tensorAccessor<value_type, 1>(knots_[1], torch::kCPU);
+      auto knots1_cpu_ptr = knots1_cpu.template data_ptr<value_type>();
+      std::vector<value_type> knots1{knots1_cpu_ptr, knots1_cpu_ptr+knots1_cpu.size(0)};
+
+      gismo::gsKnotVector<value_type> kv1(knots1, degrees_[1]);
+    }
+    else if constexpr (parDim_ == 3) {
+
+      auto [knots0_cpu, knots0_accessor] =
+        utils::to_tensorAccessor<value_type, 1>(knots_[0], torch::kCPU);
+      auto knots0_cpu_ptr = knots0_cpu.template data_ptr<value_type>();
+      std::vector<value_type> knots0{knots0_cpu_ptr, knots0_cpu_ptr+knots0_cpu.size(0)};
+
+      gismo::gsKnotVector<value_type> kv0(knots0, degrees_[0]);
+      
+      auto [knots1_cpu, knots1_accessor] =
+        utils::to_tensorAccessor<value_type, 1>(knots_[1], torch::kCPU);
+      auto knots1_cpu_ptr = knots1_cpu.template data_ptr<value_type>();
+      std::vector<value_type> knots1{knots1_cpu_ptr, knots1_cpu_ptr+knots1_cpu.size(0)};
+
+      gismo::gsKnotVector<value_type> kv1(knots1, degrees_[1]);
+      
+      auto [knots2_cpu, knots2_accessor] =
+        utils::to_tensorAccessor<value_type, 1>(knots_[2], torch::kCPU);
+      auto knots2_cpu_ptr = knots2_cpu.template data_ptr<value_type>();
+      std::vector<value_type> knots2{knots2_cpu_ptr, knots2_cpu_ptr+knots2_cpu.size(0)};
+
+      gismo::gsKnotVector<value_type> kv2(knots2, degrees_[2]);
+      
+    }
+    else if constexpr (parDim_ == 4) {
+
+      auto [knots0_cpu, knots0_accessor] =
+        utils::to_tensorAccessor<value_type, 1>(knots_[0], torch::kCPU);
+      auto knots0_cpu_ptr = knots0_cpu.template data_ptr<value_type>();
+      std::vector<value_type> knots0{knots0_cpu_ptr, knots0_cpu_ptr+knots0_cpu.size(0)};
+
+      gismo::gsKnotVector<value_type> kv0(knots0, degrees_[0]);
+      
+      auto [knots1_cpu, knots1_accessor] =
+        utils::to_tensorAccessor<value_type, 1>(knots_[1], torch::kCPU);
+      auto knots1_cpu_ptr = knots1_cpu.template data_ptr<value_type>();
+      std::vector<value_type> knots1{knots1_cpu_ptr, knots1_cpu_ptr+knots1_cpu.size(0)};
+
+      gismo::gsKnotVector kv1(knots1, degrees_[1]);
+      
+      auto [knots2_cpu, knots2_accessor] =
+        utils::to_tensorAccessor<value_type, 1>(knots_[2], torch::kCPU);
+      auto knots2_cpu_ptr = knots2_cpu.template data_ptr<value_type>();
+      std::vector<value_type> knots2{knots2_cpu_ptr, knots2_cpu_ptr+knots2_cpu.size(0)};
+
+      gismo::gsKnotVector<value_type> kv2(knots2, degrees_[2]);
+      
+      auto [knots3_cpu, knots3_accessor] =
+        utils::to_tensorAccessor<value_type, 1>(knots_[3], torch::kCPU);
+      auto knots3_cpu_ptr = knots3_cpu.template data_ptr<value_type>();
+      std::vector<value_type> knots3{knots3_cpu_ptr, knots3_cpu_ptr+knots3_cpu.size(0)};
+
+      gismo::gsKnotVector<value_type> kv3(knots3, degrees_[3]);
+      
+    }
+    else
+      throw std::runtime_error("Invalid parametric dimension");
+  }
+#else
+#endif
 };
 
 /// @brief Serializes a B-spline object
