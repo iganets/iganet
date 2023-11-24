@@ -21,8 +21,8 @@ FetchContent_Declare(popl
   URL https://github.com/badaix/popl/archive/refs/tags/v1.3.0.zip
   )
 
-set(BUILD_EXAMPLE 0 CACHE BOOL "")
-set(BUILD_TESTS   0 CACHE BOOL "")
+set(BUILD_EXAMPLE 0 CACHE INTERNAL "")
+set(BUILD_TESTS   0 CACHE INTERNAL "")
 FetchContent_MakeAvailable(popl)
 FetchContent_GetProperties(popl)
 include_directories(${popl_SOURCE_DIR}/include)

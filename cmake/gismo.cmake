@@ -22,7 +22,9 @@ FetchContent_Declare(gismo
   PATCH_COMMAND patch -p1 -N -d ${PROJECT_BINARY_DIR}/_deps/gismo-src < ${PROJECT_SOURCE_DIR}/cmake/gismo.patch
   )
 
-set(GISMO_BUILD_EXAMPLES 0 CACHE BOOL "")
-set(BUILD_TESTING        0 CACHE BOOL "")
+set(BUILD_TESTING        OFF CACHE INTERNAL "")
+set(GISMO_BUILD_EXAMPLES OFF CACHE INTERNAL "")
+set(GISMO_BUILD_LIB      OFF CACHE INTERNAL "")
+set(GISMO_WITH_OPENMP    ${IGANET_WITH_OPENMP} CACHE INTERNAL "")
 FetchContent_MakeAvailable(gismo)
 include_directories(${GISMO_INCLUDE_DIRS})

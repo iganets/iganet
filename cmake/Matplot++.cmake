@@ -21,7 +21,7 @@ FetchContent_Declare(matplotplusplus
   URL https://github.com/alandefreitas/matplotplusplus/archive/refs/tags/v1.1.0.zip
   )
 
-set(BUILD_EXAMPLES 0 CACHE BOOL "")
-set(BUILD_TESTING  0 CACHE BOOL "")
-set(BUILD_TESTS    0 CACHE BOOL "")
+set(BUILD_EXAMPLES 0 CACHE INTERNAL "")
+set(BUILD_TESTING  0 CACHE INTERNAL "")
+set(BUILD_TESTS    0 CACHE INTERNAL "")
 FetchContent_MakeAvailable(matplotplusplus)
