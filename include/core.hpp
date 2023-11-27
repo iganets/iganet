@@ -48,6 +48,7 @@ namespace iganet {
 using short_t = unsigned short int;
 
 namespace literals {
+inline short_t operator""_s(unsigned long long value) { return value; };
 inline int8_t operator""_i8(unsigned long long value) { return value; };
 inline int16_t operator""_i16(unsigned long long value) { return value; };
 inline int32_t operator""_i32(unsigned long long value) { return value; };
