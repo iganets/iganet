@@ -1816,12 +1816,19 @@ public:
                 transformation) {
     static_assert(parDim_ <= 4, "Unsupported parametric dimension");
 
+    // 0D
+    if constexpr (parDim_ == 0) {
+      auto c = transformation(std::array<value_type, parDim_>{});
+      for (short_t d = 0; d < geoDim_; ++d)
+        coeffs_[d].detach()[0] = c[d];
+    }
+    
     // 1D
-    if constexpr (parDim_ == 1) {
+    else if constexpr (parDim_ == 1) {
 #pragma omp parallel for
       for (int64_t i = 0; i < ncoeffs_[0]; ++i) {
         auto c = transformation(
-            std::array<value_type, 1>{i / value_type(ncoeffs_[0] - 1)});
+            std::array<value_type, parDim_>{i / value_type(ncoeffs_[0] - 1)});
         for (short_t d = 0; d < geoDim_; ++d)
           coeffs_[d].detach()[i] = c[d];
       }
@@ -1833,7 +1840,7 @@ public:
       for (int64_t j = 0; j < ncoeffs_[1]; ++j) {
         for (int64_t i = 0; i < ncoeffs_[0]; ++i) {
           auto c = transformation(
-              std::array<value_type, 2>{i / value_type(ncoeffs_[0] - 1),
+              std::array<value_type, parDim_>{i / value_type(ncoeffs_[0] - 1),
                                         j / value_type(ncoeffs_[1] - 1)});
           for (short_t d = 0; d < geoDim_; ++d)
             coeffs_[d].detach()[j * ncoeffs_[0] + i] = c[d];
@@ -1848,7 +1855,7 @@ public:
         for (int64_t j = 0; j < ncoeffs_[1]; ++j) {
           for (int64_t i = 0; i < ncoeffs_[0]; ++i) {
             auto c = transformation(
-                std::array<value_type, 3>{i / value_type(ncoeffs_[0] - 1),
+                std::array<value_type, parDim_>{i / value_type(ncoeffs_[0] - 1),
                                           j / value_type(ncoeffs_[1] - 1),
                                           k / value_type(ncoeffs_[2] - 1)});
             for (short_t d = 0; d < geoDim_; ++d)
@@ -1867,7 +1874,7 @@ public:
           for (int64_t j = 0; j < ncoeffs_[1]; ++j) {
             for (int64_t i = 0; i < ncoeffs_[0]; ++i) {
               auto c = transformation(
-                  std::array<value_type, 4>{i / value_type(ncoeffs_[0] - 1),
+                  std::array<value_type, parDim_>{i / value_type(ncoeffs_[0] - 1),
                                             j / value_type(ncoeffs_[1] - 1),
                                             k / value_type(ncoeffs_[2] - 1),
                                             l / value_type(ncoeffs_[3] - 1)});
@@ -2004,8 +2011,22 @@ public:
     // add Geometry node
     pugi::xml_node geo = root.append_child("Geometry");
 
+    // 0D parametric dimension
+    if constexpr (parDim_ == 0) {
+      geo.append_attribute("type") = "Point";
+      
+      if (id >= 0)
+        geo.append_attribute("id") = id;
+      
+      if (index >= 0)
+        geo.append_attribute("index") = index;
+      
+      if (!label.empty())
+        geo.append_attribute("label") = label.c_str();
+    }
+    
     // 1D parametric dimension
-    if constexpr (parDim_ == 1) {
+    else if constexpr (parDim_ == 1) {
       geo.append_attribute("type") = "BSpline";
 
       if (id >= 0)
@@ -2082,18 +2103,23 @@ public:
         utils::to_tensorAccessor<value_type, 1>(coeffs_, torch::kCPU);
     std::stringstream ss;
 
-    if constexpr (parDim_ == 1) {
+    if constexpr (parDim_ == 0) {
+      for (short_t g = 0; g < geoDim_; ++g)
+        ss << std::to_string(coeffs_accessors[g][0])
+           << (g < geoDim_ - 1 ? " " : "");
+      
+    } else if constexpr (parDim_ == 1) {
       for (int64_t i = 0; i < ncoeffs_[0]; ++i)
         for (short_t g = 0; g < geoDim_; ++g)
           ss << std::to_string(coeffs_accessors[g][i])
-             << (i < ncoeffs_[0] - 1 || g < geoDim_ ? " " : "");
+             << (i < ncoeffs_[0] - 1 || g < geoDim_ - 1 ? " " : "");
 
     } else if constexpr (parDim_ == 2) {
       for (int64_t j = 0; j < ncoeffs_[1]; ++j)
         for (int64_t i = 0; i < ncoeffs_[0]; ++i)
           for (short_t g = 0; g < geoDim_; ++g)
             ss << std::to_string(coeffs_accessors[g][j * ncoeffs_[0] + i])
-               << (i < ncoeffs_[0] - 1 || j < ncoeffs_[1] - 1 || g < geoDim_
+               << (i < ncoeffs_[0] - 1 || j < ncoeffs_[1] - 1 || g < geoDim_ - 1
                        ? " "
                        : "");
 
@@ -2106,7 +2132,7 @@ public:
                         coeffs_accessors[g][k * ncoeffs_[0] * ncoeffs_[1] +
                                             j * ncoeffs_[0] + i])
                  << (i < ncoeffs_[0] - 1 || j < ncoeffs_[1] - 1 ||
-                             k < ncoeffs_[2] - 1 || g < geoDim_
+                             k < ncoeffs_[2] - 1 || g < geoDim_ - 1
                          ? " "
                          : "");
 
@@ -2145,13 +2171,29 @@ public:
   inline UniformBSplineCore &from_xml(const pugi::xml_node &root, int id = 0,
                                       std::string label = "", int index = -1) {
 
-    std::array<bool, parDim_> nknots_found{false}, ncoeffs_found{false};
+    std::array<bool, std::max(parDim_, short_t{1})> nknots_found{false}, ncoeffs_found{false};
 
     // Loop through all geometry nodes
     for (pugi::xml_node geo : root.children("Geometry")) {
 
+      // 0D parametric dimension
+      if constexpr (parDim_ == 0) {
+
+        // Check for "Point" with given id, index, label
+        if (geo.attribute("type").value() == std::string("Point") &&
+            (id >= 0 ? geo.attribute("id").as_int() == id : true) &&
+            (index >= 0 ? geo.attribute("index").as_int() == index : true) &&
+            (!label.empty() ? geo.attribute("label").value() == label : true)) {
+
+          nknots_found[0] = true;
+          ncoeffs_found[0] = true;
+        } // "Point"
+        else
+          continue; // try next "Geometry"
+      }
+      
       // 1D parametric dimension
-      if constexpr (parDim_ == 1) {
+      else if constexpr (parDim_ == 1) {
 
         // Check for "BSpline" with given id, index, label
         if (geo.attribute("type").value() == std::string("BSpline") &&
@@ -2248,6 +2290,10 @@ public:
 
       } // parametric dimension
 
+      if (std::any_of(std::begin(nknots_found), std::end(nknots_found),
+                      [](bool i) { return !i; }))
+        throw std::runtime_error("XML object is not compatible with B-spline object");
+      
       // Reverse ncoeffs
       ncoeffs_reverse_ = ncoeffs_;
       std::reverse(ncoeffs_reverse_.begin(), ncoeffs_reverse_.end());
@@ -2265,24 +2311,41 @@ public:
         auto coeffs_accessors =
             utils::to_tensorAccessor<value_type, 1>(coeffs_);
 
-        if constexpr (parDim_ == 1) {
+        if constexpr (parDim_ == 0) {
           auto value = strtok(&values[0], " ");
 
+          for (short_t g = 0; g < geoDim_; ++g) {
+            if (value == NULL)
+              throw std::runtime_error(
+                                       "XML object does not provide enough coefficients");
+
+            coeffs_accessors[g][0] =
+              static_cast<value_type>(std::stod(value));
+            value = strtok(NULL, " ");
+          }
+          
+          if (value != NULL)
+            throw std::runtime_error(
+                                     "XML object provides too many coefficients");
+          
+        } else if constexpr (parDim_ == 1) {
+          auto value = strtok(&values[0], " ");
+          
           for (int64_t i = 0; i < ncoeffs_[0]; ++i)
             for (short_t g = 0; g < geoDim_; ++g) {
               if (value == NULL)
                 throw std::runtime_error(
-                    "XML object does not provide enough coefficients");
-
+                                         "XML object does not provide enough coefficients");
+              
               coeffs_accessors[g][i] =
-                  static_cast<value_type>(std::stod(value));
+                static_cast<value_type>(std::stod(value));
               value = strtok(NULL, " ");
             }
-
+          
           if (value != NULL)
             throw std::runtime_error(
-                "XML object provides too many coefficients");
-
+                                     "XML object provides too many coefficients");
+          
         } else if constexpr (parDim_ == 2) {
           auto value = strtok(&values[0], " ");
 
@@ -2353,17 +2416,21 @@ public:
         // Copy coefficients to device (if needed)
         for (short_t i = 0; i < geoDim_; ++i)
           coeffs_[i] = coeffs_[i].to(options_.device());
-
-        if (std::all_of(std::begin(nknots_found), std::end(nknots_found),
-                        [](bool i) { return i; }) &&
-            std::all_of(std::begin(ncoeffs_found), std::end(ncoeffs_found),
-                        [](bool i) { return i; }))
+        
+        if constexpr (parDim_ == 0) {
+          if (nknots_found[0] && ncoeffs_found[0])
+            return *this;
+        }
+        else if (std::all_of(std::begin(nknots_found), std::end(nknots_found),
+                             [](bool i) { return i; }) &&
+                 std::all_of(std::begin(ncoeffs_found), std::end(ncoeffs_found),
+                             [](bool i) { return i; }))
           return *this;
-
+        
         else
           throw std::runtime_error(
-              "XML object is not compatible with B-spline object");
-
+                                   "XML object is not compatible with B-spline object");
+        
       } // Coefs
       else
         throw std::runtime_error("XML object does not provide coefficients");
