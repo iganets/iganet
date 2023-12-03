@@ -1129,7 +1129,7 @@ TEST_F(BoundaryTest, Boundary_copy_constructor) {
     return std::array<real_t, 1>{0.0_r};
   });
   
-  EXPECT_EQ((boundary_orig == boundary_copy), true);
+  EXPECT_TRUE(boundary_orig == boundary_copy);
 }
 
 TEST_F(BoundaryTest, Boundary_clone_constructor) {
@@ -1144,7 +1144,7 @@ TEST_F(BoundaryTest, Boundary_clone_constructor) {
     return std::array<real_t, 1>{0.0_r};
   });
   
-  EXPECT_EQ((boundary_ref == boundary_clone), true);
+  EXPECT_TRUE(boundary_ref == boundary_clone);
 }
 
 TEST_F(BoundaryTest, Boundary_move_constructor) {
@@ -1154,7 +1154,7 @@ TEST_F(BoundaryTest, Boundary_move_constructor) {
   auto boundary(iganet::Boundary<BSpline>({5, 4}, iganet::init::greville,
                                           options).uniform_refine(2));
   
-  EXPECT_EQ(boundary.isclose(boundary_ref), true);
+  EXPECT_TRUE(boundary.isclose(boundary_ref));
 }
 
 TEST_F(BoundaryTest, Boundary_read_write) {
@@ -1169,11 +1169,60 @@ TEST_F(BoundaryTest, Boundary_read_write) {
   boundary_in.load(filename.c_str());
   std::filesystem::remove(filename);
 
-  EXPECT_EQ((boundary_in == boundary_out), true);
-  EXPECT_EQ((boundary_in != boundary_out), false);
+  EXPECT_TRUE(boundary_in == boundary_out);
+  EXPECT_FALSE(boundary_in != boundary_out);
 }
 
 TEST_F(BoundaryTest, Boundary_to_from_xml) {
+  {
+    using BSpline = iganet::UniformBSpline<real_t, 4, 2>;
+    iganet::Boundary<BSpline> boundary_out({5}, iganet::init::greville,
+                                           options);
+    
+    boundary_out.side<iganet::side::east>().transform([](const std::array<real_t, 0>) {
+      return std::array<real_t, 4>{static_cast<real_t>(std::rand()), static_cast<real_t>(std::rand()), static_cast<real_t>(std::rand()), static_cast<real_t>(std::rand())};
+    });
+    
+    boundary_out.side<iganet::side::west>().transform([](const std::array<real_t, 0>) {
+      return std::array<real_t, 4>{static_cast<real_t>(std::rand()), static_cast<real_t>(std::rand()), static_cast<real_t>(std::rand()), static_cast<real_t>(std::rand())};
+    });
+    
+    pugi::xml_document doc = boundary_out.to_xml();
+    
+    iganet::Boundary<BSpline> boundary_in(options);
+    boundary_in.from_xml(doc);
+    
+    EXPECT_TRUE(boundary_in.isclose(boundary_out));
+
+    // non-matching degree
+    EXPECT_THROW((iganet::Boundary<iganet::UniformBSpline<real_t, 1, 1>>{}.from_xml(doc, 0)),
+                 std::runtime_error); // XML object provides too many coefficients
+    EXPECT_THROW((iganet::Boundary<iganet::UniformBSpline<real_t, 1, 3>>{}.from_xml(doc, 0)),
+                 std::runtime_error); // XML object provides too many coefficients
+    EXPECT_THROW((iganet::Boundary<iganet::UniformBSpline<real_t, 1, 4>>{}.from_xml(doc, 0)),
+                 std::runtime_error); // XML object provides too few coefficients
+    
+    // non-matching parametric dimension
+    EXPECT_THROW((iganet::Boundary<iganet::UniformBSpline<real_t, 1, 2, 1>>{}.from_xml(doc, 0)),
+                 std::runtime_error);
+    EXPECT_THROW((iganet::Boundary<iganet::UniformBSpline<real_t, 1, 2, 1, 1>>{}.from_xml(doc, 0)),
+                 std::runtime_error);
+    EXPECT_THROW((iganet::Boundary<iganet::UniformBSpline<real_t, 1, 2, 1, 1, 1>>{}.from_xml(doc, 0)),
+                 std::runtime_error);
+    
+    // non-matching geometric dimension
+    EXPECT_THROW((iganet::Boundary<iganet::UniformBSpline<real_t, 1, 2>>{}.from_xml(doc, 0)),
+                 std::runtime_error);
+    EXPECT_THROW((iganet::Boundary<iganet::UniformBSpline<real_t, 2, 2>>{}.from_xml(doc, 0)),
+                 std::runtime_error);
+    EXPECT_THROW((iganet::Boundary<iganet::UniformBSpline<real_t, 3, 2>>{}.from_xml(doc, 0)),
+                 std::runtime_error);
+    
+    // non-matching id
+    EXPECT_THROW((iganet::Boundary<BSpline>{}.from_xml(doc, 1)),
+                 std::runtime_error);
+  }
+  
   {
   using BSpline = iganet::UniformBSpline<real_t, 1, 2, 3>;
   iganet::Boundary<BSpline> boundary_out({5, 4}, iganet::init::greville,
@@ -1196,16 +1245,22 @@ TEST_F(BoundaryTest, Boundary_to_from_xml) {
   });
 
   pugi::xml_document doc = boundary_out.to_xml();
-
+  
   iganet::Boundary<BSpline> boundary_in(options);
   boundary_in.from_xml(doc);
   
-  EXPECT_EQ(boundary_in.isclose(boundary_out), true);
+  EXPECT_TRUE(boundary_in.isclose(boundary_out));
 
   // non-matching degree
+  EXPECT_THROW((iganet::Boundary<iganet::UniformBSpline<real_t, 1, 1, 3>>{}.from_xml(doc, 0)),
+               std::runtime_error); // XML object provides too many coefficients
+  EXPECT_THROW((iganet::Boundary<iganet::UniformBSpline<real_t, 1, 3, 3>>{}.from_xml(doc, 0)),
+               std::runtime_error); // XML object provides too many coefficients
+  EXPECT_THROW((iganet::Boundary<iganet::UniformBSpline<real_t, 1, 2, 2>>{}.from_xml(doc, 0)),
+               std::runtime_error); // XML object provides too few coefficients
   EXPECT_THROW((iganet::Boundary<iganet::UniformBSpline<real_t, 1, 2, 4>>{}.from_xml(doc, 0)),
-               c10::Error);
-
+               std::runtime_error); // XML object provides too few coefficients
+  
   // non-matching parametric dimension
   EXPECT_THROW((iganet::Boundary<iganet::UniformBSpline<real_t, 1, 2>>{}.from_xml(doc, 0)),
                std::runtime_error);
@@ -1232,56 +1287,273 @@ TEST_F(BoundaryTest, Boundary_to_from_xml) {
     iganet::Boundary<BSpline> boundary_out({5, 4, 5}, iganet::init::greville,
                                          options);
 
-  boundary_out.side<iganet::side::east>().transform([](const std::array<real_t, 2> xi) {
-    return std::array<real_t, 3>{static_cast<real_t>(std::rand()), static_cast<real_t>(std::rand()), static_cast<real_t>(std::rand())};
-  });
+    boundary_out.side<iganet::side::east>().transform([](const std::array<real_t, 2> xi) {
+      return std::array<real_t, 3>{static_cast<real_t>(std::rand()), static_cast<real_t>(std::rand()), static_cast<real_t>(std::rand())};
+    });
+    
+    boundary_out.side<iganet::side::west>().transform([](const std::array<real_t, 2> xi) {
+      return std::array<real_t, 3>{static_cast<real_t>(std::rand()), static_cast<real_t>(std::rand()), static_cast<real_t>(std::rand())};
+    });
+    
+    boundary_out.side<iganet::side::north>().transform([](const std::array<real_t, 2> xi) {
+      return std::array<real_t, 3>{static_cast<real_t>(std::rand()), static_cast<real_t>(std::rand()), static_cast<real_t>(std::rand())};
+    });
+    
+    boundary_out.side<iganet::side::south>().transform([](const std::array<real_t, 2> xi) {
+      return std::array<real_t, 3>{static_cast<real_t>(std::rand()), static_cast<real_t>(std::rand()), static_cast<real_t>(std::rand())};
+    });
+
+    boundary_out.side<iganet::side::front>().transform([](const std::array<real_t, 2> xi) {
+      return std::array<real_t, 3>{static_cast<real_t>(std::rand()), static_cast<real_t>(std::rand()), static_cast<real_t>(std::rand())};
+    });
+
+    boundary_out.side<iganet::side::back>().transform([](const std::array<real_t, 2> xi) {
+      return std::array<real_t, 3>{static_cast<real_t>(std::rand()), static_cast<real_t>(std::rand()), static_cast<real_t>(std::rand())};
+    });
+    
+    pugi::xml_document doc = boundary_out.to_xml();
+    
+    iganet::Boundary<BSpline> boundary_in(options);
+    boundary_in.from_xml(doc);
   
-  boundary_out.side<iganet::side::west>().transform([](const std::array<real_t, 2> xi) {
-    return std::array<real_t, 3>{static_cast<real_t>(std::rand()), static_cast<real_t>(std::rand()), static_cast<real_t>(std::rand())};
-  });
+    EXPECT_TRUE(boundary_in.isclose(boundary_out));
+    
+    // non-matching degree
+    EXPECT_THROW((iganet::Boundary<iganet::UniformBSpline<real_t, 3, 2, 4, 2>>{}.from_xml(doc, 0)),
+                 std::runtime_error);
+    
+    // non-matching parametric dimension
+    EXPECT_THROW((iganet::Boundary<iganet::UniformBSpline<real_t, 3, 2>>{}.from_xml(doc, 0)),
+                 std::runtime_error);
+    EXPECT_THROW((iganet::Boundary<iganet::UniformBSpline<real_t, 3, 2, 3>>{}.from_xml(doc, 0)),
+                 std::runtime_error);
+    EXPECT_THROW((iganet::Boundary<iganet::UniformBSpline<real_t, 3, 2, 3, 2, 1>>{}.from_xml(doc, 0)),
+                 std::runtime_error);
+    
+    // non-matching geometric dimension
+    EXPECT_THROW((iganet::Boundary<iganet::UniformBSpline<real_t, 1, 2, 3, 2>>{}.from_xml(doc, 0)),
+                 std::runtime_error);
+    EXPECT_THROW((iganet::Boundary<iganet::UniformBSpline<real_t, 2, 2, 3, 2>>{}.from_xml(doc, 0)),
+                 std::runtime_error);
+    EXPECT_THROW((iganet::Boundary<iganet::UniformBSpline<real_t, 4, 2, 3, 2>>{}.from_xml(doc, 0)),
+                 std::runtime_error);
+    
+    // non-matching id
+    EXPECT_THROW((iganet::Boundary<BSpline>{}.from_xml(doc, 1)),
+                 std::runtime_error);
+  }
+
+  {
+    using BSpline = iganet::UniformBSpline<real_t, 2, 2, 3, 2, 3>;
+    iganet::Boundary<BSpline> boundary_out({5, 4, 5, 6}, iganet::init::greville,
+                                           options);
+    
+    boundary_out.side<iganet::side::east>().transform([](const std::array<real_t, 3> xi) {
+      return std::array<real_t, 2>{static_cast<real_t>(std::rand()), static_cast<real_t>(std::rand())};
+    });
+    
+    boundary_out.side<iganet::side::west>().transform([](const std::array<real_t, 3> xi) {
+      return std::array<real_t, 2>{static_cast<real_t>(std::rand()), static_cast<real_t>(std::rand())};
+    });
+    
+    boundary_out.side<iganet::side::north>().transform([](const std::array<real_t, 3> xi) {
+      return std::array<real_t, 2>{static_cast<real_t>(std::rand()), static_cast<real_t>(std::rand())};
+    });
+    
+    boundary_out.side<iganet::side::south>().transform([](const std::array<real_t, 3> xi) {
+      return std::array<real_t, 2>{static_cast<real_t>(std::rand()), static_cast<real_t>(std::rand())};
+    });
+
+    boundary_out.side<iganet::side::front>().transform([](const std::array<real_t, 3> xi) {
+      return std::array<real_t, 2>{static_cast<real_t>(std::rand()), static_cast<real_t>(std::rand())};
+    });
+
+    boundary_out.side<iganet::side::back>().transform([](const std::array<real_t, 3> xi) {
+      return std::array<real_t, 2>{static_cast<real_t>(std::rand()), static_cast<real_t>(std::rand())};
+    });
+
+    boundary_out.side<iganet::side::stime>().transform([](const std::array<real_t, 3> xi) {
+      return std::array<real_t, 2>{static_cast<real_t>(std::rand()), static_cast<real_t>(std::rand())};
+    });
+
+    boundary_out.side<iganet::side::etime>().transform([](const std::array<real_t, 3> xi) {
+      return std::array<real_t, 2>{static_cast<real_t>(std::rand()), static_cast<real_t>(std::rand())};
+    });
+    
+    pugi::xml_document doc = boundary_out.to_xml();
+    
+    iganet::Boundary<BSpline> boundary_in(options);
+    boundary_in.from_xml(doc);
   
-  boundary_out.side<iganet::side::north>().transform([](const std::array<real_t, 2> xi) {
-    return std::array<real_t, 3>{static_cast<real_t>(std::rand()), static_cast<real_t>(std::rand()), static_cast<real_t>(std::rand())};
-  });
-  
-  boundary_out.side<iganet::side::south>().transform([](const std::array<real_t, 2> xi) {
-    return std::array<real_t, 3>{static_cast<real_t>(std::rand()), static_cast<real_t>(std::rand()), static_cast<real_t>(std::rand())};
-  });
-
-  pugi::xml_document doc = boundary_out.to_xml();
-
-  iganet::Boundary<BSpline> boundary_in(options);
-  boundary_in.from_xml(doc);
-  
-  EXPECT_EQ(boundary_in.isclose(boundary_out), true);
-
-  // non-matching degree
-  EXPECT_THROW((iganet::Boundary<iganet::UniformBSpline<real_t, 3, 2, 4, 2>>{}.from_xml(doc, 0)),
-               c10::Error);
-
-  // non-matching parametric dimension
-  EXPECT_THROW((iganet::Boundary<iganet::UniformBSpline<real_t, 3, 2>>{}.from_xml(doc, 0)),
-               std::runtime_error);
-  EXPECT_THROW((iganet::Boundary<iganet::UniformBSpline<real_t, 3, 2, 3>>{}.from_xml(doc, 0)),
-               std::runtime_error);
-  EXPECT_THROW((iganet::Boundary<iganet::UniformBSpline<real_t, 3, 2, 3, 2, 1>>{}.from_xml(doc, 0)),
-               std::runtime_error);
-
-  // non-matching geometric dimension
-  EXPECT_THROW((iganet::Boundary<iganet::UniformBSpline<real_t, 1, 2, 3, 2>>{}.from_xml(doc, 0)),
-               std::runtime_error);
-  EXPECT_THROW((iganet::Boundary<iganet::UniformBSpline<real_t, 2, 2, 3, 2>>{}.from_xml(doc, 0)),
-               std::runtime_error);
-  EXPECT_THROW((iganet::Boundary<iganet::UniformBSpline<real_t, 4, 2, 3, 2>>{}.from_xml(doc, 0)),
-               std::runtime_error);
-
-  // non-matching id
-  EXPECT_THROW((iganet::Boundary<BSpline>{}.from_xml(doc, 1)),
-               std::runtime_error);
+    EXPECT_TRUE(boundary_in.isclose(boundary_out));
+    
+    // non-matching degree
+    EXPECT_THROW((iganet::Boundary<iganet::UniformBSpline<real_t, 2, 2, 4, 2, 3>>{}.from_xml(doc, 0)),
+                 std::runtime_error);
+    
+    // non-matching parametric dimension
+    EXPECT_THROW((iganet::Boundary<iganet::UniformBSpline<real_t, 2, 2>>{}.from_xml(doc, 0)),
+                 std::runtime_error);
+    EXPECT_THROW((iganet::Boundary<iganet::UniformBSpline<real_t, 2, 2, 3>>{}.from_xml(doc, 0)),
+                 std::runtime_error);
+    EXPECT_THROW((iganet::Boundary<iganet::UniformBSpline<real_t, 2, 2, 3, 2>>{}.from_xml(doc, 0)),
+                 std::runtime_error);
+    
+    // non-matching geometric dimension
+    EXPECT_THROW((iganet::Boundary<iganet::UniformBSpline<real_t, 1, 2, 3, 2, 3>>{}.from_xml(doc, 0)),
+                 std::runtime_error);
+    EXPECT_THROW((iganet::Boundary<iganet::UniformBSpline<real_t, 3, 2, 3, 2, 3>>{}.from_xml(doc, 0)),
+                 std::runtime_error);
+    EXPECT_THROW((iganet::Boundary<iganet::UniformBSpline<real_t, 4, 2, 3, 2, 3>>{}.from_xml(doc, 0)),
+                 std::runtime_error);
+    
+    // non-matching id
+    EXPECT_THROW((iganet::Boundary<BSpline>{}.from_xml(doc, 1)),
+                 std::runtime_error);
   }
 }
 
-TEST_F(BoundaryTest, Boundary_load_from_xml) {}
+TEST_F(BoundaryTest, Boundary_load_from_xml) {
+  {
+    pugi::xml_document doc;
+    pugi::xml_parse_result result =
+      doc.load_file(IGANET_DATA_DIR "domain1d/line_boundary.xml");
+
+    using BSpline = iganet::UniformBSpline<real_t, 4, 2>;
+    iganet::Boundary<BSpline> boundary_in(options);
+    boundary_in.from_xml(doc);
+
+    iganet::Boundary<BSpline> boundary_ref({5}, iganet::init::greville,
+                                           options);
+    
+    boundary_ref.side<iganet::side::east>().transform([](const std::array<real_t,0>) {
+      return std::array<real_t, 4>{static_cast<real_t>(1.0), static_cast<real_t>(2.0), static_cast<real_t>(3.0), static_cast<real_t>(4.0)};
+    });
+
+    boundary_ref.side<iganet::side::west>().transform([](const std::array<real_t,0>) {
+      return std::array<real_t, 4>{static_cast<real_t>(-1.0), static_cast<real_t>(-2.0), static_cast<real_t>(-3.0), static_cast<real_t>(-4.0)};
+    });
+
+    EXPECT_TRUE(boundary_in.isclose(boundary_ref));
+  }
+
+  {
+    pugi::xml_document doc;
+    pugi::xml_parse_result result =
+      doc.load_file(IGANET_DATA_DIR "domain2d/square_boundary.xml");
+
+    using BSpline = iganet::UniformBSpline<real_t, 1, 2, 3>;
+    iganet::Boundary<BSpline> boundary_in(options);
+    boundary_in.from_xml(doc);
+
+    iganet::Boundary<BSpline> boundary_ref({5, 4}, iganet::init::greville,
+                                           options);
+    
+    boundary_ref.side<iganet::side::east>().transform([](const std::array<real_t, 1> xi) {
+      return std::array<real_t, 1>{xi[0]};
+    });
+    
+    boundary_ref.side<iganet::side::west>().transform([](const std::array<real_t, 1> xi) {
+      return std::array<real_t, 1>{xi[0] + 10};
+    });
+    
+    boundary_ref.side<iganet::side::north>().transform([](const std::array<real_t, 1> xi) {
+      return std::array<real_t, 1>{xi[0] + 20};
+    });
+    
+    boundary_ref.side<iganet::side::south>().transform([](const std::array<real_t, 1> xi) {
+      return std::array<real_t, 1>{xi[0] + 30};
+    });
+
+    EXPECT_TRUE(boundary_in.isclose(boundary_ref));
+  }
+
+  {
+    pugi::xml_document doc;
+    pugi::xml_parse_result result =
+      doc.load_file(IGANET_DATA_DIR "domain3d/cube_boundary.xml");
+    
+    using BSpline = iganet::UniformBSpline<real_t, 3, 2, 3, 2>;
+    iganet::Boundary<BSpline> boundary_in(options);
+    boundary_in.from_xml(doc);
+    
+    iganet::Boundary<BSpline> boundary_ref({5, 4, 5}, iganet::init::greville,
+                                           options);
+    
+    boundary_ref.side<iganet::side::east>().transform([](const std::array<real_t, 2> xi) {
+      return std::array<real_t, 3>{static_cast<real_t>(std::rand()), static_cast<real_t>(std::rand()), static_cast<real_t>(std::rand())};
+    });
+    
+    boundary_ref.side<iganet::side::west>().transform([](const std::array<real_t, 2> xi) {
+      return std::array<real_t, 3>{static_cast<real_t>(std::rand()), static_cast<real_t>(std::rand()), static_cast<real_t>(std::rand())};
+    });
+    
+    boundary_ref.side<iganet::side::north>().transform([](const std::array<real_t, 2> xi) {
+      return std::array<real_t, 3>{static_cast<real_t>(std::rand()), static_cast<real_t>(std::rand()), static_cast<real_t>(std::rand())};
+    });
+    
+    boundary_ref.side<iganet::side::south>().transform([](const std::array<real_t, 2> xi) {
+      return std::array<real_t, 3>{static_cast<real_t>(std::rand()), static_cast<real_t>(std::rand()), static_cast<real_t>(std::rand())};
+    });
+
+    boundary_ref.side<iganet::side::front>().transform([](const std::array<real_t, 2> xi) {
+      return std::array<real_t, 3>{static_cast<real_t>(std::rand()), static_cast<real_t>(std::rand()), static_cast<real_t>(std::rand())};
+    });
+
+    boundary_ref.side<iganet::side::back>().transform([](const std::array<real_t, 2> xi) {
+      return std::array<real_t, 3>{static_cast<real_t>(std::rand()), static_cast<real_t>(std::rand()), static_cast<real_t>(std::rand())};
+    });
+    
+    EXPECT_TRUE(boundary_in.isclose(boundary_ref));
+  }
+
+  {
+    pugi::xml_document doc;
+    pugi::xml_parse_result result =
+      doc.load_file(IGANET_DATA_DIR "domain4d/hypercube_boundary.xml");
+
+    using BSpline = iganet::UniformBSpline<real_t, 2, 2, 3, 2, 3>;
+    iganet::Boundary<BSpline> boundary_in(options);
+    boundary_in.from_xml(doc);
+        
+    iganet::Boundary<BSpline> boundary_ref({5, 4, 5, 6}, iganet::init::greville,
+                                           options);
+    
+    boundary_ref.side<iganet::side::east>().transform([](const std::array<real_t, 3> xi) {
+      return std::array<real_t, 2>{static_cast<real_t>(std::rand()), static_cast<real_t>(std::rand())};
+    });
+    
+    boundary_ref.side<iganet::side::west>().transform([](const std::array<real_t, 3> xi) {
+      return std::array<real_t, 2>{static_cast<real_t>(std::rand()), static_cast<real_t>(std::rand())};
+    });
+    
+    boundary_ref.side<iganet::side::north>().transform([](const std::array<real_t, 3> xi) {
+      return std::array<real_t, 2>{static_cast<real_t>(std::rand()), static_cast<real_t>(std::rand())};
+    });
+    
+    boundary_ref.side<iganet::side::south>().transform([](const std::array<real_t, 3> xi) {
+      return std::array<real_t, 2>{static_cast<real_t>(std::rand()), static_cast<real_t>(std::rand())};
+    });
+
+    boundary_ref.side<iganet::side::front>().transform([](const std::array<real_t, 3> xi) {
+      return std::array<real_t, 2>{static_cast<real_t>(std::rand()), static_cast<real_t>(std::rand())};
+    });
+
+    boundary_ref.side<iganet::side::back>().transform([](const std::array<real_t, 3> xi) {
+      return std::array<real_t, 2>{static_cast<real_t>(std::rand()), static_cast<real_t>(std::rand())};
+    });
+
+    boundary_ref.side<iganet::side::stime>().transform([](const std::array<real_t, 3> xi) {
+      return std::array<real_t, 2>{static_cast<real_t>(std::rand()), static_cast<real_t>(std::rand())};
+    });
+
+    boundary_ref.side<iganet::side::etime>().transform([](const std::array<real_t, 3> xi) {
+      return std::array<real_t, 2>{static_cast<real_t>(std::rand()), static_cast<real_t>(std::rand())};
+    });
+    
+    EXPECT_TRUE(boundary_in.isclose(boundary_ref));
+  }
+}
 
 TEST_F(BoundaryTest, Boundary_to_from_json) {}
 
