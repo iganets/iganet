@@ -536,7 +536,7 @@ TEST_F(BSplineTest, NonUniformBSpline_uniform_refine) {
     iganet::NonUniformBSpline<real_t, 3, 3, 4> bspline_ref({5, 6});
     bspline.uniform_refine();
 
-    EXPECT_EQ(bspline.isclose(bspline_ref), true);
+    EXPECT_TRUE(bspline.isclose(bspline_ref));
   }
 
   {
@@ -544,7 +544,7 @@ TEST_F(BSplineTest, NonUniformBSpline_uniform_refine) {
     iganet::NonUniformBSpline<real_t, 3, 3, 4> bspline_ref({7, 8});
     bspline.uniform_refine(2);
 
-    EXPECT_EQ(bspline.isclose(bspline_ref), true);
+    EXPECT_TRUE(bspline.isclose(bspline_ref));
   }
 
   {
@@ -552,7 +552,7 @@ TEST_F(BSplineTest, NonUniformBSpline_uniform_refine) {
     iganet::NonUniformBSpline<real_t, 3, 3, 4> bspline_ref({5, 5});
     bspline.uniform_refine(1, 0);
 
-    EXPECT_EQ(bspline.isclose(bspline_ref), true);
+    EXPECT_TRUE(bspline.isclose(bspline_ref));
   }
 
   {
@@ -560,7 +560,7 @@ TEST_F(BSplineTest, NonUniformBSpline_uniform_refine) {
     iganet::NonUniformBSpline<real_t, 3, 3, 4> bspline_ref({5, 8});
     bspline.uniform_refine(1, 0).uniform_refine(2, 1);
 
-    EXPECT_EQ(bspline.isclose(bspline_ref), true);
+    EXPECT_TRUE(bspline.isclose(bspline_ref));
   }
 }
 
@@ -573,7 +573,7 @@ TEST_F(BSplineTest, NonUniformBSpline_copy_constructor) {
     return std::array<real_t, 3>{0.0_r, 1.0_r, 2.0_r};
   });
 
-  EXPECT_EQ((bspline_orig == bspline_copy), true);
+  EXPECT_TRUE(bspline_orig == bspline_copy);
 }
 
 TEST_F(BSplineTest, NonUniformBSpline_clone_constructor) {
@@ -587,7 +587,7 @@ TEST_F(BSplineTest, NonUniformBSpline_clone_constructor) {
     return std::array<real_t, 3>{0.0_r, 1.0_r, 2.0_r};
   });
 
-  EXPECT_EQ((bspline_ref == bspline_clone), true);
+  EXPECT_TRUE(bspline_ref == bspline_clone);
 }
 
 TEST_F(BSplineTest, NonUniformBSpline_move_constructor) {
@@ -597,7 +597,7 @@ TEST_F(BSplineTest, NonUniformBSpline_move_constructor) {
                    {4, 5}, iganet::init::greville, options)
                    .uniform_refine(2));
 
-  EXPECT_EQ(bspline.isclose(bspline_ref), true);
+  EXPECT_TRUE(bspline.isclose(bspline_ref));
 }
 
 TEST_F(BSplineTest, NonUniformBSpline_copy_coeffs_constructor) {
@@ -610,7 +610,7 @@ TEST_F(BSplineTest, NonUniformBSpline_copy_coeffs_constructor) {
     return std::array<real_t, 3>{0.0_r, 1.0_r, 2.0_r};
   });
 
-  EXPECT_EQ((bspline_orig == bspline_copy), true);
+  EXPECT_TRUE(bspline_orig == bspline_copy);
 }
 
 TEST_F(BSplineTest, NonUniformBSpline_clone_coeffs_constructor) {
@@ -625,7 +625,7 @@ TEST_F(BSplineTest, NonUniformBSpline_clone_coeffs_constructor) {
     return std::array<real_t, 3>{0.0_r, 1.0_r, 2.0_r};
   });
 
-  EXPECT_EQ((bspline_ref == bspline_clone), true);
+  EXPECT_TRUE(bspline_ref == bspline_clone);
 }
 
 TEST_F(BSplineTest, NonUniformBSpline_read_write) {
@@ -641,8 +641,8 @@ TEST_F(BSplineTest, NonUniformBSpline_read_write) {
   bspline_in.load(filename.c_str());
   std::filesystem::remove(filename);
 
-  EXPECT_EQ((bspline_in == bspline_out), true);
-  EXPECT_EQ((bspline_in != bspline_out), false);
+  EXPECT_TRUE(bspline_in == bspline_out);
+  EXPECT_FALSE(bspline_in != bspline_out);
 }
 
 TEST_F(BSplineTest, NonUniformBSpline_to_from_xml) {
@@ -659,7 +659,7 @@ TEST_F(BSplineTest, NonUniformBSpline_to_from_xml) {
     iganet::NonUniformBSpline<real_t, 1, 3> bspline_in(options);
     bspline_in.from_xml(doc);
 
-    EXPECT_EQ((bspline_in == bspline_out), true);
+    EXPECT_TRUE(bspline_in == bspline_out);
 
     // non-matching degree
     EXPECT_THROW((iganet::NonUniformBSpline<real_t, 1, 2>{}.from_xml(doc, 0)),
@@ -703,7 +703,7 @@ TEST_F(BSplineTest, NonUniformBSpline_to_from_xml) {
     iganet::NonUniformBSpline<real_t, 2, 3> bspline_in(options);
     bspline_in.from_xml(doc);
 
-    EXPECT_EQ((bspline_in == bspline_out), true);
+    EXPECT_TRUE(bspline_in == bspline_out);
 
     // non-matching degree
     EXPECT_THROW((iganet::NonUniformBSpline<real_t, 2, 2>{}.from_xml(doc, 0)),
@@ -748,7 +748,7 @@ TEST_F(BSplineTest, NonUniformBSpline_to_from_xml) {
     iganet::NonUniformBSpline<real_t, 3, 3> bspline_in(options);
     bspline_in.from_xml(doc);
 
-    EXPECT_EQ((bspline_in == bspline_out), true);
+    EXPECT_TRUE(bspline_in == bspline_out);
 
     // non-matching degree
     EXPECT_THROW((iganet::NonUniformBSpline<real_t, 3, 2>{}.from_xml(doc, 0)),
@@ -793,7 +793,7 @@ TEST_F(BSplineTest, NonUniformBSpline_to_from_xml) {
     iganet::NonUniformBSpline<real_t, 4, 3> bspline_in(options);
     bspline_in.from_xml(doc);
 
-    EXPECT_EQ((bspline_in == bspline_out), true);
+    EXPECT_TRUE(bspline_in == bspline_out);
 
     // non-matching degree
     EXPECT_THROW((iganet::NonUniformBSpline<real_t, 4, 2>{}.from_xml(doc, 0)),
@@ -836,7 +836,7 @@ TEST_F(BSplineTest, NonUniformBSpline_to_from_xml) {
     iganet::NonUniformBSpline<real_t, 1, 3, 4> bspline_in(options);
     bspline_in.from_xml(doc);
 
-    EXPECT_EQ((bspline_in == bspline_out), true);
+    EXPECT_TRUE(bspline_in == bspline_out);
 
     // non-matching degree
     EXPECT_THROW(
@@ -884,7 +884,7 @@ TEST_F(BSplineTest, NonUniformBSpline_to_from_xml) {
     iganet::NonUniformBSpline<real_t, 2, 3, 4> bspline_in(options);
     bspline_in.from_xml(doc);
 
-    EXPECT_EQ((bspline_in == bspline_out), true);
+    EXPECT_TRUE(bspline_in == bspline_out);
 
     // non-matching degree
     EXPECT_THROW(
@@ -933,7 +933,7 @@ TEST_F(BSplineTest, NonUniformBSpline_to_from_xml) {
     iganet::NonUniformBSpline<real_t, 3, 3, 4> bspline_in(options);
     bspline_in.from_xml(doc);
 
-    EXPECT_EQ((bspline_in == bspline_out), true);
+    EXPECT_TRUE(bspline_in == bspline_out);
 
     // non-matching degree
     EXPECT_THROW(
@@ -982,7 +982,7 @@ TEST_F(BSplineTest, NonUniformBSpline_to_from_xml) {
     iganet::NonUniformBSpline<real_t, 4, 3, 4> bspline_in(options);
     bspline_in.from_xml(doc);
 
-    EXPECT_EQ((bspline_in == bspline_out), true);
+    EXPECT_TRUE(bspline_in == bspline_out);
 
     // non-matching degree
     EXPECT_THROW(
@@ -1029,7 +1029,7 @@ TEST_F(BSplineTest, NonUniformBSpline_to_from_xml) {
     iganet::NonUniformBSpline<real_t, 1, 3, 4, 5> bspline_in(options);
     bspline_in.from_xml(doc);
 
-    EXPECT_EQ((bspline_in == bspline_out), true);
+    EXPECT_TRUE(bspline_in == bspline_out);
 
     // non-matching degree
     EXPECT_THROW(
@@ -1077,7 +1077,7 @@ TEST_F(BSplineTest, NonUniformBSpline_to_from_xml) {
     iganet::NonUniformBSpline<real_t, 2, 3, 4, 5> bspline_in(options);
     bspline_in.from_xml(doc);
 
-    EXPECT_EQ((bspline_in == bspline_out), true);
+    EXPECT_TRUE(bspline_in == bspline_out);
 
     // non-matching degree
     EXPECT_THROW(
@@ -1126,7 +1126,7 @@ TEST_F(BSplineTest, NonUniformBSpline_to_from_xml) {
     iganet::NonUniformBSpline<real_t, 3, 3, 4, 5> bspline_in(options);
     bspline_in.from_xml(doc);
 
-    EXPECT_EQ((bspline_in == bspline_out), true);
+    EXPECT_TRUE(bspline_in == bspline_out);
 
     // non-matching degree
     EXPECT_THROW(
@@ -1175,7 +1175,7 @@ TEST_F(BSplineTest, NonUniformBSpline_to_from_xml) {
     iganet::NonUniformBSpline<real_t, 4, 3, 4, 5> bspline_in(options);
     bspline_in.from_xml(doc);
 
-    EXPECT_EQ((bspline_in == bspline_out), true);
+    EXPECT_TRUE(bspline_in == bspline_out);
 
     // non-matching degree
     EXPECT_THROW(
@@ -1222,7 +1222,7 @@ TEST_F(BSplineTest, NonUniformBSpline_to_from_xml) {
     iganet::NonUniformBSpline<real_t, 1, 3, 4, 5, 1> bspline_in(options);
     bspline_in.from_xml(doc);
 
-    EXPECT_EQ((bspline_in == bspline_out), true);
+    EXPECT_TRUE(bspline_in == bspline_out);
 
     // non-matching degree
     EXPECT_THROW(
@@ -1270,7 +1270,7 @@ TEST_F(BSplineTest, NonUniformBSpline_to_from_xml) {
     iganet::NonUniformBSpline<real_t, 2, 3, 4, 5, 1> bspline_in(options);
     bspline_in.from_xml(doc);
 
-    EXPECT_EQ((bspline_in == bspline_out), true);
+    EXPECT_TRUE(bspline_in == bspline_out);
 
     // non-matching degree
     EXPECT_THROW(
@@ -1319,7 +1319,7 @@ TEST_F(BSplineTest, NonUniformBSpline_to_from_xml) {
     iganet::NonUniformBSpline<real_t, 3, 3, 4, 5, 1> bspline_in(options);
     bspline_in.from_xml(doc);
 
-    EXPECT_EQ((bspline_in == bspline_out), true);
+    EXPECT_TRUE(bspline_in == bspline_out);
 
     // non-matching degree
     EXPECT_THROW(
@@ -1368,7 +1368,7 @@ TEST_F(BSplineTest, NonUniformBSpline_to_from_xml) {
     iganet::NonUniformBSpline<real_t, 4, 3, 4, 5, 1> bspline_in(options);
     bspline_in.from_xml(doc);
 
-    EXPECT_EQ((bspline_in == bspline_out), true);
+    EXPECT_TRUE(bspline_in == bspline_out);
 
     // non-matching degree
     EXPECT_THROW(
@@ -1419,7 +1419,7 @@ TEST_F(BSplineTest, NonUniformBSpline_load_from_xml) {
       return std::array<real_t, 3>{xi[0], 0.0_r, 0.0_r};
     });
 
-    EXPECT_EQ((bspline_in == bspline_ref), true);
+    EXPECT_TRUE(bspline_in == bspline_ref);
   }
 
   {
@@ -1433,7 +1433,7 @@ TEST_F(BSplineTest, NonUniformBSpline_load_from_xml) {
     iganet::NonUniformBSpline<real_t, 2, 1, 1> bspline_ref(
         {2, 2}, iganet::init::greville, options);
 
-    EXPECT_EQ((bspline_in == bspline_ref), true);
+    EXPECT_TRUE(bspline_in == bspline_ref);
   }
 
   {
@@ -1477,7 +1477,7 @@ TEST_F(BSplineTest, NonUniformBSpline_to_from_json) {
     iganet::NonUniformBSpline<real_t, 1, 3> bspline_in(options);
     bspline_in.from_json(json);
 
-    EXPECT_EQ((bspline_in == bspline_out), true);
+    EXPECT_TRUE(bspline_in == bspline_out);
 
     // non-matching degree
     EXPECT_THROW((iganet::NonUniformBSpline<real_t, 1, 2>{}.from_json(json)),
@@ -1516,7 +1516,7 @@ TEST_F(BSplineTest, NonUniformBSpline_to_from_json) {
     iganet::NonUniformBSpline<real_t, 2, 3> bspline_in(options);
     bspline_in.from_json(json);
 
-    EXPECT_EQ((bspline_in == bspline_out), true);
+    EXPECT_TRUE(bspline_in == bspline_out);
 
     // non-matching degree
     EXPECT_THROW((iganet::NonUniformBSpline<real_t, 2, 2>{}.from_json(json)),
@@ -1556,7 +1556,7 @@ TEST_F(BSplineTest, NonUniformBSpline_to_from_json) {
     iganet::NonUniformBSpline<real_t, 3, 3> bspline_in(options);
     bspline_in.from_json(json);
 
-    EXPECT_EQ((bspline_in == bspline_out), true);
+    EXPECT_TRUE(bspline_in == bspline_out);
 
     // non-matching degree
     EXPECT_THROW((iganet::NonUniformBSpline<real_t, 3, 2>{}.from_json(json)),
@@ -1596,7 +1596,7 @@ TEST_F(BSplineTest, NonUniformBSpline_to_from_json) {
     iganet::NonUniformBSpline<real_t, 4, 3> bspline_in(options);
     bspline_in.from_json(json);
 
-    EXPECT_EQ((bspline_in == bspline_out), true);
+    EXPECT_TRUE(bspline_in == bspline_out);
 
     // non-matching degree
     EXPECT_THROW((iganet::NonUniformBSpline<real_t, 4, 2>{}.from_json(json)),
@@ -1634,7 +1634,7 @@ TEST_F(BSplineTest, NonUniformBSpline_to_from_json) {
     iganet::NonUniformBSpline<real_t, 1, 3, 4> bspline_in(options);
     bspline_in.from_json(json);
 
-    EXPECT_EQ((bspline_in == bspline_out), true);
+    EXPECT_TRUE(bspline_in == bspline_out);
 
     // non-matching degree
     EXPECT_THROW((iganet::NonUniformBSpline<real_t, 1, 3, 3>{}.from_json(json)),
@@ -1673,7 +1673,7 @@ TEST_F(BSplineTest, NonUniformBSpline_to_from_json) {
     iganet::NonUniformBSpline<real_t, 2, 3, 4> bspline_in(options);
     bspline_in.from_json(json);
 
-    EXPECT_EQ((bspline_in == bspline_out), true);
+    EXPECT_TRUE(bspline_in == bspline_out);
 
     // non-matching degree
     EXPECT_THROW((iganet::NonUniformBSpline<real_t, 2, 3, 3>{}.from_json(json)),
@@ -1713,7 +1713,7 @@ TEST_F(BSplineTest, NonUniformBSpline_to_from_json) {
     iganet::NonUniformBSpline<real_t, 3, 3, 4> bspline_in(options);
     bspline_in.from_json(json);
 
-    EXPECT_EQ((bspline_in == bspline_out), true);
+    EXPECT_TRUE(bspline_in == bspline_out);
 
     // non-matching degree
     EXPECT_THROW((iganet::NonUniformBSpline<real_t, 3, 3, 3>{}.from_json(json)),
@@ -1753,7 +1753,7 @@ TEST_F(BSplineTest, NonUniformBSpline_to_from_json) {
     iganet::NonUniformBSpline<real_t, 4, 3, 4> bspline_in(options);
     bspline_in.from_json(json);
 
-    EXPECT_EQ((bspline_in == bspline_out), true);
+    EXPECT_TRUE(bspline_in == bspline_out);
 
     // non-matching degree
     EXPECT_THROW((iganet::NonUniformBSpline<real_t, 4, 3, 3>{}.from_json(json)),
@@ -1791,7 +1791,7 @@ TEST_F(BSplineTest, NonUniformBSpline_to_from_json) {
     iganet::NonUniformBSpline<real_t, 1, 3, 4, 5> bspline_in(options);
     bspline_in.from_json(json);
 
-    EXPECT_EQ((bspline_in == bspline_out), true);
+    EXPECT_TRUE(bspline_in == bspline_out);
 
     // non-matching degree
     EXPECT_THROW(
@@ -1833,7 +1833,7 @@ TEST_F(BSplineTest, NonUniformBSpline_to_from_json) {
     iganet::NonUniformBSpline<real_t, 2, 3, 4, 5> bspline_in(options);
     bspline_in.from_json(json);
 
-    EXPECT_EQ((bspline_in == bspline_out), true);
+    EXPECT_TRUE(bspline_in == bspline_out);
 
     // non-matching degree
     EXPECT_THROW(
@@ -1876,7 +1876,7 @@ TEST_F(BSplineTest, NonUniformBSpline_to_from_json) {
     iganet::NonUniformBSpline<real_t, 3, 3, 4, 5> bspline_in(options);
     bspline_in.from_json(json);
 
-    EXPECT_EQ((bspline_in == bspline_out), true);
+    EXPECT_TRUE(bspline_in == bspline_out);
 
     // non-matching degree
     EXPECT_THROW(
@@ -1919,7 +1919,7 @@ TEST_F(BSplineTest, NonUniformBSpline_to_from_json) {
     iganet::NonUniformBSpline<real_t, 4, 3, 4, 5> bspline_in(options);
     bspline_in.from_json(json);
 
-    EXPECT_EQ((bspline_in == bspline_out), true);
+    EXPECT_TRUE(bspline_in == bspline_out);
 
     // non-matching degree
     EXPECT_THROW(
@@ -1960,7 +1960,7 @@ TEST_F(BSplineTest, NonUniformBSpline_to_from_json) {
     iganet::NonUniformBSpline<real_t, 1, 3, 4, 5, 1> bspline_in(options);
     bspline_in.from_json(json);
 
-    EXPECT_EQ((bspline_in == bspline_out), true);
+    EXPECT_TRUE(bspline_in == bspline_out);
 
     // non-matching degree
     EXPECT_THROW(
@@ -2002,7 +2002,7 @@ TEST_F(BSplineTest, NonUniformBSpline_to_from_json) {
     iganet::NonUniformBSpline<real_t, 2, 3, 4, 5, 1> bspline_in(options);
     bspline_in.from_json(json);
 
-    EXPECT_EQ((bspline_in == bspline_out), true);
+    EXPECT_TRUE(bspline_in == bspline_out);
 
     // non-matching degree
     EXPECT_THROW(
@@ -2045,7 +2045,7 @@ TEST_F(BSplineTest, NonUniformBSpline_to_from_json) {
     iganet::NonUniformBSpline<real_t, 3, 3, 4, 5, 1> bspline_in(options);
     bspline_in.from_json(json);
 
-    EXPECT_EQ((bspline_in == bspline_out), true);
+    EXPECT_TRUE(bspline_in == bspline_out);
 
     // non-matching degree
     EXPECT_THROW(
@@ -2088,7 +2088,7 @@ TEST_F(BSplineTest, NonUniformBSpline_to_from_json) {
     iganet::NonUniformBSpline<real_t, 4, 3, 4, 5, 1> bspline_in(options);
     bspline_in.from_json(json);
 
-    EXPECT_EQ((bspline_in == bspline_out), true);
+    EXPECT_TRUE(bspline_in == bspline_out);
 
     // non-matching degree
     EXPECT_THROW(
@@ -2164,13 +2164,13 @@ TEST_F(BSplineTest, NonUniformBSpline_requires_grad) {
     iganet::NonUniformBSpline<real_t, 2, 3, 4> bspline(
         {4, 5}, iganet::init::linear, options.requires_grad(true));
 
-    EXPECT_EQ(bspline.requires_grad(), true);
+    EXPECT_TRUE(bspline.requires_grad());
 
     for (iganet::short_t i = 0; i < bspline.parDim(); ++i)
-      EXPECT_EQ(bspline.knots(i).requires_grad(), true);
+      EXPECT_TRUE(bspline.knots(i).requires_grad());
 
     for (iganet::short_t i = 0; i < bspline.geoDim(); ++i)
-      EXPECT_EQ(bspline.coeffs(i).requires_grad(), true);
+      EXPECT_TRUE(bspline.coeffs(i).requires_grad());
 
     auto xi = iganet::utils::to_tensorArray<real_t>({0.5_r}, {0.5_r}, options);
     auto values = bspline.eval(xi);
@@ -2279,7 +2279,7 @@ TEST_F(BSplineTest, NonUniformBSpline_reduce_continuity) {
                                      1.0_r)));
     bspline.reduce_continuity();
 
-    EXPECT_EQ(bspline.isclose(bspline_ref), true);
+    EXPECT_TRUE(bspline.isclose(bspline_ref));
   }
 
   {
@@ -2293,7 +2293,7 @@ TEST_F(BSplineTest, NonUniformBSpline_reduce_continuity) {
                                      1.0_r)));
     bspline.reduce_continuity(2);
 
-    EXPECT_EQ(bspline.isclose(bspline_ref), true);
+    EXPECT_TRUE(bspline.isclose(bspline_ref));
   }
 
   {
@@ -2307,7 +2307,7 @@ TEST_F(BSplineTest, NonUniformBSpline_reduce_continuity) {
                                      1.0_r)));
     bspline.reduce_continuity(1, 0).reduce_continuity(2, 1);
 
-    EXPECT_EQ(bspline.isclose(bspline_ref), true);
+    EXPECT_TRUE(bspline.isclose(bspline_ref));
   }
 }
 
@@ -2324,7 +2324,7 @@ TEST_F(BSplineTest, NonUniformBSpline_insert_knots) {
     bspline.insert_knots(
         iganet::utils::to_tensorArray({0.1_r, 0.3_r}, {0.2_r, 0.4_r}));
 
-    EXPECT_EQ(bspline.isclose(bspline_ref), true);
+    EXPECT_TRUE(bspline.isclose(bspline_ref));
   }
 }
 

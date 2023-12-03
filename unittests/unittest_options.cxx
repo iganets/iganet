@@ -25,9 +25,9 @@ TEST(Options, Options_default) {
   EXPECT_EQ(options.device(),
             torch::cuda::is_available() ? torch::kCUDA : torch::kCPU);
   EXPECT_EQ(options.layout(), torch::kStrided);
-  EXPECT_EQ(options.requires_grad(), false);
-  EXPECT_EQ(options.pinned_memory(), false);
-  EXPECT_EQ(options.is_sparse(), false);
+  EXPECT_FALSE(options.requires_grad());
+  EXPECT_FALSE(options.pinned_memory());
+  EXPECT_FALSE(options.is_sparse());
 }
 
 TEST(Options, Options_nondefault) {
@@ -39,9 +39,9 @@ TEST(Options, Options_nondefault) {
   EXPECT_EQ(options.dtype(), c10::ScalarType::Float);
   EXPECT_EQ(options.device(), torch::kCPU);
   EXPECT_EQ(options.layout(), torch::kSparse);
-  EXPECT_EQ(options.requires_grad(), true);
-  EXPECT_EQ(options.pinned_memory(), false);
-  EXPECT_EQ(options.is_sparse(), true);
+  EXPECT_TRUE(options.requires_grad());
+  EXPECT_FALSE(options.pinned_memory());
+  EXPECT_TRUE(options.is_sparse());
 }
 
 TEST(Options, Options_dtype) {
@@ -73,9 +73,9 @@ TEST(Options, Options_clone) {
   EXPECT_EQ(options_clone.dtype(), c10::ScalarType::Float);
   EXPECT_EQ(options_clone.device(), torch::kCPU);
   EXPECT_EQ(options_clone.layout(), torch::kSparse);
-  EXPECT_EQ(options_clone.requires_grad(), false);
-  EXPECT_EQ(options_clone.pinned_memory(), false);
-  EXPECT_EQ(options_clone.is_sparse(), true);
+  EXPECT_FALSE(options_clone.requires_grad());
+  EXPECT_FALSE(options_clone.pinned_memory());
+  EXPECT_TRUE(options_clone.is_sparse());
 }
 
 TEST(Options, Options_conversion) {
@@ -89,9 +89,9 @@ TEST(Options, Options_conversion) {
   EXPECT_EQ(tensorOptions.dtype(), c10::ScalarType::Float);
   EXPECT_EQ(tensorOptions.device(), torch::kCPU);
   EXPECT_EQ(tensorOptions.layout(), torch::kSparse);
-  EXPECT_EQ(tensorOptions.requires_grad(), true);
-  EXPECT_EQ(tensorOptions.pinned_memory(), false);
-  EXPECT_EQ(tensorOptions.is_sparse(), true);
+  EXPECT_TRUE(tensorOptions.requires_grad());
+  EXPECT_FALSE(tensorOptions.pinned_memory());
+  EXPECT_TRUE(tensorOptions.is_sparse());
 }
 
 int main(int argc, char **argv) {
