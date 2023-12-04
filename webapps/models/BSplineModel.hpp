@@ -590,7 +590,7 @@ public:
                   static_cast<int64_t>(std::hash<std::string>{}(getName())));
     archive.write("nonuniform", static_cast<bool>(BSpline_t::is_nonuniform()));
     archive.write("transform", transform);
-    
+
     BSpline_t::write(archive, "geometry");
     solution_.write(archive, "solution");
 
@@ -646,11 +646,13 @@ public:
     if (component.empty()) {
       BSpline_t::from_xml(xml, id, "geometry");
       solution_.from_xml(xml, id, "solution");
-      iganet::utils::from_xml<iganet::real_t, 2>(xml, transform, "Matrix", id, "transform", false);      
+      iganet::utils::from_xml<iganet::real_t, 2>(xml, transform, "Matrix", id,
+                                                 "transform", false);
     } else {
       if (component == "geometry") {
         BSpline_t::from_xml(xml, id, "geometry");
-        iganet::utils::from_xml<iganet::real_t, 2>(xml, transform, "Matrix", id, "transform", false);
+        iganet::utils::from_xml<iganet::real_t, 2>(xml, transform, "Matrix", id,
+                                                   "transform", false);
       } else if (component == "solution")
         solution_.from_xml(xml, id, "solution");
       else
@@ -659,8 +661,7 @@ public:
   }
 
   /// @brief Exports the model to XML (as JSON object)
-  nlohmann::json exportXML(const std::string &component,
-                           int id) override {
+  nlohmann::json exportXML(const std::string &component, int id) override {
 
     // serialize to XML
     pugi::xml_document doc;
@@ -681,11 +682,13 @@ public:
     if (component.empty()) {
       BSpline_t::to_xml(xml, id, "geometry");
       solution_.to_xml(xml, id, "solution");
-      iganet::utils::to_xml<iganet::real_t, 2>(transform, xml, "Matrix", id, "transform");
+      iganet::utils::to_xml<iganet::real_t, 2>(transform, xml, "Matrix", id,
+                                               "transform");
     } else {
       if (component == "geometry") {
         BSpline_t::to_xml(xml, id, "geometry");
-        iganet::utils::to_xml<iganet::real_t, 2>(transform, xml, "Matrix", id, "transform");
+        iganet::utils::to_xml<iganet::real_t, 2>(transform, xml, "Matrix", id,
+                                                 "transform");
       } else if (component == "solution")
         solution_.to_xml(xml, id, "solution");
       else

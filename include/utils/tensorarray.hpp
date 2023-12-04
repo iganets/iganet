@@ -136,9 +136,8 @@ auto to_tensorAccessor(const torch::Tensor &tensor,
     return std::tuple(tensor_device, accessor);
   } else {
     auto accessor = tensor.template accessor<T, N>();
-    return std::tuple(tensor, accessor);    
+    return std::tuple(tensor, accessor);
   }
-      
 }
 /// @}
 

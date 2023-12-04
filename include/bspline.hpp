@@ -1822,7 +1822,7 @@ public:
       for (short_t d = 0; d < geoDim_; ++d)
         coeffs_[d].detach()[0] = c[d];
     }
-    
+
     // 1D
     else if constexpr (parDim_ == 1) {
 #pragma omp parallel for
@@ -1841,7 +1841,7 @@ public:
         for (int64_t i = 0; i < ncoeffs_[0]; ++i) {
           auto c = transformation(
               std::array<value_type, parDim_>{i / value_type(ncoeffs_[0] - 1),
-                                        j / value_type(ncoeffs_[1] - 1)});
+                                              j / value_type(ncoeffs_[1] - 1)});
           for (short_t d = 0; d < geoDim_; ++d)
             coeffs_[d].detach()[j * ncoeffs_[0] + i] = c[d];
         }
@@ -1854,10 +1854,10 @@ public:
       for (int64_t k = 0; k < ncoeffs_[2]; ++k) {
         for (int64_t j = 0; j < ncoeffs_[1]; ++j) {
           for (int64_t i = 0; i < ncoeffs_[0]; ++i) {
-            auto c = transformation(
-                std::array<value_type, parDim_>{i / value_type(ncoeffs_[0] - 1),
-                                          j / value_type(ncoeffs_[1] - 1),
-                                          k / value_type(ncoeffs_[2] - 1)});
+            auto c = transformation(std::array<value_type, parDim_>{
+                i / value_type(ncoeffs_[0] - 1),
+                j / value_type(ncoeffs_[1] - 1),
+                k / value_type(ncoeffs_[2] - 1)});
             for (short_t d = 0; d < geoDim_; ++d)
               coeffs_[d].detach()[k * ncoeffs_[0] * ncoeffs_[1] +
                                   j * ncoeffs_[0] + i] = c[d];
@@ -1873,11 +1873,11 @@ public:
         for (int64_t k = 0; k < ncoeffs_[2]; ++k) {
           for (int64_t j = 0; j < ncoeffs_[1]; ++j) {
             for (int64_t i = 0; i < ncoeffs_[0]; ++i) {
-              auto c = transformation(
-                  std::array<value_type, parDim_>{i / value_type(ncoeffs_[0] - 1),
-                                            j / value_type(ncoeffs_[1] - 1),
-                                            k / value_type(ncoeffs_[2] - 1),
-                                            l / value_type(ncoeffs_[3] - 1)});
+              auto c = transformation(std::array<value_type, parDim_>{
+                  i / value_type(ncoeffs_[0] - 1),
+                  j / value_type(ncoeffs_[1] - 1),
+                  k / value_type(ncoeffs_[2] - 1),
+                  l / value_type(ncoeffs_[3] - 1)});
               for (short_t d = 0; d < geoDim_; ++d)
                 coeffs_[d]
                     .detach()[l * ncoeffs_[0] * ncoeffs_[1] * ncoeffs_[2] +
@@ -1996,8 +1996,8 @@ public:
   }
 
   /// @brief Returns the B-spline object as XML object
-  inline pugi::xml_document to_xml(int id = 0,
-                                   std::string label = "", int index = -1) const {
+  inline pugi::xml_document to_xml(int id = 0, std::string label = "",
+                                   int index = -1) const {
     pugi::xml_document doc;
     pugi::xml_node root = doc.append_child("xml");
     to_xml(root, id, label, index);
@@ -2014,17 +2014,17 @@ public:
     // 0D parametric dimension
     if constexpr (parDim_ == 0) {
       geo.append_attribute("type") = "Point";
-      
+
       if (id >= 0)
         geo.append_attribute("id") = id;
-      
+
       if (index >= 0)
         geo.append_attribute("index") = index;
-      
+
       if (!label.empty())
         geo.append_attribute("label") = label.c_str();
     }
-    
+
     // 1D parametric dimension
     else if constexpr (parDim_ == 1) {
       geo.append_attribute("type") = "BSpline";
@@ -2058,11 +2058,11 @@ public:
     // >1D parametric dimension
     else {
       geo.append_attribute("type") =
-        std::string("TensorBSpline").append(std::to_string(parDim_)).c_str();
+          std::string("TensorBSpline").append(std::to_string(parDim_)).c_str();
 
       if (id >= 0)
         geo.append_attribute("id") = id;
-      
+
       if (index >= 0)
         geo.append_attribute("index") = index;
 
@@ -2107,7 +2107,7 @@ public:
       for (short_t g = 0; g < geoDim_; ++g)
         ss << std::to_string(coeffs_accessors[g][0])
            << (g < geoDim_ - 1 ? " " : "");
-      
+
     } else if constexpr (parDim_ == 1) {
       for (int64_t i = 0; i < ncoeffs_[0]; ++i)
         for (short_t g = 0; g < geoDim_; ++g)
@@ -2171,7 +2171,8 @@ public:
   inline UniformBSplineCore &from_xml(const pugi::xml_node &root, int id = 0,
                                       std::string label = "", int index = -1) {
 
-    std::array<bool, std::max(parDim_, short_t{1})> nknots_found{false}, ncoeffs_found{false};
+    std::array<bool, std::max(parDim_, short_t{1})> nknots_found{false},
+        ncoeffs_found{false};
 
     // Loop through all geometry nodes
     for (pugi::xml_node geo : root.children("Geometry")) {
@@ -2191,7 +2192,7 @@ public:
         else
           continue; // try next "Geometry"
       }
-      
+
       // 1D parametric dimension
       else if constexpr (parDim_ == 1) {
 
@@ -2292,8 +2293,9 @@ public:
 
       if (std::any_of(std::begin(nknots_found), std::end(nknots_found),
                       [](bool i) { return !i; }))
-        throw std::runtime_error("XML object is not compatible with B-spline object");
-      
+        throw std::runtime_error(
+            "XML object is not compatible with B-spline object");
+
       // Reverse ncoeffs
       ncoeffs_reverse_ = ncoeffs_;
       std::reverse(ncoeffs_reverse_.begin(), ncoeffs_reverse_.end());
@@ -2317,35 +2319,34 @@ public:
           for (short_t g = 0; g < geoDim_; ++g) {
             if (value == NULL)
               throw std::runtime_error(
-                                       "XML object does not provide enough coefficients");
+                  "XML object does not provide enough coefficients");
 
-            coeffs_accessors[g][0] =
-              static_cast<value_type>(std::stod(value));
+            coeffs_accessors[g][0] = static_cast<value_type>(std::stod(value));
             value = strtok(NULL, " ");
           }
-          
+
           if (value != NULL)
             throw std::runtime_error(
-                                     "XML object provides too many coefficients");
-          
+                "XML object provides too many coefficients");
+
         } else if constexpr (parDim_ == 1) {
           auto value = strtok(&values[0], " ");
-          
+
           for (int64_t i = 0; i < ncoeffs_[0]; ++i)
             for (short_t g = 0; g < geoDim_; ++g) {
               if (value == NULL)
                 throw std::runtime_error(
-                                         "XML object does not provide enough coefficients");
-              
+                    "XML object does not provide enough coefficients");
+
               coeffs_accessors[g][i] =
-                static_cast<value_type>(std::stod(value));
+                  static_cast<value_type>(std::stod(value));
               value = strtok(NULL, " ");
             }
-          
+
           if (value != NULL)
             throw std::runtime_error(
-                                     "XML object provides too many coefficients");
-          
+                "XML object provides too many coefficients");
+
         } else if constexpr (parDim_ == 2) {
           auto value = strtok(&values[0], " ");
 
@@ -2416,29 +2417,29 @@ public:
         // Copy coefficients to device (if needed)
         for (short_t i = 0; i < geoDim_; ++i)
           coeffs_[i] = coeffs_[i].to(options_.device());
-        
+
         if constexpr (parDim_ == 0) {
           if (nknots_found[0] && ncoeffs_found[0])
             return *this;
-        }
-        else if (std::all_of(std::begin(nknots_found), std::end(nknots_found),
-                             [](bool i) { return i; }) &&
-                 std::all_of(std::begin(ncoeffs_found), std::end(ncoeffs_found),
-                             [](bool i) { return i; }))
+        } else if (std::all_of(std::begin(nknots_found), std::end(nknots_found),
+                               [](bool i) { return i; }) &&
+                   std::all_of(std::begin(ncoeffs_found),
+                               std::end(ncoeffs_found),
+                               [](bool i) { return i; }))
           return *this;
-        
+
         else
           throw std::runtime_error(
-                                   "XML object is not compatible with B-spline object");
-        
+              "XML object is not compatible with B-spline object");
+
       } // Coefs
       else
         throw std::runtime_error("XML object does not provide coefficients");
 
     } // "Geometry"
 
-    throw std::runtime_error(
-        "XML object does not provide geometry with given id, index, and/or label");
+    throw std::runtime_error("XML object does not provide geometry with given "
+                             "id, index, and/or label");
     return *this;
   }
 
@@ -2547,7 +2548,7 @@ public:
 
     for (short_t i = 0; i < parDim_; ++i)
       result *= torch::allclose(knots(i), other.knots(i), rtol, atol);
-    
+
     for (short_t i = 0; i < geoDim_; ++i)
       result *= torch::allclose(coeffs(i), other.coeffs(i), rtol, atol);
 
@@ -3174,90 +3175,95 @@ protected:
 
 #ifdef WITH_GISMO
   /// @brief Returns a gsTensorBSpline object
-  auto to_gismo() const
-  {
+  auto to_gismo() const {
     if constexpr (parDim_ == 1) {
 
       auto [knots0_cpu, knots0_accessor] =
           utils::to_tensorAccessor<value_type, 1>(knots_[0], torch::kCPU);
       auto knots0_cpu_ptr = knots0_cpu.template data_ptr<value_type>();
-      std::vector<value_type> knots0{knots0_cpu_ptr, knots0_cpu_ptr+knots0_cpu.size(0)};
+      std::vector<value_type> knots0{knots0_cpu_ptr,
+                                     knots0_cpu_ptr + knots0_cpu.size(0)};
 
       gismo::gsKnotVector<value_type> kv0(knots0, degrees_[0]);
-      
-    }
-    else if constexpr (parDim_ == 2) {
+
+    } else if constexpr (parDim_ == 2) {
 
       auto [knots0_cpu, knots0_accessor] =
-        utils::to_tensorAccessor<value_type, 1>(knots_[0], torch::kCPU);
+          utils::to_tensorAccessor<value_type, 1>(knots_[0], torch::kCPU);
       auto knots0_cpu_ptr = knots0_cpu.template data_ptr<value_type>();
-      std::vector<value_type> knots0{knots0_cpu_ptr, knots0_cpu_ptr+knots0_cpu.size(0)};
-      
+      std::vector<value_type> knots0{knots0_cpu_ptr,
+                                     knots0_cpu_ptr + knots0_cpu.size(0)};
+
       gismo::gsKnotVector<value_type> kv0(knots0, degrees_[0]);
-      
+
       auto [knots1_cpu, knots1_accessor] =
-        utils::to_tensorAccessor<value_type, 1>(knots_[1], torch::kCPU);
+          utils::to_tensorAccessor<value_type, 1>(knots_[1], torch::kCPU);
       auto knots1_cpu_ptr = knots1_cpu.template data_ptr<value_type>();
-      std::vector<value_type> knots1{knots1_cpu_ptr, knots1_cpu_ptr+knots1_cpu.size(0)};
+      std::vector<value_type> knots1{knots1_cpu_ptr,
+                                     knots1_cpu_ptr + knots1_cpu.size(0)};
 
       gismo::gsKnotVector<value_type> kv1(knots1, degrees_[1]);
-    }
-    else if constexpr (parDim_ == 3) {
+    } else if constexpr (parDim_ == 3) {
 
       auto [knots0_cpu, knots0_accessor] =
-        utils::to_tensorAccessor<value_type, 1>(knots_[0], torch::kCPU);
+          utils::to_tensorAccessor<value_type, 1>(knots_[0], torch::kCPU);
       auto knots0_cpu_ptr = knots0_cpu.template data_ptr<value_type>();
-      std::vector<value_type> knots0{knots0_cpu_ptr, knots0_cpu_ptr+knots0_cpu.size(0)};
+      std::vector<value_type> knots0{knots0_cpu_ptr,
+                                     knots0_cpu_ptr + knots0_cpu.size(0)};
 
       gismo::gsKnotVector<value_type> kv0(knots0, degrees_[0]);
-      
+
       auto [knots1_cpu, knots1_accessor] =
-        utils::to_tensorAccessor<value_type, 1>(knots_[1], torch::kCPU);
+          utils::to_tensorAccessor<value_type, 1>(knots_[1], torch::kCPU);
       auto knots1_cpu_ptr = knots1_cpu.template data_ptr<value_type>();
-      std::vector<value_type> knots1{knots1_cpu_ptr, knots1_cpu_ptr+knots1_cpu.size(0)};
+      std::vector<value_type> knots1{knots1_cpu_ptr,
+                                     knots1_cpu_ptr + knots1_cpu.size(0)};
 
       gismo::gsKnotVector<value_type> kv1(knots1, degrees_[1]);
-      
+
       auto [knots2_cpu, knots2_accessor] =
-        utils::to_tensorAccessor<value_type, 1>(knots_[2], torch::kCPU);
+          utils::to_tensorAccessor<value_type, 1>(knots_[2], torch::kCPU);
       auto knots2_cpu_ptr = knots2_cpu.template data_ptr<value_type>();
-      std::vector<value_type> knots2{knots2_cpu_ptr, knots2_cpu_ptr+knots2_cpu.size(0)};
+      std::vector<value_type> knots2{knots2_cpu_ptr,
+                                     knots2_cpu_ptr + knots2_cpu.size(0)};
 
       gismo::gsKnotVector<value_type> kv2(knots2, degrees_[2]);
-      
-    }
-    else if constexpr (parDim_ == 4) {
+
+    } else if constexpr (parDim_ == 4) {
 
       auto [knots0_cpu, knots0_accessor] =
-        utils::to_tensorAccessor<value_type, 1>(knots_[0], torch::kCPU);
+          utils::to_tensorAccessor<value_type, 1>(knots_[0], torch::kCPU);
       auto knots0_cpu_ptr = knots0_cpu.template data_ptr<value_type>();
-      std::vector<value_type> knots0{knots0_cpu_ptr, knots0_cpu_ptr+knots0_cpu.size(0)};
+      std::vector<value_type> knots0{knots0_cpu_ptr,
+                                     knots0_cpu_ptr + knots0_cpu.size(0)};
 
       gismo::gsKnotVector<value_type> kv0(knots0, degrees_[0]);
-      
+
       auto [knots1_cpu, knots1_accessor] =
-        utils::to_tensorAccessor<value_type, 1>(knots_[1], torch::kCPU);
+          utils::to_tensorAccessor<value_type, 1>(knots_[1], torch::kCPU);
       auto knots1_cpu_ptr = knots1_cpu.template data_ptr<value_type>();
-      std::vector<value_type> knots1{knots1_cpu_ptr, knots1_cpu_ptr+knots1_cpu.size(0)};
+      std::vector<value_type> knots1{knots1_cpu_ptr,
+                                     knots1_cpu_ptr + knots1_cpu.size(0)};
 
       gismo::gsKnotVector kv1(knots1, degrees_[1]);
-      
+
       auto [knots2_cpu, knots2_accessor] =
-        utils::to_tensorAccessor<value_type, 1>(knots_[2], torch::kCPU);
+          utils::to_tensorAccessor<value_type, 1>(knots_[2], torch::kCPU);
       auto knots2_cpu_ptr = knots2_cpu.template data_ptr<value_type>();
-      std::vector<value_type> knots2{knots2_cpu_ptr, knots2_cpu_ptr+knots2_cpu.size(0)};
+      std::vector<value_type> knots2{knots2_cpu_ptr,
+                                     knots2_cpu_ptr + knots2_cpu.size(0)};
 
       gismo::gsKnotVector<value_type> kv2(knots2, degrees_[2]);
-      
+
       auto [knots3_cpu, knots3_accessor] =
-        utils::to_tensorAccessor<value_type, 1>(knots_[3], torch::kCPU);
+          utils::to_tensorAccessor<value_type, 1>(knots_[3], torch::kCPU);
       auto knots3_cpu_ptr = knots3_cpu.template data_ptr<value_type>();
-      std::vector<value_type> knots3{knots3_cpu_ptr, knots3_cpu_ptr+knots3_cpu.size(0)};
+      std::vector<value_type> knots3{knots3_cpu_ptr,
+                                     knots3_cpu_ptr + knots3_cpu.size(0)};
 
       gismo::gsKnotVector<value_type> kv3(knots3, degrees_[3]);
-      
-    }
-    else
+
+    } else
       throw std::runtime_error("Invalid parametric dimension");
   }
 #else

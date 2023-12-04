@@ -131,13 +131,11 @@ public:
                          const std::string &component, int id) = 0;
 
   /// @brief Exports model to XML (as JSON object)
-  virtual nlohmann::json exportXML(const std::string &component,
-                                   int id) = 0;
+  virtual nlohmann::json exportXML(const std::string &component, int id) = 0;
 
   /// @brief Exports model to XML (as XML object)
   virtual pugi::xml_node &exportXML(pugi::xml_node &root,
-                                    const std::string &component,
-                                    int id) = 0;
+                                    const std::string &component, int id) = 0;
 
   // @brief Returns model capabilities
   std::vector<std::string> getCapabilities() const {
@@ -237,8 +235,7 @@ public:
       if (!json["data"].contains("matrix"))
         throw InvalidModelAttributeException();
 
-      auto matrix =
-          json["data"]["matrix"].get<std::vector<iganet::real_t>>();
+      auto matrix = json["data"]["matrix"].get<std::vector<iganet::real_t>>();
 
       if (matrix.size() != 16)
         throw IndexOutOfBoundsException();

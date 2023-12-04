@@ -4719,8 +4719,7 @@ TEST_F(FunctionSpaceTest, RT4_geoDim1_degrees2341) {
   }
 }
 
-TEST_F(FunctionSpaceTest, FunctionSpace_init) {
-}
+TEST_F(FunctionSpaceTest, FunctionSpace_init) {}
 
 TEST_F(FunctionSpaceTest, FunctionSpace_refine) {}
 
@@ -4738,17 +4737,13 @@ TEST_F(FunctionSpaceTest, FunctionSpace_load_from_xml) {}
 
 TEST_F(FunctionSpaceTest, FunctionSpace_to_from_json) {}
 
-TEST_F(FunctionSpaceTest, FunctionSpace_query_property) {
-}
+TEST_F(FunctionSpaceTest, FunctionSpace_query_property) {}
 
-TEST_F(FunctionSpaceTest, FunctionSpace_requires_grad) {
-}
+TEST_F(FunctionSpaceTest, FunctionSpace_requires_grad) {}
 
-TEST_F(FunctionSpaceTest, FunctionSpace_to_dtype) {
-}
+TEST_F(FunctionSpaceTest, FunctionSpace_to_dtype) {}
 
-TEST_F(FunctionSpaceTest, FunctionSpace_to_device) {
-}   
+TEST_F(FunctionSpaceTest, FunctionSpace_to_device) {}
 
 int main(int argc, char **argv) {
   ::testing::InitGoogleTest(&argc, argv);

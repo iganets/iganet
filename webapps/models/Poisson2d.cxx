@@ -92,8 +92,7 @@ public:
                  int id = 0) override {}
 
   /// @brief Exports the model to XML (as JSON object)
-  nlohmann::json exportXML(const std::string &component,
-                           int id) override {
+  nlohmann::json exportXML(const std::string &component, int id) override {
     return "\"reason\" : \"Not implemented yet\"";
   }
 

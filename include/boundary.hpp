@@ -78,11 +78,9 @@ public:
   using eval_type = std::tuple<torch::Tensor, torch::Tensor>;
 
   /// @brief Default constructor
-  BoundaryCore(Options<typename Spline::value_type> options = Options<typename Spline::value_type>{})
-    : bdr_({
-        boundary_spline_type(options),
-        boundary_spline_type(options)
-      }) {}
+  BoundaryCore(Options<typename Spline::value_type> options =
+                   Options<typename Spline::value_type>{})
+      : bdr_({boundary_spline_type(options), boundary_spline_type(options)}) {}
 
   /// @brief Copy constructor
   BoundaryCore(const boundary_type &bdr_) : bdr_(bdr_) {}
@@ -92,32 +90,27 @@ public:
 
   /// @brief Copy/clone constructor
   BoundaryCore(const BoundaryCore &other, bool clone)
-    : bdr_(clone ?
-           std::apply([](const auto &...bspline) {
-             return std::make_tuple(bspline.clone()...);
-           },
-             other.coeffs()) :
-           other.coeffs())
-  {}
+      : bdr_(clone ? std::apply(
+                         [](const auto &...bspline) {
+                           return std::make_tuple(bspline.clone()...);
+                         },
+                         other.coeffs())
+                   : other.coeffs()) {}
 
   /// @brief Constructor
   BoundaryCore(const std::array<int64_t, 1> &, enum init init = init::zeros,
                Options<typename Spline::value_type> options =
                    Options<typename Spline::value_type>{})
-      : bdr_({
-            boundary_spline_type(std::array<int64_t, 0>{}, init, options),
-            boundary_spline_type(std::array<int64_t, 0>{}, init, options)
-        }) {}
+      : bdr_({boundary_spline_type(std::array<int64_t, 0>{}, init, options),
+              boundary_spline_type(std::array<int64_t, 0>{}, init, options)}) {}
 
   /// @brief Constructor
   BoundaryCore(const std::array<std::vector<typename Spline::value_type>, 1> &,
                enum init init = init::zeros,
                Options<typename Spline::value_type> options =
                    Options<typename Spline::value_type>{})
-      : bdr_({
-            boundary_spline_type(std::array<int64_t, 0>{}, init, options),
-            boundary_spline_type(std::array<int64_t, 0>{}, init, options)
-        }) {}
+      : bdr_({boundary_spline_type(std::array<int64_t, 0>{}, init, options),
+              boundary_spline_type(std::array<int64_t, 0>{}, init, options)}) {}
 
   /// @brief Returns the number of sides
   inline static constexpr short_t sides() { return side::east; }
@@ -225,13 +218,12 @@ public:
                  std::array<torch::Tensor, 1>, std::array<torch::Tensor, 1>>;
 
   /// @brief Default constructor
-  BoundaryCore(Options<typename Spline::value_type> options = Options<typename Spline::value_type>{})
-    : bdr_({
-        std::tuple_element_t<0, boundary_spline_type>(options),
-        std::tuple_element_t<0, boundary_spline_type>(options),
-        std::tuple_element_t<1, boundary_spline_type>(options),
-        std::tuple_element_t<1, boundary_spline_type>(options)
-      }) {}
+  BoundaryCore(Options<typename Spline::value_type> options =
+                   Options<typename Spline::value_type>{})
+      : bdr_({std::tuple_element_t<0, boundary_spline_type>(options),
+              std::tuple_element_t<0, boundary_spline_type>(options),
+              std::tuple_element_t<1, boundary_spline_type>(options),
+              std::tuple_element_t<1, boundary_spline_type>(options)}) {}
 
   /// @brief Copy constructor
   BoundaryCore(const boundary_type &bdr_) : bdr_(bdr_) {}
@@ -241,14 +233,13 @@ public:
 
   /// @brief Copy/clone constructor
   BoundaryCore(const BoundaryCore &other, bool clone)
-    : bdr_(clone ?
-           std::apply([](const auto &...bspline) {
-             return std::make_tuple(bspline.clone()...);
-           },
-             other.coeffs()) :
-           other.coeffs())
-  {}
-  
+      : bdr_(clone ? std::apply(
+                         [](const auto &...bspline) {
+                           return std::make_tuple(bspline.clone()...);
+                         },
+                         other.coeffs())
+                   : other.coeffs()) {}
+
   /// @brief Constructor
   BoundaryCore(const std::array<int64_t, 2> &ncoeffs,
                enum init init = init::zeros,
@@ -412,15 +403,14 @@ public:
                  std::array<torch::Tensor, 2>, std::array<torch::Tensor, 2>>;
 
   /// @brief Default constructor
-  BoundaryCore(Options<typename Spline::value_type> options = Options<typename Spline::value_type>{})
-    : bdr_({
-        std::tuple_element_t<0, boundary_spline_type>(options),
-        std::tuple_element_t<0, boundary_spline_type>(options),
-        std::tuple_element_t<1, boundary_spline_type>(options),
-        std::tuple_element_t<1, boundary_spline_type>(options),
-        std::tuple_element_t<2, boundary_spline_type>(options),
-        std::tuple_element_t<2, boundary_spline_type>(options)
-      }) {}
+  BoundaryCore(Options<typename Spline::value_type> options =
+                   Options<typename Spline::value_type>{})
+      : bdr_({std::tuple_element_t<0, boundary_spline_type>(options),
+              std::tuple_element_t<0, boundary_spline_type>(options),
+              std::tuple_element_t<1, boundary_spline_type>(options),
+              std::tuple_element_t<1, boundary_spline_type>(options),
+              std::tuple_element_t<2, boundary_spline_type>(options),
+              std::tuple_element_t<2, boundary_spline_type>(options)}) {}
 
   /// @brief Copy constructor
   BoundaryCore(const boundary_type &bdr_) : bdr_(bdr_) {}
@@ -430,14 +420,13 @@ public:
 
   /// @brief Copy/clone constructor
   BoundaryCore(const BoundaryCore &other, bool clone)
-    : bdr_(clone ?
-           std::apply([](const auto &...bspline) {
-             return std::make_tuple(bspline.clone()...);
-           },
-             other.coeffs()) :
-           other.coeffs())
-  {}
-  
+      : bdr_(clone ? std::apply(
+                         [](const auto &...bspline) {
+                           return std::make_tuple(bspline.clone()...);
+                         },
+                         other.coeffs())
+                   : other.coeffs()) {}
+
   /// @brief Constructor
   BoundaryCore(const std::array<int64_t, 3> &ncoeffs,
                enum init init = init::zeros,
@@ -641,17 +630,16 @@ public:
                  std::array<torch::Tensor, 3>, std::array<torch::Tensor, 3>>;
 
   /// @brief Default constructor
-  BoundaryCore(Options<typename Spline::value_type> options = Options<typename Spline::value_type>{})
-    : bdr_({
-        std::tuple_element_t<0, boundary_spline_type>(options),
-        std::tuple_element_t<0, boundary_spline_type>(options),
-        std::tuple_element_t<1, boundary_spline_type>(options),
-        std::tuple_element_t<1, boundary_spline_type>(options),
-        std::tuple_element_t<2, boundary_spline_type>(options),
-        std::tuple_element_t<2, boundary_spline_type>(options),
-        std::tuple_element_t<3, boundary_spline_type>(options),
-        std::tuple_element_t<3, boundary_spline_type>(options)
-      }) {}
+  BoundaryCore(Options<typename Spline::value_type> options =
+                   Options<typename Spline::value_type>{})
+      : bdr_({std::tuple_element_t<0, boundary_spline_type>(options),
+              std::tuple_element_t<0, boundary_spline_type>(options),
+              std::tuple_element_t<1, boundary_spline_type>(options),
+              std::tuple_element_t<1, boundary_spline_type>(options),
+              std::tuple_element_t<2, boundary_spline_type>(options),
+              std::tuple_element_t<2, boundary_spline_type>(options),
+              std::tuple_element_t<3, boundary_spline_type>(options),
+              std::tuple_element_t<3, boundary_spline_type>(options)}) {}
 
   /// @brief Copy constructor
   BoundaryCore(const boundary_type &bdr_) : bdr_(bdr_) {}
@@ -661,14 +649,13 @@ public:
 
   /// @brief Copy/clone constructor
   BoundaryCore(const BoundaryCore &other, bool clone)
-    : bdr_(clone ?
-           std::apply([](const auto &...bspline) {
-             return std::make_tuple(bspline.clone()...);
-           },
-             other.coeffs()) :
-           other.coeffs())
-  {}
-  
+      : bdr_(clone ? std::apply(
+                         [](const auto &...bspline) {
+                           return std::make_tuple(bspline.clone()...);
+                         },
+                         other.coeffs())
+                   : other.coeffs()) {}
+
   /// @brief Constructor
   BoundaryCore(const std::array<int64_t, 4> &ncoeffs,
                enum init init = init::zeros,
@@ -825,7 +812,7 @@ template <typename BoundaryCore> class BoundaryCommon : public BoundaryCore {
 public:
   /// @brief Constructors from the base class
   using BoundaryCore::BoundaryCore;
-  
+
 private:
   /// @brief Returns all coefficients of all spline objects as a
   /// single tensor
@@ -1125,90 +1112,113 @@ public:
   /// knot and coefficient vectors
   inline auto &uniform_refine(int numRefine = 1, int dim = -1) {
     if (dim == -1)
-      uniform_refine_(std::make_index_sequence<BoundaryCore::sides()>{}, numRefine, dim);
+      uniform_refine_(std::make_index_sequence<BoundaryCore::sides()>{},
+                      numRefine, dim);
     else if (dim == 0) {
-      if constexpr (BoundaryCore::sides() == 2) {}
-      else if constexpr (BoundaryCore::sides() == 4) {
-        std::get<side::south-1>(BoundaryCore::bdr_).uniform_refine(numRefine, 0);
-        std::get<side::north-1>(BoundaryCore::bdr_).uniform_refine(numRefine, 0);
-      }
-      else if constexpr (BoundaryCore::sides() == 6) {
-        std::get<side::south-1>(BoundaryCore::bdr_).uniform_refine(numRefine, 0);
-        std::get<side::north-1>(BoundaryCore::bdr_).uniform_refine(numRefine, 0);
-        std::get<side::front-1>(BoundaryCore::bdr_).uniform_refine(numRefine, 0);
-        std::get<side::back -1>(BoundaryCore::bdr_).uniform_refine(numRefine, 0);
-      }
-      else if constexpr (BoundaryCore::sides() == 8) {
-        std::get<side::south-1>(BoundaryCore::bdr_).uniform_refine(numRefine, 0);
-        std::get<side::north-1>(BoundaryCore::bdr_).uniform_refine(numRefine, 0);
-        std::get<side::front-1>(BoundaryCore::bdr_).uniform_refine(numRefine, 0);
-        std::get<side::back -1>(BoundaryCore::bdr_).uniform_refine(numRefine, 0);
-        std::get<side::stime-1>(BoundaryCore::bdr_).uniform_refine(numRefine, 0);
-        std::get<side::etime-1>(BoundaryCore::bdr_).uniform_refine(numRefine, 0);
-      }
-      else
-        throw std::runtime_error(
-                                 "Invalid dimension");
-    }
-    else if (dim == 1) {
+      if constexpr (BoundaryCore::sides() == 2) {
+      } else if constexpr (BoundaryCore::sides() == 4) {
+        std::get<side::south - 1>(BoundaryCore::bdr_)
+            .uniform_refine(numRefine, 0);
+        std::get<side::north - 1>(BoundaryCore::bdr_)
+            .uniform_refine(numRefine, 0);
+      } else if constexpr (BoundaryCore::sides() == 6) {
+        std::get<side::south - 1>(BoundaryCore::bdr_)
+            .uniform_refine(numRefine, 0);
+        std::get<side::north - 1>(BoundaryCore::bdr_)
+            .uniform_refine(numRefine, 0);
+        std::get<side::front - 1>(BoundaryCore::bdr_)
+            .uniform_refine(numRefine, 0);
+        std::get<side::back - 1>(BoundaryCore::bdr_)
+            .uniform_refine(numRefine, 0);
+      } else if constexpr (BoundaryCore::sides() == 8) {
+        std::get<side::south - 1>(BoundaryCore::bdr_)
+            .uniform_refine(numRefine, 0);
+        std::get<side::north - 1>(BoundaryCore::bdr_)
+            .uniform_refine(numRefine, 0);
+        std::get<side::front - 1>(BoundaryCore::bdr_)
+            .uniform_refine(numRefine, 0);
+        std::get<side::back - 1>(BoundaryCore::bdr_)
+            .uniform_refine(numRefine, 0);
+        std::get<side::stime - 1>(BoundaryCore::bdr_)
+            .uniform_refine(numRefine, 0);
+        std::get<side::etime - 1>(BoundaryCore::bdr_)
+            .uniform_refine(numRefine, 0);
+      } else
+        throw std::runtime_error("Invalid dimension");
+    } else if (dim == 1) {
       if constexpr (BoundaryCore::sides() == 4) {
-        std::get<side::east-1>(BoundaryCore::bdr_).uniform_refine(numRefine, 0);
-        std::get<side::west-1>(BoundaryCore::bdr_).uniform_refine(numRefine, 0);
-      }
-      else if constexpr (BoundaryCore::sides() == 6) {
-        std::get<side::east -1>(BoundaryCore::bdr_).uniform_refine(numRefine, 0);
-        std::get<side::west -1>(BoundaryCore::bdr_).uniform_refine(numRefine, 0);
-        std::get<side::front-1>(BoundaryCore::bdr_).uniform_refine(numRefine, 1);
-        std::get<side::back -1>(BoundaryCore::bdr_).uniform_refine(numRefine, 1);
-        
-      }
-      else if constexpr (BoundaryCore::sides() == 8) {
-        std::get<side::east -1>(BoundaryCore::bdr_).uniform_refine(numRefine, 0);
-        std::get<side::west -1>(BoundaryCore::bdr_).uniform_refine(numRefine, 0);
-        std::get<side::front-1>(BoundaryCore::bdr_).uniform_refine(numRefine, 1);
-        std::get<side::back -1>(BoundaryCore::bdr_).uniform_refine(numRefine, 1);
-        std::get<side::stime-1>(BoundaryCore::bdr_).uniform_refine(numRefine, 1);
-        std::get<side::etime-1>(BoundaryCore::bdr_).uniform_refine(numRefine, 1);
-      }
-      else
-        throw std::runtime_error(
-                                 "Invalid dimension");
-    }
-    else if (dim == 2) {
+        std::get<side::east - 1>(BoundaryCore::bdr_)
+            .uniform_refine(numRefine, 0);
+        std::get<side::west - 1>(BoundaryCore::bdr_)
+            .uniform_refine(numRefine, 0);
+      } else if constexpr (BoundaryCore::sides() == 6) {
+        std::get<side::east - 1>(BoundaryCore::bdr_)
+            .uniform_refine(numRefine, 0);
+        std::get<side::west - 1>(BoundaryCore::bdr_)
+            .uniform_refine(numRefine, 0);
+        std::get<side::front - 1>(BoundaryCore::bdr_)
+            .uniform_refine(numRefine, 1);
+        std::get<side::back - 1>(BoundaryCore::bdr_)
+            .uniform_refine(numRefine, 1);
+
+      } else if constexpr (BoundaryCore::sides() == 8) {
+        std::get<side::east - 1>(BoundaryCore::bdr_)
+            .uniform_refine(numRefine, 0);
+        std::get<side::west - 1>(BoundaryCore::bdr_)
+            .uniform_refine(numRefine, 0);
+        std::get<side::front - 1>(BoundaryCore::bdr_)
+            .uniform_refine(numRefine, 1);
+        std::get<side::back - 1>(BoundaryCore::bdr_)
+            .uniform_refine(numRefine, 1);
+        std::get<side::stime - 1>(BoundaryCore::bdr_)
+            .uniform_refine(numRefine, 1);
+        std::get<side::etime - 1>(BoundaryCore::bdr_)
+            .uniform_refine(numRefine, 1);
+      } else
+        throw std::runtime_error("Invalid dimension");
+    } else if (dim == 2) {
       if constexpr (BoundaryCore::sides() == 6) {
-        std::get<side::east -1>(BoundaryCore::bdr_).uniform_refine(numRefine, 1);
-        std::get<side::west -1>(BoundaryCore::bdr_).uniform_refine(numRefine, 1);
-        std::get<side::north-1>(BoundaryCore::bdr_).uniform_refine(numRefine, 1);
-        std::get<side::south-1>(BoundaryCore::bdr_).uniform_refine(numRefine, 1);
-      }
-      else if constexpr (BoundaryCore::sides() == 8) {
-        std::get<side::west -1>(BoundaryCore::bdr_).uniform_refine(numRefine, 1);
-        std::get<side::east -1>(BoundaryCore::bdr_).uniform_refine(numRefine, 1);
-        std::get<side::south-1>(BoundaryCore::bdr_).uniform_refine(numRefine, 1);
-        std::get<side::north-1>(BoundaryCore::bdr_).uniform_refine(numRefine, 1);
-        std::get<side::stime-1>(BoundaryCore::bdr_).uniform_refine(numRefine, 2);
-        std::get<side::etime-1>(BoundaryCore::bdr_).uniform_refine(numRefine, 2);
-      }
-      else
-        throw std::runtime_error(
-                                 "Invalid dimension");
-    }
-    else if (dim == 3) {
+        std::get<side::east - 1>(BoundaryCore::bdr_)
+            .uniform_refine(numRefine, 1);
+        std::get<side::west - 1>(BoundaryCore::bdr_)
+            .uniform_refine(numRefine, 1);
+        std::get<side::north - 1>(BoundaryCore::bdr_)
+            .uniform_refine(numRefine, 1);
+        std::get<side::south - 1>(BoundaryCore::bdr_)
+            .uniform_refine(numRefine, 1);
+      } else if constexpr (BoundaryCore::sides() == 8) {
+        std::get<side::west - 1>(BoundaryCore::bdr_)
+            .uniform_refine(numRefine, 1);
+        std::get<side::east - 1>(BoundaryCore::bdr_)
+            .uniform_refine(numRefine, 1);
+        std::get<side::south - 1>(BoundaryCore::bdr_)
+            .uniform_refine(numRefine, 1);
+        std::get<side::north - 1>(BoundaryCore::bdr_)
+            .uniform_refine(numRefine, 1);
+        std::get<side::stime - 1>(BoundaryCore::bdr_)
+            .uniform_refine(numRefine, 2);
+        std::get<side::etime - 1>(BoundaryCore::bdr_)
+            .uniform_refine(numRefine, 2);
+      } else
+        throw std::runtime_error("Invalid dimension");
+    } else if (dim == 3) {
       if constexpr (BoundaryCore::sides() == 8) {
-        std::get<side::west -1>(BoundaryCore::bdr_).uniform_refine(numRefine, 2);
-        std::get<side::east -1>(BoundaryCore::bdr_).uniform_refine(numRefine, 2);
-        std::get<side::south-1>(BoundaryCore::bdr_).uniform_refine(numRefine, 2);
-        std::get<side::north-1>(BoundaryCore::bdr_).uniform_refine(numRefine, 2);
-        std::get<side::front-1>(BoundaryCore::bdr_).uniform_refine(numRefine, 2);
-        std::get<side::back -1>(BoundaryCore::bdr_).uniform_refine(numRefine, 2);
-      }
-      else
-        throw std::runtime_error(
-                                 "Invalid dimension");
-    }
-    else
-      throw std::runtime_error(
-                               "Invalid dimension");
+        std::get<side::west - 1>(BoundaryCore::bdr_)
+            .uniform_refine(numRefine, 2);
+        std::get<side::east - 1>(BoundaryCore::bdr_)
+            .uniform_refine(numRefine, 2);
+        std::get<side::south - 1>(BoundaryCore::bdr_)
+            .uniform_refine(numRefine, 2);
+        std::get<side::north - 1>(BoundaryCore::bdr_)
+            .uniform_refine(numRefine, 2);
+        std::get<side::front - 1>(BoundaryCore::bdr_)
+            .uniform_refine(numRefine, 2);
+        std::get<side::back - 1>(BoundaryCore::bdr_)
+            .uniform_refine(numRefine, 2);
+      } else
+        throw std::runtime_error("Invalid dimension");
+    } else
+      throw std::runtime_error("Invalid dimension");
     return *this;
   }
 
@@ -1232,7 +1242,7 @@ public:
     torch::serialize::OutputArchive archive;
     write(archive, key).save_to(filename);
   }
-  
+
   /// @brief Writes the boundary spline object into a
   /// torch::serialize::OutputArchive object
   inline torch::serialize::OutputArchive &
@@ -1263,7 +1273,7 @@ public:
     archive.load_from(filename);
     read(archive, key);
   }
-  
+
   /// @brief Loads the boundary spline object from a
   /// torch::serialize::InputArchive object
   inline torch::serialize::InputArchive &
@@ -1274,15 +1284,15 @@ public:
   }
 
   /// @brief Returns the boundary object as XML object
-  inline pugi::xml_document to_xml(int id = 0,
-                                   std::string label = "", int index = -1) const {
+  inline pugi::xml_document to_xml(int id = 0, std::string label = "",
+                                   int index = -1) const {
     pugi::xml_document doc;
     pugi::xml_node root = doc.append_child("xml");
     to_xml(root, id, label, index);
 
     return doc;
   }
-  
+
   /// @brief Returns the boundary object as XML node
   inline pugi::xml_node &to_xml(pugi::xml_node &root, int id = 0,
                                 std::string label = "", int index = -1) const {
@@ -1291,17 +1301,19 @@ public:
 
     if (id >= 0)
       bdr.append_attribute("id") = id;
-    
+
     if (index >= 0)
       bdr.append_attribute("index") = index;
-    
+
     if (!label.empty())
       bdr.append_attribute("label") = label.c_str();
 
     int index_ = 0;
-    std::apply([&bdr, &index_](const auto &...bspline) {
-      (bspline.to_xml(bdr, -1, "", index_++),...);
-    }, BoundaryCore::bdr_);
+    std::apply(
+        [&bdr, &index_](const auto &...bspline) {
+          (bspline.to_xml(bdr, -1, "", index_++), ...);
+        },
+        BoundaryCore::bdr_);
 
     return root;
   }
@@ -1311,7 +1323,7 @@ public:
                                   std::string label = "", int index = -1) {
     return from_xml(doc.child("xml"), id, label, index);
   }
-  
+
   /// @brief Updates the boundary object from XML node
   inline BoundaryCommon &from_xml(const pugi::xml_node &root, int id = 0,
                                   std::string label = "", int index = -1) {
@@ -1325,18 +1337,19 @@ public:
           (!label.empty() ? bdr.attribute("label").value() == label : true)) {
 
         int index_ = 0;
-        std::apply([&bdr, &index_](auto &...bspline) {
-          (bspline.from_xml(bdr, -1, "", index_++),...);
-        }, BoundaryCore::bdr_);
-        
+        std::apply(
+            [&bdr, &index_](auto &...bspline) {
+              (bspline.from_xml(bdr, -1, "", index_++), ...);
+            },
+            BoundaryCore::bdr_);
+
         return *this;
-      }
-      else
+      } else
         continue; // try next "Boundary"
     }
 
-    throw std::runtime_error(
-                             "XML object does not provide geometry with given id, index, and/or label");
+    throw std::runtime_error("XML object does not provide geometry with given "
+                             "id, index, and/or label");
     return *this;
   }
 
@@ -1350,7 +1363,7 @@ private:
         (std::get<Is>(BoundaryCore::bdr_) == std::get<Is>(other.coeffs())) &&
         ...);
   }
-  
+
 public:
   /// @brief Returns true if both boundary objects are the same
   template <typename BoundaryCore_>
@@ -1367,26 +1380,31 @@ public:
   }
 
 private:
-  /// @brief Returns true if both boundary spline objects are close up to the given tolerances
+  /// @brief Returns true if both boundary spline objects are close up to the
+  /// given tolerances
   template <typename BoundaryCore_, size_t... Is>
-  inline bool isclose_(std::index_sequence<Is...>,
-                       const BoundaryCommon<BoundaryCore_> &other,
-                       typename BoundaryCore::spline_type::value_type rtol,
-                       typename BoundaryCore::spline_type::value_type atol) const {
-    return (
-            (std::get<Is>(BoundaryCore::bdr_).isclose(std::get<Is>(other.coeffs()))) &&
+  inline bool
+  isclose_(std::index_sequence<Is...>,
+           const BoundaryCommon<BoundaryCore_> &other,
+           typename BoundaryCore::spline_type::value_type rtol,
+           typename BoundaryCore::spline_type::value_type atol) const {
+    return ((std::get<Is>(BoundaryCore::bdr_)
+                 .isclose(std::get<Is>(other.coeffs()))) &&
             ...);
   }
 
 public:
-  /// @brief Returns true if both boundary objects are close up to the given tolerances
+  /// @brief Returns true if both boundary objects are close up to the given
+  /// tolerances
   template <typename BoundaryCore_>
-  inline bool isclose(const BoundaryCommon<BoundaryCore_> &other,
-                      typename BoundaryCore::spline_type::value_type rtol =
-                      typename BoundaryCore::spline_type::value_type{1e-5},
-                      typename BoundaryCore::spline_type::value_type atol =
-                      typename BoundaryCore::spline_type::value_type{1e-8}) const {
-    return isclose_(std::make_index_sequence<BoundaryCore::sides()>{}, other, rtol, atol);
+  inline bool
+  isclose(const BoundaryCommon<BoundaryCore_> &other,
+          typename BoundaryCore::spline_type::value_type rtol =
+              typename BoundaryCore::spline_type::value_type{1e-5},
+          typename BoundaryCore::spline_type::value_type atol =
+              typename BoundaryCore::spline_type::value_type{1e-8}) const {
+    return isclose_(std::make_index_sequence<BoundaryCore::sides()>{}, other,
+                    rtol, atol);
   }
 
 #define GENERATE_EXPR_MACRO(r, data, name)                                     \

@@ -824,33 +824,33 @@ int main(int argc, char const *argv[]) {
                            // Create vector if ids and array of models
                            std::vector<int64_t> ids;
                            auto models = nlohmann::json::array();
-                           
+
                            // Loop over all instances
                            for (const auto &instance : instances) {
-                             
+
                              // Get new model's id
                              int64_t id =
-                               (session->models.size() > 0
-                                ? session->models.crbegin()->first + 1
-                                : 0);
-                             
+                                 (session->models.size() > 0
+                                      ? session->models.crbegin()->first + 1
+                                      : 0);
+
                              nlohmann::json request;
                              request["data"]["binary"] = instance;
-                             
+
                              // Create a new model instance from binary data
                              // stream
                              session->models[id] =
-                               ws->getUserData()->models.load(request);
+                                 ws->getUserData()->models.load(request);
                              ids.push_back(id);
                              models.push_back(session->models[id]->getModel());
-                             
+
                              // Broadcast creation of a new model instance
                              nlohmann::json broadcast;
                              broadcast["id"] = session->getUUID();
                              broadcast["request"] = "create/instance";
                              broadcast["data"]["id"] = id;
                              broadcast["data"]["model"] =
-                               session->models[id]->getModel();
+                                 session->models[id]->getModel();
                              ws->publish(session->getUUID(), broadcast.dump(),
                                          uWS::OpCode::TEXT);
                            }

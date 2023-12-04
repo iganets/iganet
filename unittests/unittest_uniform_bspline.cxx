@@ -593,7 +593,7 @@ TEST_F(BSplineTest, UniformBSpline_copy_constructor) {
   bspline_orig.transform([](const std::array<real_t, 2> xi) {
     return std::array<real_t, 3>{0.0_r, 1.0_r, 2.0_r};
   });
-  
+
   EXPECT_TRUE(bspline_orig == bspline_copy);
 }
 
