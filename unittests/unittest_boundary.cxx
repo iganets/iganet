@@ -22,6 +22,10 @@
 using namespace iganet::unittests::literals;
 
 class BoundaryTest : public ::testing::Test {
+public:
+  BoundaryTest()
+  { std::srand(std::time(nullptr)); }
+  
 protected:
   using real_t = iganet::unittests::real_t;
   iganet::Options<real_t> options;
@@ -1597,44 +1601,44 @@ TEST_F(BoundaryTest, Boundary_load_from_xml) {
 
     boundary_ref.side<iganet::side::east>().transform(
         [](const std::array<real_t, 2> xi) {
-          return std::array<real_t, 3>{static_cast<real_t>(std::rand()),
-                                       static_cast<real_t>(std::rand()),
-                                       static_cast<real_t>(std::rand())};
+          return std::array<real_t, 3>{xi[0]+xi[1] + 1,
+                                       xi[0]+xi[1] + 2,
+                                       xi[0]+xi[1] + 3};
         });
 
     boundary_ref.side<iganet::side::west>().transform(
         [](const std::array<real_t, 2> xi) {
-          return std::array<real_t, 3>{static_cast<real_t>(std::rand()),
-                                       static_cast<real_t>(std::rand()),
-                                       static_cast<real_t>(std::rand())};
+          return std::array<real_t, 3>{xi[0]+xi[1] + 11,
+                                       xi[0]+xi[1] + 12,
+                                       xi[0]+xi[1] + 13};
         });
 
     boundary_ref.side<iganet::side::north>().transform(
         [](const std::array<real_t, 2> xi) {
-          return std::array<real_t, 3>{static_cast<real_t>(std::rand()),
-                                       static_cast<real_t>(std::rand()),
-                                       static_cast<real_t>(std::rand())};
+          return std::array<real_t, 3>{xi[0]+xi[1] + 21,
+                                       xi[0]+xi[1] + 22,
+                                       xi[0]+xi[1] + 23};
         });
 
     boundary_ref.side<iganet::side::south>().transform(
         [](const std::array<real_t, 2> xi) {
-          return std::array<real_t, 3>{static_cast<real_t>(std::rand()),
-                                       static_cast<real_t>(std::rand()),
-                                       static_cast<real_t>(std::rand())};
+          return std::array<real_t, 3>{xi[0]+xi[1] + 31,
+                                       xi[0]+xi[1] + 32,
+                                       xi[0]+xi[1] + 33};
         });
 
     boundary_ref.side<iganet::side::front>().transform(
         [](const std::array<real_t, 2> xi) {
-          return std::array<real_t, 3>{static_cast<real_t>(std::rand()),
-                                       static_cast<real_t>(std::rand()),
-                                       static_cast<real_t>(std::rand())};
+          return std::array<real_t, 3>{xi[0]+xi[1] + 41,
+                                       xi[0]+xi[1] + 42,
+                                       xi[0]+xi[1] + 43};
         });
 
     boundary_ref.side<iganet::side::back>().transform(
         [](const std::array<real_t, 2> xi) {
-          return std::array<real_t, 3>{static_cast<real_t>(std::rand()),
-                                       static_cast<real_t>(std::rand()),
-                                       static_cast<real_t>(std::rand())};
+          return std::array<real_t, 3>{xi[0]+xi[1] + 51,
+                                       xi[0]+xi[1] + 52,
+                                       xi[0]+xi[1] + 53};
         });
 
     EXPECT_TRUE(boundary_in.isclose(boundary_ref));
@@ -1654,50 +1658,50 @@ TEST_F(BoundaryTest, Boundary_load_from_xml) {
 
     boundary_ref.side<iganet::side::east>().transform(
         [](const std::array<real_t, 3> xi) {
-          return std::array<real_t, 2>{static_cast<real_t>(std::rand()),
-                                       static_cast<real_t>(std::rand())};
+          return std::array<real_t, 2>{xi[0] + xi[1] + xi[2] + 1,
+                                       xi[0] + xi[1] + xi[2] + 2};
         });
 
     boundary_ref.side<iganet::side::west>().transform(
         [](const std::array<real_t, 3> xi) {
-          return std::array<real_t, 2>{static_cast<real_t>(std::rand()),
-                                       static_cast<real_t>(std::rand())};
+          return std::array<real_t, 2>{xi[0] + xi[1] + xi[2] + 11,
+                                       xi[0] + xi[1] + xi[2] + 12};
         });
 
     boundary_ref.side<iganet::side::north>().transform(
         [](const std::array<real_t, 3> xi) {
-          return std::array<real_t, 2>{static_cast<real_t>(std::rand()),
-                                       static_cast<real_t>(std::rand())};
+          return std::array<real_t, 2>{xi[0] + xi[1] + xi[2] + 21,
+                                       xi[0] + xi[1] + xi[2] + 22};
         });
 
     boundary_ref.side<iganet::side::south>().transform(
         [](const std::array<real_t, 3> xi) {
-          return std::array<real_t, 2>{static_cast<real_t>(std::rand()),
-                                       static_cast<real_t>(std::rand())};
+          return std::array<real_t, 2>{xi[0] + xi[1] + xi[2] + 31,
+                                       xi[0] + xi[1] + xi[2] + 32};
         });
 
     boundary_ref.side<iganet::side::front>().transform(
         [](const std::array<real_t, 3> xi) {
-          return std::array<real_t, 2>{static_cast<real_t>(std::rand()),
-                                       static_cast<real_t>(std::rand())};
+          return std::array<real_t, 2>{xi[0] + xi[1] + xi[2] + 41,
+                                       xi[0] + xi[1] + xi[2] + 42};
         });
 
     boundary_ref.side<iganet::side::back>().transform(
         [](const std::array<real_t, 3> xi) {
-          return std::array<real_t, 2>{static_cast<real_t>(std::rand()),
-                                       static_cast<real_t>(std::rand())};
+          return std::array<real_t, 2>{xi[0] + xi[1] + xi[2] + 51,
+                                       xi[0] + xi[1] + xi[2] + 52};
         });
 
     boundary_ref.side<iganet::side::stime>().transform(
         [](const std::array<real_t, 3> xi) {
-          return std::array<real_t, 2>{static_cast<real_t>(std::rand()),
-                                       static_cast<real_t>(std::rand())};
+          return std::array<real_t, 2>{xi[0] + xi[1] + xi[2] + 61,
+                                       xi[0] + xi[1] + xi[2] + 62};
         });
 
     boundary_ref.side<iganet::side::etime>().transform(
         [](const std::array<real_t, 3> xi) {
-          return std::array<real_t, 2>{static_cast<real_t>(std::rand()),
-                                       static_cast<real_t>(std::rand())};
+          return std::array<real_t, 2>{xi[0] + xi[1] + xi[2] + 71,
+                                       xi[0] + xi[1] + xi[2] + 72};
         });
 
     EXPECT_TRUE(boundary_in.isclose(boundary_ref));

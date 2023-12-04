@@ -22,6 +22,10 @@
 using namespace iganet::unittests::literals;
 
 class BSplineTest : public ::testing::Test {
+public:
+  BSplineTest()
+  { std::srand(std::time(nullptr)); }
+  
 protected:
   using real_t = iganet::unittests::real_t;
   iganet::Options<real_t> options;
