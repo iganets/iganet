@@ -1708,7 +1708,185 @@ TEST_F(BoundaryTest, Boundary_load_from_xml) {
   }
 }
 
-TEST_F(BoundaryTest, Boundary_to_from_json) {}
+TEST_F(BoundaryTest, Boundary_to_from_json) {
+  {
+    using BSpline = iganet::UniformBSpline<real_t, 4, 2>;
+    iganet::Boundary<BSpline> boundary_out({5}, iganet::init::greville,
+                                           options);
+
+    boundary_out.side<iganet::side::east>().transform(
+        [](const std::array<real_t, 0>) {
+          return std::array<real_t, 4>{static_cast<real_t>(std::rand()),
+                                       static_cast<real_t>(std::rand()),
+                                       static_cast<real_t>(std::rand()),
+                                       static_cast<real_t>(std::rand())};
+        });
+
+    boundary_out.side<iganet::side::west>().transform(
+        [](const std::array<real_t, 0>) {
+          return std::array<real_t, 4>{static_cast<real_t>(std::rand()),
+                                       static_cast<real_t>(std::rand()),
+                                       static_cast<real_t>(std::rand()),
+                                       static_cast<real_t>(std::rand())};
+        });
+
+    nlohmann::json json = boundary_out.to_json();
+
+    iganet::Boundary<BSpline> boundary_in(options);
+    boundary_in.from_json(json);
+
+    EXPECT_TRUE(boundary_in.isclose(boundary_out));
+  }
+
+  {
+    using BSpline = iganet::UniformBSpline<real_t, 1, 2, 3>;
+    iganet::Boundary<BSpline> boundary_out({5, 4}, iganet::init::greville,
+                                           options);
+
+    boundary_out.side<iganet::side::east>().transform(
+        [](const std::array<real_t, 1> xi) {
+          return std::array<real_t, 1>{static_cast<real_t>(std::rand())};
+        });
+
+    boundary_out.side<iganet::side::west>().transform(
+        [](const std::array<real_t, 1> xi) {
+          return std::array<real_t, 1>{static_cast<real_t>(std::rand())};
+        });
+
+    boundary_out.side<iganet::side::north>().transform(
+        [](const std::array<real_t, 1> xi) {
+          return std::array<real_t, 1>{static_cast<real_t>(std::rand())};
+        });
+
+    boundary_out.side<iganet::side::south>().transform(
+        [](const std::array<real_t, 1> xi) {
+          return std::array<real_t, 1>{static_cast<real_t>(std::rand())};
+        });
+
+    nlohmann::json json = boundary_out.to_json();
+
+    iganet::Boundary<BSpline> boundary_in(options);
+    boundary_in.from_json(json);
+
+    EXPECT_TRUE(boundary_in.isclose(boundary_out));
+  }
+
+  {
+    using BSpline = iganet::UniformBSpline<real_t, 3, 2, 3, 2>;
+    iganet::Boundary<BSpline> boundary_out({5, 4, 5}, iganet::init::greville,
+                                           options);
+
+    boundary_out.side<iganet::side::east>().transform(
+        [](const std::array<real_t, 2> xi) {
+          return std::array<real_t, 3>{static_cast<real_t>(std::rand()),
+                                       static_cast<real_t>(std::rand()),
+                                       static_cast<real_t>(std::rand())};
+        });
+
+    boundary_out.side<iganet::side::west>().transform(
+        [](const std::array<real_t, 2> xi) {
+          return std::array<real_t, 3>{static_cast<real_t>(std::rand()),
+                                       static_cast<real_t>(std::rand()),
+                                       static_cast<real_t>(std::rand())};
+        });
+
+    boundary_out.side<iganet::side::north>().transform(
+        [](const std::array<real_t, 2> xi) {
+          return std::array<real_t, 3>{static_cast<real_t>(std::rand()),
+                                       static_cast<real_t>(std::rand()),
+                                       static_cast<real_t>(std::rand())};
+        });
+
+    boundary_out.side<iganet::side::south>().transform(
+        [](const std::array<real_t, 2> xi) {
+          return std::array<real_t, 3>{static_cast<real_t>(std::rand()),
+                                       static_cast<real_t>(std::rand()),
+                                       static_cast<real_t>(std::rand())};
+        });
+
+    boundary_out.side<iganet::side::front>().transform(
+        [](const std::array<real_t, 2> xi) {
+          return std::array<real_t, 3>{static_cast<real_t>(std::rand()),
+                                       static_cast<real_t>(std::rand()),
+                                       static_cast<real_t>(std::rand())};
+        });
+
+    boundary_out.side<iganet::side::back>().transform(
+        [](const std::array<real_t, 2> xi) {
+          return std::array<real_t, 3>{static_cast<real_t>(std::rand()),
+                                       static_cast<real_t>(std::rand()),
+                                       static_cast<real_t>(std::rand())};
+        });
+
+    nlohmann::json json = boundary_out.to_json();
+
+    iganet::Boundary<BSpline> boundary_in(options);
+    boundary_in.from_json(json);
+
+    EXPECT_TRUE(boundary_in.isclose(boundary_out));
+  }
+
+  {
+    using BSpline = iganet::UniformBSpline<real_t, 2, 2, 3, 2, 3>;
+    iganet::Boundary<BSpline> boundary_out({5, 4, 5, 6}, iganet::init::greville,
+                                           options);
+
+    boundary_out.side<iganet::side::east>().transform(
+        [](const std::array<real_t, 3> xi) {
+          return std::array<real_t, 2>{static_cast<real_t>(std::rand()),
+                                       static_cast<real_t>(std::rand())};
+        });
+
+    boundary_out.side<iganet::side::west>().transform(
+        [](const std::array<real_t, 3> xi) {
+          return std::array<real_t, 2>{static_cast<real_t>(std::rand()),
+                                       static_cast<real_t>(std::rand())};
+        });
+
+    boundary_out.side<iganet::side::north>().transform(
+        [](const std::array<real_t, 3> xi) {
+          return std::array<real_t, 2>{static_cast<real_t>(std::rand()),
+                                       static_cast<real_t>(std::rand())};
+        });
+
+    boundary_out.side<iganet::side::south>().transform(
+        [](const std::array<real_t, 3> xi) {
+          return std::array<real_t, 2>{static_cast<real_t>(std::rand()),
+                                       static_cast<real_t>(std::rand())};
+        });
+
+    boundary_out.side<iganet::side::front>().transform(
+        [](const std::array<real_t, 3> xi) {
+          return std::array<real_t, 2>{static_cast<real_t>(std::rand()),
+                                       static_cast<real_t>(std::rand())};
+        });
+
+    boundary_out.side<iganet::side::back>().transform(
+        [](const std::array<real_t, 3> xi) {
+          return std::array<real_t, 2>{static_cast<real_t>(std::rand()),
+                                       static_cast<real_t>(std::rand())};
+        });
+
+    boundary_out.side<iganet::side::stime>().transform(
+        [](const std::array<real_t, 3> xi) {
+          return std::array<real_t, 2>{static_cast<real_t>(std::rand()),
+                                       static_cast<real_t>(std::rand())};
+        });
+
+    boundary_out.side<iganet::side::etime>().transform(
+        [](const std::array<real_t, 3> xi) {
+          return std::array<real_t, 2>{static_cast<real_t>(std::rand()),
+                                       static_cast<real_t>(std::rand())};
+        });
+
+    nlohmann::json json = boundary_out.to_json();
+
+    iganet::Boundary<BSpline> boundary_in(options);
+    boundary_in.from_json(json);
+
+    EXPECT_TRUE(boundary_in.isclose(boundary_out));
+  }  
+}
 
 TEST_F(BoundaryTest, Boundary_query_property) {
   using BSpline = iganet::UniformBSpline<real_t, 1, 2, 3, 4>;
