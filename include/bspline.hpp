@@ -1921,8 +1921,13 @@ public:
 
       auto json = nlohmann::json::array();
 
+      // 0D
+      if constexpr (parDim_ == 0) {
+        json.push_back(coeffs_accessor[0]);
+      }
+      
       // 1D
-      if constexpr (parDim_ == 1) {
+      else if constexpr (parDim_ == 1) {
         for (int64_t i = 0; i < ncumcoeffs(); ++i)
           json.push_back(coeffs_accessor[i]);
       }
