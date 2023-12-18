@@ -61,20 +61,20 @@ protected:
       if (nsamples == 1) {
         auto splinelib_bspline = to_bsplinelib_bspline(bspline);
 
-        // B-spline evaluation
+        // B-spline evaluation (parametric dim = 1)
         using ParametricCoordinate =
             typename decltype(splinelib_bspline)::ParametricCoordinate_;
-        using ScalarParametricCoordinate =
-            typename ParametricCoordinate::value_type;
         using Derivative =
             typename decltype(splinelib_bspline)::ParameterSpace_::Derivative_;
-        using ScalarDerivative = typename Derivative::value_type;
+        using Coordinate = typename decltype(splinelib_bspline)::Coordinate_;
+
+        ParametricCoordinate query{0.5};
+        Derivative der_query{(iganet::short_t) deriv % 10};
+        Coordinate result(GeoDim);
 
         auto t1 = std::chrono::high_resolution_clock::now();
         for (int i = 0; i < 1000; i++)
-          splinelib_bspline(
-              ParametricCoordinate{ScalarParametricCoordinate{0.5}},
-              Derivative{ScalarDerivative{(iganet::short_t)deriv % 10}});
+          splinelib_bspline.EvaluateDerivative(query.data(), der_query.data(), result.data());
         auto t2 = std::chrono::high_resolution_clock::now();
         std::cout << std::right << std::setw(10)
                   << std::chrono::duration_cast<std::chrono::nanoseconds>(t2 -
@@ -124,19 +124,18 @@ protected:
         // B-spline evaluation
         using ParametricCoordinate =
             typename decltype(splinelib_bspline)::ParametricCoordinate_;
-        using ScalarParametricCoordinate =
-            typename ParametricCoordinate::value_type;
         using Derivative =
             typename decltype(splinelib_bspline)::ParameterSpace_::Derivative_;
-        using ScalarDerivative = typename Derivative::value_type;
+        using Coordinate = typename decltype(splinelib_bspline)::Coordinate_;
+
+        ParametricCoordinate query{0.5, 0.5};
+        Derivative der_query{(iganet::short_t) deriv % 10,
+                             ((iganet::short_t)deriv / 10) % 10};
+        Coordinate result(GeoDim);
 
         auto t1 = std::chrono::high_resolution_clock::now();
         for (int i = 0; i < 1000; i++)
-          splinelib_bspline(
-              ParametricCoordinate{ScalarParametricCoordinate{0.5},
-                                   ScalarParametricCoordinate{0.5}},
-              Derivative{ScalarDerivative{(iganet::short_t)deriv % 10},
-                         ScalarDerivative{((iganet::short_t)deriv / 10) % 10}});
+          splinelib_bspline.EvaluateDerivative(query.data(), der_query.data(), result.data());
         auto t2 = std::chrono::high_resolution_clock::now();
         std::cout << std::right << std::setw(10)
                   << std::chrono::duration_cast<std::chrono::nanoseconds>(t2 -
@@ -187,22 +186,19 @@ protected:
         // B-spline evaluation
         using ParametricCoordinate =
             typename decltype(splinelib_bspline)::ParametricCoordinate_;
-        using ScalarParametricCoordinate =
-            typename ParametricCoordinate::value_type;
         using Derivative =
             typename decltype(splinelib_bspline)::ParameterSpace_::Derivative_;
-        using ScalarDerivative = typename Derivative::value_type;
+        using Coordinate = typename decltype(splinelib_bspline)::Coordinate_;
+
+        ParametricCoordinate query{0.5, 0.5, 0.5};
+        Derivative der_query{(iganet::short_t) deriv % 10,
+                             ((iganet::short_t)deriv / 10) % 10,
+                             ((iganet::short_t)deriv / 100) % 10};
+        Coordinate result(GeoDim);
 
         auto t1 = std::chrono::high_resolution_clock::now();
         for (int i = 0; i < 1000; i++)
-          splinelib_bspline(
-              ParametricCoordinate{ScalarParametricCoordinate{0.5},
-                                   ScalarParametricCoordinate{0.5},
-                                   ScalarParametricCoordinate{0.5}},
-              Derivative{
-                  ScalarDerivative{(iganet::short_t)deriv % 10},
-                  ScalarDerivative{((iganet::short_t)deriv / 10) % 10},
-                  ScalarDerivative{((iganet::short_t)deriv / 100) % 10}});
+          splinelib_bspline.EvaluateDerivative(query.data(), der_query.data(), result.data());
         auto t2 = std::chrono::high_resolution_clock::now();
         std::cout << std::right << std::setw(10)
                   << std::chrono::duration_cast<std::chrono::nanoseconds>(t2 -
@@ -255,24 +251,20 @@ protected:
         // B-spline evaluation
         using ParametricCoordinate =
             typename decltype(splinelib_bspline)::ParametricCoordinate_;
-        using ScalarParametricCoordinate =
-            typename ParametricCoordinate::value_type;
         using Derivative =
             typename decltype(splinelib_bspline)::ParameterSpace_::Derivative_;
-        using ScalarDerivative = typename Derivative::value_type;
+        using Coordinate = typename decltype(splinelib_bspline)::Coordinate_;
+
+        ParametricCoordinate query{0.5, 0.5, 0.5, 0.5};
+        Derivative der_query{(iganet::short_t) deriv % 10,
+                             ((iganet::short_t)deriv / 10) % 10,
+                             ((iganet::short_t)deriv / 100) % 10,
+                             ((iganet::short_t)deriv / 1000) % 10};
+        Coordinate result(GeoDim);
 
         auto t1 = std::chrono::high_resolution_clock::now();
         for (int i = 0; i < 1000; i++)
-          splinelib_bspline(
-              ParametricCoordinate{ScalarParametricCoordinate{0.5},
-                                   ScalarParametricCoordinate{0.5},
-                                   ScalarParametricCoordinate{0.5},
-                                   ScalarParametricCoordinate{0.5}},
-              Derivative{
-                  ScalarDerivative{(iganet::short_t)deriv % 10},
-                  ScalarDerivative{((iganet::short_t)deriv / 10) % 10},
-                  ScalarDerivative{((iganet::short_t)deriv / 100) % 10},
-                  ScalarDerivative{((iganet::short_t)deriv / 1000) % 10}});
+          splinelib_bspline.EvaluateDerivative(query.data(), der_query.data(), result.data());
         auto t2 = std::chrono::high_resolution_clock::now();
         std::cout << std::right << std::setw(10)
                   << std::chrono::duration_cast<std::chrono::nanoseconds>(t2 -
