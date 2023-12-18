@@ -77,6 +77,11 @@ foreach(webapp ${WEBAPPS})
   target_link_libraries(${name} PUBLIC usockets)
   target_link_libraries(${name} PUBLIC pugixml)
 
+  if (IGANET_WITH_GISMO)
+    target_compile_definitions(${name} PUBLIC WITH_GISMO)
+    target_link_libraries(${name} PUBLIC gismo_static)
+  endif()
+  
   if (IGANET_WITH_OPENMP)
     target_link_libraries(${name} PUBLIC OpenMP::OpenMP_CXX)
   endif()

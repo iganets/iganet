@@ -77,17 +77,25 @@ foreach(perftest ${PERFTESTS})
     target_precompile_headers(${name} REUSE_FROM iganet_pch)
   endif()
 
+  target_compile_options(${name} PUBLIC "-DIGANET_DATA_DIR=\"${PROJECT_SOURCE_DIR}/filedata/\"")
+
   # LibTorch
   target_link_libraries(${name} PUBLIC "${TORCH_LIBRARIES}")
-
-  # BSplineLib
   target_link_libraries(${name} PUBLIC pugixml)
+  
+  # BSplineLib
   target_link_libraries(${name} PUBLIC splines)
 
   # Google test
   target_link_libraries(${name} PUBLIC gtest_main)
 
+  if (IGANET_WITH_GISMO)
+    target_compile_definitions(${name} PUBLIC WITH_GISMO)
+    target_link_libraries(${name} PUBLIC gismo_static)
+  endif()
+  
   if (IGANET_WITH_MATPLOT)
+    target_compile_definitions(${name} PUBLIC WITH_MATPLOT)
     target_link_libraries(${name} PUBLIC Matplot++::matplot)
   endif()
 
@@ -95,6 +103,6 @@ foreach(perftest ${PERFTESTS})
     target_link_libraries(${name} PUBLIC OpenMP::OpenMP_CXX)
   endif()
 
-  target_compile_definitions(${name} PUBLIC PERFTEST_DISABLE_SHORT_MACROS)
+  target_compile_definitions(${name} PUBLIC UNITTEST_DISABLE_SHORT_MACROS)
   add_test(${name} ${name})
 endforeach()

@@ -82,15 +82,21 @@ foreach(unittest ${UNITTESTS})
 
   # LibTorch
   target_link_libraries(${name} PUBLIC "${TORCH_LIBRARIES}")
-
-  # BSplineLib
   target_link_libraries(${name} PUBLIC pugixml)
+  
+  # BSplineLib
   target_link_libraries(${name} PUBLIC splines)
 
   # Google test
   target_link_libraries(${name} PUBLIC gtest_main)
 
+  if (IGANET_WITH_GISMO)
+    target_compile_definitions(${name} PUBLIC WITH_GISMO)
+    target_link_libraries(${name} PUBLIC gismo_static)
+  endif()
+  
   if (IGANET_WITH_MATPLOT)
+    target_compile_definitions(${name} PUBLIC WITH_MATPLOT)
     target_link_libraries(${name} PUBLIC Matplot++::matplot)
   endif()
 

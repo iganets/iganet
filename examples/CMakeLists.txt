@@ -28,13 +28,15 @@ foreach(example ${EXAMPLES})
     target_precompile_headers(${name} REUSE_FROM iganet_pch)
   endif()
 
+  target_compile_options(${name} PUBLIC "-DIGANET_DATA_DIR=\"${PROJECT_SOURCE_DIR}/filedata/\"")
+  
   # LibTorch
   target_link_libraries(${name} PUBLIC ${TORCH_LIBRARIES})
   target_link_libraries(${name} PUBLIC pugixml)
 
   if (IGANET_WITH_GISMO)
     target_compile_definitions(${name} PUBLIC WITH_GISMO)
-    target_link_libraries(${name} PUBLIC gismo)
+    target_link_libraries(${name} PUBLIC gismo_static)
   endif()
 
   if (IGANET_WITH_MATPLOT)
