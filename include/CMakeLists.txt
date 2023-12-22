@@ -12,7 +12,7 @@
 #
 ########################################################################
 
-if(NOT ${CMAKE_VERSION} VERSION_LESS "3.16.0")
+if(IGANET_BUILD_PCH AND NOT WIN32 AND NOT ${CMAKE_VERSION} VERSION_LESS "3.16.0")
   file(GLOB HEADERS *.hpp)
 
   add_executable(iganet_pch .iganet_pch.cxx iganet.h ${HEADERS})
