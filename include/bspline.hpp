@@ -665,22 +665,21 @@ public:
                   greville_.template packed_accessor64<value_type, 1>();
               auto knots =
                   knots_[j].template packed_accessor64<value_type, 1>();
-
-	      int blockSize;   // The launch configurator returned block size
-	      int minGridSize; // The minimum grid size needed to achieve the maximum occupancy for a full device launch
-	      int gridSize;    // The actual grid size needed, based on input size
 	      
 #if defined(__CUDACC__)
+	      int blockSize, minGridSize, gridSize;
 	      cudaOccupancyMaxPotentialBlockSize(&minGridSize, &blockSize, (const void *)cuda::greville_kernel<real_t>, 0, 0);
+	      gridSize = (ncoeffs_[j] + blockSize - 1) / blockSize;
+              cuda::greville_kernel<<<gridSize, blockSize>>>(greville, knots, ncoeffs_[j], degrees_[j], interior);
 #elif defined(__HIPCC__)
+	      int blockSize, minGridSize, gridSize;
 	      hipOccupancyMaxPotentialBlockSize(&minGridSize, &blockSize, (const void *)cuda::greville_kernel<real_t>, 0, 0);
+	      gridSize = (ncoeffs_[j] + blockSize - 1) / blockSize;
+              cuda::greville_kernel<<<gridSize, blockSize>>>(greville, knots, ncoeffs_[j], degrees_[j], interior);
 #else
               throw std::runtime_error(
                   "Code must be compiled with CUDA or HIP enabled");
 #endif
-	      gridSize = (ncoeffs_[j] + blockSize - 1) / blockSize;
-	      std::cout << "GRIDSIZE = " << gridSize << ", BLOCKSIZE" << blockSize << std::endl;
-              cuda::greville_kernel<<<gridSize, blockSize>>>(greville, knots, ncoeffs_[j], degrees_[j], interior);
             } else {
               auto greville_accessor =
                   greville_.template accessor<value_type, 1>();
@@ -2823,23 +2822,22 @@ public:
                   greville_.template packed_accessor64<value_type, 1>();
               auto knots =
                   knots_[j].template packed_accessor64<value_type, 1>();
-
-	      int blockSize;   // The launch configurator returned block size
-	      int minGridSize; // The minimum grid size needed to achieve the maximum occupancy for a full device launch
-	      int gridSize;    // The actual grid size needed, based on input size
 	      
 #if defined(__CUDACC__)
+	      int blockSize, minGridSize, gridSize;
 	      cudaOccupancyMaxPotentialBlockSize(&minGridSize, &blockSize, (const void *)cuda::greville_kernel<real_t>, 0, 0);
+	      gridSize = (ncoeffs_[j] + blockSize - 1) / blockSize;
+              cuda::greville_kernel<<<gridSize, blockSize>>>(greville, knots, ncoeffs_[j], degrees_[j], false);
 #elif defined(__HIPCC__)
+	      int blockSize, minGridSize, gridSize;
 	      hipOccupancyMaxPotentialBlockSize(&minGridSize, &blockSize, (const void *)cuda::greville_kernel<real_t>, 0, 0);
+	      gridSize = (ncoeffs_[j] + blockSize - 1) / blockSize;
+	      cuda::greville_kernel<<<gridSize, blockSize>>>(greville, knots, ncoeffs_[j], degrees_[j], false);
 #else
               throw std::runtime_error(
 				       "Code must be compiled with CUDA or HIP enabled");
 #endif
-	      gridSize = (ncoeffs_[j] + blockSize - 1) / blockSize;
-	      std::cout << "GRIDSIZE = " << gridSize << ", BLOCKSIZE" << blockSize << std::endl;
-              cuda::greville_kernel<<<gridSize, blockSize>>>(
-                  greville, knots, ncoeffs_[j], degrees_[j], false);
+
             } else {
               auto greville = greville_.template accessor<value_type, 1>();
               auto knots = knots_[j].template accessor<value_type, 1>();
