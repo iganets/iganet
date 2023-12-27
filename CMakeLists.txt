@@ -30,7 +30,7 @@
 # IgANet version number
 ########################################################################
 set(iganet_VERSION_MAJOR 23) #year
-set(iganet_VERSION_MINOR 08) #month
+set(iganet_VERSION_MINOR 12) #month
 set(iganet_VERSION_PATCH 0 ) #patch
 set(iganet_VERSION
   "${iganet_VERSION_MAJOR}.${iganet_VERSION_MINOR}.${iganet_VERSION_PATCH}" CACHE INTERNAL "iganet version number")
@@ -99,6 +99,7 @@ list(APPEND CMAKE_MODULE_PATH "${PROJECT_SOURCE_DIR}/cmake")
 ########################################################################
 # Option list
 ########################################################################
+option(IGANET_BUILD_CPUONLY     "Build CPU-only code"       OFF)
 option(IGANET_BUILD_DOCS        "Build documentation"       OFF)
 option(IGANET_BUILD_EXAMPLES    "Build examples"            ON )
 option(IGANET_BUILD_PCH         "Build precompiled headers" ON )
@@ -282,10 +283,8 @@ message("IGANET_BUILD_WEBAPPS...............: ${IGANET_BUILD_WEBAPPS}")
 message("")
 message("Features:")
 message("IGANET_WITH_GISMO..................: ${IGANET_WITH_GISMO}")
-message("IGANET_WITH_LIBUV..................: ${IGANET_WITH_LIBUV}")
 message("IGANET_WITH_MATPLOT................: ${IGANET_WITH_MATPLOT}")
 message("IGANET_WITH_OPENMP.................: ${IGANET_WITH_OPENMP}")
-message("IGANET_WITH_OPENSSL................: ${IGANET_WITH_OPENSSL}")
 message("")
 
 ########################################################################

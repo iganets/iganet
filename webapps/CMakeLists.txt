@@ -23,8 +23,13 @@ set_property(CACHE IGANET_WEBAPPS_COEFF_TYPE PROPERTY STRINGS
 ########################################################################
 # Option list
 ########################################################################
-option(IGANET_WITH_OPENSSL      "With OpenSSL suppoer"      OFF)
+option(IGANET_WITH_OPENSSL      "With OpenSSL support"      OFF)
 option(IGANET_WITH_LIBUV        "With LibUV support"        OFF)
+
+message("WebApp features:")
+message("IGANET_WITH_LIBUV..................: ${IGANET_WITH_LIBUV}")
+message("IGANET_WITH_OPENSSL................: ${IGANET_WITH_OPENSSL}")
+message("")
 
 ########################################################################
 # Prerequisites
@@ -60,10 +65,14 @@ file(GLOB WEBAPPS *.cxx)
 foreach(webapp ${WEBAPPS})
   file(RELATIVE_PATH filename ${CMAKE_CURRENT_SOURCE_DIR} ${webapp})
 
-  if (CMAKE_CUDA_COMPILER)
-    set_source_files_properties(${filename} PROPERTIES LANGUAGE CUDA)
+  if (NOT IGANET_BUILD_CPUONLY)
+    if (CMAKE_CUDA_COMPILER)
+      set_source_files_properties(${filename} PROPERTIES LANGUAGE CUDA)
+    elseif (HIP_COMPILER)
+      set_source_files_properties(${filename} PROPERTIES LANGUAGE HIP)
+    endif()
   endif()
-
+  
   string(REPLACE ".cxx" "" name ${filename})
   add_executable(${name} ${filename})
 

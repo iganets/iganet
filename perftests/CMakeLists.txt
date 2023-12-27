@@ -66,8 +66,13 @@ file(GLOB PERFTESTS *.cxx)
 
 foreach(perftest ${PERFTESTS})
   file(RELATIVE_PATH filename ${CMAKE_CURRENT_SOURCE_DIR} ${perftest})
-  if (CMAKE_CUDA_COMPILER)
-    set_source_files_properties(${filename} PROPERTIES LANGUAGE CUDA)
+
+  if (NOT IGANET_BUILD_CPUONLY)
+    if (CMAKE_CUDA_COMPILER)
+      set_source_files_properties(${filename} PROPERTIES LANGUAGE CUDA)
+    elseif (HIP_COMPILER)
+      set_source_files_properties(${filename} PROPERTIES LANGUAGE HIP)
+    endif()
   endif()
 
   string(REPLACE ".cxx" "" name ${filename})
