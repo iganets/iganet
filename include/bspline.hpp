@@ -33,9 +33,34 @@
 #include <utils/tensorarray.hpp>
 #include <utils/vslice.hpp>
 
-#ifdef __CUDACC__
+#if defined(__CUDACC__)
 #include <ATen/cuda/CUDAContext.h>
-#include <bspline.cuh>
+#endif
+
+#if defined(__HIPCC__)
+#include <ATen/hip/HIPContext.h>
+#endif
+
+#if defined(__CUDACC__) || defined(__HIPCC__)
+namespace iganet {
+namespace cuda {
+/**
+   @brief Compute Greville abscissae
+*/
+template <typename real_t>
+__global__ void
+greville_kernel(torch::PackedTensorAccessor64<real_t, 1> greville,
+                const torch::PackedTensorAccessor64<real_t, 1> knots,
+                int64_t ncoeffs, short_t degree, bool interior) {
+  for (int64_t k = blockIdx.x * blockDim.x + threadIdx.x;
+       k < ncoeffs - (interior ? 2 : 0); k += blockDim.x * gridDim.x) {
+    for (short_t l = 1; l <= degree; ++l)
+      greville[k] += knots[k + (interior ? 1 : 0) + l];
+    greville[k] /= real_t(degree);
+  }
+}
+} // namespace cuda
+} // namespace iganet
 #endif
 
 /// @brief Sequence of expression (parametric coordinates)
@@ -635,19 +660,27 @@ public:
             auto greville_ =
                 torch::zeros(ncoeffs_[j] - (interior ? 2 : 0), options_);
             if (greville_.is_cuda()) {
-#ifdef __CUDACC__
+
               auto greville =
                   greville_.template packed_accessor64<value_type, 1>();
               auto knots =
                   knots_[j].template packed_accessor64<value_type, 1>();
-              const int num_mp =
-                  at::cuda::getCurrentDeviceProperties()->multiProcessorCount;
-              cuda::greville_cuda_kernel<<<32 * num_mp, 2048>>>(
-                  greville, knots, ncoeffs_[j], degrees_[j], interior);
+
+	      int blockSize;   // The launch configurator returned block size
+	      int minGridSize; // The minimum grid size needed to achieve the maximum occupancy for a full device launch
+	      int gridSize;    // The actual grid size needed, based on input size
+	      
+#if defined(__CUDACC__)
+	      cudaOccupancyMaxPotentialBlockSize(&minGridSize, &blockSize, (const void *)cuda::greville_kernel<real_t>, 0, 0);
+#elif defined(__HIPCC__)
+	      hipOccupancyMaxPotentialBlockSize(&minGridSize, &blockSize, (const void *)cuda::greville_kernel<real_t>, 0, 0);
 #else
               throw std::runtime_error(
-                  "Code must be compiled with CUDA enabled");
+                  "Code must be compiled with CUDA or HIP enabled");
 #endif
+	      gridSize = (ncoeffs_[j] + blockSize - 1) / blockSize;
+	      std::cout << "GRIDSIZE = " << gridSize << ", BLOCKSIZE" << blockSize << std::endl;
+              cuda::greville_kernel<<<gridSize, blockSize>>>(greville, knots, ncoeffs_[j], degrees_[j], interior);
             } else {
               auto greville_accessor =
                   greville_.template accessor<value_type, 1>();
@@ -2785,19 +2818,28 @@ public:
           if (i == j) {
             auto greville_ = torch::zeros(ncoeffs_[j], options_);
             if (greville_.is_cuda()) {
-#ifdef __CUDACC__
+
               auto greville =
                   greville_.template packed_accessor64<value_type, 1>();
               auto knots =
                   knots_[j].template packed_accessor64<value_type, 1>();
-              const int num_mp =
-                  at::cuda::getCurrentDeviceProperties()->multiProcessorCount;
-              cuda::greville_cuda_kernel<<<32 * num_mp, 256>>>(
-                  greville, knots, ncoeffs_[j], degrees_[j], false);
+
+	      int blockSize;   // The launch configurator returned block size
+	      int minGridSize; // The minimum grid size needed to achieve the maximum occupancy for a full device launch
+	      int gridSize;    // The actual grid size needed, based on input size
+	      
+#if defined(__CUDACC__)
+	      cudaOccupancyMaxPotentialBlockSize(&minGridSize, &blockSize, (const void *)cuda::greville_kernel<real_t>, 0, 0);
+#elif defined(__HIPCC__)
+	      hipOccupancyMaxPotentialBlockSize(&minGridSize, &blockSize, (const void *)cuda::greville_kernel<real_t>, 0, 0);
 #else
               throw std::runtime_error(
-                  "Code must be compiled with CUDA enabled");
+				       "Code must be compiled with CUDA or HIP enabled");
 #endif
+	      gridSize = (ncoeffs_[j] + blockSize - 1) / blockSize;
+	      std::cout << "GRIDSIZE = " << gridSize << ", BLOCKSIZE" << blockSize << std::endl;
+              cuda::greville_kernel<<<gridSize, blockSize>>>(
+                  greville, knots, ncoeffs_[j], degrees_[j], false);
             } else {
               auto greville = greville_.template accessor<value_type, 1>();
               auto knots = knots_[j].template accessor<value_type, 1>();
