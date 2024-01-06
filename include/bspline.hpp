@@ -673,7 +673,7 @@ public:
               cuda::greville_kernel<<<gridSize, blockSize>>>(greville, knots, ncoeffs_[j], degrees_[j], interior);
 #elif defined(__HIPCC__)
 	      int blockSize, minGridSize, gridSize;
-	      hipOccupancyMaxPotentialBlockSize(&minGridSize, &blockSize, (const void *)cuda::greville_kernel<real_t>, 0, 0);
+	      static_cast<void>(hipOccupancyMaxPotentialBlockSize(&minGridSize, &blockSize, (const void *)cuda::greville_kernel<real_t>, 0, 0));
 	      gridSize = (ncoeffs_[j] + blockSize - 1) / blockSize;
               cuda::greville_kernel<<<gridSize, blockSize>>>(greville, knots, ncoeffs_[j], degrees_[j], interior);
 #else
@@ -2830,7 +2830,7 @@ public:
               cuda::greville_kernel<<<gridSize, blockSize>>>(greville, knots, ncoeffs_[j], degrees_[j], false);
 #elif defined(__HIPCC__)
 	      int blockSize, minGridSize, gridSize;
-	      hipOccupancyMaxPotentialBlockSize(&minGridSize, &blockSize, (const void *)cuda::greville_kernel<real_t>, 0, 0);
+	      static_cast<void>(hipOccupancyMaxPotentialBlockSize(&minGridSize, &blockSize, (const void *)cuda::greville_kernel<real_t>, 0, 0));
 	      gridSize = (ncoeffs_[j] + blockSize - 1) / blockSize;
 	      cuda::greville_kernel<<<gridSize, blockSize>>>(greville, knots, ncoeffs_[j], degrees_[j], false);
 #else

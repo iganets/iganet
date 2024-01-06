@@ -70,8 +70,6 @@ foreach(unittest ${UNITTESTS})
   if (NOT IGANET_BUILD_CPUONLY)
     if (CMAKE_CUDA_COMPILER)
       set_source_files_properties(${filename} PROPERTIES LANGUAGE CUDA)
-    elseif (HIP_COMPILER)
-      set_source_files_properties(${filename} PROPERTIES LANGUAGE HIP)
     endif()
   endif()
 
