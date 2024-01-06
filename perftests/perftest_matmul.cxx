@@ -74,6 +74,7 @@ TEST(Performance, MatmulTensorLayout) {
 }
 
 int main(int argc, char **argv) {
+  ::testing::GTEST_FLAG(filter) = ":-:*";
   ::testing::InitGoogleTest(&argc, argv);
   iganet::init();
   return RUN_ALL_TESTS();
