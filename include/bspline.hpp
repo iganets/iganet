@@ -3227,14 +3227,14 @@ public:
     
 #ifdef WITH_GISMO
 
-    gismo::gsMatrix<value_type> coefs(geoDim_, ncumcoeffs());
-    
+    gismo::gsMatrix<value_type> coefs(ncumcoeffs(), geoDim_);
+  
     for (short_t g = 0; g < geoDim_; ++g) {
       auto [coeffs_cpu, coeffs_accessor] =
         utils::to_tensorAccessor<value_type, 1>(coeffs_[g], torch::kCPU);
       auto coeffs_cpu_ptr = coeffs_cpu.template data_ptr<value_type>();
-      coefs.row(g) = gsAsConstVector<value_type>(coeffs_cpu_ptr, coeffs_cpu.size(0));
-    }    
+      coefs.col(g) = gsAsConstVector<value_type>(coeffs_cpu_ptr, coeffs_cpu.size(0));
+    }
     
     if constexpr (parDim_ == 1) {
 
@@ -3376,7 +3376,7 @@ public:
         auto [coeffs_cpu, coeffs_accessor] =
           utils::to_tensorAccessor<value_type, 1>(coeffs_[g], torch::kCPU);
         auto coeffs_cpu_ptr = coeffs_cpu.template data_ptr<value_type>();
-        bspline.coefs().row(g) = gsAsConstVector<value_type>(coeffs_cpu_ptr, coeffs_cpu.size(0));
+        bspline.coefs().col(g) = gsAsConstVector<value_type>(coeffs_cpu_ptr, coeffs_cpu.size(0));
       }        
     }
 
@@ -3503,7 +3503,7 @@ public:
         auto [coeffs_cpu, coeffs_accessor] =
           utils::to_tensorAccessor<value_type, 1>(coeffs_[g], torch::kCPU);
         auto coeffs_cpu_ptr = coeffs_cpu.template data_ptr<value_type>();
-        bspline.coefs().row(g) = gsAsConstVector<value_type>(coeffs_cpu_ptr, coeffs_cpu.size(0));
+        bspline.coefs().col(g) = gsAsConstVector<value_type>(coeffs_cpu_ptr, coeffs_cpu.size(0));
       }        
     }
         
@@ -3534,10 +3534,10 @@ public:
     
     if (updateCoeffs) {
 
-      if (bspline.coefs().rows() != geoDim_)
+      if (bspline.coefs().cols() != geoDim_)
           throw std::runtime_error("Geometric dimensions mismatch");
 
-      if (bspline.coefs().cols() != ncumcoeffs())
+      if (bspline.coefs().rows() != ncumcoeffs())
         throw std::runtime_error("Coefficient vector dimensions mismatch");
       
       for (short_t g = 0; g < geoDim_; ++g) {
@@ -3545,7 +3545,7 @@ public:
         auto [coeffs_cpu, coeffs_accessor] =
           utils::to_tensorAccessor<value_type, 1>(coeffs_[g], torch::kCPU);
         
-        const value_type* coeffs_ptr = bspline.coefs().row(g).data();
+        const value_type* coeffs_ptr = bspline.coefs().col(g).data();
         
         for (int64_t i = 0; i < ncoeffs_[g]; ++i)
           coeffs_accessor[i] = coeffs_ptr[i];
@@ -3570,10 +3570,10 @@ public:
     
     if (updateCoeffs) {
 
-      if (bspline.coefs().rows() != geoDim_)
+      if (bspline.coefs().cols() != geoDim_)
           throw std::runtime_error("Geometric dimensions mismatch");
 
-      if (bspline.coefs().cols() != ncumcoeffs())
+      if (bspline.coefs().rows() != ncumcoeffs())
         throw std::runtime_error("Coefficient vector dimensions mismatch");
       
       for (short_t g = 0; g < geoDim_; ++g) {
@@ -3581,7 +3581,7 @@ public:
         auto [coeffs_cpu, coeffs_accessor] =
           utils::to_tensorAccessor<value_type, 1>(coeffs_[g], torch::kCPU);
         
-        const value_type* coeffs_ptr = bspline.coefs().row(g).data();
+        const value_type* coeffs_ptr = bspline.coefs().col(g).data();
         
         for (int64_t i = 0; i < ncoeffs_[g]; ++i)
           coeffs_accessor[i] = coeffs_ptr[i];
