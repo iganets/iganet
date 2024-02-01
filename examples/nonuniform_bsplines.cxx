@@ -52,7 +52,7 @@ int main() {
 #endif
 
     // Export B-spline to XML
-    std::cout << bspline.to_xml() << std::endl;
+    bspline.to_xml().print(std::cout);
   }
 
   {
@@ -87,7 +87,7 @@ int main() {
 #endif
 
     // Export B-spline to XML
-    std::cout << bspline.to_xml() << std::endl;
+    bspline.to_xml().print(std::cout);
   }
 
   {
@@ -122,7 +122,7 @@ int main() {
 #endif
 
     // Export B-spline to XML
-    std::cout << bspline.to_xml() << std::endl;
+    bspline.to_xml().print(std::cout);
   }
 
   {
@@ -161,7 +161,7 @@ int main() {
 #endif
 
     // Export B-spline to XML
-    std::cout << bspline.to_xml() << std::endl;
+    bspline.to_xml().print(std::cout);
   }
 
   {
@@ -200,7 +200,7 @@ int main() {
 #endif
 
     // Export B-spline to XML
-    std::cout << bspline.to_xml() << std::endl;
+    bspline.to_xml().print(std::cout);
   }
 
   return 0;
