@@ -42,9 +42,11 @@ int main() {
                      iganet::utils::to_tensorArray<real_t>({0.0, 0.5, 1.0}))
               << std::endl;
 
-    // Plot B-spline
+#ifdef WITH_MATPLOT
+    // Plot B-spline    
     bspline.plot(50);
     bspline.plot(color, 50);
+#endif
 
     // Export B-spline to XML
     std::cout << bspline.to_xml() << std::endl;
@@ -73,9 +75,11 @@ int main() {
                      iganet::utils::to_tensorArray<real_t>({0.0, 0.5, 1.0}))
               << std::endl;
 
+#ifdef WITH_MATPLOT
     // Plot B-spline
     bspline.plot(50);
     bspline.plot(color, 50);
+#endif
 
     // Export B-spline to XML
     std::cout << bspline.to_xml() << std::endl;
@@ -104,9 +108,11 @@ int main() {
                      iganet::utils::to_tensorArray<real_t>({0.0, 0.5, 1.0}))
               << std::endl;
 
+#ifdef WITH_MATPLOT
     // Plot B-spline
     bspline.plot(50);
     bspline.plot(color, 50);
+#endif
 
     // Export B-spline to XML
     std::cout << bspline.to_xml() << std::endl;
@@ -137,9 +143,11 @@ int main() {
                      {0.0, 0.5, 1.0}, {0.0, 0.5, 0.5}))
               << std::endl;
 
+#ifdef WITH_MATPLOT
     // Plot B-spline
     bspline.plot(50, 50);
     bspline.plot(color, 50, 50);
+#endif
 
     // Export B-spline to XML
     std::cout << bspline.to_xml() << std::endl;
@@ -170,21 +178,18 @@ int main() {
                      {0.0, 0.5, 1.0}, {0.0, 0.5, 0.5}))
               << std::endl;
 
+#ifdef WITH_MATPLOT
     // Plot B-spline
     bspline.plot(50, 50);
     bspline.plot(color, 50, 50);
+#endif
 
     // Export B-spline to XML
     std::cout << bspline.to_xml() << std::endl;
 
     auto xi =
         iganet::utils::to_tensorArray<real_t>({0.0, 0.5, 1.0}, {0.0, 0.5, 0.5});
-
-    std::cout << color.grad(xi) << std::endl;
-    // std::cout << color.igrad(bspline, xi) << std::endl;
-    std::cout << color.jac(xi) << std::endl;
-    // std::cout << color.ijac(bspline, xi) << std::endl;
-    // std::cout << color.hess(xi) << std::endl;
-    // std::cout << color.ihess(bspline, xi) << std::endl;
   }
+
+  return 0;
 }

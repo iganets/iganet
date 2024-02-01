@@ -3674,8 +3674,8 @@ public:
       std::array<std::vector<typename Base::value_type>, Base::parDim_> kv,
       enum init init = init::greville,
       Options<real_t> options = Options<real_t>{})
-      : Base(std::array<int64_t, Base::parDim_>{2 * Degrees...}, init,
-             options) {
+    : Base(options)
+  {    
     init_knots(kv);
     Base::init_coeffs(init);
   }
@@ -3697,9 +3697,20 @@ public:
       std::array<std::vector<typename Base::value_type>, Base::parDim_> kv,
       const std::array<torch::Tensor, Base::geoDim_> &coeffs,
       bool clone = false, Options<real_t> options = Options<real_t>{})
-      : Base(std::array<int64_t, Base::parDim_>{2 * Degrees...}, coeffs, clone,
-             options) {
+    : Base(options)
+  {
     init_knots(kv);
+
+    // Copy/clone coefficients
+    if (clone)
+      for (short_t i = 0; i < Base::geoDim_; ++i)
+        Base::coeffs_[i] = coeffs[i]
+          .clone()
+          .to(options.requires_grad(false))
+          .requires_grad_(Base::options.requires_grad());
+    else
+      for (short_t i = 0; i < Base::geoDim_; ++i)
+        Base::coeffs_[i] = coeffs[i];
   }
 
 private:
@@ -3716,7 +3727,10 @@ private:
       Base::knots_[i] = utils::to_tensor(kv[i], Base::options_);
       Base::nknots_[i] = Base::knots_[i].size(0);
       Base::ncoeffs_[i] = Base::nknots_[i] - Base::degrees_[i] - 1;
+      Base::ncoeffs_reverse_[i] = Base::ncoeffs_[i];
     }
+    // Reverse ncoeffs
+    std::reverse(Base::ncoeffs_reverse_.begin(), Base::ncoeffs_reverse_.end());
   }
 
 public:
