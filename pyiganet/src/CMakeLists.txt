@@ -163,7 +163,6 @@ target_include_directories(pyiganet_core PUBLIC ${TORCH_INCLUDE_DIRS})
 target_link_libraries(pyiganet_core PUBLIC pugixml)
 
 if (IGANET_WITH_GISMO)
-  target_compile_definitions(pyiganet_core PUBLIC WITH_GISMO)
   target_link_libraries(pyiganet_core PUBLIC gismo)
 endif()
 

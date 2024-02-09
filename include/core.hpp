@@ -14,6 +14,8 @@
 
 #pragma once
 
+#include <config.hpp>
+
 #include <array>
 #include <tuple>
 #include <vector>
@@ -22,7 +24,7 @@
 #include <omp.h>
 #endif
 
-#ifdef WITH_GISMO
+#ifdef IGANET_WITH_GISMO
 #include <gismo.h>
 #endif
 
@@ -30,7 +32,7 @@
 #undef index_t
 #undef short_t
 
-#ifdef WITH_MATPLOT
+#ifdef IGANET_WITH_MATPLOT
 #ifdef __CUDACC__
 #pragma nv_diag_suppress 611
 #endif

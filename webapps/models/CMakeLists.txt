@@ -35,6 +35,10 @@ foreach(model ${MODELS})
   target_link_libraries(${name} PUBLIC ${CMAKE_DL_LIBS})
   target_link_libraries(${name} PUBLIC pugixml)
 
+  if (IGANET_WITH_GISMO)
+    target_link_libraries(${name} PUBLIC gismo_static)
+  endif()
+  
   if (IGANET_WITH_OPENMP)
     target_link_libraries(${name} PUBLIC OpenMP::OpenMP_CXX)
   endif()

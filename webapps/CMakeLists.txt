@@ -40,10 +40,10 @@ include(uwebsockets)
 ########################################################################
 # Config file
 ########################################################################
-configure_file(${PROJECT_SOURCE_DIR}/webapps/config.hpp.in
-  ${PROJECT_BINARY_DIR}/webapps/config.hpp @ONLY)
+configure_file(${PROJECT_SOURCE_DIR}/webapps/webapps_config.hpp.in
+  ${PROJECT_BINARY_DIR}/webapps/webapps_config.hpp @ONLY)
 
-install(FILES ${PROJECT_BINARY_DIR}/webapps/config.hpp
+install(FILES ${PROJECT_BINARY_DIR}/webapps/webapps_config.hpp
   DESTINATION include/iganet/webapp)
 
 ########################################################################
@@ -87,7 +87,6 @@ foreach(webapp ${WEBAPPS})
   target_link_libraries(${name} PUBLIC pugixml)
 
   if (IGANET_WITH_GISMO)
-    target_compile_definitions(${name} PUBLIC WITH_GISMO)
     target_link_libraries(${name} PUBLIC gismo_static)
   endif()
   

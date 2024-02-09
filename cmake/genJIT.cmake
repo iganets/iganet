@@ -70,7 +70,7 @@ function(genJITCompiler SOURCE_FILES SOURCE_TARGET)
     get_target_property(JIT_COMPILE_DEFINITIONS ${SOURCE_TARGET} COMPILE_DEFINITIONS)
     if (JIT_COMPILE_DEFINITIONS)
       foreach (flag ${JIT_COMPILE_DEFINITIONS})
-        set (JIT_CXX_FLAGS "${JIT_CXX_FLAGS} ${flag}")
+        set (JIT_CXX_FLAGS "${JIT_CXX_FLAGS} -D${flag}")
       endforeach()
     endif()
 
@@ -225,6 +225,12 @@ function(genJITCompiler SOURCE_FILES SOURCE_TARGET)
             "${JIT_LIBRARIES} ${JIT_CXX_LINKER_SEARCH_FLAG}${pugixml_BINARY_DIR}")
 
           list(APPEND LIBS pugixml)
+
+        elseif(lib STREQUAL "gismo_static")
+          set(JIT_LIBRARIES
+            "${JIT_LIBRARIES} ${JIT_CXX_LINKER_SEARCH_FLAG}${PROJECT_BINARY_DIR}/lib")
+
+          list(APPEND LIBS gismo)
 
         elseif(lib STREQUAL "OpenMP::OpenMP_CXX")
 

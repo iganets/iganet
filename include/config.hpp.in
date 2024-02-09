@@ -1,7 +1,7 @@
 /**
-   @file webapps/config.hpp
+   @file unittests/unittest_config.hpp
 
-   @brief Compile-time configuration
+   @brief Unit tests compile-time configuration
 
    @author Matthias Moller
 
@@ -14,13 +14,8 @@
 
 #pragma once
 
-#ifndef IGANET_WEBAPPS_COEFF_TYPE
-#define IGANET_WEBAPPS_COEFF_TYPE @IGANET_WEBAPPS_COEFF_TYPE@
-#endif
+/// @brief Compile with G+Smo enabled
+#cmakedefine IGANET_WITH_GISMO
 
-namespace iganet {
-
-  /// @brief Default coefficient type
-  using real_t = IGANET_WEBAPPS_COEFF_TYPE;
-
-} // namespace iganet
+/// @brief Compile with Matplotlib enabled
+#cmakedefine IGANET_WITH_MATPLOTLIB

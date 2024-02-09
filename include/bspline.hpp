@@ -67,13 +67,13 @@ greville_kernel(torch::PackedTensorAccessor64<real_t, 1> greville,
 ///
 /// For each item in this sequence corresponding expressions will be
 /// generated for function spaces, boundary spaces, etc.
-#define GENERATE_EXPR_SEQ (grad)(hess)(jac)
+#define GENERATE_EXPR_SEQ (curl)(div)(grad)(hess)(jac)(lapl)
 
 /// @brief Sequence of expression (physical coordinates)
 ///
 /// For each item in this sequence corresponding expressions will be
 /// generated for function spaces, boundary spaces, etc.
-#define GENERATE_IEXPR_SEQ (igrad)(ihess)(ijac)
+#define GENERATE_IEXPR_SEQ (icurl)(idiv)(igrad)(ihess)(ijac)(ilapl)
 
 namespace iganet {
 
@@ -3225,7 +3225,7 @@ public:
   /// otherwise
   auto to_gismo() const {
     
-#ifdef WITH_GISMO
+#ifdef IGANET_WITH_GISMO
 
     gismo::gsMatrix<value_type> coefs(ncumcoeffs(), geoDim_);
   
@@ -3337,12 +3337,12 @@ public:
 
 #else
     throw std::runtime_error(
-                             "This functions must be compiled with -DWITH_GISMO turned on");
+                             "This functions must be compiled with -DIGANET_WITH_GISMO turned on");
 #endif
     
   }
 
-#ifdef WITH_GISMO
+#ifdef IGANET_WITH_GISMO
   
   // @brief Updates a given gsBSpline object from the B-spline object
   gismo::gsBSpline<value_type>& to_gismo(gismo::gsBSpline<value_type>& bspline,
@@ -3510,17 +3510,17 @@ public:
     return bspline;
   }
 
-#else // WITH_GISMO
+#else // IGANET_WITH_GISMO
 
   template<typename T>
   T& to_gismo(T& bspline, bool, bool) const {
-    throw std::runtime_error("This functions must be compiled with -DWITH_GISMO turned on");
+    throw std::runtime_error("This functions must be compiled with -DIGANET_WITH_GISMO turned on");
     return bspline;
   }
   
-#endif // WITH_GISMO
+#endif // IGANET_WITH_GISMO
 
-#ifdef WITH_GISMO
+#ifdef IGANET_WITH_GISMO
   
   // @brief Updates the B-spline object from a given gsBSpline object
   auto& from_gismo(const gismo::gsBSpline<value_type>& bspline,
@@ -3594,15 +3594,15 @@ public:
     return *this;    
   }
 
-#else // WITH_GISMO
+#else // IGANET_WITH_GISMO
   
   template<typename T>
   auto& from_gismo(T& bspline, bool, bool) {
-    throw std::runtime_error("This functions must be compiled with -DWITH_GISMO turned on");
+    throw std::runtime_error("This functions must be compiled with -DIGANET_WITH_GISMO turned on");
     return *this;
   }
   
-#endif // WITH_GISMO
+#endif // IGANET_WITH_GISMO
   
 };
 
@@ -4071,7 +4071,7 @@ public:
     return *this;
   }
 
-  #ifdef WITH_GISMO
+  #ifdef IGANET_WITH_GISMO
   
   // @brief Updates the B-spline object from a given gsBSpline object
   auto& from_gismo(const gismo::gsBSpline<typename Base::value_type>& bspline,                  
@@ -4291,15 +4291,15 @@ public:
     return *this;    
   }
 
-#else // WITH_GISMO
+#else // IGANET_WITH_GISMO
   
   template<typename T>
   auto& from_gismo(T& bspline, bool, bool) {
-    throw std::runtime_error("This functions must be compiled with -DWITH_GISMO turned on");
+    throw std::runtime_error("This functions must be compiled with -DIGANET_WITH_GISMO turned on");
     return *this;
   }
   
-#endif // WITH_GISMO
+#endif // IGANET_WITH_GISMO
   
 };
 
@@ -4448,6 +4448,194 @@ public:
     return to(BSplineCore::options_.template dtype<real_t>());
   }
 
+  //  clang-format off
+  /// @brief Returns a block-tensor with the curl of the
+  /// B-spline object with respect to the parametric variables
+  ///
+  /// @param[in] xi Point(s) where to evaluate the curl
+  ///
+  /// @result Block-tensor with the curl with respect to the
+  /// parametric variables `xi`
+  /// \f[
+  ///     \nabla_{\boldsymbol{\xi}} \times \mathbf{u}
+  ///        =
+  ///     \begin{bmatrix}
+  ///        \mathbf{i}_0 & \cdots & \mathbf{i}_{d_\text{par}} \\
+  ///        \frac{\partial}{\partial\xi_0} & \cdots &
+  ///        \frac{\partial}{\partial\xi_{d_\text{par}}} \\
+  ///        u_0 & \cdots & u_{d_\text{par}}
+  ///     \end{bmatrix}
+  /// \f]
+  ///
+  /// @note This function can only be applied to B-spline objects with
+  /// equal parametric and geometric multiplicity.
+  //  clang-format off
+  /// @{
+  template <bool memory_optimized = false> auto curl(torch::Tensor &xi) const {
+    return curl<memory_optimized>(utils::TensorArray1({xi}));
+  }
+  
+  template <bool memory_optimized = false>
+  inline auto
+  curl(const std::array<torch::Tensor, BSplineCore::parDim_> &xi) const {
+    return curl<memory_optimized>(xi, BSplineCore::find_knot_indices(xi));
+  }
+  /// @}
+
+  //  clang-format off
+  /// @brief Returns a block-tensor with the curl of the
+  /// B-spline object with respect to the parametric variables
+  ///
+  /// @param[in] xi Point(s) where to evaluate the curl
+  ///
+  /// @param[in] indices Knot indices where to evaluate the curl
+  ///
+  /// @result Block-tensor with the curl with respect to
+  /// the parametric variables
+  /// \f[
+  ///     \nabla_{\boldsymbol{\xi}} \times \mathbf{u}
+  ///        =
+  ///     \begin{bmatrix}
+  ///        \mathbf{i}_0 & \cdots & \mathbf{i}_{d_\text{par}} \\
+  ///        \frac{\partial}{\partial\xi_0} & \cdots &
+  ///        \frac{\partial}{\partial\xi_{d_\text{par}}} \\
+  ///        u_0 & \cdots & u_{d_\text{par}}
+  ///     \end{bmatrix}
+  /// \f]
+  ///
+  /// @note This function can only be applied to B-spline objects with
+  /// equal parametric and geometric multiplicity.
+  //  clang-format on
+  template <bool memory_optimized = false>
+  inline auto
+  curl(const std::array<torch::Tensor, BSplineCore::parDim_> &xi,
+       const std::array<torch::Tensor, BSplineCore::parDim_> &indices) const {
+    return curl<memory_optimized>(
+        xi, indices,
+        BSplineCore::template find_coeff_indices<memory_optimized>(indices));
+  }
+
+  /// @brief Returns a block-tensor with the curl of the B-spline
+  /// object with respect to the parametric variables
+  ///
+  /// @param[in] xi Point(s) where to evaluate the curl
+  ///
+  /// @param[in] indices Knot indices where to evaluate the curl
+  ///
+  /// @param[in] coeff_indices Coefficient indices where to evaluate
+  /// the curl
+  ///
+  /// @result Block-tensor with the curl of the B-spline with respect
+  /// to the parametric variables
+  ///
+  /// \f[
+  ///     \nabla_{\boldsymbol{\xi}} \cdot \mathbf{u}
+  ///        =
+  ///     \text{trace} ( J_{\boldsymbol{\xi}}(u) )
+  ///        =
+  ///     \frac{\partial u_0}{\partial \xi_0} +
+  ///     \frac{\partial u_1}{\partial \xi_1} +
+  ///        \dots
+  ///     \frac{\partial u_{d_\text{geo}}}{\partial \xi_{d_\text{par}}}
+  /// \f]
+  ///
+  /// @note This function can only be applied to B-spline objects with
+  /// equal parametric and geometric multiplicity.
+  ///
+  /// @{
+  template <bool memory_optimized = false>
+  inline auto curl(const utils::TensorArray1 &xi,
+                   const utils::TensorArray1 &indices,
+                   const torch::Tensor &coeff_indices) const {
+    assert(xi[0].sizes() == indices[0].sizes());
+    if constexpr (BSplineCore::parDim_ == 1)
+
+      /// curl = ???
+      return utils::BlockTensor<torch::Tensor, 1, 1>(
+          BSplineCore::template eval<deriv::dx, memory_optimized>(
+              xi, indices, coeff_indices)[0]);
+
+    else
+      throw std::runtime_error("Unsupported parametric dimension");
+  }
+
+  template <bool memory_optimized = false>
+  inline auto curl(const utils::TensorArray2 &xi,
+                   const utils::TensorArray2 &indices,
+                   const torch::Tensor &coeff_indices) const {
+    assert(xi[0].sizes() == indices[0].sizes() &&
+           xi[1].sizes() == indices[1].sizes());
+
+    if constexpr (BSplineCore::parDim_ == 2)
+
+      /// curl = ???
+      return utils::BlockTensor<torch::Tensor, 1, 2>(
+          BSplineCore::template eval<deriv::dx, memory_optimized>(
+              xi, indices, coeff_indices)[0],
+          BSplineCore::template eval<deriv::dy, memory_optimized>(
+              xi, indices, coeff_indices)[1]);
+
+    else
+      throw std::runtime_error("Unsupported parametric dimension");
+  }
+
+  template <bool memory_optimized = false>
+  inline auto curl(const utils::TensorArray3 &xi,
+                   const utils::TensorArray3 &indices,
+                   const torch::Tensor &coeff_indices) const {
+    assert(xi[0].sizes() == indices[0].sizes() &&
+           xi[1].sizes() == indices[1].sizes() &&
+           xi[2].sizes() == indices[2].sizes());
+
+    if constexpr (BSplineCore::parDim_ == 3)
+
+      /// curl = du_z / dy - du_y / dz,
+      ///        du_x / dz - du_z / dx,
+      ///        du_y / dx - du_x / dy
+      return utils::BlockTensor<torch::Tensor, 1, 3>(
+          BSplineCore::template eval<deriv::dy, memory_optimized>(
+              xi, indices, coeff_indices)[2] -
+          BSplineCore::template eval<deriv::dz, memory_optimized>(
+              xi, indices, coeff_indices)[1],
+          BSplineCore::template eval<deriv::dz, memory_optimized>(
+              xi, indices, coeff_indices)[0] +
+          BSplineCore::template eval<deriv::dx, memory_optimized>(
+              xi, indices, coeff_indices)[2],
+          BSplineCore::template eval<deriv::dx, memory_optimized>(
+              xi, indices, coeff_indices)[1] +
+          BSplineCore::template eval<deriv::dy, memory_optimized>(
+              xi, indices, coeff_indices)[0]);
+    else
+      throw std::runtime_error("Unsupported parametric dimension");
+  }
+
+  template <bool memory_optimized = false>
+  inline auto curl(const utils::TensorArray4 &xi,
+                   const utils::TensorArray4 &indices,
+                   const torch::Tensor &coeff_indices) const {
+    assert(xi[0].sizes() == indices[0].sizes() &&
+           xi[1].sizes() == indices[1].sizes() &&
+           xi[2].sizes() == indices[2].sizes() &&
+           xi[3].sizes() == indices[3].sizes());
+
+    if constexpr (BSplineCore::parDim_ == 4)
+
+      /// curl = ???
+      return utils::BlockTensor<torch::Tensor, 1, 4>(
+          BSplineCore::template eval<deriv::dx, memory_optimized>(
+              xi, indices, coeff_indices)[0],
+          BSplineCore::template eval<deriv::dy, memory_optimized>(
+              xi, indices, coeff_indices)[1],
+          BSplineCore::template eval<deriv::dz, memory_optimized>(
+              xi, indices, coeff_indices)[2],
+          BSplineCore::template eval<deriv::dt, memory_optimized>(
+              xi, indices, coeff_indices)[3]);
+
+    else
+      throw std::runtime_error("Unsupported parametric dimension");
+  }
+  /// @}
+  
   /// @brief Returns a block-tensor with the divergence of the
   /// B-spline object with respect to the parametric variables
   ///
@@ -4521,8 +4709,8 @@ public:
   /// @param[in] coeff_indices Coefficient indices where to evaluate the
   /// divergence
   ///
-  /// @result Block-tensor with the divergence of with respect to
-  /// the parametric variables
+  /// @result Block-tensor with the divergence of the B-spline with
+  /// respect to the parametric variables
   /// \f[
   ///     \nabla_{\boldsymbol{\xi}} \cdot \mathbf{u}
   ///        =
@@ -5172,7 +5360,6 @@ public:
   ///     \end{bmatrix}
   /// \f]
   ///
-  ///
   /// @note If the B-spline object has geometric dimension larger
   /// then one then all Hessian matrices are returned as slices of a
   /// rank-3 tensor.
@@ -5458,7 +5645,8 @@ public:
     }
 
     auto jacInv =
-        G.template jac<memory_optimized>(xi, indices_G, coeff_indices_G).ginv();
+      G.template jac<memory_optimized>(xi, indices_G, coeff_indices_G).ginv();
+    
     return jacInv.tr() * hessu * jacInv;
   }
 
@@ -5793,18 +5981,339 @@ public:
                .ginv();
   }
 
+  //  clang-format off
+  /// @brief Returns a block-tensor with the Laplacian of the B-spline
+  /// object in the points `xi` with respect to the parametric variables
+  ///
+  /// @param[in] xi Point(s) where to evaluate the Laplacian
+  ///
+  /// @result Block-tensor with the Laplacian with respect to the
+  /// parametric variables `xi`
+  /// \f[
+  ///     L_{\boldsymbol{\xi}}(u)
+  ///        =
+  ///     \sum_{i,j=0\atop|i+j|=2}^2 
+  ///     \frac{\partial^2 u}{\partial \xi_i\partial \xi_{j}}
+  /// \f]
+  ///
+  /// @note If the B-spline object has geometric dimension larger
+  /// then one then all Laplacians are returned as a vector.
+  //  clang-format on
+  ///
+  /// @{
+  template <bool memory_optimized = false>
+  inline auto lapl(const torch::Tensor &xi) const {
+    return lapl<memory_optimized>(utils::TensorArray1({xi}));
+  }
+  
   /// Plots the B-spline object
   inline auto plot(int64_t res0 = 10, int64_t res1 = 10,
                    int64_t res2 = 10) const {
     return plot(*this, res0, res1, res2);
   }
 
+  template <bool memory_optimized = false>
+  inline auto
+  lapl(const std::array<torch::Tensor, BSplineCore::parDim_> &xi) const {
+    if constexpr (BSplineCore::parDim_ == 0)
+      return utils::BlockTensor<torch::Tensor, 1, 1>{
+          torch::zeros_like(BSplineCore::coeffs_[0])};
+    else
+      return lapl<memory_optimized>(xi, BSplineCore::find_knot_indices(xi));
+  }
+  /// @}
+
+  //  clang-format off
+  /// @brief Returns a block-tensor with the Laplacian of the B-spline
+  /// object in the points `xi` with respect to the parametric
+  /// variables
+  ///
+  /// @param[in] xi Point(s) where to evaluate the Laplacian
+  ///
+  /// @param[in] indices Knot indices where to evaluate the Laplacian
+  ///
+  /// @result Block-tensor with the Laplacian with respect to
+  /// the parametric variables
+  /// \f[
+  ///     L_{\boldsymbol{\xi}}(u)
+  ///        =
+  ///     \sum_{i,j=0\atop|i+j|=2}^2 
+  ///     \frac{\partial^2 u}{\partial \xi_i\partial \xi_{j}}
+  /// \f]
+  ///
+  /// @note If the B-spline object has geometric dimension larger
+  /// then one then all Laplacian matrices are returned as a vector.
+  //  clang-format on
+  template <bool memory_optimized = false>
+  inline auto
+  lapl(const std::array<torch::Tensor, BSplineCore::parDim_> &xi,
+          const std::array<torch::Tensor, BSplineCore::parDim_> &indices) const {
+    return lapl<memory_optimized>(
+        xi, indices,
+        BSplineCore::template find_coeff_indices<memory_optimized>(indices));
+  }
+
+  //  clang-format off
+  /// @brief Returns a block-tensor with the Laplacian of the B-spline
+  /// object in the points `xi` with respect to the parametric
+  /// variables
+  ///
+  /// @param[in] xi Point(s) where to evaluate the Laplacian
+  ///
+  /// @param[in] indices Knot indices where to evaluate the Laplacian
+  ///
+  /// @param[in] coeff_indices Coefficient indices where to evaluate the Laplacian
+  ///
+  /// @result Block-tensor with the Laplacian with respect to the
+  /// parametric variables
+  /// \f[
+  ///     L_{\boldsymbol{\xi}}(u)
+  ///        =
+  ///     \sum_{i,j=0\atop|i+j|=2}^2 
+  ///     \frac{\partial^2 u}{\partial \xi_i\partial \xi_{j}}
+  /// \f]
+  ///
+  /// @note If the B-spline object has geometric dimension larger
+  /// then one then all Laplacians are returned as a vector.
+  //  clang-format on
+  ///
+  /// @{
+  template <bool memory_optimized = false>
+  inline auto lapl(const utils::TensorArray1 &xi,
+                      const utils::TensorArray1 &indices,
+                      const torch::Tensor &coeff_indices) const {
+    assert(xi[0].sizes() == indices[0].sizes());
+    if constexpr (BSplineCore::parDim_ == 1)
+      return utils::BlockTensor<torch::Tensor, 1, 1, BSplineCore::geoDim_>(
+          BSplineCore::template eval<deriv::dx ^ 2, memory_optimized>(
+              xi, indices, coeff_indices));
+    else
+      throw std::runtime_error("Unsupported parametric dimension");
+  }
+
+  template <bool memory_optimized = false>
+  inline auto lapl(const utils::TensorArray2 &xi,
+                      const utils::TensorArray2 &indices,
+                      const torch::Tensor &coeff_indices) const {
+    assert(xi[0].sizes() == indices[0].sizes() &&
+           xi[1].sizes() == indices[1].sizes());
+
+    if constexpr (BSplineCore::parDim_ == 2)
+      return utils::BlockTensor<torch::Tensor, 2, BSplineCore::geoDim_, 2>(
+                 BSplineCore::template eval<deriv::dx ^ 2, memory_optimized>(
+                     xi, indices, coeff_indices) +
+                 BSplineCore::template eval<deriv::dy ^ 2, memory_optimized>(
+                     xi, indices, coeff_indices))
+          .reorder_ikj();
+    else
+      throw std::runtime_error("Unsupported parametric dimension");
+  }
+
+  template <bool memory_optimized = false>
+  inline auto lapl(const utils::TensorArray3 &xi,
+                   const utils::TensorArray3 &indices,
+                   const torch::Tensor &coeff_indices) const {
+    assert(xi[0].sizes() == indices[0].sizes() &&
+           xi[1].sizes() == indices[1].sizes() &&
+           xi[2].sizes() == indices[2].sizes());
+
+    if constexpr (BSplineCore::parDim_ == 3)
+      return utils::BlockTensor<torch::Tensor, 3, BSplineCore::geoDim_, 3>(
+                 BSplineCore::template eval<deriv::dx ^ 2, memory_optimized>(
+                                            xi, indices, coeff_indices) +
+                 BSplineCore::template eval<deriv::dy ^ 2, memory_optimized>(
+                                            xi, indices, coeff_indices) +
+                 BSplineCore::template eval<deriv::dz ^ 2, memory_optimized>(
+                                            xi, indices, coeff_indices))
+          .reorder_ikj();
+    else
+      throw std::runtime_error("Unsupported parametric dimension");
+  }
+
+  template <bool memory_optimized = false>
+  inline auto lapl(const utils::TensorArray4 &xi,
+                      const utils::TensorArray4 &indices,
+                      const torch::Tensor &coeff_indices) const {
+    assert(xi[0].sizes() == indices[0].sizes() &&
+           xi[1].sizes() == indices[1].sizes() &&
+           xi[2].sizes() == indices[2].sizes() &&
+           xi[3].sizes() == indices[3].sizes());
+
+    if constexpr (BSplineCore::parDim_ == 4)
+      return utils::BlockTensor<torch::Tensor, 4, BSplineCore::geoDim_, 4>(
+                 BSplineCore::template eval<deriv::dx ^ 2, memory_optimized>(
+                     xi, indices, coeff_indices) +                 
+                 BSplineCore::template eval<deriv::dy ^ 2, memory_optimized>(
+                     xi, indices, coeff_indices) +
+                 BSplineCore::template eval<deriv::dz ^ 2, memory_optimized>(
+                     xi, indices, coeff_indices) +
+                 BSplineCore::template eval<deriv::dt ^ 2, memory_optimized>(
+                     xi, indices, coeff_indices))
+          .reorder_ikj();
+    else
+      throw std::runtime_error("Unsupported parametric dimension");
+  }
+  /// @}
+
+  /// @brief Returns a block-tensor with the Laplacian of the B-spline
+  /// object in the points `xi` with respect to the physical
+  /// variables
+  ///
+  /// @tparam Geometry Type of the geometry B-spline object
+  ///
+  /// @param[in] G B-spline geometry object
+  ///
+  /// @param[in] xi Point(s) where to evaluate the Laplacian
+  ///
+  /// @result Block-tensor with the Laplacian with respect to the
+  /// parametric variables
+  /// \f[
+  ///     L_{\mathbf{x}}(u)
+  ///        =
+  ///     \text{trace} \left(
+  ///     J_{\boldsymbol{\xi}}(G)^{-T}
+  ///     \left(
+  ///       H_\boldsymbol{\xi}(u)
+  ///       -
+  ///       \sum_k \nabla_{\mathbf{x},k}u H_{\boldsymbol{\xi}}(G_k)
+  ///     \right)
+  ///     J_{\boldsymbol{\xi}}(G)^{-1} \right),
+  ///     \quad
+  ///     \mathbf{x} = G(\boldsymbol{\xi})
+  /// \f]
+  ///
+  /// @{
+  template <bool memory_optimized = false, typename Geometry>
+  auto ilapl(const Geometry &G, const torch::Tensor &xi) const {
+    return ilapl<memory_optimized, Geometry>(G, utils::TensorArray1({xi}));
+  }
+
+  template <bool memory_optimized = false, typename Geometry>
+  inline auto
+  ilapl(const Geometry &G,
+        const std::array<torch::Tensor, BSplineCore::parDim_> &xi) const {
+    if constexpr (BSplineCore::parDim_ == 0)
+      return utils::BlockTensor<torch::Tensor, 1, 1>{
+          torch::zeros_like(BSplineCore::coeffs_[0])};
+    else
+      return ilapl<memory_optimized, Geometry>(
+          G, xi, BSplineCore::find_knot_indices(xi), G.find_knot_indices(xi));
+  }
+  /// @}
+
+  /// @brief Returns a block-tensor with the Laplacian of the B-spline
+  /// object in the points `xi` with respect to the physical
+  /// variables
+  ///
+  /// @tparam Geometry Type of the geometry B-spline object
+  ///
+  /// @param[in] G B-spline geometry object
+  ///
+  /// @param[in] xi Point(s) where to evaluate the Laplacian
+  ///
+  /// @param[in] indices Knot indices where to evaluate the Laplacian
+  ///
+  /// @param[in] indices_G Knot indices where to evaluate Jacobian of `G`
+  ///
+  /// @result Block-tensor with the Laplacian with respect to the
+  /// physical variables
+  /// \f[
+  ///     L_{\mathbf{x}}(u)
+  ///        =
+  ///     \text{trace} \left(
+  ///     J_{\boldsymbol{\xi}}(G)^{-T}
+  ///     \left(
+  ///       H_\boldsymbol{\xi}(u)
+  ///       -
+  ///       \sum_k \nabla_{\mathbf{x},k}u H_{\boldsymbol{\xi}}(G_k)
+  ///     \right)
+  ///     J_{\boldsymbol{\xi}}(G)^{-1} \right),
+  ///     \quad
+  ///     \mathbf{x} = G(\boldsymbol{\xi})
+  /// \f]
+  template <bool memory_optimized = false, typename Geometry>
+  inline auto
+  ilapl(const Geometry G,
+        const std::array<torch::Tensor, BSplineCore::parDim_> &xi,
+        const std::array<torch::Tensor, BSplineCore::parDim_> &indices,
+        const std::array<torch::Tensor, Geometry::parDim()> &indices_G) const {
+    return ilapl<memory_optimized, Geometry>(
+        G, xi, indices,
+        BSplineCore::template find_coeff_indices<memory_optimized>(indices),
+        indices_G, G.template find_coeff_indices<memory_optimized>(indices_G));
+  }
+
+  /// @brief Returns a block-tensor with the Laplacian of the B-spline
+  /// object in the points `xi` with respect to the physical
+  /// variables
+  ///
+  /// @tparam Geometry Type of the geometry B-spline object
+  ///
+  /// @param[in] G B-spline geometry object
+  ///
+  /// @param[in] xi Point(s) where to evaluate the Laplacian
+  ///
+  /// @param[in] indices Knot indices where to evaluate the Laplacian
+  ///
+  /// @param[in] indices_G Knot indices where to evaluate the Jacobian of `G`
+  ///
+  /// @param[in] coeff_indices Coefficient indices where to evaluate the Laplacian
+  ///
+  /// @param[in] coeff_indices_G Coefficient indices where to evaluate the
+  /// Jacobian of `G`
+  ///
+  /// @result Block-tensor with the Laplacian with respect to the
+  /// physical variables
+  /// \f[
+  ///     L_{\mathbf{x}}(u)
+  ///        =
+  ///     \text{trace} \left(
+  ///     J_{\boldsymbol{\xi}}(G)^{-T}
+  ///     \left(
+  ///       H_\boldsymbol{\xi}(u)
+  ///       -
+  ///       \sum_k \nabla_{\mathbf{x},k}u H_{\boldsymbol{\xi}}(G_k)
+  ///     \right)
+  ///     J_{\boldsymbol{\xi}}(G)^{-1} \right),
+  ///     \quad
+  ///     \mathbf{x} = G(\boldsymbol{\xi})
+  /// \f]
+  template <bool memory_optimized = false, typename Geometry>
+  inline auto
+  ilapl(const Geometry &G,
+        const std::array<torch::Tensor, BSplineCore::parDim_> &xi,
+        const std::array<torch::Tensor, BSplineCore::parDim_> &indices,
+        const torch::Tensor &coeff_indices,
+        const std::array<torch::Tensor, Geometry::parDim()> &indices_G,
+        const torch::Tensor &coeff_indices_G) const {
+
+    auto hessu = hess<memory_optimized>(xi, indices, coeff_indices).slice(0);
+
+    {
+      auto igradG = igrad<memory_optimized>(G, xi, indices, coeff_indices,
+                                            indices_G, coeff_indices_G);
+      auto hessG =
+          G.template hess<memory_optimized>(xi, indices_G, coeff_indices_G);
+      assert(igradG.cols() == hessG.slices());
+      for (short_t k = 0; k < hessG.slices(); ++k)
+        hessu -= igradG(0, k) * hessG.slice(k);
+    }
+
+    auto jacInv =
+      G.template jac<memory_optimized>(xi, indices_G, coeff_indices_G).ginv();
+    
+    return (jacInv.tr() * hessu * jacInv).trace();
+  }
+
+
+
+  
   /// Plots the B-spline object
   template <typename BSplineCoreColor>
   inline auto plot(const BSplineCommon<BSplineCoreColor> &color,
                    int64_t res0 = 10, int64_t res1 = 10,
                    int64_t res2 = 10) const {
-#ifdef WITH_MATPLOT
+#ifdef IGANET_WITH_MATPLOT
     static_assert(BSplineCore::parDim() == BSplineCoreColor::parDim(),
                   "Parametric dimensions must match");
 
@@ -6370,7 +6879,7 @@ public:
           "Unsupported combination of parametric/geometric dimensions");
 #else
     throw std::runtime_error(
-        "This functions must be compiled with -DWITH_MATPLOT turned on");
+        "This functions must be compiled with -DIGANET_WITH_MATPLOT turned on");
 #endif
   }
 

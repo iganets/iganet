@@ -49,7 +49,10 @@ private:
 
 public:
   /// @brief Default constructor
-  BSplineModel() = default;
+  BSplineModel()
+      : offset_(torch::zeros({3}, Options<typename BSpline_t::value_type>{})),
+        rotation_(
+            torch::zeros({3}, Options<typename BSpline_t::value_type>{})) {}
 
   /// @brief Constructor for equidistant knot vectors
   BSplineModel(const std::array<int64_t, BSpline_t::parDim()> ncoeffs,
