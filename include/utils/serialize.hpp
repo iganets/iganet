@@ -96,6 +96,106 @@ inline auto to_json(const std::array<torch::Tensor, M> &tensors) {
   return json;
 }
 
+#ifdef IGANET_WITH_GISMO
+  /// @brief Converts a gismo::gsMatrix object to a JSON object
+  template <typename T, int Rows, int Cols, int Options>
+  inline auto to_json(const gismo::gsMatrix<T, Rows, Cols, Options> &matrix) {
+    auto json = nlohmann::json::array();
+    
+    for (std::size_t j = 0; j < matrix.cols(); ++j) {
+      auto data = nlohmann::json::array();
+      for (std::size_t i = 0; i < matrix.rows(); ++i) {
+        data.push_back(matrix(i,j));
+      }        
+      json.emplace_back(data);
+    }
+
+    return json;
+  }
+
+  /// @brief Converts a gismo::gsBSpline object to a JSON object
+  template<typename T>
+  inline auto to_json(const gismo::gsBSpline<T> &bspline) {
+    auto json = nlohmann::json();
+
+    json["degrees"] = nlohmann::json::array();
+    
+    for (std::size_t i = 0; i < bspline.parDim(); ++i)
+      json["degrees"].push_back(bspline.degree(i));
+
+    json["geoDim"] = bspline.geoDim();
+    json["parDim"] = bspline.parDim();
+
+    json["ncoeffs"] = nlohmann::json::array();
+    for (std::size_t i = 0; i < bspline.parDim(); ++i)
+      json["ncoeffs"].push_back(bspline.basis().size(i));
+    
+    json["coeffs"] = to_json(bspline.coefs());
+
+    json["nknots"] = nlohmann::json::array();
+    for (std::size_t i = 0; i < bspline.parDim(); ++i)
+      json["nknots"].push_back(bspline.knots(i).size());
+
+    json["knots"] = nlohmann::json::array();
+    for (std::size_t i = 0; i < bspline.parDim(); ++i)
+      json["knots"].push_back(bspline.knots(i));
+    
+    return json;    
+  }
+
+  /// @brief Converts a gismo::gsTensorBSpline object to a JSON object
+  template<int d, typename T>
+  inline auto to_json(const gismo::gsTensorBSpline<d, T> &bspline) {
+    auto json = nlohmann::json();
+    
+    json["degrees"] = nlohmann::json::array();
+    
+    for (std::size_t i = 0; i < bspline.parDim(); ++i)
+      json["degrees"].push_back(bspline.degree(i));
+
+    json["geoDim"] = bspline.geoDim();
+    json["parDim"] = bspline.parDim();
+
+    json["ncoeffs"] = nlohmann::json::array();
+    for (std::size_t i = 0; i < bspline.parDim(); ++i)
+      json["ncoeffs"].push_back(bspline.basis().size(i));
+    
+    json["coeffs"] = to_json(bspline.coefs());
+
+    json["nknots"] = nlohmann::json::array();
+    for (std::size_t i = 0; i < bspline.parDim(); ++i)
+      json["nknots"].push_back(bspline.knots(i).size());
+
+    json["knots"] = nlohmann::json::array();
+    for (std::size_t i = 0; i < bspline.parDim(); ++i)
+      json["knots"].push_back(bspline.knots(i));
+    
+    return json;
+  }
+  
+  /// @brief Converts a gismo::gsMultiPatch object to a JSON object
+  template<typename T>
+  inline auto to_json(const gismo::gsMultiPatch<T> &mp) {
+    auto json = nlohmann::json::array();
+
+    for (std::size_t i = 0; i < mp.nPatches(); ++i) {
+
+      if (auto patch = dynamic_cast<const gsBSpline<T>*>(&mp.patch(i)))
+        json.push_back(to_json(*patch));
+      else if (auto patch = dynamic_cast<const gsTensorBSpline<2,T>*>(&mp.patch(i)))
+        json.push_back(to_json(*patch));
+      else if (auto patch = dynamic_cast<const gsTensorBSpline<3,T>*>(&mp.patch(i)))
+        json.push_back(to_json(*patch));
+      else if (auto patch = dynamic_cast<const gsTensorBSpline<4,T>*>(&mp.patch(i)))
+        json.push_back(to_json(*patch));
+      else
+        json.push_back("{ Invalid patch type }");
+    }
+    
+    return json;
+  }
+#endif
+
 /// @brief Converts a torch::TensorAccessor object to an XML document object
 template <typename T, std::size_t N>
 inline pugi::xml_document to_xml(const torch::TensorAccessor<T, N> &accessor,
