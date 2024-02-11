@@ -117,6 +117,8 @@ option(IGANET_WITH_OPENMP       "With OpenMP support"       ON )
 find_package(Torch REQUIRED)
 list(APPEND CMAKE_CXX_FLAGS ${TORCH_CXX_FLAGS})
 
+find_package(IPEX)
+
 if(NOT WIN32)
 find_package(ZLIB REQUIRED)
 endif()
