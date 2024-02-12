@@ -280,48 +280,56 @@ public:
     if (component == "geometry" ||
         component == "" /* might be removed in the future */) {
       if (attribute != "") {
-        nlohmann::json data;
+        nlohmann::json json;
         if (attribute == "degrees")
-          data["degrees"] = this->degrees();
+          json["degrees"] = this->degrees();
         else if (attribute == "geoDim")
-          data["geoDim"] = this->geoDim();
+          json["geoDim"] = this->geoDim();
         else if (attribute == "parDim")
-          data["parDim"] = this->parDim();
+          json["parDim"] = this->parDim();
         else if (attribute == "ncoeffs")
-          data["ncoeffs"] = this->ncoeffs();
+          json["ncoeffs"] = this->ncoeffs();
         else if (attribute == "nknots")
-          data["nknots"] = this->nknots();
-        else if (attribute == "knots")
-          data["knots"] = this->knots_to_json();
+          json["nknots"] = this->nknots();
         else if (attribute == "coeffs")
-          data["coeffs"] = this->coeffs_to_json();
-        return data;
+          json["coeffs"] = this->coeffs_to_json();
+        else if (attribute == "knots")
+          json["knots"] = this->knots_to_json();
+
+        std::cout << json.dump(2) <<std::endl;
+        return json;
+        
       } else {
         auto json = BSpline_t::to_json();
         json.update(Model::to_json("transform", ""), true);
+
+        std::cout << json.dump(2) <<std::endl;
         return json;
       }
     }
 
     else if (component == "solution") {
       if (attribute != "") {
-        nlohmann::json data;
+        nlohmann::json json;
         if (attribute == "degrees")
-          data["degrees"] = solution_.degrees();
+          json["degrees"] = solution_.degrees();
         else if (attribute == "geoDim")
-          data["geoDim"] = solution_.geoDim();
+          json["geoDim"] = solution_.geoDim();
         else if (attribute == "parDim")
-          data["parDim"] = solution_.parDim();
+          json["parDim"] = solution_.parDim();
         else if (attribute == "ncoeffs")
-          data["ncoeffs"] = solution_.ncoeffs();
+          json["ncoeffs"] = solution_.ncoeffs();
         else if (attribute == "nknots")
-          data["nknots"] = solution_.nknots();
-        else if (attribute == "knots")
-          data["knots"] = solution_.knots_to_json();
+          json["nknots"] = solution_.nknots();
         else if (attribute == "coeffs")
-          data["coeffs"] = solution_.coeffs_to_json();
-        return data;
+          json["coeffs"] = solution_.coeffs_to_json();
+        else if (attribute == "knots")
+          json["knots"] = solution_.knots_to_json();
+
+        std::cout << json.dump(2) <<std::endl;
+        return json;
       } else
+
         return solution_.to_json();
     }
 
@@ -573,7 +581,7 @@ public:
         archive.load_from(reinterpret_cast<const char *>(binary.data()),
                           binary.size());
 
-        archive.read("transform", transform);
+        archive.read("transform", transform_);
         BSpline_t::read(archive, "geometry");
         solution_.read(archive, "solution");
 
@@ -592,7 +600,7 @@ public:
     archive.write("model",
                   static_cast<int64_t>(std::hash<std::string>{}(getName())));
     archive.write("nonuniform", static_cast<bool>(BSpline_t::is_nonuniform()));
-    archive.write("transform", transform);
+    archive.write("transform", transform_);
 
     BSpline_t::write(archive, "geometry");
     solution_.write(archive, "solution");
@@ -649,12 +657,12 @@ public:
     if (component.empty()) {
       BSpline_t::from_xml(xml, id, "geometry");
       solution_.from_xml(xml, id, "solution");
-      iganet::utils::from_xml<iganet::real_t, 2>(xml, transform, "Matrix", id,
+      iganet::utils::from_xml<iganet::real_t, 2>(xml, transform_, "Matrix", id,
                                                  "transform", false);
     } else {
       if (component == "geometry") {
         BSpline_t::from_xml(xml, id, "geometry");
-        iganet::utils::from_xml<iganet::real_t, 2>(xml, transform, "Matrix", id,
+        iganet::utils::from_xml<iganet::real_t, 2>(xml, transform_, "Matrix", id,
                                                    "transform", false);
       } else if (component == "solution")
         solution_.from_xml(xml, id, "solution");
@@ -685,12 +693,12 @@ public:
     if (component.empty()) {
       BSpline_t::to_xml(xml, id, "geometry");
       solution_.to_xml(xml, id, "solution");
-      iganet::utils::to_xml<iganet::real_t, 2>(transform, xml, "Matrix", id,
+      iganet::utils::to_xml<iganet::real_t, 2>(transform_, xml, "Matrix", id,
                                                "transform");
     } else {
       if (component == "geometry") {
         BSpline_t::to_xml(xml, id, "geometry");
-        iganet::utils::to_xml<iganet::real_t, 2>(transform, xml, "Matrix", id,
+        iganet::utils::to_xml<iganet::real_t, 2>(transform_, xml, "Matrix", id,
                                                  "transform");
       } else if (component == "solution")
         solution_.to_xml(xml, id, "solution");
