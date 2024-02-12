@@ -147,7 +147,7 @@ public:
 class Model {
 public:
   /// @brief Constructor
-  Model() : transform(torch::eye(4)){};
+  Model() : transform_(torch::eye(4)){};
 
   /// @brief Destructor
   virtual ~Model(){};
@@ -215,10 +215,10 @@ public:
                                  const std::string &attribute) const {
     if (component == "transform") {
 
-      nlohmann::json data;
-      data["matrix"] = utils::to_json<iganet::real_t, 1>(transform.flatten());
+      nlohmann::json json;
+      json["matrix"] = utils::to_json<iganet::real_t, 1>(transform_.flatten());
 
-      return data;
+      return json;
     }
 
     else
@@ -241,12 +241,14 @@ public:
         throw IndexOutOfBoundsException();
 
       auto transform_cpu =
-          utils::to_tensorAccessor<iganet::real_t, 2>(transform, torch::kCPU);
+          utils::to_tensorAccessor<iganet::real_t, 2>(transform_, torch::kCPU);
       auto transformAccessor = std::get<1>(transform_cpu);
 
       std::size_t index(0);
-      for (const auto &entry : matrix)
-        transformAccessor[index / 4][index++ % 4] = entry;
+      for (const auto &entry : matrix) {
+        transformAccessor[index / 4][index % 4] = entry;
+        index++;
+      }
 
       return "{}";
     }
@@ -257,7 +259,7 @@ public:
 
 protected:
   /// @brief Global transformation matrix
-  torch::Tensor transform;
+  torch::Tensor transform_;
 };
 
 } // namespace iganet
