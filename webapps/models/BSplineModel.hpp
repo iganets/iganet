@@ -296,14 +296,12 @@ public:
         else if (attribute == "knots")
           json["knots"] = this->knots_to_json();
 
-        std::cout << json.dump(2) <<std::endl;
         return json;
         
       } else {
         auto json = BSpline_t::to_json();
         json.update(Model::to_json("transform", ""), true);
 
-        std::cout << json.dump(2) <<std::endl;
         return json;
       }
     }
@@ -326,7 +324,6 @@ public:
         else if (attribute == "knots")
           json["knots"] = solution_.knots_to_json();
 
-        std::cout << json.dump(2) <<std::endl;
         return json;
       } else
 

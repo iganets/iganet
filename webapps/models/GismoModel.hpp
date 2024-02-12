@@ -35,7 +35,6 @@ namespace iganet {
       GismoModel() {
         offset_.setZero();
         rotation_.setZero();
-        std::cout << "Constructor GismoModel\n";
       }
 
       /// @brief Destructor

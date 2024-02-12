@@ -34,9 +34,7 @@ namespace iganet {
                       const std::array<int64_t, d> ncoeffs,
                       const std::array<int64_t, d> npatches)
       : GismoPdeModel<d, T>(degrees, ncoeffs, npatches)
-    {
-      std::cout << "Constructor GismoPoissonModel\n";
-    }
+    {}
       
     /// @brief Destructor
     ~GismoPoissonModel() {}

@@ -37,8 +37,6 @@ namespace iganet {
                     const std::array<int64_t, d> npatches) 
         : GismoModel<T>()
       {
-        std::cout << "Constructor GismoPdeModel\n";
-        
         if constexpr(d == 1) {
           gsKnotVector<T> KV0 (0, 1, ncoeffs[0]-degrees[0]-1, degrees[0]+1);
             
@@ -286,14 +284,12 @@ namespace iganet {
               return "{ INVALID REQUEST }";
           }          
 
-          std::cout << json.dump(2) <<std::endl;
           return json;
           
         } else {
           auto json = utils::to_json(geo_);
           json.update(Model::to_json("transform", ""), true);
 
-          std::cout << json.dump(2) <<std::endl;
           return json;
         }
         
@@ -303,9 +299,6 @@ namespace iganet {
       /// @brief Evaluates the model
       nlohmann::json eval(const std::string &component,
                           const nlohmann::json &json) const override {
-
-        std::cout << "/n/nEVAL/n/n";
-        
         gsMatrix<T> ab = geo_.patch(0).support();
         gsVector<T> a  = ab.col(0);
         gsVector<T> b  = ab.col(1);
@@ -320,22 +313,12 @@ namespace iganet {
               np(i) = res[i];            
           }
         
-        std::cout << "\na = " << a << "\nb = " << b << "\nnp = " << np << std::endl;
-        
         // Uniform parameters for evaluation
-        gsMatrix<T> pts = gsPointGrid(a, b, np);
-
-        std::cout << "\npts = " << pts << std::endl;
-        
+        gsMatrix<T> pts = gsPointGrid(a, b, np);        
         gsMatrix<T> eval = geo_.patch(0).eval(pts);
-               
-        std::cout << "\neval = " << eval << std::endl;
         
-        return utils::to_json(eval);
-        
-      }
-
-      
+        return utils::to_json(eval);        
+      }      
     };
     
   } // namespace webapp
