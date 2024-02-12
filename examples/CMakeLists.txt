@@ -36,6 +36,11 @@ foreach(example ${EXAMPLES})
   target_link_libraries(${name} PUBLIC ${TORCH_LIBRARIES})
   target_link_libraries(${name} PUBLIC pugixml)
 
+  # Intel Extension for PyTorch
+  if (IPEX_FOUND)
+    target_link_libraries(${name} PUBLIC ${TORCH_IPEX_LIBRARIES})
+  endif()
+  
   if (IGANET_WITH_GISMO)
     target_link_libraries(${name} PUBLIC gismo_static)
   endif()

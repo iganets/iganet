@@ -86,6 +86,11 @@ foreach(webapp ${WEBAPPS})
   target_link_libraries(${name} PUBLIC usockets)
   target_link_libraries(${name} PUBLIC pugixml)
 
+  # Intel Extension for PyTorch
+  if (IPEX_FOUND)
+    target_link_libraries(${name} PUBLIC ${TORCH_IPEX_LIBRARIES})
+  endif()
+
   if (IGANET_WITH_GISMO)
     target_link_libraries(${name} PUBLIC gismo_static)
   endif()

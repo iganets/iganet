@@ -162,6 +162,11 @@ pybind11_add_module(pyiganet_core MODULE ${SRCS})
 target_include_directories(pyiganet_core PUBLIC ${TORCH_INCLUDE_DIRS})
 target_link_libraries(pyiganet_core PUBLIC pugixml)
 
+# Intel Extension for PyTorch
+if (IPEX_FOUND)
+  target_link_libraries(${name} PUBLIC ${TORCH_IPEX_LIBRARIES})
+endif()
+
 if (IGANET_WITH_GISMO)
   target_link_libraries(pyiganet_core PUBLIC gismo)
 endif()

@@ -85,6 +85,11 @@ foreach(unittest ${UNITTESTS})
   # LibTorch
   target_link_libraries(${name} PUBLIC "${TORCH_LIBRARIES}")
   target_link_libraries(${name} PUBLIC pugixml)
+
+  # Intel Extension for PyTorch
+  if (IPEX_FOUND)
+    target_link_libraries(${name} PUBLIC ${TORCH_IPEX_LIBRARIES})
+  endif()
   
   # BSplineLib
   target_link_libraries(${name} PUBLIC splines)
