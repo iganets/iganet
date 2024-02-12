@@ -71,7 +71,7 @@ extern "C"
         // compile dynamic library
         auto libname = iganet::jit{}.compile(includes, src, "BSplineSurface");
 
-        // Search for library name
+        // search for library name
         auto model = models.find(libname);
         if (model == models.end()) {
           models[libname] =
@@ -179,7 +179,7 @@ extern "C"
             auto libname =
                 iganet::jit{}.compile(includes, src, "BSplineSurface");
 
-            // Search for library name
+            // search for library name
             auto model = models.find(libname);
             if (model == models.end()) {
               models[libname] =
