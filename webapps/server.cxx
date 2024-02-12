@@ -796,7 +796,7 @@ int main(int argc, char const *argv[]) {
                              iganet::webapp::status::invalidEvalRequest;
                          response["reason"] =
                              "Invalid EVAL request. Valid EVAL requests are "
-                             "\"eval/<session-id>/<model-instance>\"";
+                             "\"eval/<session-id>/<model-instance>/<model-component>\"";
                          ws->send(response.dump(), uWS::OpCode::TEXT, true);
                        }
 
