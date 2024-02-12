@@ -25,6 +25,9 @@ extern "C"
   // @brief List of JIT-compiled model handlers
   static std::map<std::string, std::shared_ptr<iganet::ModelHandler>> models;
 
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wreturn-type-c-linkage"
+  
   /// @brief Create a G+Smo poisson solver
   std::shared_ptr<iganet::Model> create(const nlohmann::json &json) {
     std::array<iganet::short_t, 2> degrees = {1, 1};
@@ -67,7 +70,7 @@ extern "C"
             std::make_shared<iganet::ModelHandler>(libname.c_str());
           model = models.find(libname);
         }
-        std::cout << "Now calling CREATE\n";
+
         // create model instance
         std::shared_ptr<iganet::Model> (*create)(const std::array<iganet::short_t, 2> &,
                                                  const std::array<int64_t, 2> &,
@@ -79,7 +82,6 @@ extern "C"
                                                                                                       model->second->getSymbol("create"));
         return create(degrees, ncoeffs, npatches);
       } catch (...) {
-        std::cout << "EXCEPTION\n";
         throw iganet::InvalidModelException();
       }
     } else
@@ -87,4 +89,6 @@ extern "C"
                                                                 iganet::real_t>>(degrees, ncoeffs, npatches);
   }
 
+#pragma GCC diagnostic pop
+  
 }

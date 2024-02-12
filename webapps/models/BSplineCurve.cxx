@@ -25,6 +25,9 @@ extern "C"
   /// @brief List of JIT-compiled model handlers
   static std::map<std::string, std::shared_ptr<iganet::ModelHandler>> models;
 
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wreturn-type-c-linkage"
+  
   /// @brief Create a B-spline curve
   std::shared_ptr<iganet::Model> create(const nlohmann::json &json) {
     enum iganet::webapp::degree degree = iganet::webapp::degree::linear;
@@ -209,4 +212,7 @@ extern "C"
 
     throw iganet::InvalidModelException();
   }
+
+#pragma GCC diagnostic pop
+  
 }
