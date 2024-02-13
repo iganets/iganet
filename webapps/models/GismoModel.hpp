@@ -32,7 +32,8 @@ namespace iganet {
 
     public:
       /// @brief Default constructor
-      GismoModel() {
+      GismoModel() :
+        transform_(gismo::gsMatrix<T, 4, 4>::Identity()) {
         offset_.setZero();
         rotation_.setZero();
       }
@@ -43,12 +44,12 @@ namespace iganet {
       /// @brief Serializes the model to JSON
       virtual nlohmann::json to_json(const std::string &component,
                                      const std::string &attribute) const override {
+
         if (component == "transform") {
+          nlohmann::json json;
+          json["matrix"] = utils::to_json(transform_, true);
 
-          nlohmann::json data;
-          data["matrix"] = utils::to_json(transform_);
-
-          return data;
+          return json;
         }
 
         else

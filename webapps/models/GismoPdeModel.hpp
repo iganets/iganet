@@ -249,7 +249,9 @@ namespace iganet {
             else
               return "{ INVALID REQUEST }";
             
-          } else if (attribute == "nknots") {            
+          }
+
+          else if (attribute == "nknots") {            
             json["nknots"] = nlohmann::json::array();
             
             if (auto bspline = dynamic_cast<const gsBSpline<T>*>(&geo_.patch(0)))              
@@ -271,7 +273,9 @@ namespace iganet {
             else
               return "{ INVALID REQUEST }";
 
-          } else if (attribute == "knots") {            
+          }
+
+          else if (attribute == "knots") {            
             json["knots"] = nlohmann::json::array();
             
             if (auto bspline = dynamic_cast<const gsBSpline<T>*>(&geo_.patch(0)))              
@@ -288,7 +292,7 @@ namespace iganet {
           
         } else {
           auto json = utils::to_json(geo_);
-          json.update(Model::to_json("transform", ""), true);
+          json.update(GismoModel<T>::to_json("transform", ""), true);
 
           return json;
         }
