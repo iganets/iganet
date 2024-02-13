@@ -51,7 +51,9 @@ extern "C"
 
       try {
         // generate list of include files
-        std::string includes = "#include <BSplineModel.hpp>\n";
+        std::string includes = "#include <BSplineModel.hpp>\n"
+          "#pragma GCC diagnostic push\n"
+          "#pragma GCC diagnostic ignored \"-Wreturn-type-c-linkage\"\n";
 
         // generate source code
         std::string src =
@@ -69,7 +71,7 @@ extern "C"
 
         src.append("3, ");
         src.append(std::to_string((int)degree) + ", " +
-                   std::to_string((int)degree) + ">>>(ncoeffs, init);\n}\n");
+                   std::to_string((int)degree) + ">>>(ncoeffs, init);\n}\n#pragma GCC diagnostic pop\n");
 
         // compile dynamic library
         auto libname = iganet::jit{}.compile(includes, src, "BSplineSurface");
@@ -157,7 +159,9 @@ extern "C"
             }
 
             // generate list of include files
-            std::string includes = "#include <BSplineModel.hpp>\n";
+            std::string includes = "#include <BSplineModel.hpp>\n"
+              "#pragma GCC diagnostic push\n"
+              "#pragma GCC diagnostic ignored \"-Wreturn-type-c-linkage\"\n";
 
             // generate source code
             std::string src =
@@ -176,7 +180,7 @@ extern "C"
             src.append("3, ");
             src.append(std::to_string((int)degrees[0]) + ", " +
                        std::to_string((int)degrees[1]) +
-                       ">>>(ncoeffs, init);\n}\n");
+                       ">>>(ncoeffs, init);\n}\n#pragma GCC diagnostic pop\n");
 
             // compile dynamic library
             auto libname =
