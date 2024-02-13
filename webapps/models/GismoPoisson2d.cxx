@@ -47,7 +47,9 @@ extern "C"
 
       try {
         // generate list of include files
-        std::string includes = "#include <GismoPoissonModel.hpp>\n";
+        std::string includes = "#include <GismoPoissonModel.hpp>\n"
+          "#pragma GCC diagnostic push\n"
+          "#pragma GCC diagnostic ignored \"-Wreturn-type-c-linkage\"\n";
 
         // generate source code
         std::string src =
@@ -58,7 +60,7 @@ extern "C"
 
         src.append("return "
                    "std::make_shared<iganet::webapp::GismoPoissonModel<2,"
-                   "iganet::real_t>>(degrees, ncoeffs, npatches);\n}\n");
+                   "iganet::real_t>>(degrees, ncoeffs, npatches);\n}\n#pragma GCC diagnostic pop\n");
 
         // compile dynamic library
         auto libname = iganet::jit{}.compile(includes, src, "GismoPoisson2d");
