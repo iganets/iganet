@@ -107,15 +107,21 @@ inline auto to_json(const std::array<torch::Tensor, M> &tensors) {
 #ifdef IGANET_WITH_GISMO
   /// @brief Converts a gismo::gsMatrix object to a JSON object
   template <typename T, int Rows, int Cols, int Options>
-  inline auto to_json(const gismo::gsMatrix<T, Rows, Cols, Options> &matrix) {
+  inline auto to_json(const gismo::gsMatrix<T, Rows, Cols, Options> &matrix, bool flatten = false) {
     auto json = nlohmann::json::array();
-    
-    for (std::size_t j = 0; j < matrix.cols(); ++j) {
-      auto data = nlohmann::json::array();
-      for (std::size_t i = 0; i < matrix.rows(); ++i) {
-        data.push_back(matrix(i,j));
-      }        
-      json.emplace_back(data);
+
+    if (flatten) {
+      for (std::size_t j = 0; j < matrix.cols(); ++j)
+        for (std::size_t i = 0; i < matrix.rows(); ++i)
+          json.push_back(matrix(i,j));
+    } else {
+      for (std::size_t j = 0; j < matrix.cols(); ++j) {
+        auto data = nlohmann::json::array();
+        for (std::size_t i = 0; i < matrix.rows(); ++i) {
+          data.push_back(matrix(i,j));
+        }        
+        json.emplace_back(data);
+      }
     }
 
     return json;
@@ -184,23 +190,40 @@ inline auto to_json(const std::array<torch::Tensor, M> &tensors) {
   /// @brief Converts a gismo::gsMultiPatch object to a JSON object
   template<typename T>
   inline auto to_json(const gismo::gsMultiPatch<T> &mp) {
-    auto json = nlohmann::json::array();
 
-    for (std::size_t i = 0; i < mp.nPatches(); ++i) {
+    if (mp.nPatches() > 1) {
+      // This must be revised in the protocol
+      auto json = nlohmann::json::array();
 
-      if (auto patch = dynamic_cast<const gsBSpline<T>*>(&mp.patch(i)))
-        json.push_back(to_json(*patch));
-      else if (auto patch = dynamic_cast<const gsTensorBSpline<2,T>*>(&mp.patch(i)))
-        json.push_back(to_json(*patch));
-      else if (auto patch = dynamic_cast<const gsTensorBSpline<3,T>*>(&mp.patch(i)))
-        json.push_back(to_json(*patch));
-      else if (auto patch = dynamic_cast<const gsTensorBSpline<4,T>*>(&mp.patch(i)))
-        json.push_back(to_json(*patch));
-      else
-        json.push_back("{ Invalid patch type }");
-    }
+      for (std::size_t i = 0; i < mp.nPatches(); ++i) {
+
+        if (auto patch = dynamic_cast<const gsBSpline<T>*>(&mp.patch(i)))
+          json.push_back(to_json(*patch));
+        else if (auto patch = dynamic_cast<const gsTensorBSpline<2,T>*>(&mp.patch(i)))
+          json.push_back(to_json(*patch));
+        else if (auto patch = dynamic_cast<const gsTensorBSpline<3,T>*>(&mp.patch(i)))
+          json.push_back(to_json(*patch));
+        else if (auto patch = dynamic_cast<const gsTensorBSpline<4,T>*>(&mp.patch(i)))
+          json.push_back(to_json(*patch));
+        else
+          json.push_back("{ Invalid patch type }");
+      }
     
-    return json;
+      return json;
+
+    } else {
+
+      if (auto patch = dynamic_cast<const gsBSpline<T>*>(&mp.patch(0)))
+        return to_json(*patch);
+      else if (auto patch = dynamic_cast<const gsTensorBSpline<2,T>*>(&mp.patch(0)))
+        return to_json(*patch);
+      else if (auto patch = dynamic_cast<const gsTensorBSpline<3,T>*>(&mp.patch(0)))
+        return to_json(*patch);
+      else if (auto patch = dynamic_cast<const gsTensorBSpline<4,T>*>(&mp.patch(0)))
+        return to_json(*patch);
+      else
+        return nlohmann::json("{ Invalid patch type }");
+    }
   }
 #endif
 
