@@ -1,5 +1,5 @@
 /**
-   @file models/BSplineSurface.cxx
+   @file webapps/models/BSplineSurface.cxx
 
    @brief B-Spline surface
 

@@ -1,5 +1,5 @@
 /**
-   @file models/BSplineVolume.cxx
+   @file webapps/models/BSplineVolume.cxx
 
    @brief B-Spline volume
 

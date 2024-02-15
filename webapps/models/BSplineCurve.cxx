@@ -1,5 +1,5 @@
 /**
-   @file models/BSplineCurve.cxx
+   @file webapps/models/BSplineCurve.cxx
 
    @brief B-Spline curve
 

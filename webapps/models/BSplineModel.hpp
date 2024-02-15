@@ -1,5 +1,5 @@
 /**
-   @file models/BSplineModel.hpp
+   @file webapps/models/BSplineModel.hpp
 
    @brief BSpline model
 

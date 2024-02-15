@@ -1,5 +1,5 @@
 /**
-   @file models/Poisson2d.cxx
+   @file webapps/models/Poisson2d.cxx
 
    @brief Poisson equation in 2d model
 
