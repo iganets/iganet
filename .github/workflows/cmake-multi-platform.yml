@@ -23,7 +23,7 @@ jobs:
       #
       # To add more build types (Release, Debug, RelWithDebInfo, etc.) customize the build_type list.
       matrix:
-        os: [ubuntu-latest, windows-latest]
+        os: [macos-latest, ubuntu-latest, windows-latest]
         build_type: [Release]
         c_compiler: [gcc, clang, cl]
         include:
@@ -36,6 +36,9 @@ jobs:
           - os: ubuntu-latest
             c_compiler: clang
             cpp_compiler: clang++
+          - os: macos-latest
+            c_compiler: clang
+            cpp_compiler: clang++
         exclude:
           - os: windows-latest
             c_compiler: gcc
@@ -43,6 +46,10 @@ jobs:
             c_compiler: clang
           - os: ubuntu-latest
             c_compiler: cl
+          - os: macos-latest
+            c_compiler: cl
+          - os: macos-latest
+            c_compiler: gcc
 
     steps:
     - uses: actions/checkout@v3
@@ -54,6 +61,13 @@ jobs:
       run: |
         echo "build-output-dir=${{ github.workspace }}/build" >> "$GITHUB_OUTPUT"
 
+    - name: Install PyTorch - MacOS
+      if: matrix.os == 'ubuntu-latest'
+      run: >
+        wget https://download.pytorch.org/libtorch/cpu/libtorch-cxx11-abi-shared-with-deps-2.2.0%2Bcpu.zip -O libtorch.zip &&
+        unzip libtorch.zip -d /opt &&
+        rm -f libtorch.zip
+        
     - name: Install PyTorch - Linux
       if: matrix.os == 'ubuntu-latest'
       run: >
@@ -64,8 +78,8 @@ jobs:
     - name: Install PyTorch - Windows
       if: matrix.os == 'windows-latest'
       run: >
-        Invoke-WebRequest -Uri "https://download.pytorch.org/libtorch/cpu/libtorch-win-shared-with-deps-2.2.0%2Bcpu.zip" -OutFile libtorch.zip
-        Expand-Archive -Path libtorch.zip -DestinationPath C:\
+        Invoke-WebRequest -Uri "https://download.pytorch.org/libtorch/cpu/libtorch-win-shared-with-deps-2.2.0%2Bcpu.zip" -OutFile libtorch.zip;
+        Expand-Archive -Path libtorch.zip -DestinationPath C:\;
         Remove-Item -Path "libtorch.zip" -Force
         
     - name: Configure CMake - Linux / GCC
