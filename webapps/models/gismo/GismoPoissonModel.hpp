@@ -1,5 +1,5 @@
 /**
-   @file models/GismoPoissonModel.hpp
+   @file webapps/models/gismo/GismoPoissonModel.hpp
 
    @brief G+Smo Poisson model
 
@@ -12,7 +12,7 @@
    file, You can obtain one at http://mozilla.org/MPL/2.0/.
 */
 
-#include <GismoPdeModel.hpp>
+#include "GismoPdeModel.hpp"
 
 namespace iganet {
 

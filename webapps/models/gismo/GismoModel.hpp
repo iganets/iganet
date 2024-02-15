@@ -1,5 +1,5 @@
 /**
-   @file models/GismoModel.hpp
+   @file webapps/models/gismo/GismoModel.hpp
 
    @brief G+Smo model
 

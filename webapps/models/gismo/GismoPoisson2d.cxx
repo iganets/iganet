@@ -1,5 +1,5 @@
 /**
-   @file models/GismoPoisson2d.cxx
+   @file webapps/models/gismo/GismoPoisson2d.cxx
 
    @brief G+Smo Poisson solver in 2d
 
@@ -12,9 +12,10 @@
    file, You can obtain one at http://mozilla.org/MPL/2.0/.
 */
 
-#include <GismoPoissonModel.hpp>
 #include <jit.hpp>
 #include <modelmanager.hpp>
+
+#include "GismoPoissonModel.hpp"
 
 #ifdef _WIN32
 extern "C" __declspec(dllexport)

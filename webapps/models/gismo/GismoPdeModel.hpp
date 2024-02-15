@@ -1,5 +1,5 @@
 /**
-   @file models/GismoPdeModel.hpp
+   @file webapps/models/gismo/GismoPdeModel.hpp
 
    @brief G+Smo PDE model
 
@@ -12,7 +12,7 @@
    file, You can obtain one at http://mozilla.org/MPL/2.0/.
 */
 
-#include <GismoModel.hpp>
+#include "GismoModel.hpp"
 
 namespace iganet {
 
