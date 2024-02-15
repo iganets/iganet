@@ -15,16 +15,13 @@
 file(GLOB EXAMPLES *.cxx)
 
 foreach(example ${EXAMPLES})
-  file(RELATIVE_PATH filename ${CMAKE_CURRENT_SOURCE_DIR} ${example})
 
-  if (NOT IGANET_BUILD_CPUONLY)
-    if (CMAKE_CUDA_COMPILER)
-      set_source_files_properties(${filename} PROPERTIES LANGUAGE CUDA)
-    endif()
+  if (NOT IGANET_BUILD_CPUONLY AND CMAKE_CUDA_COMPILER)
+    set_source_files_properties(${model} PROPERTIES LANGUAGE CUDA)
   endif()
-
-  string(REPLACE ".cxx" "" name ${filename})
-  add_executable(${name} ${filename})
+  
+  get_filename_component(name ${example} NAME_WE)
+  add_executable(${name} ${example})
 
   if(IGANET_BUILD_PCH AND NOT WIN32 AND NOT ${CMAKE_VERSION} VERSION_LESS "3.16.0")
     target_precompile_headers(${name} REUSE_FROM iganet_pch)

@@ -15,16 +15,21 @@
 ########################################################################
 # Models
 ########################################################################
-file(GLOB MODELS *.cxx)
+
+if (IGANET_WITH_GISMO)
+  file(GLOB MODELS *.cxx *.cpp)
+else()
+  file(GLOB MODELS *.cxx *.cpp gismo/*.cxx gismo/*.cpp)
+endif()
+
 foreach(model ${MODELS})
-  file(RELATIVE_PATH filename ${CMAKE_CURRENT_SOURCE_DIR} ${model})
 
-  if (CMAKE_CUDA_COMPILER)
-    set_source_files_properties(${filename} PROPERTIES LANGUAGE CUDA)
+  if (NOT IGANET_BUILD_CPUONLY AND CMAKE_CUDA_COMPILER)
+      set_source_files_properties(${model} PROPERTIES LANGUAGE CUDA)
   endif()
-
-  string(REPLACE ".cxx" "" name ${filename})
-  add_library(${name} SHARED ${filename})
+  
+  get_filename_component(name ${model} NAME_WE)
+  add_library(${name} SHARED ${model})
 
   if(IGANET_BUILD_PCH AND NOT WIN32 AND NOT ${CMAKE_VERSION} VERSION_LESS "3.16.0")
     target_precompile_headers(${name} REUSE_FROM iganet_pch)
