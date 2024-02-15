@@ -15,7 +15,7 @@
 #include <jit.hpp>
 #include <modelmanager.hpp>
 
-#include "GismoPoissonModel.hpp"
+#include <GismoPoissonModel.hpp>
 
 #ifdef _WIN32
 extern "C" __declspec(dllexport)

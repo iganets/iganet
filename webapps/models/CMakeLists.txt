@@ -17,9 +17,9 @@
 ########################################################################
 
 if (IGANET_WITH_GISMO)
-  file(GLOB MODELS *.cxx *.cpp)
-else()
   file(GLOB MODELS *.cxx *.cpp gismo/*.cxx gismo/*.cpp)
+else()
+  file(GLOB MODELS *.cxx *.cpp)
 endif()
 
 foreach(model ${MODELS})
@@ -58,6 +58,9 @@ install(FILES ${SOURCES} DESTINATION include/iganet/webapp/models)
 # Include directories
 ########################################################################
 include_directories(${CMAKE_CURRENT_SOURCE_DIR} ${CMAKE_CURRENT_BINARY_DIR})
+if (IGANET_WITH_GISMO)
+  include_directories(${CMAKE_CURRENT_SOURCE_DIR}/gismo)
+endif()
 
 ########################################################################
 # JIT compiler (using last target as base)
