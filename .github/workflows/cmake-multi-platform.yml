@@ -57,8 +57,8 @@ jobs:
     - name: Install PyTorch - Linux
       if: matrix.os == 'ubuntu-latest'
       run: >
-        wget https://download.pytorch.org/libtorch/cpu/libtorch-cxx11-abi-shared-with-deps-2.2.0%2Bcpu.zip -O libtorch.zip
-        unzip libtorch.zip -d /opt
+        wget https://download.pytorch.org/libtorch/cpu/libtorch-cxx11-abi-shared-with-deps-2.2.0%2Bcpu.zip -O libtorch.zip &&
+        unzip libtorch.zip -d /opt &&
         rm -f libtorch.zip
         
     - name: Install PyTorch - Windows
@@ -68,20 +68,32 @@ jobs:
         Expand-Archive -Path libtorch.zip -DestinationPath C:\
         Remove-Item -Path "libtorch.zip" -Force
         
-    - name: Configure CMake - Linux
+    - name: Configure CMake - Linux / GCC
       # Configure CMake in a 'build' subdirectory. `CMAKE_BUILD_TYPE` is only required if you are using a single-configuration generator such as make.
       # See https://cmake.org/cmake/help/latest/variable/CMAKE_BUILD_TYPE.html?highlight=cmake_build_type
-      if: matrix.os == 'ubuntu-latest'
+      if: ${{ matrix.os == 'ubuntu-latest' && matrix.compiler == 'gcc' }}
       run: >
         cmake -B ${{ steps.strings.outputs.build-output-dir }}
         -DCMAKE_CXX_COMPILER=${{ matrix.cpp_compiler }}
         -DCMAKE_C_COMPILER=${{ matrix.c_compiler }}
         -DCMAKE_BUILD_TYPE=${{ matrix.build_type }}
-        -DIGANET_BUILD_UNITTESTS=OFF
         -DTorch_DIR=/opt/libtorch/share/cmake/Torch
         -S ${{ github.workspace }}
 
-    - name: Configure CMake - Windows
+    - name: Configure CMake - Linux / Clang
+      # Configure CMake in a 'build' subdirectory. `CMAKE_BUILD_TYPE` is only required if you are using a single-configuration generator such as make.
+      # See https://cmake.org/cmake/help/latest/variable/CMAKE_BUILD_TYPE.html?highlight=cmake_build_type
+      if: ${{ matrix.os == 'ubuntu-latest' && matrix.compiler == 'clang' }}
+      run: >
+        cmake -B ${{ steps.strings.outputs.build-output-dir }}
+        -DCMAKE_CXX_COMPILER=${{ matrix.cpp_compiler }}
+        -DCMAKE_C_COMPILER=${{ matrix.c_compiler }}
+        -DCMAKE_BUILD_TYPE=${{ matrix.build_type }}
+        -DTorch_DIR=/opt/libtorch/share/cmake/Torch
+        -DIGANET_WITH_OPENMP=OFF
+        -S ${{ github.workspace }}
+
+    - name: Configure CMake - Windows / Cl
       if: matrix.os == 'windows-latest'
       run: >
         cmake -B ${{ steps.strings.outputs.build-output-dir }}
