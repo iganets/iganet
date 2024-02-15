@@ -129,6 +129,7 @@ jobs:
         -DCMAKE_BUILD_TYPE=${{ matrix.build_type }}
         -DIGANET_BUILD_UNITTESTS=OFF
         -DTorch_DIR=C:\libtorch\share\cmake\Torch
+        -DIGANET_WITH_OPENMP=OFF
         -S ${{ github.workspace }}
         
     - name: Build
