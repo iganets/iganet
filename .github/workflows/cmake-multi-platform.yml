@@ -71,7 +71,7 @@ jobs:
     - name: Configure CMake - Linux / GCC
       # Configure CMake in a 'build' subdirectory. `CMAKE_BUILD_TYPE` is only required if you are using a single-configuration generator such as make.
       # See https://cmake.org/cmake/help/latest/variable/CMAKE_BUILD_TYPE.html?highlight=cmake_build_type
-      if: ${{ matrix.os == 'ubuntu-latest' && matrix.compiler == 'gcc' }}
+      if: ${{ matrix.os == 'ubuntu-latest' && matrix.c_compiler == 'gcc' }}
       run: >
         cmake -B ${{ steps.strings.outputs.build-output-dir }}
         -DCMAKE_CXX_COMPILER=${{ matrix.cpp_compiler }}
@@ -83,7 +83,7 @@ jobs:
     - name: Configure CMake - Linux / Clang
       # Configure CMake in a 'build' subdirectory. `CMAKE_BUILD_TYPE` is only required if you are using a single-configuration generator such as make.
       # See https://cmake.org/cmake/help/latest/variable/CMAKE_BUILD_TYPE.html?highlight=cmake_build_type
-      if: ${{ matrix.os == 'ubuntu-latest' && matrix.compiler == 'clang' }}
+      if: ${{ matrix.os == 'ubuntu-latest' && matrix.c_compiler == 'clang' }}
       run: >
         cmake -B ${{ steps.strings.outputs.build-output-dir }}
         -DCMAKE_CXX_COMPILER=${{ matrix.cpp_compiler }}
