@@ -62,9 +62,9 @@ jobs:
         echo "build-output-dir=${{ github.workspace }}/build" >> "$GITHUB_OUTPUT"
 
     - name: Install PyTorch - MacOS
-      if: matrix.os == 'ubuntu-latest'
+      if: matrix.os == 'macos-latest'
       run: >
-        wget https://download.pytorch.org/libtorch/cpu/libtorch-cxx11-abi-shared-with-deps-2.2.0%2Bcpu.zip -O libtorch.zip &&
+        wget https://download.pytorch.org/libtorch/cpu/libtorch-macos-arm64-2.2.0.zip -O libtorch.zip &&
         unzip libtorch.zip -d /opt &&
         rm -f libtorch.zip
         
@@ -118,6 +118,19 @@ jobs:
         -DTorch_DIR=C:\libtorch\share\cmake\Torch
         -S ${{ github.workspace }}
 
+    - name: Configure CMake - MacOS / Clang
+      # Configure CMake in a 'build' subdirectory. `CMAKE_BUILD_TYPE` is only required if you are using a single-configuration generator such as make.
+      # See https://cmake.org/cmake/help/latest/variable/CMAKE_BUILD_TYPE.html?highlight=cmake_build_type
+      if: ${{ matrix.os == 'macos-latest' && matrix.c_compiler == 'clang' }}
+      run: >
+        cmake -B ${{ steps.strings.outputs.build-output-dir }}
+        -DCMAKE_CXX_COMPILER=${{ matrix.cpp_compiler }}
+        -DCMAKE_C_COMPILER=${{ matrix.c_compiler }}
+        -DCMAKE_BUILD_TYPE=${{ matrix.build_type }}
+        -DTorch_DIR=/opt/libtorch/share/cmake/Torch
+        -DIGANET_WITH_OPENMP=OFF
+        -S ${{ github.workspace }}
+        
     - name: Build
       # Build your program with the given configuration. Note that --config is needed because the default Windows generator is a multi-config generator (Visual Studio generator).
       run: cmake --build ${{ steps.strings.outputs.build-output-dir }} --config ${{ matrix.build_type }}
