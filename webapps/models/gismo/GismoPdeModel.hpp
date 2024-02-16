@@ -299,6 +299,86 @@ namespace iganet {
         
         return "{ INVALID REQUEST }";
       }
+
+      /// @brief Updates the attributes of the model
+      nlohmann::json updateAttribute(const std::string &component,
+                                     const std::string &attribute,
+                                     const nlohmann::json &json) override {
+
+        if (attribute == "coeffs") {
+          if (!json.contains("data"))
+            throw InvalidModelAttributeException();
+          if (!json["data"].contains("indices") || !json["data"].contains("coeffs"))
+            throw InvalidModelAttributeException();
+
+          auto indices = json["data"]["indices"].get<std::vector<int64_t>>();
+          auto ncoeffs = geo_.patch(0).coefs().rows();
+          
+          switch (geo_.geoDim()) {
+          case (1): {
+            auto coords =
+              json["data"]["coeffs"].get<std::vector<std::tuple<T>>>();
+
+            for (const auto &[index, coord] : iganet::utils::zip(indices, coords)) {
+              if (index < 0 || index >= ncoeffs)
+                throw IndexOutOfBoundsException();
+
+              geo_.patch(0).coef(index, 0) = std::get<0>(coord);
+            }
+            break;
+          }
+          case (2): {
+            auto coords =
+              json["data"]["coeffs"].get<std::vector<std::tuple<T, T>>>();
+
+            for (const auto &[index, coord] : iganet::utils::zip(indices, coords)) {
+              if (index < 0 || index >= ncoeffs)
+                throw IndexOutOfBoundsException();
+
+              geo_.patch(0).coef(index, 0) = std::get<0>(coord);
+              geo_.patch(0).coef(index, 1) = std::get<1>(coord);
+            }
+            break;
+          }
+          case (3): {
+            auto coords =
+              json["data"]["coeffs"].get<std::vector<std::tuple<T, T, T>>>();
+
+            for (const auto &[index, coord] : iganet::utils::zip(indices, coords)) {
+              if (index < 0 || index >= ncoeffs)
+                throw IndexOutOfBoundsException();
+
+              geo_.patch(0).coef(index, 0) = std::get<0>(coord);
+              geo_.patch(0).coef(index, 1) = std::get<1>(coord);
+              geo_.patch(0).coef(index, 2) = std::get<2>(coord);
+            }
+            break;
+          }
+          case (4): {
+            auto coords =
+              json["data"]["coeffs"].get<std::vector<std::tuple<T, T, T, T>>>();
+
+            for (const auto &[index, coord] : iganet::utils::zip(indices, coords)) {
+              if (index < 0 || index >= ncoeffs)
+                throw IndexOutOfBoundsException();
+
+              geo_.patch(0).coef(index, 0) = std::get<0>(coord);
+              geo_.patch(0).coef(index, 1) = std::get<1>(coord);
+              geo_.patch(0).coef(index, 2) = std::get<2>(coord);
+              geo_.patch(0).coef(index, 3) = std::get<3>(coord);
+            }
+            break;
+          }
+          default:
+            throw InvalidModelAttributeException();
+          }
+
+          std::cout << geo_.patch(0).coefs() << std::endl;
+          
+          return "{}";
+        } else
+          return GismoModel<T>::updateAttribute(component, attribute, json);
+      }  
       
       /// @brief Evaluates the model
       nlohmann::json eval(const std::string &component,
