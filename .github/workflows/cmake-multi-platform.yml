@@ -71,8 +71,7 @@ jobs:
     - name: Install PyTorch - MacOS
       if: matrix.os == 'macos-latest'
       run: >
-        ARCH=$(arch) &&
-        wget https://download.pytorch.org/libtorch/cpu/libtorch-macos-$ARCH-2.2.0.zip -O libtorch.zip &&
+        wget https://download.pytorch.org/libtorch/cpu/libtorch-macos-x86_64-2.2.0.zip -O libtorch.zip &&
         unzip libtorch.zip -d $HOME &&
         rm -f libtorch.zip
         
