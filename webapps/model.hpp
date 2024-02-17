@@ -25,22 +25,23 @@ enum class capability {
   remove = 1, /*!< remove object */
 
   /*!< Model evaluation and adaption */
-  eval = 2,    /*!< evaluates object */
-  refine = 3,  /*!< h-refines object */
-  elevate = 4, /*!< p-refines object */
+  eval = 2,     /*!< evaluates object */
+  refine = 3,   /*!< h-refines object */
+  elevate = 4,  /*!< p-refines object */
+  increase = 5, /*!< p-refines object */
 
   /*!< Model loading/saving */
-  load = 5, /*!< loads model from PyTorch file */
-  save = 6, /*!< saves model to PyTorch file */
+  load = 6, /*!< loads model from PyTorch file */
+  save = 7, /*!< saves model to PyTorch file */
 
   /*!< Model import/export */
-  importXML = 7, /*!< imports object from G+Smo XML file */
-  exportXML = 8, /*!< exports object to G+Smo XML file */
+  importXML = 8, /*!< imports object from G+Smo XML file */
+  exportXML = 9, /*!< exports object to G+Smo XML file */
 
   /*!< Error computation */
-  computeL1error = 9,  /*!< computes model's L1-error */
-  computeL2error = 10, /*!< computes model's L2-error */
-  computeH1error = 11  /*!< computes model's H1-error */
+  computeL1error = 10, /*!< computes model's L1-error */
+  computeL2error = 11, /*!< computes model's L2-error */
+  computeH1error = 12  /*!< computes model's H1-error */
 };
 
 /// @brief Enumerator for specifying the output type
@@ -67,10 +68,10 @@ struct InvalidModelAttributeException : public std::exception {
   const char *what() const throw() { return "Invalid model attribute"; }
 };
 
-/// @brief Model elevation
+/// @brief Model degree elevation
 class ModelElevate {
 public:
-  /// @brief elevates model
+  /// @brief Elevates the model's degrees, preserves smoothness
   virtual void elevate(const nlohmann::json &json) = 0;
 
   // @brief Returns model capabilities
@@ -92,6 +93,18 @@ public:
   }
 };
 
+/// @brief Model degree increase
+class ModelIncrease {
+public:
+  /// @brief Increases the model's degrees, preserves multiplicity
+  virtual void increase(const nlohmann::json &json) = 0;
+
+  // @brief Returns model capabilities
+  std::vector<std::string> getCapabilities() const {
+    return std::vector{std::string("increase")};
+  }
+};
+  
 /// @brief Model refinement
 class ModelRefine {
 public:
