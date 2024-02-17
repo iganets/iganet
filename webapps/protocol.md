@@ -549,8 +549,8 @@ _Client request_
 ```json
 "request" : "refine/<session-id>/<instance>"
 "data"    : {
-               [ "numRefine" : <integer> (default value is 1) ]
-               [ "dim"       : <integer> (default value is -1) ]
+               [ "num" : <integer> (default value is 1) ]
+               [ "dim" : <integer> (default value is -1) ]
             }
 ```
 If no `data` field is provided the default values are adopted.

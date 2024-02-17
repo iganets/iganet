@@ -551,17 +551,44 @@ public:
 
   /// @brief Refines the model
   void refine(const nlohmann::json &json = NULL) override {
-    int numRefine = 1, dim = -1;
+    int num = 1, dim = -1;
 
     if (json.contains("data")) {
-      if (json["data"].contains("numRefine"))
-        numRefine = json["data"]["numRefine"].get<int>();
+      if (json["data"].contains("num"))
+        num = json["data"]["num"].get<int>();
 
       if (json["data"].contains("dim"))
         dim = json["data"]["dim"].get<int>();
     }
 
-    BSpline_t::uniform_refine(numRefine, dim);
+    BSpline_t::uniform_refine(num, dim);
+    
+    solution_.uniform_refine(num, dim);
+    if constexpr (BSpline_t::parDim() == 1)
+      solution_.transform([](const std::array<typename BSpline_t::value_type, 1>
+                                 xi) {
+        return std::array<typename BSpline_t::value_type, BSpline_t::geoDim()>{
+            static_cast<iganet::real_t>(std::sin(M_PI * xi[0])), 0.0, 0.0};
+      });
+
+    else if constexpr (BSpline_t::parDim() == 2)
+      solution_.transform([](const std::array<typename BSpline_t::value_type, 2>
+                                 xi) {
+        return std::array<typename BSpline_t::value_type, BSpline_t::geoDim()>{
+            static_cast<iganet::real_t>(std::sin(M_PI * xi[0]) *
+                                        std::sin(M_PI * xi[1])),
+            0.0, 0.0};
+      });
+
+    else if constexpr (BSpline_t::parDim() == 3)
+      solution_.transform([](const std::array<typename BSpline_t::value_type, 3>
+                                 xi) {
+        return std::array<typename BSpline_t::value_type, BSpline_t::geoDim()>{
+            static_cast<iganet::real_t>(std::sin(M_PI * xi[0]) *
+                                        std::sin(M_PI * xi[1]) *
+                                        std::sin(M_PI * xi[2])),
+            0.0, 0.0};
+      });
   }
 
   /// @brief Loads model from LibTorch file
