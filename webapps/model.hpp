@@ -160,7 +160,7 @@ public:
 class Model {
 public:
   /// @brief Constructor
-  Model() : transform_(torch::eye(4)){};
+  Model() : transform_(torch::eye(4, Options<iganet::real_t>{})){};
 
   /// @brief Destructor
   virtual ~Model(){};
