@@ -40,6 +40,11 @@ foreach(model ${MODELS})
   target_link_libraries(${name} PUBLIC ${CMAKE_DL_LIBS})
   target_link_libraries(${name} PUBLIC pugixml)
 
+  # Intel Extension for PyTorch
+  if (NOT IGANET_BUILD_CPUONLY AND IPEX_FOUND)
+    target_link_libraries(${name} PUBLIC ${TORCH_IPEX_LIBRARIES})
+  endif()
+
   if (IGANET_WITH_GISMO)
     target_link_libraries(${name} PUBLIC gismo_static)
   endif()

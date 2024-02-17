@@ -17,7 +17,7 @@ file(GLOB EXAMPLES *.cxx)
 foreach(example ${EXAMPLES})
 
   if (NOT IGANET_BUILD_CPUONLY AND CMAKE_CUDA_COMPILER)
-    set_source_files_properties(${model} PROPERTIES LANGUAGE CUDA)
+    set_source_files_properties(${example} PROPERTIES LANGUAGE CUDA)
   endif()
   
   get_filename_component(name ${example} NAME_WE)
@@ -34,7 +34,7 @@ foreach(example ${EXAMPLES})
   target_link_libraries(${name} PUBLIC pugixml)
 
   # Intel Extension for PyTorch
-  if (IPEX_FOUND)
+  if (NOT IGANET_BUILD_CPUONLY AND IPEX_FOUND)
     target_link_libraries(${name} PUBLIC ${TORCH_IPEX_LIBRARIES})
   endif()
   
