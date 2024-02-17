@@ -24,17 +24,54 @@ namespace iganet {
   class GismoPoissonModel : public GismoPdeModel<d, T> {
 
   protected:
-      
+    /// @brief Option list
+    gsOptionList Aopt_;
+    
+    /// @brief Multi-patch basis
+    gsMultiBasis<T> basis_;
+
+    /// @brief Expression assembler
+    gsExprAssembler<T> A_;
+
+    /// @brief Expression evaluator
+    gsExprEvaluator<T> ev_;
+
+    /// @brief Type of the geometry mapping
+    using geometryMap = typename gsExprAssembler<T>::geometryMap;
+
+    /// @brief Type of the variable
+    using variable = typename gsExprAssembler<T>::variable;
+
+    /// @brief Type of the function space
+    using space = typename gsExprAssembler<T>::space;
+
+    /// @brief Type of the solution
+    using solution = typename gsExprAssembler<T>::solution;
+
+    /// @brief Geoemtry map
+    geometryMap G_;
+
+    /// @brief Discretization space
+    space u_;
+    
   public:
     /// @brief Default constructor
-    GismoPoissonModel() = default;
+    GismoPoissonModel() = delete;
 
     /// @brief Constructor for equidistant knot vectors
     GismoPoissonModel(const std::array<short_t, d> degrees,
                       const std::array<int64_t, d> ncoeffs,
                       const std::array<int64_t, d> npatches)
-      : GismoPdeModel<d, T>(degrees, ncoeffs, npatches)
-    {}
+      : GismoPdeModel<d, T>(degrees, ncoeffs, npatches),
+        basis_(GismoPdeModel<d, T>::geo_, true),
+        A_(1,1),
+        ev_(A_),
+        G_(A_.getMap(GismoPdeModel<d, T>::geo_)),
+        u_(A_.getSpace(basis_))
+    {
+      A_.setOptions(Aopt_);
+      A_.setIntegrationElements(basis_);
+    }
       
     /// @brief Destructor
     ~GismoPoissonModel() {}
