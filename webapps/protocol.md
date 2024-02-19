@@ -870,11 +870,17 @@ The `iotype descriptor` must be one of the following
 
  | `type`        | description   | enum value |
  |--------------:|:--------------|------------|
- | `eval`        | evaluate model| 0 |
- | `refine`      | refine model  | 1 |
- | `elevate`     | elevate model | 2 |
- | `load`        | load model from file | 101 |
- | `save`        | save model to file   | 102 |
- | `importXML`   | import object from XML file | 201 |
- | `exportXML`   | export object to XML file   | 202 |
+ | `create`      | create model | 0 |
+ | `remove`      | remove model | 1 |
+ | `eval`        | evaluate model | 2 |
+ | `refine`      | h-refine model  | 3 |
+ | `elevate`     | p-refine model (degree elevation) | 4 |
+ | `increase`    | p-refine model (degree increase) | 5 |
+ | `load`        | load model from file | 6 |
+ | `save`        | save model to file   | 7 |
+ | `importXML`   | import object from XML file | 8 |
+ | `exportXML`   | export object to XML file   | 9 |
+ | `computeL1error` | compute L1 error of the model | 10 |
+ | `computeL2error` | compute L2 error of the model | 11 |
+ | `computeH1error` | compute H1 error of the model | 12 |
 ---
