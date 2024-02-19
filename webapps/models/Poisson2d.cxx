@@ -113,7 +113,7 @@ extern "C"
 
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wreturn-type-c-linkage"
-  
+
   std::shared_ptr<iganet::Model> create(const nlohmann::json &json) {
     return std::make_shared<iganet::Poisson2dModel>();
   }

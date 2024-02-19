@@ -567,7 +567,7 @@ public:
 #ifdef __CUDACC__
 #pragma nv_diag_suppress 186
 #endif
-    
+
     for (short_t i = 0; i < parDim_; ++i)
       s *= ncoeffs(i);
 
@@ -674,17 +674,23 @@ public:
                   greville_.template packed_accessor64<value_type, 1>();
               auto knots =
                   knots_[j].template packed_accessor64<value_type, 1>();
-        
+
 #if defined(__CUDACC__)
-        int blockSize, minGridSize, gridSize;
-        cudaOccupancyMaxPotentialBlockSize(&minGridSize, &blockSize, (const void *)cuda::greville_kernel<real_t>, 0, 0);
-        gridSize = (ncoeffs_[j] + blockSize - 1) / blockSize;
-              cuda::greville_kernel<<<gridSize, blockSize>>>(greville, knots, ncoeffs_[j], degrees_[j], interior);
+              int blockSize, minGridSize, gridSize;
+              cudaOccupancyMaxPotentialBlockSize(
+                  &minGridSize, &blockSize,
+                  (const void *)cuda::greville_kernel<real_t>, 0, 0);
+              gridSize = (ncoeffs_[j] + blockSize - 1) / blockSize;
+              cuda::greville_kernel<<<gridSize, blockSize>>>(
+                  greville, knots, ncoeffs_[j], degrees_[j], interior);
 #elif defined(__HIPCC__)
-        int blockSize, minGridSize, gridSize;
-        static_cast<void>(hipOccupancyMaxPotentialBlockSize(&minGridSize, &blockSize, (const void *)cuda::greville_kernel<real_t>, 0, 0));
-        gridSize = (ncoeffs_[j] + blockSize - 1) / blockSize;
-              cuda::greville_kernel<<<gridSize, blockSize>>>(greville, knots, ncoeffs_[j], degrees_[j], interior);
+              int blockSize, minGridSize, gridSize;
+              static_cast<void>(hipOccupancyMaxPotentialBlockSize(
+                  &minGridSize, &blockSize,
+                  (const void *)cuda::greville_kernel<real_t>, 0, 0));
+              gridSize = (ncoeffs_[j] + blockSize - 1) / blockSize;
+              cuda::greville_kernel<<<gridSize, blockSize>>>(
+                  greville, knots, ncoeffs_[j], degrees_[j], interior);
 #else
               throw std::runtime_error(
                   "Code must be compiled with CUDA or HIP enabled");
@@ -1966,7 +1972,7 @@ public:
       if constexpr (parDim_ == 0) {
         json.push_back(coeffs_accessor[0]);
       }
-      
+
       // 1D
       else if constexpr (parDim_ == 1) {
         for (int64_t i = 0; i < ncumcoeffs(); ++i)
@@ -2033,14 +2039,14 @@ public:
 #ifdef __CUDACC__
 #pragma nv_diag_suppress 186
 #endif
-    
+
     for (short_t i = 0; i < parDim_; ++i)
       knots_[i] = utils::to_tensor(kv[i], options_);
 
 #ifdef __CUDACC__
 #pragma nv_diag_default 186
 #endif
-    
+
     auto c = json["coeffs"].get<std::array<std::vector<value_type>, geoDim_>>();
 
     for (short_t i = 0; i < geoDim_; ++i)
@@ -2160,7 +2166,7 @@ public:
 #ifdef __CUDACC__
 #pragma nv_diag_suppress 186
 #endif
-    
+
     if constexpr (parDim_ == 0) {
       for (short_t g = 0; g < geoDim_; ++g)
         ss << std::to_string(coeffs_accessors[g][0])
@@ -2217,7 +2223,7 @@ public:
 #ifdef __CUDACC__
 #pragma nv_diag_default 186
 #endif
-    
+
     coefs.append_child(pugi::node_pcdata).set_value(ss.str().c_str());
 
     return root;
@@ -2602,7 +2608,7 @@ public:
 #ifdef __CUDACC__
 #pragma nv_diag_suppress 186
 #endif
-    
+
     for (short_t i = 0; i < parDim_; ++i)
       result *= (degree(i) == other.degree(i));
 
@@ -2621,7 +2627,7 @@ public:
 #ifdef __CUDACC__
 #pragma nv_diag_default 186
 #endif
-    
+
     return result;
   }
 
@@ -2758,7 +2764,7 @@ public:
 #ifdef __CUDACC__
 #pragma nv_diag_suppress 186
 #endif
-    
+
     for (short_t i = 0; i < parDim_; ++i) {
 
       // Check that open knot vector can be created
@@ -2787,7 +2793,6 @@ public:
 #ifdef __CUDACC__
 #pragma nv_diag_default 186
 #endif
-    
   }
 
   /// @brief Initializes the B-spline coefficients
@@ -2834,7 +2839,7 @@ public:
 #ifdef __CUDACC__
 #pragma nv_diag_suppress 186
 #endif
-	
+
         for (short_t j = 0; j < parDim_; ++j) {
           if (i == j)
             coeffs_[i] = torch::kron(torch::linspace(static_cast<value_type>(0),
@@ -2849,7 +2854,7 @@ public:
 #ifdef __CUDACC__
 #pragma nv_diag_default 186
 #endif
-	
+
         // Enable gradient calculation for non-leaf tensor
         if (options_.requires_grad())
           coeffs_[i].retain_grad();
@@ -2867,7 +2872,7 @@ public:
 #ifdef __CUDACC__
 #pragma nv_diag_suppress 186
 #endif
-	
+
         for (short_t j = 0; j < parDim_; ++j) {
           if (i == j) {
             auto greville_ = torch::zeros(ncoeffs_[j], options_);
@@ -2877,20 +2882,26 @@ public:
                   greville_.template packed_accessor64<value_type, 1>();
               auto knots =
                   knots_[j].template packed_accessor64<value_type, 1>();
-        
+
 #if defined(__CUDACC__)
-        int blockSize, minGridSize, gridSize;
-        cudaOccupancyMaxPotentialBlockSize(&minGridSize, &blockSize, (const void *)cuda::greville_kernel<real_t>, 0, 0);
-        gridSize = (ncoeffs_[j] + blockSize - 1) / blockSize;
-              cuda::greville_kernel<<<gridSize, blockSize>>>(greville, knots, ncoeffs_[j], degrees_[j], false);
+              int blockSize, minGridSize, gridSize;
+              cudaOccupancyMaxPotentialBlockSize(
+                  &minGridSize, &blockSize,
+                  (const void *)cuda::greville_kernel<real_t>, 0, 0);
+              gridSize = (ncoeffs_[j] + blockSize - 1) / blockSize;
+              cuda::greville_kernel<<<gridSize, blockSize>>>(
+                  greville, knots, ncoeffs_[j], degrees_[j], false);
 #elif defined(__HIPCC__)
-        int blockSize, minGridSize, gridSize;
-        static_cast<void>(hipOccupancyMaxPotentialBlockSize(&minGridSize, &blockSize, (const void *)cuda::greville_kernel<real_t>, 0, 0));
-        gridSize = (ncoeffs_[j] + blockSize - 1) / blockSize;
-        cuda::greville_kernel<<<gridSize, blockSize>>>(greville, knots, ncoeffs_[j], degrees_[j], false);
+              int blockSize, minGridSize, gridSize;
+              static_cast<void>(hipOccupancyMaxPotentialBlockSize(
+                  &minGridSize, &blockSize,
+                  (const void *)cuda::greville_kernel<real_t>, 0, 0));
+              gridSize = (ncoeffs_[j] + blockSize - 1) / blockSize;
+              cuda::greville_kernel<<<gridSize, blockSize>>>(
+                  greville, knots, ncoeffs_[j], degrees_[j], false);
 #else
               throw std::runtime_error(
-               "Code must be compiled with CUDA or HIP enabled");
+                  "Code must be compiled with CUDA or HIP enabled");
 #endif
 
             } else {
@@ -3278,23 +3289,23 @@ protected:
   }
 
 public:
-  
   /// @brief Converts the B-spline object into a gsBSpline object of
   /// the parametric dimension is one and a gsTensorBSpline object
   /// otherwise
   auto to_gismo() const {
-    
+
 #ifdef IGANET_WITH_GISMO
 
     gismo::gsMatrix<value_type> coefs(ncumcoeffs(), geoDim_);
-  
+
     for (short_t g = 0; g < geoDim_; ++g) {
       auto [coeffs_cpu, coeffs_accessor] =
-        utils::to_tensorAccessor<value_type, 1>(coeffs_[g], torch::kCPU);
+          utils::to_tensorAccessor<value_type, 1>(coeffs_[g], torch::kCPU);
       auto coeffs_cpu_ptr = coeffs_cpu.template data_ptr<value_type>();
-      coefs.col(g) = gsAsConstVector<value_type>(coeffs_cpu_ptr, coeffs_cpu.size(0));
+      coefs.col(g) =
+          gsAsConstVector<value_type>(coeffs_cpu_ptr, coeffs_cpu.size(0));
     }
-    
+
     if constexpr (parDim_ == 1) {
 
       auto [knots0_cpu, knots0_accessor] =
@@ -3303,9 +3314,8 @@ public:
 
       gismo::gsKnotVector<value_type> kv0(degrees_[0], knots0_cpu_ptr,
                                           knots0_cpu_ptr + knots0_cpu.size(0));
-      
-      return gismo::gsBSpline<value_type>(gismo::give(kv0),
-                                          gismo::give(coefs));
+
+      return gismo::gsBSpline<value_type>(gismo::give(kv0), gismo::give(coefs));
 
     } else if constexpr (parDim_ == 2) {
 
@@ -3323,23 +3333,22 @@ public:
       gismo::gsKnotVector<value_type> kv1(degrees_[1], knots1_cpu_ptr,
                                           knots1_cpu_ptr + knots1_cpu.size(0));
 
-      return gismo::gsTensorBSpline<parDim_, value_type>(gismo::give(kv0),
-                                                         gismo::give(kv1),
-                                                         gismo::give(coefs));
-      
+      return gismo::gsTensorBSpline<parDim_, value_type>(
+          gismo::give(kv0), gismo::give(kv1), gismo::give(coefs));
+
     } else if constexpr (parDim_ == 3) {
 
       auto [knots0_cpu, knots0_accessor] =
           utils::to_tensorAccessor<value_type, 1>(knots_[0], torch::kCPU);
       auto knots0_cpu_ptr = knots0_cpu.template data_ptr<value_type>();
-      
+
       gismo::gsKnotVector<value_type> kv0(degrees_[0], knots0_cpu_ptr,
                                           knots0_cpu_ptr + knots0_cpu.size(0));
 
       auto [knots1_cpu, knots1_accessor] =
           utils::to_tensorAccessor<value_type, 1>(knots_[1], torch::kCPU);
       auto knots1_cpu_ptr = knots1_cpu.template data_ptr<value_type>();
-      
+
       gismo::gsKnotVector<value_type> kv1(degrees_[1], knots1_cpu_ptr,
                                           knots1_cpu_ptr + knots1_cpu.size(0));
 
@@ -3350,11 +3359,10 @@ public:
       gismo::gsKnotVector<value_type> kv2(degrees_[2], knots2_cpu_ptr,
                                           knots2_cpu_ptr + knots2_cpu.size(0));
 
-      return gismo::gsTensorBSpline<parDim_, value_type>(gismo::give(kv0),
-                                                         gismo::give(kv1),
-                                                         gismo::give(kv2),
-                                                         gismo::give(coefs));
-      
+      return gismo::gsTensorBSpline<parDim_, value_type>(
+          gismo::give(kv0), gismo::give(kv1), gismo::give(kv2),
+          gismo::give(coefs));
+
     } else if constexpr (parDim_ == 4) {
 
       auto [knots0_cpu, knots0_accessor] =
@@ -3363,306 +3371,300 @@ public:
 
       gismo::gsKnotVector<value_type> kv0(degrees_[0], knots0_cpu_ptr,
                                           knots0_cpu_ptr + knots0_cpu.size(0));
-      
+
       auto [knots1_cpu, knots1_accessor] =
           utils::to_tensorAccessor<value_type, 1>(knots_[1], torch::kCPU);
       auto knots1_cpu_ptr = knots1_cpu.template data_ptr<value_type>();
 
       gismo::gsKnotVector kv1(degrees_[1], knots1_cpu_ptr,
                               knots1_cpu_ptr + knots1_cpu.size(0));
-      
+
       auto [knots2_cpu, knots2_accessor] =
           utils::to_tensorAccessor<value_type, 1>(knots_[2], torch::kCPU);
       auto knots2_cpu_ptr = knots2_cpu.template data_ptr<value_type>();
-      
+
       gismo::gsKnotVector<value_type> kv2(degrees_[2], knots2_cpu_ptr,
                                           knots2_cpu_ptr + knots2_cpu.size(0));
-      
+
       auto [knots3_cpu, knots3_accessor] =
           utils::to_tensorAccessor<value_type, 1>(knots_[3], torch::kCPU);
       auto knots3_cpu_ptr = knots3_cpu.template data_ptr<value_type>();
-      
+
       gismo::gsKnotVector<value_type> kv3(degrees_[3], knots3_cpu_ptr,
                                           knots3_cpu_ptr + knots3_cpu.size(0));
-      
-      return gismo::gsTensorBSpline<parDim_, value_type>(gismo::give(kv0),
-                                                         gismo::give(kv1),
-                                                         gismo::give(kv2),
-                                                         gismo::give(kv3),
-                                                         gismo::give(coefs));
-      
+
+      return gismo::gsTensorBSpline<parDim_, value_type>(
+          gismo::give(kv0), gismo::give(kv1), gismo::give(kv2),
+          gismo::give(kv3), gismo::give(coefs));
+
     } else
       throw std::runtime_error("Invalid parametric dimension");
 
 #else
     throw std::runtime_error(
-                             "This functions must be compiled with -DIGANET_WITH_GISMO turned on");
+        "This functions must be compiled with -DIGANET_WITH_GISMO turned on");
 #endif
-    
   }
 
 #ifdef IGANET_WITH_GISMO
-  
+
   // @brief Updates a given gsBSpline object from the B-spline object
-  gismo::gsBSpline<value_type>& to_gismo(gismo::gsBSpline<value_type>& bspline,
+  gismo::gsBSpline<value_type> &to_gismo(gismo::gsBSpline<value_type> &bspline,
                                          bool updateKnotVector = true,
                                          bool updateCoeffs = true) const {
-    
+
     if (updateKnotVector) {
-      
+
       if constexpr (parDim_ == 1) {
-        
+
         if (bspline.degree(0) != degrees_[0])
           throw std::runtime_error("Degrees mismatch");
-        
+
         auto [knots0_cpu, knots0_accessor] =
-          utils::to_tensorAccessor<value_type, 1>(knots_[0], torch::kCPU);
+            utils::to_tensorAccessor<value_type, 1>(knots_[0], torch::kCPU);
         auto knots0_cpu_ptr = knots0_cpu.template data_ptr<value_type>();
-        
-        gismo::gsKnotVector<value_type> kv0(degrees_[0], knots0_cpu_ptr,
-                                            knots0_cpu_ptr + knots0_cpu.size(0));
-        
+
+        gismo::gsKnotVector<value_type> kv0(
+            degrees_[0], knots0_cpu_ptr, knots0_cpu_ptr + knots0_cpu.size(0));
+
         bspline.knots(0).swap(kv0);
-        
+
       } else
         throw std::runtime_error("Invalid parametric dimension");
-      
     }
 
     if (updateCoeffs) {
-      
+
       for (short_t g = 0; g < geoDim_; ++g) {
         auto [coeffs_cpu, coeffs_accessor] =
-          utils::to_tensorAccessor<value_type, 1>(coeffs_[g], torch::kCPU);
+            utils::to_tensorAccessor<value_type, 1>(coeffs_[g], torch::kCPU);
         auto coeffs_cpu_ptr = coeffs_cpu.template data_ptr<value_type>();
-        bspline.coefs().col(g) = gsAsConstVector<value_type>(coeffs_cpu_ptr, coeffs_cpu.size(0));
-      }        
+        bspline.coefs().col(g) =
+            gsAsConstVector<value_type>(coeffs_cpu_ptr, coeffs_cpu.size(0));
+      }
     }
 
     return bspline;
   }
 
   // @brief Updates a given gsTensorBSpline object from the B-spline object
-  gismo::gsTensorBSpline<parDim_, value_type>& to_gismo(gismo::gsTensorBSpline<parDim_, value_type>& bspline,
-                                                        bool updateKnotVector = true,
-                                                        bool updateCoeffs = true) const {
-    
+  gismo::gsTensorBSpline<parDim_, value_type> &
+  to_gismo(gismo::gsTensorBSpline<parDim_, value_type> &bspline,
+           bool updateKnotVector = true, bool updateCoeffs = true) const {
+
     if (updateKnotVector) {
-      
+
       if constexpr (parDim_ == 2) {
-        
+
         if (bspline.degree(0) != degrees_[0] ||
             bspline.degree(1) != degrees_[1])
           throw std::runtime_error("Degrees mismatch");
-        
+
         auto [knots0_cpu, knots0_accessor] =
-          utils::to_tensorAccessor<value_type, 1>(knots_[0], torch::kCPU);
+            utils::to_tensorAccessor<value_type, 1>(knots_[0], torch::kCPU);
         auto knots0_cpu_ptr = knots0_cpu.template data_ptr<value_type>();
-        
-        gismo::gsKnotVector<value_type> kv0(degrees_[0], knots0_cpu_ptr,
-                                            knots0_cpu_ptr + knots0_cpu.size(0));
-        
+
+        gismo::gsKnotVector<value_type> kv0(
+            degrees_[0], knots0_cpu_ptr, knots0_cpu_ptr + knots0_cpu.size(0));
+
         bspline.knots(0).swap(kv0);
-        
+
         auto [knots1_cpu, knots1_accessor] =
-          utils::to_tensorAccessor<value_type, 1>(knots_[1], torch::kCPU);
+            utils::to_tensorAccessor<value_type, 1>(knots_[1], torch::kCPU);
         auto knots1_cpu_ptr = knots1_cpu.template data_ptr<value_type>();
-        
-        gismo::gsKnotVector<value_type> kv1(degrees_[1], knots1_cpu_ptr,
-                                            knots1_cpu_ptr + knots1_cpu.size(0));
+
+        gismo::gsKnotVector<value_type> kv1(
+            degrees_[1], knots1_cpu_ptr, knots1_cpu_ptr + knots1_cpu.size(0));
 
         bspline.knots(1).swap(kv1);
 
       } else if constexpr (parDim_ == 3) {
-        
+
         if (bspline.degree(0) != degrees_[0] ||
             bspline.degree(1) != degrees_[1] ||
             bspline.degree(2) != degrees_[2])
           throw std::runtime_error("Degrees mismatch");
-        
+
         auto [knots0_cpu, knots0_accessor] =
-          utils::to_tensorAccessor<value_type, 1>(knots_[0], torch::kCPU);
+            utils::to_tensorAccessor<value_type, 1>(knots_[0], torch::kCPU);
         auto knots0_cpu_ptr = knots0_cpu.template data_ptr<value_type>();
-        
-        gismo::gsKnotVector<value_type> kv0(degrees_[0], knots0_cpu_ptr,
-                                            knots0_cpu_ptr + knots0_cpu.size(0));
-        
+
+        gismo::gsKnotVector<value_type> kv0(
+            degrees_[0], knots0_cpu_ptr, knots0_cpu_ptr + knots0_cpu.size(0));
+
         bspline.knots(0).swap(kv0);
-        
+
         auto [knots1_cpu, knots1_accessor] =
-          utils::to_tensorAccessor<value_type, 1>(knots_[1], torch::kCPU);
+            utils::to_tensorAccessor<value_type, 1>(knots_[1], torch::kCPU);
         auto knots1_cpu_ptr = knots1_cpu.template data_ptr<value_type>();
-        
-        gismo::gsKnotVector<value_type> kv1(degrees_[1], knots1_cpu_ptr,
-                                            knots1_cpu_ptr + knots1_cpu.size(0));
+
+        gismo::gsKnotVector<value_type> kv1(
+            degrees_[1], knots1_cpu_ptr, knots1_cpu_ptr + knots1_cpu.size(0));
 
         bspline.knots(1).swap(kv1);
 
         auto [knots2_cpu, knots2_accessor] =
-          utils::to_tensorAccessor<value_type, 1>(knots_[2], torch::kCPU);
+            utils::to_tensorAccessor<value_type, 1>(knots_[2], torch::kCPU);
         auto knots2_cpu_ptr = knots2_cpu.template data_ptr<value_type>();
-        
-        gismo::gsKnotVector<value_type> kv2(degrees_[2], knots2_cpu_ptr,
-                                            knots2_cpu_ptr + knots2_cpu.size(0));
+
+        gismo::gsKnotVector<value_type> kv2(
+            degrees_[2], knots2_cpu_ptr, knots2_cpu_ptr + knots2_cpu.size(0));
 
         bspline.knots(2).swap(kv2);
 
       } else if constexpr (parDim_ == 4) {
-        
+
         if (bspline.degree(0) != degrees_[0] ||
             bspline.degree(1) != degrees_[1] ||
             bspline.degree(2) != degrees_[2] ||
             bspline.degree(3) != degrees_[3])
           throw std::runtime_error("Degrees mismatch");
-        
+
         auto [knots0_cpu, knots0_accessor] =
-          utils::to_tensorAccessor<value_type, 1>(knots_[0], torch::kCPU);
+            utils::to_tensorAccessor<value_type, 1>(knots_[0], torch::kCPU);
         auto knots0_cpu_ptr = knots0_cpu.template data_ptr<value_type>();
-        
-        gismo::gsKnotVector<value_type> kv0(degrees_[0], knots0_cpu_ptr,
-                                            knots0_cpu_ptr + knots0_cpu.size(0));
-        
+
+        gismo::gsKnotVector<value_type> kv0(
+            degrees_[0], knots0_cpu_ptr, knots0_cpu_ptr + knots0_cpu.size(0));
+
         bspline.knots(0).swap(kv0);
-        
+
         auto [knots1_cpu, knots1_accessor] =
-          utils::to_tensorAccessor<value_type, 1>(knots_[1], torch::kCPU);
+            utils::to_tensorAccessor<value_type, 1>(knots_[1], torch::kCPU);
         auto knots1_cpu_ptr = knots1_cpu.template data_ptr<value_type>();
-        
-        gismo::gsKnotVector<value_type> kv1(degrees_[1], knots1_cpu_ptr,
-                                            knots1_cpu_ptr + knots1_cpu.size(0));
+
+        gismo::gsKnotVector<value_type> kv1(
+            degrees_[1], knots1_cpu_ptr, knots1_cpu_ptr + knots1_cpu.size(0));
 
         bspline.knots(1).swap(kv1);
 
         auto [knots2_cpu, knots2_accessor] =
-          utils::to_tensorAccessor<value_type, 1>(knots_[2], torch::kCPU);
+            utils::to_tensorAccessor<value_type, 1>(knots_[2], torch::kCPU);
         auto knots2_cpu_ptr = knots2_cpu.template data_ptr<value_type>();
-        
-        gismo::gsKnotVector<value_type> kv2(degrees_[2], knots2_cpu_ptr,
-                                            knots2_cpu_ptr + knots2_cpu.size(0));
+
+        gismo::gsKnotVector<value_type> kv2(
+            degrees_[2], knots2_cpu_ptr, knots2_cpu_ptr + knots2_cpu.size(0));
 
         bspline.knots(2).swap(kv2);
 
         auto [knots3_cpu, knots3_accessor] =
-          utils::to_tensorAccessor<value_type, 1>(knots_[3], torch::kCPU);
+            utils::to_tensorAccessor<value_type, 1>(knots_[3], torch::kCPU);
         auto knots3_cpu_ptr = knots3_cpu.template data_ptr<value_type>();
-        
-        gismo::gsKnotVector<value_type> kv3(degrees_[3], knots3_cpu_ptr,
-                                            knots3_cpu_ptr + knots3_cpu.size(0));
+
+        gismo::gsKnotVector<value_type> kv3(
+            degrees_[3], knots3_cpu_ptr, knots3_cpu_ptr + knots3_cpu.size(0));
 
         bspline.knots(3).swap(kv3);
 
       } else
         throw std::runtime_error("Invalid parametric dimension");
-      
     }
-    
+
     if (updateCoeffs) {
-      
+
       for (short_t g = 0; g < geoDim_; ++g) {
         auto [coeffs_cpu, coeffs_accessor] =
-          utils::to_tensorAccessor<value_type, 1>(coeffs_[g], torch::kCPU);
+            utils::to_tensorAccessor<value_type, 1>(coeffs_[g], torch::kCPU);
         auto coeffs_cpu_ptr = coeffs_cpu.template data_ptr<value_type>();
-        bspline.coefs().col(g) = gsAsConstVector<value_type>(coeffs_cpu_ptr, coeffs_cpu.size(0));
-      }        
+        bspline.coefs().col(g) =
+            gsAsConstVector<value_type>(coeffs_cpu_ptr, coeffs_cpu.size(0));
+      }
     }
-        
+
     return bspline;
   }
 
 #else // IGANET_WITH_GISMO
 
-  template<typename T>
-  T& to_gismo(T& bspline, bool, bool) const {
-    throw std::runtime_error("This functions must be compiled with -DIGANET_WITH_GISMO turned on");
+  template <typename T> T &to_gismo(T &bspline, bool, bool) const {
+    throw std::runtime_error(
+        "This functions must be compiled with -DIGANET_WITH_GISMO turned on");
     return bspline;
   }
-  
+
 #endif // IGANET_WITH_GISMO
 
 #ifdef IGANET_WITH_GISMO
-  
+
   // @brief Updates the B-spline object from a given gsBSpline object
-  auto& from_gismo(const gismo::gsBSpline<value_type>& bspline,
+  auto &from_gismo(const gismo::gsBSpline<value_type> &bspline,
                    bool updateCoeffs = true, bool updateKnotVector = false) {
-    
+
     if (updateKnotVector) {
-      
-      throw std::runtime_error("Knot vectors can only be updated for Non-uniform B-splines");
-      
+
+      throw std::runtime_error(
+          "Knot vectors can only be updated for Non-uniform B-splines");
     }
-    
+
     if (updateCoeffs) {
 
       if (bspline.coefs().cols() != geoDim_)
-          throw std::runtime_error("Geometric dimensions mismatch");
+        throw std::runtime_error("Geometric dimensions mismatch");
 
       if (bspline.coefs().rows() != ncumcoeffs())
         throw std::runtime_error("Coefficient vector dimensions mismatch");
-      
+
       for (short_t g = 0; g < geoDim_; ++g) {
-        
+
         auto [coeffs_cpu, coeffs_accessor] =
-          utils::to_tensorAccessor<value_type, 1>(coeffs_[g], torch::kCPU);
-        
-        const value_type* coeffs_ptr = bspline.coefs().col(g).data();
-        
+            utils::to_tensorAccessor<value_type, 1>(coeffs_[g], torch::kCPU);
+
+        const value_type *coeffs_ptr = bspline.coefs().col(g).data();
+
         for (int64_t i = 0; i < ncoeffs_[g]; ++i)
           coeffs_accessor[i] = coeffs_ptr[i];
-        
-        coeffs_[g] = coeffs_[g].to(options_.device());        
+
+        coeffs_[g] = coeffs_[g].to(options_.device());
       }
-      
     }
-    
-    return *this;    
+
+    return *this;
   }
 
   // @brief Updates the B-spline object from a given gsTensorBSpline object
-  auto& from_gismo(const gismo::gsTensorBSpline<parDim_, value_type>& bspline,
+  auto &from_gismo(const gismo::gsTensorBSpline<parDim_, value_type> &bspline,
                    bool updateCoeffs = true, bool updateKnotVector = false) {
 
     if (updateKnotVector) {
-            
-        throw std::runtime_error("Knot vectors can only be updated for Non-uniform B-splines");
-      
+
+      throw std::runtime_error(
+          "Knot vectors can only be updated for Non-uniform B-splines");
     }
-    
+
     if (updateCoeffs) {
 
       if (bspline.coefs().cols() != geoDim_)
-          throw std::runtime_error("Geometric dimensions mismatch");
+        throw std::runtime_error("Geometric dimensions mismatch");
 
       if (bspline.coefs().rows() != ncumcoeffs())
         throw std::runtime_error("Coefficient vector dimensions mismatch");
-      
+
       for (short_t g = 0; g < geoDim_; ++g) {
-        
+
         auto [coeffs_cpu, coeffs_accessor] =
-          utils::to_tensorAccessor<value_type, 1>(coeffs_[g], torch::kCPU);
-        
-        const value_type* coeffs_ptr = bspline.coefs().col(g).data();
-        
+            utils::to_tensorAccessor<value_type, 1>(coeffs_[g], torch::kCPU);
+
+        const value_type *coeffs_ptr = bspline.coefs().col(g).data();
+
         for (int64_t i = 0; i < ncoeffs_[g]; ++i)
           coeffs_accessor[i] = coeffs_ptr[i];
-        
-        coeffs_[g] = coeffs_[g].to(options_.device());        
+
+        coeffs_[g] = coeffs_[g].to(options_.device());
       }
-      
     }
-    
-    return *this;    
+
+    return *this;
   }
 
 #else // IGANET_WITH_GISMO
-  
-  template<typename T>
-  auto& from_gismo(T& bspline, bool, bool) {
-    throw std::runtime_error("This functions must be compiled with -DIGANET_WITH_GISMO turned on");
+
+  template <typename T> auto &from_gismo(T &bspline, bool, bool) {
+    throw std::runtime_error(
+        "This functions must be compiled with -DIGANET_WITH_GISMO turned on");
     return *this;
   }
-  
+
 #endif // IGANET_WITH_GISMO
-  
 };
 
 /// @brief Serializes a B-spline object
@@ -3733,8 +3735,7 @@ public:
       std::array<std::vector<typename Base::value_type>, Base::parDim_> kv,
       enum init init = init::greville,
       Options<real_t> options = Options<real_t>{})
-    : Base(options)
-  {    
+      : Base(options) {
     init_knots(kv);
     Base::init_coeffs(init);
   }
@@ -3756,17 +3757,16 @@ public:
       std::array<std::vector<typename Base::value_type>, Base::parDim_> kv,
       const std::array<torch::Tensor, Base::geoDim_> &coeffs,
       bool clone = false, Options<real_t> options = Options<real_t>{})
-    : Base(options)
-  {
+      : Base(options) {
     init_knots(kv);
 
     // Copy/clone coefficients
     if (clone)
       for (short_t i = 0; i < Base::geoDim_; ++i)
         Base::coeffs_[i] = coeffs[i]
-          .clone()
-          .to(options.requires_grad(false))
-          .requires_grad_(Base::options.requires_grad());
+                               .clone()
+                               .to(options.requires_grad(false))
+                               .requires_grad_(Base::options.requires_grad());
     else
       for (short_t i = 0; i < Base::geoDim_; ++i)
         Base::coeffs_[i] = coeffs[i];
@@ -4130,236 +4130,257 @@ public:
     return *this;
   }
 
-  #ifdef IGANET_WITH_GISMO
-  
+#ifdef IGANET_WITH_GISMO
+
   // @brief Updates the B-spline object from a given gsBSpline object
-  auto& from_gismo(const gismo::gsBSpline<typename Base::value_type>& bspline,                  
+  auto &from_gismo(const gismo::gsBSpline<typename Base::value_type> &bspline,
                    bool updateCoeffs = true, bool updateKnotVector = false) {
 
     if (updateKnotVector) {
 
       if constexpr (Base::parDim_ == 1) {
-        
+
         if (bspline.degree(0) != Base::degrees_[0])
           throw std::runtime_error("Degrees mismatch");
-        
+
         if (bspline.knots(0).size() != Base::nknots_[0])
           throw std::runtime_error("Knot vector dimensions mismatch");
-        
-        auto [knots0_cpu, knots0_accessor] =
-          utils::to_tensorAccessor<typename Base::value_type, 1>(Base::knots_[0], torch::kCPU);
 
-        const typename Base::value_type* knots0_ptr = bspline.knots(0).asMatrix().data();
-        
+        auto [knots0_cpu, knots0_accessor] =
+            utils::to_tensorAccessor<typename Base::value_type, 1>(
+                Base::knots_[0], torch::kCPU);
+
+        const typename Base::value_type *knots0_ptr =
+            bspline.knots(0).asMatrix().data();
+
         for (int64_t i = 0; i < Base::nknots_[0]; ++i)
           knots0_accessor[i] = knots0_ptr[i];
 
         Base::knots_[0] = Base::knots_[0].to(Base::options_.device());
-                
+
       } else
         throw std::runtime_error("Invalid parametric dimension");
-      
     }
-    
+
     if (updateCoeffs) {
 
       if (bspline.coefs().rows() != Base::geoDim_)
-          throw std::runtime_error("Geometric dimensions mismatch");
+        throw std::runtime_error("Geometric dimensions mismatch");
 
       if (bspline.coefs().cols() != Base::ncumcoeffs())
         throw std::runtime_error("Coefficient vector dimensions mismatch");
-      
+
       for (short_t g = 0; g < Base::geoDim_; ++g) {
-        
+
         auto [coeffs_cpu, coeffs_accessor] =
-          utils::to_tensorAccessor<typename Base::value_type, 1>(Base::coeffs_[g], torch::kCPU);
-        
-        const typename Base::value_type* coeffs_ptr = bspline.coefs().row(g).data();
-        
+            utils::to_tensorAccessor<typename Base::value_type, 1>(
+                Base::coeffs_[g], torch::kCPU);
+
+        const typename Base::value_type *coeffs_ptr =
+            bspline.coefs().row(g).data();
+
         for (int64_t i = 0; i < Base::ncoeffs_[g]; ++i)
           coeffs_accessor[i] = coeffs_ptr[i];
-        
-        Base::coeffs_[g] = Base::coeffs_[g].to(Base::options_.device());        
+
+        Base::coeffs_[g] = Base::coeffs_[g].to(Base::options_.device());
       }
-      
     }
-    
-    return *this;    
+
+    return *this;
   }
 
   // @brief Updates the B-spline object from a given gsTensorBSpline object
-  auto& from_gismo(const gismo::gsTensorBSpline<Base::parDim_, typename Base::value_type>& bspline,                  
-                   bool updateCoeffs = true, bool updateKnotVector = false) {
+  auto &from_gismo(
+      const gismo::gsTensorBSpline<Base::parDim_, typename Base::value_type>
+          &bspline,
+      bool updateCoeffs = true, bool updateKnotVector = false) {
 
     if (updateKnotVector) {
-      
+
       if constexpr (Base::parDim_ == 2) {
-        
+
         if (bspline.degree(0) != Base::degrees_[0] ||
             bspline.degree(1) != Base::degrees_[1])
           throw std::runtime_error("Degrees mismatch");
-        
+
         if (bspline.knots(0).size() != Base::nknots_[0] ||
             bspline.knots(1).size() != Base::nknots_[1])
           throw std::runtime_error("Knot vector dimensions mismatch");
-        
+
         auto [knots0_cpu, knots0_accessor] =
-          utils::to_tensorAccessor<typename Base::value_type, 1>(Base::knots_[0], torch::kCPU);
-        
-        const typename Base::value_type* knots0_ptr = bspline.knots(0).asMatrix().data();
-        
+            utils::to_tensorAccessor<typename Base::value_type, 1>(
+                Base::knots_[0], torch::kCPU);
+
+        const typename Base::value_type *knots0_ptr =
+            bspline.knots(0).asMatrix().data();
+
         for (int64_t i = 0; i < Base::nknots_[0]; ++i)
           knots0_accessor[i] = knots0_ptr[i];
 
         Base::knots_[0] = Base::knots_[0].to(Base::options_.device());
-        
+
         auto [knots1_cpu, knots1_accessor] =
-          utils::to_tensorAccessor<typename Base::value_type, 1>(Base::knots_[1], torch::kCPU);
-        
-        const typename Base::value_type* knots1_ptr = bspline.knots(1).asMatrix().data();
-        
+            utils::to_tensorAccessor<typename Base::value_type, 1>(
+                Base::knots_[1], torch::kCPU);
+
+        const typename Base::value_type *knots1_ptr =
+            bspline.knots(1).asMatrix().data();
+
         for (int64_t i = 0; i < Base::nknots_[1]; ++i)
           knots1_accessor[i] = knots1_ptr[i];
-        
+
         Base::knots_[1] = Base::knots_[1].to(Base::options_.device());
-        
+
       } else if constexpr (Base::parDim_ == 3) {
-          
+
         if (bspline.degree(0) != Base::degrees_[0] ||
             bspline.degree(1) != Base::degrees_[1] ||
             bspline.degree(2) != Base::degrees_[2])
           throw std::runtime_error("Degrees mismatch");
-        
+
         if (bspline.knots(0).size() != Base::nknots_[0] ||
             bspline.knots(1).size() != Base::nknots_[1] ||
             bspline.knots(2).size() != Base::nknots_[2])
           throw std::runtime_error("Knot vector dimensions mismatch");
-        
+
         auto [knots0_cpu, knots0_accessor] =
-          utils::to_tensorAccessor<typename Base::value_type, 1>(Base::knots_[0], torch::kCPU);
-        
-        const typename Base::value_type* knots0_ptr = bspline.knots(0).asMatrix().data();
-        
+            utils::to_tensorAccessor<typename Base::value_type, 1>(
+                Base::knots_[0], torch::kCPU);
+
+        const typename Base::value_type *knots0_ptr =
+            bspline.knots(0).asMatrix().data();
+
         for (int64_t i = 0; i < Base::nknots_[0]; ++i)
           knots0_accessor[i] = knots0_ptr[i];
 
         Base::knots_[0] = Base::knots_[0].to(Base::options_.device());
-        
+
         auto [knots1_cpu, knots1_accessor] =
-          utils::to_tensorAccessor<typename Base::value_type, 1>(Base::knots_[1], torch::kCPU);
-        
-        const typename Base::value_type* knots1_ptr = bspline.knots(1).asMatrix().data();
-        
+            utils::to_tensorAccessor<typename Base::value_type, 1>(
+                Base::knots_[1], torch::kCPU);
+
+        const typename Base::value_type *knots1_ptr =
+            bspline.knots(1).asMatrix().data();
+
         for (int64_t i = 0; i < Base::nknots_[1]; ++i)
           knots1_accessor[i] = knots1_ptr[i];
 
         Base::knots_[1] = Base::knots_[1].to(Base::options_.device());
 
         auto [knots2_cpu, knots2_accessor] =
-          utils::to_tensorAccessor<typename Base::value_type, 1>(Base::knots_[2], torch::kCPU);
-        
-        const typename Base::value_type* knots2_ptr = bspline.knots(2).asMatrix().data();
-        
+            utils::to_tensorAccessor<typename Base::value_type, 1>(
+                Base::knots_[2], torch::kCPU);
+
+        const typename Base::value_type *knots2_ptr =
+            bspline.knots(2).asMatrix().data();
+
         for (int64_t i = 0; i < Base::nknots_[2]; ++i)
           knots2_accessor[i] = knots2_ptr[i];
 
         Base::knots_[2] = Base::knots_[2].to(Base::options_.device());
 
       } else if constexpr (Base::parDim_ == 4) {
-          
+
         if (bspline.degree(0) != Base::degrees_[0] ||
             bspline.degree(1) != Base::degrees_[1] ||
             bspline.degree(2) != Base::degrees_[2] ||
             bspline.degree(3) != Base::degrees_[3])
           throw std::runtime_error("Degrees mismatch");
-        
+
         if (bspline.knots(0).size() != Base::nknots_[0] ||
             bspline.knots(1).size() != Base::nknots_[1] ||
             bspline.knots(2).size() != Base::nknots_[2] ||
             bspline.knots(3).size() != Base::nknots_[3])
           throw std::runtime_error("Knot vector dimensions mismatch");
-        
+
         auto [knots0_cpu, knots0_accessor] =
-          utils::to_tensorAccessor<typename Base::value_type, 1>(Base::knots_[0], torch::kCPU);
-        
-        const typename Base::value_type* knots0_ptr = bspline.knots(0).asMatrix().data();
-        
+            utils::to_tensorAccessor<typename Base::value_type, 1>(
+                Base::knots_[0], torch::kCPU);
+
+        const typename Base::value_type *knots0_ptr =
+            bspline.knots(0).asMatrix().data();
+
         for (int64_t i = 0; i < Base::nknots_[0]; ++i)
           knots0_accessor[i] = knots0_ptr[i];
 
         Base::knots_[0] = Base::knots_[0].to(Base::options_.device());
-        
+
         auto [knots1_cpu, knots1_accessor] =
-          utils::to_tensorAccessor<typename Base::value_type, 1>(Base::knots_[1], torch::kCPU);
-        
-        const typename Base::value_type* knots1_ptr = bspline.knots(1).asMatrix().data();
-        
+            utils::to_tensorAccessor<typename Base::value_type, 1>(
+                Base::knots_[1], torch::kCPU);
+
+        const typename Base::value_type *knots1_ptr =
+            bspline.knots(1).asMatrix().data();
+
         for (int64_t i = 0; i < Base::nknots_[1]; ++i)
           knots1_accessor[i] = knots1_ptr[i];
 
         Base::knots_[1] = Base::knots_[1].to(Base::options_.device());
 
         auto [knots2_cpu, knots2_accessor] =
-          utils::to_tensorAccessor<typename Base::value_type, 1>(Base::knots_[2], torch::kCPU);
-        
-        const typename Base::value_type* knots2_ptr = bspline.knots(2).asMatrix().data();
-        
+            utils::to_tensorAccessor<typename Base::value_type, 1>(
+                Base::knots_[2], torch::kCPU);
+
+        const typename Base::value_type *knots2_ptr =
+            bspline.knots(2).asMatrix().data();
+
         for (int64_t i = 0; i < Base::nknots_[2]; ++i)
           knots2_accessor[i] = knots2_ptr[i];
 
         Base::knots_[2] = Base::knots_[2].to(Base::options_.device());
 
         auto [knots3_cpu, knots3_accessor] =
-          utils::to_tensorAccessor<typename Base::value_type, 1>(Base::knots_[3], torch::kCPU);
-        
-        const typename Base::value_type* knots3_ptr = bspline.knots(3).asMatrix().data();
-        
+            utils::to_tensorAccessor<typename Base::value_type, 1>(
+                Base::knots_[3], torch::kCPU);
+
+        const typename Base::value_type *knots3_ptr =
+            bspline.knots(3).asMatrix().data();
+
         for (int64_t i = 0; i < Base::nknots_[3]; ++i)
           knots3_accessor[i] = knots3_ptr[i];
 
         Base::knots_[3] = Base::knots_[3].to(Base::options_.device());
-        
+
       } else
         throw std::runtime_error("Invalid parametric dimension");
-      
     }
-    
+
     if (updateCoeffs) {
 
       if (bspline.coefs().rows() != Base::geoDim_)
-          throw std::runtime_error("Geometric dimensions mismatch");
+        throw std::runtime_error("Geometric dimensions mismatch");
 
       if (bspline.coefs().cols() != Base::ncumcoeffs())
         throw std::runtime_error("Coefficient vector dimensions mismatch");
-      
+
       for (short_t g = 0; g < Base::geoDim_; ++g) {
-        
+
         auto [coeffs_cpu, coeffs_accessor] =
-          utils::to_tensorAccessor<typename Base::value_type, 1>(Base::coeffs_[g], torch::kCPU);
-        
-        const typename Base::value_type* coeffs_ptr = bspline.coefs().row(g).data();
-        
+            utils::to_tensorAccessor<typename Base::value_type, 1>(
+                Base::coeffs_[g], torch::kCPU);
+
+        const typename Base::value_type *coeffs_ptr =
+            bspline.coefs().row(g).data();
+
         for (int64_t i = 0; i < Base::ncoeffs_[g]; ++i)
           coeffs_accessor[i] = coeffs_ptr[i];
-        
-        Base::coeffs_[g] = Base::coeffs_[g].to(Base::options_.device());        
+
+        Base::coeffs_[g] = Base::coeffs_[g].to(Base::options_.device());
       }
-      
     }
-    
-    return *this;    
+
+    return *this;
   }
 
 #else // IGANET_WITH_GISMO
-  
-  template<typename T>
-  auto& from_gismo(T& bspline, bool, bool) {
-    throw std::runtime_error("This functions must be compiled with -DIGANET_WITH_GISMO turned on");
+
+  template <typename T> auto &from_gismo(T &bspline, bool, bool) {
+    throw std::runtime_error(
+        "This functions must be compiled with -DIGANET_WITH_GISMO turned on");
     return *this;
   }
-  
+
 #endif // IGANET_WITH_GISMO
-  
 };
 
 /// @brief B-spline (common high-level functionality)
@@ -4533,7 +4554,7 @@ public:
   template <bool memory_optimized = false> auto curl(torch::Tensor &xi) const {
     return curl<memory_optimized>(utils::TensorArray1({xi}));
   }
-  
+
   template <bool memory_optimized = false>
   inline auto
   curl(const std::array<torch::Tensor, BSplineCore::parDim_> &xi) const {
@@ -4654,16 +4675,16 @@ public:
       return utils::BlockTensor<torch::Tensor, 1, 3>(
           BSplineCore::template eval<deriv::dy, memory_optimized>(
               xi, indices, coeff_indices)[2] -
-          BSplineCore::template eval<deriv::dz, memory_optimized>(
-              xi, indices, coeff_indices)[1],
+              BSplineCore::template eval<deriv::dz, memory_optimized>(
+                  xi, indices, coeff_indices)[1],
           BSplineCore::template eval<deriv::dz, memory_optimized>(
               xi, indices, coeff_indices)[0] +
-          BSplineCore::template eval<deriv::dx, memory_optimized>(
-              xi, indices, coeff_indices)[2],
+              BSplineCore::template eval<deriv::dx, memory_optimized>(
+                  xi, indices, coeff_indices)[2],
           BSplineCore::template eval<deriv::dx, memory_optimized>(
               xi, indices, coeff_indices)[1] +
-          BSplineCore::template eval<deriv::dy, memory_optimized>(
-              xi, indices, coeff_indices)[0]);
+              BSplineCore::template eval<deriv::dy, memory_optimized>(
+                  xi, indices, coeff_indices)[0]);
     else
       throw std::runtime_error("Unsupported parametric dimension");
   }
@@ -4694,7 +4715,7 @@ public:
       throw std::runtime_error("Unsupported parametric dimension");
   }
   /// @}
-  
+
   /// @brief Returns a block-tensor with the divergence of the
   /// B-spline object with respect to the parametric variables
   ///
@@ -5704,8 +5725,8 @@ public:
     }
 
     auto jacInv =
-      G.template jac<memory_optimized>(xi, indices_G, coeff_indices_G).ginv();
-    
+        G.template jac<memory_optimized>(xi, indices_G, coeff_indices_G).ginv();
+
     return jacInv.tr() * hessu * jacInv;
   }
 
@@ -6051,7 +6072,7 @@ public:
   /// \f[
   ///     L_{\boldsymbol{\xi}}(u)
   ///        =
-  ///     \sum_{i,j=0\atop|i+j|=2}^2 
+  ///     \sum_{i,j=0\atop|i+j|=2}^2
   ///     \frac{\partial^2 u}{\partial \xi_i\partial \xi_{j}}
   /// \f]
   ///
@@ -6064,7 +6085,7 @@ public:
   inline auto lapl(const torch::Tensor &xi) const {
     return lapl<memory_optimized>(utils::TensorArray1({xi}));
   }
-  
+
   /// Plots the B-spline object
   inline auto plot(int64_t res0 = 10, int64_t res1 = 10,
                    int64_t res2 = 10) const {
@@ -6096,7 +6117,7 @@ public:
   /// \f[
   ///     L_{\boldsymbol{\xi}}(u)
   ///        =
-  ///     \sum_{i,j=0\atop|i+j|=2}^2 
+  ///     \sum_{i,j=0\atop|i+j|=2}^2
   ///     \frac{\partial^2 u}{\partial \xi_i\partial \xi_{j}}
   /// \f]
   ///
@@ -6106,7 +6127,7 @@ public:
   template <bool memory_optimized = false>
   inline auto
   lapl(const std::array<torch::Tensor, BSplineCore::parDim_> &xi,
-          const std::array<torch::Tensor, BSplineCore::parDim_> &indices) const {
+       const std::array<torch::Tensor, BSplineCore::parDim_> &indices) const {
     return lapl<memory_optimized>(
         xi, indices,
         BSplineCore::template find_coeff_indices<memory_optimized>(indices));
@@ -6121,14 +6142,15 @@ public:
   ///
   /// @param[in] indices Knot indices where to evaluate the Laplacian
   ///
-  /// @param[in] coeff_indices Coefficient indices where to evaluate the Laplacian
+  /// @param[in] coeff_indices Coefficient indices where to evaluate the
+  /// Laplacian
   ///
   /// @result Block-tensor with the Laplacian with respect to the
   /// parametric variables
   /// \f[
   ///     L_{\boldsymbol{\xi}}(u)
   ///        =
-  ///     \sum_{i,j=0\atop|i+j|=2}^2 
+  ///     \sum_{i,j=0\atop|i+j|=2}^2
   ///     \frac{\partial^2 u}{\partial \xi_i\partial \xi_{j}}
   /// \f]
   ///
@@ -6139,8 +6161,8 @@ public:
   /// @{
   template <bool memory_optimized = false>
   inline auto lapl(const utils::TensorArray1 &xi,
-                      const utils::TensorArray1 &indices,
-                      const torch::Tensor &coeff_indices) const {
+                   const utils::TensorArray1 &indices,
+                   const torch::Tensor &coeff_indices) const {
     assert(xi[0].sizes() == indices[0].sizes());
     if constexpr (BSplineCore::parDim_ == 1)
       return utils::BlockTensor<torch::Tensor, 1, 1, BSplineCore::geoDim_>(
@@ -6152,8 +6174,8 @@ public:
 
   template <bool memory_optimized = false>
   inline auto lapl(const utils::TensorArray2 &xi,
-                      const utils::TensorArray2 &indices,
-                      const torch::Tensor &coeff_indices) const {
+                   const utils::TensorArray2 &indices,
+                   const torch::Tensor &coeff_indices) const {
     assert(xi[0].sizes() == indices[0].sizes() &&
            xi[1].sizes() == indices[1].sizes());
 
@@ -6179,11 +6201,11 @@ public:
     if constexpr (BSplineCore::parDim_ == 3)
       return utils::BlockTensor<torch::Tensor, 3, BSplineCore::geoDim_, 3>(
                  BSplineCore::template eval<deriv::dx ^ 2, memory_optimized>(
-                                            xi, indices, coeff_indices) +
+                     xi, indices, coeff_indices) +
                  BSplineCore::template eval<deriv::dy ^ 2, memory_optimized>(
-                                            xi, indices, coeff_indices) +
+                     xi, indices, coeff_indices) +
                  BSplineCore::template eval<deriv::dz ^ 2, memory_optimized>(
-                                            xi, indices, coeff_indices))
+                     xi, indices, coeff_indices))
           .reorder_ikj();
     else
       throw std::runtime_error("Unsupported parametric dimension");
@@ -6191,8 +6213,8 @@ public:
 
   template <bool memory_optimized = false>
   inline auto lapl(const utils::TensorArray4 &xi,
-                      const utils::TensorArray4 &indices,
-                      const torch::Tensor &coeff_indices) const {
+                   const utils::TensorArray4 &indices,
+                   const torch::Tensor &coeff_indices) const {
     assert(xi[0].sizes() == indices[0].sizes() &&
            xi[1].sizes() == indices[1].sizes() &&
            xi[2].sizes() == indices[2].sizes() &&
@@ -6201,7 +6223,7 @@ public:
     if constexpr (BSplineCore::parDim_ == 4)
       return utils::BlockTensor<torch::Tensor, 4, BSplineCore::geoDim_, 4>(
                  BSplineCore::template eval<deriv::dx ^ 2, memory_optimized>(
-                     xi, indices, coeff_indices) +                 
+                     xi, indices, coeff_indices) +
                  BSplineCore::template eval<deriv::dy ^ 2, memory_optimized>(
                      xi, indices, coeff_indices) +
                  BSplineCore::template eval<deriv::dz ^ 2, memory_optimized>(
@@ -6316,7 +6338,8 @@ public:
   ///
   /// @param[in] indices_G Knot indices where to evaluate the Jacobian of `G`
   ///
-  /// @param[in] coeff_indices Coefficient indices where to evaluate the Laplacian
+  /// @param[in] coeff_indices Coefficient indices where to evaluate the
+  /// Laplacian
   ///
   /// @param[in] coeff_indices_G Coefficient indices where to evaluate the
   /// Jacobian of `G`
@@ -6359,14 +6382,11 @@ public:
     }
 
     auto jacInv =
-      G.template jac<memory_optimized>(xi, indices_G, coeff_indices_G).ginv();
-    
+        G.template jac<memory_optimized>(xi, indices_G, coeff_indices_G).ginv();
+
     return (jacInv.tr() * hessu * jacInv).trace();
   }
 
-
-
-  
   /// Plots the B-spline object
   template <typename BSplineCoreColor>
   inline auto plot(const BSplineCommon<BSplineCoreColor> &color,
@@ -6946,9 +6966,8 @@ public:
   inline virtual void
   pretty_print(std::ostream &os = std::cout) const noexcept override {
     os << name() << "(\nparDim = " << BSplineCore::parDim_
-       << ", geoDim = " << BSplineCore::geoDim_
-       << ", degrees = ";
-    
+       << ", geoDim = " << BSplineCore::geoDim_ << ", degrees = ";
+
 #ifdef __CUDACC__
 #pragma nv_diag_suppress 68
 #pragma nv_diag_suppress 186

@@ -165,7 +165,7 @@ public:
   inline BoundaryCore &from_json(const nlohmann::json &json) {
     std::get<west - 1>(bdr_).from_json(json["west"]);
     std::get<east - 1>(bdr_).from_json(json["east"]);
-    
+
     return *this;
   }
 
@@ -346,7 +346,7 @@ public:
     std::get<east - 1>(bdr_).from_json(json["east"]);
     std::get<south - 1>(bdr_).from_json(json["south"]);
     std::get<north - 1>(bdr_).from_json(json["north"]);
-    
+
     return *this;
   }
 
@@ -569,7 +569,7 @@ public:
     std::get<north - 1>(bdr_).from_json(json["north"]);
     std::get<front - 1>(bdr_).from_json(json["front"]);
     std::get<back - 1>(bdr_).from_json(json["back"]);
-    
+
     return *this;
   }
 
@@ -832,7 +832,7 @@ public:
     std::get<back - 1>(bdr_).from_json(json["back"]);
     std::get<stime - 1>(bdr_).from_json(json["stime"]);
     std::get<etime - 1>(bdr_).from_json(json["etime"]);
-    
+
     return *this;
   }
 

@@ -6,12 +6,12 @@ learning with the mathematical framework of isogeometric analysis.
 ## Compilation instructions
 
 IgANets require a C++17 compiler, CMake and LibTorch (the C++ API of
-PyTorch). 
+PyTorch).
 
 Depending on the LibTorch version installed on your system,
 IgANets will be compiled with support for CUDA, ROCm or the Intel
 Extension for PyTorch. You can disable this feature by providing the
-`-DIGANET_BUILD_CPUONLY=ON` flag to CMake. 
+`-DIGANET_BUILD_CPUONLY=ON` flag to CMake.
 
 By providing additional CMake flags you can configure IgANet to build the following optional components:
 
@@ -89,7 +89,7 @@ In addition to the optional components, IgANets can be compiled with several opt
     cmake .. -DTorch_DIR=-DTorch_DIR=/opt/homebrew/Cellar/pytorch/2.1.2_1/share/cmake/Torch -DCMAKE_PREFIX_PATH=/opt/homebrew/Cellar/protobuf/25.2
     ```
 
-    Note that the specific version of PyTorch and/or protobuf might be different on your system. 
+    Note that the specific version of PyTorch and/or protobuf might be different on your system.
 
 3.  Compile
     ```shell
@@ -134,8 +134,8 @@ In addition to the optional components, IgANets can be compiled with several opt
 
     Code Snippet for `liza.surf.nl`:
     ```shell
-    module load intel/oneapi/tbb 
-    module load intel/oneapi/compiler-rt 
+    module load intel/oneapi/tbb
+    module load intel/oneapi/compiler-rt
     module load intel/oneapi/mkl
 
     cmake .. -DTorch_DIR=$HOME/sfw/libtorch/2.1.0-intel/share/cmake/Torch/ -DIPEX_DIR=$HOME/sfw/libtorch/2.1.0-intel/share/cmake/IPEX

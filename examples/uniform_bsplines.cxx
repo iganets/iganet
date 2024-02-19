@@ -43,7 +43,7 @@ int main() {
               << std::endl;
 
 #ifdef WITH_MATPLOT
-    // Plot B-spline    
+    // Plot B-spline
     bspline.plot(50);
     bspline.plot(color, 50);
 #endif

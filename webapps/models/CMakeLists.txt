@@ -27,7 +27,7 @@ foreach(model ${MODELS})
   if (NOT IGANET_BUILD_CPUONLY AND CMAKE_CUDA_COMPILER)
       set_source_files_properties(${model} PROPERTIES LANGUAGE CUDA)
   endif()
-  
+
   get_filename_component(name ${model} NAME_WE)
   add_library(${name} SHARED ${model})
 
@@ -43,7 +43,7 @@ foreach(model ${MODELS})
   if (IGANET_WITH_GISMO)
     target_link_libraries(${name} PUBLIC gismo_static)
   endif()
-  
+
   if (IGANET_WITH_OPENMP)
     target_link_libraries(${name} PUBLIC OpenMP::OpenMP_CXX)
   endif()

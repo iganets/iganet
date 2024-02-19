@@ -104,7 +104,7 @@ public:
     return std::vector{std::string("increase")};
   }
 };
-  
+
 /// @brief Model refinement
 class ModelRefine {
 public:

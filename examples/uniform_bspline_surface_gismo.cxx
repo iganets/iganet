@@ -35,7 +35,7 @@ int main() {
   auto bspline_gismo = bspline.to_gismo();
 
   // Export as ParaView file
-  std::string out = "Geometry";      
+  std::string out = "Geometry";
   gsWriteParaview(bspline_gismo, out);
 
   out = "Basis";
@@ -54,10 +54,11 @@ int main() {
 
   // Convert result back into B-spline object
   gsMultiPatch<real_t> mp = opt.result();
-  bspline.from_gismo(dynamic_cast<const gsTensorBSpline<2, real_t>&>( mp.patch(0) ));
+  bspline.from_gismo(
+      dynamic_cast<const gsTensorBSpline<2, real_t> &>(mp.patch(0)));
 
   // Export as ParaView file
-  out = "Geometry_opt";      
+  out = "Geometry_opt";
   gsWriteParaview(mp.patch(0), out);
 
   out = "Basis_opt";
@@ -69,5 +70,5 @@ int main() {
   gsWriteParaview(mesh, out);
 #endif
 
-  return 0;  
+  return 0;
 }

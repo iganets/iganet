@@ -72,7 +72,7 @@ foreach(webapp ${WEBAPPS})
       set_source_files_properties(${filename} PROPERTIES LANGUAGE HIP)
     endif()
   endif()
-  
+
   string(REPLACE ".cxx" "" name ${filename})
   add_executable(${name} ${filename})
 
@@ -94,7 +94,7 @@ foreach(webapp ${WEBAPPS})
   if (IGANET_WITH_GISMO)
     target_link_libraries(${name} PUBLIC gismo_static)
   endif()
-  
+
   if (IGANET_WITH_OPENMP)
     target_link_libraries(${name} PUBLIC OpenMP::OpenMP_CXX)
   endif()

@@ -19,7 +19,7 @@ foreach(example ${EXAMPLES})
   if (NOT IGANET_BUILD_CPUONLY AND CMAKE_CUDA_COMPILER)
     set_source_files_properties(${model} PROPERTIES LANGUAGE CUDA)
   endif()
-  
+
   get_filename_component(name ${example} NAME_WE)
   add_executable(${name} ${example})
 
@@ -28,7 +28,7 @@ foreach(example ${EXAMPLES})
   endif()
 
   target_compile_options(${name} PUBLIC "-DIGANET_DATA_DIR=\"${PROJECT_SOURCE_DIR}/filedata/\"")
-  
+
   # LibTorch
   target_link_libraries(${name} PUBLIC ${TORCH_LIBRARIES})
   target_link_libraries(${name} PUBLIC pugixml)
@@ -37,7 +37,7 @@ foreach(example ${EXAMPLES})
   if (IPEX_FOUND)
     target_link_libraries(${name} PUBLIC ${TORCH_IPEX_LIBRARIES})
   endif()
-  
+
   if (IGANET_WITH_GISMO)
     target_link_libraries(${name} PUBLIC gismo_static)
   endif()

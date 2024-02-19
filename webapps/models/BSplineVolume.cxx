@@ -27,7 +27,7 @@ extern "C"
 
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wreturn-type-c-linkage"
-  
+
   /// @brief Create a B-spline volume
   std::shared_ptr<iganet::Model> create(const nlohmann::json &json) {
     enum iganet::webapp::degree degree = iganet::webapp::degree::linear;
@@ -51,9 +51,10 @@ extern "C"
 
       try {
         // generate list of include files
-        std::string includes = "#include <BSplineModel.hpp>\n"
-          "#pragma GCC diagnostic push\n"
-          "#pragma GCC diagnostic ignored \"-Wreturn-type-c-linkage\"\n";
+        std::string includes =
+            "#include <BSplineModel.hpp>\n"
+            "#pragma GCC diagnostic push\n"
+            "#pragma GCC diagnostic ignored \"-Wreturn-type-c-linkage\"\n";
 
         // generate source code
         std::string src =
@@ -72,7 +73,8 @@ extern "C"
         src.append("3, ");
         src.append(std::to_string((int)degree) + ", " +
                    std::to_string((int)degree) + ", " +
-                   std::to_string((int)degree) + ">>>(ncoeffs, init);\n}\n#pragma GCC diagnostic pop\n");
+                   std::to_string((int)degree) +
+                   ">>>(ncoeffs, init);\n}\n#pragma GCC diagnostic pop\n");
 
         // compile dynamic library
         auto libname = iganet::jit{}.compile(includes, src, "BSplineVolume");
@@ -161,9 +163,10 @@ extern "C"
             }
 
             // generate list of include files
-            std::string includes = "#include <BSplineModel.hpp>\n"
-              "#pragma GCC diagnostic push\n"
-              "#pragma GCC diagnostic ignored \"-Wreturn-type-c-linkage\"\n";
+            std::string includes =
+                "#include <BSplineModel.hpp>\n"
+                "#pragma GCC diagnostic push\n"
+                "#pragma GCC diagnostic ignored \"-Wreturn-type-c-linkage\"\n";
 
             // generate source code
             std::string src =
@@ -224,5 +227,4 @@ extern "C"
   }
 
 #pragma GCC diagnostic pop
-  
 }

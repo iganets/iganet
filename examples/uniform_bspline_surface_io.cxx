@@ -42,9 +42,9 @@ int main() {
   // Plot B-spline
   bspline.plot(50, 50);
 #endif
-  
+
   // Export B-spline to XML
   std::cout << bspline.to_xml() << std::endl;
 
-  return 0;  
+  return 0;
 }

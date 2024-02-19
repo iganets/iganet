@@ -297,7 +297,7 @@ public:
           json["knots"] = this->knots_to_json();
 
         return json;
-        
+
       } else {
         auto json = BSpline_t::to_json();
         json.update(Model::to_json("transform", ""), true);
@@ -562,7 +562,7 @@ public:
     }
 
     BSpline_t::uniform_refine(num, dim);
-    
+
     solution_.uniform_refine(num, dim);
     if constexpr (BSpline_t::parDim() == 1)
       solution_.transform([](const std::array<typename BSpline_t::value_type, 1>
@@ -686,8 +686,8 @@ public:
     } else {
       if (component == "geometry") {
         BSpline_t::from_xml(xml, id, "geometry");
-        iganet::utils::from_xml<iganet::real_t, 2>(xml, transform_, "Matrix", id,
-                                                   "transform", false);
+        iganet::utils::from_xml<iganet::real_t, 2>(xml, transform_, "Matrix",
+                                                   id, "transform", false);
       } else if (component == "solution")
         solution_.from_xml(xml, id, "solution");
       else

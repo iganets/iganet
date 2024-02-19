@@ -87,7 +87,7 @@ foreach(unittest ${UNITTESTS})
   if (IPEX_FOUND)
     target_link_libraries(${name} PUBLIC ${TORCH_IPEX_LIBRARIES})
   endif()
-  
+
   # BSplineLib
   target_link_libraries(${name} PUBLIC splines)
 
@@ -97,7 +97,7 @@ foreach(unittest ${UNITTESTS})
   if (IGANET_WITH_GISMO)
     target_link_libraries(${name} PUBLIC gismo_static)
   endif()
-  
+
   if (IGANET_WITH_MATPLOT)
     target_link_libraries(${name} PUBLIC Matplot++::matplot)
   endif()
