@@ -67,7 +67,7 @@ file(GLOB PERFTESTS *.cxx)
 foreach(perftest ${PERFTESTS})
 
   if (NOT IGANET_BUILD_CPUONLY AND CMAKE_CUDA_COMPILER)
-    set_source_files_properties(${filename} PROPERTIES LANGUAGE CUDA)
+    set_source_files_properties(${perftest} PROPERTIES LANGUAGE CUDA)
   endif()
 
   get_filename_component(name ${perftest} NAME_WE)
@@ -84,7 +84,7 @@ foreach(perftest ${PERFTESTS})
   target_link_libraries(${name} PUBLIC pugixml)
 
   # Intel Extension for PyTorch
-  if (IPEX_FOUND)
+  if (NOT IGANET_BUILD_CPUONLY AND IPEX_FOUND)
     target_link_libraries(${name} PUBLIC ${TORCH_IPEX_LIBRARIES})
   endif()
 

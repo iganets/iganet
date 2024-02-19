@@ -65,16 +65,12 @@ file(GLOB WEBAPPS *.cxx)
 foreach(webapp ${WEBAPPS})
   file(RELATIVE_PATH filename ${CMAKE_CURRENT_SOURCE_DIR} ${webapp})
 
-  if (NOT IGANET_BUILD_CPUONLY)
-    if (CMAKE_CUDA_COMPILER)
-      set_source_files_properties(${filename} PROPERTIES LANGUAGE CUDA)
-    elseif (HIP_COMPILER)
-      set_source_files_properties(${filename} PROPERTIES LANGUAGE HIP)
-    endif()
+  if (NOT IGANET_BUILD_CPUONLY AND CMAKE_CUDA_COMPILER)
+    set_source_files_properties(${webapp} PROPERTIES LANGUAGE CUDA)
   endif()
 
-  string(REPLACE ".cxx" "" name ${filename})
-  add_executable(${name} ${filename})
+  get_filename_component(name ${webapp} NAME_WE)
+  add_executable(${name} ${webapp})
 
   if(IGANET_BUILD_PCH AND NOT WIN32 AND NOT ${CMAKE_VERSION} VERSION_LESS "3.16.0")
     target_precompile_headers(${name} REUSE_FROM iganet_pch)
@@ -87,7 +83,7 @@ foreach(webapp ${WEBAPPS})
   target_link_libraries(${name} PUBLIC pugixml)
 
   # Intel Extension for PyTorch
-  if (IPEX_FOUND)
+  if (NOT IGANET_BUILD_CPUONLY AND IPEX_FOUND)
     target_link_libraries(${name} PUBLIC ${TORCH_IPEX_LIBRARIES})
   endif()
 
