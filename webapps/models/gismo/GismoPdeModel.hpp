@@ -21,7 +21,9 @@ namespace iganet {
     /// @brief G+Smo PDE model
     template <short_t d, class T>
     class GismoPdeModel : public GismoModel<T>,
-                          public ModelEval {
+                          public ModelElevate,
+                          public ModelIncrease,
+                          public ModelRefine {
 
     protected:
       /// @brief Multi-patch geometry
@@ -373,36 +375,55 @@ namespace iganet {
             throw InvalidModelAttributeException();
           }
 
-          std::cout << geo_.patch(0).coefs() << std::endl;
-          
           return "{}";
         } else
           return GismoModel<T>::updateAttribute(component, attribute, json);
       }  
+
+      /// @brief Elevates the model's degrees, preserves smoothness
+      void elevate(const nlohmann::json &json = NULL) override {
+        int num = 1, dim = -1;
+
+        if (json.contains("data")) {
+          if (json["data"].contains("num"))
+            num = json["data"]["num"].get<int>();
+
+          if (json["data"].contains("dim"))
+            dim = json["data"]["dim"].get<int>();
+        }
+
+        geo_.patch(0).degreeElevate(num, dim);
+      }
       
-      /// @brief Evaluates the model
-      nlohmann::json eval(const std::string &component,
-                          const nlohmann::json &json) const override {
-        gsMatrix<T> ab = geo_.patch(0).support();
-        gsVector<T> a  = ab.col(0);
-        gsVector<T> b  = ab.col(1);
+      /// @brief Increases the model's degrees, preserves multiplicity
+      void increase(const nlohmann::json &json = NULL) override {
+        int num = 1, dim = -1;
 
-        gsVector<unsigned> np(geo_.parDim()); np.setConstant(25);
+        if (json.contains("data")) {
+          if (json["data"].contains("num"))
+            num = json["data"]["num"].get<int>();
 
-        if (json.contains("data"))
-          if (json["data"].contains("resolution")) {
-            auto res = json["data"]["resolution"].get<std::array<int64_t, d>>();
+          if (json["data"].contains("dim"))
+            dim = json["data"]["dim"].get<int>();
+        }
 
-            for (std::size_t i = 0; i < d; ++i)
-              np(i) = res[i];            
-          }
-        
-        // Uniform parameters for evaluation
-        gsMatrix<T> pts = gsPointGrid(a, b, np);        
-        gsMatrix<T> eval = geo_.patch(0).eval(pts);
-        
-        return utils::to_json(eval);        
-      }      
+        geo_.patch(0).degreeIncrease(num, dim);
+      }
+      
+      /// @brief Refines the model
+      void refine(const nlohmann::json &json = NULL) override {
+        int num = 1, dim = -1;
+
+        if (json.contains("data")) {
+          if (json["data"].contains("num"))
+            num = json["data"]["num"].get<int>();
+
+          if (json["data"].contains("dim"))
+            dim = json["data"]["dim"].get<int>();
+        }
+
+        geo_.patch(0).uniformRefine(num, 1, dim);
+      }
     };
     
   } // namespace webapp
