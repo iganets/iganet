@@ -13,6 +13,8 @@
 */
 
 #include <App.h>
+#include <algorithm>
+#include <thread>
 #include <iganet.h>
 #include <modelmanager.hpp>
 #include <popl.hpp>
@@ -164,19 +166,21 @@ int main(int argc, char const *argv[]) {
       "m", "modelpath", "path to model files", "");
   auto passphrase_option = op.add<popl::Value<std::string>>(
       "a", "passphrase", "passphrase for SSL encryption", "");
+  auto threads_option = op.add<popl::Value<int>>(
+      "t", "threads", "number of server threads", 1);
 
   op.parse(argc, argv);
 
   // Print auto-generated help message
   if (help_option->count() == 1) {
     std::cout << op << std::endl;
-    exit(0);
+    return 0;
   } else if (help_option->count() == 2) {
     std::cout << op.help(popl::Attribute::advanced) << std::endl;
-    exit(0);
+    return 0;
   } else if (help_option->count() > 2) {
     std::cout << op.help(popl::Attribute::expert) << std::endl;
-    exit(0);
+    return 0;
   }
 
   // Initialize backend
@@ -208,21 +212,24 @@ int main(int argc, char const *argv[]) {
   }
 
   // Override commandline arguments
-  if (!port_option->value())
+  if (port_option->is_set())
     config["port"] = port_option->value();
 
-  if (!keyfile_option->value().empty())
+  if (keyfile_option->is_set())
     config["keyFile"] = keyfile_option->value();
 
-  if (!certfile_option->value().empty())
+  if (certfile_option->is_set())
     config["certFile"] = certfile_option->value();
 
-  if (!passphrase_option->value().empty())
+  if (passphrase_option->is_set())
     config["passphrase"] = passphrase_option->value();
 
-  if (!modelpath_option->value().empty())
+  if (modelpath_option->is_set())
     config["modelPath"] = modelpath_option->value();
-
+  
+  if (threads_option->is_set())
+    config["numThreads"] = threads_option->value();
+  
   // Check if key file is available
   if (config.contains("keyFile")) {
     if (!std::filesystem::exists(
@@ -260,6 +267,14 @@ int main(int argc, char const *argv[]) {
     PerSocketData::addModelPath(
         iganet::webapp::tokenize(config["modelPath"].get<std::string>(), ","));
 
+  // Multi-threaded websocket application
+  std::vector<std::thread *> threads(config.contains("numThreads")
+                      ? config["numThreads"].get<int>()
+                      : std::thread::hardware_concurrency());
+
+  std::transform(threads.begin(), threads.end(), threads.begin(), [&config, &port_option](std::thread *) {
+    return new std::thread([&config, &port_option]() {
+  
   // Create WebSocket application
   try {
     uWS::SSLApp(
@@ -309,7 +324,7 @@ int main(int argc, char const *argv[]) {
              .open =
                  [](auto *ws) {
 #ifndef NDEBUG
-                   std::clog << "Connection has been opened\n";
+                   std::clog << "[Thread " << std::this_thread::get_id() << "] Connection has been opened\n";
 #endif
                  },
              .message =
@@ -327,7 +342,7 @@ int main(int argc, char const *argv[]) {
 
 #ifndef NDEBUG
                      for (auto const &token : tokens)
-                       std::clog << token << "/";
+                       std::clog << "[Thread " << std::this_thread::get_id() << "] " << token << "/";
                      std::clog << std::endl;
 #endif
 
@@ -1288,13 +1303,16 @@ int main(int argc, char const *argv[]) {
                  [](auto *ws, int code, std::string_view message) {
     /* You may access ws->getUserData() here */
 #ifndef NDEBUG
-                   std::clog << "Connection has been closed\n";
+                   std::clog << "[Thread " << std::this_thread::get_id() << "] Connection has been closed\n";
 #endif
                  }})
         .listen(port_option->value(),
                 [&port_option](auto *listen_socket) {
                   if (listen_socket) {
-                    std::clog << "Listening on port " << port_option->value()
+                    std::clog << "[Thread " << std::this_thread::get_id() << "] Listening on port " << port_option->value()
+                              << std::endl;
+                  } else {
+                    std::clog << "[Thread " << std::this_thread::get_id() << "] Failed to listen on port " << port_option->value()
                               << std::endl;
                   }
                 })
@@ -1303,5 +1321,12 @@ int main(int argc, char const *argv[]) {
     std::cerr << e.what();
   }
 
+    });
+  });
+  
+  std::for_each(threads.begin(), threads.end(), [](std::thread *t) {
+    t->join();
+  });
+  
   return 0;
 }
