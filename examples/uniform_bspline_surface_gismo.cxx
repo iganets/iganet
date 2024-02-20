@@ -17,7 +17,7 @@
 
 int main() {
   std::cout << iganet::verbose;
-  using real_t = double;
+  using real_t = float;
   iganet::init();
 
   // Bivariate uniform B-spline of degree 2 in both directions
@@ -30,7 +30,7 @@ int main() {
   // Load B-spline from XML object
   bspline.from_xml(xml);
 
-#ifdef WITH_GISMO
+#ifdef IGANET_WITH_GISMO
   // Create gsTensorBSpline object
   auto bspline_gismo = bspline.to_gismo();
 

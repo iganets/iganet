@@ -17,7 +17,7 @@
 
 int main() {
   std::cout << iganet::verbose;
-  using real_t = double;
+  using real_t = float;
   iganet::init();
 
   // Bivariate uniform B-spline of degree 2 in both directions
@@ -30,7 +30,7 @@ int main() {
   // Load B-spline from XML object
   bspline.from_xml(xml);
 
-#ifdef WITH_MATPLOT
+#ifdef IGANET_WITH_MATPLOT
   // Plot B-spline
   bspline.plot(50, 50);
 #endif
@@ -38,7 +38,7 @@ int main() {
   // Refine B-Spline
   bspline.uniform_refine(2);
 
-#ifdef WITH_MATPLOT
+#ifdef IGANET_WITH_MATPLOT
   // Plot B-spline
   bspline.plot(50, 50);
 #endif
