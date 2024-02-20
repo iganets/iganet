@@ -17,7 +17,7 @@
 
 int main() {
   std::cout << iganet::verbose;
-  using real_t = float;
+  using real_t = double;
   iganet::init();
 
   {
