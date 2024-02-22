@@ -33,6 +33,12 @@ enum class status : short_t {
   variable_collPts = 1 << 2  /*!< variable collocation points need update */
 };
 
+  /// @brief Enumerator for the collocation point specifier
+  enum class collPts : short_t {
+    greville = 0, /*!< Greville points */
+    greville_interior = 1 /*!< Greville points in the interior */
+  };
+  
 /// @brief Returns the sum of two status objects
 status operator+(enum status lhs, enum status rhs) {
   return status(static_cast<short_t>(lhs) + static_cast<short_t>(rhs));
@@ -1005,6 +1011,12 @@ protected:
   /// @brief Options
   IgANetOptions options_;
 
+  /// @brief Specifier for collocation points of the geometry map
+  collPts geometryMap_collPts_;
+
+  /// @brief Specifier for collocation points of the variables
+  collPts variable_collPts_;
+
   /// @brief Constructor: number of layers, activation functions,
   /// and number of spline coefficients (different for Geometry
   /// and Variable types)
@@ -1032,7 +1044,12 @@ protected:
         opt_(net_->parameters()),
 
         // Set options
-        options_(defaults) {}
+        options_(defaults),
+
+        // Set collocation point specifiers
+        geometryMap_collPts_(collPts::greville),
+        variable_collPts_(collPts::greville)
+  {}
 
 public:
   /// @brief Default constructor
@@ -1040,11 +1057,11 @@ public:
       IgANetOptions defaults = {},
       iganet::Options<value_type> options = iganet::Options<value_type>{})
       : G_(), f_(), u_(), opt_(net_->parameters()),
-        options_(defaults) {}
+        options_(defaults), geometryMap_collPts_(collPts::greville), variable_collPts_(collPts::greville) {}
 
-  /// @brief Constructor: number of layers, activation functions,
-  /// and number of spline coefficients (same for GeometryMap and
-  /// Variable types)
+  /// @brief Constructor: number of layers, activation functions, and
+  /// number of spline coefficients (same for geometry map and
+  /// variables)
   template <typename... Splines>
   IgANet(const std::vector<int64_t> &layers,
          const std::vector<std::vector<std::any>> &activations,
@@ -1052,9 +1069,9 @@ public:
          iganet::Options<value_type> options = iganet::Options<value_type>{})
       : IgANet(layers, activations, splines, splines, defaults, options) {}
 
-  /// @brief Constructor: number of layers, activation functions,
-  /// and number of spline coefficients (different for Geometry
-  /// and Variable types)
+  /// @brief Constructor: number of layers, activation functions, and
+  /// number of spline coefficients (different for geometry map and
+  /// variables)
   template <typename... GeometryMapSplines, typename... VariableSplines>
   IgANet(const std::vector<int64_t> &layers,
          const std::vector<std::vector<std::any>> &activations,
@@ -1110,6 +1127,38 @@ public:
   /// @brief Returns a non-constant reference to the options structure
   inline auto &options() { return options_; }
 
+  /// @brief Sets the collocation point specifiers for the geometry
+  /// map and the variables and returns the specifier
+  inline enum collPts collPts(enum collPts collPts ) {
+    geometryMap_collPts_ = collPts;
+    variable_collPts_ = collPts;
+    return collPts;
+  }
+
+  /// @brief Sets the collocation point specifier for the geometry map
+  /// and returns the specifier
+  inline enum collPts geometryMap_collPts(enum collPts collPts) {
+    geometryMap_collPts_ = collPts;
+    return collPts;
+  }
+
+  /// @brief Sets the collocation point specifier for the variables
+  /// and returns the specifier
+  inline enum collPts variable_collPts(enum collPts collPts) {
+    variable_collPts_ = collPts;
+    return collPts;
+  }
+
+  /// @brief Returns the collocation point specifier for the geometry map
+  inline enum collPts geometryMap_collPts() const {
+    return geometryMap_collPts_;
+  }
+
+  /// @brief Returns the collocation point specifier for the variables
+  inline enum collPts variable_collPts() const {
+    return variable_collPts_;
+  }
+    
 private:
   /// @brief Returns the geometry map collocation points
   ///
@@ -1121,16 +1170,36 @@ private:
   geometryMap_collPts_type geometryMap_collPts(std::index_sequence<Is...>) const {
     geometryMap_collPts_type collPts;
 
-    // Get Greville abscissae inside the domain
-    ((std::get<Is>(collPts.first) =
-          std::get<Is>(G_).greville(/* interior */ true)),
-     ...);
+    switch (geometryMap_collPts_) {
 
-    // Get Greville abscissae at the domain
-    ((std::get<Is>(collPts.second) =
-          std::get<Is>(G_.boundary()).greville()),
-     ...);
+    case collPts::greville:
+      // Get Greville abscissae inside the domain and at the boundary
+      ((std::get<Is>(collPts.first) =
+        std::get<Is>(G_).greville(/* interior */ false)),
+       ...);
 
+      // Get Greville abscissae at the domain
+      ((std::get<Is>(collPts.second) =
+        std::get<Is>(G_.boundary()).greville()),
+       ...);
+      break;
+      
+    case collPts::greville_interior:
+      // Get Greville abscissae inside the domain
+      ((std::get<Is>(collPts.first) =
+        std::get<Is>(G_).greville(/* interior */ true)),
+       ...);
+
+      // Get Greville abscissae at the domain
+      ((std::get<Is>(collPts.second) =
+        std::get<Is>(G_.boundary()).greville()),
+       ...);
+      break;
+
+    default:
+      throw std::runtime_error("Invalid collocation point specifier");
+    }
+    
     return collPts;
   }
 
@@ -1144,16 +1213,36 @@ private:
   variable_collPts_type variable_collPts(std::index_sequence<Is...>) const {
     variable_collPts_type collPts;
 
-    // Get Greville abscissae inside the domain
-    ((std::get<Is>(collPts.first) =
-          std::get<Is>(f_).greville(/* interior */ true)),
-     ...);
+    switch (variable_collPts_) {
 
-    // Get Greville abscissae at the domain
-    ((std::get<Is>(collPts.second) =
-          std::get<Is>(f_.boundary()).greville()),
-     ...);
+    case collPts::greville:
+      // Get Greville abscissae inside the domain and at the boundary
+      ((std::get<Is>(collPts.first) =
+        std::get<Is>(f_).greville(/* interior */ false)),
+       ...);
 
+      // Get Greville abscissae at the domain
+      ((std::get<Is>(collPts.second) =
+        std::get<Is>(f_.boundary()).greville()),
+       ...);
+      break;
+      
+    case collPts::greville_interior:
+      // Get Greville abscissae inside the domain and at the boundary
+      ((std::get<Is>(collPts.first) =
+        std::get<Is>(f_).greville(/* interior */ true)),
+       ...);
+
+      // Get Greville abscissae at the domain
+      ((std::get<Is>(collPts.second) =
+        std::get<Is>(f_.boundary()).greville()),
+       ...);
+      break;
+
+    default:
+      throw std::runtime_error("Invalid collocation point specifier");
+    }
+    
     return collPts;
   }
 
@@ -1166,8 +1255,21 @@ public:
   /// function in a derived class.
   virtual geometryMap_collPts_type geometryMap_collPts(int64_t epoch) const {
     if constexpr (GeometryMap::dim() == 1)
-      return {G_.greville(/* interior */ true),
-              G_.boundary().greville()};
+
+      switch (geometryMap_collPts_) {
+
+      case collPts::greville:
+        return {G_.greville(/* interior */ false),
+                G_.boundary().greville()};
+
+      case collPts::greville_interior:
+        return {G_.greville(/* interior */ true),
+                G_.boundary().greville()};
+
+      default:
+        throw std::runtime_error("Invalid collocation point specifier");
+      }
+    
     else
       return geometryMap_collPts(std::make_index_sequence<GeometryMap::dim()>{});
   }
@@ -1180,8 +1282,21 @@ public:
   /// function in a derived class.
   virtual variable_collPts_type variable_collPts(int64_t epoch) const {
     if constexpr (Variable::dim() == 1)
-      return {f_.greville(/* interior */ true),
-              f_.boundary().greville()};
+
+      switch (variable_collPts_) {
+
+      case collPts::greville:
+        return {f_.greville(/* interior */ false),
+                f_.boundary().greville()};
+
+      case collPts::greville_interior:
+        return {f_.greville(/* interior */ true),
+                f_.boundary().greville()};
+
+      default:
+        throw std::runtime_error("Invalid collocation point specifier");
+      }
+    
     else
       return variable_collPts(std::make_index_sequence<Variable::dim()>{});
   }
@@ -1241,7 +1356,7 @@ public:
         // Compute gradients of the loss w.r.t. the model parameters
         loss.backward({}, true, false);
 
-        std::cout << loss.template item<value_type>() << std::endl;
+        std::clog << loss.template item<value_type>() << std::endl;
         return loss;
       };
 
@@ -1355,19 +1470,19 @@ operator<<(std::ostream &os, const IgANet<Optimizer, GeometryMap, Variable> &obj
 template <typename Optimizer, typename GeometryMap, typename Variable>
 class IgANetCustomizable {
 public:
-  /// @brief Type of the knot indices of GeometryMap type in the interior
+  /// @brief Type of the knot indices of the geometry map in the interior
   using geometryMap_interior_knot_indices_type =
       decltype(std::declval<GeometryMap>()
                    .template find_knot_indices<functionspace::interior>(
                        std::declval<typename GeometryMap::eval_type>()));
 
-  /// @brief Type of the knot indices of GeometryMap type at the boundary
+  /// @brief Type of the knot indices of the geometry map at the boundary
   using geometryMap_boundary_knot_indices_type =
       decltype(std::declval<GeometryMap>()
                    .template find_knot_indices<functionspace::boundary>(
                        std::declval<typename GeometryMap::boundary_eval_type>()));
 
-  /// @brief Type of the knot indices of Variable type in the interior
+  /// @brief Type of the knot indices of the variables in the interior
   using variable_interior_knot_indices_type =
       decltype(std::declval<Variable>()
                    .template find_knot_indices<functionspace::interior>(
@@ -1380,16 +1495,16 @@ public:
                        std::declval<typename Variable::boundary_eval_type>()));
 
 protected:
-  /// @brief Knot indices of GeometryMap type in the interior
+  /// @brief Knot indices of the geometry map in the interior
   geometryMap_interior_knot_indices_type geometryMap_interior_knot_indices_;
 
-  /// @brief Knot indices of GeometryMap type at the boundary
+  /// @brief Knot indices of the geometry map at the boundary
   geometryMap_boundary_knot_indices_type geometryMap_boundary_knot_indices_;
 
-  /// @brief Knot indices of Variable type in the interior
+  /// @brief Knot indices of the variables in the interior
   variable_interior_knot_indices_type variable_interior_knot_indices_;
 
-  /// @brief Knot indices of Variable type at the boundary
+  /// @brief Knot indices of the variables at the boundary
   variable_boundary_knot_indices_type variable_boundary_knot_indices_;
 
 public:
