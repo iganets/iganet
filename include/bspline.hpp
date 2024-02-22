@@ -4557,6 +4557,62 @@ public:
     return to(BSplineCore::options_.template dtype<real_t>());
   }
 
+  /// @brief Computes the difference between two compatible B-spline
+  /// objects
+  ///
+  /// If `dim = -1` the full coefficient vector of \a other is
+  /// subtracted from that of the current B-spline object. Otherwise,
+  /// only the specified direction is subtracted
+  inline auto diff(const BSplineCommon &other, int dim = -1) {
+
+    bool compatible(true);
+
+    for (short_t i = 0; i < BSplineCore::parDim_; ++i)
+      compatible *= (BSplineCore::nknots(i) == other.nknots(i));
+
+    for (short_t i = 0; i < BSplineCore::parDim_; ++i)
+      compatible *= (BSplineCore::ncoeffs(i) == other.ncoeffs(i));
+    
+    if (!compatible)
+      throw std::runtime_error("B-splines are not compatible");
+
+    if (dim == -1) {
+      for (short_t i = 0; i < BSplineCore::geoDim_; ++i)
+        BSplineCore::coeffs(i) -= other.coeffs(i);
+    } else
+      BSplineCore::coeffs(dim) -= other.coeffs(dim);
+
+    return *this;
+  }
+
+  /// @brief Computes the absolute difference between two compatible
+  /// B-spline objects
+  ///
+  /// If `dim = -1` the full coefficient vector of \a other is
+  /// subtracted from that of the current B-spline object. Otherwise,
+  /// only the specified direction is subtracted
+  inline auto abs_diff(const BSplineCommon &other, int dim = -1) {
+
+    bool compatible(true);
+
+    for (short_t i = 0; i < BSplineCore::parDim_; ++i)
+      compatible *= (BSplineCore::nknots(i) == other.nknots(i));
+
+    for (short_t i = 0; i < BSplineCore::parDim_; ++i)
+      compatible *= (BSplineCore::ncoeffs(i) == other.ncoeffs(i));
+    
+    if (!compatible)
+      throw std::runtime_error("B-splines are not compatible");
+
+    if (dim == -1) {
+      for (short_t i = 0; i < BSplineCore::geoDim_; ++i)
+        BSplineCore::coeffs(i) = torch::abs(BSplineCore::coeffs(i) - other.coeffs(i));
+    } else
+      BSplineCore::coeffs(dim) = torch::abs(BSplineCore::coeffs(dim) - other.coeffs(dim));
+
+    return *this;
+  }
+  
   //  clang-format off
   /// @brief Returns a block-tensor with the curl of the
   /// B-spline object with respect to the parametric variables
@@ -6532,6 +6588,7 @@ public:
       if ((void *)this != (void *)&color) {
         if constexpr (BSplineCoreColor::geoDim_ == 1) {
           matplot::plot(Xfine, Yfine, "b-")->line_width(2);
+          matplot::colorbar();
         }
       } else {
         matplot::vector_1d X(BSplineCore::ncoeffs(0), 0.0);
@@ -6562,6 +6619,7 @@ public:
       matplot::title("BSpline: [0,1] -> R");
       matplot::xlabel("x");
       matplot::ylabel("y");
+      
       matplot::show();
     }
 
@@ -6612,6 +6670,7 @@ public:
           }
           matplot::view(2);
           matplot::mesh(Xfine, Yfine, Zfine);
+          matplot::colorbar();
         }
       } else {
         matplot::vector_1d Xfine(res0, 0.0);
@@ -6730,6 +6789,7 @@ public:
           }
 
           matplot::mesh(Xfine, Yfine, Zfine, Cfine);
+          matplot::colorbar();
         }
       } else {
         matplot::vector_1d Xfine(res0, 0.0);
@@ -6872,7 +6932,8 @@ public:
         matplot::colormap(matplot::palette::hsv());
         matplot::mesh(Xfine, Yfine, Zfine)
             ->palette_map_at_surface(true)
-            .face_alpha(0.7);
+          .face_alpha(0.7);
+        matplot::colorbar();
       } else {
         matplot::view(2);
         matplot::vector_2d X(BSplineCore::ncoeffs(1),
@@ -6984,7 +7045,11 @@ public:
             }
           matplot::colormap(matplot::palette::hsv());
           matplot::mesh(Xfine, Yfine, Zfine, Cfine);
+          matplot::colorbar();
         }
+        else
+          throw std::runtime_error("BSpline for coloring must have geoDim=1");
+        
       } else {
         matplot::vector_2d X(BSplineCore::ncoeffs(1),
                              matplot::vector_1d(BSplineCore::ncoeffs(0), 0.0));
