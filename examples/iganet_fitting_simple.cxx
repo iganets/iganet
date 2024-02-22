@@ -19,6 +19,7 @@
 
 #include <iganet.h>
 #include <iostream>
+#include <chrono>
 
 /// @brief Specialization of the abstract IgANet class for function fitting
 template <typename Optimizer, typename GeometryMap, typename Variable>
@@ -39,7 +40,7 @@ public:
   ///
   /// @param[in] status Status flag
   iganet::status epoch(int64_t epoch) override {
-    std::cout << "Epoch " << std::to_string(epoch) << ": ";
+    std::clog << "Epoch " << std::to_string(epoch) << ": ";
 
     // In the very first epoch we need to generate the sampling points
     // for the inputs and the sampling points in the function space of
@@ -111,7 +112,7 @@ int main() {
          std::tuple(iganet::utils::to_array(2_i64, 2_i64))
          ,
          // Number of B-spline coefficients of the variable
-         std::tuple(iganet::utils::to_array(7_i64, 7_i64))
+         std::tuple(iganet::utils::to_array(70_i64, 70_i64))
          );
   
   // Impose solution value for supervised training (not right-hand side)
@@ -119,15 +120,58 @@ int main() {
     return std::array<real_t, 1>{static_cast<real_t>(sin(M_PI * xi[0]) * sin(M_PI * xi[1]))};
   });
 
+  // Set maximum number of epoches
   net.options().max_epoch(1000);
+
+  // Set tolerance for the loss functions
   net.options().min_loss(1e-8);
+
+  // Start time measurement
+  auto t1 = std::chrono::high_resolution_clock::now();
+
+  // Train network
   net.train();
 
-
-  std::cout << net.variable_collPts(0).first << std::endl;
+  // Stop time measurement
+  auto t2 = std::chrono::high_resolution_clock::now();
+  std::cout << "Training took "
+            << std::chrono::duration_cast<std::chrono::duration<double>>(t2 - t1).count()
+            << " seconds\n";
   
 #ifdef IGANET_WITH_MATPLOT
+  // Plot the solution
   net.G().plot(net.u(), 50, 50);
+
+  // Plot the difference between the solution and the reference data
+  net.G().plot(net.u().abs_diff(net.f()), 50, 50);
+#endif
+
+#ifdef IGANET_WITH_GISMO
+  // Convert B-spline objects to G+Smo
+  auto G_gismo = net.G().to_gismo();
+  auto u_gismo = net.u().to_gismo();
+  auto f_gismo = net.f().to_gismo();
+
+  // Set up expression assembler
+  gsExprAssembler<real_t> A(1,1);
+  gsMultiBasis<real_t> basis(u_gismo, true);
+  
+  A.setIntegrationElements(basis);
+ 
+  auto G = A.getMap(G_gismo);
+  auto u = A.getCoeff(u_gismo, G);
+  auto f = A.getCoeff(f_gismo, G);
+
+  // Compute L2- and H2-error
+  gsExprEvaluator<real_t> ev(A);
+
+  std::cout << "L2-error : "
+            << gismo::math::sqrt( ev.integral( (u - f).sqNorm() * meas(G) ) )
+            << std::endl;
+  
+  std::cout << "H1-error : "
+            << gismo::math::sqrt( ev.integral( ( gismo::expr::igrad(u, G) - gismo::expr::igrad(f, G)).sqNorm() * meas(G) ) )
+            << std::endl;
 #endif
   
   return 0;
