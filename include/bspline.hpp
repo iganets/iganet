@@ -6411,14 +6411,67 @@ public:
   }
 
   /// Plots the B-spline object
-  inline auto plot(int64_t res0 = 10, int64_t res1 = 10,
+  ///
+  /// @param[in] res0 Resolution in x-direction
+  ///
+  /// @param[in] res1 Resolution in y-direction
+  ///
+  /// @param[in] res2 Resolution in z-direction
+  ///
+  /// @result Plot of the B-spline object
+  inline void plot(int64_t res0 = 10, int64_t res1 = 10,
                    int64_t res2 = 10) const {
-    return plot(*this, res0, res1, res2);
+    plot(*this, res0, res1, res2);
   }
-  
-  /// Plots the B-spline object
+
+  /// Plots the B-spline object together with a set of sampling points
+  ///
+  /// @param[in] xi Sampling points
+  ///
+  /// @param[in] res0 Resolution in x-direction
+  ///
+  /// @param[in] res1 Resolution in y-direction
+  ///
+  /// @param[in] res2 Resolution in z-direction
+  ///
+  /// @result Plot of the B-spline object
+  inline void plot(const torch::Tensor& xi,
+                   int64_t res0 = 10, int64_t res1 = 10,
+                   int64_t res2 = 10) const {
+
+    std::cout << xi.sizes() << std::endl;
+    plot(*this, res0, res1, res2);   
+
+// #ifdef __clang__
+//         auto coeffs_cpu =
+//             utils::to_tensorAccessor<typename BSplineCoreColor::value_type, 1>(
+//                 BSplineCore::coeffs(0), torch::kCPU);
+//         auto xAccessor = std::get<1>(coeffs_cpu);
+// #else
+//         auto [coeffs_cpu, xAccessor] =
+//             utils::to_tensorAccessor<typename BSplineCoreColor::value_type, 1>(
+//                 BSplineCore::coeffs(0), torch::kCPU);
+// #endif
+
+// #pragma omp parallel for simd
+//         for (int64_t i = 0; i < BSplineCore::ncoeffs(0); ++i) {
+//           X[i] = xAccessor[i];
+//         }    
+  }
+   
+  /// Plots the B-spline object colored by another B-spline object
+  ///
+  /// @param[in] color B-spline object representing the color
+  ///  
+  /// @param[in] res0 Resolution in x-direction
+  ///
+  /// @param[in] res1 Resolution in y-direction
+  ///
+  /// @param[in] res2 Resolution in z-direction
+  ///
+  /// @result Plot of the B-spline object
   template <typename BSplineCoreColor>
-  inline auto plot(const BSplineCommon<BSplineCoreColor> &color,
+  inline void plot(const BSplineCommon<BSplineCoreColor> &color,
                    int64_t res0 = 10, int64_t res1 = 10,
                    int64_t res2 = 10) const {
 #ifdef IGANET_WITH_MATPLOT
@@ -6509,7 +6562,7 @@ public:
       matplot::title("BSpline: [0,1] -> R");
       matplot::xlabel("x");
       matplot::ylabel("y");
-      return matplot::show();
+      matplot::show();
     }
 
     else if constexpr (BSplineCore::parDim_ == 1 && BSplineCore::geoDim_ == 2) {
@@ -6620,7 +6673,7 @@ public:
       matplot::title("BSpline: [0,1] -> R^2");
       matplot::xlabel("x");
       matplot::ylabel("y");
-      return matplot::show();
+      matplot::show();
     }
 
     else if constexpr (BSplineCore::parDim() == 1 &&
@@ -6751,7 +6804,7 @@ public:
       matplot::xlabel("x");
       matplot::ylabel("y");
       matplot::zlabel("z");
-      return matplot::show();
+      matplot::show();
     }
 
     else if constexpr (BSplineCore::parDim() == 2 &&
@@ -6861,7 +6914,7 @@ public:
       matplot::xlabel("x");
       matplot::ylabel("y");
       matplot::zlabel("z");
-      return matplot::show();
+      matplot::show();
     }
 
     else if constexpr (BSplineCore::parDim() == 2 &&
@@ -6979,7 +7032,7 @@ public:
       matplot::xlabel("x");
       matplot::ylabel("y");
       matplot::zlabel("z");
-      return matplot::show();
+      matplot::show();
     }
 
     else
@@ -6989,6 +7042,30 @@ public:
     throw std::runtime_error(
         "This functions must be compiled with -DIGANET_WITH_MATPLOT turned on");
 #endif
+  }
+
+  /// Plots the B-spline object colored by another B-spline object
+  /// together with a set of sampling points
+  ///
+  /// @param[in] color B-spline object representing the color
+  ///
+  /// @param[in] xi Sampling points
+  ///
+  /// @param[in] res0 Resolution in x-direction
+  ///
+  /// @param[in] res1 Resolution in y-direction
+  ///
+  /// @param[in] res2 Resolution in z-direction
+  ///
+  /// @result Plot of the B-spline object
+  template <typename BSplineCoreColor>
+  inline void plot(const BSplineCommon<BSplineCoreColor> &color,
+                   const torch::Tensor& xi,
+                   int64_t res0 = 10, int64_t res1 = 10,
+                   int64_t res2 = 10) const {
+
+    std::cout << xi.sizes() << std::endl;
+    plot(color, res0, res1, res2);    
   }
 
   /// @brief Returns a string representation of the BSplineCommon object
