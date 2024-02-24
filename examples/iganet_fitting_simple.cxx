@@ -112,7 +112,7 @@ int main() {
          std::tuple(iganet::utils::to_array(2_i64, 2_i64))
          ,
          // Number of B-spline coefficients of the variable
-         std::tuple(iganet::utils::to_array(70_i64, 70_i64))
+         std::tuple(iganet::utils::to_array(10_i64, 10_i64))
          );
   
   // Impose solution value for supervised training (not right-hand side)
@@ -140,10 +140,10 @@ int main() {
   
 #ifdef IGANET_WITH_MATPLOT
   // Plot the solution
-  net.G().plot(net.u(), 50, 50);
+  net.G().plot(net.u(), net.variable_collPts(0).first, 50, 50);
 
   // Plot the difference between the solution and the reference data
-  net.G().plot(net.u().abs_diff(net.f()), 50, 50);
+  net.G().plot(net.u().abs_diff(net.f()), net.variable_collPts(0).first, 50, 50);
 #endif
 
 #ifdef IGANET_WITH_GISMO
