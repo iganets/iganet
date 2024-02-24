@@ -7135,38 +7135,38 @@ public:
       utils::to_tensorAccessor<typename BSplineCoreColor::value_type, 1>(xi, torch::kCPU);
 #endif
 
-    if constexpr (BSplineCore::parDim_ == 1) {
-      matplot::vector_1d X(xi[0].size(0), 0.0);
+//     if constexpr (BSplineCore::parDim_ == 1) {
+//       matplot::vector_1d X(xi[0].size(0), 0.0);
 
-#pragma omp parallel for simd
-      for (int64_t i = 0; i < xi[0].size(0); ++i) {
-        X[i] = xiAccessor[0][i];
-      }
-    }
-    else if constexpr (BSplineCore::parDim_ == 2) {
-      matplot::vector_1d X(xi[0].size(0), 0.0);
-      matplot::vector_1d Y(xi[0].size(0), 0.0);
+// #pragma omp parallel for simd
+//       for (int64_t i = 0; i < xi[0].size(0); ++i) {
+//         X[i] = xiAccessor[0][i];
+//       }
+//     }
+//     else if constexpr (BSplineCore::parDim_ == 2) {
+//       matplot::vector_1d X(xi[0].size(0), 0.0);
+//       matplot::vector_1d Y(xi[0].size(0), 0.0);
 
-      #pragma omp parallel for simd
-      for (int64_t i = 0; i < xi[0].size(0); ++i) {
-        X[i] = xiAccessor[0][i];
-        Y[i] = xiAccessor[1][i];
-      }
+//       #pragma omp parallel for simd
+//       for (int64_t i = 0; i < xi[0].size(0); ++i) {
+//         X[i] = xiAccessor[0][i];
+//         Y[i] = xiAccessor[1][i];
+//       }
       
-    }
-    else if constexpr (BSplineCore::parDim_ == 3) {
-      matplot::vector_1d X(xi[0].size(0), 0.0);
-      matplot::vector_1d Y(xi[0].size(0), 0.0);
-      matplot::vector_1d Z(xi[0].size(0), 0.0);
+//     }
+//     else if constexpr (BSplineCore::parDim_ == 3) {
+//       matplot::vector_1d X(xi[0].size(0), 0.0);
+//       matplot::vector_1d Y(xi[0].size(0), 0.0);
+//       matplot::vector_1d Z(xi[0].size(0), 0.0);
 
-      #pragma omp parallel for simd
-      for (int64_t i = 0; i < xi[0].size(0); ++i) {
-        X[i] = xiAccessor[0][i];
-        Y[i] = xiAccessor[1][i];
-        Z[i] = xiAccessor[2][i];
-      }
+//       #pragma omp parallel for simd
+//       for (int64_t i = 0; i < xi[0].size(0); ++i) {
+//         X[i] = xiAccessor[0][i];
+//         Y[i] = xiAccessor[1][i];
+//         Z[i] = xiAccessor[2][i];
+//       }
       
-    }
+//    }
       
     //
     //matplot::vector_1d Y(BSplineCore::ncoeffs(0), 0.0);
