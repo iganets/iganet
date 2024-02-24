@@ -6491,28 +6491,11 @@ public:
   /// @param[in] res2 Resolution in z-direction
   ///
   /// @result Plot of the B-spline object
-  inline void plot(const torch::Tensor& xi,
+  inline void plot(const std::array<torch::Tensor, BSplineCore::parDim_>& xi,
                    int64_t res0 = 10, int64_t res1 = 10,
                    int64_t res2 = 10) const {
 
-    std::cout << xi.sizes() << std::endl;
-    plot(*this, res0, res1, res2);   
-
-// #ifdef __clang__
-//         auto coeffs_cpu =
-//             utils::to_tensorAccessor<typename BSplineCoreColor::value_type, 1>(
-//                 BSplineCore::coeffs(0), torch::kCPU);
-//         auto xAccessor = std::get<1>(coeffs_cpu);
-// #else
-//         auto [coeffs_cpu, xAccessor] =
-//             utils::to_tensorAccessor<typename BSplineCoreColor::value_type, 1>(
-//                 BSplineCore::coeffs(0), torch::kCPU);
-// #endif
-
-// #pragma omp parallel for simd
-//         for (int64_t i = 0; i < BSplineCore::ncoeffs(0); ++i) {
-//           X[i] = xAccessor[i];
-//         }    
+    plot(*this, res0, res1, res2);
   }
    
   /// Plots the B-spline object colored by another B-spline object
@@ -6578,18 +6561,23 @@ public:
                                        1>(Color(0), torch::kCPU);
 #endif
 
-#pragma omp parallel for simd
-          for (int64_t i = 0; i < res0; ++i)
-            Yfine[i] = CAccessor[i];
+// #pragma omp parallel for simd
+//           for (int64_t i = 0; i < res0; ++i)
+//             Yfine[i] = CAccessor[i];
         }
       }
 
       // Plotting ...
       if ((void *)this != (void *)&color) {
         if constexpr (BSplineCoreColor::geoDim_ == 1) {
+
+          // Plot line
           matplot::plot(Xfine, Yfine, "b-")->line_width(2);
           matplot::colorbar();
         }
+        else
+          throw std::runtime_error("BSpline for coloring must have geoDim=1");
+        
       } else {
         matplot::vector_1d X(BSplineCore::ncoeffs(0), 0.0);
         matplot::vector_1d Y(BSplineCore::ncoeffs(0), 0.0);
@@ -6610,6 +6598,7 @@ public:
           X[i] = xAccessor[i];
         }
 
+        // Plot line + control polygon
         matplot::plot(Xfine, Yfine, "b-")->line_width(2);
         matplot::hold(matplot::on);
         matplot::plot(X, Y, ".k-")->line_width(1);
@@ -6668,7 +6657,8 @@ public:
             Yfine[0][i] = YAccessor[i];
             Zfine[0][i] = CAccessor[i];
           }
-          matplot::view(2);
+
+          // Plot curve
           matplot::mesh(Xfine, Yfine, Zfine);
           matplot::colorbar();
         }
@@ -6723,6 +6713,7 @@ public:
           Y[i] = yAccessor[i];
         }
 
+        // Plot curve + control polygon
         matplot::plot(Xfine, Yfine, "b-")->line_width(2);
         matplot::hold(matplot::on);
         matplot::plot(X, Y, ".k-")->line_width(1);
@@ -6788,6 +6779,7 @@ public:
             Cfine[0][i] = CAccessor[i];
           }
 
+          //          matplot::view(2);
           matplot::mesh(Xfine, Yfine, Zfine, Cfine);
           matplot::colorbar();
         }
@@ -6854,6 +6846,7 @@ public:
           Z[i] = zAccessor[i];
         }
 
+        //        matplot::view(2);
         matplot::plot3(Xfine, Yfine, Zfine, "b-")->line_width(2);
         matplot::hold(matplot::on);
         matplot::plot3(X, Y, Z, ".k-")->line_width(1);
@@ -6928,14 +6921,14 @@ public:
 
       // Plotting...
       if ((void *)this != (void *)&color && BSplineCoreColor::geoDim() == 1) {
-        matplot::view(2);
+        //        matplot::view(2);
         matplot::colormap(matplot::palette::hsv());
         matplot::mesh(Xfine, Yfine, Zfine)
             ->palette_map_at_surface(true)
           .face_alpha(0.7);
         matplot::colorbar();
       } else {
-        matplot::view(2);
+
         matplot::vector_2d X(BSplineCore::ncoeffs(1),
                              matplot::vector_1d(BSplineCore::ncoeffs(0), 0.0));
         matplot::vector_2d Y(BSplineCore::ncoeffs(1),
@@ -6965,8 +6958,10 @@ public:
             Y[j][i] = yAccessor[j * BSplineCore::ncoeffs(0) + i];
           }
 
-        matplot::colormap(matplot::palette::winter());
-        matplot::mesh(Xfine, Yfine, Zfine);
+        // Plot planar patch + control net
+        //matplot::view(2);
+        matplot::colormap(std::vector<std::vector<double>>{{0.0, 0.0, 1.0}});
+        matplot::fence(Xfine, Yfine, Zfine);
         matplot::hold(matplot::on);
         matplot::surf(X, Y, Z)->palette_map_at_surface(true).face_alpha(0);
         matplot::hold(matplot::off);
@@ -7125,12 +7120,64 @@ public:
   /// @result Plot of the B-spline object
   template <typename BSplineCoreColor>
   inline void plot(const BSplineCommon<BSplineCoreColor> &color,
-                   const torch::Tensor& xi,
+                   const std::array<torch::Tensor, BSplineCore::parDim_>& xi,
                    int64_t res0 = 10, int64_t res1 = 10,
                    int64_t res2 = 10) const {
 
-    std::cout << xi.sizes() << std::endl;
-    plot(color, res0, res1, res2);    
+    plot(color, res0, res1, res2);
+
+#ifdef __clang__
+    auto xi_cpu =
+      utils::to_tensorAccessor<typename BSplineCoreColor::value_type, 1>(xi, torch::kCPU);
+    auto xiAccessor = std::get<1>(xi_cpu);
+#else
+    auto [xi_cpu, xiAccessor] =
+      utils::to_tensorAccessor<typename BSplineCoreColor::value_type, 1>(xi, torch::kCPU);
+#endif
+
+    if constexpr (BSplineCore::parDim_ == 1) {
+      matplot::vector_1d X(xi[0].size(0), 0.0);
+
+#pragma omp parallel for simd
+      for (int64_t i = 0; i < xi[0].size(0); ++i) {
+        X[i] = xiAccessor[0][i];
+      }
+    }
+    else if constexpr (BSplineCore::parDim_ == 2) {
+      matplot::vector_1d X(xi[0].size(0), 0.0);
+      matplot::vector_1d Y(xi[0].size(0), 0.0);
+
+      #pragma omp parallel for simd
+      for (int64_t i = 0; i < xi[0].size(0); ++i) {
+        X[i] = xiAccessor[0][i];
+        Y[i] = xiAccessor[1][i];
+      }
+      
+    }
+    else if constexpr (BSplineCore::parDim_ == 3) {
+      matplot::vector_1d X(xi[0].size(0), 0.0);
+      matplot::vector_1d Y(xi[0].size(0), 0.0);
+      matplot::vector_1d Z(xi[0].size(0), 0.0);
+
+      #pragma omp parallel for simd
+      for (int64_t i = 0; i < xi[0].size(0); ++i) {
+        X[i] = xiAccessor[0][i];
+        Y[i] = xiAccessor[1][i];
+        Z[i] = xiAccessor[2][i];
+      }
+      
+    }
+      
+    //
+    //matplot::vector_1d Y(BSplineCore::ncoeffs(0), 0.0);
+    
+    //std::cout << typeid(xiAccessor).name() << std::endl;
+    
+    //#pragma omp parallel for simd
+    //    for (int64_t i = 0; i < BSplineCore::ncoeffs(0); ++i) {
+    //      X[i] = xiAccessor[i];
+    //    }    
+    
   }
 
   /// @brief Returns a string representation of the BSplineCommon object
