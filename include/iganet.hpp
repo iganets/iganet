@@ -1127,14 +1127,6 @@ public:
   /// @brief Returns a non-constant reference to the options structure
   inline auto &options() { return options_; }
 
-  /// @brief Sets the collocation point specifiers for the geometry
-  /// map and the variables and returns the specifier
-  inline enum collPts collPts(enum collPts collPts ) {
-    geometryMap_collPts_ = collPts;
-    variable_collPts_ = collPts;
-    return collPts;
-  }
-
   /// @brief Sets the collocation point specifier for the geometry map
   /// and returns the specifier
   inline enum collPts geometryMap_collPts(enum collPts collPts) {
