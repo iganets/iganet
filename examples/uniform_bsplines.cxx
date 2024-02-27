@@ -24,7 +24,7 @@ int main() {
   json["res0"] = 50;
   json["res1"] = 50;
   json["cnet"] = true;
-  
+
   {
     // Univariate uniform B-spline of degree 2 with 6 control points in R^1
     iganet::UniformBSpline<real_t, 1, 2> bspline({6}), color({6});
@@ -67,7 +67,8 @@ int main() {
 
     // Map control points to phyiscal coordinates
     bspline.transform([](const std::array<real_t, 1> xi) {
-      return std::array<real_t, 2>{xi[0] * xi[0], sin(static_cast<real_t>(M_PI) * xi[0])};
+      return std::array<real_t, 2>{xi[0] * xi[0],
+                                   sin(static_cast<real_t>(M_PI) * xi[0])};
     });
 
     // Map colors
@@ -100,7 +101,8 @@ int main() {
 
     // Map control points to phyiscal coordinates
     bspline.transform([](const std::array<real_t, 1> xi) {
-      return std::array<real_t, 3>{xi[0] * xi[0], sin(static_cast<real_t>(M_PI) * xi[0]), xi[0]};
+      return std::array<real_t, 3>{
+          xi[0] * xi[0], sin(static_cast<real_t>(M_PI) * xi[0]), xi[0]};
     });
 
     // Map colors
@@ -134,8 +136,9 @@ int main() {
 
     // Map control points to phyiscal coordinates
     bspline.transform([](const std::array<real_t, 2> xi) {
-      return std::array<real_t, 2>{(xi[0] + 1) * cos(static_cast<real_t>(M_PI) * xi[1]),
-                                   (xi[0] + 1) * sin(static_cast<real_t>(M_PI) * xi[1])};
+      return std::array<real_t, 2>{
+          (xi[0] + 1) * cos(static_cast<real_t>(M_PI) * xi[1]),
+          (xi[0] + 1) * sin(static_cast<real_t>(M_PI) * xi[1])};
     });
 
     // Map colors
@@ -169,8 +172,9 @@ int main() {
 
     // Map control points to phyiscal coordinates
     bspline.transform([](const std::array<real_t, 2> xi) {
-      return std::array<real_t, 3>{(xi[0] + 1) * cos(static_cast<real_t>(M_PI) * xi[1]),
-                                   (xi[0] + 1) * sin(static_cast<real_t>(M_PI) * xi[1]), xi[0]};
+      return std::array<real_t, 3>{
+          (xi[0] + 1) * cos(static_cast<real_t>(M_PI) * xi[1]),
+          (xi[0] + 1) * sin(static_cast<real_t>(M_PI) * xi[1]), xi[0]};
     });
 
     // Map colors
