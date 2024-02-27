@@ -81,6 +81,10 @@ int main() {
   iganet::init();
   iganet::verbose(std::cout);
 
+  nlohmann::json json;
+  json["res0"] = 50;
+  json["res1"] = 50;
+
   using namespace iganet::literals;
   using optimizer_t = torch::optim::Adam;
   using real_t = double;
@@ -141,10 +145,12 @@ int main() {
   
 #ifdef IGANET_WITH_MATPLOT
   // Plot the solution
-  net.G().plot(net.u(), net.variable_collPts(0).first, 50, 50);
+  net.G().plot(net.u(), net.variable_collPts(0).first, json)->show();
 
   // Plot the difference between the solution and the reference data
-  net.G().plot(net.u().abs_diff(net.f()), net.variable_collPts(0).first, 50, 50);
+  net.G()
+      .plot(net.u().abs_diff(net.f()), net.variable_collPts(0).first, json)
+      ->show();
 #endif
 
 #ifdef IGANET_WITH_GISMO
