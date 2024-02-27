@@ -48,19 +48,10 @@ private:
   gsFunctionExpr<T> rhsFunc_, bdrFunc_;
 
   /// @brief Expression assembler
-  gsExprAssembler<T> A_;
-
-  /// @brief Geometry map
-  geometryMap_type G_;
-
-  /// @brief Discretization space
-  space_type u_;
-
-  /// @brief Right-hand side vector
-  gismo::expr::gsComposition<T> f_;
+  gsExprAssembler<T> assembler_;
 
   /// @brief Solution
-  gsMultiPatch<T> sol_;
+  gsMultiPatch<T> solution_;
 
 public:
   /// @brief Default constructor
@@ -72,9 +63,7 @@ public:
                     const std::array<int64_t, d> npatches)
       : Base(degrees, ncoeffs, npatches), basis_(Base::geo_, true),
         rhsFunc_("2*pi^2*sin(pi*x)*sin(pi*y)", d),
-        bdrFunc_("sin(pi*x) * sin(pi*y)", d), A_(1, 1),
-        G_(A_.getMap(Base::geo_)), u_(A_.getSpace(basis_)),
-        f_(A_.getCoeff(rhsFunc_, G_)) {
+        bdrFunc_("sin(pi*x) * sin(pi*y)", d), assembler_(1, 1) {
     // Specify assembler options
     gsOptionList Aopt;
 
@@ -99,8 +88,10 @@ public:
                 1);
 
     // Set assembler options
-    A_.setOptions(Aopt);
-    A_.setIntegrationElements(basis_);
+    assembler_.setOptions(Aopt);
+
+    // Set assembler basis
+    assembler_.setIntegrationElements(basis_);
 
     // Set boundary conditions
     bc_.addCondition(gismo::boundary::west, gismo::condition_type::dirichlet,
@@ -115,9 +106,6 @@ public:
     // Set geometry
     bc_.setGeoMap(Base::geo_);
 
-    // Impose boundary conditions
-    u_.setup(bc_, gismo::dirichlet::l2Projection, 0);
-
     // Generate solution
     solve();
   }
@@ -127,23 +115,32 @@ public:
 
   /// @brief Solve the Poisson problem
   void solve() {
+
+    // Set up expression assembler
+    auto G = assembler_.getMap(Base::geo_);
+    auto u = assembler_.getSpace(basis_);
+    auto f = assembler_.getCoeff(rhsFunc_, G);
+
+    // Impose boundary conditions
+    u.setup(bc_, gismo::dirichlet::l2Projection, 0);
+
     // Set up system
-    A_.initSystem();
-    A_.assemble(igrad(u_, G_) * igrad(u_, G_).tr() * meas(G_) // matrix
-                ,
-                u_ * f_ * meas(G_) // rhs vector
+    assembler_.initSystem();
+    assembler_.assemble(igrad(u, G) * igrad(u, G).tr() * meas(G) // matrix
+                        ,
+                        u * f * meas(G) // rhs vector
     );
 
     // Solve system
     typename gismo::gsSparseSolver<T>::CGDiagonal solver;
-    solver.compute(A_.matrix());
+    solver.compute(assembler_.matrix());
 
-    gsMatrix<T> solVector;
-    solution_type sol = A_.getSolution(u_, solVector);
-    solVector = solver.solve(A_.rhs());
+    gsMatrix<T> solutionVector;
+    solution_type solution = assembler_.getSolution(u, solutionVector);
+    solutionVector = solver.solve(assembler_.rhs());
 
     // Extract solution
-    sol.extract(sol_);
+    solution.extract(solution_);
   }
 
   /// @brief Returns the model's name
@@ -198,7 +195,7 @@ public:
 
     // Uniform parameters for evaluation
     gsMatrix<T> pts = gsPointGrid(a, b, np);
-    gsMatrix<T> eval = sol_.patch(0).eval(pts);
+    gsMatrix<T> eval = solution_.patch(0).eval(pts);
 
     return utils::to_json(eval, true);
   }
@@ -206,7 +203,11 @@ public:
   /// @brief Refines the model
   void refine(const nlohmann::json &json = NULL) override {
 
+    // Refine geometry
     Base::refine(json);
+
+    // Set geometry
+    bc_.setGeoMap(Base::geo_);
 
     int num = 1, dim = -1;
 
@@ -218,7 +219,11 @@ public:
         dim = json["data"]["dim"].get<int>();
     }
 
+    // Refine basis of solution space
     basis_.basis(0).uniformRefine(num, 1, dim);
+
+    // Set assembler basis
+    assembler_.setIntegrationElements(basis_);
   }
 };
 
