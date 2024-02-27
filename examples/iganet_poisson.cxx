@@ -142,6 +142,10 @@ int main() {
   iganet::init();
   iganet::verbose(std::cout);
 
+  nlohmann::json json;
+  json["res0"] = 50;
+  json["res1"] = 50;
+  
   using namespace iganet::literals;
   using optimizer_t = torch::optim::Adam;
   using real_t = double;
@@ -202,7 +206,7 @@ int main() {
   net.train();
 
 #ifdef IGANET_WITH_MATPLOT
-  net.G().plot(net.u(), 50, 50);
+  net.G().plot(net.u(), net.variable_collPts(0).first, json)->show();
 #endif
 
   net.f().transform([](const std::array<real_t, 2> xi) {
@@ -216,7 +220,7 @@ int main() {
   net.train();
 
 #ifdef IGANET_WITH_MATPLOT
-  net.G().plot(net.u(), 50, 50);
+  net.G().plot(net.u(), net.variable_collPts(0).first, json)->show();
 #endif
   
   return 0;

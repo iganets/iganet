@@ -16,10 +16,14 @@
 #include <iostream>
 
 int main() {
-  std::cout << iganet::verbose;
-  using real_t = double;
   iganet::init();
-
+  iganet::verbose(std::cout);
+  using real_t = double;
+  
+  nlohmann::json json;
+  json["res0"] = 50;
+  json["res1"] = 50;
+  
   {
     // Univariate non-uniform B-spline of degree 2 with 6 control points in R^1
     iganet::NonUniformBSpline<real_t, 1, 2> bspline(
@@ -47,8 +51,8 @@ int main() {
 
 #ifdef IGANET_WITH_MATPLOT
     // Plot B-spline
-    bspline.plot(50);
-    bspline.plot(color, 50);
+    bspline.plot(json);
+    bspline.plot(color, json);
 #endif
 
     // Export B-spline to XML
@@ -82,8 +86,8 @@ int main() {
 
 #ifdef IGANET_WITH_MATPLOT
     // Plot B-spline
-    bspline.plot(50);
-    bspline.plot(color, 50);
+    bspline.plot(json);
+    bspline.plot(color, json);
 #endif
 
     // Export B-spline to XML
@@ -117,8 +121,8 @@ int main() {
 
 #ifdef IGANET_WITH_MATPLOT
     // Plot B-spline
-    bspline.plot(50);
-    bspline.plot(color, 50);
+    bspline.plot(json);
+    bspline.plot(color, json);
 #endif
 
     // Export B-spline to XML
@@ -156,8 +160,8 @@ int main() {
 
 #ifdef IGANET_WITH_MATPLOT
     // Plot B-spline
-    bspline.plot(50, 50);
-    bspline.plot(color, 50, 50);
+    bspline.plot(json);
+    bspline.plot(color, json);
 #endif
 
     // Export B-spline to XML
@@ -195,8 +199,8 @@ int main() {
 
 #ifdef IGANET_WITH_MATPLOT
     // Plot B-spline
-    bspline.plot(50, 50);
-    bspline.plot(color, 50, 50);
+    bspline.plot(json);
+    bspline.plot(color, json);
 #endif
 
     // Export B-spline to XML

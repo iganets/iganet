@@ -140,6 +140,10 @@ int main() {
   iganet::init();
   iganet::verbose(std::cout);
 
+  nlohmann::json json;
+  json["res0"] = 50;
+  json["res1"] = 50;
+
   using namespace iganet::literals;
   using optimizer_t = torch::optim::Adam;
   using real_t = double;
@@ -212,7 +216,7 @@ int main() {
 
   net.train();
 
-  net.G().plot(net.u(), 50, 50);
+  net.G().plot(net.u(), json);
 
   net.f().transform([](const std::array<real_t, 2> xi) {
     return std::array<real_t, 1>{-2.0 * M_PI * M_PI * sin(M_PI * xi[0]) *
@@ -224,7 +228,7 @@ int main() {
   net.options().min_loss(1e-10);
   net.train();
 
-  net.G().plot(net.u(), 50, 50);
+  net.G().plot(net.u(), json);
 
   return 0;
 }
