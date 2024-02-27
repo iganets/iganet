@@ -1,7 +1,7 @@
 /**
-   @file examples/iganet_fitting_quadCircle.cxx
+   @file examples/iganet_fitting_geometry_simple.cxx
 
-   @brief Demonstration of IgANet function fitting in geometry read from file
+   @brief Demonstration of IgANet function fitting on a geometry loaded from a file
 
    @author Veronika Travnikova
 
@@ -91,9 +91,10 @@ int main() {
 
   // Load XML file
   pugi::xml_document xml;
-  xml.load_file(IGANET_DATA_DIR "surfaces/2d/geo03.xml");
+  xml.load_file(IGANET_DATA_DIR "surfaces/2d/geo02.xml");
 
   // Bivariate uniform B-spline of degree 2 in both directions
+  // the type has to correspond to the respective geometry parameterization in the input file
   using geometry_t = iganet::S2<iganet::UniformBSpline<real_t, 2, 2, 2>>;
 
   // Variable: Bi-quadratic B-spline function space S2 (geoDim = 1, p = q = 2)
@@ -111,7 +112,8 @@ int main() {
           {iganet::activation::sigmoid},
           {iganet::activation::none}}
          ,
-         // Number of B-spline coefficients of the geometry, just [0,1] x [0,1]
+         // Number of B-spline coefficients of the geometry, has to correspond to 
+         // number of coefficients in input file
          std::tuple(iganet::utils::to_array(25_i64, 25_i64))
          ,
          // Number of B-spline coefficients of the variable
@@ -145,11 +147,11 @@ int main() {
   
 #ifdef IGANET_WITH_MATPLOT
   // Plot the solution
-  net.G().plot(net.u(), net.variable_collPts(0).first, json)->show();
+  net.G().plot(net.u(), json)->show();
 
   // Plot the difference between the solution and the reference data
   net.G()
-      .plot(net.u().abs_diff(net.f()), net.variable_collPts(0).first, json)
+      .plot(net.u().abs_diff(net.f()), json)
       ->show();
 #endif
 
