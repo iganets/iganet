@@ -16,18 +16,17 @@
 
 namespace iganet {
 
-  /// @brief Enumerator for the collocation point specifier
+/// @brief Enumerator for the collocation point specifier
 enum class collPts : short_t {
   greville = 0,         /*!< Greville points */
   greville_interior = 1 /*!< Greville points in the interior */
 };
 
-  /// @brief IgA base class
-  ///
-  /// This class implements the base functionality of IgA solvers and nets
-  template <typename GeometryMap, typename Variable>
-  class IgABase {
-  public:
+/// @brief IgA base class
+///
+/// This class implements the base functionality of IgA solvers and nets
+template <typename GeometryMap, typename Variable> class IgABase {
+public:
   /// @brief Value type
   using value_type =
       typename std::common_type<typename GeometryMap::value_type,
@@ -49,7 +48,7 @@ enum class collPts : short_t {
       std::pair<typename Variable::eval_type,
                 typename Variable::boundary_eval_type>;
 
-  protected:
+protected:
   /// @brief Spline representation of the geometry map
   GeometryMap G_;
 
@@ -65,16 +64,16 @@ enum class collPts : short_t {
   /// @brief Specifier for collocation points of the variables
   collPts variable_collPts_;
 
-  private:
+private:
   /// @brief Constructor: number of spline coefficients (different for Geometry
   /// and Variable types)
   template <typename... GeometryMapSplines, size_t... Is,
             typename... VariableSplines, size_t... Js>
   IgABase(std::tuple<GeometryMapSplines...> geometryMap_splines,
-         std::index_sequence<Is...>,
-         std::tuple<VariableSplines...> variable_splines,
-         std::index_sequence<Js...>,
-         iganet::Options<value_type> options = iganet::Options<value_type>{})
+          std::index_sequence<Is...>,
+          std::tuple<VariableSplines...> variable_splines,
+          std::index_sequence<Js...>,
+          iganet::Options<value_type> options = iganet::Options<value_type>{})
       : // Construct the different spline objects individually
         G_(std::get<Is>(geometryMap_splines)..., init::greville, options),
         f_(std::get<Js>(variable_splines)..., init::zeros, options),
@@ -88,28 +87,27 @@ public:
   /// @brief Default constructor
   explicit IgABase(
       iganet::Options<value_type> options = iganet::Options<value_type>{})
-    : G_(), f_(), u_(),
-        geometryMap_collPts_(collPts::greville),
+      : G_(), f_(), u_(), geometryMap_collPts_(collPts::greville),
         variable_collPts_(collPts::greville) {}
 
-  /// @brief Constructor: number of spline coefficients (same for geometry map and
-  /// variables)
+  /// @brief Constructor: number of spline coefficients (same for geometry map
+  /// and variables)
   template <typename... Splines>
   IgABase(std::tuple<Splines...> splines,
-         iganet::Options<value_type> options = iganet::Options<value_type>{})
+          iganet::Options<value_type> options = iganet::Options<value_type>{})
       : IgABase(splines, splines, options) {}
 
   /// @brief Constructor: number of spline coefficients (different for
   /// geometry map and variables)
   template <typename... GeometryMapSplines, typename... VariableSplines>
   IgABase(std::tuple<GeometryMapSplines...> geometryMap_splines,
-         std::tuple<VariableSplines...> variable_splines,
-         iganet::Options<value_type> options = iganet::Options<value_type>{})
+          std::tuple<VariableSplines...> variable_splines,
+          iganet::Options<value_type> options = iganet::Options<value_type>{})
       : IgABase(geometryMap_splines,
-               std::make_index_sequence<sizeof...(GeometryMapSplines)>{},
-               variable_splines,
-               std::make_index_sequence<sizeof...(VariableSplines)>{},
-               options) {}
+                std::make_index_sequence<sizeof...(GeometryMapSplines)>{},
+                variable_splines,
+                std::make_index_sequence<sizeof...(VariableSplines)>{},
+                options) {}
 
   /// @brief Returns a constant reference to the spline
   /// representation of the geometry map
@@ -174,7 +172,7 @@ private:
     case collPts::greville:
       // Get Greville abscissae inside the domain and at the boundary
       ((std::get<Is>(collPts.first) =
-        std::get<Is>(G_).greville(/* interior */ false)),
+            std::get<Is>(G_).greville(/* interior */ false)),
        ...);
 
       // Get Greville abscissae at the domain
@@ -185,7 +183,7 @@ private:
     case collPts::greville_interior:
       // Get Greville abscissae inside the domain
       ((std::get<Is>(collPts.first) =
-        std::get<Is>(G_).greville(/* interior */ true)),
+            std::get<Is>(G_).greville(/* interior */ true)),
        ...);
 
       // Get Greville abscissae at the domain
@@ -207,15 +205,15 @@ private:
   /// faces. This behavior can be changed by overriding this virtual
   /// function in a derived class.
   template <size_t... Is>
-   variable_collPts_type variable_collPts(std::index_sequence<Is...>) const {
-     variable_collPts_type collPts;
+  variable_collPts_type variable_collPts(std::index_sequence<Is...>) const {
+    variable_collPts_type collPts;
 
     switch (variable_collPts_) {
 
     case collPts::greville:
       // Get Greville abscissae inside the domain and at the boundary
       ((std::get<Is>(collPts.first) =
-        std::get<Is>(f_).greville(/* interior */ false)),
+            std::get<Is>(f_).greville(/* interior */ false)),
        ...);
 
       // Get Greville abscissae at the domain
@@ -226,7 +224,7 @@ private:
     case collPts::greville_interior:
       // Get Greville abscissae inside the domain and at the boundary
       ((std::get<Is>(collPts.first) =
-        std::get<Is>(f_).greville(/* interior */ true)),
+            std::get<Is>(f_).greville(/* interior */ true)),
        ...);
 
       // Get Greville abscissae at the domain
@@ -292,7 +290,6 @@ public:
     else
       return variable_collPts(std::make_index_sequence<Variable::dim()>{});
   }
-    
-  };
+};
 
 } // namespace iganet
