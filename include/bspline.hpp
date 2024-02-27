@@ -6476,7 +6476,11 @@ public:
   /// @param[in] json JSON configuration
   ///
   /// @result Plot of the B-spline object
+#ifdef IGANET_WITH_MATPLOT
   template <typename Backend = matplot::backend::gnuplot>
+#else
+  template <typename Backend = void>
+#endif
   inline auto plot(const nlohmann::json &json = {}) const {
     return plot<Backend>(*this, json);
   }
@@ -6488,7 +6492,11 @@ public:
   /// @param[in] json JSON configuration
   ///
   /// @result Plot of the B-spline object
+#ifdef IGANET_WITH_MATPLOT
   template <typename Backend = matplot::backend::gnuplot>
+#else
+  template <typename Backend = void>
+#endif
   inline auto plot(const std::array<torch::Tensor, BSplineCore::parDim_> &xi,
                    const nlohmann::json &json = {}) const {
 
@@ -6502,7 +6510,11 @@ public:
   /// @param[in] json JSON configuration
   ///
   /// @result Plot of the B-spline object
+#ifdef IGANET_WITH_MATPLOT
   template <typename Backend = matplot::backend::gnuplot>
+#else
+  template <typename Backend = void>
+#endif
   inline auto plot(const std::initializer_list<
                        std::array<torch::Tensor, BSplineCore::parDim_>> &xi,
                    const nlohmann::json &json = {}) const {
@@ -6517,8 +6529,12 @@ public:
   /// @param[in] json JSON configuration
   ///
   /// @result Plot of the B-spline object
+#ifdef IGANET_WITH_MATPLOT
   template <typename Backend = matplot::backend::gnuplot,
             typename BSplineCoreColor>
+#else
+  template <typename Backend = void, typename BSplineCoreColor>
+#endif
   inline auto plot(const BSplineCommon<BSplineCoreColor> &color,
                    const nlohmann::json &json = {}) const {
 #ifdef IGANET_WITH_MATPLOT
@@ -7327,12 +7343,17 @@ public:
   /// @param[in] json JSON configuration
   ///
   /// @result Plot of the B-spline object
+#ifdef IGANET_WITH_MATPLOT
   template <typename Backend = matplot::backend::gnuplot,
             typename BSplineCoreColor>
+#else
+  template <typename Backend = void, typename BSplineCoreColor>
+#endif
   inline auto plot(const BSplineCommon<BSplineCoreColor> &color,
                    const std::array<torch::Tensor, BSplineCore::parDim_> &xi,
                    const nlohmann::json &json = {}) const {
 
+#ifdef IGANET_WITH_MATPLOT
     auto f = plot<Backend>(color, json);
     auto ax = f->current_axes();
 
@@ -7359,7 +7380,6 @@ public:
       ax->hold(matplot::on);
       ax->scatter(X, Y, ".");
       ax->hold(matplot::off);
-      return f;
     } else if constexpr (BSplineCore::parDim_ == 2) {
       matplot::vector_1d X(xi[0].size(0), 0.0);
       matplot::vector_1d Y(xi[0].size(0), 0.0);
@@ -7374,7 +7394,6 @@ public:
       ax->hold(matplot::on);
       ax->scatter3(X, Y, Z, ".");
       ax->hold(matplot::off);
-      return f;
     } else if constexpr (BSplineCore::parDim_ == 3) {
       matplot::vector_1d X(xi[0].size(0), 0.0);
       matplot::vector_1d Y(xi[0].size(0), 0.0);
@@ -7390,9 +7409,14 @@ public:
       ax->hold(matplot::on);
       ax->scatter3(X, Y, Z, ".");
       ax->hold(matplot::off);
-      return f;
     } else
       throw std::runtime_error("Invalid parametric dimension");
+
+    return f;
+#else
+    throw std::runtime_error(
+        "This functions must be compiled with -DIGANET_WITH_MATPLOT turned on");
+#endif
   }
 
   /// Plots the B-spline object colored by another B-spline object
@@ -7405,13 +7429,18 @@ public:
   /// @param[in] json JSON configuration
   ///
   /// @result Plot of the B-spline object
+#ifdef IGANET_WITH_MATPLOT
   template <typename Backend = matplot::backend::gnuplot,
             typename BSplineCoreColor>
+#else
+  template <typename Backend = void, typename BSplineCoreColor>
+#endif
   inline auto plot(const BSplineCommon<BSplineCoreColor> &color,
                    const std::initializer_list<
                        std::array<torch::Tensor, BSplineCore::parDim_>> &xi,
                    const nlohmann::json &json = {}) const {
 
+#ifdef IGANET_WITH_MATPLOT
     auto f = plot<Backend>(color, json);
     auto ax = f->current_axes();
 
@@ -7473,6 +7502,10 @@ public:
         throw std::runtime_error("Invalid parametric dimension");
     }
     return f;
+#else
+    throw std::runtime_error(
+        "This functions must be compiled with -DIGANET_WITH_MATPLOT turned on");
+#endif
   }
 
   /// @brief Returns a string representation of the BSplineCommon object
