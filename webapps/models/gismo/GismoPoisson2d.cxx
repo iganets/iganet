@@ -29,7 +29,7 @@ extern "C"
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wreturn-type-c-linkage"
 
-  /// @brief Create a G+Smo poisson solver
+  /// @brief Create a G+Smo Poisson solver
   std::shared_ptr<iganet::Model> create(const nlohmann::json &json) {
     std::array<iganet::short_t, 2> degrees = {1, 1};
     std::array<int64_t, 2> ncoeffs = {4, 4};
