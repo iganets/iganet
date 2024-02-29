@@ -1,16 +1,18 @@
 /**
-   @file examples/iganet_fitting_geometry_simple.cxx
+   @file examples/iganet_fitting_geometry.cxx
 
    @brief Demonstration of IgANet function fitting on a geometry loaded from a
    file
 
-   This example demonstrates how to implement a simple IgANet to fit a
-   given function on a geometry loaded from a file. In contrast to the
-   example iganet_fitting_geometry.cxx this examples does not
-   make use of pre-computed indices and coefficients and might
-   therefore be slower.
-
    @author Veronika Travnikova
+   
+   This example demonstrates how to implement an IgANet to fit a given
+   function on a geometry loaded from a file. In contrast to the
+   example iganet_fitting_geometry_simple.cxx this examples makes use
+   of pre-computed indices and coefficients and should therefore be
+   faster.
+
+   @author Matthias Moller
 
    @copyright This file is part of the IgANet project
 
@@ -25,11 +27,17 @@
 
 /// @brief Specialization of the abstract IgANet class for function fitting
 template <typename Optimizer, typename GeometryMap, typename Variable>
-class fitting : public iganet::IgANet<Optimizer, GeometryMap, Variable> {
+class fitting
+    : public iganet::IgANet<Optimizer, GeometryMap, Variable>,
+      public iganet::IgANetCustomizable<Optimizer, GeometryMap, Variable> {
 
 private:
   /// @brief Type of the base class
   using Base = iganet::IgANet<Optimizer, GeometryMap, Variable>;
+
+  /// @brief Type of the customizable class
+  using Customizable =
+      iganet::IgANetCustomizable<Optimizer, GeometryMap, Variable>;
 
 public:
   /// @brief Constructors from the base class
@@ -70,14 +78,29 @@ public:
        const typename Base::variable_collPts_type &variable_collPts,
        int64_t epoch, iganet::status status) override {
 
+    // Update indices and pre-compute basis functions for variables u and f
+    if (status & iganet::status::variable_collPts) {
+      Customizable::variable_interior_knot_indices_ =
+          Base::f_.template find_knot_indices<iganet::functionspace::interior>(
+              variable_collPts.first);
+      Customizable::variable_interior_coeff_indices_ =
+          Base::f_.template find_coeff_indices<iganet::functionspace::interior>(
+              Customizable::variable_interior_knot_indices_);
+    }
+
     // Cast the network output (a raw tensor) into the proper
     // function-space format, i.e. B-spline objects for the interior
     // and boundary parts that can be evaluated.
     Base::u_.from_tensor(outputs, false);
 
     // Evaluate the loss function
-    return torch::mse_loss(*Base::u_.eval(variable_collPts.first)[0],
-                           *Base::f_.eval(variable_collPts.first)[0]);
+    return torch::mse_loss(
+        *Base::u_.eval(variable_collPts.first,
+                       Customizable::variable_interior_knot_indices_,
+                       Customizable::variable_interior_coeff_indices_)[0],
+        *Base::f_.eval(variable_collPts.first,
+                       Customizable::variable_interior_knot_indices_,
+                       Customizable::variable_interior_coeff_indices_)[0]);
   }
 };
 
@@ -123,7 +146,7 @@ int main() {
 
   // Load geometry parameterization from XML
   net.G().from_xml(xml);
-
+  
   // Impose solution value for supervised training (not right-hand side)
   net.f().transform([](const std::array<real_t, 2> xi) {
     return std::array<real_t, 1>{
@@ -153,16 +176,13 @@ int main() {
 #ifdef IGANET_WITH_MATPLOT
   // Evaluate position of collocation points in physical domain
   auto colPts = net.G().eval(net.variable_collPts(0).first);
-
+  
   // Plot the solution
-  net.G()
-      .plot(net.u(), std::array<torch::Tensor, 2>{*colPts[0], *colPts[1]}, json)
-      ->show();
+  net.G().plot(net.u(), std::array<torch::Tensor, 2>{*colPts[0], *colPts[1]}, json)->show();
 
   // Plot the difference between the solution and the reference data
   net.G()
-      .plot(net.u().abs_diff(net.f()),
-            std::array<torch::Tensor, 2>{*colPts[0], *colPts[1]}, json)
+    .plot(net.u().abs_diff(net.f()), std::array<torch::Tensor, 2>{*colPts[0], *colPts[1]}, json)
       ->show();
 #endif
 
