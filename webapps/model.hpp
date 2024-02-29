@@ -222,17 +222,6 @@ public:
         json.push_back(capability);
 
     return json;
-
-    // auto data = nlohmann::json::array();
-    // for (const std::string &capability : capabilities)
-    //   data.push_back(capability);
-
-    // return data;
-
-    // nlohmann::json json;
-    // json["capability"] = data;
-
-    // return json;
   }
 
   /// @brief Serializes the model to JSON
