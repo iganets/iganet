@@ -1,7 +1,7 @@
 /**
-   @file webapps/models/gismo/GismoPoissonModel.hpp
+   @file webapps/models/gismo/GismoLinearElasticityModel.hpp
 
-   @brief G+Smo Poisson model
+   @brief G+Smo Linear elasticity model
 
    @author Matthias Moller
 
@@ -18,9 +18,10 @@ namespace iganet {
 
 namespace webapp {
 
-/// @brief G+Smo Poisson model
+/// @brief G+Smo Linear elasticity model
 template <short_t d, typename T>
-class GismoPoissonModel : public GismoPdeModel<d, T>, public ModelEval {
+class GismoLinearElasticityModel : public GismoPdeModel<d, T>,
+                                   public ModelEval {
 
 private:
   /// @brief Base class
@@ -55,12 +56,12 @@ private:
 
 public:
   /// @brief Default constructor
-  GismoPoissonModel() = delete;
+  GismoLinearElasticityModel() = delete;
 
   /// @brief Constructor for equidistant knot vectors
-  GismoPoissonModel(const std::array<short_t, d> degrees,
-                    const std::array<int64_t, d> ncoeffs,
-                    const std::array<int64_t, d> npatches)
+  GismoLinearElasticityModel(const std::array<short_t, d> degrees,
+                             const std::array<int64_t, d> ncoeffs,
+                             const std::array<int64_t, d> npatches)
       : Base(degrees, ncoeffs, npatches), basis_(Base::geo_, true),
         rhsFunc_("2*pi^2*sin(pi*x)*sin(pi*y)", d),
         bdrFunc_("sin(pi*x) * sin(pi*y)", d), assembler_(1, 1) {
@@ -111,9 +112,9 @@ public:
   }
 
   /// @brief Destructor
-  ~GismoPoissonModel() {}
+  ~GismoLinearElasticityModel() {}
 
-  /// @brief Solve the Poisson problem
+  /// @brief Solve the Linear elasticity problem
   void solve() {
 
     // Set up expression assembler
@@ -145,19 +146,20 @@ public:
 
   /// @brief Returns the model's name
   std::string getName() const override {
-    return "GismoPoisson" + std::to_string(d) + "d";
+    return "GismoLinearElasticity" + std::to_string(d) + "d";
   }
 
   /// @brief Returns the model's description
   std::string getDescription() const override {
-    return "G+Smo Poisson model in " + std::to_string(d) + " dimensions";
+    return "G+Smo linear elasticity model in " + std::to_string(d) +
+           " dimensions";
   };
 
   /// @brief Returns the model's outputs
   nlohmann::json getOutputs() const override {
     return R"([{
            "name" : "Solution",
-           "description" : "Solution of the Poisson equation",
+           "description" : "Solution of the linear elasticity equation",
            "type" : 1}])"_json;
   }
 

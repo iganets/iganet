@@ -172,55 +172,67 @@ public:
   virtual std::string getDescription() const = 0;
 
   /// @brief Returns the model's options
-  virtual std::string getOptions() const = 0;
+  virtual nlohmann::json getOptions() const = 0;
 
   /// @brief Returns the model's inputs
-  virtual std::string getInputs() const = 0;
+  virtual nlohmann::json getInputs() const = 0;
 
   /// @brief Returns the model's outputs
-  virtual std::string getOutputs() const = 0;
+  virtual nlohmann::json getOutputs() const = 0;
 
   /// @brief Returns the model's JSON serialization
   virtual nlohmann::json getModel() const {
-    return nlohmann::json::parse(
-        std::string("{ \"name\" : \"") + getName() + "\"," +
-        "\"description\" : \"" + getDescription() + "\"," + "\"options\" : " +
-        getOptions() + "," + "\"capabilities\" : " + getCapabilities().dump() +
-        "," + "\"inputs\" : " + getInputs() + "," +
-        "\"outputs\" : " + getOutputs() + " }");
+
+    nlohmann::json json;
+    json["name"] = getName();
+    json["description"] = getDescription();
+
+    json["options"] = getOptions();
+    json["capabilities"] = getCapabilities();
+    json["inputs"] = getInputs();
+    json["outputs"] = getOutputs();
+
+    std::cout << json.dump(2) << std::endl;
+
+    return json;
   }
 
   /// @brief Returns the model's capabilities
   virtual nlohmann::json getCapabilities() const {
 
-    std::vector<std::string> capabilities;
-    capabilities.push_back("create");
-    capabilities.push_back("remove");
+    auto json = nlohmann::json::array();
+
+    json.push_back("create");
+    json.push_back("remove");
 
     if (auto m = dynamic_cast<const ModelElevate *>(this))
       for (auto const &capability : m->getCapabilities())
-        capabilities.push_back(capability);
+        json.push_back(capability);
 
     if (auto m = dynamic_cast<const ModelEval *>(this))
       for (auto const &capability : m->getCapabilities())
-        capabilities.push_back(capability);
+        json.push_back(capability);
 
     if (auto m = dynamic_cast<const ModelRefine *>(this))
       for (auto const &capability : m->getCapabilities())
-        capabilities.push_back(capability);
+        json.push_back(capability);
 
     if (auto m = dynamic_cast<const ModelXML *>(this))
       for (auto const &capability : m->getCapabilities())
-        capabilities.push_back(capability);
-
-    auto data = nlohmann::json::array();
-    for (auto const &capability : capabilities)
-      data.push_back("\"" + capability + "\"");
-
-    nlohmann::json json;
-    json["capability"] = data;
+        json.push_back(capability);
 
     return json;
+
+    // auto data = nlohmann::json::array();
+    // for (const std::string &capability : capabilities)
+    //   data.push_back(capability);
+
+    // return data;
+
+    // nlohmann::json json;
+    // json["capability"] = data;
+
+    // return json;
   }
 
   /// @brief Serializes the model to JSON

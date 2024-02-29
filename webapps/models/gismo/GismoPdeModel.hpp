@@ -113,110 +113,101 @@ public:
   }
 
   /// @brief Returns the model's options
-  std::string getOptions() const override {
+  nlohmann::json getOptions() const override {
     if constexpr (d == 1)
-      return "["
-             "{\"name\" : \"npatches\","
-             " \"description\" : \"Number of patches per spatial "
-             "dimension\","
-             " \"type\" : [\"int\"],"
-             " \"value\" : [1],"
-             " \"default\" : [1],"
-             " \"uiid\" : 0},"
-             "{\"name\" : \"degree\","
-             " \"description\" : \"Polynomial degree of the B-spline\","
-             " \"type\" : [\"int\"],"
-             " \"value\" : [2],"
-             " \"default\" : [2],"
-             " \"uiid\" : 1},"
-             "{\"name\" : \"ncoeffs\","
-             " \"description\" : \"Number of coefficients per parametric "
-             "dimension\","
-             " \"type\" : [\"int\"],"
-             " \"value\" : [3],"
-             " \"default\" : [3],"
-             " \"uiid\" : 2}"
-             "]";
+      return R"([{
+             "name" : "npatches",
+             "description" : "Number of patches per spatial dimension",
+             "type" : ["int"],
+             "value" : [1],
+             "default" : [1],
+             "uiid" : 0},{
+             "name" : "degree",
+             "description" : "Polynomial degree of the B-spline",
+             "type" : ["int"],
+             "value" : [2],
+             "default" : [2],
+             "uiid" : 1},{
+             "name" : "ncoeffs",
+             "description" : "Number of coefficients per parametric dimension",
+             "type" : ["int"],
+             "value" : [3],
+             "default" : [3],
+             "uiid" : 2}])"_json;
+
     else if constexpr (d == 2)
-      return "["
-             "{\"name\" : \"npatches\","
-             " \"description\" : \"Number of patches per spatial "
-             "dimension\","
-             " \"type\" : [\"int\",\"int\"],"
-             " \"value\" : [1,1],"
-             " \"default\" : [1,1],"
-             " \"uiid\" : 0},"
-             "{\"name\" : \"degrees\","
-             " \"description\" : \"Polynomial degrees of the B-spline\","
-             " \"type\" : [\"int\",\"int\"],"
-             " \"value\" : [2,2],"
-             " \"default\" : [2,2],"
-             " \"uiid\" : 1},"
-             "{\"name\" : \"ncoeffs\","
-             " \"description\" : \"Number of coefficients per parametric "
-             "dimension\","
-             " \"type\" : [\"int\",\"int\"],"
-             " \"value\" : [3,3],"
-             " \"default\" : [3,3],"
-             " \"uiid\" : 2}"
-             "]";
+      return R"([{
+             "name" : "npatches",
+             "description" : "Number of patches per spatial dimension",
+             "type" : ["int","int"],
+             "value" : [1,1],
+             "default" : [1,1],
+             "uiid" : 0},{
+             "name" : "degrees",
+             "description" : "Polynomial degrees of the B-spline",
+             "type" : ["int","int"],
+             "value" : [2,2],
+             "default" : [2,2],
+             "uiid" : 1},{
+             "name" : "ncoeffs",
+             "description" : "Number of coefficients per parametric dimension",
+             "type" : ["int","int"],
+             "value" : [3,3],
+             "default" : [3,3],
+             "uiid" : 2}])"_json;
+
     else if constexpr (d == 3)
-      return "["
-             "{\"name\" : \"ncoeffs\","
-             " \"description\" : \"Number of patches per spatial "
-             "dimension\","
-             " \"type\" : [\"int\",\"int\",\"int\"],"
-             " \"value\" : [1,1,1],"
-             " \"default\" : [1,1,1],"
-             " \"uiid\" : 0},"
-             "{\"name\" : \"degrees\","
-             " \"description\" : \"Polynomial degrees of the B-spline\","
-             " \"type\" : [\"int\",\"int\",\"int\"],"
-             " \"value\" : [2,2,2],"
-             " \"default\" : [2,2,2],"
-             " \"uiid\" : 1},"
-             "{\"name\" : \"ncoeffs\","
-             " \"description\" : \"Number of coefficients per parametric "
-             "dimension\","
-             " \"type\" : [\"int\",\"int\",\"int\"],"
-             " \"value\" : [3,3,3],"
-             " \"default\" : [3,3,3],"
-             " \"uiid\" : 2}"
-             "]";
+      return R"([{
+             "name" : "ncoeffs",
+             "description" : "Number of patches per spatial dimension",
+             "type" : ["int","int","int"],
+             "value" : [1,1,1],
+             "default" : [1,1,1],
+             "uiid" : 0},{
+             "name" : "degrees",
+             "description" : "Polynomial degrees of the B-spline",
+             "type" : ["int","int","int"],
+             "value" : [2,2,2],
+             "default" : [2,2,2],
+             "uiid" : 1},{
+             "name" : "ncoeffs",
+             "description" : "Number of coefficients per parametric dimension",
+             "type" : ["int","int","int"],
+             "value" : [3,3,3],
+             "default" : [3,3,3],
+             "uiid" : 2}])"_json;
+
     else if constexpr (d == 4)
-      return "["
-             "{\"name\" : \"ncoeffs\","
-             " \"description\" : \"Number of patches per spatial "
-             "dimension\","
-             " \"type\" : [\"int\",\"int\",\"int\",\"int\"],"
-             " \"value\" : [1,1,1,1],"
-             " \"default\" : [1,1,1,1],"
-             " \"uiid\" : 0},"
-             "{\"name\" : \"degrees\","
-             " \"description\" : \"Polynomial degrees of the B-spline\","
-             " \"type\" : [\"int\",\"int\",\"int\",\"int\"],"
-             " \"value\" : [2,2,2,2],"
-             " \"default\" : [2,2,2,2],"
-             " \"uiid\" : 1},"
-             "{\"name\" : \"ncoeffs\","
-             " \"description\" : \"Number of coefficients per parametric "
-             "dimension\","
-             " \"type\" : [\"int\",\"int\",\"int\",\"int\"],"
-             " \"value\" : [3,3,3,3],"
-             " \"default\" : [3,3,3,3],"
-             " \"uiid\" : 2}"
-             "]";
+      return R"([{
+             "name" : "ncoeffs",
+             "description" : "Number of patches per spatial dimension",
+             "type" : ["int","int","int","int"],
+             "value" : [1,1,1,1],
+             "default" : [1,1,1,1],
+             "uiid" : 0},{
+             "name" : "degrees",
+             "description" : "Polynomial degrees of the B-spline",
+             "type" : ["int","int","int","int"],
+             "value" : [2,2,2,2],
+             "default" : [2,2,2,2],
+             "uiid" : 1},{
+             "name" : "ncoeffs",
+             "description" : "Number of coefficients per parametric dimension",
+             "type" : ["int","int","int","int"],
+             "value" : [3,3,3,3],
+             "default" : [3,3,3,3],
+             "uiid" : 2}])"_json;
+
     else
-      return "{ INVALID REQUEST }";
+      return R"({ INVALID REQUEST })"_json;
   }
 
   /// @brief Returns the model's inputs
-  std::string getInputs() const override {
-    return "["
-           "{\"name\" : \"geometry\","
-           " \"description\" : \"Geometry\","
-           " \"type\" : 2}"
-           "]";
+  nlohmann::json getInputs() const override {
+    return R"([{
+              "name" : "geometry",
+              "description" : "Geometry",
+              "type" : 2}])"_json;
   }
 
   /// @brief Serializes the model to JSON
@@ -250,7 +241,7 @@ public:
           for (std::size_t i = 0; i < bspline->parDim(); ++i)
             json["ncoeffs"].push_back(bspline->basis().size(i));
         else
-          return "{ INVALID REQUEST }";
+          return R"({ INVALID REQUEST })"_json;
 
       }
 
@@ -265,7 +256,7 @@ public:
           for (std::size_t i = 0; i < bspline->parDim(); ++i)
             json["nknots"].push_back(bspline->knots(i).size());
         else
-          return "{ INVALID REQUEST }";
+          return R"({ INVALID REQUEST })"_json;
       }
 
       else if (attribute == "coeffs") {
@@ -276,7 +267,7 @@ public:
                      &geo_.patch(0)))
           json["coeffs"] = utils::to_json(bspline->coefs());
         else
-          return "{ INVALID REQUEST }";
+          return R"({ INVALID REQUEST })"_json;
 
       }
 
@@ -291,7 +282,7 @@ public:
           for (std::size_t i = 0; i < bspline->parDim(); ++i)
             json["knots"].push_back(bspline->knots(i));
         else
-          return "{ INVALID REQUEST }";
+          return R"({ INVALID REQUEST })"_json;
       }
 
       return json;
@@ -303,7 +294,7 @@ public:
       return json;
     }
 
-    return "{ INVALID REQUEST }";
+    return R"({ INVALID REQUEST })"_json;
   }
 
   /// @brief Updates the attributes of the model
