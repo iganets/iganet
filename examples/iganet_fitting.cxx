@@ -74,7 +74,7 @@ public:
        const typename Base::variable_collPts_type &variable_collPts,
        int64_t epoch, iganet::status status) override {
 
-    // Update indices and pre-compute basis functions for variables u and f
+    // Update knot and coefficient indices for variables u and f
     if (status & iganet::status::variable_collPts) {
       Customizable::variable_interior_knot_indices_ =
           Base::f_.template find_knot_indices<iganet::functionspace::interior>(
