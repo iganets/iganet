@@ -5,7 +5,7 @@
    file
 
    @author Veronika Travnikova
-   
+
    This example demonstrates how to implement an IgANet to fit a given
    function on a geometry loaded from a file. In contrast to the
    example iganet_fitting_geometry_simple.cxx this examples makes use
@@ -35,20 +35,30 @@ private:
   /// @brief Type of the base class
   using Base = iganet::IgANet<Optimizer, GeometryMap, Variable>;
 
+  /// @brief Collocation points
+  typename Base::variable_collPts_type collPts_;
+
   /// @brief Type of the customizable class
   using Customizable =
       iganet::IgANetCustomizable<Optimizer, GeometryMap, Variable>;
+
+  /// @brief Knot indices
+  typename Customizable::variable_interior_knot_indices_type knot_indices_;
+
+  /// @broef Coefficient indices
+  typename Customizable::variable_interior_coeff_indices_type coeff_indices_;
 
 public:
   /// @brief Constructors from the base class
   using iganet::IgANet<Optimizer, GeometryMap, Variable>::IgANet;
 
+  /// @brief Returns a constant reference to the collocation points
+  auto const &collPts() const { return collPts_; }
+
   /// @brief Initializes the epoch
   ///
   /// @param[in] epoch Epoch number
-  ///
-  /// @param[in] status Status flag
-  iganet::status epoch(int64_t epoch) override {
+  bool epoch(int64_t epoch) override {
     std::clog << "Epoch " << std::to_string(epoch) << ": ";
 
     // In the very first epoch we need to generate the sampling points
@@ -56,37 +66,28 @@ public:
     // the variables since otherwise the respective tensors would be
     // empty. In all further epochs no updates are needed since we do
     // not change the inputs nor the variable function space.
-    return (epoch == 0
-                ? iganet::status::inputs + iganet::status::variable_collPts
-                : iganet::status::none);
+    if (epoch == 0) {
+      Base::inputs(epoch);
+      collPts_ = Base::variable_collPts(iganet::collPts::greville);
+
+      knot_indices_ =
+          Base::f_.template find_knot_indices<iganet::functionspace::interior>(
+              collPts_.first);
+      coeff_indices_ =
+          Base::f_.template find_coeff_indices<iganet::functionspace::interior>(
+              knot_indices_);
+
+      return true;
+    } else
+      return false;
   }
 
   /// @brief Computes the loss function
   ///
   /// @param[in] outputs Output of the network
   ///
-  /// @param[in] geometryMap_collPts Sampling points for the geometry
-  ///
-  /// @param[in] variable_collPts Sampling points for the variable
-  ///
   /// @param[in] epoch Epoch number
-  ///
-  /// @param[in] status Status flag
-  torch::Tensor
-  loss(const torch::Tensor &outputs,
-       const typename Base::geometryMap_collPts_type &geometryMap_collPts,
-       const typename Base::variable_collPts_type &variable_collPts,
-       int64_t epoch, iganet::status status) override {
-
-    // Update knot and coefficient indices for variables u and f
-    if (status & iganet::status::variable_collPts) {
-      Customizable::variable_interior_knot_indices_ =
-          Base::f_.template find_knot_indices<iganet::functionspace::interior>(
-              variable_collPts.first);
-      Customizable::variable_interior_coeff_indices_ =
-          Base::f_.template find_coeff_indices<iganet::functionspace::interior>(
-              Customizable::variable_interior_knot_indices_);
-    }
+  torch::Tensor loss(const torch::Tensor &outputs, int64_t epoch) override {
 
     // Cast the network output (a raw tensor) into the proper
     // function-space format, i.e. B-spline objects for the interior
@@ -95,12 +96,8 @@ public:
 
     // Evaluate the loss function
     return torch::mse_loss(
-        *Base::u_.eval(variable_collPts.first,
-                       Customizable::variable_interior_knot_indices_,
-                       Customizable::variable_interior_coeff_indices_)[0],
-        *Base::f_.eval(variable_collPts.first,
-                       Customizable::variable_interior_knot_indices_,
-                       Customizable::variable_interior_coeff_indices_)[0]);
+        *Base::u_.eval(collPts_.first, knot_indices_, coeff_indices_)[0],
+        *Base::f_.eval(collPts_.first, knot_indices_, coeff_indices_)[0]);
   }
 };
 
@@ -146,7 +143,7 @@ int main() {
 
   // Load geometry parameterization from XML
   net.G().from_xml(xml);
-  
+
   // Impose solution value for supervised training (not right-hand side)
   net.f().transform([](const std::array<real_t, 2> xi) {
     return std::array<real_t, 1>{
@@ -175,14 +172,17 @@ int main() {
 
 #ifdef IGANET_WITH_MATPLOT
   // Evaluate position of collocation points in physical domain
-  auto colPts = net.G().eval(net.variable_collPts(0).first);
-  
+  auto colPts = net.G().eval(net.collPts().first);
+
   // Plot the solution
-  net.G().plot(net.u(), std::array<torch::Tensor, 2>{*colPts[0], *colPts[1]}, json)->show();
+  net.G()
+      .plot(net.u(), std::array<torch::Tensor, 2>{*colPts[0], *colPts[1]}, json)
+      ->show();
 
   // Plot the difference between the solution and the reference data
   net.G()
-    .plot(net.u().abs_diff(net.f()), std::array<torch::Tensor, 2>{*colPts[0], *colPts[1]}, json)
+      .plot(net.u().abs_diff(net.f()),
+            std::array<torch::Tensor, 2>{*colPts[0], *colPts[1]}, json)
       ->show();
 #endif
 

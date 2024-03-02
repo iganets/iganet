@@ -26,25 +26,6 @@
 
 namespace iganet {
 
-/// @brief Enumerator for the status of the various data
-enum class status : short_t {
-  none = 0,        /*!< nothing needs update  */
-  inputs = 1 << 0, /*!< inputs need update  */
-  geometryMap_collPts =
-      1 << 1,               /*!< geometry map collocation points need update */
-  variable_collPts = 1 << 2 /*!< variable collocation points need update */
-};
-
-/// @brief Returns the sum of two status objects
-status operator+(enum status lhs, enum status rhs) {
-  return status(static_cast<short_t>(lhs) + static_cast<short_t>(rhs));
-}
-
-/// @brief Returns true if flag is set in the given status
-bool operator&(enum status status, enum status flag) {
-  return bool(static_cast<short_t>(status) & static_cast<short_t>(flag));
-}
-
 /// @brief IgANetOptions
 struct IgANetOptions {
   TORCH_ARG(int64_t, max_epoch) = 100;
@@ -1061,34 +1042,21 @@ public:
   }
 
   /// @brief Initializes epoch
-  virtual enum status epoch(int64_t) = 0;
+  virtual bool epoch(int64_t) = 0;
 
   /// @brief Computes the loss function
-  virtual torch::Tensor loss(const torch::Tensor &,
-                             const typename Base::geometryMap_collPts_type &,
-                             const typename Base::variable_collPts_type &,
-                             int64_t, enum status) = 0;
+  virtual torch::Tensor loss(const torch::Tensor &, int64_t) = 0;
 
   /// @brief Trains the IgANet
   virtual void train() {
     torch::Tensor inputs, outputs, loss;
-    typename Base::geometryMap_collPts_type geometryMap_collPts;
-    typename Base::variable_collPts_type variable_collPts;
-    status status;
 
     // Loop over epochs
     for (int64_t epoch = 0; epoch != options_.max_epoch(); ++epoch) {
-      // Update from user-defined callback function
-      status = this->epoch(epoch);
 
-      if (status & status::inputs)
+      // Update epoch and inputs
+      if (this->epoch(epoch))
         inputs = this->inputs(epoch);
-
-      if (status & status::geometryMap_collPts)
-        geometryMap_collPts = this->geometryMap_collPts(epoch);
-
-      if (status & status::variable_collPts)
-        variable_collPts = this->variable_collPts(epoch);
 
       auto closure = [&]() {
         // Reset gradients
@@ -1098,8 +1066,7 @@ public:
         outputs = net_->forward(inputs);
 
         // Compute the loss value
-        loss = this->loss(outputs, geometryMap_collPts, variable_collPts, epoch,
-                          status);
+        loss = this->loss(outputs, epoch);
 
         // Compute gradients of the loss w.r.t. the model parameters
         loss.backward({}, true, false);
@@ -1245,20 +1212,6 @@ public:
                    .template find_knot_indices<functionspace::boundary>(
                        std::declval<typename Variable::boundary_eval_type>()));
 
-protected:
-  /// @brief Knot indices of the geometry map in the interior
-  geometryMap_interior_knot_indices_type geometryMap_interior_knot_indices_;
-
-  /// @brief Knot indices of the geometry map at the boundary
-  geometryMap_boundary_knot_indices_type geometryMap_boundary_knot_indices_;
-
-  /// @brief Knot indices of the variables in the interior
-  variable_interior_knot_indices_type variable_interior_knot_indices_;
-
-  /// @brief Knot indices of the variables at the boundary
-  variable_boundary_knot_indices_type variable_boundary_knot_indices_;
-
-public:
   /// @brief Type of the coefficient indices of geometry type in the interior
   using geometryMap_interior_coeff_indices_type =
       decltype(std::declval<GeometryMap>()
@@ -1283,19 +1236,6 @@ public:
       decltype(std::declval<Variable>()
                    .template find_coeff_indices<functionspace::boundary>(
                        std::declval<typename Variable::boundary_eval_type>()));
-
-protected:
-  /// @brief Coefficient indices of geometry type in the interior
-  geometryMap_interior_coeff_indices_type geometryMap_interior_coeff_indices_;
-
-  /// @brief Coefficient indices of geometry type at the vboundary
-  geometryMap_boundary_coeff_indices_type geometryMap_boundary_coeff_indices_;
-
-  /// @brief Coefficient indices of variable type in the interior
-  variable_interior_coeff_indices_type variable_interior_coeff_indices_;
-
-  /// @brief Coefficient indices of variable type at the boundary
-  variable_boundary_coeff_indices_type variable_boundary_coeff_indices_;
 };
 
 } // namespace iganet

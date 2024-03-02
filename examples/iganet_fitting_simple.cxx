@@ -29,16 +29,20 @@ private:
   /// @brief Type of the base class
   using Base = iganet::IgANet<Optimizer, GeometryMap, Variable>;
 
+  /// @brief Collocation points
+  typename Base::variable_collPts_type collPts_;
+
 public:
   /// @brief Constructors from the base class
   using iganet::IgANet<Optimizer, GeometryMap, Variable>::IgANet;
 
+  /// @brief Returns a constant reference to the collocation points
+  auto const &collPts() const { return collPts_; }
+
   /// @brief Initializes the epoch
   ///
   /// @param[in] epoch Epoch number
-  ///
-  /// @param[in] status Status flag
-  iganet::status epoch(int64_t epoch) override {
+  bool epoch(int64_t epoch) override {
     std::clog << "Epoch " << std::to_string(epoch) << ": ";
 
     // In the very first epoch we need to generate the sampling points
@@ -46,27 +50,21 @@ public:
     // the variables since otherwise the respective tensors would be
     // empty. In all further epochs no updates are needed since we do
     // not change the inputs nor the variable function space.
-    return (epoch == 0
-                ? iganet::status::inputs + iganet::status::variable_collPts
-                : iganet::status::none);
+    if (epoch == 0) {
+      Base::inputs(epoch);
+      collPts_ = Base::variable_collPts(iganet::collPts::greville);
+
+      return true;
+    } else
+      return false;
   }
 
   /// @brief Computes the loss function
   ///
   /// @param[in] outputs Output of the network
   ///
-  /// @param[in] geometryMap_collPts Sampling points for the geometry
-  ///
-  /// @param[in] variable_collPts Sampling points for the variable
-  ///
   /// @param[in] epoch Epoch number
-  ///
-  /// @param[in] status Status flag
-  torch::Tensor
-  loss(const torch::Tensor &outputs,
-       const typename Base::geometryMap_collPts_type &geometryMap_collPts,
-       const typename Base::variable_collPts_type &variable_collPts,
-       int64_t epoch, iganet::status status) override {
+  torch::Tensor loss(const torch::Tensor &outputs, int64_t epoch) override {
 
     // Cast the network output (a raw tensor) into the proper
     // function-space format, i.e. B-spline objects for the interior
@@ -74,8 +72,8 @@ public:
     Base::u_.from_tensor(outputs, false);
 
     // Evaluate the loss function
-    return torch::mse_loss(*Base::u_.eval(variable_collPts.first)[0],
-                           *Base::f_.eval(variable_collPts.first)[0]);
+    return torch::mse_loss(*Base::u_.eval(collPts_.first)[0],
+                           *Base::f_.eval(collPts_.first)[0]);
   }
 };
 
@@ -140,12 +138,10 @@ int main() {
 
 #ifdef IGANET_WITH_MATPLOT
   // Plot the solution
-  net.G().plot(net.u(), net.variable_collPts(0).first, json)->show();
+  net.G().plot(net.u(), net.collPts().first, json)->show();
 
   // Plot the difference between the solution and the reference data
-  net.G()
-      .plot(net.u().abs_diff(net.f()), net.variable_collPts(0).first, json)
-      ->show();
+  net.G().plot(net.u().abs_diff(net.f()), net.collPts().first, json)->show();
 #endif
 
 #ifdef IGANET_WITH_GISMO

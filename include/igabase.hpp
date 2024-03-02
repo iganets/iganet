@@ -58,12 +58,6 @@ protected:
   /// @brief Spline representation of the solution
   Variable u_;
 
-  /// @brief Specifier for collocation points of the geometry map
-  collPts geometryMap_collPts_;
-
-  /// @brief Specifier for collocation points of the variables
-  collPts variable_collPts_;
-
 private:
   /// @brief Constructor: number of spline coefficients (different for Geometry
   /// and Variable types)
@@ -77,18 +71,13 @@ private:
       : // Construct the different spline objects individually
         G_(std::get<Is>(geometryMap_splines)..., init::greville, options),
         f_(std::get<Js>(variable_splines)..., init::zeros, options),
-        u_(std::get<Js>(variable_splines)..., init::random, options),
-
-        // Set collocation point specifiers
-        geometryMap_collPts_(collPts::greville),
-        variable_collPts_(collPts::greville) {}
+        u_(std::get<Js>(variable_splines)..., init::random, options) {}
 
 public:
   /// @brief Default constructor
   explicit IgABase(
       iganet::Options<value_type> options = iganet::Options<value_type>{})
-      : G_(), f_(), u_(), geometryMap_collPts_(collPts::greville),
-        variable_collPts_(collPts::greville) {}
+      : G_(), f_(), u_() {}
 
   /// @brief Constructor: number of spline coefficients (same for geometry map
   /// and variables)
@@ -133,28 +122,6 @@ public:
   /// representation of the solution
   inline Variable &u() { return u_; }
 
-  /// @brief Sets the collocation point specifier for the geometry map
-  /// and returns the specifier
-  inline enum collPts geometryMap_collPts(enum collPts collPts) {
-    geometryMap_collPts_ = collPts;
-    return collPts;
-  }
-
-  /// @brief Sets the collocation point specifier for the variables
-  /// and returns the specifier
-  inline enum collPts variable_collPts(enum collPts collPts) {
-    variable_collPts_ = collPts;
-    return collPts;
-  }
-
-  /// @brief Returns the collocation point specifier for the geometry map
-  inline enum collPts geometryMap_collPts() const {
-    return geometryMap_collPts_;
-  }
-
-  /// @brief Returns the collocation point specifier for the variables
-  inline enum collPts variable_collPts() const { return variable_collPts_; }
-
 private:
   /// @brief Returns the geometry map collocation points
   ///
@@ -164,30 +131,30 @@ private:
   /// function in a derived class.
   template <size_t... Is>
   geometryMap_collPts_type
-  geometryMap_collPts(std::index_sequence<Is...>) const {
-    geometryMap_collPts_type collPts;
+  geometryMap_collPts(enum collPts collPts, std::index_sequence<Is...>) const {
+    geometryMap_collPts_type collPts_;
 
-    switch (geometryMap_collPts_) {
+    switch (collPts) {
 
     case collPts::greville:
       // Get Greville abscissae inside the domain and at the boundary
-      ((std::get<Is>(collPts.first) =
+      ((std::get<Is>(collPts_.first) =
             std::get<Is>(G_).greville(/* interior */ false)),
        ...);
 
       // Get Greville abscissae at the domain
-      ((std::get<Is>(collPts.second) = std::get<Is>(G_.boundary()).greville()),
+      ((std::get<Is>(collPts_.second) = std::get<Is>(G_.boundary()).greville()),
        ...);
       break;
 
     case collPts::greville_interior:
       // Get Greville abscissae inside the domain
-      ((std::get<Is>(collPts.first) =
+      ((std::get<Is>(collPts_.first) =
             std::get<Is>(G_).greville(/* interior */ true)),
        ...);
 
       // Get Greville abscissae at the domain
-      ((std::get<Is>(collPts.second) = std::get<Is>(G_.boundary()).greville()),
+      ((std::get<Is>(collPts_.second) = std::get<Is>(G_.boundary()).greville()),
        ...);
       break;
 
@@ -195,7 +162,7 @@ private:
       throw std::runtime_error("Invalid collocation point specifier");
     }
 
-    return collPts;
+    return collPts_;
   }
 
   /// @brief Returns the variable collocation points
@@ -205,30 +172,31 @@ private:
   /// faces. This behavior can be changed by overriding this virtual
   /// function in a derived class.
   template <size_t... Is>
-  variable_collPts_type variable_collPts(std::index_sequence<Is...>) const {
-    variable_collPts_type collPts;
+  variable_collPts_type variable_collPts(enum collPts collPts,
+                                         std::index_sequence<Is...>) const {
+    variable_collPts_type collPts_;
 
-    switch (variable_collPts_) {
+    switch (collPts) {
 
     case collPts::greville:
       // Get Greville abscissae inside the domain and at the boundary
-      ((std::get<Is>(collPts.first) =
+      ((std::get<Is>(collPts_.first) =
             std::get<Is>(f_).greville(/* interior */ false)),
        ...);
 
       // Get Greville abscissae at the domain
-      ((std::get<Is>(collPts.second) = std::get<Is>(f_.boundary()).greville()),
+      ((std::get<Is>(collPts_.second) = std::get<Is>(f_.boundary()).greville()),
        ...);
       break;
 
     case collPts::greville_interior:
       // Get Greville abscissae inside the domain and at the boundary
-      ((std::get<Is>(collPts.first) =
+      ((std::get<Is>(collPts_.first) =
             std::get<Is>(f_).greville(/* interior */ true)),
        ...);
 
       // Get Greville abscissae at the domain
-      ((std::get<Is>(collPts.second) = std::get<Is>(f_.boundary()).greville()),
+      ((std::get<Is>(collPts_.second) = std::get<Is>(f_.boundary()).greville()),
        ...);
       break;
 
@@ -236,7 +204,7 @@ private:
       throw std::runtime_error("Invalid collocation point specifier");
     }
 
-    return collPts;
+    return collPts_;
   }
 
 public:
@@ -246,10 +214,11 @@ public:
   /// abscissae in the interior of the domain and on the boundary
   /// faces. This behavior can be changed by overriding this virtual
   /// function in a derived class.
-  virtual geometryMap_collPts_type geometryMap_collPts(int64_t epoch) const {
+  virtual geometryMap_collPts_type
+  geometryMap_collPts(enum collPts collPts) const {
     if constexpr (GeometryMap::dim() == 1)
 
-      switch (geometryMap_collPts_) {
+      switch (collPts) {
 
       case collPts::greville:
         return {G_.greville(/* interior */ false), G_.boundary().greville()};
@@ -263,7 +232,7 @@ public:
 
     else
       return geometryMap_collPts(
-          std::make_index_sequence<GeometryMap::dim()>{});
+          collPts, std::make_index_sequence<GeometryMap::dim()>{});
   }
 
   /// @brief Returns the variable collocation points
@@ -272,10 +241,10 @@ public:
   /// abscissae in the interior of the domain and on the boundary
   /// faces. This behavior can be changed by overriding this virtual
   /// function in a derived class.
-  virtual variable_collPts_type variable_collPts(int64_t epoch) const {
+  virtual variable_collPts_type variable_collPts(enum collPts collPts) const {
     if constexpr (Variable::dim() == 1)
 
-      switch (variable_collPts_) {
+      switch (collPts) {
 
       case collPts::greville:
         return {f_.greville(/* interior */ false), f_.boundary().greville()};
@@ -288,7 +257,8 @@ public:
       }
 
     else
-      return variable_collPts(std::make_index_sequence<Variable::dim()>{});
+      return variable_collPts(collPts,
+                              std::make_index_sequence<Variable::dim()>{});
   }
 };
 
