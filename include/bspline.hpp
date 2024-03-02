@@ -949,8 +949,8 @@ public:
   ///
   /// @param[in] xi Point(s) where to evaluate the univariate B-spline object
   ///
-  /// @param[in] knot_indices Knot indices where to evaluate the univariate B-spline
-  /// object
+  /// @param[in] knot_indices Knot indices where to evaluate the univariate
+  /// B-spline object
   ///
   /// @result Value(s) of the univariate B-spline evaluated at the point(s) `xi`
   template <deriv deriv = deriv::func, bool memory_optimized = false>
@@ -972,8 +972,10 @@ public:
         return result;
       } else {
         if constexpr (geoDim_ > 1) {
-          auto basfunc = eval_basfunc<deriv, memory_optimized>(xi, knot_indices);
-          auto coeff_indices = find_coeff_indices<memory_optimized>(knot_indices);
+          auto basfunc =
+              eval_basfunc<deriv, memory_optimized>(xi, knot_indices);
+          auto coeff_indices =
+              find_coeff_indices<memory_optimized>(knot_indices);
           utils::BlockTensor<torch::Tensor, 1, geoDim_> result;
           for (short_t i = 0; i < geoDim_; ++i)
             result.set(i, utils::dotproduct(basfunc,
@@ -1007,8 +1009,8 @@ public:
   ///
   /// @param[in] xi Point(s) where to evaluate the univariate B-spline object
   ///
-  /// @param[in] knot_indices Knot indices where to evaluate the univariate B-spline
-  /// object
+  /// @param[in] knot_indices Knot indices where to evaluate the univariate
+  /// B-spline object
   ///
   /// @param[in] coeff_indices Coefficient indices where to evaluate the
   /// univariate B-spline object
@@ -1033,7 +1035,8 @@ public:
         return result;
       } else {
         if constexpr (geoDim_ > 1) {
-          auto basfunc = eval_basfunc<deriv, memory_optimized>(xi, knot_indices);
+          auto basfunc =
+              eval_basfunc<deriv, memory_optimized>(xi, knot_indices);
           utils::BlockTensor<torch::Tensor, 1, geoDim_> result;
           for (short_t i = 0; i < geoDim_; ++i)
             result.set(i, utils::dotproduct(basfunc,
@@ -1066,8 +1069,8 @@ public:
   ///
   /// @param[in] xi Point(s) where to evaluate the bivariate B-spline object
   ///
-  /// @param[in] knot_indices Knot indices where to evaluate the bivariate B-spline
-  /// object
+  /// @param[in] knot_indices Knot indices where to evaluate the bivariate
+  /// B-spline object
   ///
   /// @result Value(s) of the bivariate B-spline evaluated at the point(s) `xi`
   template <deriv deriv = deriv::func, bool memory_optimized = false>
@@ -1094,8 +1097,10 @@ public:
         return result;
       } else {
         if constexpr (geoDim_ > 1) {
-          auto basfunc = eval_basfunc<deriv, memory_optimized>(xi, knot_indices);
-          auto coeff_indices = find_coeff_indices<memory_optimized>(knot_indices);
+          auto basfunc =
+              eval_basfunc<deriv, memory_optimized>(xi, knot_indices);
+          auto coeff_indices =
+              find_coeff_indices<memory_optimized>(knot_indices);
           utils::BlockTensor<torch::Tensor, 1, geoDim_> result;
           for (short_t i = 0; i < geoDim_; ++i)
             result.set(i, utils::dotproduct(basfunc,
@@ -1129,8 +1134,8 @@ public:
   ///
   /// @param[in] xi Point(s) where to evaluate the bivariate B-spline object
   ///
-  /// @param[in] knot_indices Knot indices where to evaluate the bivariate B-spline
-  /// object
+  /// @param[in] knot_indices Knot indices where to evaluate the bivariate
+  /// B-spline object
   ///
   /// @param[in] coeff_indices Coefficient indices where to evaluate the
   /// bivariate B-spline object
@@ -1160,7 +1165,8 @@ public:
         return result;
       } else {
         if constexpr (geoDim_ > 1) {
-          auto basfunc = eval_basfunc<deriv, memory_optimized>(xi, knot_indices);
+          auto basfunc =
+              eval_basfunc<deriv, memory_optimized>(xi, knot_indices);
           utils::BlockTensor<torch::Tensor, 1, geoDim_> result;
           for (short_t i = 0; i < geoDim_; ++i)
             result.set(i, utils::dotproduct(basfunc,
@@ -1193,8 +1199,8 @@ public:
   ///
   /// @param[in] xi Point(s) where to evaluate the trivariate B-spline object
   ///
-  /// @param[in] knot_indices Knot indices where to evaluate the trivariate B-spline
-  /// object
+  /// @param[in] knot_indices Knot indices where to evaluate the trivariate
+  /// B-spline object
   ///
   /// @result Value(s) of the trivariate B-spline evaluated at the point(s) `xi`
   template <deriv deriv = deriv::func, bool memory_optimized = false>
@@ -1226,8 +1232,10 @@ public:
         return result;
       } else {
         if constexpr (geoDim_ > 1) {
-          auto basfunc = eval_basfunc<deriv, memory_optimized>(xi, knot_indices);
-          auto coeff_indices = find_coeff_indices<memory_optimized>(knot_indices);
+          auto basfunc =
+              eval_basfunc<deriv, memory_optimized>(xi, knot_indices);
+          auto coeff_indices =
+              find_coeff_indices<memory_optimized>(knot_indices);
           utils::BlockTensor<torch::Tensor, 1, geoDim_> result;
           for (short_t i = 0; i < geoDim_; ++i)
             result.set(i, utils::dotproduct(basfunc,
@@ -1261,8 +1269,8 @@ public:
   ///
   /// @param[in] xi Point(s) where to evaluate the trivariate B-spline object
   ///
-  /// @param[in] knot_indices Knot indices where to evaluate the trivariate B-spline
-  /// object
+  /// @param[in] knot_indices Knot indices where to evaluate the trivariate
+  /// B-spline object
   ///
   /// @param[in] coeff_indices Coefficient indices where to evaluate the
   /// trivariate B-spline object
@@ -1298,7 +1306,8 @@ public:
         return result;
       } else {
         if constexpr (geoDim_ > 1) {
-          auto basfunc = eval_basfunc<deriv, memory_optimized>(xi, knot_indices);
+          auto basfunc =
+              eval_basfunc<deriv, memory_optimized>(xi, knot_indices);
           utils::BlockTensor<torch::Tensor, 1, geoDim_> result;
           for (short_t i = 0; i < geoDim_; ++i)
             result.set(i, utils::dotproduct(basfunc,
@@ -1371,8 +1380,10 @@ public:
         return result;
       } else {
         if constexpr (geoDim_ > 1) {
-          auto basfunc = eval_basfunc<deriv, memory_optimized>(xi, knot_indices);
-          auto coeff_indices = find_coeff_indices<memory_optimized>(knot_indices);
+          auto basfunc =
+              eval_basfunc<deriv, memory_optimized>(xi, knot_indices);
+          auto coeff_indices =
+              find_coeff_indices<memory_optimized>(knot_indices);
           utils::BlockTensor<torch::Tensor, 1, geoDim_> result;
           for (short_t i = 0; i < geoDim_; ++i)
             result.set(i, utils::dotproduct(basfunc,
@@ -1449,7 +1460,8 @@ public:
         return result;
       } else {
         if constexpr (geoDim_ > 1) {
-          auto basfunc = eval_basfunc<deriv, memory_optimized>(xi, knot_indices);
+          auto basfunc =
+              eval_basfunc<deriv, memory_optimized>(xi, knot_indices);
           utils::BlockTensor<torch::Tensor, 1, geoDim_> result;
           for (short_t i = 0; i < geoDim_; ++i)
             result.set(i, utils::dotproduct(basfunc,
@@ -2997,10 +3009,11 @@ protected:
       assert(knots[0].numel() == knot_indices[0].numel() + degrees_[0] + 1 &&
              knots[1].numel() == knot_indices[1].numel() + degrees_[1] + 1);
 
-      auto basfunc = torch::kron(update_coeffs_univariate<degrees_[1], 1>(
-                                     knots[1].flatten(), knot_indices[1].flatten()),
-                                 update_coeffs_univariate<degrees_[0], 0>(
-                                     knots[0].flatten(), knot_indices[0].flatten()));
+      auto basfunc =
+          torch::kron(update_coeffs_univariate<degrees_[1], 1>(
+                          knots[1].flatten(), knot_indices[1].flatten()),
+                      update_coeffs_univariate<degrees_[0], 0>(
+                          knots[0].flatten(), knot_indices[0].flatten()));
 
       utils::TensorArray2 knot_indices_ = {
           knot_indices[0].repeat(knot_indices[1].numel()),
@@ -3009,11 +3022,11 @@ protected:
       auto coeff_indices = find_coeff_indices(knot_indices_);
 
       for (short_t i = 0; i < geoDim_; ++i)
-        coeffs(i) =
-            utils::dotproduct(basfunc, coeffs(i)
-                                           .index_select(0, coeff_indices)
-                                           .view({-1, knot_indices_[0].numel()}))
-                .view(knot_indices_[0].sizes());
+        coeffs(i) = utils::dotproduct(basfunc,
+                                      coeffs(i)
+                                          .index_select(0, coeff_indices)
+                                          .view({-1, knot_indices_[0].numel()}))
+                        .view(knot_indices_[0].sizes());
     } else
       throw std::runtime_error("Invalid parametric dimension");
   }
@@ -3035,21 +3048,22 @@ protected:
                           knots[0].flatten(), knot_indices[0].flatten())));
 
       utils::TensorArray3 knot_indices_ = {
-          knot_indices[0].repeat(knot_indices[1].numel() * knot_indices[2].numel()),
+          knot_indices[0].repeat(knot_indices[1].numel() *
+                                 knot_indices[2].numel()),
           knot_indices[1]
               .repeat_interleave(knot_indices[0].numel(), 0)
               .repeat(knot_indices[2].numel()),
-          knot_indices[2].repeat_interleave(knot_indices[0].numel() * knot_indices[1].numel(),
-                                       0)};
+          knot_indices[2].repeat_interleave(
+              knot_indices[0].numel() * knot_indices[1].numel(), 0)};
 
       auto coeff_indices = find_coeff_indices(knot_indices_);
 
       for (short_t i = 0; i < geoDim_; ++i)
-        coeffs(i) =
-            utils::dotproduct(basfunc, coeffs(i)
-                                           .index_select(0, coeff_indices)
-                                           .view({-1, knot_indices_[0].numel()}))
-                .view(knot_indices_[0].sizes());
+        coeffs(i) = utils::dotproduct(basfunc,
+                                      coeffs(i)
+                                          .index_select(0, coeff_indices)
+                                          .view({-1, knot_indices_[0].numel()}))
+                        .view(knot_indices_[0].sizes());
     } else
       throw std::runtime_error("Invalid parametric dimension");
   }
@@ -3074,25 +3088,29 @@ protected:
                           knots[0].flatten(), knot_indices[0].flatten())));
 
       utils::TensorArray4 knot_indices_ = {
-          knot_indices[0].repeat(knot_indices[1].numel() * knot_indices[2].numel() *
-                            knot_indices[3].numel()),
+          knot_indices[0].repeat(knot_indices[1].numel() *
+                                 knot_indices[2].numel() *
+                                 knot_indices[3].numel()),
           knot_indices[1]
               .repeat_interleave(knot_indices[0].numel(), 0)
               .repeat(knot_indices[2].numel() * knot_indices[3].numel()),
           knot_indices[2]
-              .repeat_interleave(knot_indices[0].numel() * knot_indices[1].numel(), 0)
+              .repeat_interleave(
+                  knot_indices[0].numel() * knot_indices[1].numel(), 0)
               .repeat(knot_indices[3].numel()),
-          knot_indices[3].repeat_interleave(
-              knot_indices[0].numel() * knot_indices[1].numel() * knot_indices[2].numel(), 0)};
+          knot_indices[3].repeat_interleave(knot_indices[0].numel() *
+                                                knot_indices[1].numel() *
+                                                knot_indices[2].numel(),
+                                            0)};
 
       auto coeff_indices = find_coeff_indices(knot_indices_);
 
       for (short_t i = 0; i < geoDim_; ++i)
-        coeffs(i) =
-            utils::dotproduct(basfunc, coeffs(i)
-                                           .index_select(0, coeff_indices)
-                                           .view({-1, knot_indices_[0].numel()}))
-                .view(knot_indices_[0].sizes());
+        coeffs(i) = utils::dotproduct(basfunc,
+                                      coeffs(i)
+                                          .index_select(0, coeff_indices)
+                                          .view({-1, knot_indices_[0].numel()}))
+                        .view(knot_indices_[0].sizes());
     } else
       throw std::runtime_error("Invalid parametric dimension");
   }
@@ -3221,7 +3239,8 @@ protected:
         auto t1 =
             knots_[dim].index_select(0, utils::VSlice(knot_indices, -k + 1, 1));
         auto t21 =
-            knots_[dim].index_select(0, utils::VSlice(knot_indices, 1, k + 1)) - t1;
+            knots_[dim].index_select(0, utils::VSlice(knot_indices, 1, k + 1)) -
+            t1;
 
         // We handle the special case 0/0:=0 by first creating a
         // mask that is 1 if t2-t1 < eps and 0 otherwise. Note that
@@ -3279,8 +3298,9 @@ protected:
   /// matrix from the given knot vector to the new knot vector
   /// passed as argument `knots`.
   template <short_t degree, short_t dim>
-  inline auto update_coeffs_univariate(const torch::Tensor &knots,
-                                       const torch::Tensor &knot_indices) const {
+  inline auto
+  update_coeffs_univariate(const torch::Tensor &knots,
+                           const torch::Tensor &knot_indices) const {
     // Algorithm 2.22 from \cite Lyche:2011 modified to implement
     // the Oslo algorithm (Algorithm 4.11 from \cite Lyche:2011)
     torch::Tensor b = torch::ones({knot_indices.numel()}, options_);
@@ -3289,9 +3309,11 @@ protected:
     for (short_t k = 1; k <= degree; ++k) {
 
       // Instead of calculating t1 and t2 we calculate t1 and t21=(t2-t1)
-      auto t1 = knots_[dim].index_select(0, utils::VSlice(knot_indices, -k + 1, 1));
+      auto t1 =
+          knots_[dim].index_select(0, utils::VSlice(knot_indices, -k + 1, 1));
       auto t21 =
-          knots_[dim].index_select(0, utils::VSlice(knot_indices, 1, k + 1)) - t1;
+          knots_[dim].index_select(0, utils::VSlice(knot_indices, 1, k + 1)) -
+          t1;
 
       // We handle the special case 0/0:=0 by first creating a
       // mask that is 1 if t2-t1 < eps and 0 otherwise. Note that
@@ -3313,8 +3335,8 @@ protected:
       b = torch::cat({torch::mul(torch::ones_like(w, options_) - w, b),
                       torch::zeros_like(knot_indices, options_)},
                      0) +
-          torch::cat({torch::zeros_like(knot_indices, options_), torch::mul(w, b)},
-                     0);
+          torch::cat(
+              {torch::zeros_like(knot_indices, options_), torch::mul(w, b)}, 0);
     }
 
     return b.view({degree + 1, knot_indices.numel()});
@@ -4677,12 +4699,13 @@ public:
   /// equal parametric and geometric multiplicity.
   //  clang-format on
   template <bool memory_optimized = false>
-  inline auto
-  curl(const std::array<torch::Tensor, BSplineCore::parDim_> &xi,
-       const std::array<torch::Tensor, BSplineCore::parDim_> &knot_indices) const {
+  inline auto curl(const std::array<torch::Tensor, BSplineCore::parDim_> &xi,
+                   const std::array<torch::Tensor, BSplineCore::parDim_>
+                       &knot_indices) const {
     return curl<memory_optimized>(
         xi, knot_indices,
-        BSplineCore::template find_coeff_indices<memory_optimized>(knot_indices));
+        BSplineCore::template find_coeff_indices<memory_optimized>(
+            knot_indices));
   }
 
   /// @brief Returns a block-tensor with the curl of the B-spline
@@ -4861,12 +4884,13 @@ public:
   /// @note This function can only be applied to B-spline objects with
   /// equal parametric and geometric multiplicity.
   template <bool memory_optimized = false>
-  inline auto
-  div(const std::array<torch::Tensor, BSplineCore::parDim_> &xi,
-      const std::array<torch::Tensor, BSplineCore::parDim_> &knot_indices) const {
+  inline auto div(const std::array<torch::Tensor, BSplineCore::parDim_> &xi,
+                  const std::array<torch::Tensor, BSplineCore::parDim_>
+                      &knot_indices) const {
     return div<memory_optimized>(
         xi, knot_indices,
-        BSplineCore::template find_coeff_indices<memory_optimized>(knot_indices));
+        BSplineCore::template find_coeff_indices<memory_optimized>(
+            knot_indices));
   }
 
   /// @brief Returns a block-tensor with the divergence of the
@@ -5026,7 +5050,8 @@ public:
   ///
   /// @param[in] knot_indices Knot indices where to evaluate the divergence
   ///
-  /// @param[in] knot_indices_G Knot indices where to evaluate the Jacobian of `G`
+  /// @param[in] knot_indices_G Knot indices where to evaluate the Jacobian of
+  /// `G`
   ///
   /// @result Block-tensor with the divergence with respect to the
   /// physical variables
@@ -5044,11 +5069,14 @@ public:
   idiv(const Geometry G,
        const std::array<torch::Tensor, BSplineCore::parDim_> &xi,
        const std::array<torch::Tensor, BSplineCore::parDim_> &knot_indices,
-       const std::array<torch::Tensor, Geometry::parDim()> &knot_indices_G) const {
+       const std::array<torch::Tensor, Geometry::parDim()> &knot_indices_G)
+      const {
     return idiv<memory_optimized, Geometry>(
         G, xi, knot_indices,
-        BSplineCore::template find_coeff_indices<memory_optimized>(knot_indices),
-        knot_indices_G, G.template find_coeff_indices<memory_optimized>(knot_indices_G));
+        BSplineCore::template find_coeff_indices<memory_optimized>(
+            knot_indices),
+        knot_indices_G,
+        G.template find_coeff_indices<memory_optimized>(knot_indices_G));
   }
 
   /// @brief Returns a block-tensor with the divergence of the
@@ -5062,7 +5090,8 @@ public:
   ///
   /// @param[in] knot_indices Knot indices where to evaluate the divergence
   ///
-  /// @param[in] knot_indices_G Knot indices where to evaluate the Jacobian of `G`
+  /// @param[in] knot_indices_G Knot indices where to evaluate the Jacobian of
+  /// `G`
   ///
   /// @param[in] coeff_indices Coefficient indices where to evaluate the
   /// divergence
@@ -5156,14 +5185,15 @@ public:
   /// @note This function can only be applied to B-spline objects with
   /// geometric multiplicity 1, i.e. scalar fields.
   template <bool memory_optimized = false>
-  inline auto
-  grad(const std::array<torch::Tensor, BSplineCore::parDim_> &xi,
-       const std::array<torch::Tensor, BSplineCore::parDim_> &knot_indices) const {
+  inline auto grad(const std::array<torch::Tensor, BSplineCore::parDim_> &xi,
+                   const std::array<torch::Tensor, BSplineCore::parDim_>
+                       &knot_indices) const {
     static_assert(BSplineCore::geoDim_ == 1,
                   "grad(.) requires 1D variable, use jac(.) instead");
     return grad<memory_optimized>(
         xi, knot_indices,
-        BSplineCore::template find_coeff_indices<memory_optimized>(knot_indices));
+        BSplineCore::template find_coeff_indices<memory_optimized>(
+            knot_indices));
   }
 
   /// @brief Returns a block-tensor with the gradient of the
@@ -5345,14 +5375,16 @@ public:
   igrad(const Geometry G,
         const std::array<torch::Tensor, BSplineCore::parDim_> &xi,
         const std::array<torch::Tensor, BSplineCore::parDim_> &knot_indices,
-        const std::array<torch::Tensor, Geometry::parDim()> &knot_indices_G) const {
+        const std::array<torch::Tensor, Geometry::parDim()> &knot_indices_G)
+      const {
     if constexpr (BSplineCore::parDim_ == 0)
       return utils::BlockTensor<torch::Tensor, 1, 1>{
           torch::zeros_like(BSplineCore::coeffs_[0])};
     else
       return igrad<memory_optimized, Geometry>(
           G, xi, knot_indices,
-          BSplineCore::template find_coeff_indices<memory_optimized>(knot_indices),
+          BSplineCore::template find_coeff_indices<memory_optimized>(
+              knot_indices),
           knot_indices_G,
           G.template find_coeff_indices<memory_optimized>(knot_indices_G));
   }
@@ -5369,7 +5401,8 @@ public:
   ///
   /// @param[in] knot_indices Knot indices where to evaluate the gradient
   ///
-  /// @param[in] knot_indices_G Knot indices where to evaluate the Jacobian of `G`
+  /// @param[in] knot_indices_G Knot indices where to evaluate the Jacobian of
+  /// `G`
   ///
   /// @param[in] coeff_indices Coefficient indices where to evaluate the
   /// gradient
@@ -5488,12 +5521,13 @@ public:
   /// rank-3 tensor.
   //  clang-format on
   template <bool memory_optimized = false>
-  inline auto
-  hess(const std::array<torch::Tensor, BSplineCore::parDim_> &xi,
-       const std::array<torch::Tensor, BSplineCore::parDim_> &knot_indices) const {
+  inline auto hess(const std::array<torch::Tensor, BSplineCore::parDim_> &xi,
+                   const std::array<torch::Tensor, BSplineCore::parDim_>
+                       &knot_indices) const {
     return hess<memory_optimized>(
         xi, knot_indices,
-        BSplineCore::template find_coeff_indices<memory_optimized>(knot_indices));
+        BSplineCore::template find_coeff_indices<memory_optimized>(
+            knot_indices));
   }
 
   //  clang-format off
@@ -5752,11 +5786,14 @@ public:
   ihess(const Geometry G,
         const std::array<torch::Tensor, BSplineCore::parDim_> &xi,
         const std::array<torch::Tensor, BSplineCore::parDim_> &knot_indices,
-        const std::array<torch::Tensor, Geometry::parDim()> &knot_indices_G) const {
+        const std::array<torch::Tensor, Geometry::parDim()> &knot_indices_G)
+      const {
     return ihess<memory_optimized, Geometry>(
         G, xi, knot_indices,
-        BSplineCore::template find_coeff_indices<memory_optimized>(knot_indices),
-        knot_indices_G, G.template find_coeff_indices<memory_optimized>(knot_indices_G));
+        BSplineCore::template find_coeff_indices<memory_optimized>(
+            knot_indices),
+        knot_indices_G,
+        G.template find_coeff_indices<memory_optimized>(knot_indices_G));
   }
 
   /// @brief Returns a block-tensor with the Hessian of the B-spline
@@ -5771,7 +5808,8 @@ public:
   ///
   /// @param[in] knot_indices Knot indices where to evaluate the Hessian
   ///
-  /// @param[in] knot_indices_G Knot indices where to evaluate the Jacobian of `G`
+  /// @param[in] knot_indices_G Knot indices where to evaluate the Jacobian of
+  /// `G`
   ///
   /// @param[in] coeff_indices Coefficient indices where to evaluate the Hessian
   ///
@@ -5802,20 +5840,22 @@ public:
         const std::array<torch::Tensor, Geometry::parDim()> &knot_indices_G,
         const torch::Tensor &coeff_indices_G) const {
 
-    auto hessu = hess<memory_optimized>(xi, knot_indices, coeff_indices).slice(0);
+    auto hessu =
+        hess<memory_optimized>(xi, knot_indices, coeff_indices).slice(0);
 
     {
       auto igradG = igrad<memory_optimized>(G, xi, knot_indices, coeff_indices,
                                             knot_indices_G, coeff_indices_G);
-      auto hessG =
-          G.template hess<memory_optimized>(xi, knot_indices_G, coeff_indices_G);
+      auto hessG = G.template hess<memory_optimized>(xi, knot_indices_G,
+                                                     coeff_indices_G);
       assert(igradG.cols() == hessG.slices());
       for (short_t k = 0; k < hessG.slices(); ++k)
         hessu -= igradG(0, k) * hessG.slice(k);
     }
 
     auto jacInv =
-        G.template jac<memory_optimized>(xi, knot_indices_G, coeff_indices_G).ginv();
+        G.template jac<memory_optimized>(xi, knot_indices_G, coeff_indices_G)
+            .ginv();
 
     return jacInv.tr() * hessu * jacInv;
   }
@@ -5899,12 +5939,13 @@ public:
   /// \f]
   //  clang-format on
   template <bool memory_optimized = false>
-  inline auto
-  jac(const std::array<torch::Tensor, BSplineCore::parDim_> &xi,
-      const std::array<torch::Tensor, BSplineCore::parDim_> &knot_indices) const {
+  inline auto jac(const std::array<torch::Tensor, BSplineCore::parDim_> &xi,
+                  const std::array<torch::Tensor, BSplineCore::parDim_>
+                      &knot_indices) const {
     return jac<memory_optimized>(
         xi, knot_indices,
-        BSplineCore::template find_coeff_indices<memory_optimized>(knot_indices));
+        BSplineCore::template find_coeff_indices<memory_optimized>(
+            knot_indices));
   }
 
   //  clang-format off
@@ -6081,7 +6122,8 @@ public:
   ///
   /// @param[in] knot_indices Knot indices where to evaluate the Jacobian
   ///
-  /// @param[in] knot_indices_G Knot indices where to evaluate the Jacobian of `G`
+  /// @param[in] knot_indices_G Knot indices where to evaluate the Jacobian of
+  /// `G`
   ///
   /// @result Block-tensor with the Jacobian with respect to the
   /// physical variables
@@ -6097,14 +6139,16 @@ public:
   ijac(const Geometry G,
        const std::array<torch::Tensor, BSplineCore::parDim_> &xi,
        const std::array<torch::Tensor, BSplineCore::parDim_> &knot_indices,
-       const std::array<torch::Tensor, Geometry::parDim()> &knot_indices_G) const {
+       const std::array<torch::Tensor, Geometry::parDim()> &knot_indices_G)
+      const {
     if constexpr (BSplineCore::parDim_ == 0)
       return utils::BlockTensor<torch::Tensor, 1, 1>{
           torch::zeros_like(BSplineCore::coeffs_[0])};
     else
       return ijac<memory_optimized, Geometry>(
           G, xi, knot_indices,
-          BSplineCore::template find_coeff_indices<memory_optimized>(knot_indices),
+          BSplineCore::template find_coeff_indices<memory_optimized>(
+              knot_indices),
           knot_indices_G,
           G.template find_coeff_indices<memory_optimized>(knot_indices_G));
   }
@@ -6121,7 +6165,8 @@ public:
   ///
   /// @param[in] knot_indices Knot indices where to evaluate the Jacobain
   ///
-  /// @param[in] knot_indices_G Knot indices where to evaluate the Jacobian of `G`
+  /// @param[in] knot_indices_G Knot indices where to evaluate the Jacobian of
+  /// `G`
   ///
   /// @param[in] coeff_indices Coefficient indices where to evaluate the
   /// Jacobian
@@ -6209,12 +6254,13 @@ public:
   /// then one then all Laplacian matrices are returned as a vector.
   //  clang-format on
   template <bool memory_optimized = false>
-  inline auto
-  lapl(const std::array<torch::Tensor, BSplineCore::parDim_> &xi,
-       const std::array<torch::Tensor, BSplineCore::parDim_> &knot_indices) const {
+  inline auto lapl(const std::array<torch::Tensor, BSplineCore::parDim_> &xi,
+                   const std::array<torch::Tensor, BSplineCore::parDim_>
+                       &knot_indices) const {
     return lapl<memory_optimized>(
         xi, knot_indices,
-        BSplineCore::template find_coeff_indices<memory_optimized>(knot_indices));
+        BSplineCore::template find_coeff_indices<memory_optimized>(
+            knot_indices));
   }
 
   //  clang-format off
@@ -6401,11 +6447,14 @@ public:
   ilapl(const Geometry G,
         const std::array<torch::Tensor, BSplineCore::parDim_> &xi,
         const std::array<torch::Tensor, BSplineCore::parDim_> &knot_indices,
-        const std::array<torch::Tensor, Geometry::parDim()> &knot_indices_G) const {
+        const std::array<torch::Tensor, Geometry::parDim()> &knot_indices_G)
+      const {
     return ilapl<memory_optimized, Geometry>(
         G, xi, knot_indices,
-        BSplineCore::template find_coeff_indices<memory_optimized>(knot_indices),
-        knot_indices_G, G.template find_coeff_indices<memory_optimized>(knot_indices_G));
+        BSplineCore::template find_coeff_indices<memory_optimized>(
+            knot_indices),
+        knot_indices_G,
+        G.template find_coeff_indices<memory_optimized>(knot_indices_G));
   }
 
   /// @brief Returns a block-tensor with the Laplacian of the B-spline
@@ -6420,7 +6469,8 @@ public:
   ///
   /// @param[in] knot_indices Knot indices where to evaluate the Laplacian
   ///
-  /// @param[in] knot_indices_G Knot indices where to evaluate the Jacobian of `G`
+  /// @param[in] knot_indices_G Knot indices where to evaluate the Jacobian of
+  /// `G`
   ///
   /// @param[in] coeff_indices Coefficient indices where to evaluate the
   /// Laplacian
@@ -6453,20 +6503,22 @@ public:
         const std::array<torch::Tensor, Geometry::parDim()> &knot_indices_G,
         const torch::Tensor &coeff_indices_G) const {
 
-    auto hessu = hess<memory_optimized>(xi, knot_indices, coeff_indices).slice(0);
+    auto hessu =
+        hess<memory_optimized>(xi, knot_indices, coeff_indices).slice(0);
 
     {
       auto igradG = igrad<memory_optimized>(G, xi, knot_indices, coeff_indices,
                                             knot_indices_G, coeff_indices_G);
-      auto hessG =
-          G.template hess<memory_optimized>(xi, knot_indices_G, coeff_indices_G);
+      auto hessG = G.template hess<memory_optimized>(xi, knot_indices_G,
+                                                     coeff_indices_G);
       assert(igradG.cols() == hessG.slices());
       for (short_t k = 0; k < hessG.slices(); ++k)
         hessu -= igradG(0, k) * hessG.slice(k);
     }
 
     auto jacInv =
-        G.template jac<memory_optimized>(xi, knot_indices_G, coeff_indices_G).ginv();
+        G.template jac<memory_optimized>(xi, knot_indices_G, coeff_indices_G)
+            .ginv();
 
     return (jacInv.tr() * hessu * jacInv).trace();
   }
