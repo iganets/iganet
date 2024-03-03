@@ -23,7 +23,8 @@ template <short_t d, class T>
 class GismoPdeModel : public GismoModel<T>,
                       public ModelElevate,
                       public ModelIncrease,
-                      public ModelRefine {
+                      public ModelRefine,
+                      public ModelReparameterize {
 
 protected:
   /// @brief Multi-patch geometry
@@ -369,7 +370,7 @@ public:
         throw InvalidModelAttributeException();
       }
 
-      return "{}";
+      return R"({})"_json;
     } else
       return GismoModel<T>::updateAttribute(component, attribute, json);
   }
@@ -417,6 +418,16 @@ public:
     }
 
     geo_.patch(0).uniformRefine(num, 1, dim);
+  }
+
+  /// @brief Reparameterized the model
+  void reparameterize(const nlohmann::json &json = NULL) override {
+
+    gismo::gsBarrierPatch<2, T> opt(geo_, false);
+    opt.options().setInt("ParamMethod", 1);
+    opt.compute();
+
+    geo_ = opt.result();
   }
 };
 
