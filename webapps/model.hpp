@@ -24,24 +24,30 @@ enum class capability {
   create = 0, /*!< create object */
   remove = 1, /*!< remove object */
 
+  /*! Model parameters */
+  parameters = 2, /*!< model has extra parameters */
+
   /*!< Model evaluation and adaption */
-  eval = 2,     /*!< evaluates object */
-  refine = 3,   /*!< h-refines object */
-  elevate = 4,  /*!< p-refines object */
-  increase = 5, /*!< p-refines object */
+  eval = 3,     /*!< evaluates object */
+  refine = 4,   /*!< h-refines object */
+  elevate = 5,  /*!< p-refines object */
+  increase = 6, /*!< p-refines object */
+
+  /*!< Model reparameterization */
+  reparameterize = 7, /*!< reparameterizes the model's geometry */
 
   /*!< Model loading/saving */
-  load = 6, /*!< loads model from PyTorch file */
-  save = 7, /*!< saves model to PyTorch file */
+  load = 8, /*!< loads model from PyTorch file */
+  save = 9, /*!< saves model to PyTorch file */
 
   /*!< Model import/export */
-  importXML = 8, /*!< imports object from G+Smo XML file */
-  exportXML = 9, /*!< exports object to G+Smo XML file */
+  importXML = 10, /*!< imports object from G+Smo XML file */
+  exportXML = 11, /*!< exports object to G+Smo XML file */
 
   /*!< Error computation */
-  computeL1error = 10, /*!< computes model's L1-error */
-  computeL2error = 11, /*!< computes model's L2-error */
-  computeH1error = 12  /*!< computes model's H1-error */
+  computeL1error = 12, /*!< computes model's L1-error */
+  computeL2error = 13, /*!< computes model's L2-error */
+  computeH1error = 14  /*!< computes model's H1-error */
 };
 
 /// @brief Enumerator for specifying the output type
@@ -66,6 +72,20 @@ struct InvalidModelException : public std::exception {
 /// @brief InvalidModelAttribute exception
 struct InvalidModelAttributeException : public std::exception {
   const char *what() const throw() { return "Invalid model attribute"; }
+};
+
+/// @brief Model error computation
+class ModelComputeError {
+public:
+  /// @brief Computes the model's error
+  virtual nlohmann::json computeError(const nlohmann::json &json) const = 0;
+
+  // @brief Returns model capabilities
+  std::vector<std::string> getCapabilities() const {
+    return std::vector{std::string("computeL1error"),
+                       std::string("computeL2error"),
+                       std::string("computeH1error")};
+  }
 };
 
 /// @brief Model degree elevation
@@ -105,6 +125,18 @@ public:
   }
 };
 
+/// @brief Model parameters
+class ModelParameters {
+public:
+  /// @brief Return's the model's parameters
+  virtual nlohmann::json getParameters() const = 0;
+
+  // @brief Returns model capabilities
+  std::vector<std::string> getCapabilities() const {
+    return std::vector{std::string("parameters")};
+  }
+};
+
 /// @brief Model refinement
 class ModelRefine {
 public:
@@ -114,6 +146,18 @@ public:
   // @brief Returns model capabilities
   std::vector<std::string> getCapabilities() const {
     return std::vector{std::string("refine")};
+  }
+};
+
+/// @brief Model reparameterization
+class ModelReparameterize {
+public:
+  /// @brief Reparameterizes the model
+  virtual void reparameterize(const nlohmann::json &json) = 0;
+
+  // @brief Returns model capabilities
+  std::vector<std::string> getCapabilities() const {
+    return std::vector{std::string("reparameterize")};
   }
 };
 
@@ -192,8 +236,6 @@ public:
     json["inputs"] = getInputs();
     json["outputs"] = getOutputs();
 
-    std::cout << json.dump(2) << std::endl;
-
     return json;
   }
 
@@ -205,6 +247,10 @@ public:
     json.push_back("create");
     json.push_back("remove");
 
+    if (auto m = dynamic_cast<const ModelComputeError *>(this))
+      for (auto const &capability : m->getCapabilities())
+        json.push_back(capability);
+
     if (auto m = dynamic_cast<const ModelElevate *>(this))
       for (auto const &capability : m->getCapabilities())
         json.push_back(capability);
@@ -213,7 +259,23 @@ public:
       for (auto const &capability : m->getCapabilities())
         json.push_back(capability);
 
+    if (auto m = dynamic_cast<const ModelIncrease *>(this))
+      for (auto const &capability : m->getCapabilities())
+        json.push_back(capability);
+
+    if (auto m = dynamic_cast<const ModelParameters *>(this))
+      for (auto const &capability : m->getCapabilities())
+        json.push_back(capability);
+
     if (auto m = dynamic_cast<const ModelRefine *>(this))
+      for (auto const &capability : m->getCapabilities())
+        json.push_back(capability);
+
+    if (auto m = dynamic_cast<const ModelReparameterize *>(this))
+      for (auto const &capability : m->getCapabilities())
+        json.push_back(capability);
+
+    if (auto m = dynamic_cast<const ModelSerialize *>(this))
       for (auto const &capability : m->getCapabilities())
         json.push_back(capability);
 
