@@ -140,7 +140,7 @@ public:
         bcFunc_[i] = gismo::give(
             gsFunctionExpr<T>("sin(pi*x)*sin(pi*y)*sin(pi*z)*sin(pi*t)", 4));
 
-      bc_.addCondition(i, gismo::condition_type::dirichlet, &bcFunc_[i]);
+      bc_.addCondition(i+1, gismo::condition_type::dirichlet, &bcFunc_[i]);
     }
 
     // Set geometry
