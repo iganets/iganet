@@ -6,11 +6,16 @@ ARG IGANET_BUILD_PCH=OFF
 ARG IGANET_BUILD_PERFTESTS=OFF
 ARG IGANET_BUILD_UNITTESTS=OFF
 ARG IGANET_BUILD_WEBAPPS=ON
-ARG IGANET_WITH_GISMO=OFF
+
+ARG IGANET_WITH_GISMO=ON
 ARG IGANET_WITH_LIBUV=OFF
 ARG IGANET_WITH_MATPLOT=OFF
 ARG IGANET_WITH_OPENMP=ON
 ARG IGANET_WITH_OPENSSL=ON
+
+ARG IGANET_PERFTESTS_COEFF_TYPE=float
+ARG IGANET_UNITTESTS_COEFF_TYPE=float
+ARG IGANET_WEBAPPS_COEFF_TYPE=double
 
 # Install dependencies
 RUN apt-get update && apt-get install -y --no-install-recommends \
@@ -37,7 +42,7 @@ RUN curl -fsSL --insecure -o cmake-${CMAKE_VERSION}-${CMAKE_OS}-${CMAKE_ARCH}.ta
 ENV PATH="$PATH:/opt/cmake-${CMAKE_VERSION}-${CMAKE_OS}-${CMAKE_ARCH}/bin"
 
 # Install LibTorch
-ARG LIBTORCH_URL=https://download.pytorch.org/libtorch/cpu/libtorch-cxx11-abi-shared-with-deps-2.1.0%2Bcpu.zip
+ARG LIBTORCH_URL=https://download.pytorch.org/libtorch/cpu/libtorch-cxx11-abi-shared-with-deps-2.2.1%2Bcpu.zip
 WORKDIR /opt
 RUN curl -fsSL --insecure -o libtorch.zip ${LIBTORCH_URL} \
         && unzip -q libtorch.zip \
@@ -60,6 +65,9 @@ RUN rm -rf * \
         -DIGANET_WITH_MATPLOT=$IGANET_WITH_MATPLOT \
         -DIGANET_WITH_OPENMP=$IGANET_WITH_OPENMP \
         -DIGANET_WITH_OPENSSL=$IGANET_WITH_OPENSSL \
+        -DIGANET_PERFTESTS_COEFF_TYPE=$IGANET_PERFTESTS_COEFF_TYPE \
+        -DIGANET_UNITTESTS_COEFF_TYPE=$IGANET_UNITTESTS_COEFF_TYPE \
+        -DIGANET_WEBAPPS_COEFF_TYPE=$IGANET_WEBAPPS_COEFF_TYPE
         && make
 
 # Production stage
@@ -86,6 +94,7 @@ COPY --from=build-stage /opt/iganet/include/*.hpp /opt/iganet/include/
 COPY --from=build-stage /opt/iganet/include/utils/*.hpp /opt/iganet/include/utils/
 COPY --from=build-stage /opt/iganet/webapps/*.hpp /opt/iganet/webapps/
 COPY --from=build-stage /opt/iganet/webapps/models/*.hpp /opt/iganet/webapps/models/
+COPY --from=build-stage /opt/iganet/webapps/models/gismo/*.hpp /opt/iganet/webapps/models/gismo
 
 # Copy SSL files and server configuration
 COPY ./cert.pem /opt/iganet/webapps/
@@ -94,4 +103,4 @@ COPY ./webapps/config/server.cfg /opt/iganet/webapps/
 
 # Start server
 WORKDIR /opt/iganet
-ENTRYPOINT ["/opt/iganet/webapps/server", "-k", "/opt/iganet/webapps/key.pem", "-c", "/opt/iganet/webapps/cert.pem", "-f", "/opt/iganet/webapps/server.cfg", "-p", "9001"]
+ENTRYPOINT ["/opt/iganet/webapps/server", "-k", "/opt/iganet/webapps/key.pem", "-c", "/opt/iganet/webapps/cert.pem", "-f", "/opt/iganet/webapps/server.cfg", "-p", "9001", "-t", "1"]
