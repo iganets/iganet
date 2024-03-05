@@ -14,6 +14,7 @@
 
 #pragma once
 
+#include <iganet.h>
 #include <webapps_config.hpp>
 
 namespace iganet {
