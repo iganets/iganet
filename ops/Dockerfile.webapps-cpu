@@ -88,7 +88,6 @@ COPY --from=build-stage /opt/iganet/build/webapps/*.hpp /opt/iganet/webapps/
 COPY --from=build-stage /opt/iganet/build/webapps/models/*.hpp /opt/iganet/webapps/models/
 COPY --from=build-stage /opt/iganet/build/webapps/models/lib* /opt/iganet/webapps/models/
 COPY --from=build-stage /opt/iganet/build/webapps/server /opt/iganet/webapps/
-COPY --from=build-stage /opt/iganet/include/*.cuh /opt/iganet/include/
 COPY --from=build-stage /opt/iganet/include/*.h /opt/iganet/include/
 COPY --from=build-stage /opt/iganet/include/*.hpp /opt/iganet/include/
 COPY --from=build-stage /opt/iganet/include/utils/*.hpp /opt/iganet/include/utils/
