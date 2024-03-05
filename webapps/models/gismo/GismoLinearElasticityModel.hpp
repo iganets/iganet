@@ -84,8 +84,12 @@ private:
     assembler_.initSystem();
     assembler_.assemble(
         0.5 * mu * meas(G) * (ijac(v, G) + ijac(v, G).cwisetr()) %
-            (ijac(u, G) + ijac(u, G).cwisetr()).tr() +
-        lambda * meas(G) * (ijac(v, G).trace() * ijac(u, G).trace().tr()));
+                (ijac(u, G) + ijac(u, G).cwisetr()).tr() +
+            lambda * meas(G) *
+                (ijac(v, G).trace() * ijac(u, G).trace().tr()) // matrix
+        ,
+        u * (f - G) * meas(G) // rhs vector
+    );
 
     // Solve system
     typename gismo::gsSparseSolver<T>::CGDiagonal solver;
@@ -108,8 +112,7 @@ public:
                              const std::array<int64_t, d> ncoeffs,
                              const std::array<int64_t, d> npatches)
       : Base(degrees, ncoeffs, npatches), basis_(Base::geo_, true),
-        rhsFunc_("2*pi^2*sin(pi*x)*sin(pi*y)", d), assembler_(1, 1), E_(2.1e5),
-        nu_(0.29) {
+        rhsFunc_("0", "0", d), assembler_(1, 1), E_(2.1e5), nu_(0.29) {
     // Specify assembler options
     gsOptionList Aopt;
 
@@ -142,17 +145,15 @@ public:
     // Set boundary conditions
     for (short_t i = 0; i < 2 * d; ++i) {
       if constexpr (d == 1)
-        bcFunc_[i] = gismo::give(gsFunctionExpr<T>("sin(pi*x)", 1));
+        bcFunc_[i] = gismo::give(gsFunctionExpr<T>("0", 1));
       else if constexpr (d == 2)
-        bcFunc_[i] = gismo::give(gsFunctionExpr<T>("sin(pi*x)*sin(pi*y)", 2));
+        bcFunc_[i] = gismo::give(gsFunctionExpr<T>("0", "0", 2));
       else if constexpr (d == 3)
-        bcFunc_[i] =
-            gismo::give(gsFunctionExpr<T>("sin(pi*x)*sin(pi*y)*sin(pi*z)", 3));
+        bcFunc_[i] = gismo::give(gsFunctionExpr<T>("0", "0", "0", 3));
       else if constexpr (d == 4)
-        bcFunc_[i] = gismo::give(
-            gsFunctionExpr<T>("sin(pi*x)*sin(pi*y)*sin(pi*z)*sin(pi*t)", 4));
+        bcFunc_[i] = gismo::give(gsFunctionExpr<T>("0", "0", "0", "0", 4));
 
-      bc_.addCondition(i, gismo::condition_type::dirichlet, &bcFunc_[i]);
+      bc_.addCondition(i + 1, gismo::condition_type::dirichlet, &bcFunc_[i]);
     }
 
     // Set geometry
@@ -538,7 +539,11 @@ public:
     gsMatrix<T> pts = gsPointGrid(a, b, np);
     gsMatrix<T> eval = solution_.patch(0).eval(pts);
 
-    return utils::to_json(eval, true);
+    gsMatrix<T> result = eval.colwise().norm();
+
+    std::cout << eval.norm() << std::endl;
+
+    return utils::to_json(result, true);
   }
 
   /// @brief Refines the model

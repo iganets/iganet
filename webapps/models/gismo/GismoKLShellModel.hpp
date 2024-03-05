@@ -97,8 +97,7 @@ public:
                     const std::array<int64_t, d> ncoeffs,
                     const std::array<int64_t, d> npatches)
       : Base(degrees, ncoeffs, npatches), basis_(Base::geo_, true),
-        rhsFunc_("2*pi^2*sin(pi*x)*sin(pi*y)", d),
-        assembler_(1, 1) {
+        rhsFunc_("2*pi^2*sin(pi*x)*sin(pi*y)", d), assembler_(1, 1) {
     // Specify assembler options
     gsOptionList Aopt;
 
@@ -141,7 +140,7 @@ public:
         bcFunc_[i] = gismo::give(
             gsFunctionExpr<T>("sin(pi*x)*sin(pi*y)*sin(pi*z)*sin(pi*t)", 4));
 
-      bc_.addCondition(i, gismo::condition_type::dirichlet, &bcFunc_[i]);
+      bc_.addCondition(i + 1, gismo::condition_type::dirichlet, &bcFunc_[i]);
     }
 
     // Set geometry
@@ -161,7 +160,8 @@ public:
 
   /// @brief Returns the model's description
   std::string getDescription() const override {
-    return "G+Smo Kirchhoff-Love Shell model in " + std::to_string(d) + " dimensions";
+    return "G+Smo Kirchhoff-Love Shell model in " + std::to_string(d) +
+           " dimensions";
   };
 
   /// @brief Returns the model's outputs
