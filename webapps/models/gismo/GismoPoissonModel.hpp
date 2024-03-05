@@ -61,6 +61,8 @@ private:
   /// @brief Solve the Poisson problem
   void solve() {
 
+    std::cout << "SOLVE\n";
+
     // Set up expression assembler
     auto G = assembler_.getMap(Base::geo_);
     auto u = assembler_.getSpace(basis_);
@@ -465,11 +467,19 @@ public:
   /// @brief Elevates the model's degrees, preserves smoothness
   void elevate(const nlohmann::json &json = NULL) override {
 
-    // Elevate geometry
-    Base::elevate(json);
+    bool geometry = true;
 
-    // Set geometry
-    bc_.setGeoMap(Base::geo_);
+    if (json.contains("data"))
+      if (json["data"].contains("num"))
+        geometry = json["data"]["geometry"].get<bool>();
+
+    if (geometry) {
+      // Elevate geometry
+      Base::elevate(json);
+
+      // Set geometry
+      bc_.setGeoMap(Base::geo_);
+    }
 
     int num = 1, dim = -1;
 
@@ -486,16 +496,27 @@ public:
 
     // Set assembler basis
     assembler_.setIntegrationElements(basis_);
+
+    // Generate solution
+    solve();
   }
 
   /// @brief Increases the model's degrees, preserves multiplicity
   void increase(const nlohmann::json &json = NULL) override {
 
-    // Increase geometry
-    Base::refine(json);
+    bool geometry = true;
 
-    // Set geometry
-    bc_.setGeoMap(Base::geo_);
+    if (json.contains("data"))
+      if (json["data"].contains("num"))
+        geometry = json["data"]["geometry"].get<bool>();
+
+    if (geometry) {
+      // Increase geometry
+      Base::increase(json);
+
+      // Set geometry
+      bc_.setGeoMap(Base::geo_);
+    }
 
     int num = 1, dim = -1;
 
@@ -512,16 +533,27 @@ public:
 
     // Set assembler basis
     assembler_.setIntegrationElements(basis_);
+
+    // Generate solution
+    solve();
   }
 
   /// @brief Refines the model
   void refine(const nlohmann::json &json = NULL) override {
 
-    // Refine geometry
-    Base::refine(json);
+    bool geometry = true;
 
-    // Set geometry
-    bc_.setGeoMap(Base::geo_);
+    if (json.contains("data"))
+      if (json["data"].contains("num"))
+        geometry = json["data"]["geometry"].get<bool>();
+
+    if (geometry) {
+      // Refine geometry
+      Base::refine(json);
+
+      // Set geometry
+      bc_.setGeoMap(Base::geo_);
+    }
 
     int num = 1, dim = -1;
 
@@ -538,6 +570,9 @@ public:
 
     // Set assembler basis
     assembler_.setIntegrationElements(basis_);
+
+    // Generate solution
+    solve();
   }
 };
 
