@@ -546,6 +546,58 @@ public:
     return utils::to_json(result, true);
   }
 
+  /// @brief Elevates the model's degrees, preserves smoothness
+  void elevate(const nlohmann::json &json = NULL) override {
+
+    // Elevate geometry
+    Base::elevate(json);
+
+    // Set geometry
+    bc_.setGeoMap(Base::geo_);
+
+    int num = 1, dim = -1;
+
+    if (json.contains("data")) {
+      if (json["data"].contains("num"))
+        num = json["data"]["num"].get<int>();
+
+      if (json["data"].contains("dim"))
+        dim = json["data"]["dim"].get<int>();
+    }
+
+    // Degree elevate basis of solution space
+    basis_.basis(0).degreeElevate(num, dim);
+
+    // Set assembler basis
+    assembler_.setIntegrationElements(basis_);
+  }
+
+  /// @brief Increases the model's degrees, preserves multiplicity
+  void increase(const nlohmann::json &json = NULL) override {
+
+    // Increase geometry
+    Base::refine(json);
+
+    // Set geometry
+    bc_.setGeoMap(Base::geo_);
+
+    int num = 1, dim = -1;
+
+    if (json.contains("data")) {
+      if (json["data"].contains("num"))
+        num = json["data"]["num"].get<int>();
+
+      if (json["data"].contains("dim"))
+        dim = json["data"]["dim"].get<int>();
+    }
+
+    // Degree increase basis of solution space
+    basis_.basis(0).degreeIncrease(num, dim);
+
+    // Set assembler basis
+    assembler_.setIntegrationElements(basis_);
+  }
+
   /// @brief Refines the model
   void refine(const nlohmann::json &json = NULL) override {
 
