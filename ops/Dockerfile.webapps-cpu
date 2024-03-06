@@ -1,22 +1,31 @@
 # Build stage
 FROM ubuntu:22.04 as build-stage
 
-# IgANet build options
+# IgANet components
 ARG IGANET_BUILD_EXAMPLES=OFF
 ARG IGANET_BUILD_PCH=OFF
 ARG IGANET_BUILD_PERFTESTS=OFF
 ARG IGANET_BUILD_UNITTESTS=OFF
 ARG IGANET_BUILD_WEBAPPS=ON
 
+# IgANet options
 ARG IGANET_WITH_GISMO=ON
 ARG IGANET_WITH_LIBUV=OFF
 ARG IGANET_WITH_MATPLOT=OFF
 ARG IGANET_WITH_OPENMP=ON
 ARG IGANET_WITH_OPENSSL=ON
 
+# IgANet configuration
 ARG IGANET_PERFTESTS_COEFF_TYPE=float
 ARG IGANET_UNITTESTS_COEFF_TYPE=float
 ARG IGANET_WEBAPPS_COEFF_TYPE=double
+
+# Docker configurations
+ARG CMAKE_VERSION=3.27.7
+ARG CMAKE_OS=linux
+ARG CMAKE_ARCH=x86_64
+ARG LIBTORCH_VERSION=2.2.1
+ARG NJOBS=1
 
 # Install dependencies
 RUN apt-get update && apt-get install -y --no-install-recommends \
@@ -32,9 +41,6 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
         unzip
 
 # Install CMake
-ARG CMAKE_VERSION=3.27.7
-ARG CMAKE_OS=linux
-ARG CMAKE_ARCH=x86_64
 WORKDIR /opt
 RUN curl -fsSL --insecure -o cmake-${CMAKE_VERSION}-${CMAKE_OS}-${CMAKE_ARCH}.tar.gz https://github.com/Kitware/CMake/releases/download/v${CMAKE_VERSION}/cmake-${CMAKE_VERSION}-${CMAKE_OS}-${CMAKE_ARCH}.tar.gz \
         && tar xvzf cmake-${CMAKE_VERSION}-${CMAKE_OS}-${CMAKE_ARCH}.tar.gz \
@@ -43,7 +49,7 @@ RUN curl -fsSL --insecure -o cmake-${CMAKE_VERSION}-${CMAKE_OS}-${CMAKE_ARCH}.ta
 ENV PATH="$PATH:/opt/cmake-${CMAKE_VERSION}-${CMAKE_OS}-${CMAKE_ARCH}/bin"
 
 # Install LibTorch
-ARG LIBTORCH_URL=https://download.pytorch.org/libtorch/cpu/libtorch-cxx11-abi-shared-with-deps-2.2.1%2Bcpu.zip
+ARG LIBTORCH_URL=https://download.pytorch.org/libtorch/cpu/libtorch-cxx11-abi-shared-with-deps-${LIBTORCH_VERSION}%2Bcpu.zip
 WORKDIR /opt
 RUN curl -fsSL --insecure -o libtorch.zip ${LIBTORCH_URL} \
         && unzip -q libtorch.zip \
@@ -52,6 +58,11 @@ RUN curl -fsSL --insecure -o libtorch.zip ${LIBTORCH_URL} \
 # Install IgANet
 WORKDIR /opt/iganet
 COPY ./ .
+
+RUN rm -f /opt/iganet/webapps/models/Poisson2d.cxx
+RUN rm -f /opt/iganet/webapps/models/gismo/GismoLinearElasticity2d.cxx
+RUN rm -f /opt/iganet/webapps/models/gismo/GismoLinearElasticity3d.cxx
+
 WORKDIR /opt/iganet/build
 RUN rm -rf * \
         && CC=clang CXX=clang++ cmake /opt/iganet \
@@ -69,7 +80,7 @@ RUN rm -rf * \
         -DIGANET_PERFTESTS_COEFF_TYPE=$IGANET_PERFTESTS_COEFF_TYPE \
         -DIGANET_UNITTESTS_COEFF_TYPE=$IGANET_UNITTESTS_COEFF_TYPE \
         -DIGANET_WEBAPPS_COEFF_TYPE=$IGANET_WEBAPPS_COEFF_TYPE \
-        && make
+        && make -j ${NJOBS}
 
 # Production stage
 FROM ubuntu:22.04 as production-stage
