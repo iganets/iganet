@@ -1,6 +1,7 @@
 # Build stage
 FROM ubuntu:22.04 as build-stage
 
+# IgANet build options
 ARG IGANET_BUILD_EXAMPLES=OFF
 ARG IGANET_BUILD_PCH=OFF
 ARG IGANET_BUILD_PERFTESTS=OFF
@@ -101,5 +102,5 @@ COPY ./key.pem /opt/iganet/webapps/
 COPY ./webapps/config/server.cfg /opt/iganet/webapps/
 
 # Start server
-WORKDIR /opt/iganet
+WORKDIR /opt/iganet/webapps
 ENTRYPOINT ["/opt/iganet/webapps/server", "-k", "/opt/iganet/webapps/key.pem", "-c", "/opt/iganet/webapps/cert.pem", "-f", "/opt/iganet/webapps/server.cfg", "-p", "9001", "-t", "1"]
