@@ -61,8 +61,6 @@ private:
   /// @brief Solve the Poisson problem
   void solve() {
 
-    std::cout << "SOLVE\n";
-
     // Set up expression assembler
     auto G = assembler_.getMap(Base::geo_);
     auto u = assembler_.getSpace(basis_);
