@@ -18,6 +18,7 @@
 #include <modelmanager.hpp>
 #include <popl.hpp>
 
+#include <chrono>
 #include <filesystem>
 #include <thread>
 
@@ -77,14 +78,26 @@ private:
   /// @brief Session UUID
   const std::string uuid;
 
+  /// @brief Hashed password
+  const std::size_t hash;
+
+  /// @brief Creation time stamp
+  std::chrono::system_clock::time_point creation_time;
+
+  /// @brief Access time stamp
+  std::chrono::system_clock::time_point access_time;
+
 public:
   /// @brief Default constructor
-  Session() : uuid(iganet::utils::uuid::create()) {}
+  Session(std::size_t hash)
+      : uuid(iganet::utils::uuid::create()), hash(hash),
+        creation_time(std::chrono::system_clock::now()),
+        access_time(std::chrono::system_clock::now()) {}
 
   /// @brief Returns the UUID
   const std::string &getUUID() const { return uuid; }
 
-  /// Returns the requested model or throws an exception
+  /// @brief Returns the requested model or throws an exception
   std::shared_ptr<Model> getModel(int64_t id) {
     auto it = models.find(id);
     if (it == models.end())
@@ -93,7 +106,7 @@ public:
       return it->second;
   }
 
-  /// Returns the model and removes it from the list of models
+  /// @brief Returns the model and removes it from the list of models
   std::shared_ptr<Model> removeModel(int64_t id) {
     auto it = models.find(id);
     if (it == models.end())
@@ -104,6 +117,9 @@ public:
       return model;
     }
   }
+
+  /// @brief Updates the access time stamp
+  void access() { access_time = std::chrono::system_clock::now(); }
 
   /// @brief List of models
   std::map<int64_t, std::shared_ptr<Model>> models;
@@ -117,8 +133,10 @@ public:
     auto it = sessions.find(uuid);
     if (it == sessions.end())
       throw InvalidSessionIdException();
-    else
+    else {
+      it->second->access();
       return it->second;
+    }
   }
 
   /// @brief Returns the session and removes it from the list of sessions
@@ -606,9 +624,9 @@ int main(int argc, char const *argv[]) {
                                    //
 
                                    // Create a new session
-                                   auto session =
-                                       std::make_shared<iganet::webapp::Session<
-                                           iganet::real_t>>();
+                                   auto session = std::make_shared<
+                                       iganet::webapp::Session<iganet::real_t>>(
+                                       0);
                                    std::string uuid = session->getUUID();
                                    ws->getUserData()->sessions[uuid] = session;
                                    response["data"]["id"] = uuid;
