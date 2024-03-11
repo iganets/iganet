@@ -45,6 +45,8 @@
 #endif
 #endif
 
+#include <sysinfo.hpp>
+
 namespace iganet {
 
 using short_t = short int;
@@ -85,10 +87,8 @@ inline void init(std::ostream &os = std::clog) {
   // Set number of interop thread pool threads
   at::set_num_interop_threads(getenv("IGANET_INTEROP_NUM_THREADS", 1));
 
-  os << "LibTorch version: " << TORCH_VERSION_MAJOR << "."
-     << TORCH_VERSION_MINOR << "." << TORCH_VERSION_PATCH
-     << " (#intraop threads: " << at::get_num_threads()
-     << ", #interop threads: " << at::get_num_interop_threads() << ")\n";
+  // Output version information
+  os << getVersion();
 }
 
 /// Stream manipulator
