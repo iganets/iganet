@@ -20,6 +20,10 @@ int main() {
   using real_t = double;
   iganet::init();
 
+  nlohmann::json json;
+  json["res0"] = 50;
+  json["res1"] = 50;
+
   // Bivariate uniform B-spline of degree 2 in both directions
   iganet::UniformBSpline<real_t, 2, 2, 2> bspline;
 
@@ -30,17 +34,17 @@ int main() {
   // Load B-spline from XML object
   bspline.from_xml(xml);
 
-#ifdef WITH_MATPLOT
+#ifdef IGANET_WITH_MATPLOT
   // Plot B-spline
-  bspline.plot(50, 50);
+  bspline.plot(json);
 #endif
 
   // Refine B-Spline
   bspline.uniform_refine(2);
 
-#ifdef WITH_MATPLOT
+#ifdef IGANET_WITH_MATPLOT
   // Plot B-spline
-  bspline.plot(50, 50);
+  bspline.plot(json);
 #endif
 
   // Export B-spline to XML
