@@ -42,12 +42,20 @@ enum class functionspace : short_t {
   boundary = 1  /*!< boundary component */
 };
 
-#define TUPLE_WRAPPER(FunctionSpace)                                           \
+/// @brief Macro: Wraps the given function space in a std::tuple
+#define IGANET_FUNCTIONSPACE_TUPLE_WRAPPER(FunctionSpace)                      \
   namespace detail {                                                           \
   template <typename T> struct tuple<FunctionSpace<T>> {                       \
     using type = typename tuple<typename FunctionSpace<T>::Base>::type;        \
   };                                                                           \
   }
+
+/// @brief Macro: Implements the default methods of a function space
+#define IGANET_FUNCTIONSPACE_DEFAULT_OPS(FunctionSpace)                        \
+  FunctionSpace() = default;                                                   \
+  FunctionSpace(FunctionSpace &&) = default;                                   \
+  FunctionSpace(const FunctionSpace &) = default;                              \
+  FunctionSpace clone() { return FunctionSpace(*this); }
 
 namespace detail {
 
@@ -758,6 +766,9 @@ public:
       : Base(kv, init, options), boundary_(kv, init, options) {}
   /// @}
 
+  /// @brief Returns a clone of the function space
+  inline FunctionSpace clone() const { return FunctionSpace(*this); }
+
   /// @brief Returns the dimension
   inline static constexpr short_t dim() { return 1; }
 
@@ -965,10 +976,6 @@ public:
 
   /// @brief Constructor
   /// @{
-  S1() = default;
-  S1(S1 &&) = default;
-  S1(const S1 &) = default;
-
   S1(const std::array<int64_t, Spline::parDim()> &ncoeffs,
      enum init init = init::zeros,
      Options<typename Spline::value_type> options =
@@ -994,10 +1001,12 @@ public:
     } else
       static_assert(sizeof...(Cs) == 0, "Dimensions mismatch");
   }
+
+  IGANET_FUNCTIONSPACE_DEFAULT_OPS(S1);
   /// @}
 };
 
-TUPLE_WRAPPER(S1);
+IGANET_FUNCTIONSPACE_TUPLE_WRAPPER(S1);
 
 template <typename Spline, short_t... Cs>
 class S2 : public FunctionSpace<typename Spline::template derived_self_type<
@@ -1011,10 +1020,6 @@ public:
 
   /// @brief Constructor
   /// @{
-  S2() = default;
-  S2(S2 &&) = default;
-  S2(const S2 &) = default;
-
   S2(const std::array<int64_t, Spline::parDim()> &ncoeffs,
      enum init init = init::zeros,
      Options<typename Spline::value_type> options =
@@ -1047,9 +1052,11 @@ public:
       static_assert(sizeof...(Cs) == 0, "Dimensions mismatch");
   }
   /// @}
+
+  IGANET_FUNCTIONSPACE_DEFAULT_OPS(S2);
 };
 
-TUPLE_WRAPPER(S2);
+IGANET_FUNCTIONSPACE_TUPLE_WRAPPER(S2);
 
 template <typename Spline, short_t... Cs>
 class S3 : public FunctionSpace<typename Spline::template derived_self_type<
@@ -1063,10 +1070,6 @@ public:
 
   /// @brief Constructor
   /// @{
-  S3() = default;
-  S3(S3 &&) = default;
-  S3(const S3 &) = default;
-
   S3(const std::array<int64_t, Spline::parDim()> &ncoeffs,
      enum init init = init::zeros,
      Options<typename Spline::value_type> options =
@@ -1105,9 +1108,11 @@ public:
       static_assert(sizeof...(Cs) == 0, "Dimensions mismatch");
   }
   /// @}
+
+  IGANET_FUNCTIONSPACE_DEFAULT_OPS(S3);
 };
 
-TUPLE_WRAPPER(S3);
+IGANET_FUNCTIONSPACE_TUPLE_WRAPPER(S3);
 
 template <typename Spline, short_t... Cs>
 class S4 : public FunctionSpace<typename Spline::template derived_self_type<
@@ -1121,10 +1126,6 @@ public:
 
   /// @brief Constructor
   /// @{
-  S4() = default;
-  S4(S4 &&) = default;
-  S4(const S4 &) = default;
-
   S4(const std::array<int64_t, Spline::parDim()> &ncoeffs,
      enum init init = init::zeros,
      Options<typename Spline::value_type> options =
@@ -1169,9 +1170,11 @@ public:
       static_assert(sizeof...(Cs) == 0, "Dimensions mismatch");
   }
   /// @}
+
+  IGANET_FUNCTIONSPACE_DEFAULT_OPS(S4);
 };
 
-TUPLE_WRAPPER(S4);
+IGANET_FUNCTIONSPACE_TUPLE_WRAPPER(S4);
 
 /// @brief Taylor-Hood like function space
 /// \f$ S^{p+1}_{p-1} \otimes S^{p}_{p-1} \f$
@@ -1193,10 +1196,6 @@ public:
 
   /// @brief Constructor
   /// @{
-  TH1() = default;
-  TH1(TH1 &&) = default;
-  TH1(const TH1 &) = default;
-
   TH1(const std::array<int64_t, 1> &ncoeffs, enum init init = init::zeros,
       Options<typename Spline::value_type> options =
           iganet::Options<typename Spline::value_type>{})
@@ -1212,9 +1211,11 @@ public:
     std::get<0>(*this).reduce_continuity();
   }
   /// @}
+
+  IGANET_FUNCTIONSPACE_DEFAULT_OPS(TH1);
 };
 
-TUPLE_WRAPPER(TH1);
+IGANET_FUNCTIONSPACE_TUPLE_WRAPPER(TH1);
 
 /// @brief Taylor-Hood like function space \f$
 /// S^{p+1,p+1}_{p-1,p-1} \otimes
@@ -1245,10 +1246,6 @@ public:
 
   /// @brief Constructor
   /// @{
-  TH2() = default;
-  TH2(TH2 &&) = default;
-  TH2(const TH2 &) = default;
-
   TH2(const std::array<int64_t, 2> &ncoeffs, enum init init = init::zeros,
       Options<typename Spline::value_type> options =
           iganet::Options<typename Spline::value_type>{})
@@ -1267,9 +1264,11 @@ public:
     std::get<1>(*this).reduce_continuity();
   }
   /// @}
+
+  IGANET_FUNCTIONSPACE_DEFAULT_OPS(TH2);
 };
 
-TUPLE_WRAPPER(TH2);
+IGANET_FUNCTIONSPACE_TUPLE_WRAPPER(TH2);
 
 /// @brief Taylor-Hood like function space \f$
 /// S^{p+1,p+1,p+1}_{p-1,p-1,p-1} \otimes
@@ -1311,10 +1310,6 @@ public:
 
   /// @brief Constructor
   /// @{
-  TH3() = default;
-  TH3(TH3 &&) = default;
-  TH3(const TH3 &) = default;
-
   TH3(const std::array<int64_t, 3> &ncoeffs, enum init init = init::zeros,
       Options<typename Spline::value_type> options =
           iganet::Options<typename Spline::value_type>{})
@@ -1337,9 +1332,11 @@ public:
     std::get<2>(*this).reduce_continuity();
   }
   /// @}
+
+  IGANET_FUNCTIONSPACE_DEFAULT_OPS(TH3);
 };
 
-TUPLE_WRAPPER(TH3);
+IGANET_FUNCTIONSPACE_TUPLE_WRAPPER(TH3);
 
 /// @brief Taylor-Hood like function space \f$
 /// S^{p+1,p+1,p+1,p+1}_{p-1,p-1,p-1,p-1} \otimes
@@ -1390,10 +1387,6 @@ public:
 
   /// @brief Constructor
   /// @{
-  TH4() = default;
-  TH4(TH4 &&) = default;
-  TH4(const TH4 &) = default;
-
   TH4(const std::array<int64_t, 4> &ncoeffs, enum init init = init::zeros,
       Options<typename Spline::value_type> options =
           iganet::Options<typename Spline::value_type>{})
@@ -1419,9 +1412,11 @@ public:
     std::get<3>(*this).reduce_continuity();
   }
   /// @}
+
+  IGANET_FUNCTIONSPACE_DEFAULT_OPS(TH4);
 };
 
-TUPLE_WRAPPER(TH4);
+IGANET_FUNCTIONSPACE_TUPLE_WRAPPER(TH4);
 
 /// @brief Nedelec like function space
 /// \f$ S^{p+1}_{p} \otimes S^{p}_{p-1} \f$
@@ -1443,10 +1438,6 @@ public:
 
   /// @brief Constructor
   /// @{
-  NE1() = default;
-  NE1(NE1 &&) = default;
-  NE1(const NE1 &) = default;
-
   NE1(const std::array<int64_t, 1> &ncoeffs, enum init init = init::zeros,
       Options<typename Spline::value_type> options =
           iganet::Options<typename Spline::value_type>{})
@@ -1458,9 +1449,11 @@ public:
           iganet::Options<typename Spline::value_type>{})
       : Base(kv, kv, init, options) {}
   /// @}
+
+  IGANET_FUNCTIONSPACE_DEFAULT_OPS(NE1);
 };
 
-TUPLE_WRAPPER(NE1);
+IGANET_FUNCTIONSPACE_TUPLE_WRAPPER(NE1);
 
 /// @brief Nedelec like function space \f$
 /// S^{p+1,p+1}_{p,p-1} \otimes
@@ -1491,10 +1484,6 @@ public:
 
   /// @brief Constructor
   /// @{
-  NE2() = default;
-  NE2(NE2 &&) = default;
-  NE2(const NE2 &) = default;
-
   NE2(const std::array<int64_t, 2> &ncoeffs, enum init init = init::zeros,
       Options<typename Spline::value_type> options =
           iganet::Options<typename Spline::value_type>{})
@@ -1513,9 +1502,11 @@ public:
     std::get<1>(*this).reduce_continuity(1, 0);
   }
   /// @}
+
+  IGANET_FUNCTIONSPACE_DEFAULT_OPS(NE2);
 };
 
-TUPLE_WRAPPER(NE2);
+IGANET_FUNCTIONSPACE_TUPLE_WRAPPER(NE2);
 
 /// @brief Nedelec like function space \f$
 /// S^{p+1,p+1,p+1}_{p,p-1,p-1} \otimes
@@ -1557,10 +1548,6 @@ public:
 
   /// @brief Constructor
   /// @{
-  NE3() = default;
-  NE3(NE3 &&) = default;
-  NE3(const NE3 &) = default;
-
   NE3(const std::array<int64_t, 3> &ncoeffs, enum init init = init::zeros,
       Options<typename Spline::value_type> options =
           iganet::Options<typename Spline::value_type>{})
@@ -1583,9 +1570,11 @@ public:
     std::get<2>(*this).reduce_continuity(1, 0).reduce_continuity(1, 1);
   }
   /// @}
+
+  IGANET_FUNCTIONSPACE_DEFAULT_OPS(NE3);
 };
 
-TUPLE_WRAPPER(NE3);
+IGANET_FUNCTIONSPACE_TUPLE_WRAPPER(NE3);
 
 /// @brief Nedelec like function space \f$
 /// S^{p+1,p+1,p+1,p+1}_{p,p-1,p-1,p-1} \otimes
@@ -1636,10 +1625,6 @@ public:
 
   /// @brief Constructor
   /// @{
-  NE4() = default;
-  NE4(NE4 &&) = default;
-  NE4(const NE4 &) = default;
-
   NE4(const std::array<int64_t, 4> &ncoeffs, enum init init = init::zeros,
       Options<typename Spline::value_type> options =
           iganet::Options<typename Spline::value_type>{})
@@ -1690,9 +1675,11 @@ public:
         .reduce_continuity(1, 2);
   }
   /// @}
+
+  IGANET_FUNCTIONSPACE_DEFAULT_OPS(NE4);
 };
 
-TUPLE_WRAPPER(NE4);
+IGANET_FUNCTIONSPACE_TUPLE_WRAPPER(NE4);
 
 /// @brief Raviart-Thomas like function space
 /// \f$ S^{p+1}_{p} \otimes S^{p}_{p-1} \f$
@@ -1714,10 +1701,6 @@ public:
 
   /// @brief Constructor
   /// @{
-  RT1() = default;
-  RT1(RT1 &&) = default;
-  RT1(const RT1 &) = default;
-
   RT1(const std::array<int64_t, 1> &ncoeffs, enum init init = init::zeros,
       Options<typename Spline::value_type> options =
           iganet::Options<typename Spline::value_type>{})
@@ -1729,9 +1712,11 @@ public:
           iganet::Options<typename Spline::value_type>{})
       : Base(kv, kv, init, options) {}
   /// @}
+
+  IGANET_FUNCTIONSPACE_DEFAULT_OPS(RT1);
 };
 
-TUPLE_WRAPPER(RT1);
+IGANET_FUNCTIONSPACE_TUPLE_WRAPPER(RT1);
 
 /// @brief Raviart-Thomas like function space \f$
 /// S^{p+1,p}_{p,p-1} \otimes
@@ -1761,10 +1746,6 @@ public:
 
   /// @brief Constructor
   /// @{
-  RT2() = default;
-  RT2(RT2 &&) = default;
-  RT2(const RT2 &) = default;
-
   RT2(const std::array<int64_t, 2> &ncoeffs, enum init init = init::zeros,
       Options<typename Spline::value_type> options =
           iganet::Options<typename Spline::value_type>{})
@@ -1777,9 +1758,11 @@ public:
           iganet::Options<typename Spline::value_type>{})
       : Base(kv, kv, kv, init, options) {}
   /// @}
+
+  IGANET_FUNCTIONSPACE_DEFAULT_OPS(RT2);
 };
 
-TUPLE_WRAPPER(RT2);
+IGANET_FUNCTIONSPACE_TUPLE_WRAPPER(RT2);
 
 /// @brief Raviart-Thomas like function space \f$
 /// S^{p+1,p,p}_{p,p-1,p-1} \otimes
@@ -1819,10 +1802,6 @@ public:
 
   /// @brief Constructor
   /// @{
-  RT3() = default;
-  RT3(RT3 &&) = default;
-  RT3(const RT3 &) = default;
-
   RT3(const std::array<int64_t, 3> &ncoeffs, enum init init = init::zeros,
       Options<typename Spline::value_type> options =
           iganet::Options<typename Spline::value_type>{})
@@ -1837,9 +1816,11 @@ public:
           iganet::Options<typename Spline::value_type>{})
       : Base(kv, kv, kv, kv, init, options) {}
   /// @}
+
+  IGANET_FUNCTIONSPACE_DEFAULT_OPS(RT3);
 };
 
-TUPLE_WRAPPER(RT3);
+IGANET_FUNCTIONSPACE_TUPLE_WRAPPER(RT3);
 
 /// @brief Raviart-Thomas like function space \f$
 /// S^{p+1,p,p,p}_{p,p-1,p-1,p-1} \otimes
@@ -1887,10 +1868,6 @@ public:
 
   /// @brief Constructor
   /// @{
-  RT4() = default;
-  RT4(RT4 &&) = default;
-  RT4(const RT4 &) = default;
-
   RT4(const std::array<int64_t, 4> &ncoeffs, enum init init = init::zeros,
       Options<typename Spline::value_type> options =
           iganet::Options<typename Spline::value_type>{})
@@ -1906,8 +1883,13 @@ public:
           iganet::Options<typename Spline::value_type>{})
       : Base(kv, kv, kv, kv, kv, init, options) {}
   /// @}
+
+  IGANET_FUNCTIONSPACE_DEFAULT_OPS(RT4);
 };
 
-TUPLE_WRAPPER(RT4);
+IGANET_FUNCTIONSPACE_TUPLE_WRAPPER(RT4);
+
+#undef IGANET_FUNCTIONSPACE_TUPLE_WRAPPER
+#undef IGANET_FUNCTIONSPACE_DEFAULT_OPS
 
 } // namespace iganet
