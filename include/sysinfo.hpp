@@ -601,7 +601,7 @@ std::string getCpuInfo() {
   return "Unknown-CPU";
 }
 
-  /// @brief Returns total system memory in bytes
+/// @brief Returns total system memory in bytes
 uint64_t getMemoryInBytes() {
 #if defined(_WIN32) || defined(_WIN64)
 
@@ -629,7 +629,7 @@ uint64_t getMemoryInBytes() {
 
   return 0;
 }
-  
+
 /// @brief Returns memory information
 std::string getMemoryInfo() {
   uint64_t memsize = getMemoryInBytes();
