@@ -112,7 +112,7 @@ public:
       : bdr_({boundary_spline_type(std::array<int64_t, 0>{}, init, options),
               boundary_spline_type(std::array<int64_t, 0>{}, init, options)}) {}
 
-  /// @brief Sets all coefficients of all spline objects from a
+  /// @brief Sets the coefficients of all spline objects from a
   /// single tensor that holds both boundary and inner coefficients
   ///
   /// @param[in] tensor Tensor from which to extract the coefficients
@@ -302,7 +302,7 @@ public:
                       {kv[0]}),
                   init, options)}) {}
 
-  /// @brief Sets all coefficients of all spline objects from a
+  /// @brief Sets the coefficients of all spline objects from a
   /// single tensor that holds both boundary and inner coefficients
   ///
   /// @param[in] tensor Tensor from which to extract the coefficients
@@ -546,7 +546,7 @@ public:
                       {kv[0], kv[1]}),
                   init, options)}) {}
 
-  /// @brief Sets all coefficients of all spline objects from a
+  /// @brief Sets the coefficients of all spline objects from a
   /// single tensor that holds both boundary and inner coefficients
   ///
   /// @param[in] tensor Tensor from which to extract the coefficients
@@ -846,7 +846,7 @@ public:
                       {kv[0], kv[1], kv[2]}),
                   init, options)}) {}
 
-  /// @brief Sets all coefficients of all spline objects from a
+  /// @brief Sets the coefficients of all spline objects from a
   /// single tensor that holds both boundary and inner coefficients
   ///
   /// @param[in] tensor Tensor from which to extract the coefficients
@@ -1003,6 +1003,9 @@ public:
   /// @brief Constructors from the base class
   using BoundaryCore::BoundaryCore;
 
+  /// @brief Returns a clone of the boundary object
+  BoundaryCommon clone() const { return BoundaryCommon(*this); }
+
 private:
   /// @brief Returns all coefficients of all spline objects as a
   /// single tensor
@@ -1044,7 +1047,7 @@ public:
   }
 
 private:
-  /// @brief Sets all coefficients of all spline objects from a
+  /// @brief Sets the coefficients of all spline objects from a
   /// single tensor
   ///
   /// @param[in] tensor Tensor from which to extract the coefficients
@@ -1067,7 +1070,7 @@ private:
   }
 
 public:
-  /// @brief Sets all coefficients of all spline objects from a
+  /// @brief Sets the coefficients of all spline objects from a
   /// single tensor
   ///
   /// @param[in] tensor Tensor from which to extract the coefficients
