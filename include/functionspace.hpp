@@ -55,7 +55,7 @@ enum class functionspace : short_t {
   FunctionSpace() = default;                                                   \
   FunctionSpace(FunctionSpace &&) = default;                                   \
   FunctionSpace(const FunctionSpace &) = default;                              \
-  FunctionSpace clone() { return FunctionSpace(*this); }
+  FunctionSpace clone() const { return FunctionSpace(*this); }
 
 namespace detail {
 
@@ -143,7 +143,15 @@ public:
                 Options<value_type> options = iganet::Options<value_type>{})
       : Base({ncoeffs, init, options}...),
         boundary_({ncoeffs, init, options}...) {
-    boundary_.from_full_tensor(Base::as_tensor());
+
+    auto from_full_tensor_ =
+        [this]<std::size_t... Is>(std::index_sequence<Is...>) {
+          (std::get<Is>(boundary_).from_full_tensor(
+               std::get<Is>(*this).as_tensor()),
+           ...);
+        };
+
+    from_full_tensor_(std::make_index_sequence<nspaces()>{});
   }
 
   FunctionSpace(const std::array<std::vector<typename Splines::value_type>,
@@ -151,18 +159,29 @@ public:
                 enum init init = init::zeros,
                 Options<value_type> options = iganet::Options<value_type>{})
       : Base({kv, init, options}...), boundary_({kv, init, options}...) {
-    boundary_.from_full_tensor(Base::as_tensor());
+
+    auto from_full_tensor_ =
+        [this]<std::size_t... Is>(std::index_sequence<Is...>) {
+          (std::get<Is>(boundary_).from_full_tensor(
+               std::get<Is>(*this).as_tensor()),
+           ...);
+        };
+
+    from_full_tensor_(std::make_index_sequence<nspaces()>{});
   }
   /// @}
 
-  /// @brief Returns a constant reference to the boundary spline object
-  inline const auto &boundary() const { return boundary_; }
-
-  /// @brief Returns a non-constant reference to the boundary spline object
-  inline auto &boundary() { return boundary_; }
-
   /// @brief Returns the number of spaces
   inline static constexpr short_t nspaces() { return sizeof...(Splines); }
+
+  /// @brief Returns constant reference to all spaces
+  inline constexpr Base &space() const { return *this; }
+
+  /// @brief Returns non-constant reference to the s-th space
+  template <short_t s> inline constexpr Base &space() {
+    static_assert(s < nspaces());
+    return std::get<s>(*this);
+  }
 
   /// @brief Returns constant reference to the s-th space
   template <short_t s> inline constexpr auto &space() const {
@@ -178,22 +197,6 @@ public:
 
   /// @brief Returns a clone of the function space
   inline FunctionSpace clone() const { return FunctionSpace(*this); }
-
-private:
-  /// @brief Returns the dimension of all bases
-  template <functionspace comp = functionspace::interior, size_t... Is>
-  int64_t dim_(std::index_sequence<Is...>) const {
-    if constexpr (comp == functionspace::interior)
-      return (std::get<Is>(*this).ncumcoeffs() + ...);
-    else if constexpr (comp == functionspace::boundary)
-      return (std::get<Is>(boundary_).ncumcoeffs() + ...);
-  }
-
-public:
-  /// @brief Returns the dimension of all bases
-  template <functionspace comp = functionspace::interior> int64_t dim() const {
-    return dim_<comp>(std::make_index_sequence<FunctionSpace::nspaces()>{});
-  }
 
 private:
   /// @brief Returns the coefficients of all spaces as a single tensor
@@ -234,9 +237,64 @@ private:
 
 public:
   /// @brief Sets the coefficients of all spaces from a single tensor
-  inline auto &from_tensor(const torch::Tensor &coeffs, bool boundary = true) {
+  inline auto &from_tensor(const torch::Tensor &coeffs) {
     return from_tensor_(std::make_index_sequence<FunctionSpace::nspaces()>{},
-                        coeffs, boundary);
+                        coeffs);
+  }
+
+private:
+  /// @brief Sets the coefficients of all spline objects from a
+  /// single tensor that holds both boundary and inner coefficients
+  template <size_t... Is>
+  inline auto &from_full_tensor_(std::index_sequence<Is...>,
+                                 const torch::Tensor &coeffs) {
+    throw std::runtime_error("from_tensor is not implemented yet");
+    return *this;
+  }
+
+public:
+  /// @brief Sets the coefficients of all spline objects from a
+  /// single tensor that holds both boundary and inner coefficients
+  inline auto &from_full_tensor(const torch::Tensor &coeffs,
+                                bool boundary = true) {
+    return from_full_tensor_(
+        std::make_index_sequence<FunctionSpace::nspaces()>{}, coeffs, boundary);
+  }
+
+  /// @brief Returns a constant reference to the boundary spline object
+  inline const auto &boundary() const { return boundary_; }
+
+  /// @brief Returns a non-constant reference to the boundary spline object
+  inline auto &boundary() { return boundary_; }
+
+  /// @brief Returns a constant reference to the s-th space's boundary spline
+  /// object
+  template <short_t s> inline const auto &boundary() const {
+    static_assert(s < nspaces());
+    return std::get<s>(boundary_);
+  }
+
+  /// @brief Returns a non-constant reference to the s-th space's boundary
+  /// spline object
+  template <short_t s> inline auto &boundary() {
+    static_assert(s < nspaces());
+    return std::get<s>(boundary_);
+  }
+
+private:
+  /// @brief Returns the dimension of all bases
+  template <functionspace comp = functionspace::interior, size_t... Is>
+  int64_t dim_(std::index_sequence<Is...>) const {
+    if constexpr (comp == functionspace::interior)
+      return (std::get<Is>(*this).ncumcoeffs() + ...);
+    else if constexpr (comp == functionspace::boundary)
+      return (std::get<Is>(boundary_).ncumcoeffs() + ...);
+  }
+
+public:
+  /// @brief Returns the dimension of all bases
+  template <functionspace comp = functionspace::interior> int64_t dim() const {
+    return dim_<comp>(std::make_index_sequence<FunctionSpace::nspaces()>{});
   }
 
 private:
@@ -609,8 +667,16 @@ public:
 
   /// @brief Returns a string representation of the function space object
   inline virtual void
-  pretty_print(std::ostream &os = std::cout) const noexcept override {
-    os << *this;
+  pretty_print(std::ostream &os = Log(log::info)) const noexcept override {
+
+    auto pretty_print_ = [this,
+                          &os]<std::size_t... Is>(std::index_sequence<Is...>) {
+      ((os << "\ninterior = ", std::get<Is>(*this).pretty_print(os),
+        os << "\nboundary = ", std::get<Is>(boundary_).pretty_print(os)),
+       ...);
+    };
+
+    pretty_print_(std::make_index_sequence<nspaces()>{});
   }
 
 #define GENERATE_EXPR_MACRO(r, data, name)                                     \
@@ -743,6 +809,14 @@ public:                                                                        \
 #undef GENERATE_IEXPR_MACRO
 };
 
+/// @brief Print (as string) a function space object
+template <typename... Splines>
+inline std::ostream &operator<<(std::ostream &os,
+                                const FunctionSpace<Splines...> &obj) {
+  obj.pretty_print(os);
+  return os;
+}
+
 /// @brief Function space
 ///
 /// @note This class is not meant for direct use in
@@ -786,35 +860,42 @@ public:
   FunctionSpace(const std::array<int64_t, Spline::parDim()> &ncoeffs,
                 enum init init = init::zeros,
                 Options<value_type> options = iganet::Options<value_type>{})
-      : Base(ncoeffs, init, options), boundary_(ncoeffs, init, options) {}
+      : Base(ncoeffs, init, options), boundary_(ncoeffs, init, options) {
+    boundary_.from_full_tensor(Base::as_tensor());
+  }
 
   FunctionSpace(
       std::array<std::vector<typename Spline::value_type>, Spline::parDim()> kv,
       enum init init = init::zeros,
       Options<value_type> options = iganet::Options<value_type>{})
-      : Base(kv, init, options), boundary_(kv, init, options) {}
+      : Base(kv, init, options), boundary_(kv, init, options) {
+    boundary_.from_full_tensor(Base::as_tensor());
+  }
   /// @}
 
   /// @brief Returns the number of spaces
   inline static constexpr short_t nspaces() { return 1; }
 
+  /// @brief Returns constant reference to the space
+  inline constexpr Base &space() const { return *this; }
+
+  /// @brief Returns non-constant reference to the space
+  inline constexpr Base &space() { return *this; }
+
   /// @brief Returns constant reference to the s-th space
-  template <short_t s> inline constexpr auto &space() const {
+  template <short_t s> inline constexpr Base &space() const {
     static_assert(s < nspaces());
     return *this;
   }
 
   /// @brief Returns non-constant reference to the s-th space
-  template <short_t s> inline constexpr auto &space() {
+  template <short_t s> inline constexpr Base &space() {
     static_assert(s < nspaces());
     return *this;
   }
 
   /// @brief Returns a clone of the function space
   inline FunctionSpace clone() const { return FunctionSpace(*this); }
-
-  /// @brief Returns the dimension
-  inline static constexpr short_t dim() { return 1; }
 
   /// @brief Returns the coefficients of all spaces as a single tensor
   inline torch::Tensor as_tensor() const { return Base::as_tensor(); }
@@ -824,9 +905,7 @@ public:
 
   /// @brief Sets the coefficients of all spaces from a single tensor
   inline auto &from_tensor(const torch::Tensor &coeffs) {
-    Base::from_tensor(
-        coeffs.index({torch::indexing::Slice(0, Base::as_tensor_size())}));
-
+    Base::from_tensor(coeffs);
     boundary_.from_full_tensor(coeffs);
 
     return *this;
@@ -837,6 +916,20 @@ public:
 
   /// @brief Returns a non-constant reference to the boundary spline object
   inline auto &boundary() { return boundary_; }
+
+  /// @brief Returns a constant reference to the s-th space's boundary spline
+  /// object
+  template <short_t s> inline const auto &boundary() const {
+    static_assert(s < nspaces());
+    return boundary_;
+  }
+
+  /// @brief Returns a non-constant reference to the s-th space's boundary
+  /// spline object
+  template <short_t s> inline auto &boundary() {
+    static_assert(s < nspaces());
+    return boundary_;
+  }
 
   /// @brief Returns the dimension of the basis
   template <functionspace comp = functionspace::interior> int64_t dim() const {
@@ -974,7 +1067,7 @@ public:
 
   /// @brief Returns a string representation of the function space object
   inline virtual void
-  pretty_print(std::ostream &os = std::cout) const noexcept override {
+  pretty_print(std::ostream &os = Log(log::info)) const noexcept override {
     os << Spline::name() << "(\ninterior = ";
     Base::pretty_print(os);
     os << "\nboundary = ";
@@ -1018,8 +1111,6 @@ public:
         Base::uniform_refine(Spline::degree(0) - 1 - c, 0);
     } else
       static_assert(sizeof...(Cs) == 0, "Dimensions mismatch");
-
-    Base::boundary_.from_full_tensor(Base::as_tensor());
   }
 
   S1(std::array<std::vector<typename Spline::value_type>, Spline::parDim()> kv,
@@ -1033,8 +1124,6 @@ public:
         Base::uniform_refine(Spline::degree(0) - 1 - c, 0);
     } else
       static_assert(sizeof...(Cs) == 0, "Dimensions mismatch");
-
-    Base::boundary_.from_full_tensor(Base::as_tensor());
   }
 
   IGANET_FUNCTIONSPACE_DEFAULT_OPS(S1);
@@ -1069,8 +1158,6 @@ public:
         Base::uniform_refine(Spline::degree(1) - 1 - c, 1);
     } else
       static_assert(sizeof...(Cs) == 0, "Dimensions mismatch");
-
-    Base::boundary_.from_full_tensor(Base::as_tensor());
   }
 
   S2(std::array<std::vector<typename Spline::value_type>, Spline::parDim()> kv,
@@ -1087,8 +1174,6 @@ public:
         Base::uniform_refine(Spline::degree(1) - 1 - c, 1);
     } else
       static_assert(sizeof...(Cs) == 0, "Dimensions mismatch");
-
-    Base::boundary_.from_full_tensor(Base::as_tensor());
   }
   /// @}
 
@@ -1126,8 +1211,6 @@ public:
         Base::uniform_refine(Spline::degree(2) - 1 - c, 2);
     } else
       static_assert(sizeof...(Cs) == 0, "Dimensions mismatch");
-
-    Base::boundary_.from_full_tensor(Base::as_tensor());
   }
 
   S3(std::array<std::vector<typename Spline::value_type>, Spline::parDim()> kv,
@@ -1147,8 +1230,6 @@ public:
         Base::uniform_refine(Spline::degree(2) - 1 - c, 2);
     } else
       static_assert(sizeof...(Cs) == 0, "Dimensions mismatch");
-
-    Base::boundary_.from_full_tensor(Base::as_tensor());
   }
   /// @}
 
@@ -1189,8 +1270,6 @@ public:
         Base::uniform_refine(Spline::degree(3) - 1 - c, 3);
     } else
       static_assert(sizeof...(Cs) == 0, "Dimensions mismatch");
-
-    Base::boundary_.from_full_tensor(Base::as_tensor());
   }
 
   S4(std::array<std::vector<typename Spline::value_type>, Spline::parDim()> kv,
@@ -1213,8 +1292,6 @@ public:
         std::get<3>(*this).uniform_refine(Spline::degree(3) - 1 - c, 3);
     } else
       static_assert(sizeof...(Cs) == 0, "Dimensions mismatch");
-
-    Base::boundary_.from_full_tensor(Base::as_tensor());
   }
   /// @}
 
