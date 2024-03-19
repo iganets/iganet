@@ -146,7 +146,7 @@ public:
 
   /// Returns a string representation of the BlockTensorCore object
   inline virtual void
-  pretty_print(std::ostream &os = std::cout) const noexcept = 0;
+  pretty_print(std::ostream &os = Log(log::info)) const noexcept = 0;
 };
 
 /// Prints (as string) a compile-time block tensor object
@@ -171,7 +171,7 @@ public:
 
   /// Returns a string representation of the BlockTensor object
   inline virtual void
-  pretty_print(std::ostream &os = std::cout) const noexcept override {
+  pretty_print(std::ostream &os = Log(log::info)) const noexcept override {
     os << Base::name() << "\n";
     for (std::size_t row = 0; row < Rows; ++row)
       os << "[" << row << "] = \n" << *Base::data_[row] << "\n";
@@ -784,7 +784,7 @@ public:
 
   /// Returns a string representation of the BSplineCommon object
   inline virtual void
-  pretty_print(std::ostream &os = std::cout) const noexcept override {
+  pretty_print(std::ostream &os = Log(log::info)) const noexcept override {
     os << Base::name() << "\n";
     for (std::size_t row = 0; row < Rows; ++row)
       for (std::size_t col = 0; col < Cols; ++col)
@@ -923,7 +923,7 @@ public:
 
   /// Returns a string representation of the BSplineCommon object
   inline virtual void
-  pretty_print(std::ostream &os = std::cout) const noexcept override {
+  pretty_print(std::ostream &os = Log(log::info)) const noexcept override {
     os << Base::name() << "\n";
     for (std::size_t slice = 0; slice < Slices; ++slice)
       for (std::size_t row = 0; row < Rows; ++row)

@@ -164,7 +164,7 @@ public:
 
   /// @brief Returns a string representation of the Boundary object
   inline virtual void
-  pretty_print(std::ostream &os = std::cout) const noexcept override {
+  pretty_print(std::ostream &os = Log(log::info)) const noexcept override {
     os << name() << "(\n"
        << "west = " << side<west>() << "\n"
        << "east = " << side<east>() << "\n)";
@@ -369,7 +369,7 @@ public:
 
   /// @brief Returns a string representation of the Boundary object
   inline virtual void
-  pretty_print(std::ostream &os = std::cout) const noexcept override {
+  pretty_print(std::ostream &os = Log(log::info)) const noexcept override {
     os << name() << "(\n"
        << "west = " << side<west>() << "\n"
        << "east = " << side<east>() << "\n"
@@ -632,7 +632,7 @@ public:
 
   /// @brief Returns a string representation of the Boundary object
   inline virtual void
-  pretty_print(std::ostream &os = std::cout) const noexcept override {
+  pretty_print(std::ostream &os = Log(log::info)) const noexcept override {
     os << name() << "(\n"
        << "west = " << side<west>() << "\n"
        << "east = " << side<east>() << "\n"
@@ -945,7 +945,7 @@ public:
 
   /// @brief Returns a string representation of the Boundary object
   inline virtual void
-  pretty_print(std::ostream &os = std::cout) const noexcept override {
+  pretty_print(std::ostream &os = Log(log::info)) const noexcept override {
     os << name() << "(\n"
        << "west = " << side<west>() << "\n"
        << "east = " << side<east>() << "\n"
@@ -1307,11 +1307,13 @@ public:
   /// @brief Returns the spline objects with uniformly refined
   /// knot and coefficient vectors
   inline auto &uniform_refine(int numRefine = 1, int dim = -1) {
-    if (dim == -1)
-      uniform_refine_(std::make_index_sequence<BoundaryCore::nsides()>{},
-                      numRefine, dim);
-    else if (dim == 0) {
+    if (dim == -1) {
+      if constexpr (BoundaryCore::spline_type::parDim() > 1)
+        uniform_refine_(std::make_index_sequence<BoundaryCore::nsides()>{},
+                        numRefine, dim);
+    } else if (dim == 0) {
       if constexpr (BoundaryCore::nsides() == 2) {
+        // We do not refine the boundary of a curve
       } else if constexpr (BoundaryCore::nsides() == 4) {
         std::get<side::south - 1>(BoundaryCore::bdr_)
             .uniform_refine(numRefine, 0);

@@ -7581,7 +7581,7 @@ public:
 
   /// @brief Returns a string representation of the BSplineCommon object
   inline virtual void
-  pretty_print(std::ostream &os = std::cout) const noexcept override {
+  pretty_print(std::ostream &os = Log(log::info)) const noexcept override {
     os << name() << "(\nparDim = " << BSplineCore::parDim_
        << ", geoDim = " << BSplineCore::geoDim_ << ", degrees = ";
 
