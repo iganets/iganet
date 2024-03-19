@@ -230,252 +230,325 @@ public:
     return result;
   }
 
+  /// @brief Returns the determinant of a square block tensor
+ ///
+ /// This function computes the determinant of a square block tensor
+
+  inline auto det() const {
+      if constexpr (Rows == 1 && Cols == 1) {
+          auto result = *Base::data_[0];
+          return result;
+      }
+      else if constexpr (Rows == 2 && Cols == 2) {
+          auto result = torch::mul(*Base::data_[0], *Base::data_[3]) -
+              torch::mul(*Base::data_[1], *Base::data_[2]);
+          return result;
+      }
+      else if constexpr (Rows == 3 && Cols == 3) {
+          auto result = torch::mul(*Base::data_[0],
+              torch::mul(*Base::data_[4], *Base::data_[8]) -
+              torch::mul(*Base::data_[5], *Base::data_[7])) -
+              torch::mul(*Base::data_[1],
+                  torch::mul(*Base::data_[3], *Base::data_[8]) -
+                  torch::mul(*Base::data_[5], *Base::data_[6])) +
+              torch::mul(*Base::data_[2],
+                  torch::mul(*Base::data_[3], *Base::data_[7]) -
+                  torch::mul(*Base::data_[4], *Base::data_[6]));
+          return result;
+      }
+      else if constexpr (Rows == 4 && Cols == 4) {
+          auto a11 = torch::mul(*Base::data_[5],
+              (torch::mul(*Base::data_[10], *Base::data_[15]) -
+                  torch::mul(*Base::data_[11], *Base::data_[14]))) -
+              torch::mul(*Base::data_[9],
+              (torch::mul(*Base::data_[6], *Base::data_[15]) -
+                  torch::mul(*Base::data_[7], *Base::data_[14]))) -
+              torch::mul(*Base::data_[13],
+              (torch::mul(*Base::data_[7], *Base::data_[10]) -
+                  torch::mul(*Base::data_[6], *Base::data_[11])));
+
+          auto a21 = torch::mul(*Base::data_[4],
+              (torch::mul(*Base::data_[11], *Base::data_[14]) -
+                  torch::mul(*Base::data_[10], *Base::data_[15]))) -
+              torch::mul(*Base::data_[8],
+              (torch::mul(*Base::data_[7], *Base::data_[14]) -
+                  torch::mul(*Base::data_[6], *Base::data_[15]))) -
+              torch::mul(*Base::data_[12],
+              (torch::mul(*Base::data_[6], *Base::data_[11]) -
+                  torch::mul(*Base::data_[7], *Base::data_[10])));
+
+          auto a31 = torch::mul(*Base::data_[4],
+              (torch::mul(*Base::data_[9], *Base::data_[15]) -
+                  torch::mul(*Base::data_[11], *Base::data_[13]))) -
+              torch::mul(*Base::data_[8],
+              (torch::mul(*Base::data_[5], *Base::data_[15]) -
+                  torch::mul(*Base::data_[7], *Base::data_[13]))) -
+              torch::mul(*Base::data_[12],
+              (torch::mul(*Base::data_[7], *Base::data_[9]) -
+                  torch::mul(*Base::data_[5], *Base::data_[11])));
+
+          auto a41 = torch::mul(*Base::data_[4],
+              (torch::mul(*Base::data_[10], *Base::data_[13]) -
+                  torch::mul(*Base::data_[9], *Base::data_[14]))) -
+              torch::mul(*Base::data_[8],
+              (torch::mul(*Base::data_[6], *Base::data_[13]) -
+                  torch::mul(*Base::data_[5], *Base::data_[14]))) -
+              torch::mul(*Base::data_[12],
+              (torch::mul(*Base::data_[5], *Base::data_[10]) -
+                  torch::mul(*Base::data_[6], *Base::data_[9])));
+
+          auto result =
+              torch::mul(*Base::data_[0], a11) + torch::mul(*Base::data_[1], a21) +
+              torch::mul(*Base::data_[2], a31) + torch::mul(*Base::data_[3], a41);
+
+          return result;
+      }
+      else {
+          throw std::runtime_error("Unsupported block tensor dimension");
+          return *this;
+      }
+
+
+  }
+
+
   /// @brief Returns the inverse of the block tensor
   ///
   /// This function computes the inverse of the block tensor.
   inline auto inv() const {
-    if constexpr (Rows == 1 && Cols == 1) {
-      BlockTensor<T, Rows, Cols> result;
-      result[0] = std::make_shared<T>(torch::reciprocal(*Base::data_[0]));
-      return result;
-    } else if constexpr (Rows == 2 && Cols == 2) {
-      auto det = torch::mul(*Base::data_[0], *Base::data_[3]) -
-                 torch::mul(*Base::data_[1], *Base::data_[2]);
 
-      BlockTensor<T, Rows, Cols> result;
-      result[0] = std::make_shared<T>(torch::div(*Base::data_[3], det));
-      result[1] = std::make_shared<T>(torch::div(*Base::data_[2], -det));
-      result[2] = std::make_shared<T>(torch::div(*Base::data_[1], -det));
-      result[3] = std::make_shared<T>(torch::div(*Base::data_[0], det));
-      return result;
-    } else if constexpr (Rows == 3 && Cols == 3) {
-      auto det = torch::mul(*Base::data_[0],
-                            torch::mul(*Base::data_[4], *Base::data_[8]) -
-                                torch::mul(*Base::data_[5], *Base::data_[7])) -
-                 torch::mul(*Base::data_[1],
-                            torch::mul(*Base::data_[3], *Base::data_[8]) -
-                                torch::mul(*Base::data_[5], *Base::data_[6])) +
-                 torch::mul(*Base::data_[2],
-                            torch::mul(*Base::data_[3], *Base::data_[7]) -
-                                torch::mul(*Base::data_[4], *Base::data_[6]));
+      auto det_ = this->det();
 
-      auto a11 = torch::mul(*Base::data_[4], *Base::data_[8]) -
-                 torch::mul(*Base::data_[5], *Base::data_[7]);
-      auto a12 = torch::mul(*Base::data_[2], *Base::data_[7]) -
-                 torch::mul(*Base::data_[1], *Base::data_[8]);
-      auto a13 = torch::mul(*Base::data_[1], *Base::data_[5]) -
-                 torch::mul(*Base::data_[2], *Base::data_[4]);
-      auto a21 = torch::mul(*Base::data_[5], *Base::data_[6]) -
-                 torch::mul(*Base::data_[3], *Base::data_[8]);
-      auto a22 = torch::mul(*Base::data_[0], *Base::data_[8]) -
-                 torch::mul(*Base::data_[2], *Base::data_[6]);
-      auto a23 = torch::mul(*Base::data_[2], *Base::data_[3]) -
-                 torch::mul(*Base::data_[0], *Base::data_[5]);
-      auto a31 = torch::mul(*Base::data_[3], *Base::data_[7]) -
-                 torch::mul(*Base::data_[4], *Base::data_[6]);
-      auto a32 = torch::mul(*Base::data_[1], *Base::data_[6]) -
-                 torch::mul(*Base::data_[0], *Base::data_[7]);
-      auto a33 = torch::mul(*Base::data_[0], *Base::data_[4]) -
-                 torch::mul(*Base::data_[1], *Base::data_[3]);
+      if constexpr (Rows == 1 && Cols == 1) {
+          BlockTensor<T, Rows, Cols> result;
+          result[0] = std::make_shared<T>(torch::reciprocal(*Base::data_[0]));
+          return result;
+      }
+      else if constexpr (Rows == 2 && Cols == 2) {
 
-      BlockTensor<T, Rows, Cols> result;
-      result[0] = std::make_shared<T>(torch::div(a11, det));
-      result[1] = std::make_shared<T>(torch::div(a12, det));
-      result[2] = std::make_shared<T>(torch::div(a13, det));
-      result[3] = std::make_shared<T>(torch::div(a21, det));
-      result[4] = std::make_shared<T>(torch::div(a22, det));
-      result[5] = std::make_shared<T>(torch::div(a23, det));
-      result[6] = std::make_shared<T>(torch::div(a31, det));
-      result[7] = std::make_shared<T>(torch::div(a32, det));
-      result[8] = std::make_shared<T>(torch::div(a33, det));
-      return result;
-    } else if constexpr (Rows == 4 && Cols == 4) {
-      auto a11 = torch::mul(*Base::data_[5],
-                            (torch::mul(*Base::data_[10], *Base::data_[15]) -
-                             torch::mul(*Base::data_[11], *Base::data_[14]))) -
-                 torch::mul(*Base::data_[9],
-                            (torch::mul(*Base::data_[6], *Base::data_[15]) -
-                             torch::mul(*Base::data_[7], *Base::data_[14]))) -
-                 torch::mul(*Base::data_[13],
-                            (torch::mul(*Base::data_[7], *Base::data_[10]) -
-                             torch::mul(*Base::data_[6], *Base::data_[11])));
+          BlockTensor<T, Rows, Cols> result;
+          result[0] = std::make_shared<T>(torch::div(*Base::data_[3], det_));
+          result[1] = std::make_shared<T>(torch::div(*Base::data_[2], -det_));
+          result[2] = std::make_shared<T>(torch::div(*Base::data_[1], -det_));
+          result[3] = std::make_shared<T>(torch::div(*Base::data_[0], det_));
+          return result;
+      }
+      else if constexpr (Rows == 3 && Cols == 3) {
 
-      auto a12 = torch::mul(*Base::data_[1],
-                            (torch::mul(*Base::data_[11], *Base::data_[14]) -
-                             torch::mul(*Base::data_[10], *Base::data_[15]))) -
-                 torch::mul(*Base::data_[9],
-                            (torch::mul(*Base::data_[3], *Base::data_[14]) -
-                             torch::mul(*Base::data_[2], *Base::data_[15]))) -
-                 torch::mul(*Base::data_[13],
-                            (torch::mul(*Base::data_[2], *Base::data_[11]) -
-                             torch::mul(*Base::data_[3], *Base::data_[10])));
+          auto a11 = torch::mul(*Base::data_[4], *Base::data_[8]) -
+              torch::mul(*Base::data_[5], *Base::data_[7]);
+          auto a12 = torch::mul(*Base::data_[2], *Base::data_[7]) -
+              torch::mul(*Base::data_[1], *Base::data_[8]);
+          auto a13 = torch::mul(*Base::data_[1], *Base::data_[5]) -
+              torch::mul(*Base::data_[2], *Base::data_[4]);
+          auto a21 = torch::mul(*Base::data_[5], *Base::data_[6]) -
+              torch::mul(*Base::data_[3], *Base::data_[8]);
+          auto a22 = torch::mul(*Base::data_[0], *Base::data_[8]) -
+              torch::mul(*Base::data_[2], *Base::data_[6]);
+          auto a23 = torch::mul(*Base::data_[2], *Base::data_[3]) -
+              torch::mul(*Base::data_[0], *Base::data_[5]);
+          auto a31 = torch::mul(*Base::data_[3], *Base::data_[7]) -
+              torch::mul(*Base::data_[4], *Base::data_[6]);
+          auto a32 = torch::mul(*Base::data_[1], *Base::data_[6]) -
+              torch::mul(*Base::data_[0], *Base::data_[7]);
+          auto a33 = torch::mul(*Base::data_[0], *Base::data_[4]) -
+              torch::mul(*Base::data_[1], *Base::data_[3]);
 
-      auto a13 = torch::mul(*Base::data_[1],
-                            (torch::mul(*Base::data_[6], *Base::data_[15]) -
-                             torch::mul(*Base::data_[7], *Base::data_[14]))) -
-                 torch::mul(*Base::data_[5],
-                            (torch::mul(*Base::data_[2], *Base::data_[15]) -
-                             torch::mul(*Base::data_[3], *Base::data_[14]))) -
-                 torch::mul(*Base::data_[13],
-                            (torch::mul(*Base::data_[3], *Base::data_[6]) -
-                             torch::mul(*Base::data_[2], *Base::data_[7])));
+          BlockTensor<T, Rows, Cols> result;
+          result[0] = std::make_shared<T>(torch::div(a11, det_));
+          result[1] = std::make_shared<T>(torch::div(a12, det_));
+          result[2] = std::make_shared<T>(torch::div(a13, det_));
+          result[3] = std::make_shared<T>(torch::div(a21, det_));
+          result[4] = std::make_shared<T>(torch::div(a22, det_));
+          result[5] = std::make_shared<T>(torch::div(a23, det_));
+          result[6] = std::make_shared<T>(torch::div(a31, det_));
+          result[7] = std::make_shared<T>(torch::div(a32, det_));
+          result[8] = std::make_shared<T>(torch::div(a33, det_));
+          return result;
+      }
+      else if constexpr (Rows == 4 && Cols == 4) {
+          auto a11 = torch::mul(*Base::data_[5],
+              (torch::mul(*Base::data_[10], *Base::data_[15]) -
+                  torch::mul(*Base::data_[11], *Base::data_[14]))) -
+              torch::mul(*Base::data_[9],
+              (torch::mul(*Base::data_[6], *Base::data_[15]) -
+                  torch::mul(*Base::data_[7], *Base::data_[14]))) -
+              torch::mul(*Base::data_[13],
+              (torch::mul(*Base::data_[7], *Base::data_[10]) -
+                  torch::mul(*Base::data_[6], *Base::data_[11])));
 
-      auto a14 = torch::mul(*Base::data_[1],
-                            (torch::mul(*Base::data_[7], *Base::data_[10]) -
-                             torch::mul(*Base::data_[6], *Base::data_[11]))) -
-                 torch::mul(*Base::data_[5],
-                            (torch::mul(*Base::data_[3], *Base::data_[10]) -
-                             torch::mul(*Base::data_[2], *Base::data_[11]))) -
-                 torch::mul(*Base::data_[9],
-                            (torch::mul(*Base::data_[2], *Base::data_[7]) -
-                             torch::mul(*Base::data_[3], *Base::data_[6])));
+          auto a12 = torch::mul(*Base::data_[1],
+              (torch::mul(*Base::data_[11], *Base::data_[14]) -
+                  torch::mul(*Base::data_[10], *Base::data_[15]))) -
+              torch::mul(*Base::data_[9],
+              (torch::mul(*Base::data_[3], *Base::data_[14]) -
+                  torch::mul(*Base::data_[2], *Base::data_[15]))) -
+              torch::mul(*Base::data_[13],
+              (torch::mul(*Base::data_[2], *Base::data_[11]) -
+                  torch::mul(*Base::data_[3], *Base::data_[10])));
 
-      auto a21 = torch::mul(*Base::data_[4],
-                            (torch::mul(*Base::data_[11], *Base::data_[14]) -
-                             torch::mul(*Base::data_[10], *Base::data_[15]))) -
-                 torch::mul(*Base::data_[8],
-                            (torch::mul(*Base::data_[7], *Base::data_[14]) -
-                             torch::mul(*Base::data_[6], *Base::data_[15]))) -
-                 torch::mul(*Base::data_[12],
-                            (torch::mul(*Base::data_[6], *Base::data_[11]) -
-                             torch::mul(*Base::data_[7], *Base::data_[10])));
+          auto a13 = torch::mul(*Base::data_[1],
+              (torch::mul(*Base::data_[6], *Base::data_[15]) -
+                  torch::mul(*Base::data_[7], *Base::data_[14]))) -
+              torch::mul(*Base::data_[5],
+              (torch::mul(*Base::data_[2], *Base::data_[15]) -
+                  torch::mul(*Base::data_[3], *Base::data_[14]))) -
+              torch::mul(*Base::data_[13],
+              (torch::mul(*Base::data_[3], *Base::data_[6]) -
+                  torch::mul(*Base::data_[2], *Base::data_[7])));
 
-      auto a22 = torch::mul(*Base::data_[0],
-                            (torch::mul(*Base::data_[10], *Base::data_[15]) -
-                             torch::mul(*Base::data_[11], *Base::data_[14]))) -
-                 torch::mul(*Base::data_[8],
-                            (torch::mul(*Base::data_[2], *Base::data_[15]) -
-                             torch::mul(*Base::data_[3], *Base::data_[14]))) -
-                 torch::mul(*Base::data_[12],
-                            (torch::mul(*Base::data_[3], *Base::data_[10]) -
-                             torch::mul(*Base::data_[2], *Base::data_[11])));
+          auto a14 = torch::mul(*Base::data_[1],
+              (torch::mul(*Base::data_[7], *Base::data_[10]) -
+                  torch::mul(*Base::data_[6], *Base::data_[11]))) -
+              torch::mul(*Base::data_[5],
+              (torch::mul(*Base::data_[3], *Base::data_[10]) -
+                  torch::mul(*Base::data_[2], *Base::data_[11]))) -
+              torch::mul(*Base::data_[9],
+              (torch::mul(*Base::data_[2], *Base::data_[7]) -
+                  torch::mul(*Base::data_[3], *Base::data_[6])));
 
-      auto a23 = torch::mul(*Base::data_[0],
-                            (torch::mul(*Base::data_[7], *Base::data_[14]) -
-                             torch::mul(*Base::data_[6], *Base::data_[15]))) -
-                 torch::mul(*Base::data_[4],
-                            (torch::mul(*Base::data_[3], *Base::data_[14]) -
-                             torch::mul(*Base::data_[2], *Base::data_[15]))) -
-                 torch::mul(*Base::data_[12],
-                            (torch::mul(*Base::data_[2], *Base::data_[7]) -
-                             torch::mul(*Base::data_[3], *Base::data_[6])));
+          auto a21 = torch::mul(*Base::data_[4],
+              (torch::mul(*Base::data_[11], *Base::data_[14]) -
+                  torch::mul(*Base::data_[10], *Base::data_[15]))) -
+              torch::mul(*Base::data_[8],
+              (torch::mul(*Base::data_[7], *Base::data_[14]) -
+                  torch::mul(*Base::data_[6], *Base::data_[15]))) -
+              torch::mul(*Base::data_[12],
+              (torch::mul(*Base::data_[6], *Base::data_[11]) -
+                  torch::mul(*Base::data_[7], *Base::data_[10])));
 
-      auto a24 = torch::mul(*Base::data_[0],
-                            (torch::mul(*Base::data_[6], *Base::data_[11]) -
-                             torch::mul(*Base::data_[7], *Base::data_[10]))) -
-                 torch::mul(*Base::data_[4],
-                            (torch::mul(*Base::data_[2], *Base::data_[11]) -
-                             torch::mul(*Base::data_[3], *Base::data_[10]))) -
-                 torch::mul(*Base::data_[8],
-                            (torch::mul(*Base::data_[3], *Base::data_[6]) -
-                             torch::mul(*Base::data_[2], *Base::data_[7])));
+          auto a22 = torch::mul(*Base::data_[0],
+              (torch::mul(*Base::data_[10], *Base::data_[15]) -
+                  torch::mul(*Base::data_[11], *Base::data_[14]))) -
+              torch::mul(*Base::data_[8],
+              (torch::mul(*Base::data_[2], *Base::data_[15]) -
+                  torch::mul(*Base::data_[3], *Base::data_[14]))) -
+              torch::mul(*Base::data_[12],
+              (torch::mul(*Base::data_[3], *Base::data_[10]) -
+                  torch::mul(*Base::data_[2], *Base::data_[11])));
 
-      auto a31 = torch::mul(*Base::data_[4],
-                            (torch::mul(*Base::data_[9], *Base::data_[15]) -
-                             torch::mul(*Base::data_[11], *Base::data_[13]))) -
-                 torch::mul(*Base::data_[8],
-                            (torch::mul(*Base::data_[5], *Base::data_[15]) -
-                             torch::mul(*Base::data_[7], *Base::data_[13]))) -
-                 torch::mul(*Base::data_[12],
-                            (torch::mul(*Base::data_[7], *Base::data_[9]) -
-                             torch::mul(*Base::data_[5], *Base::data_[11])));
+          auto a23 = torch::mul(*Base::data_[0],
+              (torch::mul(*Base::data_[7], *Base::data_[14]) -
+                  torch::mul(*Base::data_[6], *Base::data_[15]))) -
+              torch::mul(*Base::data_[4],
+              (torch::mul(*Base::data_[3], *Base::data_[14]) -
+                  torch::mul(*Base::data_[2], *Base::data_[15]))) -
+              torch::mul(*Base::data_[12],
+              (torch::mul(*Base::data_[2], *Base::data_[7]) -
+                  torch::mul(*Base::data_[3], *Base::data_[6])));
 
-      auto a32 = torch::mul(*Base::data_[0],
-                            (torch::mul(*Base::data_[11], *Base::data_[13]) -
-                             torch::mul(*Base::data_[9], *Base::data_[15]))) -
-                 torch::mul(*Base::data_[8],
-                            (torch::mul(*Base::data_[3], *Base::data_[13]) -
-                             torch::mul(*Base::data_[1], *Base::data_[15]))) -
-                 torch::mul(*Base::data_[12],
-                            (torch::mul(*Base::data_[1], *Base::data_[11]) -
-                             torch::mul(*Base::data_[3], *Base::data_[9])));
+          auto a24 = torch::mul(*Base::data_[0],
+              (torch::mul(*Base::data_[6], *Base::data_[11]) -
+                  torch::mul(*Base::data_[7], *Base::data_[10]))) -
+              torch::mul(*Base::data_[4],
+              (torch::mul(*Base::data_[2], *Base::data_[11]) -
+                  torch::mul(*Base::data_[3], *Base::data_[10]))) -
+              torch::mul(*Base::data_[8],
+              (torch::mul(*Base::data_[3], *Base::data_[6]) -
+                  torch::mul(*Base::data_[2], *Base::data_[7])));
 
-      auto a33 = torch::mul(*Base::data_[0],
-                            (torch::mul(*Base::data_[5], *Base::data_[15]) -
-                             torch::mul(*Base::data_[7], *Base::data_[13]))) -
-                 torch::mul(*Base::data_[4],
-                            (torch::mul(*Base::data_[1], *Base::data_[15]) -
-                             torch::mul(*Base::data_[3], *Base::data_[13]))) -
-                 torch::mul(*Base::data_[12],
-                            (torch::mul(*Base::data_[3], *Base::data_[5]) -
-                             torch::mul(*Base::data_[1], *Base::data_[7])));
+          auto a31 = torch::mul(*Base::data_[4],
+              (torch::mul(*Base::data_[9], *Base::data_[15]) -
+                  torch::mul(*Base::data_[11], *Base::data_[13]))) -
+              torch::mul(*Base::data_[8],
+              (torch::mul(*Base::data_[5], *Base::data_[15]) -
+                  torch::mul(*Base::data_[7], *Base::data_[13]))) -
+              torch::mul(*Base::data_[12],
+              (torch::mul(*Base::data_[7], *Base::data_[9]) -
+                  torch::mul(*Base::data_[5], *Base::data_[11])));
 
-      auto a34 = torch::mul(*Base::data_[0],
-                            (torch::mul(*Base::data_[7], *Base::data_[9]) -
-                             torch::mul(*Base::data_[5], *Base::data_[11]))) -
-                 torch::mul(*Base::data_[4],
-                            (torch::mul(*Base::data_[3], *Base::data_[9]) -
-                             torch::mul(*Base::data_[1], *Base::data_[11]))) -
-                 torch::mul(*Base::data_[8],
-                            (torch::mul(*Base::data_[1], *Base::data_[7]) -
-                             torch::mul(*Base::data_[3], *Base::data_[5])));
+          auto a32 = torch::mul(*Base::data_[0],
+              (torch::mul(*Base::data_[11], *Base::data_[13]) -
+                  torch::mul(*Base::data_[9], *Base::data_[15]))) -
+              torch::mul(*Base::data_[8],
+              (torch::mul(*Base::data_[3], *Base::data_[13]) -
+                  torch::mul(*Base::data_[1], *Base::data_[15]))) -
+              torch::mul(*Base::data_[12],
+              (torch::mul(*Base::data_[1], *Base::data_[11]) -
+                  torch::mul(*Base::data_[3], *Base::data_[9])));
 
-      auto a41 = torch::mul(*Base::data_[4],
-                            (torch::mul(*Base::data_[10], *Base::data_[13]) -
-                             torch::mul(*Base::data_[9], *Base::data_[14]))) -
-                 torch::mul(*Base::data_[8],
-                            (torch::mul(*Base::data_[6], *Base::data_[13]) -
-                             torch::mul(*Base::data_[5], *Base::data_[14]))) -
-                 torch::mul(*Base::data_[12],
-                            (torch::mul(*Base::data_[5], *Base::data_[10]) -
-                             torch::mul(*Base::data_[6], *Base::data_[9])));
+          auto a33 = torch::mul(*Base::data_[0],
+              (torch::mul(*Base::data_[5], *Base::data_[15]) -
+                  torch::mul(*Base::data_[7], *Base::data_[13]))) -
+              torch::mul(*Base::data_[4],
+              (torch::mul(*Base::data_[1], *Base::data_[15]) -
+                  torch::mul(*Base::data_[3], *Base::data_[13]))) -
+              torch::mul(*Base::data_[12],
+              (torch::mul(*Base::data_[3], *Base::data_[5]) -
+                  torch::mul(*Base::data_[1], *Base::data_[7])));
 
-      auto a42 = torch::mul(*Base::data_[0],
-                            (torch::mul(*Base::data_[9], *Base::data_[14]) -
-                             torch::mul(*Base::data_[10], *Base::data_[13]))) -
-                 torch::mul(*Base::data_[8],
-                            (torch::mul(*Base::data_[1], *Base::data_[14]) -
-                             torch::mul(*Base::data_[2], *Base::data_[13]))) -
-                 torch::mul(*Base::data_[12],
-                            (torch::mul(*Base::data_[2], *Base::data_[9]) -
-                             torch::mul(*Base::data_[1], *Base::data_[10])));
+          auto a34 = torch::mul(*Base::data_[0],
+              (torch::mul(*Base::data_[7], *Base::data_[9]) -
+                  torch::mul(*Base::data_[5], *Base::data_[11]))) -
+              torch::mul(*Base::data_[4],
+              (torch::mul(*Base::data_[3], *Base::data_[9]) -
+                  torch::mul(*Base::data_[1], *Base::data_[11]))) -
+              torch::mul(*Base::data_[8],
+              (torch::mul(*Base::data_[1], *Base::data_[7]) -
+                  torch::mul(*Base::data_[3], *Base::data_[5])));
 
-      auto a43 = torch::mul(*Base::data_[0],
-                            (torch::mul(*Base::data_[6], *Base::data_[13]) -
-                             torch::mul(*Base::data_[5], *Base::data_[14]))) -
-                 torch::mul(*Base::data_[4],
-                            (torch::mul(*Base::data_[2], *Base::data_[13]) -
-                             torch::mul(*Base::data_[1], *Base::data_[14]))) -
-                 torch::mul(*Base::data_[12],
-                            (torch::mul(*Base::data_[1], *Base::data_[6]) -
-                             torch::mul(*Base::data_[2], *Base::data_[5])));
+          auto a41 = torch::mul(*Base::data_[4],
+              (torch::mul(*Base::data_[10], *Base::data_[13]) -
+                  torch::mul(*Base::data_[9], *Base::data_[14]))) -
+              torch::mul(*Base::data_[8],
+              (torch::mul(*Base::data_[6], *Base::data_[13]) -
+                  torch::mul(*Base::data_[5], *Base::data_[14]))) -
+              torch::mul(*Base::data_[12],
+              (torch::mul(*Base::data_[5], *Base::data_[10]) -
+                  torch::mul(*Base::data_[6], *Base::data_[9])));
 
-      auto a44 = torch::mul(*Base::data_[0],
-                            (torch::mul(*Base::data_[5], *Base::data_[10]) -
-                             torch::mul(*Base::data_[6], *Base::data_[9]))) -
-                 torch::mul(*Base::data_[4],
-                            (torch::mul(*Base::data_[1], *Base::data_[10]) -
-                             torch::mul(*Base::data_[2], *Base::data_[9]))) -
-                 torch::mul(*Base::data_[8],
-                            (torch::mul(*Base::data_[2], *Base::data_[5]) -
-                             torch::mul(*Base::data_[1], *Base::data_[6])));
+          auto a42 = torch::mul(*Base::data_[0],
+              (torch::mul(*Base::data_[9], *Base::data_[14]) -
+                  torch::mul(*Base::data_[10], *Base::data_[13]))) -
+              torch::mul(*Base::data_[8],
+              (torch::mul(*Base::data_[1], *Base::data_[14]) -
+                  torch::mul(*Base::data_[2], *Base::data_[13]))) -
+              torch::mul(*Base::data_[12],
+              (torch::mul(*Base::data_[2], *Base::data_[9]) -
+                  torch::mul(*Base::data_[1], *Base::data_[10])));
 
-      auto det =
-          torch::mul(*Base::data_[0], a11) + torch::mul(*Base::data_[1], a21) +
-          torch::mul(*Base::data_[2], a31) + torch::mul(*Base::data_[3], a41);
+          auto a43 = torch::mul(*Base::data_[0],
+              (torch::mul(*Base::data_[6], *Base::data_[13]) -
+                  torch::mul(*Base::data_[5], *Base::data_[14]))) -
+              torch::mul(*Base::data_[4],
+              (torch::mul(*Base::data_[2], *Base::data_[13]) -
+                  torch::mul(*Base::data_[1], *Base::data_[14]))) -
+              torch::mul(*Base::data_[12],
+              (torch::mul(*Base::data_[1], *Base::data_[6]) -
+                  torch::mul(*Base::data_[2], *Base::data_[5])));
 
-      BlockTensor<T, Rows, Cols> result;
-      result[0] = std::make_shared<T>(torch::div(a11, det));
-      result[1] = std::make_shared<T>(torch::div(a12, det));
-      result[2] = std::make_shared<T>(torch::div(a13, det));
-      result[3] = std::make_shared<T>(torch::div(a14, det));
-      result[4] = std::make_shared<T>(torch::div(a21, det));
-      result[5] = std::make_shared<T>(torch::div(a22, det));
-      result[6] = std::make_shared<T>(torch::div(a23, det));
-      result[7] = std::make_shared<T>(torch::div(a24, det));
-      result[8] = std::make_shared<T>(torch::div(a31, det));
-      result[9] = std::make_shared<T>(torch::div(a32, det));
-      result[10] = std::make_shared<T>(torch::div(a33, det));
-      result[11] = std::make_shared<T>(torch::div(a34, det));
-      result[12] = std::make_shared<T>(torch::div(a41, det));
-      result[13] = std::make_shared<T>(torch::div(a42, det));
-      result[14] = std::make_shared<T>(torch::div(a43, det));
-      result[15] = std::make_shared<T>(torch::div(a44, det));
-      return result;
-    } else {
-      throw std::runtime_error("Unsupported block tensor dimension");
-      return *this;
-    }
+          auto a44 = torch::mul(*Base::data_[0],
+              (torch::mul(*Base::data_[5], *Base::data_[10]) -
+                  torch::mul(*Base::data_[6], *Base::data_[9]))) -
+              torch::mul(*Base::data_[4],
+              (torch::mul(*Base::data_[1], *Base::data_[10]) -
+                  torch::mul(*Base::data_[2], *Base::data_[9]))) -
+              torch::mul(*Base::data_[8],
+              (torch::mul(*Base::data_[2], *Base::data_[5]) -
+                  torch::mul(*Base::data_[1], *Base::data_[6])));
+          BlockTensor<T, Rows, Cols> result;
+          result[0] = std::make_shared<T>(torch::div(a11, det_));
+          result[1] = std::make_shared<T>(torch::div(a12, det_));
+          result[2] = std::make_shared<T>(torch::div(a13, det_));
+          result[3] = std::make_shared<T>(torch::div(a14, det_));
+          result[4] = std::make_shared<T>(torch::div(a21, det_));
+          result[5] = std::make_shared<T>(torch::div(a22, det_));
+          result[6] = std::make_shared<T>(torch::div(a23, det_));
+          result[7] = std::make_shared<T>(torch::div(a24, det_));
+          result[8] = std::make_shared<T>(torch::div(a31, det_));
+          result[9] = std::make_shared<T>(torch::div(a32, det_));
+          result[10] = std::make_shared<T>(torch::div(a33, det_));
+          result[11] = std::make_shared<T>(torch::div(a34, det_));
+          result[12] = std::make_shared<T>(torch::div(a41, det_));
+          result[13] = std::make_shared<T>(torch::div(a42, det_));
+          result[14] = std::make_shared<T>(torch::div(a43, det_));
+          result[15] = std::make_shared<T>(torch::div(a44, det_));
+          return result;
+      }
+      else {
+          throw std::runtime_error("Unsupported block tensor dimension");
+          return *this;
+      }
   }
 
   /// @brief Returns the (generalized) inverse of the block tensor
@@ -486,11 +559,11 @@ public:
   /// that the matrix is invertible. For rectangular matrices it
   /// computes the generalized inverse i.e. \f$(A^T A)^{-1} A^T\f$.
   inline auto ginv() const {
-    if constexpr (Rows == Cols)
-      return this->inv();
-    else
-      // Compute the generalized inverse, i.e. (A^T A)^{-1} A^T
-      return (this->tr() * (*this)).inv() * this->tr();
+      if constexpr (Rows == Cols)
+          return this->inv();
+      else
+          // Compute the generalized inverse, i.e. (A^T A)^{-1} A^T
+          return (this->tr() * (*this)).inv() * this->tr();
   }
 
   /// @brief Returns the transpose of the inverse of the block
@@ -499,248 +572,241 @@ public:
   /// This function computes the transpose of the (generalized)
   /// inverse of the block tensor.
   inline auto invtr() const {
-    if constexpr (Rows == 1 && Cols == 1) {
-      BlockTensor<T, Cols, Rows> result;
-      result[0] = std::make_shared<T>(torch::reciprocal(*Base::data_[0]));
-      return result;
-    } else if constexpr (Rows == 2 && Cols == 2) {
-      auto det = torch::mul(*Base::data_[0], *Base::data_[3]) -
-                 torch::mul(*Base::data_[1], *Base::data_[2]);
 
-      BlockTensor<T, Cols, Rows> result;
-      result[0] = std::make_shared<T>(torch::div(*Base::data_[3], det));
-      result[1] = std::make_shared<T>(torch::div(*Base::data_[1], -det));
-      result[2] = std::make_shared<T>(torch::div(*Base::data_[2], -det));
-      result[3] = std::make_shared<T>(torch::div(*Base::data_[0], det));
-      return result;
-    } else if constexpr (Rows == 3 && Cols == 3) {
-      auto det = torch::mul(*Base::data_[0],
-                            torch::mul(*Base::data_[4], *Base::data_[8]) -
-                                torch::mul(*Base::data_[5], *Base::data_[7])) -
-                 torch::mul(*Base::data_[1],
-                            torch::mul(*Base::data_[3], *Base::data_[8]) -
-                                torch::mul(*Base::data_[5], *Base::data_[6])) +
-                 torch::mul(*Base::data_[2],
-                            torch::mul(*Base::data_[3], *Base::data_[7]) -
-                                torch::mul(*Base::data_[4], *Base::data_[6]));
+      auto det_ = this->det();
 
-      auto a11 = torch::mul(*Base::data_[4], *Base::data_[8]) -
-                 torch::mul(*Base::data_[5], *Base::data_[7]);
-      auto a12 = torch::mul(*Base::data_[2], *Base::data_[7]) -
-                 torch::mul(*Base::data_[1], *Base::data_[8]);
-      auto a13 = torch::mul(*Base::data_[1], *Base::data_[5]) -
-                 torch::mul(*Base::data_[2], *Base::data_[4]);
-      auto a21 = torch::mul(*Base::data_[5], *Base::data_[6]) -
-                 torch::mul(*Base::data_[3], *Base::data_[8]);
-      auto a22 = torch::mul(*Base::data_[0], *Base::data_[8]) -
-                 torch::mul(*Base::data_[2], *Base::data_[6]);
-      auto a23 = torch::mul(*Base::data_[2], *Base::data_[3]) -
-                 torch::mul(*Base::data_[0], *Base::data_[5]);
-      auto a31 = torch::mul(*Base::data_[3], *Base::data_[7]) -
-                 torch::mul(*Base::data_[4], *Base::data_[6]);
-      auto a32 = torch::mul(*Base::data_[1], *Base::data_[6]) -
-                 torch::mul(*Base::data_[0], *Base::data_[7]);
-      auto a33 = torch::mul(*Base::data_[0], *Base::data_[4]) -
-                 torch::mul(*Base::data_[1], *Base::data_[3]);
+      if constexpr (Rows == 1 && Cols == 1) {
+          BlockTensor<T, Cols, Rows> result;
+          result[0] = std::make_shared<T>(torch::reciprocal(*Base::data_[0]));
+          return result;
+      }
+      else if constexpr (Rows == 2 && Cols == 2) {
 
-      BlockTensor<T, Cols, Rows> result;
-      result[0] = std::make_shared<T>(torch::div(a11, det));
-      result[1] = std::make_shared<T>(torch::div(a21, det));
-      result[2] = std::make_shared<T>(torch::div(a31, det));
-      result[3] = std::make_shared<T>(torch::div(a12, det));
-      result[4] = std::make_shared<T>(torch::div(a22, det));
-      result[5] = std::make_shared<T>(torch::div(a32, det));
-      result[6] = std::make_shared<T>(torch::div(a13, det));
-      result[7] = std::make_shared<T>(torch::div(a23, det));
-      result[8] = std::make_shared<T>(torch::div(a33, det));
-      return result;
-    } else if constexpr (Rows == 4 && Cols == 4) {
-      auto a11 = torch::mul(*Base::data_[5],
-                            (torch::mul(*Base::data_[10], *Base::data_[15]) -
-                             torch::mul(*Base::data_[11], *Base::data_[14]))) -
-                 torch::mul(*Base::data_[9],
-                            (torch::mul(*Base::data_[6], *Base::data_[15]) -
-                             torch::mul(*Base::data_[7], *Base::data_[14]))) -
-                 torch::mul(*Base::data_[13],
-                            (torch::mul(*Base::data_[7], *Base::data_[10]) -
-                             torch::mul(*Base::data_[6], *Base::data_[11])));
+          BlockTensor<T, Cols, Rows> result;
+          result[0] = std::make_shared<T>(torch::div(*Base::data_[3], det_));
+          result[1] = std::make_shared<T>(torch::div(*Base::data_[1], -det_));
+          result[2] = std::make_shared<T>(torch::div(*Base::data_[2], -det_));
+          result[3] = std::make_shared<T>(torch::div(*Base::data_[0], det_));
+          return result;
+      }
+      else if constexpr (Rows == 3 && Cols == 3) {
 
-      auto a12 = torch::mul(*Base::data_[1],
-                            (torch::mul(*Base::data_[11], *Base::data_[14]) -
-                             torch::mul(*Base::data_[10], *Base::data_[15]))) -
-                 torch::mul(*Base::data_[9],
-                            (torch::mul(*Base::data_[3], *Base::data_[14]) -
-                             torch::mul(*Base::data_[2], *Base::data_[15]))) -
-                 torch::mul(*Base::data_[13],
-                            (torch::mul(*Base::data_[2], *Base::data_[11]) -
-                             torch::mul(*Base::data_[3], *Base::data_[10])));
+          auto a11 = torch::mul(*Base::data_[4], *Base::data_[8]) -
+              torch::mul(*Base::data_[5], *Base::data_[7]);
+          auto a12 = torch::mul(*Base::data_[2], *Base::data_[7]) -
+              torch::mul(*Base::data_[1], *Base::data_[8]);
+          auto a13 = torch::mul(*Base::data_[1], *Base::data_[5]) -
+              torch::mul(*Base::data_[2], *Base::data_[4]);
+          auto a21 = torch::mul(*Base::data_[5], *Base::data_[6]) -
+              torch::mul(*Base::data_[3], *Base::data_[8]);
+          auto a22 = torch::mul(*Base::data_[0], *Base::data_[8]) -
+              torch::mul(*Base::data_[2], *Base::data_[6]);
+          auto a23 = torch::mul(*Base::data_[2], *Base::data_[3]) -
+              torch::mul(*Base::data_[0], *Base::data_[5]);
+          auto a31 = torch::mul(*Base::data_[3], *Base::data_[7]) -
+              torch::mul(*Base::data_[4], *Base::data_[6]);
+          auto a32 = torch::mul(*Base::data_[1], *Base::data_[6]) -
+              torch::mul(*Base::data_[0], *Base::data_[7]);
+          auto a33 = torch::mul(*Base::data_[0], *Base::data_[4]) -
+              torch::mul(*Base::data_[1], *Base::data_[3]);
 
-      auto a13 = torch::mul(*Base::data_[1],
-                            (torch::mul(*Base::data_[6], *Base::data_[15]) -
-                             torch::mul(*Base::data_[7], *Base::data_[14]))) -
-                 torch::mul(*Base::data_[5],
-                            (torch::mul(*Base::data_[2], *Base::data_[15]) -
-                             torch::mul(*Base::data_[3], *Base::data_[14]))) -
-                 torch::mul(*Base::data_[13],
-                            (torch::mul(*Base::data_[3], *Base::data_[6]) -
-                             torch::mul(*Base::data_[2], *Base::data_[7])));
+          BlockTensor<T, Cols, Rows> result;
+          result[0] = std::make_shared<T>(torch::div(a11, det_));
+          result[1] = std::make_shared<T>(torch::div(a21, det_));
+          result[2] = std::make_shared<T>(torch::div(a31, det_));
+          result[3] = std::make_shared<T>(torch::div(a12, det_));
+          result[4] = std::make_shared<T>(torch::div(a22, det_));
+          result[5] = std::make_shared<T>(torch::div(a32, det_));
+          result[6] = std::make_shared<T>(torch::div(a13, det_));
+          result[7] = std::make_shared<T>(torch::div(a23, det_));
+          result[8] = std::make_shared<T>(torch::div(a33, det_));
+          return result;
+      }
+      else if constexpr (Rows == 4 && Cols == 4) {
 
-      auto a14 = torch::mul(*Base::data_[1],
-                            (torch::mul(*Base::data_[7], *Base::data_[10]) -
-                             torch::mul(*Base::data_[6], *Base::data_[11]))) -
-                 torch::mul(*Base::data_[5],
-                            (torch::mul(*Base::data_[3], *Base::data_[10]) -
-                             torch::mul(*Base::data_[2], *Base::data_[11]))) -
-                 torch::mul(*Base::data_[9],
-                            (torch::mul(*Base::data_[2], *Base::data_[7]) -
-                             torch::mul(*Base::data_[3], *Base::data_[6])));
+          auto a11 = torch::mul(*Base::data_[5],
+              (torch::mul(*Base::data_[10], *Base::data_[15]) -
+                  torch::mul(*Base::data_[11], *Base::data_[14]))) -
+              torch::mul(*Base::data_[9],
+              (torch::mul(*Base::data_[6], *Base::data_[15]) -
+                  torch::mul(*Base::data_[7], *Base::data_[14]))) -
+              torch::mul(*Base::data_[13],
+              (torch::mul(*Base::data_[7], *Base::data_[10]) -
+                  torch::mul(*Base::data_[6], *Base::data_[11])));
 
-      auto a21 = torch::mul(*Base::data_[4],
-                            (torch::mul(*Base::data_[11], *Base::data_[14]) -
-                             torch::mul(*Base::data_[10], *Base::data_[15]))) -
-                 torch::mul(*Base::data_[8],
-                            (torch::mul(*Base::data_[7], *Base::data_[14]) -
-                             torch::mul(*Base::data_[6], *Base::data_[15]))) -
-                 torch::mul(*Base::data_[12],
-                            (torch::mul(*Base::data_[6], *Base::data_[11]) -
-                             torch::mul(*Base::data_[7], *Base::data_[10])));
+          auto a12 = torch::mul(*Base::data_[1],
+              (torch::mul(*Base::data_[11], *Base::data_[14]) -
+                  torch::mul(*Base::data_[10], *Base::data_[15]))) -
+              torch::mul(*Base::data_[9],
+              (torch::mul(*Base::data_[3], *Base::data_[14]) -
+                  torch::mul(*Base::data_[2], *Base::data_[15]))) -
+              torch::mul(*Base::data_[13],
+              (torch::mul(*Base::data_[2], *Base::data_[11]) -
+                  torch::mul(*Base::data_[3], *Base::data_[10])));
 
-      auto a22 = torch::mul(*Base::data_[0],
-                            (torch::mul(*Base::data_[10], *Base::data_[15]) -
-                             torch::mul(*Base::data_[11], *Base::data_[14]))) -
-                 torch::mul(*Base::data_[8],
-                            (torch::mul(*Base::data_[2], *Base::data_[15]) -
-                             torch::mul(*Base::data_[3], *Base::data_[14]))) -
-                 torch::mul(*Base::data_[12],
-                            (torch::mul(*Base::data_[3], *Base::data_[10]) -
-                             torch::mul(*Base::data_[2], *Base::data_[11])));
+          auto a13 = torch::mul(*Base::data_[1],
+              (torch::mul(*Base::data_[6], *Base::data_[15]) -
+                  torch::mul(*Base::data_[7], *Base::data_[14]))) -
+              torch::mul(*Base::data_[5],
+              (torch::mul(*Base::data_[2], *Base::data_[15]) -
+                  torch::mul(*Base::data_[3], *Base::data_[14]))) -
+              torch::mul(*Base::data_[13],
+              (torch::mul(*Base::data_[3], *Base::data_[6]) -
+                  torch::mul(*Base::data_[2], *Base::data_[7])));
 
-      auto a23 = torch::mul(*Base::data_[0],
-                            (torch::mul(*Base::data_[7], *Base::data_[14]) -
-                             torch::mul(*Base::data_[6], *Base::data_[15]))) -
-                 torch::mul(*Base::data_[4],
-                            (torch::mul(*Base::data_[3], *Base::data_[14]) -
-                             torch::mul(*Base::data_[2], *Base::data_[15]))) -
-                 torch::mul(*Base::data_[12],
-                            (torch::mul(*Base::data_[2], *Base::data_[7]) -
-                             torch::mul(*Base::data_[3], *Base::data_[6])));
+          auto a14 = torch::mul(*Base::data_[1],
+              (torch::mul(*Base::data_[7], *Base::data_[10]) -
+                  torch::mul(*Base::data_[6], *Base::data_[11]))) -
+              torch::mul(*Base::data_[5],
+              (torch::mul(*Base::data_[3], *Base::data_[10]) -
+                  torch::mul(*Base::data_[2], *Base::data_[11]))) -
+              torch::mul(*Base::data_[9],
+              (torch::mul(*Base::data_[2], *Base::data_[7]) -
+                  torch::mul(*Base::data_[3], *Base::data_[6])));
 
-      auto a24 = torch::mul(*Base::data_[0],
-                            (torch::mul(*Base::data_[6], *Base::data_[11]) -
-                             torch::mul(*Base::data_[7], *Base::data_[10]))) -
-                 torch::mul(*Base::data_[4],
-                            (torch::mul(*Base::data_[2], *Base::data_[11]) -
-                             torch::mul(*Base::data_[3], *Base::data_[10]))) -
-                 torch::mul(*Base::data_[8],
-                            (torch::mul(*Base::data_[3], *Base::data_[6]) -
-                             torch::mul(*Base::data_[2], *Base::data_[7])));
+          auto a21 = torch::mul(*Base::data_[4],
+              (torch::mul(*Base::data_[11], *Base::data_[14]) -
+                  torch::mul(*Base::data_[10], *Base::data_[15]))) -
+              torch::mul(*Base::data_[8],
+              (torch::mul(*Base::data_[7], *Base::data_[14]) -
+                  torch::mul(*Base::data_[6], *Base::data_[15]))) -
+              torch::mul(*Base::data_[12],
+              (torch::mul(*Base::data_[6], *Base::data_[11]) -
+                  torch::mul(*Base::data_[7], *Base::data_[10])));
 
-      auto a31 = torch::mul(*Base::data_[4],
-                            (torch::mul(*Base::data_[9], *Base::data_[15]) -
-                             torch::mul(*Base::data_[11], *Base::data_[13]))) -
-                 torch::mul(*Base::data_[8],
-                            (torch::mul(*Base::data_[5], *Base::data_[15]) -
-                             torch::mul(*Base::data_[7], *Base::data_[13]))) -
-                 torch::mul(*Base::data_[12],
-                            (torch::mul(*Base::data_[7], *Base::data_[9]) -
-                             torch::mul(*Base::data_[5], *Base::data_[11])));
+          auto a22 = torch::mul(*Base::data_[0],
+              (torch::mul(*Base::data_[10], *Base::data_[15]) -
+                  torch::mul(*Base::data_[11], *Base::data_[14]))) -
+              torch::mul(*Base::data_[8],
+              (torch::mul(*Base::data_[2], *Base::data_[15]) -
+                  torch::mul(*Base::data_[3], *Base::data_[14]))) -
+              torch::mul(*Base::data_[12],
+              (torch::mul(*Base::data_[3], *Base::data_[10]) -
+                  torch::mul(*Base::data_[2], *Base::data_[11])));
 
-      auto a32 = torch::mul(*Base::data_[0],
-                            (torch::mul(*Base::data_[11], *Base::data_[13]) -
-                             torch::mul(*Base::data_[9], *Base::data_[15]))) -
-                 torch::mul(*Base::data_[8],
-                            (torch::mul(*Base::data_[3], *Base::data_[13]) -
-                             torch::mul(*Base::data_[1], *Base::data_[15]))) -
-                 torch::mul(*Base::data_[12],
-                            (torch::mul(*Base::data_[1], *Base::data_[11]) -
-                             torch::mul(*Base::data_[3], *Base::data_[9])));
+          auto a23 = torch::mul(*Base::data_[0],
+              (torch::mul(*Base::data_[7], *Base::data_[14]) -
+                  torch::mul(*Base::data_[6], *Base::data_[15]))) -
+              torch::mul(*Base::data_[4],
+              (torch::mul(*Base::data_[3], *Base::data_[14]) -
+                  torch::mul(*Base::data_[2], *Base::data_[15]))) -
+              torch::mul(*Base::data_[12],
+              (torch::mul(*Base::data_[2], *Base::data_[7]) -
+                  torch::mul(*Base::data_[3], *Base::data_[6])));
 
-      auto a33 = torch::mul(*Base::data_[0],
-                            (torch::mul(*Base::data_[5], *Base::data_[15]) -
-                             torch::mul(*Base::data_[7], *Base::data_[13]))) -
-                 torch::mul(*Base::data_[4],
-                            (torch::mul(*Base::data_[1], *Base::data_[15]) -
-                             torch::mul(*Base::data_[3], *Base::data_[13]))) -
-                 torch::mul(*Base::data_[12],
-                            (torch::mul(*Base::data_[3], *Base::data_[5]) -
-                             torch::mul(*Base::data_[1], *Base::data_[7])));
+          auto a24 = torch::mul(*Base::data_[0],
+              (torch::mul(*Base::data_[6], *Base::data_[11]) -
+                  torch::mul(*Base::data_[7], *Base::data_[10]))) -
+              torch::mul(*Base::data_[4],
+              (torch::mul(*Base::data_[2], *Base::data_[11]) -
+                  torch::mul(*Base::data_[3], *Base::data_[10]))) -
+              torch::mul(*Base::data_[8],
+              (torch::mul(*Base::data_[3], *Base::data_[6]) -
+                  torch::mul(*Base::data_[2], *Base::data_[7])));
 
-      auto a34 = torch::mul(*Base::data_[0],
-                            (torch::mul(*Base::data_[7], *Base::data_[9]) -
-                             torch::mul(*Base::data_[5], *Base::data_[11]))) -
-                 torch::mul(*Base::data_[4],
-                            (torch::mul(*Base::data_[3], *Base::data_[9]) -
-                             torch::mul(*Base::data_[1], *Base::data_[11]))) -
-                 torch::mul(*Base::data_[8],
-                            (torch::mul(*Base::data_[1], *Base::data_[7]) -
-                             torch::mul(*Base::data_[3], *Base::data_[5])));
+          auto a31 = torch::mul(*Base::data_[4],
+              (torch::mul(*Base::data_[9], *Base::data_[15]) -
+                  torch::mul(*Base::data_[11], *Base::data_[13]))) -
+              torch::mul(*Base::data_[8],
+              (torch::mul(*Base::data_[5], *Base::data_[15]) -
+                  torch::mul(*Base::data_[7], *Base::data_[13]))) -
+              torch::mul(*Base::data_[12],
+              (torch::mul(*Base::data_[7], *Base::data_[9]) -
+                  torch::mul(*Base::data_[5], *Base::data_[11])));
 
-      auto a41 = torch::mul(*Base::data_[4],
-                            (torch::mul(*Base::data_[10], *Base::data_[13]) -
-                             torch::mul(*Base::data_[9], *Base::data_[14]))) -
-                 torch::mul(*Base::data_[8],
-                            (torch::mul(*Base::data_[6], *Base::data_[13]) -
-                             torch::mul(*Base::data_[5], *Base::data_[14]))) -
-                 torch::mul(*Base::data_[12],
-                            (torch::mul(*Base::data_[5], *Base::data_[10]) -
-                             torch::mul(*Base::data_[6], *Base::data_[9])));
+          auto a32 = torch::mul(*Base::data_[0],
+              (torch::mul(*Base::data_[11], *Base::data_[13]) -
+                  torch::mul(*Base::data_[9], *Base::data_[15]))) -
+              torch::mul(*Base::data_[8],
+              (torch::mul(*Base::data_[3], *Base::data_[13]) -
+                  torch::mul(*Base::data_[1], *Base::data_[15]))) -
+              torch::mul(*Base::data_[12],
+              (torch::mul(*Base::data_[1], *Base::data_[11]) -
+                  torch::mul(*Base::data_[3], *Base::data_[9])));
 
-      auto a42 = torch::mul(*Base::data_[0],
-                            (torch::mul(*Base::data_[9], *Base::data_[14]) -
-                             torch::mul(*Base::data_[10], *Base::data_[13]))) -
-                 torch::mul(*Base::data_[8],
-                            (torch::mul(*Base::data_[1], *Base::data_[14]) -
-                             torch::mul(*Base::data_[2], *Base::data_[13]))) -
-                 torch::mul(*Base::data_[12],
-                            (torch::mul(*Base::data_[2], *Base::data_[9]) -
-                             torch::mul(*Base::data_[1], *Base::data_[10])));
+          auto a33 = torch::mul(*Base::data_[0],
+              (torch::mul(*Base::data_[5], *Base::data_[15]) -
+                  torch::mul(*Base::data_[7], *Base::data_[13]))) -
+              torch::mul(*Base::data_[4],
+              (torch::mul(*Base::data_[1], *Base::data_[15]) -
+                  torch::mul(*Base::data_[3], *Base::data_[13]))) -
+              torch::mul(*Base::data_[12],
+              (torch::mul(*Base::data_[3], *Base::data_[5]) -
+                  torch::mul(*Base::data_[1], *Base::data_[7])));
 
-      auto a43 = torch::mul(*Base::data_[0],
-                            (torch::mul(*Base::data_[6], *Base::data_[13]) -
-                             torch::mul(*Base::data_[5], *Base::data_[14]))) -
-                 torch::mul(*Base::data_[4],
-                            (torch::mul(*Base::data_[2], *Base::data_[13]) -
-                             torch::mul(*Base::data_[1], *Base::data_[14]))) -
-                 torch::mul(*Base::data_[12],
-                            (torch::mul(*Base::data_[1], *Base::data_[6]) -
-                             torch::mul(*Base::data_[2], *Base::data_[5])));
+          auto a34 = torch::mul(*Base::data_[0],
+              (torch::mul(*Base::data_[7], *Base::data_[9]) -
+                  torch::mul(*Base::data_[5], *Base::data_[11]))) -
+              torch::mul(*Base::data_[4],
+              (torch::mul(*Base::data_[3], *Base::data_[9]) -
+                  torch::mul(*Base::data_[1], *Base::data_[11]))) -
+              torch::mul(*Base::data_[8],
+              (torch::mul(*Base::data_[1], *Base::data_[7]) -
+                  torch::mul(*Base::data_[3], *Base::data_[5])));
 
-      auto a44 = torch::mul(*Base::data_[0],
-                            (torch::mul(*Base::data_[5], *Base::data_[10]) -
-                             torch::mul(*Base::data_[6], *Base::data_[9]))) -
-                 torch::mul(*Base::data_[4],
-                            (torch::mul(*Base::data_[1], *Base::data_[10]) -
-                             torch::mul(*Base::data_[2], *Base::data_[9]))) -
-                 torch::mul(*Base::data_[8],
-                            (torch::mul(*Base::data_[2], *Base::data_[5]) -
-                             torch::mul(*Base::data_[1], *Base::data_[6])));
+          auto a41 = torch::mul(*Base::data_[4],
+              (torch::mul(*Base::data_[10], *Base::data_[13]) -
+                  torch::mul(*Base::data_[9], *Base::data_[14]))) -
+              torch::mul(*Base::data_[8],
+              (torch::mul(*Base::data_[6], *Base::data_[13]) -
+                  torch::mul(*Base::data_[5], *Base::data_[14]))) -
+              torch::mul(*Base::data_[12],
+              (torch::mul(*Base::data_[5], *Base::data_[10]) -
+                  torch::mul(*Base::data_[6], *Base::data_[9])));
 
-      auto det =
-          torch::mul(*Base::data_[0], a11) + torch::mul(*Base::data_[1], a21) +
-          torch::mul(*Base::data_[2], a31) + torch::mul(*Base::data_[3], a41);
+          auto a42 = torch::mul(*Base::data_[0],
+              (torch::mul(*Base::data_[9], *Base::data_[14]) -
+                  torch::mul(*Base::data_[10], *Base::data_[13]))) -
+              torch::mul(*Base::data_[8],
+              (torch::mul(*Base::data_[1], *Base::data_[14]) -
+                  torch::mul(*Base::data_[2], *Base::data_[13]))) -
+              torch::mul(*Base::data_[12],
+              (torch::mul(*Base::data_[2], *Base::data_[9]) -
+                  torch::mul(*Base::data_[1], *Base::data_[10])));
 
-      BlockTensor<T, Rows, Cols> result;
-      result[0] = std::make_shared<T>(torch::div(a11, det));
-      result[1] = std::make_shared<T>(torch::div(a21, det));
-      result[2] = std::make_shared<T>(torch::div(a31, det));
-      result[3] = std::make_shared<T>(torch::div(a41, det));
-      result[4] = std::make_shared<T>(torch::div(a12, det));
-      result[5] = std::make_shared<T>(torch::div(a22, det));
-      result[6] = std::make_shared<T>(torch::div(a32, det));
-      result[7] = std::make_shared<T>(torch::div(a42, det));
-      result[8] = std::make_shared<T>(torch::div(a13, det));
-      result[9] = std::make_shared<T>(torch::div(a23, det));
-      result[10] = std::make_shared<T>(torch::div(a33, det));
-      result[11] = std::make_shared<T>(torch::div(a43, det));
-      result[12] = std::make_shared<T>(torch::div(a14, det));
-      result[13] = std::make_shared<T>(torch::div(a24, det));
-      result[14] = std::make_shared<T>(torch::div(a34, det));
-      result[15] = std::make_shared<T>(torch::div(a44, det));
-      return result;
-    } else {
-      throw std::runtime_error("Unsupported block tensor dimension");
-      return *this;
-    }
+          auto a43 = torch::mul(*Base::data_[0],
+              (torch::mul(*Base::data_[6], *Base::data_[13]) -
+                  torch::mul(*Base::data_[5], *Base::data_[14]))) -
+              torch::mul(*Base::data_[4],
+              (torch::mul(*Base::data_[2], *Base::data_[13]) -
+                  torch::mul(*Base::data_[1], *Base::data_[14]))) -
+              torch::mul(*Base::data_[12],
+              (torch::mul(*Base::data_[1], *Base::data_[6]) -
+                  torch::mul(*Base::data_[2], *Base::data_[5])));
+
+          auto a44 = torch::mul(*Base::data_[0],
+              (torch::mul(*Base::data_[5], *Base::data_[10]) -
+                  torch::mul(*Base::data_[6], *Base::data_[9]))) -
+              torch::mul(*Base::data_[4],
+              (torch::mul(*Base::data_[1], *Base::data_[10]) -
+                  torch::mul(*Base::data_[2], *Base::data_[9]))) -
+              torch::mul(*Base::data_[8],
+              (torch::mul(*Base::data_[2], *Base::data_[5]) -
+                  torch::mul(*Base::data_[1], *Base::data_[6])));
+
+          BlockTensor<T, Rows, Cols> result;
+          result[0] = std::make_shared<T>(torch::div(a11, det_));
+          result[1] = std::make_shared<T>(torch::div(a21, det_));
+          result[2] = std::make_shared<T>(torch::div(a31, det_));
+          result[3] = std::make_shared<T>(torch::div(a41, det_));
+          result[4] = std::make_shared<T>(torch::div(a12, det_));
+          result[5] = std::make_shared<T>(torch::div(a22, det_));
+          result[6] = std::make_shared<T>(torch::div(a32, det_));
+          result[7] = std::make_shared<T>(torch::div(a42, det_));
+          result[8] = std::make_shared<T>(torch::div(a13, det_));
+          result[9] = std::make_shared<T>(torch::div(a23, det_));
+          result[10] = std::make_shared<T>(torch::div(a33, det_));
+          result[11] = std::make_shared<T>(torch::div(a43, det_));
+          result[12] = std::make_shared<T>(torch::div(a14, det_));
+          result[13] = std::make_shared<T>(torch::div(a24, det_));
+          result[14] = std::make_shared<T>(torch::div(a34, det_));
+          result[15] = std::make_shared<T>(torch::div(a44, det_));
+          return result;
+      }
+      else {
+          throw std::runtime_error("Unsupported block tensor dimension");
+          return *this;
+      }
   }
 
   /// @brief Returns the transpose of the (generalized) inverse of
