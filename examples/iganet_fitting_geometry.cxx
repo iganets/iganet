@@ -59,8 +59,6 @@ public:
   ///
   /// @param[in] epoch Epoch number
   bool epoch(int64_t epoch) override {
-    std::clog << "Epoch " << std::to_string(epoch) << ": ";
-
     // In the very first epoch we need to generate the sampling points
     // for the inputs and the sampling points in the function space of
     // the variables since otherwise the respective tensors would be
@@ -150,7 +148,7 @@ int main() {
         static_cast<real_t>(sin(M_PI * xi[0]) * sin(M_PI * xi[1]))};
   });
 
-  // Set maximum number of epoches
+  // Set maximum number of epochs
   net.options().max_epoch(1000);
 
   // Set tolerance for the loss functions
