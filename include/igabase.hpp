@@ -464,8 +464,9 @@ template <bool solution = false> class IgADataset;
 template <>
 class IgADataset<false>
     : public IgADatasetBase,
-      public torch::data::Dataset<IgADataset<false>,
-                                  torch::data::TensorExample> {
+      public torch::data::Dataset<
+          IgADataset<false>,
+          torch::data::Example<torch::Tensor, torch::data::example::NoTarget>> {
 private:
   /// @brief Vector of tensors representing the geometry maps
   std::vector<torch::Tensor> G_;
@@ -474,6 +475,10 @@ private:
   std::vector<torch::Tensor> f_;
 
 public:
+  /// @brief Example type
+  using example_type =
+      torch::data::Example<torch::Tensor, torch::data::example::NoTarget>;
+
   /// @brief Adds a geometry map from file
   /// @{
   template <typename T> void add_geometryMap(T &obj, std::string location) {
@@ -570,7 +575,7 @@ public:
   /// @}
 
   /// @brief Returns the data set at location index
-  inline torch::data::TensorExample get(std::size_t index) override {
+  inline example_type get(std::size_t index) override {
 
     std::size_t geo_index = index / (f_.empty() ? 1 : f_.size());
     std::size_t ref_index = index - geo_index * f_.size();

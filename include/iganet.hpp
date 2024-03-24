@@ -1072,15 +1072,26 @@ public:
   /// @brief Trains the IgANet
   template <typename DataLoader> void train(DataLoader &loader) {
     torch::Tensor inputs, outputs, loss;
-    typename Base::value_type Loss(0);
 
     // Loop over epochs
     for (int64_t epoch = 0; epoch != options_.max_epoch(); ++epoch) {
 
+      typename Base::value_type Loss(0);
+
       for (auto &batch : loader) {
+        inputs = batch.data;
+
+        Base::G_.from_tensor(
+            inputs.slice(1, 0, Base::G_.ncumcoeffs() * Base::G_.geoDim())
+                .flatten());
+        Base::f_.from_tensor(
+            inputs
+                .slice(1, Base::G_.ncumcoeffs() * Base::G_.geoDim(),
+                       Base::G_.ncumcoeffs() * Base::G_.geoDim() +
+                           Base::f_.ncumcoeffs() * Base::f_.geoDim())
+                .flatten());
 
         this->epoch(epoch);
-        inputs = batch.data; //.to(options.device);
 
         auto closure = [&]() {
           // Reset gradients
@@ -1112,6 +1123,10 @@ public:
                        << std::endl;
         break;
       }
+
+      if (epoch == options_.max_epoch() - 1)
+        Log(log::warning) << "Total epochs: " << epoch << ", loss: " << Loss
+                          << std::endl;
     }
   }
 
