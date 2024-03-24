@@ -125,12 +125,9 @@ int main() {
 
   fitting<optimizer_t, geometry_t, variable_t>
       net( // Number of neurons per layers
-          {50, 50, 50, 50, 50},
+          {50, 50},
           // Activation functions
           {{iganet::activation::sigmoid},
-           {iganet::activation::sigmoid},
-           {iganet::activation::sigmoid},
-           {iganet::activation::sigmoid},
            {iganet::activation::sigmoid},
            {iganet::activation::none}},
           // Number of B-spline coefficients of the geometry, has to correspond
