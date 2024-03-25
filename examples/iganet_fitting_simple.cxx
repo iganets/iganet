@@ -77,7 +77,7 @@ public:
 
 int main() {
   iganet::init();
-  iganet::verbose(iganet::Log(iganet::log::info));
+  iganet::verbose(std::cout);
 
   nlohmann::json json;
   json["res0"] = 50;
