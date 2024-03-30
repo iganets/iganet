@@ -817,7 +817,7 @@ public:
     static_assert(Rows == Cols, "trace(.) requires square block tensor");
 
     if constexpr (Rows == 1)
-      return BlockTensor<T, 1, 1>(Base::data_[0]);
+      return BlockTensor<T, 1, 1>(*Base::data_[0]);
 
     else if constexpr (Rows == 2)
       return BlockTensor<T, 1, 1>(*Base::data_[0] + *Base::data_[3]);
