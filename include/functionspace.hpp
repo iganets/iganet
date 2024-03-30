@@ -800,54 +800,29 @@ public:                                                                        \
 private:                                                                       \
   template <functionspace comp = functionspace::interior,                      \
             bool memory_optimized = false, std::size_t... Is,                  \
-            typename... Geometry, typename... Xi>                              \
-  inline auto BOOST_PP_CAT(name, _)(std::index_sequence<Is...>,                \
-                                    const std::tuple<Geometry...> &G,          \
-                                    const std::tuple<Xi...> &xi) const {       \
-    if constexpr (comp == functionspace::interior)                             \
-      return std::tuple(std::get<Is>(*this).template name<memory_optimized>(   \
-          std::get<Is>(G), std::get<Is>(xi))...);                              \
-    else if constexpr (comp == functionspace::boundary)                        \
-      return std::tuple(                                                       \
-          std::get<Is>(boundary_).template name<memory_optimized>(             \
-              std::get<Is>(G).boundary().coeffs(), std::get<Is>(xi))...);      \
-  }                                                                            \
-                                                                               \
-  template <functionspace comp = functionspace::interior,                      \
-            bool memory_optimized = false, std::size_t... Is,                  \
             typename Geometry, typename... Xi>                                 \
   inline auto BOOST_PP_CAT(name, _)(std::index_sequence<Is...>,                \
                                     const Geometry &G,                         \
                                     const std::tuple<Xi...> &xi) const {       \
     if constexpr (comp == functionspace::interior)                             \
-      return std::tuple(std::get<Is>(*this).template name<memory_optimized>(   \
-          static_cast<typename Geometry::Base::Base>(G),                       \
-          std::get<Is>(xi))...);                                               \
+      if constexpr (Geometry::nspaces() == 1)                                  \
+        return std::tuple(std::get<Is>(*this).template name<memory_optimized>( \
+            static_cast<typename Geometry::Base::Base>(G),                     \
+            std::get<Is>(xi))...);                                             \
+      else                                                                     \
+        return std::tuple(std::get<Is>(*this).template name<memory_optimized>( \
+            std::get<Is>(G), std::get<Is>(xi))...);                            \
     else if constexpr (comp == functionspace::boundary)                        \
-      return std::tuple(                                                       \
-          std::get<Is>(boundary_).template name<memory_optimized>(             \
-              static_cast<typename Geometry::boundary_type::boundary_type>(    \
-                  G.boundary().coeffs()),                                      \
-              std::get<Is>(xi))...);                                           \
-  }                                                                            \
-                                                                               \
-  template <functionspace comp = functionspace::interior,                      \
-            bool memory_optimized = false, std::size_t... Is,                  \
-            typename... Geometry, typename... Xi, typename... Indices,         \
-            typename... Indices_G>                                             \
-  inline auto BOOST_PP_CAT(name, _)(                                           \
-      std::index_sequence<Is...>, const std::tuple<Geometry...> &G,            \
-      const std::tuple<Xi...> &xi, const std::tuple<Indices...> &indices,      \
-      const std::tuple<Indices_G...> &indices_G) const {                       \
-    if constexpr (comp == functionspace::interior)                             \
-      return std::tuple(std::get<Is>(*this).template name<memory_optimized>(   \
-          std::get<Is>(G), std::get<Is>(xi), std::get<Is>(indices),            \
-          std::get<Is>(indices_G))...);                                        \
-    else if constexpr (comp == functionspace::boundary)                        \
-      return std::tuple(                                                       \
-          std::get<Is>(boundary_).template name<memory_optimized>(             \
-              std::get<Is>(G).boundary().coeffs(), std::get<Is>(xi),           \
-              std::get<Is>(indices), std::get<Is>(indices_G))...);             \
+      if constexpr (Geometry::nspaces() == 1)                                  \
+        return std::tuple(                                                     \
+            std::get<Is>(boundary_).template name<memory_optimized>(           \
+                static_cast<typename Geometry::boundary_type::boundary_type>(  \
+                    G.boundary().coeffs()),                                    \
+                std::get<Is>(xi))...);                                         \
+      else                                                                     \
+        return std::tuple(                                                     \
+            std::get<Is>(boundary_).template name<memory_optimized>(           \
+                std::get<Is>(G).boundary().coeffs(), std::get<Is>(xi))...);    \
   }                                                                            \
                                                                                \
   template <functionspace comp = functionspace::interior,                      \
@@ -859,40 +834,27 @@ private:                                                                       \
       const std::tuple<Xi...> &xi, const std::tuple<Indices...> &indices,      \
       const std::tuple<Indices_G...> &indices_G) const {                       \
     if constexpr (comp == functionspace::interior)                             \
-      return std::tuple(std::get<Is>(*this).template name<memory_optimized>(   \
-          static_cast<typename Geometry::Base::Base>(G), std::get<Is>(xi),     \
-          std::get<Is>(indices), std::get<Is>(indices_G))...);                 \
+      if constexpr (Geometry::nspaces() == 1)                                  \
+        return std::tuple(std::get<Is>(*this).template name<memory_optimized>( \
+            static_cast<typename Geometry::Base::Base>(G), std::get<Is>(xi),   \
+            std::get<Is>(indices), std::get<Is>(indices_G))...);               \
+      else                                                                     \
+        return std::tuple(std::get<Is>(*this).template name<memory_optimized>( \
+            std::get<Is>(G), std::get<Is>(xi), std::get<Is>(indices),          \
+            std::get<Is>(indices_G))...);                                      \
     else if constexpr (comp == functionspace::boundary)                        \
-      return std::tuple(                                                       \
-          std::get<Is>(boundary_).template name<memory_optimized>(             \
-              static_cast<typename Geometry::boundary_type::boundary_type>(    \
-                  G.boundary().coeffs()),                                      \
-              std::get<Is>(xi), std::get<Is>(indices),                         \
-              std::get<Is>(indices_G))...);                                    \
-  }                                                                            \
-                                                                               \
-  template <functionspace comp = functionspace::interior,                      \
-            bool memory_optimized = false, std::size_t... Is,                  \
-            typename... Geometry, typename... Xi, typename... Indices,         \
-            typename... Coeff_Indices, typename... Indices_G,                  \
-            typename... Coeff_Indices_G>                                       \
-  inline auto BOOST_PP_CAT(name, _)(                                           \
-      std::index_sequence<Is...>, const std::tuple<Geometry...> &G,            \
-      const std::tuple<Xi...> &xi, const std::tuple<Indices...> &indices,      \
-      const std::tuple<Coeff_Indices...> &coeff_indices,                       \
-      const std::tuple<Indices_G...> &indices_G,                               \
-      const std::tuple<Coeff_Indices_G...> &coeff_indices_G) const {           \
-    if constexpr (comp == functionspace::interior)                             \
-      return std::tuple(std::get<Is>(*this).template name<memory_optimized>(   \
-          std::get<Is>(G), std::get<Is>(xi), std::get<Is>(indices),            \
-          std::get<Is>(coeff_indices), std::get<Is>(indices_G),                \
-          std::get<Is>(coeff_indices_G))...);                                  \
-    else if constexpr (comp == functionspace::boundary)                        \
-      return std::tuple(                                                       \
-          std::get<Is>(boundary_).template name<memory_optimized>(             \
-              std::get<Is>(G).boundary().coeffs(), std::get<Is>(xi),           \
-              std::get<Is>(indices), std::get<Is>(coeff_indices),              \
-              std::get<Is>(indices_G), std::get<Is>(coeff_indices_G))...);     \
+      if constexpr (Geometry::nspaces() == 1)                                  \
+        return std::tuple(                                                     \
+            std::get<Is>(boundary_).template name<memory_optimized>(           \
+                static_cast<typename Geometry::boundary_type::boundary_type>(  \
+                    G.boundary().coeffs()),                                    \
+                std::get<Is>(xi), std::get<Is>(indices),                       \
+                std::get<Is>(indices_G))...);                                  \
+      else                                                                     \
+        return std::tuple(                                                     \
+            std::get<Is>(boundary_).template name<memory_optimized>(           \
+                std::get<Is>(G).boundary().coeffs(), std::get<Is>(xi),         \
+                std::get<Is>(indices), std::get<Is>(indices_G))...);           \
   }                                                                            \
                                                                                \
   template <functionspace comp = functionspace::interior,                      \
@@ -907,18 +869,31 @@ private:                                                                       \
       const std::tuple<Indices_G...> &indices_G,                               \
       const std::tuple<Coeff_Indices_G...> &coeff_indices_G) const {           \
     if constexpr (comp == functionspace::interior)                             \
-      return std::tuple(std::get<Is>(*this).template name<memory_optimized>(   \
-          static_cast<typename Geometry::Base::Base>(G), std::get<Is>(xi),     \
-          std::get<Is>(indices), std::get<Is>(coeff_indices),                  \
-          std::get<Is>(indices_G), std::get<Is>(coeff_indices_G))...);         \
+      if constexpr (Geometry::nspaces() == 1)                                  \
+        return std::tuple(std::get<Is>(*this).template name<memory_optimized>( \
+            static_cast<typename Geometry::Base::Base>(G), std::get<Is>(xi),   \
+            std::get<Is>(indices), std::get<Is>(coeff_indices),                \
+            std::get<Is>(indices_G), std::get<Is>(coeff_indices_G))...);       \
+      else                                                                     \
+        return std::tuple(std::get<Is>(*this).template name<memory_optimized>( \
+            std::get<Is>(G), std::get<Is>(xi), std::get<Is>(indices),          \
+            std::get<Is>(coeff_indices), std::get<Is>(indices_G),              \
+            std::get<Is>(coeff_indices_G))...);                                \
     else if constexpr (comp == functionspace::boundary)                        \
-      return std::tuple(                                                       \
-          std::get<Is>(boundary_).template name<memory_optimized>(             \
-              static_cast<typename Geometry::boundary_type::boundary_type>(    \
-                  G.boundary().coeffs()),                                      \
-              std::get<Is>(xi), std::get<Is>(indices),                         \
-              std::get<Is>(coeff_indices), std::get<Is>(indices_G),            \
-              std::get<Is>(coeff_indices_G))...);                              \
+      if constexpr (Geometry::nspaces() == 1)                                  \
+        return std::tuple(                                                     \
+            std::get<Is>(boundary_).template name<memory_optimized>(           \
+                static_cast<typename Geometry::boundary_type::boundary_type>(  \
+                    G.boundary().coeffs()),                                    \
+                std::get<Is>(xi), std::get<Is>(indices),                       \
+                std::get<Is>(coeff_indices), std::get<Is>(indices_G),          \
+                std::get<Is>(coeff_indices_G))...);                            \
+      else                                                                     \
+        return std::tuple(                                                     \
+            std::get<Is>(boundary_).template name<memory_optimized>(           \
+                std::get<Is>(G).boundary().coeffs(), std::get<Is>(xi),         \
+                std::get<Is>(indices), std::get<Is>(coeff_indices),            \
+                std::get<Is>(indices_G), std::get<Is>(coeff_indices_G))...);   \
   }                                                                            \
                                                                                \
 public:                                                                        \

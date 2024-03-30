@@ -133,18 +133,20 @@ inline constexpr auto operator^(deriv lhs, short_t rhs) {
 namespace detail {
 /// @brief Prepends data to a torch::ArrayRef
 template <typename T>
-inline constexpr torch::ArrayRef<T> prepend(torch::ArrayRef<T> array, T data) {
+inline constexpr auto prepend(torch::ArrayRef<T> array, T data) {
   std::vector<T> Vec{array.vec()};
   Vec.insert(Vec.begin(), data);
-  return torch::ArrayRef<T>{Vec};
+  return Vec;
+  //  return std::tuple{torch::ArrayRef<T>{Vec}, Vec};
 }
 
 /// @brief Appends data to a torch::ArrayRef
 template <typename T>
-inline constexpr torch::ArrayRef<T> append(torch::ArrayRef<T> array, T data) {
+inline constexpr auto append(torch::ArrayRef<T> array, T data) {
   std::vector<T> Vec{array.vec()};
   Vec.push_back(data);
-  return torch::ArrayRef<T>{Vec};
+  return Vec;
+  //  return torch::ArrayRef<T>{Vec};
 }
 } // namespace detail
 
@@ -591,7 +593,11 @@ public:
   inline const auto coeffs_view(short_t i) const {
     assert(i >= 0 && i < geoDim_);
     if constexpr (parDim_ > 1)
-      return coeffs_[i].view(utils::to_ArrayRef(ncoeffs_reverse_));
+      if (coeffs_[i].dim() > 1)
+        return coeffs_[i].view(
+            detail::append(utils::to_ArrayRef(ncoeffs_reverse_), int64_t{-1}));
+      else
+        return coeffs_[i].view(utils::to_ArrayRef(ncoeffs_reverse_));
     else
       return coeffs_[i];
   }
@@ -658,8 +664,9 @@ private:
   template <std::size_t... Is>
   inline UniformBSplineCore &from_tensor_(std::index_sequence<Is...>,
                                           const torch::Tensor &tensor) {
-    ((coeffs_[Is] = tensor.index({torch::indexing::Slice(
-          Is * ncumcoeffs(), (Is + 1) * ncumcoeffs())})),
+    ((coeffs_[Is] = tensor.index(
+          {torch::indexing::Slice(Is * ncumcoeffs(), (Is + 1) * ncumcoeffs()),
+           "..."})),
      ...);
     return *this;
   }
@@ -987,16 +994,23 @@ public:
 
       if constexpr (memory_optimized) {
         // memory-optimized
-        auto basfunc = eval_basfunc<deriv, memory_optimized>(xi, knot_indices);
-        auto coeff_indices = find_coeff_indices<memory_optimized>(knot_indices);
-        utils::BlockTensor<torch::Tensor, 1, geoDim_> result;
-        for (short_t i = 0; i < geoDim_; ++i)
-          result.set(i, torch::matmul(coeffs(i)
-                                          .index_select(0, coeff_indices)
-                                          .view({xi[0].numel(), 1, -1}),
-                                      basfunc[0].view({xi[0].numel(), -1, 1}))
-                            .view(xi[0].sizes()));
-        return result;
+        if (coeffs(0).dim() > 1)
+          throw std::runtime_error(
+              "Memory-optimized evaluation requires single-valued coefficient");
+        else {
+          auto basfunc =
+              eval_basfunc<deriv, memory_optimized>(xi, knot_indices);
+          auto coeff_indices =
+              find_coeff_indices<memory_optimized>(knot_indices);
+          utils::BlockTensor<torch::Tensor, 1, geoDim_> result;
+          for (short_t i = 0; i < geoDim_; ++i)
+            result.set(i, torch::matmul(coeffs(i)
+                                            .index_select(0, coeff_indices)
+                                            .view({xi[0].numel(), 1, -1}),
+                                        basfunc[0].view({xi[0].numel(), -1, 1}))
+                              .view(xi[0].sizes()));
+          return result;
+        }
       } else {
         // not memory-optimized
         if constexpr (geoDim_ > 1) {
@@ -1009,8 +1023,7 @@ public:
 
           if (coeffs(0).dim() > 1) {
             // coeffs has extra dimension
-            torch::IntArrayRef sizes =
-                detail::append(xi[0].sizes(), int64_t(-1));
+            auto sizes = detail::append(xi[0].sizes(), int64_t(-1));
             for (short_t i = 0; i < geoDim_; ++i)
               result.set(i,
                          utils::dotproduct(
@@ -1085,15 +1098,21 @@ public:
 
       if constexpr (memory_optimized) {
         // memory-optimized
-        auto basfunc = eval_basfunc<deriv, memory_optimized>(xi, knot_indices);
-        utils::BlockTensor<torch::Tensor, 1, geoDim_> result;
-        for (short_t i = 0; i < geoDim_; ++i)
-          result.set(i, torch::matmul(coeffs(i)
-                                          .index_select(0, coeff_indices)
-                                          .view({xi[0].numel(), 1, -1}),
-                                      basfunc[0].view({xi[0].numel(), -1, 1}))
-                            .view(xi[0].sizes()));
-        return result;
+        if (coeffs(0).dim() > 1)
+          throw std::runtime_error(
+              "Memory-optimized evaluation requires single-valued coefficient");
+        else {
+          auto basfunc =
+              eval_basfunc<deriv, memory_optimized>(xi, knot_indices);
+          utils::BlockTensor<torch::Tensor, 1, geoDim_> result;
+          for (short_t i = 0; i < geoDim_; ++i)
+            result.set(i, torch::matmul(coeffs(i)
+                                            .index_select(0, coeff_indices)
+                                            .view({xi[0].numel(), 1, -1}),
+                                        basfunc[0].view({xi[0].numel(), -1, 1}))
+                              .view(xi[0].sizes()));
+          return result;
+        }
       } else {
         // not memory-optimized
         if constexpr (geoDim_ > 1) {
@@ -1104,8 +1123,7 @@ public:
 
           if (coeffs(0).dim() > 1) {
             // coeffs has extra dimension
-            torch::IntArrayRef sizes =
-                detail::append(xi[0].sizes(), int64_t(-1));
+            auto sizes = detail::append(xi[0].sizes(), int64_t(-1));
             for (short_t i = 0; i < geoDim_; ++i)
               result.set(i,
                          utils::dotproduct(
@@ -1176,19 +1194,27 @@ public:
 
       if constexpr (memory_optimized) {
         // memory-optimized
-        auto basfunc = eval_basfunc<deriv, memory_optimized>(xi, knot_indices);
-        auto coeff_indices = find_coeff_indices<memory_optimized>(knot_indices);
-        utils::BlockTensor<torch::Tensor, 1, geoDim_> result;
-        for (short_t i = 0; i < geoDim_; ++i)
-          result.set(i, torch::matmul(
-                            basfunc[1].view({xi[0].numel(), 1, -1}),
-                            torch::matmul(
-                                coeffs(i)
-                                    .index_select(0, coeff_indices)
-                                    .view({xi[0].numel(), -1, degrees_[0] + 1}),
-                                basfunc[0].view({xi[0].numel(), -1, 1})))
-                            .view(xi[0].sizes()));
-        return result;
+        if (coeffs(0).dim() > 1)
+          throw std::runtime_error(
+              "Memory-optimized evaluation requires single-valued coefficient");
+        else {
+          auto basfunc =
+              eval_basfunc<deriv, memory_optimized>(xi, knot_indices);
+          auto coeff_indices =
+              find_coeff_indices<memory_optimized>(knot_indices);
+          utils::BlockTensor<torch::Tensor, 1, geoDim_> result;
+          for (short_t i = 0; i < geoDim_; ++i)
+            result.set(i,
+                       torch::matmul(
+                           basfunc[1].view({xi[0].numel(), 1, -1}),
+                           torch::matmul(
+                               coeffs(i)
+                                   .index_select(0, coeff_indices)
+                                   .view({xi[0].numel(), -1, degrees_[0] + 1}),
+                               basfunc[0].view({xi[0].numel(), -1, 1})))
+                           .view(xi[0].sizes()));
+          return result;
+        }
       } else {
         // not memory-optimized
         if constexpr (geoDim_ > 1) {
@@ -1201,8 +1227,7 @@ public:
 
           if (coeffs(0).dim() > 1) {
             // coeffs has extra dimension
-            torch::IntArrayRef sizes =
-                detail::append(xi[0].sizes(), int64_t(-1));
+            auto sizes = detail::append(xi[0].sizes(), int64_t(-1));
             for (short_t i = 0; i < geoDim_; ++i)
               result.set(i,
                          utils::dotproduct(
@@ -1279,18 +1304,25 @@ public:
 
       if constexpr (memory_optimized) {
         // memory-optimized
-        auto basfunc = eval_basfunc<deriv, memory_optimized>(xi, knot_indices);
-        utils::BlockTensor<torch::Tensor, 1, geoDim_> result;
-        for (short_t i = 0; i < geoDim_; ++i)
-          result.set(i, torch::matmul(
-                            basfunc[1].view({xi[0].numel(), 1, -1}),
-                            torch::matmul(
-                                coeffs(i)
-                                    .index_select(0, coeff_indices)
-                                    .view({xi[0].numel(), -1, degrees_[0] + 1}),
-                                basfunc[0].view({xi[0].numel(), -1, 1})))
-                            .view(xi[0].sizes()));
-        return result;
+        if (coeffs(0).dim() > 1)
+          throw std::runtime_error(
+              "Memory-optimized evaluation requires single-valued coefficient");
+        else {
+          auto basfunc =
+              eval_basfunc<deriv, memory_optimized>(xi, knot_indices);
+          utils::BlockTensor<torch::Tensor, 1, geoDim_> result;
+          for (short_t i = 0; i < geoDim_; ++i)
+            result.set(i,
+                       torch::matmul(
+                           basfunc[1].view({xi[0].numel(), 1, -1}),
+                           torch::matmul(
+                               coeffs(i)
+                                   .index_select(0, coeff_indices)
+                                   .view({xi[0].numel(), -1, degrees_[0] + 1}),
+                               basfunc[0].view({xi[0].numel(), -1, 1})))
+                           .view(xi[0].sizes()));
+          return result;
+        }
       } else {
         // not memory-optimized
         if constexpr (geoDim_ > 1) {
@@ -1301,8 +1333,7 @@ public:
 
           if (coeffs(0).dim() > 1) {
             // coeffs has extra dimension
-            torch::IntArrayRef sizes =
-                detail::append(xi[0].sizes(), int64_t(-1));
+            auto sizes = detail::append(xi[0].sizes(), int64_t(-1));
             for (short_t i = 0; i < geoDim_; ++i)
               result.set(i,
                          utils::dotproduct(
@@ -1374,23 +1405,30 @@ public:
 
       if constexpr (memory_optimized) {
         // memory-optimized
-        auto basfunc = eval_basfunc<deriv, memory_optimized>(xi, knot_indices);
-        auto coeff_indices = find_coeff_indices<memory_optimized>(knot_indices);
-        utils::BlockTensor<torch::Tensor, 1, geoDim_> result;
-        for (short_t i = 0; i < geoDim_; ++i)
-          result.set(
-              i, torch::matmul(
-                     basfunc[2].view({xi[0].numel(), 1, -1}),
-                     torch::matmul(
-                         torch::matmul(
-                             coeffs(i)
-                                 .index_select(0, coeff_indices)
-                                 .view({xi[0].numel(), -1, degrees_[0] + 1}),
-                             basfunc[0].view({xi[0].numel(), -1, 1}))
-                             .view({xi[0].numel(), -1, degrees_[1] + 1}),
-                         basfunc[1].view({xi[0].numel(), -1, 1})))
-                     .view(xi[0].sizes()));
-        return result;
+        if (coeffs(0).dim() > 1)
+          throw std::runtime_error(
+              "Memory-optimized evaluation requires single-valued coefficient");
+        else {
+          auto basfunc =
+              eval_basfunc<deriv, memory_optimized>(xi, knot_indices);
+          auto coeff_indices =
+              find_coeff_indices<memory_optimized>(knot_indices);
+          utils::BlockTensor<torch::Tensor, 1, geoDim_> result;
+          for (short_t i = 0; i < geoDim_; ++i)
+            result.set(
+                i, torch::matmul(
+                       basfunc[2].view({xi[0].numel(), 1, -1}),
+                       torch::matmul(
+                           torch::matmul(
+                               coeffs(i)
+                                   .index_select(0, coeff_indices)
+                                   .view({xi[0].numel(), -1, degrees_[0] + 1}),
+                               basfunc[0].view({xi[0].numel(), -1, 1}))
+                               .view({xi[0].numel(), -1, degrees_[1] + 1}),
+                           basfunc[1].view({xi[0].numel(), -1, 1})))
+                       .view(xi[0].sizes()));
+          return result;
+        }
       } else {
         // not memory-optimized
         if constexpr (geoDim_ > 1) {
@@ -1403,8 +1441,7 @@ public:
 
           if (coeffs(0).dim() > 1) {
             // coeffs has extra dimension
-            torch::IntArrayRef sizes =
-                detail::append(xi[0].sizes(), int64_t(-1));
+            auto sizes = detail::append(xi[0].sizes(), int64_t(-1));
             for (short_t i = 0; i < geoDim_; ++i)
               result.set(i,
                          utils::dotproduct(
@@ -1482,23 +1519,30 @@ public:
 
       if constexpr (memory_optimized) {
         // memory-optimized
-        auto basfunc = eval_basfunc<deriv, memory_optimized>(xi, knot_indices);
-        auto coeff_indices = find_coeff_indices<memory_optimized>(knot_indices);
-        utils::BlockTensor<torch::Tensor, 1, geoDim_> result;
-        for (short_t i = 0; i < geoDim_; ++i)
-          result.set(
-              i, torch::matmul(
-                     basfunc[2].view({xi[0].numel(), 1, -1}),
-                     torch::matmul(
-                         torch::matmul(
-                             coeffs(i)
-                                 .index_select(0, coeff_indices)
-                                 .view({xi[0].numel(), -1, degrees_[0] + 1}),
-                             basfunc[0].view({xi[0].numel(), -1, 1}))
-                             .view({xi[0].numel(), -1, degrees_[1] + 1}),
-                         basfunc[1].view({xi[0].numel(), -1, 1})))
-                     .view(xi[0].sizes()));
-        return result;
+        if (coeffs(0).dim() > 1)
+          throw std::runtime_error(
+              "Memory-optimized evaluation requires single-valued coefficient");
+        else {
+          auto basfunc =
+              eval_basfunc<deriv, memory_optimized>(xi, knot_indices);
+          auto coeff_indices =
+              find_coeff_indices<memory_optimized>(knot_indices);
+          utils::BlockTensor<torch::Tensor, 1, geoDim_> result;
+          for (short_t i = 0; i < geoDim_; ++i)
+            result.set(
+                i, torch::matmul(
+                       basfunc[2].view({xi[0].numel(), 1, -1}),
+                       torch::matmul(
+                           torch::matmul(
+                               coeffs(i)
+                                   .index_select(0, coeff_indices)
+                                   .view({xi[0].numel(), -1, degrees_[0] + 1}),
+                               basfunc[0].view({xi[0].numel(), -1, 1}))
+                               .view({xi[0].numel(), -1, degrees_[1] + 1}),
+                           basfunc[1].view({xi[0].numel(), -1, 1})))
+                       .view(xi[0].sizes()));
+          return result;
+        }
       } else {
         // non memory-optimized
         if constexpr (geoDim_ > 1) {
@@ -1509,8 +1553,7 @@ public:
 
           if (coeffs(0).dim() > 1) {
             // coeffs has extra dimension
-            torch::IntArrayRef sizes =
-                detail::append(xi[0].sizes(), int64_t(-1));
+            auto sizes = detail::append(xi[0].sizes(), int64_t(-1));
             for (short_t i = 0; i < geoDim_; ++i)
               result.set(i,
                          utils::dotproduct(
@@ -1585,27 +1628,34 @@ public:
 
       if constexpr (memory_optimized) {
         // memory-optimized
-        auto basfunc = eval_basfunc<deriv, memory_optimized>(xi, knot_indices);
-        auto coeff_indices = find_coeff_indices<memory_optimized>(knot_indices);
-        utils::BlockTensor<torch::Tensor, 1, geoDim_> result;
-        for (short_t i = 0; i < geoDim_; ++i)
-          result.set(
-              i,
-              torch::matmul(
-                  basfunc[3].view({xi[0].numel(), 1, -1}),
-                  torch::matmul(
-                      torch::matmul(
-                          torch::matmul(
-                              coeffs(i)
-                                  .index_select(0, coeff_indices)
-                                  .view({xi[0].numel(), -1, degrees_[0] + 1}),
-                              basfunc[0].view({xi[0].numel(), -1, 1}))
-                              .view({xi[0].numel(), -1, degrees_[1] + 1}),
-                          basfunc[1].view({xi[0].numel(), -1, 1}))
-                          .view({xi[0].numel(), -1, degrees_[2] + 1}),
-                      basfunc[2].view({xi[0].numel(), -1, 1})))
-                  .view(xi[0].sizes()));
-        return result;
+        if (coeffs(0).dim() > 1)
+          throw std::runtime_error(
+              "Memory-optimized evaluation requires single-valued coefficient");
+        else {
+          auto basfunc =
+              eval_basfunc<deriv, memory_optimized>(xi, knot_indices);
+          auto coeff_indices =
+              find_coeff_indices<memory_optimized>(knot_indices);
+          utils::BlockTensor<torch::Tensor, 1, geoDim_> result;
+          for (short_t i = 0; i < geoDim_; ++i)
+            result.set(
+                i,
+                torch::matmul(
+                    basfunc[3].view({xi[0].numel(), 1, -1}),
+                    torch::matmul(
+                        torch::matmul(
+                            torch::matmul(
+                                coeffs(i)
+                                    .index_select(0, coeff_indices)
+                                    .view({xi[0].numel(), -1, degrees_[0] + 1}),
+                                basfunc[0].view({xi[0].numel(), -1, 1}))
+                                .view({xi[0].numel(), -1, degrees_[1] + 1}),
+                            basfunc[1].view({xi[0].numel(), -1, 1}))
+                            .view({xi[0].numel(), -1, degrees_[2] + 1}),
+                        basfunc[2].view({xi[0].numel(), -1, 1})))
+                    .view(xi[0].sizes()));
+          return result;
+        }
       } else {
         // non memory-optimized
         if constexpr (geoDim_ > 1) {
@@ -1618,8 +1668,7 @@ public:
 
           if (coeffs(0).dim() > 1) {
             // coeffs has extra dimension
-            torch::IntArrayRef sizes =
-                detail::append(xi[0].sizes(), int64_t(-1));
+            auto sizes = detail::append(xi[0].sizes(), int64_t(-1));
             for (short_t i = 0; i < geoDim_; ++i)
               result.set(i,
                          utils::dotproduct(
@@ -1700,26 +1749,32 @@ public:
 
       if constexpr (memory_optimized) {
         // memory-optimized
-        auto basfunc = eval_basfunc<deriv, memory_optimized>(xi, knot_indices);
-        utils::BlockTensor<torch::Tensor, 1, geoDim_> result;
-        for (short_t i = 0; i < geoDim_; ++i)
-          result.set(
-              i,
-              torch::matmul(
-                  basfunc[3].view({xi[0].numel(), 1, -1}),
-                  torch::matmul(
-                      torch::matmul(
-                          torch::matmul(
-                              coeffs(i)
-                                  .index_select(0, coeff_indices)
-                                  .view({xi[0].numel(), -1, degrees_[0] + 1}),
-                              basfunc[0].view({xi[0].numel(), -1, 1}))
-                              .view({xi[0].numel(), -1, degrees_[1] + 1}),
-                          basfunc[1].view({xi[0].numel(), -1, 1}))
-                          .view({xi[0].numel(), -1, degrees_[2] + 1}),
-                      basfunc[2].view({xi[0].numel(), -1, 1})))
-                  .view(xi[0].sizes()));
-        return result;
+        if (coeffs(0).dim() > 1)
+          throw std::runtime_error(
+              "Memory-optimized evaluation requires single-valued coefficient");
+        else {
+          auto basfunc =
+              eval_basfunc<deriv, memory_optimized>(xi, knot_indices);
+          utils::BlockTensor<torch::Tensor, 1, geoDim_> result;
+          for (short_t i = 0; i < geoDim_; ++i)
+            result.set(
+                i,
+                torch::matmul(
+                    basfunc[3].view({xi[0].numel(), 1, -1}),
+                    torch::matmul(
+                        torch::matmul(
+                            torch::matmul(
+                                coeffs(i)
+                                    .index_select(0, coeff_indices)
+                                    .view({xi[0].numel(), -1, degrees_[0] + 1}),
+                                basfunc[0].view({xi[0].numel(), -1, 1}))
+                                .view({xi[0].numel(), -1, degrees_[1] + 1}),
+                            basfunc[1].view({xi[0].numel(), -1, 1}))
+                            .view({xi[0].numel(), -1, degrees_[2] + 1}),
+                        basfunc[2].view({xi[0].numel(), -1, 1})))
+                    .view(xi[0].sizes()));
+          return result;
+        }
       } else {
         // non memory-optimized
         if constexpr (geoDim_ > 1) {
@@ -1730,8 +1785,7 @@ public:
 
           if (coeffs(0).dim() > 1) {
             // coeffs has extra dimension
-            torch::IntArrayRef sizes =
-                detail::append(xi[0].sizes(), int64_t(-1));
+            auto sizes = detail::append(xi[0].sizes(), int64_t(-1));
             for (short_t i = 0; i < geoDim_; ++i)
               result.set(i,
                          utils::dotproduct(
