@@ -5287,7 +5287,7 @@ public:
     if constexpr (BSplineCore::parDim_ == 1)
 
       return utils::BlockTensor<torch::Tensor, 1, 1>(
-          BSplineCore::template eval<deriv::dx, memory_optimized>(
+          *BSplineCore::template eval<deriv::dx, memory_optimized>(
               xi, knot_indices, coeff_indices)[0]);
 
     else
@@ -5304,10 +5304,10 @@ public:
     if constexpr (BSplineCore::parDim_ == 2)
 
       return utils::BlockTensor<torch::Tensor, 1, 1>(
-          BSplineCore::template eval<deriv::dx, memory_optimized>(
+          *BSplineCore::template eval<deriv::dx, memory_optimized>(
               xi, knot_indices, coeff_indices)[0] +
-          BSplineCore::template eval<deriv::dy, memory_optimized>(
-              xi, knot_indices, coeff_indices)[1]);
+          *BSplineCore::template eval<deriv::dy, memory_optimized>(
+              xi, knot_indices, coeff_indices)[0]);
 
     else
       throw std::runtime_error("Unsupported parametric dimension");
@@ -5324,12 +5324,12 @@ public:
     if constexpr (BSplineCore::parDim_ == 3)
 
       return utils::BlockTensor<torch::Tensor, 1, 1>(
-          BSplineCore::template eval<deriv::dx, memory_optimized>(
+          *BSplineCore::template eval<deriv::dx, memory_optimized>(
               xi, knot_indices, coeff_indices)[0] +
-          BSplineCore::template eval<deriv::dy, memory_optimized>(
-              xi, knot_indices, coeff_indices)[1] +
-          BSplineCore::template eval<deriv::dz, memory_optimized>(
-              xi, knot_indices, coeff_indices)[2]);
+          *BSplineCore::template eval<deriv::dy, memory_optimized>(
+              xi, knot_indices, coeff_indices)[0] +
+          *BSplineCore::template eval<deriv::dz, memory_optimized>(
+              xi, knot_indices, coeff_indices)[0]);
 
     else
       throw std::runtime_error("Unsupported parametric dimension");
@@ -5347,14 +5347,14 @@ public:
     if constexpr (BSplineCore::parDim_ == 4)
 
       return utils::BlockTensor<torch::Tensor, 1, 1>(
-          BSplineCore::template eval<deriv::dx, memory_optimized>(
+          *BSplineCore::template eval<deriv::dx, memory_optimized>(
               xi, knot_indices, coeff_indices)[0] +
-          BSplineCore::template eval<deriv::dy, memory_optimized>(
-              xi, knot_indices, coeff_indices)[1] +
-          BSplineCore::template eval<deriv::dz, memory_optimized>(
-              xi, knot_indices, coeff_indices)[2] +
-          BSplineCore::template eval<deriv::dt, memory_optimized>(
-              xi, knot_indices, coeff_indices)[3]);
+          *BSplineCore::template eval<deriv::dy, memory_optimized>(
+              xi, knot_indices, coeff_indices)[0] +
+          *BSplineCore::template eval<deriv::dz, memory_optimized>(
+              xi, knot_indices, coeff_indices)[0] +
+          *BSplineCore::template eval<deriv::dt, memory_optimized>(
+              xi, knot_indices, coeff_indices)[0]);
 
     else
       throw std::runtime_error("Unsupported parametric dimension");
