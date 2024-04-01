@@ -1677,7 +1677,13 @@ template <typename T, typename U, std::size_t... Dims>
 inline auto operator*(const BlockTensor<T, Dims...> &lhs, const U &rhs) {
   BlockTensor<T, Dims...> result;
   for (std::size_t idx = 0; idx < (Dims * ...); ++idx)
-    result[idx] = std::make_shared<T>(*lhs[idx] + rhs);
+    result[idx] =
+        (lhs[idx]->dim() > rhs.dim()
+             ? std::make_shared<T>(*lhs[idx] * rhs.unsqueeze(-1))
+             : (lhs[idx]->dim() < rhs.dim()
+                    ? std::make_shared<T>(lhs[idx]->unsqueeze(-1) * rhs)
+                    : std::make_shared<T>(*lhs[idx] * rhs)));
+  ;
   return result;
 }
 
@@ -1687,7 +1693,12 @@ template <typename T, typename U, std::size_t... Dims>
 inline auto operator*(const T &lhs, const BlockTensor<U, Dims...> &rhs) {
   BlockTensor<U, Dims...> result;
   for (std::size_t idx = 0; idx < (Dims * ...); ++idx)
-    result[idx] = std::make_shared<U>(lhs * *rhs[idx]);
+    result[idx] =
+        (lhs.dim() > rhs[idx]->dim()
+             ? std::make_shared<U>(lhs * rhs[idx]->unsqueeze(-1))
+             : (lhs.dim() < rhs[idx]->dim()
+                    ? std::make_shared<U>(lhs.unsqueeze(-1) * *rhs[idx])
+                    : std::make_shared<U>(lhs * *rhs[idx])));
   return result;
 }
 
