@@ -5100,65 +5100,77 @@ public:
                    const utils::TensorArray1 &knot_indices,
                    const torch::Tensor &coeff_indices) const {
     assert(xi[0].sizes() == knot_indices[0].sizes());
-    if constexpr (BSplineCore::parDim_ == 1)
+    throw std::runtime_error("Unsupported parametric/geometric dimension");
 
-      /// curl = ???
-      return utils::BlockTensor<torch::Tensor, 1, 1>(
-          BSplineCore::template eval<deriv::dx, memory_optimized>(
-              xi, knot_indices, coeff_indices)[0]);
-
-    else
-      throw std::runtime_error("Unsupported parametric dimension");
+    return utils::BlockTensor<torch::Tensor, 1, 1>{};
   }
 
   template <bool memory_optimized = false>
   inline auto curl(const utils::TensorArray2 &xi,
                    const utils::TensorArray2 &knot_indices,
                    const torch::Tensor &coeff_indices) const {
+
+    static_assert(BSplineCore::parDim_ == BSplineCore::geoDim_,
+                  "curl(.) requires that parametric and geometric dimension "
+                  "are the same");
+
     assert(xi[0].sizes() == knot_indices[0].sizes() &&
            xi[1].sizes() == knot_indices[1].sizes());
 
-    if constexpr (BSplineCore::parDim_ == 2)
+    if constexpr (BSplineCore::parDim_ == 2 && BSplineCore::geoDim_ == 2)
 
-      /// curl = ???
-      return utils::BlockTensor<torch::Tensor, 1, 2>(
-          BSplineCore::template eval<deriv::dx, memory_optimized>(
-              xi, knot_indices, coeff_indices)[0],
-          BSplineCore::template eval<deriv::dy, memory_optimized>(
-              xi, knot_indices, coeff_indices)[1]);
+      /// curl = 0,
+      ///        0,
+      ///        du_y / dx - du_x / dy
+      ///
+      /// Only the third component is returned
+      return utils::BlockTensor<torch::Tensor, 1, 1>(
+          *BSplineCore::template eval<deriv::dx, memory_optimized>(
+              xi, knot_indices, coeff_indices)[1] -
+          *BSplineCore::template eval<deriv::dy, memory_optimized>(
+              xi, knot_indices, coeff_indices)[0]);
 
     else
-      throw std::runtime_error("Unsupported parametric dimension");
+      throw std::runtime_error("Unsupported parametric/geometric dimension");
+
+    return utils::BlockTensor<torch::Tensor, 1, 1>{};
   }
 
   template <bool memory_optimized = false>
   inline auto curl(const utils::TensorArray3 &xi,
                    const utils::TensorArray3 &knot_indices,
                    const torch::Tensor &coeff_indices) const {
+
+    static_assert(BSplineCore::parDim_ == BSplineCore::geoDim_,
+                  "curl(.) requires that parametric and geometric dimension "
+                  "are the same");
+
     assert(xi[0].sizes() == knot_indices[0].sizes() &&
            xi[1].sizes() == knot_indices[1].sizes() &&
            xi[2].sizes() == knot_indices[2].sizes());
 
-    if constexpr (BSplineCore::parDim_ == 3)
+    if constexpr (BSplineCore::parDim_ == 3 && BSplineCore::geoDim_ == 3)
 
       /// curl = du_z / dy - du_y / dz,
       ///        du_x / dz - du_z / dx,
       ///        du_y / dx - du_x / dy
       return utils::BlockTensor<torch::Tensor, 1, 3>(
-          BSplineCore::template eval<deriv::dy, memory_optimized>(
+          *BSplineCore::template eval<deriv::dy, memory_optimized>(
               xi, knot_indices, coeff_indices)[2] -
-              BSplineCore::template eval<deriv::dz, memory_optimized>(
+              *BSplineCore::template eval<deriv::dz, memory_optimized>(
                   xi, knot_indices, coeff_indices)[1],
-          BSplineCore::template eval<deriv::dz, memory_optimized>(
+          *BSplineCore::template eval<deriv::dz, memory_optimized>(
               xi, knot_indices, coeff_indices)[0] +
-              BSplineCore::template eval<deriv::dx, memory_optimized>(
+              *BSplineCore::template eval<deriv::dx, memory_optimized>(
                   xi, knot_indices, coeff_indices)[2],
-          BSplineCore::template eval<deriv::dx, memory_optimized>(
+          *BSplineCore::template eval<deriv::dx, memory_optimized>(
               xi, knot_indices, coeff_indices)[1] +
-              BSplineCore::template eval<deriv::dy, memory_optimized>(
+              *BSplineCore::template eval<deriv::dy, memory_optimized>(
                   xi, knot_indices, coeff_indices)[0]);
     else
-      throw std::runtime_error("Unsupported parametric dimension");
+      throw std::runtime_error("Unsupported parametric/geometric dimension");
+
+    return utils::BlockTensor<torch::Tensor, 1, 3>{};
   }
 
   template <bool memory_optimized = false>
@@ -5170,21 +5182,9 @@ public:
            xi[2].sizes() == knot_indices[2].sizes() &&
            xi[3].sizes() == knot_indices[3].sizes());
 
-    if constexpr (BSplineCore::parDim_ == 4)
+    throw std::runtime_error("Unsupported parametric/geometric dimension");
 
-      /// curl = ???
-      return utils::BlockTensor<torch::Tensor, 1, 4>(
-          BSplineCore::template eval<deriv::dx, memory_optimized>(
-              xi, knot_indices, coeff_indices)[0],
-          BSplineCore::template eval<deriv::dy, memory_optimized>(
-              xi, knot_indices, coeff_indices)[1],
-          BSplineCore::template eval<deriv::dz, memory_optimized>(
-              xi, knot_indices, coeff_indices)[2],
-          BSplineCore::template eval<deriv::dt, memory_optimized>(
-              xi, knot_indices, coeff_indices)[3]);
-
-    else
-      throw std::runtime_error("Unsupported parametric dimension");
+    return utils::BlockTensor<torch::Tensor, 1, 3>{};
   }
   /// @}
 
@@ -6669,7 +6669,7 @@ public:
            xi[1].sizes() == knot_indices[1].sizes());
 
     if constexpr (BSplineCore::parDim_ == 2)
-      return utils::BlockTensor<torch::Tensor, 2, BSplineCore::geoDim_, 2>(
+      return utils::BlockTensor<torch::Tensor, 1, 1, BSplineCore::geoDim_>(
                  BSplineCore::template eval<deriv::dx ^ 2, memory_optimized>(
                      xi, knot_indices, coeff_indices) +
                  BSplineCore::template eval<deriv::dy ^ 2, memory_optimized>(
@@ -6688,7 +6688,7 @@ public:
            xi[2].sizes() == knot_indices[2].sizes());
 
     if constexpr (BSplineCore::parDim_ == 3)
-      return utils::BlockTensor<torch::Tensor, 3, BSplineCore::geoDim_, 3>(
+      return utils::BlockTensor<torch::Tensor, 1, 1, BSplineCore::geoDim_>(
                  BSplineCore::template eval<deriv::dx ^ 2, memory_optimized>(
                      xi, knot_indices, coeff_indices) +
                  BSplineCore::template eval<deriv::dy ^ 2, memory_optimized>(
@@ -6710,7 +6710,7 @@ public:
            xi[3].sizes() == knot_indices[3].sizes());
 
     if constexpr (BSplineCore::parDim_ == 4)
-      return utils::BlockTensor<torch::Tensor, 4, BSplineCore::geoDim_, 4>(
+      return utils::BlockTensor<torch::Tensor, 1, 1, BSplineCore::geoDim_>(
                  BSplineCore::template eval<deriv::dx ^ 2, memory_optimized>(
                      xi, knot_indices, coeff_indices) +
                  BSplineCore::template eval<deriv::dy ^ 2, memory_optimized>(
