@@ -854,9 +854,21 @@ inline auto operator*(const BlockTensor<T, Rows, Common> &lhs,
   BlockTensor<typename std::common_type<T, U>::type, Rows, Cols> result;
   for (std::size_t row = 0; row < Rows; ++row)
     for (std::size_t col = 0; col < Cols; ++col) {
-      T tmp = torch::mul(*lhs[Common * row], *rhs[col]);
+      T tmp =
+          (lhs[Common * row]->dim() > rhs[col]->dim()
+               ? torch::mul(*lhs[Common * row], rhs[col]->unsqueeze(-1))
+               : (lhs[Common * row]->dim() < rhs[col]->dim()
+                      ? torch::mul(lhs[Common * row]->unsqueeze(-1), *rhs[col])
+                      : torch::mul(*lhs[Common * row], *rhs[col])));
       for (std::size_t idx = 1; idx < Common; ++idx)
-        tmp += torch::mul(*lhs[Common * row + idx], *rhs[Cols * idx + col]);
+        tmp += (lhs[Common * row]->dim() > rhs[col]->dim()
+                    ? torch::mul(*lhs[Common * row + idx],
+                                 rhs[Cols * idx + col]->unsqueeze(-1))
+                    : (lhs[Common * row]->dim() < rhs[col]->dim()
+                           ? torch::mul(lhs[Common * row + idx]->unsqueeze(-1),
+                                        *rhs[Cols * idx + col])
+                           : torch::mul(*lhs[Common * row + idx],
+                                        *rhs[Cols * idx + col])));
       result[Cols * row + col] = std::make_shared<T>(tmp);
     }
   return result;
@@ -995,10 +1007,31 @@ inline auto operator*(const BlockTensor<T, Rows, Common> &lhs,
   for (std::size_t slice = 0; slice < Slices; ++slice)
     for (std::size_t row = 0; row < Rows; ++row)
       for (std::size_t col = 0; col < Cols; ++col) {
-        T tmp = torch::mul(*lhs[Common * row], *rhs[Rows * Cols * slice + col]);
+        T tmp =
+            (lhs[Common * row]->dim() > rhs[Rows * Cols * slice + col]->dim()
+                 ? torch::mul(*lhs[Common * row],
+                              rhs[Rows * Cols * slice + col]->unsqueeze(-1))
+                 : (lhs[Common * row]->dim() <
+                            rhs[Rows * Cols * slice + col]->dim()
+                        ? torch::mul(lhs[Common * row]->unsqueeze(-1),
+                                     *rhs[Rows * Cols * slice + col])
+                        : torch::mul(*lhs[Common * row],
+                                     *rhs[Rows * Cols * slice + col])));
         for (std::size_t idx = 1; idx < Common; ++idx)
-          tmp += torch::mul(*lhs[Common * row + idx],
-                            *rhs[Rows * Cols * slice + Cols * idx + col]);
+          tmp +=
+              (lhs[Common * row]->dim() > rhs[Rows * Cols * slice + col]->dim()
+                   ? torch::mul(
+                         *lhs[Common * row + idx],
+                         rhs[Rows * Cols * slice + Cols * idx + col]->unsqueeze(
+                             -1))
+                   : (lhs[Common * row]->dim() <
+                              rhs[Rows * Cols * slice + col]->dim()
+                          ? torch::mul(
+                                lhs[Common * row + idx]->unsqueeze(-1),
+                                *rhs[Rows * Cols * slice + Cols * idx + col])
+                          : torch::mul(
+                                *lhs[Common * row + idx],
+                                *rhs[Rows * Cols * slice + Cols * idx + col])));
         result[Rows * Cols * slice + Cols * row + col] =
             std::make_shared<T>(tmp);
       }
@@ -1015,10 +1048,33 @@ inline auto operator*(const BlockTensor<T, Rows, Common, Slices> &lhs,
   for (std::size_t slice = 0; slice < Slices; ++slice)
     for (std::size_t row = 0; row < Rows; ++row)
       for (std::size_t col = 0; col < Cols; ++col) {
-        T tmp = torch::mul(*lhs[Rows * Cols * slice + Common * row], *rhs[col]);
+        T tmp =
+            (lhs[Rows * Cols * slice + Common * row]->dim() > rhs[col]->dim()
+                 ? torch::mul(*lhs[Rows * Cols * slice + Common * row],
+                              rhs[col]->unsqueeze(-1))
+                 : (lhs[Rows * Cols * slice + Common * row]->dim() <
+                            rhs[col]->dim()
+                        ? torch::mul(lhs[Rows * Cols * slice + Common * row]
+                                         ->unsqueeze(-1),
+                                     *rhs[col])
+                        : torch::mul(*lhs[Rows * Cols * slice + Common * row],
+                                     *rhs[col])));
         for (std::size_t idx = 1; idx < Common; ++idx)
-          tmp += torch::mul(*lhs[Rows * Cols * slice + Common * row + idx],
-                            *rhs[Cols * idx + col]);
+          tmp +=
+              (lhs[Rows * Cols * slice + Common * row + idx]->dim() >
+                       rhs[Cols * idx + col]->dim()
+                   ? torch::mul(*lhs[Rows * Cols * slice + Common * row + idx],
+                                rhs[Cols * idx + col])
+                         ->unsqueeze(-1)
+                   : (lhs[Rows * Cols * slice + Common * row + idx]->dim() <
+                              rhs[Cols * idx + col]->dim()
+                          ? torch::mul(
+                                lhs[Rows * Cols * slice + Common * row + idx]
+                                    ->unsqueeze(-1),
+                                *rhs[Cols * idx + col])
+                          : torch::mul(
+                                *lhs[Rows * Cols * slice + Common * row + idx],
+                                *rhs[Cols * idx + col])));
         result[Rows * Cols * slice + Cols * row + col] =
             std::make_shared<T>(tmp);
       }
