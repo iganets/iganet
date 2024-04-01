@@ -137,7 +137,6 @@ inline constexpr auto prepend(torch::ArrayRef<T> array, T data) {
   std::vector<T> Vec{array.vec()};
   Vec.insert(Vec.begin(), data);
   return Vec;
-  //  return std::tuple{torch::ArrayRef<T>{Vec}, Vec};
 }
 
 /// @brief Appends data to a torch::ArrayRef
@@ -146,7 +145,6 @@ inline constexpr auto append(torch::ArrayRef<T> array, T data) {
   std::vector<T> Vec{array.vec()};
   Vec.push_back(data);
   return Vec;
-  //  return torch::ArrayRef<T>{Vec};
 }
 } // namespace detail
 
@@ -5394,7 +5392,7 @@ public:
        const std::array<torch::Tensor, BSplineCore::parDim_> &xi) const {
     return idiv<memory_optimized, Geometry>(
         G, xi, BSplineCore::find_knot_indices(xi),
-        G.BSplineCore::find_knot_indices(xi));
+        G.find_knot_indices(xi));
   }
   /// @}
 
@@ -5477,7 +5475,7 @@ public:
        const torch::Tensor &coeff_indices,
        const std::array<torch::Tensor, Geometry::parDim()> &knot_indices_G,
        const torch::Tensor &coeff_indices_G) const {
-    return BSplineCore::template ijac<memory_optimized>(
+    return ijac<memory_optimized, Geometry>(G,
                xi, knot_indices, coeff_indices, knot_indices_G, coeff_indices_G)
         .trace();
   }
