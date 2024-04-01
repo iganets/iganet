@@ -5391,8 +5391,7 @@ public:
   idiv(const Geometry &G,
        const std::array<torch::Tensor, BSplineCore::parDim_> &xi) const {
     return idiv<memory_optimized, Geometry>(
-        G, xi, BSplineCore::find_knot_indices(xi),
-        G.find_knot_indices(xi));
+        G, xi, BSplineCore::find_knot_indices(xi), G.find_knot_indices(xi));
   }
   /// @}
 
@@ -5475,8 +5474,8 @@ public:
        const torch::Tensor &coeff_indices,
        const std::array<torch::Tensor, Geometry::parDim()> &knot_indices_G,
        const torch::Tensor &coeff_indices_G) const {
-    return ijac<memory_optimized, Geometry>(G,
-               xi, knot_indices, coeff_indices, knot_indices_G, coeff_indices_G)
+    return ijac<memory_optimized, Geometry>(G, xi, knot_indices, coeff_indices,
+                                            knot_indices_G, coeff_indices_G)
         .trace();
   }
 
