@@ -4,7 +4,6 @@ cert.pem
 key.pem
 
 # Editor directories and files
-/build
 .idea
 .vscode
 *.dll
