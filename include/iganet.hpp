@@ -1081,7 +1081,18 @@ public:
       for (auto &batch : loader) {
         inputs = batch.data;
 
+        if (inputs.dim() > 0) {
         Base::G_.from_tensor(
+            inputs.slice(1, 0, Base::G_.ncumcoeffs() * Base::G_.geoDim())
+                .t());
+        Base::f_.from_tensor(
+            inputs
+                .slice(1, Base::G_.ncumcoeffs() * Base::G_.geoDim(),
+                       Base::G_.ncumcoeffs() * Base::G_.geoDim() +
+                           Base::f_.ncumcoeffs() * Base::f_.geoDim())
+            .t());
+        } else {
+          Base::G_.from_tensor(
             inputs.slice(1, 0, Base::G_.ncumcoeffs() * Base::G_.geoDim())
                 .flatten());
         Base::f_.from_tensor(
@@ -1089,7 +1100,8 @@ public:
                 .slice(1, Base::G_.ncumcoeffs() * Base::G_.geoDim(),
                        Base::G_.ncumcoeffs() * Base::G_.geoDim() +
                            Base::f_.ncumcoeffs() * Base::f_.geoDim())
-                .flatten());
+            .flatten());
+        }
 
         this->epoch(epoch);
 
