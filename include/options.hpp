@@ -80,6 +80,8 @@ public:
                             ? torch::kMPS
                         : (getenv("IGANET_DEVICE", std::string{}) == "XLA")
                             ? torch::kXLA
+			: (getenv("IGANET_DEVICE", std::string{}) == "XPU")
+                            ? torch::kXPU
                         : torch::cuda::is_available() ? torch::kCUDA
                                                       : torch::kCPU)) {}
 

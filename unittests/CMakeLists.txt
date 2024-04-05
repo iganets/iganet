@@ -20,6 +20,10 @@ endif()
 set_property(CACHE IGANET_UNITTESTS_COEFF_TYPE PROPERTY STRINGS
   "float" "double")
 
+message("UnitTests options:")
+message("IGANET_UNITTESTS_COEFF_TYPE........: ${IGANET_UNITTESTS_COEFF_TYPE}")
+message("")
+
 ########################################################################
 # Config file
 ########################################################################

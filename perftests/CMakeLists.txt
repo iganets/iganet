@@ -20,6 +20,10 @@ endif()
 set_property(CACHE IGANET_PERFTESTS_COEFF_TYPE PROPERTY STRINGS
   "float" "double")
 
+message("PerfTests options:")
+message("IGANET_PERFTESTS_COEFF_TYPE........: ${IGANET_PERFTESTS_COEFF_TYPE}")
+message("")
+
 ########################################################################
 # Config file
 ########################################################################

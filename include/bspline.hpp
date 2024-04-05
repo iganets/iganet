@@ -5007,7 +5007,7 @@ public:
   }
 
   /// @brief Scales the B-spline object by a scalar
-  inline auto scale(BSplineCore::value_type s, int dim = -1) {
+  inline auto scale(typename BSplineCore::value_type s, int dim = -1) {
     if (dim == -1)
       for (int i = 0; i < BSplineCore::geoDim(); ++i)
         BSplineCore::coeffs(i) *= s;
@@ -5033,7 +5033,7 @@ public:
   }
 
   /// @brief Rotates the B-spline object by an angle in 2d
-  inline auto rotate(BSplineCore::value_type angle) {
+  inline auto rotate(typename BSplineCore::value_type angle) {
 
     static_assert(BSplineCore::geoDim() == 2,
                   "Rotation about one angle is only available in 2D");
