@@ -102,6 +102,10 @@ foreach(unittest ${UNITTESTS})
     target_link_libraries(${name} PUBLIC Matplot++::matplot)
   endif()
 
+  if (IGANET_WITH_MPI)
+    target_link_libraries(${name} PUBLIC MPI::MPI_CXX)
+  endif()
+
   if (IGANET_WITH_OPENMP)
     target_link_libraries(${name} PUBLIC OpenMP::OpenMP_CXX)
   endif()

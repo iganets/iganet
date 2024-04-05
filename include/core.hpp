@@ -22,8 +22,12 @@
 #include <tuple>
 #include <vector>
 
-#if _OPENMP
+#ifdef IGANET_WITH_OPENMP
 #include <omp.h>
+#endif
+
+#ifdef IGANET_WITH_MPI
+#include <torch/csrc/distributed/c10d/ProcessGroupMPI.hpp>
 #endif
 
 #include <torch/csrc/api/include/torch/types.h>
@@ -164,7 +168,7 @@ inline void init(std::ostream &os = Log(log::info)) {
   torch::manual_seed(1);
 
   // Set number of intraop thread pool threads
-#if _OPENMP
+#ifdef IGANET_WITH_OPENMP
   at::set_num_threads(
       getenv("IGANET_INTRAOP_NUM_THREADS", omp_get_max_threads()));
 #else

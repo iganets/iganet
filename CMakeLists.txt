@@ -22,6 +22,7 @@
 #
 # IGANET_WITH_GISMO
 # IGANET_WITH_MATPLOT
+# IGANET_WITH_MPI
 # IGANET_WITH_OPENMP
 #
 ########################################################################
@@ -109,6 +110,7 @@ option(IGANET_BUILD_UNITTESTS   "Build unittests"           OFF)
 option(IGANET_BUILD_WEBAPPS     "Build WebApps"             OFF)
 option(IGANET_WITH_GISMO        "With G+Smo support"        OFF)
 option(IGANET_WITH_MATPLOT      "With Matplot support"      OFF)
+option(IGANET_WITH_MPI          "With MPI support"          OFF)
 option(IGANET_WITH_OPENMP       "With OpenMP support"       ON )
 
 ########################################################################
@@ -133,6 +135,13 @@ endif()
 
 if (IGANET_WITH_MATPLOT)
   include(Matplot++)
+endif()
+
+########################################################################
+# Enable MPI support
+########################################################################
+if (IGANET_WITH_MPI)
+  find_package(MPI REQUIRED)
 endif()
 
 ########################################################################
@@ -286,6 +295,7 @@ message("")
 message("Features:")
 message("IGANET_WITH_GISMO..................: ${IGANET_WITH_GISMO}")
 message("IGANET_WITH_MATPLOT................: ${IGANET_WITH_MATPLOT}")
+message("IGANET_WITH_MPI....................: ${IGANET_WITH_MPI}")
 message("IGANET_WITH_OPENMP.................: ${IGANET_WITH_OPENMP}")
 message("")
 
