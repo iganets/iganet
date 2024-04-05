@@ -14,7 +14,7 @@
 
 # Set a default coefficient numeric types if not specified
 if(NOT IGANET_WEBAPPS_COEFF_TYPE)
-  set (IGANET_WEBAPPS_COEFF_TYPE "float" CACHE STRING
+  set (IGANET_WEBAPPS_COEFF_TYPE "double" CACHE STRING
     "Coefficient type(float, double)" FORCE)
 endif()
 set_property(CACHE IGANET_WEBAPPS_COEFF_TYPE PROPERTY STRINGS
@@ -93,6 +93,10 @@ foreach(webapp ${WEBAPPS})
 
   if (IGANET_WITH_GISMO)
     target_link_libraries(${name} PUBLIC gismo_static)
+  endif()
+
+  if (IGANET_WITH_MATPLOT)
+    target_link_libraries(${name} PUBLIC Matplot++::matplot)
   endif()
 
   if (IGANET_WITH_OPENMP)

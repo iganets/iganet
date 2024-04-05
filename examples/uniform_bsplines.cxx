@@ -16,16 +16,21 @@
 #include <iostream>
 
 int main() {
-  std::cout << iganet::verbose;
-  using real_t = double;
   iganet::init();
+  iganet::verbose(std::cout);
+  using real_t = double;
+
+  nlohmann::json json;
+  json["res0"] = 50;
+  json["res1"] = 50;
+  json["cnet"] = true;
 
   {
     // Univariate uniform B-spline of degree 2 with 6 control points in R^1
     iganet::UniformBSpline<real_t, 1, 2> bspline({6}), color({6});
 
     // Print information
-    std::cout << bspline << std::endl;
+    iganet::Log(iganet::log::info) << bspline << std::endl;
 
     // Map control points to phyiscal coordinates
     bspline.transform([](const std::array<real_t, 1> xi) {
@@ -38,18 +43,18 @@ int main() {
     });
 
     // Evaluate B-spline at xi=0, xi=0.5, and xi=1
-    std::cout << bspline.eval(
-                     iganet::utils::to_tensorArray<real_t>({0.0, 0.5, 1.0}))
-              << std::endl;
+    iganet::Log(iganet::log::info)
+        << bspline.eval(iganet::utils::to_tensorArray<real_t>({0.0, 0.5, 1.0}))
+        << std::endl;
 
-#ifdef WITH_MATPLOT
+#ifdef IGANET_WITH_MATPLOT
     // Plot B-spline
-    bspline.plot(50);
-    bspline.plot(color, 50);
+    bspline.plot(json)->show();
+    bspline.plot(color, json)->show();
 #endif
 
     // Export B-spline to XML
-    bspline.to_xml().print(std::cout);
+    bspline.to_xml().print(iganet::Log(iganet::log::info));
   }
 
   {
@@ -58,11 +63,12 @@ int main() {
     iganet::UniformBSpline<real_t, 1, 2> color({6});
 
     // Print information
-    std::cout << bspline << std::endl;
+    iganet::Log(iganet::log::info) << bspline << std::endl;
 
     // Map control points to phyiscal coordinates
     bspline.transform([](const std::array<real_t, 1> xi) {
-      return std::array<real_t, 2>{xi[0] * xi[0], sin(M_PI * xi[0])};
+      return std::array<real_t, 2>{xi[0] * xi[0],
+                                   sin(static_cast<real_t>(M_PI) * xi[0])};
     });
 
     // Map colors
@@ -71,18 +77,18 @@ int main() {
     });
 
     // Evaluate B-spline at xi=0, xi=0.5, and xi=1
-    std::cout << bspline.eval(
-                     iganet::utils::to_tensorArray<real_t>({0.0, 0.5, 1.0}))
-              << std::endl;
+    iganet::Log(iganet::log::info)
+        << bspline.eval(iganet::utils::to_tensorArray<real_t>({0.0, 0.5, 1.0}))
+        << std::endl;
 
-#ifdef WITH_MATPLOT
+#ifdef IGANET_WITH_MATPLOT
     // Plot B-spline
-    bspline.plot(50);
-    bspline.plot(color, 50);
+    bspline.plot(json)->show();
+    bspline.plot(color, json)->show();
 #endif
 
     // Export B-spline to XML
-    bspline.to_xml().print(std::cout);
+    bspline.to_xml().print(iganet::Log(iganet::log::info));
   }
 
   {
@@ -91,11 +97,12 @@ int main() {
     iganet::UniformBSpline<real_t, 1, 2> color({6});
 
     // Print information
-    std::cout << bspline << std::endl;
+    iganet::Log(iganet::log::info) << bspline << std::endl;
 
     // Map control points to phyiscal coordinates
     bspline.transform([](const std::array<real_t, 1> xi) {
-      return std::array<real_t, 3>{xi[0] * xi[0], sin(M_PI * xi[0]), xi[0]};
+      return std::array<real_t, 3>{
+          xi[0] * xi[0], sin(static_cast<real_t>(M_PI) * xi[0]), xi[0]};
     });
 
     // Map colors
@@ -104,18 +111,18 @@ int main() {
     });
 
     // Evaluate B-spline at xi=0, xi=0.5, and xi=1
-    std::cout << bspline.eval(
-                     iganet::utils::to_tensorArray<real_t>({0.0, 0.5, 1.0}))
-              << std::endl;
+    iganet::Log(iganet::log::info)
+        << bspline.eval(iganet::utils::to_tensorArray<real_t>({0.0, 0.5, 1.0}))
+        << std::endl;
 
-#ifdef WITH_MATPLOT
+#ifdef IGANET_WITH_MATPLOT
     // Plot B-spline
-    bspline.plot(50);
-    bspline.plot(color, 50);
+    bspline.plot(json)->show();
+    bspline.plot(color, json)->show();
 #endif
 
     // Export B-spline to XML
-    bspline.to_xml().print(std::cout);
+    bspline.to_xml().print(iganet::Log(iganet::log::info));
   }
 
   {
@@ -125,12 +132,13 @@ int main() {
     iganet::UniformBSpline<real_t, 1, 3, 4> color({5, 6});
 
     // Print information
-    std::cout << bspline << std::endl;
+    iganet::Log(iganet::log::info) << bspline << std::endl;
 
     // Map control points to phyiscal coordinates
     bspline.transform([](const std::array<real_t, 2> xi) {
-      return std::array<real_t, 2>{(xi[0] + 1) * cos(M_PI * xi[1]),
-                                   (xi[0] + 1) * sin(M_PI * xi[1])};
+      return std::array<real_t, 2>{
+          (xi[0] + 1) * cos(static_cast<real_t>(M_PI) * xi[1]),
+          (xi[0] + 1) * sin(static_cast<real_t>(M_PI) * xi[1])};
     });
 
     // Map colors
@@ -139,18 +147,19 @@ int main() {
     });
 
     // Evaluate B-spline at xi=0, xi=0.5, and xi=1
-    std::cout << bspline.eval(iganet::utils::to_tensorArray<real_t>(
-                     {0.0, 0.5, 1.0}, {0.0, 0.5, 0.5}))
-              << std::endl;
+    iganet::Log(iganet::log::info)
+        << bspline.eval(iganet::utils::to_tensorArray<real_t>({0.0, 0.5, 1.0},
+                                                              {0.0, 0.5, 0.5}))
+        << std::endl;
 
-#ifdef WITH_MATPLOT
+#ifdef IGANET_WITH_MATPLOT
     // Plot B-spline
-    bspline.plot(50, 50);
-    bspline.plot(color, 50, 50);
+    bspline.plot(json)->show();
+    bspline.plot(color, json)->show();
 #endif
 
     // Export B-spline to XML
-    bspline.to_xml().print(std::cout);
+    bspline.to_xml().print(iganet::Log(iganet::log::info));
   }
 
   {
@@ -160,12 +169,13 @@ int main() {
     iganet::UniformBSpline<real_t, 1, 3, 4> color({5, 6});
 
     // Print information
-    std::cout << bspline << std::endl;
+    iganet::Log(iganet::log::info) << bspline << std::endl;
 
     // Map control points to phyiscal coordinates
     bspline.transform([](const std::array<real_t, 2> xi) {
-      return std::array<real_t, 3>{(xi[0] + 1) * cos(M_PI * xi[1]),
-                                   (xi[0] + 1) * sin(M_PI * xi[1]), xi[0]};
+      return std::array<real_t, 3>{
+          (xi[0] + 1) * cos(static_cast<real_t>(M_PI) * xi[1]),
+          (xi[0] + 1) * sin(static_cast<real_t>(M_PI) * xi[1]), xi[0]};
     });
 
     // Map colors
@@ -174,18 +184,19 @@ int main() {
     });
 
     // Evaluate B-spline at (xi=0,eta=0), (xi=0.5,eta=0.5), and (xi=1,eta=0.5)
-    std::cout << bspline.eval(iganet::utils::to_tensorArray<real_t>(
-                     {0.0, 0.5, 1.0}, {0.0, 0.5, 0.5}))
-              << std::endl;
+    iganet::Log(iganet::log::info)
+        << bspline.eval(iganet::utils::to_tensorArray<real_t>({0.0, 0.5, 1.0},
+                                                              {0.0, 0.5, 0.5}))
+        << std::endl;
 
-#ifdef WITH_MATPLOT
+#ifdef IGANET_WITH_MATPLOT
     // Plot B-spline
-    bspline.plot(50, 50);
-    bspline.plot(color, 50, 50);
+    bspline.plot(json)->show();
+    bspline.plot(color, json)->show();
 #endif
 
     // Export B-spline to XML
-    bspline.to_xml().print(std::cout);
+    bspline.to_xml().print(iganet::Log(iganet::log::info));
 
     auto xi =
         iganet::utils::to_tensorArray<real_t>({0.0, 0.5, 1.0}, {0.0, 0.5, 0.5});

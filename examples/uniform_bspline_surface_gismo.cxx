@@ -16,7 +16,7 @@
 #include <iostream>
 
 int main() {
-  std::cout << iganet::verbose;
+  iganet::verbose(std::cout);
   using real_t = double;
   iganet::init();
 
@@ -30,7 +30,7 @@ int main() {
   // Load B-spline from XML object
   bspline.from_xml(xml);
 
-#ifdef WITH_GISMO
+#ifdef IGANET_WITH_GISMO
   // Create gsTensorBSpline object
   auto bspline_gismo = bspline.to_gismo();
 

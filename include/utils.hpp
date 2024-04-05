@@ -17,10 +17,12 @@
 #include <utils/blocktensor.hpp>
 #include <utils/concat.hpp>
 #include <utils/fqn.hpp>
+#include <utils/getenv.hpp>
 #include <utils/integer_pow.hpp>
 #include <utils/linalg.hpp>
 #include <utils/serialize.hpp>
 #include <utils/tensorarray.hpp>
+#include <utils/type_traits.hpp>
 #include <utils/uuid.hpp>
 #include <utils/vslice.hpp>
 #include <utils/zip.hpp>

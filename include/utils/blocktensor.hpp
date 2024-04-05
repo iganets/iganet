@@ -146,7 +146,7 @@ public:
 
   /// Returns a string representation of the BlockTensorCore object
   inline virtual void
-  pretty_print(std::ostream &os = std::cout) const noexcept = 0;
+  pretty_print(std::ostream &os = Log(log::info)) const noexcept = 0;
 };
 
 /// Prints (as string) a compile-time block tensor object
@@ -171,7 +171,7 @@ public:
 
   /// Returns a string representation of the BlockTensor object
   inline virtual void
-  pretty_print(std::ostream &os = std::cout) const noexcept override {
+  pretty_print(std::ostream &os = Log(log::info)) const noexcept override {
     os << Base::name() << "\n";
     for (std::size_t row = 0; row < Rows; ++row)
       os << "[" << row << "] = \n" << *Base::data_[row] << "\n";
@@ -230,34 +230,102 @@ public:
     return result;
   }
 
+  /// @brief Returns the determinant of a square block tensor
+  ///
+  /// This function computes the determinant of a square block tensor
+
+  inline auto det() const {
+    if constexpr (Rows == 1 && Cols == 1) {
+      auto result = *Base::data_[0];
+      return result;
+    } else if constexpr (Rows == 2 && Cols == 2) {
+      auto result = torch::mul(*Base::data_[0], *Base::data_[3]) -
+                    torch::mul(*Base::data_[1], *Base::data_[2]);
+      return result;
+    } else if constexpr (Rows == 3 && Cols == 3) {
+      auto result =
+          torch::mul(*Base::data_[0],
+                     torch::mul(*Base::data_[4], *Base::data_[8]) -
+                         torch::mul(*Base::data_[5], *Base::data_[7])) -
+          torch::mul(*Base::data_[1],
+                     torch::mul(*Base::data_[3], *Base::data_[8]) -
+                         torch::mul(*Base::data_[5], *Base::data_[6])) +
+          torch::mul(*Base::data_[2],
+                     torch::mul(*Base::data_[3], *Base::data_[7]) -
+                         torch::mul(*Base::data_[4], *Base::data_[6]));
+      return result;
+    } else if constexpr (Rows == 4 && Cols == 4) {
+      auto a11 = torch::mul(*Base::data_[5],
+                            (torch::mul(*Base::data_[10], *Base::data_[15]) -
+                             torch::mul(*Base::data_[11], *Base::data_[14]))) -
+                 torch::mul(*Base::data_[9],
+                            (torch::mul(*Base::data_[6], *Base::data_[15]) -
+                             torch::mul(*Base::data_[7], *Base::data_[14]))) -
+                 torch::mul(*Base::data_[13],
+                            (torch::mul(*Base::data_[7], *Base::data_[10]) -
+                             torch::mul(*Base::data_[6], *Base::data_[11])));
+
+      auto a21 = torch::mul(*Base::data_[4],
+                            (torch::mul(*Base::data_[11], *Base::data_[14]) -
+                             torch::mul(*Base::data_[10], *Base::data_[15]))) -
+                 torch::mul(*Base::data_[8],
+                            (torch::mul(*Base::data_[7], *Base::data_[14]) -
+                             torch::mul(*Base::data_[6], *Base::data_[15]))) -
+                 torch::mul(*Base::data_[12],
+                            (torch::mul(*Base::data_[6], *Base::data_[11]) -
+                             torch::mul(*Base::data_[7], *Base::data_[10])));
+
+      auto a31 = torch::mul(*Base::data_[4],
+                            (torch::mul(*Base::data_[9], *Base::data_[15]) -
+                             torch::mul(*Base::data_[11], *Base::data_[13]))) -
+                 torch::mul(*Base::data_[8],
+                            (torch::mul(*Base::data_[5], *Base::data_[15]) -
+                             torch::mul(*Base::data_[7], *Base::data_[13]))) -
+                 torch::mul(*Base::data_[12],
+                            (torch::mul(*Base::data_[7], *Base::data_[9]) -
+                             torch::mul(*Base::data_[5], *Base::data_[11])));
+
+      auto a41 = torch::mul(*Base::data_[4],
+                            (torch::mul(*Base::data_[10], *Base::data_[13]) -
+                             torch::mul(*Base::data_[9], *Base::data_[14]))) -
+                 torch::mul(*Base::data_[8],
+                            (torch::mul(*Base::data_[6], *Base::data_[13]) -
+                             torch::mul(*Base::data_[5], *Base::data_[14]))) -
+                 torch::mul(*Base::data_[12],
+                            (torch::mul(*Base::data_[5], *Base::data_[10]) -
+                             torch::mul(*Base::data_[6], *Base::data_[9])));
+
+      auto result =
+          torch::mul(*Base::data_[0], a11) + torch::mul(*Base::data_[1], a21) +
+          torch::mul(*Base::data_[2], a31) + torch::mul(*Base::data_[3], a41);
+
+      return result;
+    } else {
+      throw std::runtime_error("Unsupported block tensor dimension");
+      return *this;
+    }
+  }
+
   /// @brief Returns the inverse of the block tensor
   ///
   /// This function computes the inverse of the block tensor.
   inline auto inv() const {
+
+    auto det_ = this->det();
+
     if constexpr (Rows == 1 && Cols == 1) {
       BlockTensor<T, Rows, Cols> result;
       result[0] = std::make_shared<T>(torch::reciprocal(*Base::data_[0]));
       return result;
     } else if constexpr (Rows == 2 && Cols == 2) {
-      auto det = torch::mul(*Base::data_[0], *Base::data_[3]) -
-                 torch::mul(*Base::data_[1], *Base::data_[2]);
 
       BlockTensor<T, Rows, Cols> result;
-      result[0] = std::make_shared<T>(torch::div(*Base::data_[3], det));
-      result[1] = std::make_shared<T>(torch::div(*Base::data_[2], -det));
-      result[2] = std::make_shared<T>(torch::div(*Base::data_[1], -det));
-      result[3] = std::make_shared<T>(torch::div(*Base::data_[0], det));
+      result[0] = std::make_shared<T>(torch::div(*Base::data_[3], det_));
+      result[1] = std::make_shared<T>(torch::div(*Base::data_[2], -det_));
+      result[2] = std::make_shared<T>(torch::div(*Base::data_[1], -det_));
+      result[3] = std::make_shared<T>(torch::div(*Base::data_[0], det_));
       return result;
     } else if constexpr (Rows == 3 && Cols == 3) {
-      auto det = torch::mul(*Base::data_[0],
-                            torch::mul(*Base::data_[4], *Base::data_[8]) -
-                                torch::mul(*Base::data_[5], *Base::data_[7])) -
-                 torch::mul(*Base::data_[1],
-                            torch::mul(*Base::data_[3], *Base::data_[8]) -
-                                torch::mul(*Base::data_[5], *Base::data_[6])) +
-                 torch::mul(*Base::data_[2],
-                            torch::mul(*Base::data_[3], *Base::data_[7]) -
-                                torch::mul(*Base::data_[4], *Base::data_[6]));
 
       auto a11 = torch::mul(*Base::data_[4], *Base::data_[8]) -
                  torch::mul(*Base::data_[5], *Base::data_[7]);
@@ -279,15 +347,15 @@ public:
                  torch::mul(*Base::data_[1], *Base::data_[3]);
 
       BlockTensor<T, Rows, Cols> result;
-      result[0] = std::make_shared<T>(torch::div(a11, det));
-      result[1] = std::make_shared<T>(torch::div(a12, det));
-      result[2] = std::make_shared<T>(torch::div(a13, det));
-      result[3] = std::make_shared<T>(torch::div(a21, det));
-      result[4] = std::make_shared<T>(torch::div(a22, det));
-      result[5] = std::make_shared<T>(torch::div(a23, det));
-      result[6] = std::make_shared<T>(torch::div(a31, det));
-      result[7] = std::make_shared<T>(torch::div(a32, det));
-      result[8] = std::make_shared<T>(torch::div(a33, det));
+      result[0] = std::make_shared<T>(torch::div(a11, det_));
+      result[1] = std::make_shared<T>(torch::div(a12, det_));
+      result[2] = std::make_shared<T>(torch::div(a13, det_));
+      result[3] = std::make_shared<T>(torch::div(a21, det_));
+      result[4] = std::make_shared<T>(torch::div(a22, det_));
+      result[5] = std::make_shared<T>(torch::div(a23, det_));
+      result[6] = std::make_shared<T>(torch::div(a31, det_));
+      result[7] = std::make_shared<T>(torch::div(a32, det_));
+      result[8] = std::make_shared<T>(torch::div(a33, det_));
       return result;
     } else if constexpr (Rows == 4 && Cols == 4) {
       auto a11 = torch::mul(*Base::data_[5],
@@ -449,28 +517,23 @@ public:
                  torch::mul(*Base::data_[8],
                             (torch::mul(*Base::data_[2], *Base::data_[5]) -
                              torch::mul(*Base::data_[1], *Base::data_[6])));
-
-      auto det =
-          torch::mul(*Base::data_[0], a11) + torch::mul(*Base::data_[1], a21) +
-          torch::mul(*Base::data_[2], a31) + torch::mul(*Base::data_[3], a41);
-
       BlockTensor<T, Rows, Cols> result;
-      result[0] = std::make_shared<T>(torch::div(a11, det));
-      result[1] = std::make_shared<T>(torch::div(a12, det));
-      result[2] = std::make_shared<T>(torch::div(a13, det));
-      result[3] = std::make_shared<T>(torch::div(a14, det));
-      result[4] = std::make_shared<T>(torch::div(a21, det));
-      result[5] = std::make_shared<T>(torch::div(a22, det));
-      result[6] = std::make_shared<T>(torch::div(a23, det));
-      result[7] = std::make_shared<T>(torch::div(a24, det));
-      result[8] = std::make_shared<T>(torch::div(a31, det));
-      result[9] = std::make_shared<T>(torch::div(a32, det));
-      result[10] = std::make_shared<T>(torch::div(a33, det));
-      result[11] = std::make_shared<T>(torch::div(a34, det));
-      result[12] = std::make_shared<T>(torch::div(a41, det));
-      result[13] = std::make_shared<T>(torch::div(a42, det));
-      result[14] = std::make_shared<T>(torch::div(a43, det));
-      result[15] = std::make_shared<T>(torch::div(a44, det));
+      result[0] = std::make_shared<T>(torch::div(a11, det_));
+      result[1] = std::make_shared<T>(torch::div(a12, det_));
+      result[2] = std::make_shared<T>(torch::div(a13, det_));
+      result[3] = std::make_shared<T>(torch::div(a14, det_));
+      result[4] = std::make_shared<T>(torch::div(a21, det_));
+      result[5] = std::make_shared<T>(torch::div(a22, det_));
+      result[6] = std::make_shared<T>(torch::div(a23, det_));
+      result[7] = std::make_shared<T>(torch::div(a24, det_));
+      result[8] = std::make_shared<T>(torch::div(a31, det_));
+      result[9] = std::make_shared<T>(torch::div(a32, det_));
+      result[10] = std::make_shared<T>(torch::div(a33, det_));
+      result[11] = std::make_shared<T>(torch::div(a34, det_));
+      result[12] = std::make_shared<T>(torch::div(a41, det_));
+      result[13] = std::make_shared<T>(torch::div(a42, det_));
+      result[14] = std::make_shared<T>(torch::div(a43, det_));
+      result[15] = std::make_shared<T>(torch::div(a44, det_));
       return result;
     } else {
       throw std::runtime_error("Unsupported block tensor dimension");
@@ -499,30 +562,22 @@ public:
   /// This function computes the transpose of the (generalized)
   /// inverse of the block tensor.
   inline auto invtr() const {
+
+    auto det_ = this->det();
+
     if constexpr (Rows == 1 && Cols == 1) {
       BlockTensor<T, Cols, Rows> result;
       result[0] = std::make_shared<T>(torch::reciprocal(*Base::data_[0]));
       return result;
     } else if constexpr (Rows == 2 && Cols == 2) {
-      auto det = torch::mul(*Base::data_[0], *Base::data_[3]) -
-                 torch::mul(*Base::data_[1], *Base::data_[2]);
 
       BlockTensor<T, Cols, Rows> result;
-      result[0] = std::make_shared<T>(torch::div(*Base::data_[3], det));
-      result[1] = std::make_shared<T>(torch::div(*Base::data_[1], -det));
-      result[2] = std::make_shared<T>(torch::div(*Base::data_[2], -det));
-      result[3] = std::make_shared<T>(torch::div(*Base::data_[0], det));
+      result[0] = std::make_shared<T>(torch::div(*Base::data_[3], det_));
+      result[1] = std::make_shared<T>(torch::div(*Base::data_[1], -det_));
+      result[2] = std::make_shared<T>(torch::div(*Base::data_[2], -det_));
+      result[3] = std::make_shared<T>(torch::div(*Base::data_[0], det_));
       return result;
     } else if constexpr (Rows == 3 && Cols == 3) {
-      auto det = torch::mul(*Base::data_[0],
-                            torch::mul(*Base::data_[4], *Base::data_[8]) -
-                                torch::mul(*Base::data_[5], *Base::data_[7])) -
-                 torch::mul(*Base::data_[1],
-                            torch::mul(*Base::data_[3], *Base::data_[8]) -
-                                torch::mul(*Base::data_[5], *Base::data_[6])) +
-                 torch::mul(*Base::data_[2],
-                            torch::mul(*Base::data_[3], *Base::data_[7]) -
-                                torch::mul(*Base::data_[4], *Base::data_[6]));
 
       auto a11 = torch::mul(*Base::data_[4], *Base::data_[8]) -
                  torch::mul(*Base::data_[5], *Base::data_[7]);
@@ -544,17 +599,18 @@ public:
                  torch::mul(*Base::data_[1], *Base::data_[3]);
 
       BlockTensor<T, Cols, Rows> result;
-      result[0] = std::make_shared<T>(torch::div(a11, det));
-      result[1] = std::make_shared<T>(torch::div(a21, det));
-      result[2] = std::make_shared<T>(torch::div(a31, det));
-      result[3] = std::make_shared<T>(torch::div(a12, det));
-      result[4] = std::make_shared<T>(torch::div(a22, det));
-      result[5] = std::make_shared<T>(torch::div(a32, det));
-      result[6] = std::make_shared<T>(torch::div(a13, det));
-      result[7] = std::make_shared<T>(torch::div(a23, det));
-      result[8] = std::make_shared<T>(torch::div(a33, det));
+      result[0] = std::make_shared<T>(torch::div(a11, det_));
+      result[1] = std::make_shared<T>(torch::div(a21, det_));
+      result[2] = std::make_shared<T>(torch::div(a31, det_));
+      result[3] = std::make_shared<T>(torch::div(a12, det_));
+      result[4] = std::make_shared<T>(torch::div(a22, det_));
+      result[5] = std::make_shared<T>(torch::div(a32, det_));
+      result[6] = std::make_shared<T>(torch::div(a13, det_));
+      result[7] = std::make_shared<T>(torch::div(a23, det_));
+      result[8] = std::make_shared<T>(torch::div(a33, det_));
       return result;
     } else if constexpr (Rows == 4 && Cols == 4) {
+
       auto a11 = torch::mul(*Base::data_[5],
                             (torch::mul(*Base::data_[10], *Base::data_[15]) -
                              torch::mul(*Base::data_[11], *Base::data_[14]))) -
@@ -715,27 +771,23 @@ public:
                             (torch::mul(*Base::data_[2], *Base::data_[5]) -
                              torch::mul(*Base::data_[1], *Base::data_[6])));
 
-      auto det =
-          torch::mul(*Base::data_[0], a11) + torch::mul(*Base::data_[1], a21) +
-          torch::mul(*Base::data_[2], a31) + torch::mul(*Base::data_[3], a41);
-
       BlockTensor<T, Rows, Cols> result;
-      result[0] = std::make_shared<T>(torch::div(a11, det));
-      result[1] = std::make_shared<T>(torch::div(a21, det));
-      result[2] = std::make_shared<T>(torch::div(a31, det));
-      result[3] = std::make_shared<T>(torch::div(a41, det));
-      result[4] = std::make_shared<T>(torch::div(a12, det));
-      result[5] = std::make_shared<T>(torch::div(a22, det));
-      result[6] = std::make_shared<T>(torch::div(a32, det));
-      result[7] = std::make_shared<T>(torch::div(a42, det));
-      result[8] = std::make_shared<T>(torch::div(a13, det));
-      result[9] = std::make_shared<T>(torch::div(a23, det));
-      result[10] = std::make_shared<T>(torch::div(a33, det));
-      result[11] = std::make_shared<T>(torch::div(a43, det));
-      result[12] = std::make_shared<T>(torch::div(a14, det));
-      result[13] = std::make_shared<T>(torch::div(a24, det));
-      result[14] = std::make_shared<T>(torch::div(a34, det));
-      result[15] = std::make_shared<T>(torch::div(a44, det));
+      result[0] = std::make_shared<T>(torch::div(a11, det_));
+      result[1] = std::make_shared<T>(torch::div(a21, det_));
+      result[2] = std::make_shared<T>(torch::div(a31, det_));
+      result[3] = std::make_shared<T>(torch::div(a41, det_));
+      result[4] = std::make_shared<T>(torch::div(a12, det_));
+      result[5] = std::make_shared<T>(torch::div(a22, det_));
+      result[6] = std::make_shared<T>(torch::div(a32, det_));
+      result[7] = std::make_shared<T>(torch::div(a42, det_));
+      result[8] = std::make_shared<T>(torch::div(a13, det_));
+      result[9] = std::make_shared<T>(torch::div(a23, det_));
+      result[10] = std::make_shared<T>(torch::div(a33, det_));
+      result[11] = std::make_shared<T>(torch::div(a43, det_));
+      result[12] = std::make_shared<T>(torch::div(a14, det_));
+      result[13] = std::make_shared<T>(torch::div(a24, det_));
+      result[14] = std::make_shared<T>(torch::div(a34, det_));
+      result[15] = std::make_shared<T>(torch::div(a44, det_));
       return result;
     } else {
       throw std::runtime_error("Unsupported block tensor dimension");
@@ -765,7 +817,7 @@ public:
     static_assert(Rows == Cols, "trace(.) requires square block tensor");
 
     if constexpr (Rows == 1)
-      return BlockTensor<T, 1, 1>(Base::data_[0]);
+      return BlockTensor<T, 1, 1>(*Base::data_[0]);
 
     else if constexpr (Rows == 2)
       return BlockTensor<T, 1, 1>(*Base::data_[0] + *Base::data_[3]);
@@ -784,7 +836,7 @@ public:
 
   /// Returns a string representation of the BSplineCommon object
   inline virtual void
-  pretty_print(std::ostream &os = std::cout) const noexcept override {
+  pretty_print(std::ostream &os = Log(log::info)) const noexcept override {
     os << Base::name() << "\n";
     for (std::size_t row = 0; row < Rows; ++row)
       for (std::size_t col = 0; col < Cols; ++col)
@@ -802,9 +854,21 @@ inline auto operator*(const BlockTensor<T, Rows, Common> &lhs,
   BlockTensor<typename std::common_type<T, U>::type, Rows, Cols> result;
   for (std::size_t row = 0; row < Rows; ++row)
     for (std::size_t col = 0; col < Cols; ++col) {
-      T tmp = torch::mul(*lhs[Common * row], *rhs[col]);
+      T tmp =
+          (lhs[Common * row]->dim() > rhs[col]->dim()
+               ? torch::mul(*lhs[Common * row], rhs[col]->unsqueeze(-1))
+               : (lhs[Common * row]->dim() < rhs[col]->dim()
+                      ? torch::mul(lhs[Common * row]->unsqueeze(-1), *rhs[col])
+                      : torch::mul(*lhs[Common * row], *rhs[col])));
       for (std::size_t idx = 1; idx < Common; ++idx)
-        tmp += torch::mul(*lhs[Common * row + idx], *rhs[Cols * idx + col]);
+        tmp += (lhs[Common * row]->dim() > rhs[col]->dim()
+                    ? torch::mul(*lhs[Common * row + idx],
+                                 rhs[Cols * idx + col]->unsqueeze(-1))
+                    : (lhs[Common * row]->dim() < rhs[col]->dim()
+                           ? torch::mul(lhs[Common * row + idx]->unsqueeze(-1),
+                                        *rhs[Cols * idx + col])
+                           : torch::mul(*lhs[Common * row + idx],
+                                        *rhs[Cols * idx + col])));
       result[Cols * row + col] = std::make_shared<T>(tmp);
     }
   return result;
@@ -923,7 +987,7 @@ public:
 
   /// Returns a string representation of the BSplineCommon object
   inline virtual void
-  pretty_print(std::ostream &os = std::cout) const noexcept override {
+  pretty_print(std::ostream &os = Log(log::info)) const noexcept override {
     os << Base::name() << "\n";
     for (std::size_t slice = 0; slice < Slices; ++slice)
       for (std::size_t row = 0; row < Rows; ++row)
@@ -943,10 +1007,31 @@ inline auto operator*(const BlockTensor<T, Rows, Common> &lhs,
   for (std::size_t slice = 0; slice < Slices; ++slice)
     for (std::size_t row = 0; row < Rows; ++row)
       for (std::size_t col = 0; col < Cols; ++col) {
-        T tmp = torch::mul(*lhs[Common * row], *rhs[Rows * Cols * slice + col]);
+        T tmp =
+            (lhs[Common * row]->dim() > rhs[Rows * Cols * slice + col]->dim()
+                 ? torch::mul(*lhs[Common * row],
+                              rhs[Rows * Cols * slice + col]->unsqueeze(-1))
+                 : (lhs[Common * row]->dim() <
+                            rhs[Rows * Cols * slice + col]->dim()
+                        ? torch::mul(lhs[Common * row]->unsqueeze(-1),
+                                     *rhs[Rows * Cols * slice + col])
+                        : torch::mul(*lhs[Common * row],
+                                     *rhs[Rows * Cols * slice + col])));
         for (std::size_t idx = 1; idx < Common; ++idx)
-          tmp += torch::mul(*lhs[Common * row + idx],
-                            *rhs[Rows * Cols * slice + Cols * idx + col]);
+          tmp +=
+              (lhs[Common * row]->dim() > rhs[Rows * Cols * slice + col]->dim()
+                   ? torch::mul(
+                         *lhs[Common * row + idx],
+                         rhs[Rows * Cols * slice + Cols * idx + col]->unsqueeze(
+                             -1))
+                   : (lhs[Common * row]->dim() <
+                              rhs[Rows * Cols * slice + col]->dim()
+                          ? torch::mul(
+                                lhs[Common * row + idx]->unsqueeze(-1),
+                                *rhs[Rows * Cols * slice + Cols * idx + col])
+                          : torch::mul(
+                                *lhs[Common * row + idx],
+                                *rhs[Rows * Cols * slice + Cols * idx + col])));
         result[Rows * Cols * slice + Cols * row + col] =
             std::make_shared<T>(tmp);
       }
@@ -963,10 +1048,33 @@ inline auto operator*(const BlockTensor<T, Rows, Common, Slices> &lhs,
   for (std::size_t slice = 0; slice < Slices; ++slice)
     for (std::size_t row = 0; row < Rows; ++row)
       for (std::size_t col = 0; col < Cols; ++col) {
-        T tmp = torch::mul(*lhs[Rows * Cols * slice + Common * row], *rhs[col]);
+        T tmp =
+            (lhs[Rows * Cols * slice + Common * row]->dim() > rhs[col]->dim()
+                 ? torch::mul(*lhs[Rows * Cols * slice + Common * row],
+                              rhs[col]->unsqueeze(-1))
+                 : (lhs[Rows * Cols * slice + Common * row]->dim() <
+                            rhs[col]->dim()
+                        ? torch::mul(lhs[Rows * Cols * slice + Common * row]
+                                         ->unsqueeze(-1),
+                                     *rhs[col])
+                        : torch::mul(*lhs[Rows * Cols * slice + Common * row],
+                                     *rhs[col])));
         for (std::size_t idx = 1; idx < Common; ++idx)
-          tmp += torch::mul(*lhs[Rows * Cols * slice + Common * row + idx],
-                            *rhs[Cols * idx + col]);
+          tmp +=
+              (lhs[Rows * Cols * slice + Common * row + idx]->dim() >
+                       rhs[Cols * idx + col]->dim()
+                   ? torch::mul(*lhs[Rows * Cols * slice + Common * row + idx],
+                                rhs[Cols * idx + col])
+                         ->unsqueeze(-1)
+                   : (lhs[Rows * Cols * slice + Common * row + idx]->dim() <
+                              rhs[Cols * idx + col]->dim()
+                          ? torch::mul(
+                                lhs[Rows * Cols * slice + Common * row + idx]
+                                    ->unsqueeze(-1),
+                                *rhs[Cols * idx + col])
+                          : torch::mul(
+                                *lhs[Rows * Cols * slice + Common * row + idx],
+                                *rhs[Cols * idx + col])));
         result[Rows * Cols * slice + Cols * row + col] =
             std::make_shared<T>(tmp);
       }
@@ -1569,7 +1677,13 @@ template <typename T, typename U, std::size_t... Dims>
 inline auto operator*(const BlockTensor<T, Dims...> &lhs, const U &rhs) {
   BlockTensor<T, Dims...> result;
   for (std::size_t idx = 0; idx < (Dims * ...); ++idx)
-    result[idx] = std::make_shared<T>(*lhs[idx] + rhs);
+    result[idx] =
+        (lhs[idx]->dim() > rhs.dim()
+             ? std::make_shared<T>(*lhs[idx] * rhs.unsqueeze(-1))
+             : (lhs[idx]->dim() < rhs.dim()
+                    ? std::make_shared<T>(lhs[idx]->unsqueeze(-1) * rhs)
+                    : std::make_shared<T>(*lhs[idx] * rhs)));
+  ;
   return result;
 }
 
@@ -1579,7 +1693,12 @@ template <typename T, typename U, std::size_t... Dims>
 inline auto operator*(const T &lhs, const BlockTensor<U, Dims...> &rhs) {
   BlockTensor<U, Dims...> result;
   for (std::size_t idx = 0; idx < (Dims * ...); ++idx)
-    result[idx] = std::make_shared<U>(lhs * *rhs[idx]);
+    result[idx] =
+        (lhs.dim() > rhs[idx]->dim()
+             ? std::make_shared<U>(lhs * rhs[idx]->unsqueeze(-1))
+             : (lhs.dim() < rhs[idx]->dim()
+                    ? std::make_shared<U>(lhs.unsqueeze(-1) * *rhs[idx])
+                    : std::make_shared<U>(lhs * *rhs[idx])));
   return result;
 }
 
