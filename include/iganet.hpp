@@ -51,7 +51,8 @@ public:
   /// @brief Constructor
   explicit IgANetGeneratorImpl(
       const std::vector<int64_t> &layers,
-      const std::vector<std::vector<std::any>> &activations) {
+      const std::vector<std::vector<std::any>> &activations,
+      Options<real_t> options = Options<real_t>{}) {
     assert(layers.size() == activations.size() + 1);
 
     // Generate vector of linear layers and register them as layer[i]
@@ -59,7 +60,7 @@ public:
       layers_.emplace_back(
           register_module("layer[" + std::to_string(i) + "]",
                           torch::nn::Linear(layers[i], layers[i + 1])));
-      layers_.back()->to(dtype<real_t>());
+      layers_.back()->to(options.device(), options.dtype(), true);
 
       torch::nn::init::xavier_uniform_(layers_.back()->weight);
       torch::nn::init::constant_(layers_.back()->bias, 0.0);
@@ -980,7 +981,7 @@ public:
         net_(utils::concat(std::vector<int64_t>{inputs(/* epoch */ 0).size(0)},
                            layers,
                            std::vector<int64_t>{Base::u_.as_tensor_size()}),
-             activations),
+             activations, options),
 
         // Construct the optimizer
         opt_(net_->parameters()),

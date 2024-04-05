@@ -104,7 +104,7 @@ public:
   int32_t device_index() const noexcept { return options_.device_index(); }
 
   /// @brief Returns the `dtype` property
-  torch::Dtype dtype() const noexcept { return options_.dtype(); }
+  torch::Dtype dtype() const noexcept { return ::iganet::dtype<real_t>(); }
 
   /// @brief Returns the `layout` property
   torch::Layout layout() const noexcept { return options_.layout(); }
