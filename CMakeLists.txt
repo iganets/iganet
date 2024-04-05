@@ -30,8 +30,8 @@
 ########################################################################
 # IgANet version number
 ########################################################################
-set(iganet_VERSION_MAJOR 23) #year
-set(iganet_VERSION_MINOR 12) #month
+set(iganet_VERSION_MAJOR 24) #year
+set(iganet_VERSION_MINOR 04) #month
 set(iganet_VERSION_PATCH 0 ) #patch
 set(iganet_VERSION
   "${iganet_VERSION_MAJOR}.${iganet_VERSION_MINOR}.${iganet_VERSION_PATCH}" CACHE INTERNAL "iganet version number")
