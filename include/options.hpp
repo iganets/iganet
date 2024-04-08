@@ -32,6 +32,8 @@ struct half {};
 /// @{
 template <typename T> inline constexpr torch::Dtype dtype();
 
+template <> inline constexpr torch::Dtype dtype<bool>() { return torch::kBool; }
+
 template <> inline constexpr torch::Dtype dtype<char>() { return torch::kChar; }
 
 template <> inline constexpr torch::Dtype dtype<short>() {
