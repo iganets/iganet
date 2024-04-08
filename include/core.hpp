@@ -22,6 +22,8 @@
 #include <tuple>
 #include <vector>
 
+#include <utils/getenv.hpp>
+
 #ifdef IGANET_WITH_OPENMP
 #include <omp.h>
 #endif
@@ -153,19 +155,6 @@ public:
   }
 } Log;
 
-/// @brief Get environment variable
-template <typename T>
-inline T getenv(const std::string &variable_name, const T &default_value = {}) {
-  const char *value = std::getenv(variable_name.c_str());
-
-  if (value) {
-    T v;
-    std::istringstream(value) >> v;
-    return v;
-  } else
-    return default_value;
-}
-
 /// @brief Initializes the library
 inline void init(std::ostream &os = Log(log::info)) {
   torch::manual_seed(1);
@@ -173,14 +162,19 @@ inline void init(std::ostream &os = Log(log::info)) {
   // Set number of intraop thread pool threads
 #ifdef IGANET_WITH_OPENMP
   at::set_num_threads(
-      getenv("IGANET_INTRAOP_NUM_THREADS", omp_get_max_threads()));
+      utils::getenv("IGANET_INTRAOP_NUM_THREADS", omp_get_max_threads()));
 #else
-  at::set_num_threads(getenv("IGANET_INTRAOP_NUM_THREADS", 1));
+  at::set_num_threads(utils::getenv("IGANET_INTRAOP_NUM_THREADS", 1));
 #endif
 
   // Set number of interop thread pool threads
-  at::set_num_interop_threads(getenv("IGANET_INTEROP_NUM_THREADS", 1));
+  at::set_num_interop_threads(utils::getenv("IGANET_INTEROP_NUM_THREADS", 1));
 
+#ifdef IGANET_WITH_MPI
+  int rank;
+  MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+  if (rank == 0)
+#endif
   // Output version information
   os << getVersion();
 }
