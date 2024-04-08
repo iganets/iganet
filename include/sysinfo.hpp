@@ -495,9 +495,8 @@ std::string getExtraLibsVersion() {
 #if defined(CUDA_VERSION)
   if (!s.empty())
     s += ", ";
-  s += "CUDA " +
-    std::to_string(CUDA_VERSION / 1000) + "." +
-    std::to_string((CUDA_VERSION % 100) / 10);
+  s += "CUDA " + std::to_string(CUDA_VERSION / 1000) + "." +
+       std::to_string((CUDA_VERSION % 100) / 10);
 #endif
 
   // Intel MKL library
@@ -524,8 +523,8 @@ std::string getExtraLibsVersion() {
   if (!s.empty())
     s += ", ";
   s += "ROCm " + std::to_string(ROCM_VERSION_MAJOR) + "." +
-    std::to_string(ROCM_VERSION_MINOR) + "." +
-    std::to_string(ROCM_VERSION_PATCH);
+       std::to_string(ROCM_VERSION_MINOR) + "." +
+       std::to_string(ROCM_VERSION_PATCH);
 #endif
 
   return s;

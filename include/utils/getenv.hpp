@@ -15,6 +15,7 @@
 #pragma once
 
 #include <stdlib.h>
+#include <sstream>
 
 namespace iganet {
 namespace utils {

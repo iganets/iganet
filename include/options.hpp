@@ -65,18 +65,19 @@ template <> inline constexpr torch::Dtype dtype<std::complex<double>>() {
 }
 /// @}
 
-  int guess_device_index()
-  {
+int guess_device_index() {
 #ifdef IGANET_WITH_MPI
-    int rank;
-    MPI_Comm_rank(MPI_COMM_WORLD, &rank);
-    return rank % utils::getenv("IGANET_DEVICE_COUNT",
-				 torch::cuda::is_available ? torch::cuda::device_count() : 1);
+  int rank;
+  MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+  return rank %
+         utils::getenv("IGANET_DEVICE_COUNT", torch::cuda::is_available
+                                                  ? torch::cuda::device_count()
+                                                  : 1);
 #else
-    return 0;
+  return 0;
 #endif
-  }
-  
+}
+
 /// @brief The Options class handles the automated determination of
 /// dtype from the template argument and the selection of the device
 ///
@@ -89,21 +90,23 @@ public:
       : options_(
             torch::TensorOptions()
                 .dtype(::iganet::dtype<real_t>())
-	    .device((utils::getenv("IGANET_DEVICE", std::string{}) == "CPU")
-                            ? torch::kCPU
-		    : (utils::getenv("IGANET_DEVICE", std::string{}) == "CUDA")
-                            ? torch::kCUDA
-		    : (utils::getenv("IGANET_DEVICE", std::string{}) == "HIP")
-                            ? torch::kHIP
-		    : (utils::getenv("IGANET_DEVICE", std::string{}) == "MPS")
-                            ? torch::kMPS
-		    : (utils::getenv("IGANET_DEVICE", std::string{}) == "XLA")
-                            ? torch::kXLA
-		    : (utils::getenv("IGANET_DEVICE", std::string{}) == "XPU")
-                            ? torch::kXPU
-                        : torch::cuda::is_available() ? torch::kCUDA
-		    : torch::kCPU)
-	    .device_index(utils::getenv("IGANET_DEVICE_INDEX", iganet::guess_device_index()))) {}
+                .device(
+                    (utils::getenv("IGANET_DEVICE", std::string{}) == "CPU")
+                        ? torch::kCPU
+                    : (utils::getenv("IGANET_DEVICE", std::string{}) == "CUDA")
+                        ? torch::kCUDA
+                    : (utils::getenv("IGANET_DEVICE", std::string{}) == "HIP")
+                        ? torch::kHIP
+                    : (utils::getenv("IGANET_DEVICE", std::string{}) == "MPS")
+                        ? torch::kMPS
+                    : (utils::getenv("IGANET_DEVICE", std::string{}) == "XLA")
+                        ? torch::kXLA
+                    : (utils::getenv("IGANET_DEVICE", std::string{}) == "XPU")
+                        ? torch::kXPU
+                    : torch::cuda::is_available() ? torch::kCUDA
+                                                  : torch::kCPU)
+                .device_index(utils::getenv("IGANET_DEVICE_INDEX",
+                                            iganet::guess_device_index()))) {}
 
   /// Constructor from torch::TensorOptions
   explicit Options(torch::TensorOptions &&options) : options_(options) {}

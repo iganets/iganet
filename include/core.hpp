@@ -175,8 +175,8 @@ inline void init(std::ostream &os = Log(log::info)) {
   MPI_Comm_rank(MPI_COMM_WORLD, &rank);
   if (rank == 0)
 #endif
-  // Output version information
-  os << getVersion();
+    // Output version information
+    os << getVersion();
 }
 
 /// Stream manipulator
