@@ -92,6 +92,8 @@ public:
       : options_(
             torch::TensorOptions()
                 .dtype(::iganet::dtype<real_t>())
+                .device_index(utils::getenv("IGANET_DEVICE_INDEX",
+                                            iganet::guess_device_index()))
                 .device(
                     (utils::getenv("IGANET_DEVICE", std::string{}) == "CPU")
                         ? torch::kCPU
@@ -105,10 +107,8 @@ public:
                         ? torch::kXLA
                     : (utils::getenv("IGANET_DEVICE", std::string{}) == "XPU")
                         ? torch::kXPU
-                    : torch::cuda::is_available() ? torch::kCUDA
-                                                  : torch::kCPU)
-                .device_index(utils::getenv("IGANET_DEVICE_INDEX",
-                                            iganet::guess_device_index()))) {}
+                        : (torch::cuda::is_available() ? torch::kCUDA
+                                                       : torch::kCPU))) {}
 
   /// Constructor from torch::TensorOptions
   explicit Options(torch::TensorOptions &&options) : options_(options) {}
