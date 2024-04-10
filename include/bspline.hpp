@@ -5160,7 +5160,8 @@ public:
   /// equal parametric and geometric multiplicity.
   //  clang-format off
   /// @{
-  template <bool memory_optimized = false> auto curl(torch::Tensor &xi) const {
+  template <bool memory_optimized = false>
+  auto curl(const torch::Tensor &xi) const {
     return curl<memory_optimized>(utils::TensorArray1({xi}));
   }
 
@@ -5473,7 +5474,8 @@ public:
   /// @note This function can only be applied to B-spline objects with
   /// equal parametric and geometric multiplicity.
   /// @{
-  template <bool memory_optimized = false> auto div(torch::Tensor &xi) const {
+  template <bool memory_optimized = false>
+  auto div(const torch::Tensor &xi) const {
     return div<memory_optimized>(utils::TensorArray1({xi}));
   }
 
@@ -5648,7 +5650,7 @@ public:
   ///
   /// @{
   template <bool memory_optimized = false, typename Geometry>
-  auto idiv(const Geometry &G, torch::Tensor &xi) {
+  auto idiv(const Geometry &G, const torch::Tensor &xi) {
     return idiv<memory_optimized, Geometry>(G, utils::TensorArray1({xi}));
   }
 
