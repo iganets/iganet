@@ -425,7 +425,7 @@ public:
   using Base = IgABaseNoRefData<GeometryMap, Variable>;
 
   /// @brief Value type
-  using value_type = Base::value_type;
+  using value_type = typename Base::value_type;
 
   /// @brief Type of the geometry map function space(s)
   using geometryMap_type = GeometryMap;
@@ -434,10 +434,10 @@ public:
   using variable_type = Variable;
 
   /// @brief Type of the geometry map collocation points
-  using geometryMap_collPts_type = Base::geometryMap_collPts_type;
+  using geometryMap_collPts_type = typename Base::geometryMap_collPts_type;
 
   /// @brief Type of the variable collocation points
-  using variable_collPts_type = Base::variable_collPts_type;
+  using variable_collPts_type = typename Base::variable_collPts_type;
 
   /// @brief Indicates whether this class provides a geometry map
   bool static constexpr has_GeometryMap = true;
