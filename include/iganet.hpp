@@ -1321,8 +1321,7 @@ operator<<(std::ostream &os,
 /// This class implements a customizable variant of IgANets that
 /// provides types and attributes for precomputing indices and basis
 /// functions
-template <typename Optimizer, typename GeometryMap, typename Variable>
-class IgANetCustomizable {
+template <typename GeometryMap, typename Variable> class IgANetCustomizable {
 public:
   /// @brief Type of the knot indices of the geometry map in the interior
   using geometryMap_interior_knot_indices_type =
