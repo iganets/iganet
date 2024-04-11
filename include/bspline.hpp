@@ -5157,7 +5157,7 @@ public:
   /// \f]
   ///
   /// @note This function can only be applied to B-spline objects with
-  /// equal parametric and geometric multiplicity.
+  /// equal parametric and geometric dimensionality.
   //  clang-format off
   /// @{
   template <bool memory_optimized = false>
@@ -5194,7 +5194,7 @@ public:
   /// \f]
   ///
   /// @note This function can only be applied to B-spline objects with
-  /// equal parametric and geometric multiplicity.
+  /// equal parametric and geometric dimensionality.
   //  clang-format on
   template <bool memory_optimized = false>
   inline auto curl(const std::array<torch::Tensor, BSplineCore::parDim_> &xi,
@@ -5231,7 +5231,7 @@ public:
   /// \f]
   ///
   /// @note This function can only be applied to B-spline objects with
-  /// equal parametric and geometric multiplicity.
+  /// equal parametric and geometric dimensionality.
   ///
   /// @{
   template <bool memory_optimized = false>
@@ -5254,7 +5254,8 @@ public:
                   "are the same");
 
     assert(xi[0].sizes() == knot_indices[0].sizes() &&
-           xi[1].sizes() == knot_indices[1].sizes());
+           xi[1].sizes() == knot_indices[1].sizes() &&
+           xi[0].sizes() == xi[1].sizes());
 
     if constexpr (BSplineCore::parDim_ == 2 && BSplineCore::geoDim_ == 2)
 
@@ -5286,7 +5287,8 @@ public:
 
     assert(xi[0].sizes() == knot_indices[0].sizes() &&
            xi[1].sizes() == knot_indices[1].sizes() &&
-           xi[2].sizes() == knot_indices[2].sizes());
+           xi[2].sizes() == knot_indices[2].sizes() &&
+           xi[0].sizes() == xi[1].sizes() && xi[1].sizes() == xi[2].sizes());
 
     if constexpr (BSplineCore::parDim_ == 3 && BSplineCore::geoDim_ == 3)
 
@@ -5319,11 +5321,13 @@ public:
     assert(xi[0].sizes() == knot_indices[0].sizes() &&
            xi[1].sizes() == knot_indices[1].sizes() &&
            xi[2].sizes() == knot_indices[2].sizes() &&
-           xi[3].sizes() == knot_indices[3].sizes());
+           xi[3].sizes() == knot_indices[3].sizes() &&
+           xi[0].sizes() == xi[1].sizes() && xi[1].sizes() == xi[2].sizes() &&
+           xi[2].sizes() == xi[3].sizes());
 
     throw std::runtime_error("Unsupported parametric/geometric dimension");
 
-    return utils::BlockTensor<torch::Tensor, 1, 3>{};
+    return utils::BlockTensor<torch::Tensor, 1, 1>{};
   }
   /// @}
 
@@ -5472,7 +5476,7 @@ public:
   /// \f]
   ///
   /// @note This function can only be applied to B-spline objects with
-  /// equal parametric and geometric multiplicity.
+  /// equal parametric and geometric dimensionality.
   /// @{
   template <bool memory_optimized = false>
   auto div(const torch::Tensor &xi) const {
@@ -5507,7 +5511,7 @@ public:
   /// \f]
   ///
   /// @note This function can only be applied to B-spline objects with
-  /// equal parametric and geometric multiplicity.
+  /// equal parametric and geometric dimensionality.
   template <bool memory_optimized = false>
   inline auto div(const std::array<torch::Tensor, BSplineCore::parDim_> &xi,
                   const std::array<torch::Tensor, BSplineCore::parDim_>
@@ -5542,7 +5546,7 @@ public:
   /// \f]
   ///
   /// @note This function can only be applied to B-spline objects with
-  /// equal parametric and geometric multiplicity.
+  /// equal parametric and geometric dimensionality.
   ///
   /// @{
   template <bool memory_optimized = false>
@@ -5550,14 +5554,15 @@ public:
                   const utils::TensorArray1 &knot_indices,
                   const torch::Tensor &coeff_indices) const {
     assert(xi[0].sizes() == knot_indices[0].sizes());
-    if constexpr (BSplineCore::parDim_ == 1)
+
+    if constexpr (BSplineCore::parDim_ == 1 && BSplineCore::geoDim_ == 1)
 
       return utils::BlockTensor<torch::Tensor, 1, 1>(
           *BSplineCore::template eval<deriv::dx, memory_optimized>(
               xi, knot_indices, coeff_indices)[0]);
 
     else
-      throw std::runtime_error("Unsupported parametric dimension");
+      throw std::runtime_error("Unsupported parametric/geometric dimension");
   }
 
   template <bool memory_optimized = false>
@@ -5565,18 +5570,18 @@ public:
                   const utils::TensorArray2 &knot_indices,
                   const torch::Tensor &coeff_indices) const {
     assert(xi[0].sizes() == knot_indices[0].sizes() &&
-           xi[1].sizes() == knot_indices[1].sizes());
+           xi[1].sizes() == knot_indices[1].sizes() &&
+           xi[0].sizes() == xi[1].sizes());
 
-    if constexpr (BSplineCore::parDim_ == 2)
-
+    if constexpr (BSplineCore::parDim_ == 2 && BSplineCore::geoDim_ == 2)
       return utils::BlockTensor<torch::Tensor, 1, 1>(
           *BSplineCore::template eval<deriv::dx, memory_optimized>(
               xi, knot_indices, coeff_indices)[0] +
-          *BSplineCore::template eval<deriv::dy, memory_optimized>(
-              xi, knot_indices, coeff_indices)[0]);
+          BSplineCore::template eval<deriv::dy, memory_optimized>(
+              xi, knot_indices, coeff_indices)[1]);
 
     else
-      throw std::runtime_error("Unsupported parametric dimension");
+      throw std::runtime_error("Unsupported parametric/geometric dimension");
   }
 
   template <bool memory_optimized = false>
@@ -5585,20 +5590,21 @@ public:
                   const torch::Tensor &coeff_indices) const {
     assert(xi[0].sizes() == knot_indices[0].sizes() &&
            xi[1].sizes() == knot_indices[1].sizes() &&
-           xi[2].sizes() == knot_indices[2].sizes());
+           xi[2].sizes() == knot_indices[2].sizes() &&
+           xi[0].sizes() == xi[1].sizes() && xi[1].sizes() == xi[2].sizes());
 
-    if constexpr (BSplineCore::parDim_ == 3)
+    if constexpr (BSplineCore::parDim_ == 3 && BSplineCore::geoDim_ == 3)
 
       return utils::BlockTensor<torch::Tensor, 1, 1>(
           *BSplineCore::template eval<deriv::dx, memory_optimized>(
               xi, knot_indices, coeff_indices)[0] +
           *BSplineCore::template eval<deriv::dy, memory_optimized>(
-              xi, knot_indices, coeff_indices)[0] +
+              xi, knot_indices, coeff_indices)[1] +
           *BSplineCore::template eval<deriv::dz, memory_optimized>(
-              xi, knot_indices, coeff_indices)[0]);
+              xi, knot_indices, coeff_indices)[2]);
 
     else
-      throw std::runtime_error("Unsupported parametric dimension");
+      throw std::runtime_error("Unsupported parametric/geometric dimension");
   }
 
   template <bool memory_optimized = false>
@@ -5608,22 +5614,24 @@ public:
     assert(xi[0].sizes() == knot_indices[0].sizes() &&
            xi[1].sizes() == knot_indices[1].sizes() &&
            xi[2].sizes() == knot_indices[2].sizes() &&
-           xi[3].sizes() == knot_indices[3].sizes());
+           xi[3].sizes() == knot_indices[3].sizes() &&
+           xi[0].sizes() == xi[1].sizes() && xi[1].sizes() == xi[2].sizes() &&
+           xi[2].sizes() == xi[3].sizes());
 
-    if constexpr (BSplineCore::parDim_ == 4)
+    if constexpr (BSplineCore::parDim_ == 4 && BSplineCore::geoDim_ == 4)
 
       return utils::BlockTensor<torch::Tensor, 1, 1>(
           *BSplineCore::template eval<deriv::dx, memory_optimized>(
               xi, knot_indices, coeff_indices)[0] +
           *BSplineCore::template eval<deriv::dy, memory_optimized>(
-              xi, knot_indices, coeff_indices)[0] +
+              xi, knot_indices, coeff_indices)[1] +
           *BSplineCore::template eval<deriv::dz, memory_optimized>(
-              xi, knot_indices, coeff_indices)[0] +
+              xi, knot_indices, coeff_indices)[2] +
           *BSplineCore::template eval<deriv::dt, memory_optimized>(
-              xi, knot_indices, coeff_indices)[0]);
+              xi, knot_indices, coeff_indices)[3]);
 
     else
-      throw std::runtime_error("Unsupported parametric dimension");
+      throw std::runtime_error("Unsupported parametric/geometric dimension");
   }
   /// @}
 
@@ -5764,7 +5772,7 @@ public:
   /// \f]
   ///
   /// @note This function can only be applied to B-spline objects with
-  /// geometric multiplicity 1, i.e. scalar fields.
+  /// geometric dimensionality 1, i.e. scalar fields.
   ///
   /// @{
   template <bool memory_optimized = false>
@@ -5807,7 +5815,7 @@ public:
   /// \f]
   ///
   /// @note This function can only be applied to B-spline objects with
-  /// geometric multiplicity 1, i.e. scalar fields.
+  /// geometric dimensionality 1, i.e. scalar fields.
   template <bool memory_optimized = false>
   inline auto grad(const std::array<torch::Tensor, BSplineCore::parDim_> &xi,
                    const std::array<torch::Tensor, BSplineCore::parDim_>
@@ -5843,7 +5851,7 @@ public:
   /// \f]
   ///
   /// @note This function can only be applied to B-spline objects with
-  /// geometric multiplicity 1, i.e. scalar fields.
+  /// geometric dimensionality 1, i.e. scalar fields.
   ///
   /// @{
   template <bool memory_optimized = false>
@@ -5870,7 +5878,8 @@ public:
     static_assert(BSplineCore::geoDim_ == 1,
                   "grad(.) requires 1D variable, use jac(.) instead");
     assert(xi[0].sizes() == knot_indices[0].sizes() &&
-           xi[1].sizes() == knot_indices[1].sizes());
+           xi[1].sizes() == knot_indices[1].sizes() &&
+           xi[0].sizes() == xi[1].sizes());
 
     if constexpr (BSplineCore::parDim_ == 2)
 
@@ -5892,7 +5901,8 @@ public:
                   "grad(.) requires 1D variable, use jac(.) instead");
     assert(xi[0].sizes() == knot_indices[0].sizes() &&
            xi[1].sizes() == knot_indices[1].sizes() &&
-           xi[2].sizes() == knot_indices[2].sizes());
+           xi[2].sizes() == knot_indices[2].sizes() &&
+           xi[0].sizes() == xi[1].sizes() && xi[1].sizes() == xi[2].sizes());
 
     if constexpr (BSplineCore::parDim_ == 3)
 
@@ -5917,7 +5927,9 @@ public:
     assert(xi[0].sizes() == knot_indices[0].sizes() &&
            xi[1].sizes() == knot_indices[1].sizes() &&
            xi[2].sizes() == knot_indices[2].sizes() &&
-           xi[3].sizes() == knot_indices[3].sizes());
+           xi[3].sizes() == knot_indices[3].sizes() &&
+           xi[0].sizes() == xi[1].sizes() && xi[1].sizes() == xi[2].sizes() &&
+           xi[2].sizes() == xi[3].sizes());
 
     if constexpr (BSplineCore::parDim_ == 4)
 
@@ -6212,7 +6224,8 @@ public:
                    const utils::TensorArray2 &knot_indices,
                    const torch::Tensor &coeff_indices) const {
     assert(xi[0].sizes() == knot_indices[0].sizes() &&
-           xi[1].sizes() == knot_indices[1].sizes());
+           xi[1].sizes() == knot_indices[1].sizes() &&
+           xi[0].sizes() == xi[1].sizes());
 
     if constexpr (BSplineCore::parDim_ == 2)
       return utils::BlockTensor<torch::Tensor, 2, BSplineCore::geoDim_, 2>(
@@ -6237,7 +6250,8 @@ public:
                    const torch::Tensor &coeff_indices) const {
     assert(xi[0].sizes() == knot_indices[0].sizes() &&
            xi[1].sizes() == knot_indices[1].sizes() &&
-           xi[2].sizes() == knot_indices[2].sizes());
+           xi[2].sizes() == knot_indices[2].sizes() &&
+           xi[0].sizes() == xi[1].sizes() && xi[1].sizes() == xi[2].sizes());
 
     if constexpr (BSplineCore::parDim_ == 3)
       return utils::BlockTensor<torch::Tensor, 3, BSplineCore::geoDim_, 3>(
@@ -6277,7 +6291,9 @@ public:
     assert(xi[0].sizes() == knot_indices[0].sizes() &&
            xi[1].sizes() == knot_indices[1].sizes() &&
            xi[2].sizes() == knot_indices[2].sizes() &&
-           xi[3].sizes() == knot_indices[3].sizes());
+           xi[3].sizes() == knot_indices[3].sizes() &&
+           xi[0].sizes() == xi[1].sizes() && xi[1].sizes() == xi[2].sizes() &&
+           xi[2].sizes() == xi[3].sizes());
 
     if constexpr (BSplineCore::parDim_ == 4)
       return utils::BlockTensor<torch::Tensor, 4, BSplineCore::geoDim_, 4>(
@@ -6634,7 +6650,8 @@ public:
                   const utils::TensorArray2 &knot_indices,
                   const torch::Tensor &coeff_indices) const {
     assert(xi[0].sizes() == knot_indices[0].sizes() &&
-           xi[1].sizes() == knot_indices[1].sizes());
+           xi[1].sizes() == knot_indices[1].sizes() &&
+           xi[0].sizes() == xi[1].sizes());
 
     if constexpr (BSplineCore::parDim_ == 2)
 
@@ -6655,7 +6672,8 @@ public:
                   const torch::Tensor &coeff_indices) const {
     assert(xi[0].sizes() == knot_indices[0].sizes() &&
            xi[1].sizes() == knot_indices[1].sizes() &&
-           xi[2].sizes() == knot_indices[2].sizes());
+           xi[2].sizes() == knot_indices[2].sizes() &&
+           xi[0].sizes() == xi[1].sizes() && xi[1].sizes() == xi[2].sizes());
 
     if constexpr (BSplineCore::parDim_ == 3)
 
@@ -6679,7 +6697,9 @@ public:
     assert(xi[0].sizes() == knot_indices[0].sizes() &&
            xi[1].sizes() == knot_indices[1].sizes() &&
            xi[2].sizes() == knot_indices[2].sizes() &&
-           xi[3].sizes() == knot_indices[3].sizes());
+           xi[3].sizes() == knot_indices[3].sizes() &&
+           xi[0].sizes() == xi[1].sizes() && xi[1].sizes() == xi[2].sizes() &&
+           xi[2].sizes() == xi[3].sizes());
 
     if constexpr (BSplineCore::parDim_ == 4)
 
@@ -6931,7 +6951,8 @@ public:
                    const utils::TensorArray2 &knot_indices,
                    const torch::Tensor &coeff_indices) const {
     assert(xi[0].sizes() == knot_indices[0].sizes() &&
-           xi[1].sizes() == knot_indices[1].sizes());
+           xi[1].sizes() == knot_indices[1].sizes() &&
+           xi[0].sizes() == xi[1].sizes());
 
     if constexpr (BSplineCore::parDim_ == 2)
       return utils::BlockTensor<torch::Tensor, 1, 1, BSplineCore::geoDim_>(
@@ -6950,7 +6971,8 @@ public:
                    const torch::Tensor &coeff_indices) const {
     assert(xi[0].sizes() == knot_indices[0].sizes() &&
            xi[1].sizes() == knot_indices[1].sizes() &&
-           xi[2].sizes() == knot_indices[2].sizes());
+           xi[2].sizes() == knot_indices[2].sizes() &&
+           xi[0].sizes() == xi[1].sizes() && xi[1].sizes() == xi[2].sizes());
 
     if constexpr (BSplineCore::parDim_ == 3)
       return utils::BlockTensor<torch::Tensor, 1, 1, BSplineCore::geoDim_>(
@@ -6972,7 +6994,9 @@ public:
     assert(xi[0].sizes() == knot_indices[0].sizes() &&
            xi[1].sizes() == knot_indices[1].sizes() &&
            xi[2].sizes() == knot_indices[2].sizes() &&
-           xi[3].sizes() == knot_indices[3].sizes());
+           xi[3].sizes() == knot_indices[3].sizes() &&
+           xi[0].sizes() == xi[1].sizes() && xi[1].sizes() == xi[2].sizes() &&
+           xi[2].sizes() == xi[3].sizes());
 
     if constexpr (BSplineCore::parDim_ == 4)
       return utils::BlockTensor<torch::Tensor, 1, 1, BSplineCore::geoDim_>(
