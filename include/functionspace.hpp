@@ -2113,7 +2113,7 @@ private:                                                                       \
   inline auto BOOST_PP_CAT(name, _all_)(std::index_sequence<Is...>,            \
                                         const Geometry &G,                     \
                                         const std::tuple<Xi...> &xi) const {   \
-  if constexpr (comp == functionspace::interior) {			\
+    if constexpr (comp == functionspace::interior) {                           \
       if constexpr (Geometry::nspaces() == 1)                                  \
         return std::tuple(std::get<Is>(*this).template name<memory_optimized>( \
             static_cast<typename Geometry::Base::Base>(G),                     \
@@ -2121,7 +2121,7 @@ private:                                                                       \
       else                                                                     \
         return std::tuple(std::get<Is>(*this).template name<memory_optimized>( \
             std::get<Is>(G), std::get<Is>(xi))...);                            \
-  } else if constexpr (comp == functionspace::boundary)	{		\
+    } else if constexpr (comp == functionspace::boundary) {                    \
       if constexpr (Geometry::nspaces() == 1)                                  \
         return std::tuple(                                                     \
             std::get<Is>(boundary_).template name<memory_optimized>(           \
@@ -2132,7 +2132,7 @@ private:                                                                       \
         return std::tuple(                                                     \
             std::get<Is>(boundary_).template name<memory_optimized>(           \
                 std::get<Is>(G).boundary().coeffs(), std::get<Is>(xi))...);    \
-  } \
+    }                                                                          \
   }                                                                            \
                                                                                \
   template <functionspace comp = functionspace::interior,                      \
@@ -2144,7 +2144,7 @@ private:                                                                       \
       const std::tuple<Xi...> &xi,                                             \
       const std::tuple<Knot_Indices...> &knot_indices,                         \
       const std::tuple<Knot_Indices_G...> &knot_indices_G) const {             \
-    if constexpr (comp == functionspace::interior) {			\
+    if constexpr (comp == functionspace::interior) {                           \
       if constexpr (Geometry::nspaces() == 1)                                  \
         return std::tuple(std::get<Is>(*this).template name<memory_optimized>( \
             static_cast<typename Geometry::Base::Base>(G), std::get<Is>(xi),   \
@@ -2153,7 +2153,7 @@ private:                                                                       \
         return std::tuple(std::get<Is>(*this).template name<memory_optimized>( \
             std::get<Is>(G), std::get<Is>(xi), std::get<Is>(knot_indices),     \
             std::get<Is>(knot_indices_G))...);                                 \
-    } else if constexpr (comp == functionspace::boundary) {		\
+    } else if constexpr (comp == functionspace::boundary) {                    \
       if constexpr (Geometry::nspaces() == 1)                                  \
         return std::tuple(                                                     \
             std::get<Is>(boundary_).template name<memory_optimized>(           \
@@ -2166,7 +2166,7 @@ private:                                                                       \
             std::get<Is>(boundary_).template name<memory_optimized>(           \
                 std::get<Is>(G).boundary().coeffs(), std::get<Is>(xi),         \
                 std::get<Is>(knot_indices), std::get<Is>(knot_indices_G))...); \
-    } \
+    }                                                                          \
   }                                                                            \
                                                                                \
   template <functionspace comp = functionspace::interior,                      \
@@ -2181,7 +2181,7 @@ private:                                                                       \
       const std::tuple<Coeff_Indices...> &coeff_indices,                       \
       const std::tuple<Knot_Indices_G...> &knot_indices_G,                     \
       const std::tuple<Coeff_Indices_G...> &coeff_indices_G) const {           \
-    if constexpr (comp == functionspace::interior) {			\
+    if constexpr (comp == functionspace::interior) {                           \
       if constexpr (Geometry::nspaces() == 1)                                  \
         return std::tuple(std::get<Is>(*this).template name<memory_optimized>( \
             static_cast<typename Geometry::Base::Base>(G), std::get<Is>(xi),   \
@@ -2192,7 +2192,7 @@ private:                                                                       \
             std::get<Is>(G), std::get<Is>(xi), std::get<Is>(knot_indices),     \
             std::get<Is>(coeff_indices), std::get<Is>(knot_indices_G),         \
             std::get<Is>(coeff_indices_G))...);                                \
-    } else if constexpr (comp == functionspace::boundary) {		\
+    } else if constexpr (comp == functionspace::boundary) {                    \
       if constexpr (Geometry::nspaces() == 1)                                  \
         return std::tuple(                                                     \
             std::get<Is>(boundary_).template name<memory_optimized>(           \
@@ -2208,7 +2208,7 @@ private:                                                                       \
                 std::get<Is>(knot_indices), std::get<Is>(coeff_indices),       \
                 std::get<Is>(knot_indices_G),                                  \
                 std::get<Is>(coeff_indices_G))...);                            \
-    } \
+    }                                                                          \
   }                                                                            \
                                                                                \
 public:                                                                        \
@@ -2685,13 +2685,13 @@ public:                                                                        \
             std::make_index_sequence<std::tuple_size_v<Arg>>{}, arg, args...); \
       else                                                                     \
         return Base::template name<memory_optimized>(arg, args...);            \
-    else if constexpr (comp == functionspace::boundary) {		\
+    else if constexpr (comp == functionspace::boundary) {                      \
       if constexpr (utils::is_tuple_of_tuples_v<Arg>)                          \
         return BOOST_PP_CAT(name, _all_)<comp, memory_optimized>(              \
             std::make_index_sequence<std::tuple_size_v<Arg>>{}, arg, args...); \
       else                                                                     \
         return boundary_.template name<memory_optimized>(arg, args...);        \
-    }\
+    }                                                                          \
   }
 
   /// @brief Auto-generated functions
@@ -2772,7 +2772,7 @@ public:                                                                        \
             typename... Args>                                                  \
   inline auto name(const Geometry &G, const Arg &arg, const Args &...args)     \
       const {                                                                  \
-    if constexpr (comp == functionspace::interior) {			\
+    if constexpr (comp == functionspace::interior) {                           \
       if constexpr (utils::is_tuple_v<Arg>)                                    \
         return BOOST_PP_CAT(name, _all_)<comp, memory_optimized>(              \
             std::make_index_sequence<std::tuple_size_v<Arg>>{}, G, arg,        \
@@ -2780,7 +2780,7 @@ public:                                                                        \
       else                                                                     \
         return Base::template name<memory_optimized>(                          \
             static_cast<typename Geometry::Base::Base>(G), arg, args...);      \
-    } else if constexpr (comp == functionspace::boundary)	{	\
+    } else if constexpr (comp == functionspace::boundary) {                    \
       if constexpr (utils::is_tuple_of_tuples_v<Arg>)                          \
         return BOOST_PP_CAT(name, _all_)<comp, memory_optimized>(              \
             std::make_index_sequence<std::tuple_size_v<Arg>>{}, G, arg,        \
@@ -2790,7 +2790,7 @@ public:                                                                        \
             static_cast<typename Geometry::boundary_type::boundary_type>(      \
                 G.boundary().coeffs()),                                        \
             arg, args...);                                                     \
-    } \
+    }                                                                          \
   }
 
   /// @brief Auto-generated functions
