@@ -5577,7 +5577,7 @@ public:
       return utils::BlockTensor<torch::Tensor, 1, 1>(
           *BSplineCore::template eval<deriv::dx, memory_optimized>(
               xi, knot_indices, coeff_indices)[0] +
-          BSplineCore::template eval<deriv::dy, memory_optimized>(
+          *BSplineCore::template eval<deriv::dy, memory_optimized>(
               xi, knot_indices, coeff_indices)[1]);
 
     else
