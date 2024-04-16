@@ -349,7 +349,7 @@ public:
     return doc;
   }
 
-  /// @brief Returns the B-spline object as XML node
+  /// @brief Returns the function space object as XML node
   inline pugi::xml_node &to_xml(pugi::xml_node &root, int id = 0,
                                 std::string label = "") const {
     return to_xml_(std::make_index_sequence<FunctionSpace::nspaces()>{}, root,
@@ -910,8 +910,118 @@ public:
     pretty_print_(std::make_index_sequence<nspaces()>{});
   }
 
+  //  clang-format off
+  /// @brief Returns a block-tensor with the curl of the
+  /// function space object with respect to the parametric variables
+  ///
+  /// @param[in] xi Point(s) where to evaluate the curl
+  ///
+  /// @result Block-tensor with the curl with respect to the
+  /// parametric variables `xi`
+  /// \f[
+  ///     \nabla_{\boldsymbol{\xi}} \times \mathbf{u}
+  ///        =
+  ///     \begin{bmatrix}
+  ///        \mathbf{i}_0 & \cdots & \mathbf{i}_{d_\text{par}} \\
+  ///        \frac{\partial}{\partial\xi_0} & \cdots &
+  ///        \frac{\partial}{\partial\xi_{d_\text{par}}} \\
+  ///        u_0 & \cdots & u_{d_\text{par}}
+  ///     \end{bmatrix}
+  /// \f]
+  //  clang-format off
+  ///
+  /// @{
+  template <functionspace comp = functionspace::interior,
+            bool memory_optimized = false>
+  inline auto curl(const utils::TensorArray1 &xi,
+                   const std::tuple<utils::TensorArray1> &knot_indices,
+                   const std::tuple<torch::Tensor> &coeff_indices) const {
+
+    assert(xi[0].sizes() == std::get<0>(knot_indices)[0].sizes());
+
+    throw std::runtime_error("Unsupported parametric/geometric dimension");
+
+    return utils::BlockTensor<torch::Tensor, 1, 1>{};
+  }
+
+  template <functionspace comp = functionspace::interior,
+            bool memory_optimized = false>
+  inline auto
+  curl(const utils::TensorArray2 &xi,
+       const std::tuple<utils::TensorArray2, utils::TensorArray2> &knot_indices,
+       const std::tuple<torch::Tensor, torch::Tensor> &coeff_indices) const {
+
+    assert(xi[0].sizes() == std::get<0>(knot_indices)[0].sizes() &&
+           xi[1].sizes() == std::get<1>(knot_indices)[0].sizes() &&
+           xi[0].sizes() == xi[1].sizes());
+
+    /// curl = 0,
+    ///        0,
+    ///        du_y / dx - du_x / dy
+    ///
+    /// Only the third component is returned
+    return utils::BlockTensor<torch::Tensor, 1, 1>(
+        *std::get<1>(*this).template eval<deriv::dx, memory_optimized>(
+            xi, std::get<1>(knot_indices), std::get<1>(coeff_indices))[0] -
+        *std::get<0>(*this).template eval<deriv::dx, memory_optimized>(
+            xi, std::get<0>(knot_indices), std::get<0>(coeff_indices))[0]);
+  }
+
+  template <functionspace comp = functionspace::interior,
+            bool memory_optimized = false>
+  inline auto curl(const utils::TensorArray3 &xi,
+                   const std::tuple<utils::TensorArray3, utils::TensorArray3,
+                                    utils::TensorArray3> &knot_indices,
+                   const std::tuple<torch::Tensor, torch::Tensor, torch::Tensor>
+                       &coeff_indices) const {
+
+    assert(xi[0].sizes() == std::get<0>(knot_indices)[0].sizes() &&
+           xi[1].sizes() == std::get<1>(knot_indices)[0].sizes() &&
+           xi[2].sizes() == std::get<2>(knot_indices)[0].sizes() &&
+           xi[0].sizes() == xi[1].sizes() && xi[1].sizes() == xi[2].sizes());
+
+    /// curl = du_z / dy - du_y / dz,
+    ///        du_x / dz - du_z / dx,
+    ///        du_y / dx - du_x / dy
+    return utils::BlockTensor<torch::Tensor, 1, 3>(
+        *std::get<2>(*this).template eval<deriv::dy, memory_optimized>(
+            xi, std::get<2>(knot_indices), std::get<2>(coeff_indices))[0] -
+            *std::get<1>(*this).template eval<deriv::dz, memory_optimized>(
+                xi, std::get<1>(knot_indices), std::get<1>(coeff_indices))[0],
+        *std::get<0>(*this).template eval<deriv::dz, memory_optimized>(
+            xi, std::get<0>(knot_indices), std::get<0>(coeff_indices))[0] -
+            *std::get<2>(*this).template eval<deriv::dx, memory_optimized>(
+                xi, std::get<2>(knot_indices), std::get<2>(coeff_indices))[0],
+        *std::get<1>(*this).template eval<deriv::dx, memory_optimized>(
+            xi, std::get<1>(knot_indices), std::get<1>(coeff_indices))[0] -
+            *std::get<0>(*this).template eval<deriv::dy, memory_optimized>(
+                xi, std::get<0>(knot_indices), std::get<0>(coeff_indices))[0]);
+  }
+
+  template <functionspace comp = functionspace::interior,
+            bool memory_optimized = false>
+  inline auto
+  curl(const utils::TensorArray4 &xi,
+       const std::tuple<utils::TensorArray4, utils::TensorArray4,
+                        utils::TensorArray4, utils::TensorArray4> &knot_indices,
+       const std::tuple<torch::Tensor, torch::Tensor, torch::Tensor,
+                        torch::Tensor> &coeff_indices) const {
+
+    assert(xi[0].sizes() == std::get<0>(knot_indices)[0].sizes() &&
+           xi[1].sizes() == std::get<1>(knot_indices)[0].sizes() &&
+           xi[2].sizes() == std::get<2>(knot_indices)[0].sizes() &&
+           xi[3].sizes() == std::get<3>(knot_indices)[0].sizes() &&
+           xi[0].sizes() == xi[1].sizes() && xi[1].sizes() == xi[2].sizes() &&
+           xi[2].sizes() == xi[3].sizes());
+
+    throw std::runtime_error("Unsupported parametric/geometric dimension");
+
+    return utils::BlockTensor<torch::Tensor, 1, 3>{};
+  }
+  /// @}
+
   /// @brief Returns a block-tensor with the divergence of the
-  /// B-spline object with respect to the parametric variables
+  /// function space object with respect to the parametric variables
   ///
   /// @param[in] xi Point(s) where to evaluate the divergence
   ///
@@ -920,7 +1030,7 @@ public:
   /// @param[in] coeff_indices Coefficient indices where to evaluate the
   /// divergence
   ///
-  /// @result Block-tensor with the divergence of the B-spline with
+  /// @result Block-tensor with the divergence of the function space with
   /// respect to the parametric variables
   /// \f[
   ///     \nabla_{\boldsymbol{\xi}} \cdot \mathbf{u}
@@ -933,9 +1043,6 @@ public:
   ///     \frac{\partial u_{d_\text{geo}}}{\partial \xi_{d_\text{par}}}
   /// \f]
   ///
-  /// @note This function can only be applied to B-spline objects with
-  /// equal parametric and geometric multiplicity.
-  ///
   /// @{
   template <functionspace comp = functionspace::interior,
             bool memory_optimized = false>
@@ -943,10 +1050,16 @@ public:
                   const std::tuple<utils::TensorArray1> &knot_indices,
                   const std::tuple<torch::Tensor> &coeff_indices) const {
 
-    if constexpr (comp == functionspace::interior)
+    assert(xi[0].sizes() == std::get<0>(knot_indices)[0].sizes());
+
+    if constexpr (comp == functionspace::interior) {
+      static_assert(std::tuple_element_t<0, Base>::geoDim() == 1,
+                    "div(.) for vector-valued spaces requires 1D variables");
+
       return utils::BlockTensor<torch::Tensor, 1, 1>(
           std::get<0>(*this).template eval<deriv::dx, memory_optimized>(
               xi, std::get<0>(knot_indices), std::get<0>(coeff_indices))[0]);
+    }
   }
 
   template <functionspace comp = functionspace::interior,
@@ -956,12 +1069,21 @@ public:
       const std::tuple<utils::TensorArray2, utils::TensorArray2> &knot_indices,
       const std::tuple<torch::Tensor, torch::Tensor> &coeff_indices) const {
 
-    if constexpr (comp == functionspace::interior)
+    assert(xi[0].sizes() == std::get<0>(knot_indices)[0].sizes() &&
+           xi[1].sizes() == std::get<1>(knot_indices)[0].sizes() &&
+           xi[0].sizes() == xi[1].sizes());
+
+    if constexpr (comp == functionspace::interior) {
+      static_assert(std::tuple_element_t<0, Base>::geoDim() == 1 &&
+                        std::tuple_element_t<1, Base>::geoDim() == 1,
+                    "div(.) for vector-valued spaces requires 1D variables");
+
       return utils::BlockTensor<torch::Tensor, 1, 1>(
           *std::get<0>(*this).template eval<deriv::dx, memory_optimized>(
               xi, std::get<0>(knot_indices), std::get<0>(coeff_indices))[0] +
           *std::get<1>(*this).template eval<deriv::dy, memory_optimized>(
               xi, std::get<1>(knot_indices), std::get<1>(coeff_indices))[0]);
+    }
   }
 
   template <functionspace comp = functionspace::interior,
@@ -972,7 +1094,17 @@ public:
                   const std::tuple<torch::Tensor, torch::Tensor, torch::Tensor>
                       &coeff_indices) const {
 
-    if constexpr (comp == functionspace::interior)
+    assert(xi[0].sizes() == std::get<0>(knot_indices)[0].sizes() &&
+           xi[1].sizes() == std::get<1>(knot_indices)[0].sizes() &&
+           xi[2].sizes() == std::get<2>(knot_indices)[0].sizes() &&
+           xi[0].sizes() == xi[1].sizes() && xi[1].sizes() == xi[2].sizes());
+
+    if constexpr (comp == functionspace::interior) {
+      static_assert(std::tuple_element_t<0, Base>::geoDim() == 1 &&
+                        std::tuple_element_t<1, Base>::geoDim() == 1 &&
+                        std::tuple_element_t<2, Base>::geoDim() == 1,
+                    "div(.) for vector-valued spaces requires 1D variables");
+
       return utils::BlockTensor<torch::Tensor, 1, 1>(
           *std::get<0>(*this).template eval<deriv::dx, memory_optimized>(
               xi, std::get<0>(knot_indices), std::get<0>(coeff_indices))[0] +
@@ -980,6 +1112,7 @@ public:
               xi, std::get<1>(knot_indices), std::get<1>(coeff_indices))[0] +
           *std::get<2>(*this).template eval<deriv::dz, memory_optimized>(
               xi, std::get<2>(knot_indices), std::get<2>(coeff_indices))[0]);
+    }
   }
 
   template <functionspace comp = functionspace::interior,
@@ -991,7 +1124,20 @@ public:
       const std::tuple<torch::Tensor, torch::Tensor, torch::Tensor,
                        torch::Tensor> &coeff_indices) const {
 
-    if constexpr (comp == functionspace::interior)
+    assert(xi[0].sizes() == std::get<0>(knot_indices)[0].sizes() &&
+           xi[1].sizes() == std::get<1>(knot_indices)[0].sizes() &&
+           xi[2].sizes() == std::get<2>(knot_indices)[0].sizes() &&
+           xi[3].sizes() == stg::get<3>(knot_indices)[0].sizes() &&
+           xi[0].sizes() == xi[1].sizes() && xi[1].sizes() == xi[2].sizes() &&
+           xi[2].sizes() == xi[3].sizes());
+
+    if constexpr (comp == functionspace::interior) {
+      static_assert(std::tuple_element_t<0, Base>::geoDim() == 1 &&
+                        std::tuple_element_t<1, Base>::geoDim() == 1 &&
+                        std::tuple_element_t<2, Base>::geoDim() == 1 &&
+                        std::tuple_element_t<3, Base>::geoDim() == 1,
+                    "div(.) for vector-valued spaces requires 1D variables");
+
       return utils::BlockTensor<torch::Tensor, 1, 1>(
           *std::get<0>(*this).template eval<deriv::dx, memory_optimized>(
               xi, std::get<0>(knot_indices), std::get<0>(coeff_indices))[0] +
@@ -1001,6 +1147,845 @@ public:
               xi, std::get<2>(knot_indices), std::get<2>(coeff_indices))[0] +
           *std::get<3>(*this).template eval<deriv::dt, memory_optimized>(
               xi, std::get<3>(knot_indices), std::get<3>(coeff_indices))[0]);
+    }
+  }
+  /// @}
+
+  /// @brief Returns a block-tensor with the gradient of the function space
+  /// object in the points `xi` with respect to the parametric variables
+  ///
+  /// @param[in] xi Point(s) where to evaluate the gradient
+  ///
+  /// @result Block-tensor with the gradient with respect to the
+  /// parametric variables `xi`
+  /// \f[
+  ///     \nabla_{\boldsymbol{\xi}}u
+  ///        =
+  ///     \left(\frac{\partial u_0}{\partial \xi_0},
+  ///           \frac{\partial u_1}{\partial \xi_1},
+  ///           \dots
+  ///           \frac{\partial u_d}{\partial \xi_{d_\text{par}}}\right)
+  /// \f]
+  ///
+  /// @{
+  template <functionspace comp = functionspace::interior,
+            bool memory_optimized = false>
+  inline auto grad(const utils::TensorArray1 &xi,
+                   const std::tuple<utils::TensorArray1> &knot_indices,
+                   const std::tuple<torch::Tensor> &coeff_indices) const {
+
+    assert(xi[0].sizes() == std::get<0>(knot_indices)[0].sizes());
+
+    if constexpr (comp == functionspace::interior) {
+      static_assert(std::tuple_element_t<0, Base>::geoDim() == 1,
+                    "grid(.) for vector-valued spaces requires 1D variables");
+
+      return utils::BlockTensor<torch::Tensor, 1, 1>(
+          std::get<0>(*this).template eval<deriv::dx, memory_optimized>(
+              xi, std::get<0>(knot_indices), std::get<0>(coeff_indices))[0]);
+    }
+  }
+
+  template <functionspace comp = functionspace::interior,
+            bool memory_optimized = false>
+  inline auto
+  grad(const utils::TensorArray2 &xi,
+       const std::tuple<utils::TensorArray2, utils::TensorArray2> &knot_indices,
+       const std::tuple<torch::Tensor, torch::Tensor> &coeff_indices) const {
+
+    assert(xi[0].sizes() == std::get<0>(knot_indices)[0].sizes() &&
+           xi[1].sizes() == stg::get<1>(knot_indices)[0].sizes() &&
+           xi[0].sizes() == xi[1].sizes());
+
+    if constexpr (comp == functionspace::interior) {
+      static_assert(std::tuple_element_t<0, Base>::geoDim() == 1 &&
+                        std::tuple_element_t<1, Base>::geoDim() == 1,
+                    "grad(.) for vector-valued spaces requires 1D variables");
+
+      return utils::BlockTensor<torch::Tensor, 1, 2>(
+          std::get<0>(*this).template eval<deriv::dx, memory_optimized>(
+              xi, std::get<0>(knot_indices), std::get<0>(coeff_indices))[0],
+          std::get<1>(*this).template eval<deriv::dy, memory_optimized>(
+              xi, std::get<1>(knot_indices), std::get<1>(coeff_indices))[0]);
+    }
+  }
+
+  template <functionspace comp = functionspace::interior,
+            bool memory_optimized = false>
+  inline auto grad(const utils::TensorArray3 &xi,
+                   const std::tuple<utils::TensorArray3, utils::TensorArray3,
+                                    utils::TensorArray3> &knot_indices,
+                   const std::tuple<torch::Tensor, torch::Tensor, torch::Tensor>
+                       &coeff_indices) const {
+
+    assert(xi[0].sizes() == std::get<0>(knot_indices)[0].sizes() &&
+           xi[1].sizes() == std::get<1>(knot_indices)[0].sizes() &&
+           xi[2].sizes() == stg::get<2>(knot_indices)[0].sizes() &&
+           xi[0].sizes() == xi[1].sizes() && xi[1].sizes() == xi[2].sizes());
+
+    if constexpr (comp == functionspace::interior) {
+      static_assert(std::tuple_element_t<0, Base>::geoDim() == 1 &&
+                        std::tuple_element_t<1, Base>::geoDim() == 1 &&
+                        std::tuple_element_t<2, Base>::geoDim() == 1,
+                    "div(.) for vector-valued spaces requires 1D variables");
+
+      return utils::BlockTensor<torch::Tensor, 1, 3>(
+          std::get<0>(*this).template eval<deriv::dx, memory_optimized>(
+              xi, std::get<0>(knot_indices), std::get<0>(coeff_indices))[0],
+          std::get<1>(*this).template eval<deriv::dy, memory_optimized>(
+              xi, std::get<1>(knot_indices), std::get<1>(coeff_indices))[0],
+          std::get<2>(*this).template eval<deriv::dz, memory_optimized>(
+              xi, std::get<2>(knot_indices), std::get<2>(coeff_indices))[0]);
+    }
+  }
+
+  template <functionspace comp = functionspace::interior,
+            bool memory_optimized = false>
+  inline auto
+  grad(const utils::TensorArray4 &xi,
+       const std::tuple<utils::TensorArray4, utils::TensorArray4,
+                        utils::TensorArray4, utils::TensorArray4> &knot_indices,
+       const std::tuple<torch::Tensor, torch::Tensor, torch::Tensor,
+                        torch::Tensor> &coeff_indices) const {
+
+    assert(xi[0].sizes() == std::get<0>(knot_indices)[0].sizes() &&
+           xi[1].sizes() == std::get<1>(knot_indices)[0].sizes() &&
+           xi[2].sizes() == std::get<2>(knot_indices)[0].sizes() &&
+           xi[3].sizes() == stg::get<3>(knot_indices)[0].sizes() &&
+           xi[0].sizes() == xi[1].sizes() && xi[1].sizes() == xi[2].sizes() &&
+           xi[2].sizes() == xi[3].sizes());
+
+    if constexpr (comp == functionspace::interior) {
+      static_assert(std::tuple_element_t<0, Base>::geoDim() == 1 &&
+                        std::tuple_element_t<1, Base>::geoDim() == 1 &&
+                        std::tuple_element_t<2, Base>::geoDim() == 1 &&
+                        std::tuple_element_t<3, Base>::geoDim() == 1,
+                    "grad(.) for vector-valued spaces requires 1D variables");
+
+      return utils::BlockTensor<torch::Tensor, 1, 4>(
+          std::get<0>(*this).template eval<deriv::dx, memory_optimized>(
+              xi, std::get<0>(knot_indices), std::get<0>(coeff_indices))[0],
+          std::get<1>(*this).template eval<deriv::dy, memory_optimized>(
+              xi, std::get<1>(knot_indices), std::get<1>(coeff_indices))[0],
+          std::get<2>(*this).template eval<deriv::dz, memory_optimized>(
+              xi, std::get<2>(knot_indices), std::get<2>(coeff_indices))[0],
+          std::get<3>(*this).template eval<deriv::dt, memory_optimized>(
+              xi, std::get<3>(knot_indices), std::get<3>(coeff_indices))[0]);
+    }
+  }
+  /// @}
+
+  //  clang-format off
+  /// @brief Returns a block-tensor with the Hessian of the function space
+  /// object in the points `xi` with respect to the parametric
+  /// variables
+  ///
+  /// @param[in] xi Point(s) where to evaluate the Hessian
+  ///
+  /// @result Block-tensor with the Hessian with respect to the
+  /// parametric variables `xi`
+  /// \f[
+  ///     H_{\boldsymbol{\xi}}(u)
+  ///        =
+  ///     \begin{bmatrix}
+  ///           \frac{\partial^2 u}{\partial^2 \xi_0}&
+  ///           \frac{\partial^2 u}{\partial \xi_0\partial \xi_1}&
+  ///           \dots&
+  ///           \frac{\partial^2 u}{\partial \xi_0\partial \xi_{d_\text{par}}}
+  ///           \\ \frac{\partial^2 u}{\partial \xi_1\partial \xi_0}&
+  ///           \frac{\partial^2 u}{\partial^2 \xi_1}&
+  ///           \dots&
+  ///           \frac{\partial^2 u}{\partial \xi_1\partial \xi_{d_\text{par}}}
+  ///           \\
+  ///           \vdots& \vdots & \ddots & \vdots \\
+  ///           \frac{\partial^2 u}{\partial \xi_{d_\text{par}}\partial \xi_0}&
+  ///           \frac{\partial^2 u}{\partial \xi_{d_\text{par}}\partial \xi_1}&
+  ///           \dots&
+  ///           \frac{\partial^2 u}{\partial^2 \xi_{d_\text{par}}}
+  ///     \end{bmatrix}
+  /// \f]
+  ///
+  /// @note If the function space object has geometric dimension larger
+  /// then one then all Hessian matrices are returned as slices of a
+  /// rank-3 tensor.
+  //  clang-format on
+  ///
+  /// @{
+  template <functionspace comp = functionspace::interior,
+            bool memory_optimized = false>
+  inline auto hess(const utils::TensorArray1 &xi,
+                   const std::tuple<utils::TensorArray1> &knot_indices,
+                   const std::tuple<torch::Tensor> &coeff_indices) const {
+
+    assert(xi[0].sizes() == std::get<0>(knot_indices)[0].sizes());
+
+    if constexpr (comp == functionspace::interior) {
+      static_assert(std::tuple_element_t<0, Base>::geoDim() == 1,
+                    "hess(.) for vector-valued spaces requires 1D variables");
+
+      return utils::BlockTensor<torch::Tensor, 1, 1>(
+          std::get<0>(*this).template eval<deriv::dx ^ 2, memory_optimized>(
+              xi, std::get<0>(knot_indices), std::get<0>(coeff_indices)));
+    }
+  }
+
+  template <functionspace comp = functionspace::interior,
+            bool memory_optimized = false>
+  inline auto
+  hess(const utils::TensorArray2 &xi,
+       const std::tuple<utils::TensorArray2, utils::TensorArray2> &knot_indices,
+       const std::tuple<torch::Tensor, torch::Tensor> &coeff_indices) const {
+
+    assert(xi[0].sizes() == std::get<0>(knot_indices)[0].sizes() &&
+           xi[1].sizes() == std::get<1>(knot_indices)[0].sizes() &&
+           xi[0].sizes() == xi[1].sizes());
+
+    if constexpr (comp == functionspace::interior) {
+      static_assert(std::tuple_element_t<0, Base>::geoDim() == 1 &&
+                        std::tuple_element_t<1, Base>::geoDim() == 1,
+                    "hess(.) for vector-valued spaces requires 1D variables");
+
+      return utils::BlockTensor<torch::Tensor, 2, 2, 2>(
+          std::get<0>(*this).template eval<deriv::dx ^ 2, memory_optimized>(
+              xi, std::get<0>(knot_indices), std::get<0>(coeff_indices)),
+          std::get<0>(*this)
+              .template eval<deriv::dx + deriv::dy, memory_optimized>(
+                  xi, std::get<0>(knot_indices), std::get<0>(coeff_indices)),
+          std::get<0>(*this)
+              .template eval<deriv::dy + deriv::dx, memory_optimized>(
+                  xi, std::get<0>(knot_indices), std::get<0>(coeff_indices)),
+          std::get<0>(*this).template eval<deriv::dy ^ 2, memory_optimized>(
+              xi, std::get<0>(knot_indices), std::get<0>(coeff_indices)),
+
+          std::get<1>(*this).template eval<deriv::dx ^ 2, memory_optimized>(
+              xi, std::get<1>(knot_indices), std::get<1>(coeff_indices)),
+          std::get<1>(*this)
+              .template eval<deriv::dx + deriv::dy, memory_optimized>(
+                  xi, std::get<1>(knot_indices), std::get<1>(coeff_indices)),
+          std::get<1>(*this)
+              .template eval<deriv::dy + deriv::dx, memory_optimized>(
+                  xi, std::get<1>(knot_indices), std::get<1>(coeff_indices)),
+          std::get<1>(*this).template eval<deriv::dy ^ 2, memory_optimized>(
+              xi, std::get<1>(knot_indices), std::get<1>(coeff_indices)));
+    }
+  }
+
+  template <functionspace comp = functionspace::interior,
+            bool memory_optimized = false>
+  inline auto hess(const utils::TensorArray3 &xi,
+                   const std::tuple<utils::TensorArray3, utils::TensorArray3,
+                                    utils::TensorArray3> &knot_indices,
+                   const std::tuple<torch::Tensor, torch::Tensor, torch::Tensor>
+                       &coeff_indices) const {
+
+    assert(xi[0].sizes() == std::get<0>(knot_indices)[0].sizes() &&
+           xi[1].sizes() == std::get<1>(knot_indices)[0].sizes() &&
+           xi[2].sizes() == std::get<2>(knot_indices)[0].sizes() &&
+           xi[0].sizes() == xi[1].sizes() && xi[1].sizes() == xi[2].sizes());
+
+    if constexpr (comp == functionspace::interior) {
+      static_assert(std::tuple_element_t<0, Base>::geoDim() == 1 &&
+                        std::tuple_element_t<1, Base>::geoDim() == 1 &&
+                        std::tuple_element_t<2, Base>::geoDim() == 1,
+                    "hess(.) for vector-valued spaces requires 1D variables");
+
+      return utils::BlockTensor<torch::Tensor, 3, 3, 3>(
+          std::get<0>(*this).template eval<deriv::dx ^ 2, memory_optimized>(
+              xi, std::get<0>(knot_indices), std::get<0>(coeff_indices)),
+          std::get<0>(*this)
+              .template eval<deriv::dx + deriv::dy, memory_optimized>(
+                  xi, std::get<0>(knot_indices), std::get<0>(coeff_indices)),
+          std::get<0>(*this)
+              .template eval<deriv::dx + deriv::dz, memory_optimized>(
+                  xi, std::get<0>(knot_indices), std::get<0>(coeff_indices)),
+          std::get<0>(*this)
+              .template eval<deriv::dy + deriv::dx, memory_optimized>(
+                  xi, std::get<0>(knot_indices), std::get<0>(coeff_indices)),
+          std::get<0>(*this).template eval<deriv::dy ^ 2, memory_optimized>(
+              xi, std::get<0>(knot_indices), std::get<0>(coeff_indices)),
+          std::get<0>(*this)
+              .template eval<deriv::dy + deriv::dz, memory_optimized>(
+                  xi, std::get<0>(knot_indices), std::get<0>(coeff_indices)),
+          std::get<0>(*this)
+              .template eval<deriv::dz + deriv::dx, memory_optimized>(
+                  xi, std::get<0>(knot_indices), std::get<0>(coeff_indices)),
+          std::get<0>(*this)
+              .template eval<deriv::dz + deriv::dy, memory_optimized>(
+                  xi, std::get<0>(knot_indices), std::get<0>(coeff_indices)),
+          std::get<0>(*this).template eval<deriv::dz ^ 2, memory_optimized>(
+              xi, std::get<0>(knot_indices), std::get<0>(coeff_indices)),
+
+          std::get<1>(*this).template eval<deriv::dx ^ 2, memory_optimized>(
+              xi, std::get<1>(knot_indices), std::get<1>(coeff_indices)),
+          std::get<1>(*this)
+              .template eval<deriv::dx + deriv::dy, memory_optimized>(
+                  xi, std::get<1>(knot_indices), std::get<1>(coeff_indices)),
+          std::get<1>(*this)
+              .template eval<deriv::dx + deriv::dz, memory_optimized>(
+                  xi, std::get<1>(knot_indices), std::get<1>(coeff_indices)),
+          std::get<1>(*this)
+              .template eval<deriv::dy + deriv::dx, memory_optimized>(
+                  xi, std::get<1>(knot_indices), std::get<1>(coeff_indices)),
+          std::get<1>(*this).template eval<deriv::dy ^ 2, memory_optimized>(
+              xi, std::get<1>(knot_indices), std::get<1>(coeff_indices)),
+          std::get<1>(*this)
+              .template eval<deriv::dy + deriv::dz, memory_optimized>(
+                  xi, std::get<1>(knot_indices), std::get<1>(coeff_indices)),
+          std::get<1>(*this)
+              .template eval<deriv::dz + deriv::dx, memory_optimized>(
+                  xi, std::get<1>(knot_indices), std::get<1>(coeff_indices)),
+          std::get<1>(*this)
+              .template eval<deriv::dz + deriv::dy, memory_optimized>(
+                  xi, std::get<1>(knot_indices), std::get<1>(coeff_indices)),
+          std::get<1>(*this).template eval<deriv::dz ^ 2, memory_optimized>(
+              xi, std::get<1>(knot_indices), std::get<1>(coeff_indices)),
+
+          std::get<2>(*this).template eval<deriv::dx ^ 2, memory_optimized>(
+              xi, std::get<2>(knot_indices), std::get<2>(coeff_indices)),
+          std::get<2>(*this)
+              .template eval<deriv::dx + deriv::dy, memory_optimized>(
+                  xi, std::get<2>(knot_indices), std::get<2>(coeff_indices)),
+          std::get<2>(*this)
+              .template eval<deriv::dx + deriv::dz, memory_optimized>(
+                  xi, std::get<2>(knot_indices), std::get<2>(coeff_indices)),
+          std::get<2>(*this)
+              .template eval<deriv::dy + deriv::dx, memory_optimized>(
+                  xi, std::get<2>(knot_indices), std::get<2>(coeff_indices)),
+          std::get<2>(*this).template eval<deriv::dy ^ 2, memory_optimized>(
+              xi, std::get<2>(knot_indices), std::get<2>(coeff_indices)),
+          std::get<2>(*this)
+              .template eval<deriv::dy + deriv::dz, memory_optimized>(
+                  xi, std::get<2>(knot_indices), std::get<2>(coeff_indices)),
+          std::get<2>(*this)
+              .template eval<deriv::dz + deriv::dx, memory_optimized>(
+                  xi, std::get<2>(knot_indices), std::get<2>(coeff_indices)),
+          std::get<2>(*this)
+              .template eval<deriv::dz + deriv::dy, memory_optimized>(
+                  xi, std::get<2>(knot_indices), std::get<2>(coeff_indices)),
+          std::get<2>(*this).template eval<deriv::dz ^ 2, memory_optimized>(
+              xi, std::get<2>(knot_indices), std::get<2>(coeff_indices)));
+    }
+  }
+
+  template <functionspace comp = functionspace::interior,
+            bool memory_optimized = false>
+  inline auto
+  hess(const utils::TensorArray4 &xi,
+       const std::tuple<utils::TensorArray4, utils::TensorArray4,
+                        utils::TensorArray4, utils::TensorArray4> &knot_indices,
+       const std::tuple<torch::Tensor, torch::Tensor, torch::Tensor,
+                        torch::Tensor> &coeff_indices) const {
+
+    assert(xi[0].sizes() == std::get<0>(knot_indices)[0].sizes() &&
+           xi[1].sizes() == std::get<1>(knot_indices)[0].sizes() &&
+           xi[2].sizes() == std::get<2>(knot_indices)[0].sizes() &&
+           xi[3].sizes() == stg::get<3>(knot_indices)[0].sizes() &&
+           xi[0].sizes() == xi[1].sizes() && xi[1].sizes() == xi[2].sizes() &&
+           xi[2].sizes() == xi[3].sizes());
+
+    if constexpr (comp == functionspace::interior) {
+      static_assert(std::tuple_element_t<0, Base>::geoDim() == 1 &&
+                        std::tuple_element_t<1, Base>::geoDim() == 1 &&
+                        std::tuple_element_t<2, Base>::geoDim() == 1 &&
+                        std::tuple_element_t<3, Base>::geoDim() == 1,
+                    "hess(.) for vector-valued spaces requires 1D variables");
+
+      return utils::BlockTensor<torch::Tensor, 4, 4, 4>(
+          std::get<0>(*this).template eval<deriv::dx ^ 2, memory_optimized>(
+              xi, std::get<0>(knot_indices), std::get<0>(coeff_indices)),
+          std::get<0>(*this)
+              .template eval<deriv::dx + deriv::dy, memory_optimized>(
+                  xi, std::get<0>(knot_indices), std::get<0>(coeff_indices)),
+          std::get<0>(*this)
+              .template eval<deriv::dx + deriv::dz, memory_optimized>(
+                  xi, std::get<0>(knot_indices), std::get<0>(coeff_indices)),
+          std::get<0>(*this)
+              .template eval<deriv::dx + deriv::dt, memory_optimized>(
+                  xi, std::get<0>(knot_indices), std::get<0>(coeff_indices)),
+          std::get<0>(*this)
+              .template eval<deriv::dy + deriv::dx, memory_optimized>(
+                  xi, std::get<0>(knot_indices), std::get<0>(coeff_indices)),
+          std::get<0>(*this).template eval<deriv::dy ^ 2, memory_optimized>(
+              xi, std::get<0>(knot_indices), std::get<0>(coeff_indices)),
+          std::get<0>(*this)
+              .template eval<deriv::dy + deriv::dz, memory_optimized>(
+                  xi, std::get<0>(knot_indices), std::get<0>(coeff_indices)),
+          std::get<0>(*this)
+              .template eval<deriv::dy + deriv::dt, memory_optimized>(
+                  xi, std::get<0>(knot_indices), std::get<0>(coeff_indices)),
+          std::get<0>(*this)
+              .template eval<deriv::dz + deriv::dx, memory_optimized>(
+                  xi, std::get<0>(knot_indices), std::get<0>(coeff_indices)),
+          std::get<0>(*this)
+              .template eval<deriv::dz + deriv::dy, memory_optimized>(
+                  xi, std::get<0>(knot_indices), std::get<0>(coeff_indices)),
+          std::get<0>(*this).template eval<deriv::dz ^ 2, memory_optimized>(
+              xi, std::get<0>(knot_indices), std::get<0>(coeff_indices)),
+          std::get<0>(*this)
+              .template eval<deriv::dz + deriv::dt, memory_optimized>(
+                  xi, std::get<0>(knot_indices), std::get<0>(coeff_indices)),
+          std::get<0>(*this)
+              .template eval<deriv::dt + deriv::dx, memory_optimized>(
+                  xi, std::get<0>(knot_indices), std::get<0>(coeff_indices)),
+          std::get<0>(*this)
+              .template eval<deriv::dt + deriv::dy, memory_optimized>(
+                  xi, std::get<0>(knot_indices), std::get<0>(coeff_indices)),
+          std::get<0>(*this)
+              .template eval<deriv::dt + deriv::dz, memory_optimized>(
+                  xi, std::get<0>(knot_indices), std::get<0>(coeff_indices)),
+          std::get<0>(*this).template eval<deriv::dt ^ 2, memory_optimized>(
+              xi, std::get<0>(knot_indices), std::get<0>(coeff_indices)),
+
+          std::get<1>(*this).template eval<deriv::dx ^ 2, memory_optimized>(
+              xi, std::get<1>(knot_indices), std::get<1>(coeff_indices)),
+          std::get<1>(*this)
+              .template eval<deriv::dx + deriv::dy, memory_optimized>(
+                  xi, std::get<1>(knot_indices), std::get<1>(coeff_indices)),
+          std::get<1>(*this)
+              .template eval<deriv::dx + deriv::dz, memory_optimized>(
+                  xi, std::get<1>(knot_indices), std::get<1>(coeff_indices)),
+          std::get<1>(*this)
+              .template eval<deriv::dx + deriv::dt, memory_optimized>(
+                  xi, std::get<1>(knot_indices), std::get<1>(coeff_indices)),
+          std::get<1>(*this)
+              .template eval<deriv::dy + deriv::dx, memory_optimized>(
+                  xi, std::get<1>(knot_indices), std::get<1>(coeff_indices)),
+          std::get<1>(*this).template eval<deriv::dy ^ 2, memory_optimized>(
+              xi, std::get<1>(knot_indices), std::get<1>(coeff_indices)),
+          std::get<1>(*this)
+              .template eval<deriv::dy + deriv::dz, memory_optimized>(
+                  xi, std::get<1>(knot_indices), std::get<1>(coeff_indices)),
+          std::get<1>(*this)
+              .template eval<deriv::dy + deriv::dt, memory_optimized>(
+                  xi, std::get<1>(knot_indices), std::get<1>(coeff_indices)),
+          std::get<1>(*this)
+              .template eval<deriv::dz + deriv::dx, memory_optimized>(
+                  xi, std::get<1>(knot_indices), std::get<1>(coeff_indices)),
+          std::get<1>(*this)
+              .template eval<deriv::dz + deriv::dy, memory_optimized>(
+                  xi, std::get<1>(knot_indices), std::get<1>(coeff_indices)),
+          std::get<1>(*this).template eval<deriv::dz ^ 2, memory_optimized>(
+              xi, std::get<1>(knot_indices), std::get<1>(coeff_indices)),
+          std::get<1>(*this)
+              .template eval<deriv::dz + deriv::dt, memory_optimized>(
+                  xi, std::get<1>(knot_indices), std::get<1>(coeff_indices)),
+          std::get<1>(*this)
+              .template eval<deriv::dt + deriv::dx, memory_optimized>(
+                  xi, std::get<1>(knot_indices), std::get<1>(coeff_indices)),
+          std::get<1>(*this)
+              .template eval<deriv::dt + deriv::dy, memory_optimized>(
+                  xi, std::get<1>(knot_indices), std::get<1>(coeff_indices)),
+          std::get<1>(*this)
+              .template eval<deriv::dt + deriv::dz, memory_optimized>(
+                  xi, std::get<1>(knot_indices), std::get<1>(coeff_indices)),
+          std::get<1>(*this).template eval<deriv::dt ^ 2, memory_optimized>(
+              xi, std::get<1>(knot_indices), std::get<1>(coeff_indices)),
+
+          std::get<2>(*this).template eval<deriv::dx ^ 2, memory_optimized>(
+              xi, std::get<2>(knot_indices), std::get<2>(coeff_indices)),
+          std::get<2>(*this)
+              .template eval<deriv::dx + deriv::dy, memory_optimized>(
+                  xi, std::get<2>(knot_indices), std::get<2>(coeff_indices)),
+          std::get<2>(*this)
+              .template eval<deriv::dx + deriv::dz, memory_optimized>(
+                  xi, std::get<2>(knot_indices), std::get<2>(coeff_indices)),
+          std::get<2>(*this)
+              .template eval<deriv::dx + deriv::dt, memory_optimized>(
+                  xi, std::get<2>(knot_indices), std::get<2>(coeff_indices)),
+          std::get<2>(*this)
+              .template eval<deriv::dy + deriv::dx, memory_optimized>(
+                  xi, std::get<2>(knot_indices), std::get<2>(coeff_indices)),
+          std::get<2>(*this).template eval<deriv::dy ^ 2, memory_optimized>(
+              xi, std::get<2>(knot_indices), std::get<2>(coeff_indices)),
+          std::get<2>(*this)
+              .template eval<deriv::dy + deriv::dz, memory_optimized>(
+                  xi, std::get<2>(knot_indices), std::get<2>(coeff_indices)),
+          std::get<2>(*this)
+              .template eval<deriv::dy + deriv::dt, memory_optimized>(
+                  xi, std::get<2>(knot_indices), std::get<2>(coeff_indices)),
+          std::get<2>(*this)
+              .template eval<deriv::dz + deriv::dx, memory_optimized>(
+                  xi, std::get<2>(knot_indices), std::get<2>(coeff_indices)),
+          std::get<2>(*this)
+              .template eval<deriv::dz + deriv::dy, memory_optimized>(
+                  xi, std::get<2>(knot_indices), std::get<2>(coeff_indices)),
+          std::get<2>(*this).template eval<deriv::dz ^ 2, memory_optimized>(
+              xi, std::get<2>(knot_indices), std::get<2>(coeff_indices)),
+          std::get<2>(*this)
+              .template eval<deriv::dz + deriv::dt, memory_optimized>(
+                  xi, std::get<2>(knot_indices), std::get<2>(coeff_indices)),
+          std::get<2>(*this)
+              .template eval<deriv::dt + deriv::dx, memory_optimized>(
+                  xi, std::get<2>(knot_indices), std::get<2>(coeff_indices)),
+          std::get<2>(*this)
+              .template eval<deriv::dt + deriv::dy, memory_optimized>(
+                  xi, std::get<2>(knot_indices), std::get<2>(coeff_indices)),
+          std::get<2>(*this)
+              .template eval<deriv::dt + deriv::dz, memory_optimized>(
+                  xi, std::get<2>(knot_indices), std::get<2>(coeff_indices)),
+          std::get<2>(*this).template eval<deriv::dt ^ 2, memory_optimized>(
+              xi, std::get<2>(knot_indices), std::get<2>(coeff_indices)),
+
+          std::get<3>(*this).template eval<deriv::dx ^ 2, memory_optimized>(
+              xi, std::get<3>(knot_indices), std::get<3>(coeff_indices)),
+          std::get<3>(*this)
+              .template eval<deriv::dx + deriv::dy, memory_optimized>(
+                  xi, std::get<3>(knot_indices), std::get<3>(coeff_indices)),
+          std::get<3>(*this)
+              .template eval<deriv::dx + deriv::dz, memory_optimized>(
+                  xi, std::get<3>(knot_indices), std::get<3>(coeff_indices)),
+          std::get<3>(*this)
+              .template eval<deriv::dx + deriv::dt, memory_optimized>(
+                  xi, std::get<3>(knot_indices), std::get<3>(coeff_indices)),
+          std::get<3>(*this)
+              .template eval<deriv::dy + deriv::dx, memory_optimized>(
+                  xi, std::get<3>(knot_indices), std::get<3>(coeff_indices)),
+          std::get<3>(*this).template eval<deriv::dy ^ 2, memory_optimized>(
+              xi, std::get<3>(knot_indices), std::get<3>(coeff_indices)),
+          std::get<3>(*this)
+              .template eval<deriv::dy + deriv::dz, memory_optimized>(
+                  xi, std::get<3>(knot_indices), std::get<3>(coeff_indices)),
+          std::get<3>(*this)
+              .template eval<deriv::dy + deriv::dt, memory_optimized>(
+                  xi, std::get<3>(knot_indices), std::get<3>(coeff_indices)),
+          std::get<3>(*this)
+              .template eval<deriv::dz + deriv::dx, memory_optimized>(
+                  xi, std::get<3>(knot_indices), std::get<3>(coeff_indices)),
+          std::get<3>(*this)
+              .template eval<deriv::dz + deriv::dy, memory_optimized>(
+                  xi, std::get<3>(knot_indices), std::get<3>(coeff_indices)),
+          std::get<3>(*this).template eval<deriv::dz ^ 2, memory_optimized>(
+              xi, std::get<3>(knot_indices), std::get<3>(coeff_indices)),
+          std::get<3>(*this)
+              .template eval<deriv::dz + deriv::dt, memory_optimized>(
+                  xi, std::get<3>(knot_indices), std::get<3>(coeff_indices)),
+          std::get<3>(*this)
+              .template eval<deriv::dt + deriv::dx, memory_optimized>(
+                  xi, std::get<3>(knot_indices), std::get<3>(coeff_indices)),
+          std::get<3>(*this)
+              .template eval<deriv::dt + deriv::dy, memory_optimized>(
+                  xi, std::get<3>(knot_indices), std::get<3>(coeff_indices)),
+          std::get<3>(*this)
+              .template eval<deriv::dt + deriv::dz, memory_optimized>(
+                  xi, std::get<3>(knot_indices), std::get<3>(coeff_indices)),
+          std::get<3>(*this).template eval<deriv::dt ^ 2, memory_optimized>(
+              xi, std::get<3>(knot_indices), std::get<3>(coeff_indices)));
+    }
+  }
+  /// @}
+
+  //  clang-format off
+  /// @brief Returns a block-tensor with the Jacobian of the function
+  /// space object in the points `xi` with respect to the parametric
+  /// variables
+  ///
+  /// @param[in] xi Point(s) where to evaluate the Jacobian
+  ///
+  /// @param[in] knot_indices Knot indices where to evaluate the Jacobian
+  ///
+  /// @param[in] coeff_indices Coefficient indices where to evaluate the
+  /// Jacobian
+  ///
+  /// @result Block-tensor with the Jacobian with respect to the
+  /// parametric variables
+  /// \f[
+  ///     J_{\boldsymbol{\xi}}(u)
+  ///        =
+  ///     \begin{bmatrix}
+  ///           \frac{\partial u_0}{\partial \xi_0}&
+  ///           \frac{\partial u_0}{\partial \xi_1}&
+  ///           \dots&
+  ///           \frac{\partial u_0}{\partial \xi_{d_\text{par}}} \\
+  ///           \frac{\partial u_1}{\partial \xi_0}&
+  ///           \frac{\partial u_1}{\partial \xi_1}&
+  ///           \dots&
+  ///           \frac{\partial u_1}{\partial \xi_{d_\text{par}}} \\
+  ///           \vdots& \vdots & \ddots & \vdots \\
+  ///           \frac{\partial u_{d_\text{geo}}}{\partial \xi_0}&
+  ///           \frac{\partial u_{d_\text{geo}}}{\partial \xi_1}&
+  ///           \dots&
+  ///           \frac{\partial u_{d_\text{geo}}}{\partial \xi_{d_\text{par}}}
+  ///     \end{bmatrix}
+  /// \f]
+  ///
+  //  clang-format on
+  /// @{
+  template <functionspace comp = functionspace::interior,
+            bool memory_optimized = false>
+  inline auto jac(const utils::TensorArray1 &xi,
+                  const std::tuple<utils::TensorArray1> &knot_indices,
+                  const std::tuple<torch::Tensor> &coeff_indices) const {
+
+    assert(xi[0].sizes() == std::get<0>(knot_indices)[0].sizes());
+
+    if constexpr (comp == functionspace::interior) {
+      static_assert(std::tuple_element_t<0, Base>::geoDim() == 1,
+                    "jac(.) for vector-valued spaces requires 1D variables");
+
+      return utils::BlockTensor<torch::Tensor, 1, 1>(
+          std::get<0>(*this).template eval<deriv::dx, memory_optimized>(
+              xi, std::get<0>(knot_indices), std::get<0>(coeff_indices))[0]);
+    }
+  }
+
+  template <functionspace comp = functionspace::interior,
+            bool memory_optimized = false>
+  inline auto
+  jac(const utils::TensorArray2 &xi,
+      const std::tuple<utils::TensorArray2, utils::TensorArray2> &knot_indices,
+      const std::tuple<torch::Tensor, torch::Tensor> &coeff_indices) const {
+
+    assert(xi[0].sizes() == std::get<0>(knot_indices)[0].sizes() &&
+           xi[1].sizes() == std::get<1>(knot_indices)[0].sizes() &&
+           xi[0].sizes() == xi[1].sizes());
+
+    if constexpr (comp == functionspace::interior) {
+      static_assert(std::tuple_element_t<0, Base>::geoDim() == 1 &&
+                        std::tuple_element_t<1, Base>::geoDim() == 1,
+                    "jac(.) for vector-valued spaces requires 1D variables");
+
+      return utils::BlockTensor<torch::Tensor, 2, 2>(
+          std::get<0>(*this).template eval<deriv::dx, memory_optimized>(
+              xi, std::get<0>(knot_indices), std::get<0>(coeff_indices))[0],
+          std::get<0>(*this).template eval<deriv::dy, memory_optimized>(
+              xi, std::get<0>(knot_indices), std::get<0>(coeff_indices))[0],
+
+          std::get<1>(*this).template eval<deriv::dx, memory_optimized>(
+              xi, std::get<1>(knot_indices), std::get<1>(coeff_indices))[0],
+          std::get<1>(*this).template eval<deriv::dy, memory_optimized>(
+              xi, std::get<1>(knot_indices), std::get<1>(coeff_indices))[0]);
+    }
+  }
+
+  template <functionspace comp = functionspace::interior,
+            bool memory_optimized = false>
+  inline auto jac(const utils::TensorArray3 &xi,
+                  const std::tuple<utils::TensorArray3, utils::TensorArray3,
+                                   utils::TensorArray3> &knot_indices,
+                  const std::tuple<torch::Tensor, torch::Tensor, torch::Tensor>
+                      &coeff_indices) const {
+
+    assert(xi[0].sizes() == std::get<0>(knot_indices)[0].sizes() &&
+           xi[1].sizes() == std::get<1>(knot_indices)[0].sizes() &&
+           xi[2].sizes() == std::get<2>(knot_indices)[0].sizes() &&
+           xi[0].sizes() == xi[1].sizes() && xi[1].sizes() == xi[2].sizes());
+
+    if constexpr (comp == functionspace::interior) {
+      static_assert(std::tuple_element_t<0, Base>::geoDim() == 1 &&
+                        std::tuple_element_t<1, Base>::geoDim() == 1 &&
+                        std::tuple_element_t<2, Base>::geoDim() == 1,
+                    "jac(.) for vector-valued spaces requires 1D variables");
+
+      return utils::BlockTensor<torch::Tensor, 3, 3>(
+          std::get<0>(*this).template eval<deriv::dx, memory_optimized>(
+              xi, std::get<0>(knot_indices), std::get<0>(coeff_indices))[0],
+          std::get<0>(*this).template eval<deriv::dy, memory_optimized>(
+              xi, std::get<0>(knot_indices), std::get<0>(coeff_indices))[0],
+          std::get<0>(*this).template eval<deriv::dz, memory_optimized>(
+              xi, std::get<0>(knot_indices), std::get<0>(coeff_indices))[0],
+
+          std::get<1>(*this).template eval<deriv::dx, memory_optimized>(
+              xi, std::get<1>(knot_indices), std::get<1>(coeff_indices))[0],
+          std::get<1>(*this).template eval<deriv::dy, memory_optimized>(
+              xi, std::get<1>(knot_indices), std::get<1>(coeff_indices))[0],
+          std::get<1>(*this).template eval<deriv::dz, memory_optimized>(
+              xi, std::get<1>(knot_indices), std::get<1>(coeff_indices))[0],
+
+          std::get<2>(*this).template eval<deriv::dx, memory_optimized>(
+              xi, std::get<2>(knot_indices), std::get<2>(coeff_indices))[0],
+          std::get<2>(*this).template eval<deriv::dy, memory_optimized>(
+              xi, std::get<2>(knot_indices), std::get<2>(coeff_indices))[0],
+          std::get<2>(*this).template eval<deriv::dz, memory_optimized>(
+              xi, std::get<2>(knot_indices), std::get<2>(coeff_indices))[0]);
+    }
+  }
+
+  template <functionspace comp = functionspace::interior,
+            bool memory_optimized = false>
+  inline auto
+  jac(const utils::TensorArray4 &xi,
+      const std::tuple<utils::TensorArray4, utils::TensorArray4,
+                       utils::TensorArray4, utils::TensorArray4> &knot_indices,
+      const std::tuple<torch::Tensor, torch::Tensor, torch::Tensor,
+                       torch::Tensor> &coeff_indices) const {
+
+    assert(xi[0].sizes() == std::get<0>(knot_indices)[0].sizes() &&
+           xi[1].sizes() == std::get<1>(knot_indices)[0].sizes() &&
+           xi[2].sizes() == std::get<2>(knot_indices)[0].sizes() &&
+           xi[3].sizes() == stg::get<3>(knot_indices)[0].sizes() &&
+           xi[0].sizes() == xi[1].sizes() && xi[1].sizes() == xi[2].sizes() &&
+           xi[2].sizes() == xi[3].sizes());
+
+    if constexpr (comp == functionspace::interior) {
+      static_assert(std::tuple_element_t<0, Base>::geoDim() == 1 &&
+                        std::tuple_element_t<1, Base>::geoDim() == 1 &&
+                        std::tuple_element_t<2, Base>::geoDim() == 1,
+                    "jac(.) for vector-valued spaces requires 1D variables");
+
+      return utils::BlockTensor<torch::Tensor, 4, 4>(
+          std::get<0>(*this).template eval<deriv::dx, memory_optimized>(
+              xi, std::get<0>(knot_indices), std::get<0>(coeff_indices))[0],
+          std::get<0>(*this).template eval<deriv::dy, memory_optimized>(
+              xi, std::get<0>(knot_indices), std::get<0>(coeff_indices))[0],
+          std::get<0>(*this).template eval<deriv::dz, memory_optimized>(
+              xi, std::get<0>(knot_indices), std::get<0>(coeff_indices))[0],
+          std::get<0>(*this).template eval<deriv::dt, memory_optimized>(
+              xi, std::get<0>(knot_indices), std::get<0>(coeff_indices))[0],
+
+          std::get<1>(*this).template eval<deriv::dx, memory_optimized>(
+              xi, std::get<1>(knot_indices), std::get<1>(coeff_indices))[0],
+          std::get<1>(*this).template eval<deriv::dy, memory_optimized>(
+              xi, std::get<1>(knot_indices), std::get<1>(coeff_indices))[0],
+          std::get<1>(*this).template eval<deriv::dz, memory_optimized>(
+              xi, std::get<1>(knot_indices), std::get<1>(coeff_indices))[0],
+          std::get<1>(*this).template eval<deriv::dt, memory_optimized>(
+              xi, std::get<1>(knot_indices), std::get<1>(coeff_indices))[0],
+
+          std::get<2>(*this).template eval<deriv::dx, memory_optimized>(
+              xi, std::get<2>(knot_indices), std::get<2>(coeff_indices))[0],
+          std::get<2>(*this).template eval<deriv::dy, memory_optimized>(
+              xi, std::get<2>(knot_indices), std::get<2>(coeff_indices))[0],
+          std::get<2>(*this).template eval<deriv::dz, memory_optimized>(
+              xi, std::get<2>(knot_indices), std::get<2>(coeff_indices))[0],
+          std::get<2>(*this).template eval<deriv::dt, memory_optimized>(
+              xi, std::get<2>(knot_indices), std::get<2>(coeff_indices))[0],
+
+          std::get<3>(*this).template eval<deriv::dx, memory_optimized>(
+              xi, std::get<3>(knot_indices), std::get<3>(coeff_indices))[0],
+          std::get<3>(*this).template eval<deriv::dy, memory_optimized>(
+              xi, std::get<3>(knot_indices), std::get<3>(coeff_indices))[0],
+          std::get<3>(*this).template eval<deriv::dz, memory_optimized>(
+              xi, std::get<3>(knot_indices), std::get<3>(coeff_indices))[0],
+          std::get<3>(*this).template eval<deriv::dt, memory_optimized>(
+              xi, std::get<3>(knot_indices), std::get<3>(coeff_indices))[0]);
+    }
+  }
+  /// @}
+
+  //  clang-format off
+  /// @brief Returns a block-tensor with the Laplacian of the function space
+  /// object in the points `xi` with respect to the parametric variables
+  ///
+  /// @param[in] xi Point(s) where to evaluate the Laplacian
+  ///
+  /// @result Block-tensor with the Laplacian with respect to the
+  /// parametric variables `xi`
+  /// \f[
+  ///     L_{\boldsymbol{\xi}}(u)
+  ///        =
+  ///     \sum_{i,j=0\atop|i+j|=2}^2
+  ///     \frac{\partial^2 u}{\partial \xi_i\partial \xi_{j}}
+  /// \f]
+  ///
+  /// @note If the function space object has geometric dimension larger
+  /// then one then all Laplacians are returned as a vector.
+  //  clang-format on
+  ///
+  /// @{
+  template <functionspace comp = functionspace::interior,
+            bool memory_optimized = false>
+  inline auto lapl(const utils::TensorArray1 &xi,
+                   const std::tuple<utils::TensorArray1> &knot_indices,
+                   const std::tuple<torch::Tensor> &coeff_indices) const {
+
+    assert(xi[0].sizes() == std::get<0>(knot_indices)[0].sizes());
+
+    if constexpr (comp == functionspace::interior) {
+      static_assert(std::tuple_element_t<0, Base>::geoDim() == 1,
+                    "lapl(.) for vector-valued spaces requires 1D variables");
+
+      return utils::BlockTensor<torch::Tensor, 1, 1>(
+          std::get<0>(*this).template eval<deriv::dx ^ 2, memory_optimized>(
+              xi, std::get<0>(knot_indices), std::get<0>(coeff_indices))[0]);
+    }
+  }
+
+  template <functionspace comp = functionspace::interior,
+            bool memory_optimized = false>
+  inline auto
+  lapl(const utils::TensorArray2 &xi,
+       const std::tuple<utils::TensorArray2, utils::TensorArray2> &knot_indices,
+       const std::tuple<torch::Tensor, torch::Tensor> &coeff_indices) const {
+
+    assert(xi[0].sizes() == std::get<0>(knot_indices)[0].sizes() &&
+           xi[1].sizes() == std::get<1>(knot_indices)[0].sizes() &&
+           xi[0].sizes() == xi[1].sizes());
+
+    if constexpr (comp == functionspace::interior) {
+      static_assert(std::tuple_element_t<0, Base>::geoDim() == 1 &&
+                        std::tuple_element_t<1, Base>::geoDim() == 1,
+                    "lapl(.) for vector-valued spaces requires 1D variables");
+
+      return utils::BlockTensor<torch::Tensor, 1, 1>(
+          *std::get<0>(*this).template eval<deriv::dx ^ 2, memory_optimized>(
+              xi, std::get<0>(knot_indices), std::get<0>(coeff_indices))[0] +
+          *std::get<1>(*this).template eval<deriv::dy ^ 2, memory_optimized>(
+              xi, std::get<1>(knot_indices), std::get<1>(coeff_indices))[0]);
+    }
+  }
+
+  template <functionspace comp = functionspace::interior,
+            bool memory_optimized = false>
+  inline auto lapl(const utils::TensorArray3 &xi,
+                   const std::tuple<utils::TensorArray3, utils::TensorArray3,
+                                    utils::TensorArray3> &knot_indices,
+                   const std::tuple<torch::Tensor, torch::Tensor, torch::Tensor>
+                       &coeff_indices) const {
+
+    assert(xi[0].sizes() == std::get<0>(knot_indices)[0].sizes() &&
+           xi[1].sizes() == std::get<1>(knot_indices)[0].sizes() &&
+           xi[2].sizes() == std::get<2>(knot_indices)[0].sizes() &&
+           xi[0].sizes() == xi[1].sizes() && xi[1].sizes() == xi[2].sizes());
+
+    if constexpr (comp == functionspace::interior) {
+      static_assert(std::tuple_element_t<0, Base>::geoDim() == 1 &&
+                        std::tuple_element_t<1, Base>::geoDim() == 1 &&
+                        std::tuple_element_t<2, Base>::geoDim() == 1,
+                    "div(.) for vector-valued spaces requires 1D variables");
+
+      return utils::BlockTensor<torch::Tensor, 1, 1>(
+          *std::get<0>(*this).template eval<deriv::dx ^ 2, memory_optimized>(
+              xi, std::get<0>(knot_indices), std::get<0>(coeff_indices))[0] +
+          *std::get<1>(*this).template eval<deriv::dy ^ 2, memory_optimized>(
+              xi, std::get<1>(knot_indices), std::get<1>(coeff_indices))[0] +
+          *std::get<2>(*this).template eval<deriv::dz ^ 2, memory_optimized>(
+              xi, std::get<2>(knot_indices), std::get<2>(coeff_indices))[0]);
+    }
+  }
+
+  template <functionspace comp = functionspace::interior,
+            bool memory_optimized = false>
+  inline auto
+  lapl(const utils::TensorArray4 &xi,
+       const std::tuple<utils::TensorArray4, utils::TensorArray4,
+                        utils::TensorArray4, utils::TensorArray4> &knot_indices,
+       const std::tuple<torch::Tensor, torch::Tensor, torch::Tensor,
+                        torch::Tensor> &coeff_indices) const {
+
+    assert(xi[0].sizes() == std::get<0>(knot_indices)[0].sizes() &&
+           xi[1].sizes() == std::get<1>(knot_indices)[0].sizes() &&
+           xi[2].sizes() == std::get<2>(knot_indices)[0].sizes() &&
+           xi[3].sizes() == stg::get<3>(knot_indices)[0].sizes() &&
+           xi[0].sizes() == xi[1].sizes() && xi[1].sizes() == xi[2].sizes() &&
+           xi[2].sizes() == xi[3].sizes());
+
+    if constexpr (comp == functionspace::interior) {
+      static_assert(std::tuple_element_t<0, Base>::geoDim() == 1 &&
+                        std::tuple_element_t<1, Base>::geoDim() == 1 &&
+                        std::tuple_element_t<2, Base>::geoDim() == 1 &&
+                        std::tuple_element_t<3, Base>::geoDim() == 1,
+                    "div(.) for vector-valued spaces requires 1D variables");
+
+      return utils::BlockTensor<torch::Tensor, 1, 1>(
+          *std::get<0>(*this).template eval<deriv::dx ^ 2, memory_optimized>(
+              xi, std::get<0>(knot_indices), std::get<0>(coeff_indices))[0] +
+          *std::get<1>(*this).template eval<deriv::dy ^ 2, memory_optimized>(
+              xi, std::get<1>(knot_indices), std::get<1>(coeff_indices))[0] +
+          *std::get<2>(*this).template eval<deriv::dz ^ 2, memory_optimized>(
+              xi, std::get<2>(knot_indices), std::get<2>(coeff_indices))[0] +
+          *std::get<3>(*this).template eval<deriv::dt ^ 2, memory_optimized>(
+              xi, std::get<3>(knot_indices), std::get<3>(coeff_indices))[0]);
+    }
   }
   /// @}
 
@@ -1117,7 +2102,7 @@ public:                                                                        \
   /// @brief Auto-generated functions
   /// @{
   BOOST_PP_SEQ_FOR_EACH(GENERATE_EXPR_MACRO, _, GENERATE_EXPR_SEQ)
-  /// @}
+/// @}
 #undef GENERATE_EXPR_MACRO
 
 #define GENERATE_IEXPR_MACRO(r, data, name)                                    \
@@ -1234,7 +2219,7 @@ public:                                                                        \
   /// @brief Auto-generated functions
   /// @{
   BOOST_PP_SEQ_FOR_EACH(GENERATE_IEXPR_MACRO, _, GENERATE_IEXPR_SEQ)
-  /// @}
+/// @}
 #undef GENERATE_IEXPR_MACRO
 };
 
