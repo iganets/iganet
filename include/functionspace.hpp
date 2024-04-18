@@ -1127,7 +1127,7 @@ public:
     assert(xi[0].sizes() == std::get<0>(knot_indices)[0].sizes() &&
            xi[1].sizes() == std::get<1>(knot_indices)[0].sizes() &&
            xi[2].sizes() == std::get<2>(knot_indices)[0].sizes() &&
-           xi[3].sizes() == stg::get<3>(knot_indices)[0].sizes() &&
+           xi[3].sizes() == std::get<3>(knot_indices)[0].sizes() &&
            xi[0].sizes() == xi[1].sizes() && xi[1].sizes() == xi[2].sizes() &&
            xi[2].sizes() == xi[3].sizes());
 
@@ -1194,7 +1194,7 @@ public:
        const std::tuple<torch::Tensor, torch::Tensor> &coeff_indices) const {
 
     assert(xi[0].sizes() == std::get<0>(knot_indices)[0].sizes() &&
-           xi[1].sizes() == stg::get<1>(knot_indices)[0].sizes() &&
+           xi[1].sizes() == std::get<1>(knot_indices)[0].sizes() &&
            xi[0].sizes() == xi[1].sizes());
 
     if constexpr (comp == functionspace::interior) {
@@ -1220,7 +1220,7 @@ public:
 
     assert(xi[0].sizes() == std::get<0>(knot_indices)[0].sizes() &&
            xi[1].sizes() == std::get<1>(knot_indices)[0].sizes() &&
-           xi[2].sizes() == stg::get<2>(knot_indices)[0].sizes() &&
+           xi[2].sizes() == std::get<2>(knot_indices)[0].sizes() &&
            xi[0].sizes() == xi[1].sizes() && xi[1].sizes() == xi[2].sizes());
 
     if constexpr (comp == functionspace::interior) {
@@ -1251,7 +1251,7 @@ public:
     assert(xi[0].sizes() == std::get<0>(knot_indices)[0].sizes() &&
            xi[1].sizes() == std::get<1>(knot_indices)[0].sizes() &&
            xi[2].sizes() == std::get<2>(knot_indices)[0].sizes() &&
-           xi[3].sizes() == stg::get<3>(knot_indices)[0].sizes() &&
+           xi[3].sizes() == std::get<3>(knot_indices)[0].sizes() &&
            xi[0].sizes() == xi[1].sizes() && xi[1].sizes() == xi[2].sizes() &&
            xi[2].sizes() == xi[3].sizes());
 
@@ -1479,7 +1479,7 @@ public:
     assert(xi[0].sizes() == std::get<0>(knot_indices)[0].sizes() &&
            xi[1].sizes() == std::get<1>(knot_indices)[0].sizes() &&
            xi[2].sizes() == std::get<2>(knot_indices)[0].sizes() &&
-           xi[3].sizes() == stg::get<3>(knot_indices)[0].sizes() &&
+           xi[3].sizes() == std::get<3>(knot_indices)[0].sizes() &&
            xi[0].sizes() == xi[1].sizes() && xi[1].sizes() == xi[2].sizes() &&
            xi[2].sizes() == xi[3].sizes());
 
@@ -1812,7 +1812,7 @@ public:
     assert(xi[0].sizes() == std::get<0>(knot_indices)[0].sizes() &&
            xi[1].sizes() == std::get<1>(knot_indices)[0].sizes() &&
            xi[2].sizes() == std::get<2>(knot_indices)[0].sizes() &&
-           xi[3].sizes() == stg::get<3>(knot_indices)[0].sizes() &&
+           xi[3].sizes() == std::get<3>(knot_indices)[0].sizes() &&
            xi[0].sizes() == xi[1].sizes() && xi[1].sizes() == xi[2].sizes() &&
            xi[2].sizes() == xi[3].sizes());
 
@@ -1965,7 +1965,7 @@ public:
     assert(xi[0].sizes() == std::get<0>(knot_indices)[0].sizes() &&
            xi[1].sizes() == std::get<1>(knot_indices)[0].sizes() &&
            xi[2].sizes() == std::get<2>(knot_indices)[0].sizes() &&
-           xi[3].sizes() == stg::get<3>(knot_indices)[0].sizes() &&
+           xi[3].sizes() == std::get<3>(knot_indices)[0].sizes() &&
            xi[0].sizes() == xi[1].sizes() && xi[1].sizes() == xi[2].sizes() &&
            xi[2].sizes() == xi[3].sizes());
 
