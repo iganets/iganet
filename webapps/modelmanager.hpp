@@ -132,7 +132,7 @@ public:
           }
         }
       } catch (...) {
-        std::cout << "Unable to open path " << path << std::endl;
+        std::clog << "Unable to open path " << path << std::endl;
       }
     }
   }
