@@ -163,10 +163,10 @@ extern "C"
             }
 
             // generate list of include files
-            std::string includes =
-                "#include <BSplineModel.hpp>\n"
-                "#pragma clang diagnostic push\n"
-                "#pragma clang diagnostic ignored \"-Wreturn-type-c-linkage\"\n";
+            std::string includes = "#include <BSplineModel.hpp>\n"
+                                   "#pragma clang diagnostic push\n"
+                                   "#pragma clang diagnostic ignored "
+                                   "\"-Wreturn-type-c-linkage\"\n";
 
             // generate source code
             std::string src =
@@ -183,10 +183,11 @@ extern "C"
                          ":UniformBSpline<iganet::real_t, ");
 
             src.append("3, ");
-            src.append(std::to_string((int)degrees[0]) + ", " +
-                       std::to_string((int)degrees[1]) + ", " +
-                       std::to_string((int)degrees[2]) +
-                       ">>>(ncoeffs, init);\n}\n#pragma clang diagnostic pop\n");
+            src.append(
+                std::to_string((int)degrees[0]) + ", " +
+                std::to_string((int)degrees[1]) + ", " +
+                std::to_string((int)degrees[2]) +
+                ">>>(ncoeffs, init);\n}\n#pragma clang diagnostic pop\n");
 
             // compile dynamic library
             auto libname =
