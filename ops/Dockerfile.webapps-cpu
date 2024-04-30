@@ -3,6 +3,7 @@ FROM ubuntu:22.04 as build-stage
 
 # CMake build type
 ARG CMAKE_BUILD_TYPE=Release
+ARG TARGET_ARCHITECTURE=nehalem
 
 # IgANet components
 ARG IGANET_BUILD_EXAMPLES=OFF
@@ -69,6 +70,7 @@ RUN rm -rf * \
         && CC=gcc CXX=g++ cmake /opt/iganet \
         -DTorch_DIR=/opt/libtorch/share/cmake/Torch \
         -DCMAKE_BUILD_TYPE=$CMAKE_BUILD_TYPE \
+        -DTARGET_ARCHITECTURE=$TARGET_ARCHITECTURE \
         -DIGANET_BUILD_EXAMPLES=$IGANET_BUILD_EXAMPLES \
         -DIGANET_BUILD_PCH=$IGANET_BUILD_PCH \
         -DIGANET_BUILD_PERFTESTS=$IGANET_BUILD_PERFTESTS \
