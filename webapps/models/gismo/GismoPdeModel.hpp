@@ -50,6 +50,7 @@ public:
       }
 
       geo_.addPatch(gsBSpline<T>(give(KV0), give(C)));
+      geo_.computeTopology();
 
     } else if constexpr (d == 2) {
       gsKnotVector<T> KV0(0, 1, ncoeffs[0] - degrees[0] - 1, degrees[0] + 1);
@@ -67,6 +68,7 @@ public:
         }
 
       geo_.addPatch(gsTensorBSpline<2, T>(give(KV0), give(KV1), give(C)));
+      geo_.computeTopology();
 
     } else if constexpr (d == 3) {
       gsKnotVector<T> KV0(0, 1, ncoeffs[0] - degrees[0] - 1, degrees[0] + 1);
@@ -87,6 +89,7 @@ public:
 
       geo_.addPatch(
           gsTensorBSpline<3, T>(give(KV0), give(KV1), give(KV2), give(C)));
+      geo_.computeTopology();
 
     } else if constexpr (d == 4) {
       gsKnotVector<T> KV0(0, 1, ncoeffs[0] - degrees[0] - 1, degrees[0] + 1);
@@ -110,6 +113,7 @@ public:
 
       geo_.addPatch(gsTensorBSpline<4, T>(give(KV0), give(KV1), give(KV2),
                                           give(KV3), give(C)));
+      geo_.computeTopology();
     }
   }
 
