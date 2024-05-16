@@ -424,14 +424,32 @@ public:
     geo_.patch(0).uniformRefine(num, 1, dim);
   }
 
-  /// @brief Reparameterized the model
+  /// @brief Reparameterize the model
   void reparameterize(const nlohmann::json &json = NULL) override {
+    std::string type("volume");
+    int maxiter(200);
+    T tol(1e-3);
 
-    gismo::gsBarrierPatch<2, T> opt(geo_, false);
-    opt.options().setInt("ParamMethod", 1);
-    opt.compute();
+    if (json.contains("data")) {
+      if (json["data"].contains("type"))
+        type = json["data"]["type"].get<std::string>();
 
-    geo_ = opt.result();
+      if (json["data"].contains("maxiter"))
+        maxiter = json["data"]["maxiter"].get<int>();
+
+      if (json["data"].contains("tol"))
+        tol = json["data"]["tol"].get<T>();
+    }
+
+    if (type == "surface") {
+
+    } else if (type == "volume") {
+      gismo::gsBarrierPatch<d, T> opt(geo_, false);
+      opt.options().setInt("ParamMethod", 1);
+      opt.compute();
+
+      geo_ = opt.result();
+    }
   }
 };
 
