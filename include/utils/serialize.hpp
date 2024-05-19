@@ -111,19 +111,38 @@ inline auto to_json(const gismo::gsMatrix<T, Rows, Cols, Options> &matrix,
                     bool flatten = false) {
   auto json = nlohmann::json::array();
 
-  if (flatten) {
-    for (std::size_t j = 0; j < matrix.cols(); ++j)
+  if constexpr (Options == gismo::RowMajor) {
+    if (flatten) {
       for (std::size_t i = 0; i < matrix.rows(); ++i)
-        json.push_back(matrix(i, j));
-  } else {
-    for (std::size_t j = 0; j < matrix.cols(); ++j) {
-      auto data = nlohmann::json::array();
+        for (std::size_t j = 0; j < matrix.cols(); ++j)
+          json.push_back(matrix(i, j));
+    } else {
       for (std::size_t i = 0; i < matrix.rows(); ++i) {
-        data.push_back(matrix(i, j));
+        auto data = nlohmann::json::array();
+        for (std::size_t j = 0; j < matrix.cols(); ++j) {
+          data.push_back(matrix(i, j));
+        }
+        json.emplace_back(data);
       }
-      json.emplace_back(data);
     }
-  }
+
+  } else if constexpr (Options == gismo::ColMajor) {
+    if (flatten) {
+      for (std::size_t j = 0; j < matrix.cols(); ++j)
+        for (std::size_t i = 0; i < matrix.rows(); ++i)
+          json.push_back(matrix(i, j));
+    } else {
+      for (std::size_t j = 0; j < matrix.cols(); ++j) {
+        auto data = nlohmann::json::array();
+        for (std::size_t i = 0; i < matrix.rows(); ++i) {
+          data.push_back(matrix(i, j));
+        }
+        json.emplace_back(data);
+      }
+    }
+
+  } else
+    throw std::runtime_error("Invalid matrix options");
 
   return json;
 }
