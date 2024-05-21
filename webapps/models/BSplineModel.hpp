@@ -33,6 +33,7 @@ enum class degree {
 template <class BSpline_t>
 class BSplineModel : public Model,
                      public ModelEval,
+                     public ModelReparameterize,
                      public ModelRefine,
                      public ModelSerialize,
                      public ModelXML,
@@ -574,6 +575,16 @@ public:
                                         std::sin(M_PI * xi[2])),
             0.0, 0.0};
       });
+  }
+
+  /// @brief Reparameterize the model
+  void reparameterize(const nlohmann::json &json = NULL) override {
+
+    // gismo::gsBarrierPatch<d, T> opt(geo_, false);
+    // opt.options().setInt("ParamMethod", 1);
+    // opt.compute();
+
+    // geo_ = opt.result();
   }
 
   /// @brief Loads model from LibTorch file
