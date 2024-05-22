@@ -470,6 +470,11 @@ public:
   /// @result Number of geometric dimensions
   inline static constexpr short_t geoDim() { return geoDim_; }
 
+  /// @brief Returns the geometric dimension without weighted space (for non-rational BSplines just the same as geoDim())
+  ///
+  /// @result Number of geometric dimensions
+  inline static constexpr short_t geoDim_proj() { return geoDim_; }
+
   /// @brief Returns a constant reference to the array of degrees
   ///
   /// @result Array of degrees for all parametric dimensions
@@ -4195,13 +4200,13 @@ public:
         Base::coeffs_[i] = coeffs[i]
                                .clone()
                                .to(options.requires_grad(false))
-                               .requires_grad_(Base::options.requires_grad());
+                               .requires_grad_(options.requires_grad());
     else
       for (short_t i = 0; i < Base::geoDim_; ++i)
         Base::coeffs_[i] = coeffs[i];
   }
 
-private:
+protected:
   /// @brief Initializes the B-spline knots
   inline void init_knots(
       std::array<std::vector<typename Base::value_type>, Base::parDim_> kv) {
@@ -4810,7 +4815,205 @@ public:
   }
 
 #endif // IGANET_WITH_GISMO
+
 };
+
+
+
+/// @brief Tensor-product non-uniform rational B-spline (core functionality)
+///
+/// This class extends the base class NonUniformBSplineCore to
+/// non-uniform rational B-splines. Like its base class it only implements
+/// the core functionality of non-uniform rational B-splines (NURBS)
+/// Warning: if load/write functions are just, the 4th dimension is interpreted as weights
+/// Limitation: This class has only been validated for at max first-order derivatives and parDim = [1,2,3,4]; moreover it does not work for precomputed nor memory optimized
+template <typename real_t, short_t GeoDim, short_t... Degrees>
+class NonUniformRationalBSplineCore
+    : public NonUniformBSplineCore<real_t, GeoDim + 1, Degrees...> {
+    /// @brief Enable access to private members
+    friend class NonUniformBSplineCore<real_t, GeoDim + 1, Degrees...>;
+ 
+
+private:
+    /// @brief Base type
+    using Base = NonUniformBSplineCore<real_t, GeoDim + 1, Degrees...>; //GeoDim is higher by 1 (projection to (GeoDim+1)-space by weights)
+
+public:
+    /// @brief Deduces the self-type possibly degrees (de-)elevated by
+    /// the additive constant `degree_elevate`
+    template <std::make_signed<short_t>::type degree_elevate = 0>
+    using self_type = typename Base::template derived_type<NonUniformRationalBSplineCore,
+        degree_elevate>;
+
+    /// @brief Deduces the derived self-type when exposed to different
+    /// class template parameters `real_t` and `GeoDim`, and the
+    /// `Degrees` parameter pack
+    template <typename real_t_, short_t GeoDim_, short_t... Degrees_>
+    using derived_self_type =
+        NonUniformRationalBSplineCore<real_t_, GeoDim_, Degrees_...>;
+
+    /// @brief Deduces the derived self-type when exposed to a
+    /// different class template parameter `real_t`
+    template <typename real_t_>
+    using real_derived_self_type =
+        NonUniformRationalBSplineCore<real_t_, GeoDim, Degrees...>;
+
+    /// @brief Returns true if the B-spline is uniform
+    static bool is_uniform() { return false; }
+
+    /// @brief Returns true if the B-spline is non-uniform
+    static bool is_nonuniform() { return true; }
+    
+
+    /// @brief Constructor for equidistant knot vectors
+    using NonUniformBSplineCore<real_t, GeoDim + 1, Degrees...>::NonUniformBSplineCore;
+
+    /// @brief Constructor for non-equidistant knot vectors
+    ///
+    /// @param[in] kv Knot vectors
+    ///
+    /// @param[in] init Type of initialization
+    ///
+    /// @param[in] options Options configuration
+    NonUniformRationalBSplineCore(
+        std::array<std::vector<typename Base::value_type>, Base::parDim_> kv,
+        enum init init = init::greville,
+        Options<real_t> options = Options<real_t>{})
+        : Base(options) {
+
+        Base::init_knots(kv);
+        Base::init_coeffs(init);
+    }
+
+    /// @brief Constructor for non-equidistant knot vectors
+    ///
+    /// @param[in] kv Knot vectors
+    ///
+    /// @param[in] coeffs Vectors of coefficients per parametric dimension (later converted to homogenous coord)
+    ///
+    /// @param[in] clone  If true, coefficients will be cloned. Otherwise,
+    /// coefficients will be aliased
+    ///
+    /// @param[in] options Options configuration
+    ///
+    /// @note It is not checked whether vectors of coefficients are
+    /// compatible with the given Options object if clone is false.
+    NonUniformRationalBSplineCore(
+        std::array<std::vector<typename Base::value_type>, Base::parDim_> kv,
+        const std::array<torch::Tensor, Base::geoDim_>& coeffs, // here: coeffs have 1dim higher than NURBSClass::geoDim (weights); coeffs are given as normal coord and in eval converted to homogenous coordinates
+        bool clone = false, Options<real_t> options = Options<real_t>{})
+        : Base(options) {
+        assert(GeoDim < 4);
+
+        Base::init_knots(kv);
+
+        // Copy/clone coefficients
+        if (clone) {
+            for (short_t i = 0; i < GeoDim; ++i)
+                Base::coeffs_[i] = (coeffs[i].clone() * coeffs[GeoDim].clone())
+                .to(options.requires_grad(false)).requires_grad_(options.requires_grad());
+            Base::coeffs_[GeoDim] = coeffs[GeoDim].clone().to(options.requires_grad(false)).requires_grad_(options.requires_grad());
+        }
+        else {
+            for (short_t i = 0; i < GeoDim; ++i)
+                Base::coeffs_[i] = coeffs[i] * coeffs[GeoDim];
+            Base::coeffs_[Base::geoDim_ - 1] = coeffs[Base::geoDim_ - 1];
+        }
+
+    }
+
+    /// @brief Returns the geometric dimension without weighted space (for rational BSplines geoDim()+1)
+    ///
+    /// @result Number of geometric dimensions
+    inline static constexpr short_t geoDim_proj() { return GeoDim; }
+    //private:
+
+public:
+
+    /// @brief Returns the value of the multivariate B-spline object in the point
+    /// `xi`
+    /// @{
+    template <deriv deriv = deriv::func, bool memory_optimized = false>
+    inline auto eval(const torch::Tensor& xi) const {
+        if constexpr (Base::parDim_ == 1)
+            return eval<deriv, memory_optimized>(utils::TensorArray1({ xi }));
+        else
+            throw std::runtime_error("Invalid parametric dimension");
+    }
+
+    template <deriv deriv = deriv::func, bool memory_optimized = false>
+    inline auto eval(const std::array<torch::Tensor, Base::parDim_>& xi) const {
+        if constexpr (Base::parDim_ == 0) {
+            utils::BlockTensor<torch::Tensor, 1, Base::geoDim_ - 1> result;
+            for (short_t i = 0; i < Base::geoDim_ - 1; ++i)
+                if constexpr (deriv == deriv::func)
+                    result.set(i, Base::coeffs_[i]);   //TODO: Check if this is correct for NURBs
+                else
+                    result.set(i, torch::zeros_like(Base::coeffs_[i]));
+            return result;
+        }
+        else
+            return eval<deriv, memory_optimized>(xi, Base::find_knot_indices(xi));
+    }
+
+    template <deriv deriv = deriv::func, bool memory_optimized = false>
+    inline auto
+        eval(const std::array<torch::Tensor, Base::parDim_>& xi,
+            const std::array<torch::Tensor, Base::parDim_>& knot_indices) const {
+        if constexpr (Base::parDim_ == 0) {
+            utils::BlockTensor<torch::Tensor, 1, Base::geoDim_ - 1> result;
+            for (short_t i = 0; i < Base::geoDim_ - 1; ++i)
+                if constexpr (deriv == deriv::func)
+                    result.set(i, Base::coeffs_[i]); //TODO: Check if this is correct for NURBs
+                else
+                    result.set(i, torch::zeros_like(Base::coeffs_[i]));
+            return result;
+        }
+        else {
+            return eval<deriv, memory_optimized>(xi, knot_indices, Base::find_coeff_indices(knot_indices));
+        }
+
+
+    }
+        
+    template <deriv deriv = deriv::func, bool memory_optimized = false>
+    inline auto eval(const std::array<torch::Tensor, Base::parDim_>& xi,
+        const std::array<torch::Tensor, Base::parDim_>& knot_indices,
+        const torch::Tensor& coeff_indices) const {
+        if constexpr (Base::parDim_ == 0) {
+            utils::BlockTensor<torch::Tensor, 1, Base::geoDim_ - 1> result;
+            for (short_t i = 0; i < Base::geoDim_ - 1; ++i)
+                if constexpr (deriv == deriv::func)
+                    result.set(i, Base::coeffs_[i]); //TODO: Check if that holds true for NURBs
+                else
+                    result.set(i, torch::zeros_like(Base::coeffs_[i]));
+            return result;
+        }
+        else {
+            utils::BlockTensor<torch::Tensor, 1, Base::geoDim_ - 1> result;
+            utils::BlockTensor<torch::Tensor, 1, Base::geoDim_ - 1> pnts;
+            utils::BlockTensor<torch::Tensor, 1, Base::geoDim_> Cw = Base::template eval<deriv::func, memory_optimized>(xi, knot_indices, coeff_indices);
+            //Divide by weight
+            for (short_t i = 0; i < Base::geoDim_ - 1; ++i)
+                pnts.set(i, torch::div(*Cw[i], *Cw[Base::geoDim_ - 1])); // TODO: Catch division by zero error!
+            if constexpr (deriv == deriv::func) {
+                return pnts;
+            }
+            else {
+                short_t deriv_t = static_cast<short_t>(deriv);
+                // Ensure that only first order derivates
+                assert(deriv_t == 1 || deriv_t == 10 || deriv_t == 100 || deriv_t == 1000);
+                auto dCw = Base::template eval<deriv, memory_optimized>(xi, knot_indices, coeff_indices);
+                for (short_t i = 0; i < Base::geoDim_ - 1; ++i)
+                    result.set(i, torch::div(torch::sub(*dCw[i], torch::mul(*dCw[Base::geoDim_ - 1], *pnts[i])), *Cw[Base::geoDim_ - 1]));
+                return result;
+            }
+        }
+    }
+    /// @}
+
+};
+
 
 /// @brief B-spline (common high-level functionality)
 ///
@@ -6636,7 +6839,7 @@ public:
 
     if constexpr (BSplineCore::parDim_ == 1)
 
-      return utils::BlockTensor<torch::Tensor, 1, BSplineCore::geoDim_>(
+      return utils::BlockTensor<torch::Tensor, 1, BSplineCore::geoDim_proj()>(
                  BSplineCore::template eval<deriv::dx, memory_optimized>(
                      xi, knot_indices, coeff_indices))
           .tr();
@@ -6655,7 +6858,7 @@ public:
 
     if constexpr (BSplineCore::parDim_ == 2)
 
-      return utils::BlockTensor<torch::Tensor, 2, BSplineCore::geoDim_>(
+      return utils::BlockTensor<torch::Tensor, 2, BSplineCore::geoDim_proj()>(
                  BSplineCore::template eval<deriv::dx, memory_optimized>(
                      xi, knot_indices, coeff_indices),
                  BSplineCore::template eval<deriv::dy, memory_optimized>(
@@ -6677,7 +6880,7 @@ public:
 
     if constexpr (BSplineCore::parDim_ == 3)
 
-      return utils::BlockTensor<torch::Tensor, 3, BSplineCore::geoDim_>(
+      return utils::BlockTensor<torch::Tensor, 3, BSplineCore::geoDim_proj()>(
                  BSplineCore::template eval<deriv::dx, memory_optimized>(
                      xi, knot_indices, coeff_indices),
                  BSplineCore::template eval<deriv::dy, memory_optimized>(
@@ -6703,7 +6906,7 @@ public:
 
     if constexpr (BSplineCore::parDim_ == 4)
 
-      return utils::BlockTensor<torch::Tensor, 4, BSplineCore::geoDim_>(
+      return utils::BlockTensor<torch::Tensor, 4, BSplineCore::geoDim_proj()>(
                  BSplineCore::template eval<deriv::dx, memory_optimized>(
                      xi, knot_indices, coeff_indices),
                  BSplineCore::template eval<deriv::dy, memory_optimized>(
@@ -8283,6 +8486,12 @@ operator<<(std::ostream &os,
 template <typename real_t, short_t GeoDim, short_t... Degrees>
 using NonUniformBSpline =
     BSplineCommon<NonUniformBSplineCore<real_t, GeoDim, Degrees...>>;
+
+/// @brief Tensor-product non-uniform rational B-spline
+template <typename real_t, short_t GeoDim, short_t... Degrees>
+using NonUniformRationalBSpline =
+BSplineCommon<NonUniformRationalBSplineCore<real_t, GeoDim, Degrees...>>;
+
 
 /// @brief Print (as string) a UniformBSpline object
 template <typename real_t, short_t GeoDim, short_t... Degrees>

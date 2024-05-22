@@ -791,66 +791,7 @@ void test_bspline_eval(const Geometry_t &geometry, const Spline &bspline,
     test_bspline_ihess<true, true>(geometry, bspline, xi, tol);
   }
 }
-template <typename Spline> auto to_bsplinelib_nurbs(const Spline& bspline) {
-    static_assert(Spline::geoDim() < 6, "Unsupported geometric dimension");
 
-    // NURBS construction
-    using Nurbs = bsplinelib::splines::Nurbs<Spline::parDim()>;
-    using ParameterSpace = typename Nurbs::ParameterSpace_;
-    using WeightedVectorSpace = typename Nurbs::WeightedVectorSpace_;
-    using Coordinates = typename WeightedVectorSpace::Coordinates_;
-    using Degrees = typename ParameterSpace::Degrees_;
-    using Degree = typename Degrees::value_type;
-    using KnotVectors = typename ParameterSpace::KnotVectors_;
-    using KnotVector = typename KnotVectors::value_type::element_type;
-    using Knots = typename KnotVector::Knots_;
-    using Knot = typename Knots::value_type;
-
-    // NURBS evaluation
-    using ParametricCoordinate = typename Nurbs::ParametricCoordinate_;
-    using ScalarParametricCoordinate = typename ParametricCoordinate::value_type;
-    using Derivative = typename ParameterSpace::Derivative_;
-    using ScalarDerivative = typename Derivative::value_type;
-
-    // Create degress structure
-    Degrees degrees;
-    for (iganet::short_t k = 0; k < bspline.parDim(); ++k)
-        degrees[k] = Degree{ bspline.degree(k) };
-
-    // Create knot vectors
-    KnotVectors knot_vectors;
-    for (iganet::short_t k = 0; k < bspline.parDim(); ++k) {
-        Knots knots_;
-        for (int64_t i = 0; i < bspline.nknots(k); ++i)
-            knots_.emplace_back(Knot{
-                bspline.knots(k)[i].template item<typename Spline::value_type>() });
-        bsplinelib::SharedPointer<KnotVector> knot_vector{
-            std::make_shared<KnotVector>(knots_) };
-        knot_vectors[k] = std::move(knot_vector);
-    }
-
-    // Create parametric space
-    bsplinelib::SharedPointer<ParameterSpace> parameter_space{
-        std::make_shared<ParameterSpace>(knot_vectors, degrees) };
-
-    // Create coordinate vector(s)
-    Coordinates coordinates(bspline.ncumcoeffs(), Spline::geoDim());
-    for (int64_t i = 0; i < bspline.ncumcoeffs(); ++i) {
-        for (int64_t j = 0; j < Spline::geoDim(); ++j) {
-            coordinates(i, j) =
-                bspline.coeffs(j)[i].template item<typename Spline::value_type>();
-        }
-    }
-
-    // Create vector space
-    bsplinelib::SharedPointer<WeightedVectorSpace> vector_space{
-        std::make_shared<WeightedVectorSpace>(std::move(coordinates)) };
-
-    // Create B-Spline
-    Nurbs bsplinelib_nurbs{ parameter_space, vector_space };
-
-    return bsplinelib_nurbs;
-}
 
 // Helper functions for NURBS unittests
 
@@ -1187,7 +1128,7 @@ template <bool memory_optimized, bool precompute, typename Geometry_t,
     }
 }
 
-// first: only first derivatives, not memory optimized and not precomputed.
+// only first derivatives, not memory optimized and not precomputed.
 
 template <typename Geometry_t, typename Spline, typename TensorArray_t>
 void test_nurbs_eval(const Geometry_t& geometry, const Spline& bspline,
@@ -1232,22 +1173,22 @@ void test_nurbs_eval(const Geometry_t& geometry, const Spline& bspline,
             test_nurbs_eval<iganet::deriv::dz ^ 4, false, false>(
                 bspline, bsplinelib_bspline, xi, tol);*/
     }
-    // parDim == 4 has not been implemented yet
-  /*  if constexpr (Spline::parDim() == 4) {
+   
+    if constexpr (Spline::parDim() == 4) {
         test_nurbs_eval<iganet::deriv::dt, false, false>(
             bspline, bsplinelib_bspline, xi, tol);
-        test_nurbs_eval<iganet::deriv::dt ^ 2, false, false>(
+    /*    test_nurbs_eval<iganet::deriv::dt ^ 2, false, false>(
             bspline, bsplinelib_bspline, xi, tol);
         test_nurbs_eval<iganet::deriv::dt ^ 3, false, false>(
             bspline, bsplinelib_bspline, xi, tol);
         test_nurbs_eval<iganet::deriv::dt ^ 4, false, false>(
-            bspline, bsplinelib_bspline, xi, tol);
-    } */
+            bspline, bsplinelib_bspline, xi, tol);*/
+    } 
     std::cout << "memory not optimized finished" << std::endl;
     // Evaluate function and derivatives (memory optimized)
-  //  test_nurbs_eval<iganet::deriv::func, true, false>(
-  //      bspline, bsplinelib_bspline, xi, tol);
-    /*
+  /*  test_nurbs_eval<iganet::deriv::func, true, false>(
+        bspline, bsplinelib_bspline, xi, tol);
+    
     if constexpr (Spline::parDim() == 1) {
         test_nurbs_eval<iganet::deriv::dx, true, false>(
             bspline, bsplinelib_bspline, xi, tol);
@@ -1281,37 +1222,37 @@ void test_nurbs_eval(const Geometry_t& geometry, const Spline& bspline,
             bspline, bsplinelib_bspline, xi, tol);
     }
 
-   /* if constexpr (Spline::parDim() == 4) {
+    if constexpr (Spline::parDim() == 4) {
         test_nurbs_eval<iganet::deriv::dt, true, false>(
             bspline, bsplinelib_bspline, xi, tol);
-        test_nurbs_eval<iganet::deriv::dt ^ 2, true, false>(
-            bspline, bsplinelib_bspline, xi, tol);
-        test_nurbs_eval<iganet::deriv::dt ^ 3, true, false>(
-            bspline, bsplinelib_bspline, xi, tol);
-        test_nurbs_eval<iganet::deriv::dt ^ 4, true, false>(
-            bspline, bsplinelib_bspline, xi, tol);
+        /*    test_nurbs_eval<iganet::deriv::dt ^ 2, true, false>(
+                bspline, bsplinelib_bspline, xi, tol);
+            test_nurbs_eval<iganet::deriv::dt ^ 3, true, false>(
+                bspline, bsplinelib_bspline, xi, tol);
+            test_nurbs_eval<iganet::deriv::dt ^ 4, true, false>(
+                bspline, bsplinelib_bspline, xi, tol);
     }
-    std::cout << "memory optimized finished" << std::endl;
+    std::cout << "memory optimized finished" << std::endl;*/
     // Evaluate function and derivatives from precomputed data (non-memory
     // optimized)
-    test_nurbs_eval<iganet::deriv::func, false, true>(
+   /* test_nurbs_eval<iganet::deriv::func, false, true>(
         bspline, bsplinelib_bspline, xi, tol);
 
     if constexpr (Spline::parDim() == 1) {
         test_nurbs_eval<iganet::deriv::dx, false, true>(
             bspline, bsplinelib_bspline, xi, tol);
-   /*     test_nurbs_eval<iganet::deriv::dx ^ 2, false, true>(
+        test_nurbs_eval<iganet::deriv::dx ^ 2, false, true>(
             bspline, bsplinelib_bspline, xi, tol);
         test_nurbs_eval<iganet::deriv::dx ^ 3, false, true>(
             bspline, bsplinelib_bspline, xi, tol);
         test_nurbs_eval<iganet::deriv::dx ^ 4, false, true>(
             bspline, bsplinelib_bspline, xi, tol);
     }
-
+    
     if constexpr (Spline::parDim() == 2) {
         test_nurbs_eval<iganet::deriv::dy, false, true>(
             bspline, bsplinelib_bspline, xi, tol);
-    /*    test_nurbs_eval<iganet::deriv::dy ^ 2, false, true>(
+        test_nurbs_eval<iganet::deriv::dy ^ 2, false, true>(
             bspline, bsplinelib_bspline, xi, tol);
         test_nurbs_eval<iganet::deriv::dy ^ 3, false, true>(
             bspline, bsplinelib_bspline, xi, tol);
@@ -1322,7 +1263,7 @@ void test_nurbs_eval(const Geometry_t& geometry, const Spline& bspline,
     if constexpr (Spline::parDim() == 3) {
         test_nurbs_eval<iganet::deriv::dz, false, true>(
             bspline, bsplinelib_bspline, xi, tol);
-    /*    test_nurbs_eval<iganet::deriv::dz ^ 2, false, true>(
+        test_nurbs_eval<iganet::deriv::dz ^ 2, false, true>(
             bspline, bsplinelib_bspline, xi, tol);
         test_nurbs_eval<iganet::deriv::dz ^ 3, false, true>(
             bspline, bsplinelib_bspline, xi, tol);
@@ -1330,7 +1271,7 @@ void test_nurbs_eval(const Geometry_t& geometry, const Spline& bspline,
             bspline, bsplinelib_bspline, xi, tol);
     }
 
-   /* if constexpr (Spline::parDim() == 4) {
+    if constexpr (Spline::parDim() == 4) {
         test_nurbs_eval<iganet::deriv::dt, false, true>(
             bspline, bsplinelib_bspline, xi, tol);
         test_nurbs_eval<iganet::deriv::dt ^ 2, false, true>(
@@ -1340,7 +1281,7 @@ void test_nurbs_eval(const Geometry_t& geometry, const Spline& bspline,
         test_nurbs_eval<iganet::deriv::dt ^ 4, false, true>(
             bspline, bsplinelib_bspline, xi, tol);
     }
-    std::cout << "precomputed memory not optimized finished" << std::endl;
+    std::cout << "precomputed memory not optimized finished" << std::endl; 
     // Evaluate function and derivatives from precomputed data (memory optimized)
     test_nurbs_eval<iganet::deriv::func, true, true>(
         bspline, bsplinelib_bspline, xi, tol);
@@ -1348,7 +1289,7 @@ void test_nurbs_eval(const Geometry_t& geometry, const Spline& bspline,
     if constexpr (Spline::parDim() == 1) {
         test_nurbs_eval<iganet::deriv::dx, true, true>(
             bspline, bsplinelib_bspline, xi, tol);
-   /*     test_nurbs_eval<iganet::deriv::dx ^ 2, true, true>(
+        test_nurbs_eval<iganet::deriv::dx ^ 2, true, true>(
             bspline, bsplinelib_bspline, xi, tol);
         test_nurbs_eval<iganet::deriv::dx ^ 3, true, true>(
             bspline, bsplinelib_bspline, xi, tol);
@@ -1359,7 +1300,7 @@ void test_nurbs_eval(const Geometry_t& geometry, const Spline& bspline,
     if constexpr (Spline::parDim() == 2) {
         test_nurbs_eval<iganet::deriv::dy, true, true>(
             bspline, bsplinelib_bspline, xi, tol);
-    /*    test_nurbs_eval<iganet::deriv::dy ^ 2, true, true>(
+        test_nurbs_eval<iganet::deriv::dy ^ 2, true, true>(
             bspline, bsplinelib_bspline, xi, tol);
         test_nurbs_eval<iganet::deriv::dy ^ 3, true, true>(
             bspline, bsplinelib_bspline, xi, tol);
@@ -1370,7 +1311,7 @@ void test_nurbs_eval(const Geometry_t& geometry, const Spline& bspline,
     if constexpr (Spline::parDim() == 3) {
         test_nurbs_eval<iganet::deriv::dz, true, true>(
             bspline, bsplinelib_bspline, xi, tol);
-   /*     test_nurbs_eval<iganet::deriv::dz ^ 2, true, true>(
+        test_nurbs_eval<iganet::deriv::dz ^ 2, true, true>(
             bspline, bsplinelib_bspline, xi, tol);
         test_nurbs_eval<iganet::deriv::dz ^ 3, true, true>(
             bspline, bsplinelib_bspline, xi, tol);
@@ -1378,7 +1319,7 @@ void test_nurbs_eval(const Geometry_t& geometry, const Spline& bspline,
             bspline, bsplinelib_bspline, xi, tol);
     }
 
-   /* if constexpr (Spline::parDim() == 4) {
+    if constexpr (Spline::parDim() == 4) {
         test_nurbs_eval<iganet::deriv::dt, true, true>(
             bspline, bsplinelib_bspline, xi, tol);
         test_nurbs_eval<iganet::deriv::dt ^ 2, true, true>(
@@ -1388,7 +1329,7 @@ void test_nurbs_eval(const Geometry_t& geometry, const Spline& bspline,
         test_nurbs_eval<iganet::deriv::dt ^ 4, true, true>(
             bspline, bsplinelib_bspline, xi, tol);
     }
-    std::cout << "precomp memory optimized finished" << std::endl;*/
+    std::cout << "precomp memory optimized finished" << std::endl; */
     // Evaluate gradients
     if constexpr (Spline::geoDim() == 1) {
         test_nurbs_grad<false, false>(bspline, xi, tol);
@@ -1405,12 +1346,12 @@ void test_nurbs_eval(const Geometry_t& geometry, const Spline& bspline,
     /// Evaluate Jacobian
     test_nurbs_jac<false, false>(bspline, xi, tol);
     //test_nurbs_jac<false, true>(bspline, xi, tol);
-    //test_nurbs_jac<true, false>(bspline, xi, tol);
-    //test_nurbs_jac<true, true>(bspline, xi, tol);
+   // test_nurbs_jac<true, false>(bspline, xi, tol);
+   // test_nurbs_jac<true, true>(bspline, xi, tol);
 
     test_nurbs_ijac<false, false>(geometry, bspline, xi, tol);
-    // test_nurbs_ijac<false, true>(geometry, bspline, xi, tol);
-    // test_nurbs_ijac<true, false>(geometry, bspline, xi, tol);
+   //  test_nurbs_ijac<false, true>(geometry, bspline, xi, tol);
+  //  test_nurbs_ijac<true, false>(geometry, bspline, xi, tol);
     // test_nurbs_ijac<true, true>(geometry, bspline, xi, tol);
 
      /// Evaluate Hessian - second order derivs not yet implemented

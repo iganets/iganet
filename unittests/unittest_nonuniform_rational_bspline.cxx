@@ -38,6 +38,7 @@ TEST_F(BSplineTest, NonUniformRationalBSpline_parDim1_geoDim1_degrees1) {
       {{{0.0_r, 0.0_r, 0.5_r, 1.0_r, 1.0_r}}});
   EXPECT_EQ(bspline.parDim(), 1);
   EXPECT_EQ(bspline.geoDim(), 2);
+  EXPECT_EQ(bspline.geoDim_proj(), 1);
   EXPECT_EQ(bspline.degree(0), 1);
   EXPECT_EQ(bspline.nknots(0), 5);
   EXPECT_EQ(bspline.ncoeffs(0), 3);
@@ -54,6 +55,7 @@ TEST_F(BSplineTest, NonUniformRationalBSpline_parDim1_geoDim2_degrees1) {
       {{{0.0_r, 0.0_r, 0.5_r, 1.0_r, 1.0_r}}});
   EXPECT_EQ(bspline.parDim(), 1);
   EXPECT_EQ(bspline.geoDim(), 3);
+  EXPECT_EQ(bspline.geoDim_proj(), 2);
   EXPECT_EQ(bspline.degree(0), 1);
   EXPECT_EQ(bspline.nknots(0), 5);
   EXPECT_EQ(bspline.ncoeffs(0), 3);
@@ -68,6 +70,7 @@ TEST_F(BSplineTest, NonUniformRationalBSpline_parDim1_geoDim3_degrees1) {
       {{{0.0_r, 0.0_r, 0.5_r, 1.0_r, 1.0_r}}});
   EXPECT_EQ(bspline.parDim(), 1);
   EXPECT_EQ(bspline.geoDim(), 4);
+  EXPECT_EQ(bspline.geoDim_proj(), 3);
   EXPECT_EQ(bspline.degree(0), 1);
   EXPECT_EQ(bspline.nknots(0), 5);
   EXPECT_EQ(bspline.ncoeffs(0), 3);
@@ -81,7 +84,8 @@ TEST_F(BSplineTest, NonUniformRationalBSpline_parDim1_geoDim4_degrees1) {
   iganet::NonUniformRationalBSpline<real_t, 4, 1> bspline(
       {{{0.0_r, 0.0_r, 0.5_r, 1.0_r, 1.0_r}}});
   EXPECT_EQ(bspline.parDim(), 1);
-  EXPECT_EQ(bspline.geoDim(), 4);
+  EXPECT_EQ(bspline.geoDim(), 5);
+  EXPECT_EQ(bspline.geoDim_proj(), 4);
   EXPECT_EQ(bspline.degree(0), 1);
   EXPECT_EQ(bspline.nknots(0), 5);
   EXPECT_EQ(bspline.ncoeffs(0), 3);
@@ -94,6 +98,7 @@ TEST_F(BSplineTest, NonUniformRationalBSpline_parDim2_geoDim1_degrees12) {
         {0.0_r, 0.0_r, 0.0_r, 1.0_r, 1.0_r, 1.0_r}}});
   EXPECT_EQ(bspline.parDim(), 2);
   EXPECT_EQ(bspline.geoDim(), 2);
+  EXPECT_EQ(bspline.geoDim_proj(), 1);
   EXPECT_EQ(bspline.degree(0), 1);
   EXPECT_EQ(bspline.degree(1), 2);
   EXPECT_EQ(bspline.nknots(0), 5);
@@ -109,6 +114,7 @@ TEST_F(BSplineTest, NonUniformRationalBSpline_parDim2_geoDim2_degrees12) {
         {0.0_r, 0.0_r, 0.0_r, 1.0_r, 1.0_r, 1.0_r}}});
   EXPECT_EQ(bspline.parDim(), 2);
   EXPECT_EQ(bspline.geoDim(), 3);
+  EXPECT_EQ(bspline.geoDim_proj(), 2);
   EXPECT_EQ(bspline.degree(0), 1);
   EXPECT_EQ(bspline.degree(1), 2);
   EXPECT_EQ(bspline.nknots(0), 5);
@@ -124,6 +130,7 @@ TEST_F(BSplineTest, NonUniformRationalBSpline_parDim2_geoDim3_degrees12) {
         {0.0_r, 0.0_r, 0.0_r, 1.0_r, 1.0_r, 1.0_r}}});
   EXPECT_EQ(bspline.parDim(), 2);
   EXPECT_EQ(bspline.geoDim(), 4);
+  EXPECT_EQ(bspline.geoDim_proj(), 3);
   EXPECT_EQ(bspline.degree(0), 1);
   EXPECT_EQ(bspline.degree(1), 2);
   EXPECT_EQ(bspline.nknots(0), 5);
@@ -138,7 +145,8 @@ TEST_F(BSplineTest, NonUniformRationalBSpline_parDim2_geoDim4_degrees12) {
       {{{0.0_r, 0.0_r, 0.5_r, 1.0_r, 1.0_r},
         {0.0_r, 0.0_r, 0.0_r, 1.0_r, 1.0_r, 1.0_r}}});
   EXPECT_EQ(bspline.parDim(), 2);
-  EXPECT_EQ(bspline.geoDim(), 4);
+  EXPECT_EQ(bspline.geoDim(), 5);
+  EXPECT_EQ(bspline.geoDim_proj(), 4);
   EXPECT_EQ(bspline.degree(0), 1);
   EXPECT_EQ(bspline.degree(1), 2);
   EXPECT_EQ(bspline.nknots(0), 5);
@@ -155,6 +163,7 @@ TEST_F(BSplineTest, NonUniformRationalBSpline_parDim3_geoDim1_degrees123) {
         {0.0_r, 0.0_r, 0.0_r, 0.0_r, 0.5_r, 1.0_r, 1.0_r, 1.0_r, 1.0_r}}});
   EXPECT_EQ(bspline.parDim(), 3);
   EXPECT_EQ(bspline.geoDim(), 2);
+  EXPECT_EQ(bspline.geoDim_proj(), 1);
   EXPECT_EQ(bspline.degree(0), 1);
   EXPECT_EQ(bspline.degree(1), 2);
   EXPECT_EQ(bspline.degree(2), 3);
@@ -174,6 +183,7 @@ TEST_F(BSplineTest, NonUniformRationalBSpline_parDim3_geoDim2_degrees123) {
         {0.0_r, 0.0_r, 0.0_r, 0.0_r, 0.5_r, 1.0_r, 1.0_r, 1.0_r, 1.0_r}}});
   EXPECT_EQ(bspline.parDim(), 3);
   EXPECT_EQ(bspline.geoDim(), 3);
+  EXPECT_EQ(bspline.geoDim_proj(), 2);
   EXPECT_EQ(bspline.degree(0), 1);
   EXPECT_EQ(bspline.degree(1), 2);
   EXPECT_EQ(bspline.degree(2), 3);
@@ -193,6 +203,7 @@ TEST_F(BSplineTest, NonUniformRationalBSpline_parDim3_geoDim3_degrees123) {
         {0.0_r, 0.0_r, 0.0_r, 0.0_r, 0.5_r, 1.0_r, 1.0_r, 1.0_r, 1.0_r}}});
   EXPECT_EQ(bspline.parDim(), 3);
   EXPECT_EQ(bspline.geoDim(), 4);
+  EXPECT_EQ(bspline.geoDim_proj(), 3);
   EXPECT_EQ(bspline.degree(0), 1);
   EXPECT_EQ(bspline.degree(1), 2);
   EXPECT_EQ(bspline.degree(2), 3);
@@ -211,7 +222,8 @@ TEST_F(BSplineTest, NonUniformRationalBSpline_parDim3_geoDim4_degrees123) {
         {0.0_r, 0.0_r, 0.0_r, 1.0_r, 1.0_r, 1.0_r},
         {0.0_r, 0.0_r, 0.0_r, 0.0_r, 0.5_r, 1.0_r, 1.0_r, 1.0_r, 1.0_r}}});
   EXPECT_EQ(bspline.parDim(), 3);
-  EXPECT_EQ(bspline.geoDim(), 4);
+  EXPECT_EQ(bspline.geoDim(), 5);
+  EXPECT_EQ(bspline.geoDim_proj(), 4);
   EXPECT_EQ(bspline.degree(0), 1);
   EXPECT_EQ(bspline.degree(1), 2);
   EXPECT_EQ(bspline.degree(2), 3);
@@ -233,6 +245,7 @@ TEST_F(BSplineTest, NonUniformRationalBSpline_parDim4_geoDim1_degrees1234) {
          1.0_r}}});
   EXPECT_EQ(bspline.parDim(), 4);
   EXPECT_EQ(bspline.geoDim(), 2);
+  EXPECT_EQ(bspline.geoDim_proj(), 1);
   EXPECT_EQ(bspline.degree(0), 1);
   EXPECT_EQ(bspline.degree(1), 2);
   EXPECT_EQ(bspline.degree(2), 3);
@@ -257,6 +270,7 @@ TEST_F(BSplineTest, NonUniformRationalBSpline_parDim4_geoDim2_degrees1234) {
          1.0_r}}});
   EXPECT_EQ(bspline.parDim(), 4);
   EXPECT_EQ(bspline.geoDim(), 3);
+  EXPECT_EQ(bspline.geoDim_proj(), 2);
   EXPECT_EQ(bspline.degree(0), 1);
   EXPECT_EQ(bspline.degree(1), 2);
   EXPECT_EQ(bspline.degree(2), 3);
@@ -281,6 +295,7 @@ TEST_F(BSplineTest, NonUniformRationalBSpline_parDim4_geoDim3_degrees1234) {
          1.0_r}}});
   EXPECT_EQ(bspline.parDim(), 4);
   EXPECT_EQ(bspline.geoDim(), 4);
+  EXPECT_EQ(bspline.geoDim_proj(), 3);
   EXPECT_EQ(bspline.degree(0), 1);
   EXPECT_EQ(bspline.degree(1), 2);
   EXPECT_EQ(bspline.degree(2), 3);
@@ -304,7 +319,8 @@ TEST_F(BSplineTest, NonUniformRationalBSpline_parDim4_geoDim4_degrees1234) {
         {0.0_r, 0.0_r, 0.0_r, 0.0_r, 0.0_r, 0.5_r, 1.0_r, 1.0_r, 1.0_r, 1.0_r,
          1.0_r}}});
   EXPECT_EQ(bspline.parDim(), 4);
-  EXPECT_EQ(bspline.geoDim(), 4);
+  EXPECT_EQ(bspline.geoDim(), 5);
+  EXPECT_EQ(bspline.geoDim_proj(), 4);
   EXPECT_EQ(bspline.degree(0), 1);
   EXPECT_EQ(bspline.degree(1), 2);
   EXPECT_EQ(bspline.degree(2), 3);
@@ -659,7 +675,7 @@ TEST_F(BSplineTest, NonUniformRationalBSpline_to_from_xml) {
         {4}, iganet::init::zeros, options);
 
     bspline_out.transform([](const std::array<real_t, 1> xi) {
-      return std::array<real_t, 2>{static_cast<real_t>(std::rand()), 1.0};
+      return std::array<real_t, 2>{static_cast<real_t>(std::rand()), static_cast<real_t>(std::rand())};
     });
 
     pugi::xml_document doc = bspline_out.to_xml();
@@ -703,7 +719,7 @@ TEST_F(BSplineTest, NonUniformRationalBSpline_to_from_xml) {
 
     bspline_out.transform([](const std::array<real_t, 1> xi) {
       return std::array<real_t, 3>{static_cast<real_t>(std::rand()),
-                                   static_cast<real_t>(std::rand()), 1.0};
+                                   static_cast<real_t>(std::rand()), static_cast<real_t>(std::rand())};
     });
 
     pugi::xml_document doc = bspline_out.to_xml();
@@ -748,7 +764,8 @@ TEST_F(BSplineTest, NonUniformRationalBSpline_to_from_xml) {
     bspline_out.transform([](const std::array<real_t, 1> xi) {
       return std::array<real_t, 4>{static_cast<real_t>(std::rand()),
                                    static_cast<real_t>(std::rand()),
-                                   static_cast<real_t>(std::rand()), 1.0};
+                                   static_cast<real_t>(std::rand()), 
+                                   static_cast<real_t>(std::rand())};
     });
 
     pugi::xml_document doc = bspline_out.to_xml();
@@ -791,9 +808,10 @@ TEST_F(BSplineTest, NonUniformRationalBSpline_to_from_xml) {
         {4}, iganet::init::zeros, options);
 
     bspline_out.transform([](const std::array<real_t, 1> xi) {
-      return std::array<real_t, 4>{
+      return std::array<real_t, 5>{
           static_cast<real_t>(std::rand()), static_cast<real_t>(std::rand()),
-          static_cast<real_t>(std::rand()), static_cast<real_t>(std::rand()), 1.0};
+          static_cast<real_t>(std::rand()), static_cast<real_t>(std::rand()),
+          static_cast<real_t>(std::rand())};
     });
 
     pugi::xml_document doc = bspline_out.to_xml();
@@ -980,9 +998,10 @@ TEST_F(BSplineTest, NonUniformRationalBSpline_to_from_xml) {
         {4, 5}, iganet::init::zeros, options);
 
     bspline_out.transform([](const std::array<real_t, 2> xi) {
-      return std::array<real_t, 4>{
+      return std::array<real_t, 5>{
           static_cast<real_t>(std::rand()), static_cast<real_t>(std::rand()),
-          static_cast<real_t>(std::rand()), static_cast<real_t>(std::rand())};
+          static_cast<real_t>(std::rand()), static_cast<real_t>(std::rand()),
+          static_cast<real_t>(std::rand())};
     });
 
     pugi::xml_document doc = bspline_out.to_xml();
@@ -1173,9 +1192,10 @@ TEST_F(BSplineTest, NonUniformRationalBSpline_to_from_xml) {
         {4, 5, 6}, iganet::init::zeros, options);
 
     bspline_out.transform([](const std::array<real_t, 3> xi) {
-      return std::array<real_t, 4>{
+      return std::array<real_t, 5>{
           static_cast<real_t>(std::rand()), static_cast<real_t>(std::rand()),
-          static_cast<real_t>(std::rand()), static_cast<real_t>(std::rand())};
+          static_cast<real_t>(std::rand()), static_cast<real_t>(std::rand()),
+          static_cast<real_t>(std::rand())};
     });
 
     pugi::xml_document doc = bspline_out.to_xml();
@@ -1366,9 +1386,10 @@ TEST_F(BSplineTest, NonUniformRationalBSpline_to_from_xml) {
         {4, 5, 6, 2}, iganet::init::zeros, options);
 
     bspline_out.transform([](const std::array<real_t, 4> xi) {
-      return std::array<real_t, 4>{
+      return std::array<real_t, 5>{
           static_cast<real_t>(std::rand()), static_cast<real_t>(std::rand()),
-          static_cast<real_t>(std::rand()), static_cast<real_t>(std::rand())};
+          static_cast<real_t>(std::rand()), static_cast<real_t>(std::rand()),
+          static_cast<real_t>(std::rand()), };
     });
 
     pugi::xml_document doc = bspline_out.to_xml();
@@ -1496,7 +1517,8 @@ TEST_F(BSplineTest, NonUniformRationalBSpline_to_from_json) {
     bspline_out.transform([](const std::array<real_t, 1> xi) {
       return std::array<real_t, 4>{static_cast<real_t>(std::rand()),
                                    static_cast<real_t>(std::rand()),
-                                   static_cast<real_t>(std::rand()), 1.0};
+                                   static_cast<real_t>(std::rand()), 
+                                   static_cast<real_t>(std::rand()), };
     });
 
     nlohmann::json json = bspline_out.to_json();
@@ -1534,9 +1556,10 @@ TEST_F(BSplineTest, NonUniformRationalBSpline_to_from_json) {
         {4}, iganet::init::zeros, options);
 
     bspline_out.transform([](const std::array<real_t, 1> xi) {
-      return std::array<real_t, 4>{
+      return std::array<real_t, 5>{
           static_cast<real_t>(std::rand()), static_cast<real_t>(std::rand()),
-          static_cast<real_t>(std::rand()), static_cast<real_t>(std::rand()),1.0};
+          static_cast<real_t>(std::rand()), static_cast<real_t>(std::rand()),
+          static_cast<real_t>(std::rand()), };
     });
 
     nlohmann::json json = bspline_out.to_json();
@@ -1574,7 +1597,7 @@ TEST_F(BSplineTest, NonUniformRationalBSpline_to_from_json) {
         {4, 5}, iganet::init::zeros, options);
 
     bspline_out.transform([](const std::array<real_t, 2> xi) {
-      return std::array<real_t, 2>{static_cast<real_t>(std::rand()),1.0};
+      return std::array<real_t, 2>{static_cast<real_t>(std::rand()), static_cast<real_t>(std::rand()), };
     });
 
     nlohmann::json json = bspline_out.to_json();
@@ -1613,7 +1636,8 @@ TEST_F(BSplineTest, NonUniformRationalBSpline_to_from_json) {
 
     bspline_out.transform([](const std::array<real_t, 2> xi) {
       return std::array<real_t, 3>{static_cast<real_t>(std::rand()),
-                                   static_cast<real_t>(std::rand()),1.0};
+                                   static_cast<real_t>(std::rand()),
+                                   static_cast<real_t>(std::rand()), };
     });
 
     nlohmann::json json = bspline_out.to_json();
@@ -1653,7 +1677,8 @@ TEST_F(BSplineTest, NonUniformRationalBSpline_to_from_json) {
     bspline_out.transform([](const std::array<real_t, 2> xi) {
       return std::array<real_t, 4>{static_cast<real_t>(std::rand()),
                                    static_cast<real_t>(std::rand()),
-                                   static_cast<real_t>(std::rand()),1.0};
+                                   static_cast<real_t>(std::rand()),
+                                   static_cast<real_t>(std::rand()), };
     });
 
     nlohmann::json json = bspline_out.to_json();
@@ -1691,9 +1716,10 @@ TEST_F(BSplineTest, NonUniformRationalBSpline_to_from_json) {
         {4, 5}, iganet::init::zeros, options);
 
     bspline_out.transform([](const std::array<real_t, 2> xi) {
-      return std::array<real_t, 4>{
+      return std::array<real_t, 5>{
           static_cast<real_t>(std::rand()), static_cast<real_t>(std::rand()),
-          static_cast<real_t>(std::rand()), static_cast<real_t>(std::rand())};
+          static_cast<real_t>(std::rand()), static_cast<real_t>(std::rand()),
+          static_cast<real_t>(std::rand()), };
     });
 
     nlohmann::json json = bspline_out.to_json();
@@ -1731,7 +1757,7 @@ TEST_F(BSplineTest, NonUniformRationalBSpline_to_from_json) {
         {4, 5, 6}, iganet::init::zeros, options);
 
     bspline_out.transform([](const std::array<real_t, 3> xi) {
-      return std::array<real_t, 2>{static_cast<real_t>(std::rand()), 1.0};
+      return std::array<real_t, 2>{static_cast<real_t>(std::rand()), static_cast<real_t>(std::rand()), };
     });
 
     nlohmann::json json = bspline_out.to_json();
@@ -1773,7 +1799,8 @@ TEST_F(BSplineTest, NonUniformRationalBSpline_to_from_json) {
 
     bspline_out.transform([](const std::array<real_t, 3> xi) {
       return std::array<real_t, 3>{static_cast<real_t>(std::rand()),
-                                   static_cast<real_t>(std::rand()), 1.0};
+                                   static_cast<real_t>(std::rand()), 
+                                   static_cast<real_t>(std::rand()), };
     });
 
     nlohmann::json json = bspline_out.to_json();
@@ -1816,7 +1843,8 @@ TEST_F(BSplineTest, NonUniformRationalBSpline_to_from_json) {
     bspline_out.transform([](const std::array<real_t, 3> xi) {
       return std::array<real_t, 4>{static_cast<real_t>(std::rand()),
                                    static_cast<real_t>(std::rand()),
-                                   static_cast<real_t>(std::rand()), 1.0};
+                                   static_cast<real_t>(std::rand()),
+                                   static_cast<real_t>(std::rand()), };
     });
 
     nlohmann::json json = bspline_out.to_json();
@@ -1857,9 +1885,10 @@ TEST_F(BSplineTest, NonUniformRationalBSpline_to_from_json) {
         {4, 5, 6}, iganet::init::zeros, options);
 
     bspline_out.transform([](const std::array<real_t, 3> xi) {
-      return std::array<real_t, 4>{
+      return std::array<real_t, 5>{
           static_cast<real_t>(std::rand()), static_cast<real_t>(std::rand()),
-          static_cast<real_t>(std::rand()), static_cast<real_t>(std::rand())};
+          static_cast<real_t>(std::rand()), static_cast<real_t>(std::rand()),
+          static_cast<real_t>(std::rand()), };
     });
 
     nlohmann::json json = bspline_out.to_json();
@@ -1900,7 +1929,7 @@ TEST_F(BSplineTest, NonUniformRationalBSpline_to_from_json) {
         {4, 5, 6, 2}, iganet::init::zeros, options);
 
     bspline_out.transform([](const std::array<real_t, 4> xi) {
-      return std::array<real_t, 2>{static_cast<real_t>(std::rand()), 1.0};
+      return std::array<real_t, 2>{static_cast<real_t>(std::rand()), static_cast<real_t>(std::rand()), };
     });
 
     nlohmann::json json = bspline_out.to_json();
@@ -1942,7 +1971,8 @@ TEST_F(BSplineTest, NonUniformRationalBSpline_to_from_json) {
 
     bspline_out.transform([](const std::array<real_t, 4> xi) {
       return std::array<real_t, 3>{static_cast<real_t>(std::rand()),
-                                   static_cast<real_t>(std::rand()), 1.0};
+                                   static_cast<real_t>(std::rand()), 
+                                   static_cast<real_t>(std::rand())};
     });
 
     nlohmann::json json = bspline_out.to_json();
@@ -1985,7 +2015,8 @@ TEST_F(BSplineTest, NonUniformRationalBSpline_to_from_json) {
     bspline_out.transform([](const std::array<real_t, 4> xi) {
       return std::array<real_t, 4>{static_cast<real_t>(std::rand()),
                                    static_cast<real_t>(std::rand()),
-                                   static_cast<real_t>(std::rand()), 1.0};
+                                   static_cast<real_t>(std::rand()),
+                                   static_cast<real_t>(std::rand())};
     });
 
     nlohmann::json json = bspline_out.to_json();
@@ -2026,9 +2057,10 @@ TEST_F(BSplineTest, NonUniformRationalBSpline_to_from_json) {
         {4, 5, 6, 2}, iganet::init::zeros, options);
 
     bspline_out.transform([](const std::array<real_t, 4> xi) {
-      return std::array<real_t, 4>{
+      return std::array<real_t, 5>{
           static_cast<real_t>(std::rand()), static_cast<real_t>(std::rand()),
-          static_cast<real_t>(std::rand()), static_cast<real_t>(std::rand())};
+          static_cast<real_t>(std::rand()), static_cast<real_t>(std::rand()), 
+          static_cast<real_t>(std::rand())};
     });
 
     nlohmann::json json = bspline_out.to_json();
