@@ -15,7 +15,7 @@
 #pragma once
 
 #include <utils/blocktensor.hpp>
-#include <utils/concat.hpp>
+#include <utils/container.hpp>
 #include <utils/fqn.hpp>
 #include <utils/getenv.hpp>
 #include <utils/integer_pow.hpp>

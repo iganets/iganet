@@ -1,7 +1,7 @@
 /**
    @file include/utils/serialize.hpp
 
-   @brief Srialization utility functions
+   @brief Serialization utility functions
 
    @author Matthias Moller
 

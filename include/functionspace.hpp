@@ -17,7 +17,7 @@
 #include <boost/preprocessor/seq/for_each.hpp>
 
 #include <bspline.hpp>
-#include <utils/convert.hpp>
+#include <utils/container.hpp>
 #include <utils/type_traits.hpp>
 #include <utils/zip.hpp>
 
@@ -3056,6 +3056,8 @@ public:
       Options<typename Spline::value_type> options =
           iganet::Options<typename Spline::value_type>{})
       : Base(kv, kv, init, options) {
+    static_assert(Spline::is_nonuniform(),
+                  "Constructor only available for non-uniform splines");
     std::get<0>(*this).reduce_continuity();
   }
   /// @}
@@ -3108,6 +3110,8 @@ public:
       Options<typename Spline::value_type> options =
           iganet::Options<typename Spline::value_type>{})
       : Base(kv, kv, kv, init, options) {
+    static_assert(Spline::is_nonuniform(),
+                  "Constructor only available for non-uniform splines");
     std::get<0>(*this).reduce_continuity();
     std::get<1>(*this).reduce_continuity();
   }
@@ -3175,6 +3179,8 @@ public:
       Options<typename Spline::value_type> options =
           iganet::Options<typename Spline::value_type>{})
       : Base(kv, kv, kv, kv, init, options) {
+    static_assert(Spline::is_nonuniform(),
+                  "Constructor only available for non-uniform splines");
     std::get<0>(*this).reduce_continuity();
     std::get<1>(*this).reduce_continuity();
     std::get<2>(*this).reduce_continuity();
@@ -3254,6 +3260,8 @@ public:
       Options<typename Spline::value_type> options =
           iganet::Options<typename Spline::value_type>{})
       : Base(kv, kv, kv, kv, kv, init, options) {
+    static_assert(Spline::is_nonuniform(),
+                  "Constructor only available for non-uniform splines");
     std::get<0>(*this).reduce_continuity();
     std::get<1>(*this).reduce_continuity();
     std::get<2>(*this).reduce_continuity();
@@ -3295,7 +3303,10 @@ public:
       enum init init = init::zeros,
       Options<typename Spline::value_type> options =
           iganet::Options<typename Spline::value_type>{})
-      : Base(kv, kv, init, options) {}
+      : Base(kv, kv, init, options) {
+    static_assert(Spline::is_nonuniform(),
+                  "Constructor only available for non-uniform splines");
+  }
   /// @}
 
   IGANET_FUNCTIONSPACE_DEFAULT_OPS(NE1);
@@ -3346,6 +3357,8 @@ public:
       Options<typename Spline::value_type> options =
           iganet::Options<typename Spline::value_type>{})
       : Base(kv, kv, kv, init, options) {
+    static_assert(Spline::is_nonuniform(),
+                  "Constructor only available for non-uniform splines");
     std::get<0>(*this).reduce_continuity(1, 1);
     std::get<1>(*this).reduce_continuity(1, 0);
   }
@@ -3413,6 +3426,8 @@ public:
       Options<typename Spline::value_type> options =
           iganet::Options<typename Spline::value_type>{})
       : Base(kv, kv, kv, kv, init, options) {
+    static_assert(Spline::is_nonuniform(),
+                  "Constructor only available for non-uniform splines");
     std::get<0>(*this).reduce_continuity(1, 1).reduce_continuity(1, 2);
     std::get<1>(*this).reduce_continuity(1, 0).reduce_continuity(1, 2);
     std::get<2>(*this).reduce_continuity(1, 0).reduce_continuity(1, 1);
@@ -3505,6 +3520,8 @@ public:
       Options<typename Spline::value_type> options =
           iganet::Options<typename Spline::value_type>{})
       : Base(kv, kv, kv, kv, kv, init, options) {
+    static_assert(Spline::is_nonuniform(),
+                  "Constructor only available for non-uniform splines");
     std::get<0>(*this)
         .reduce_continuity(1, 1)
         .reduce_continuity(1, 2)
@@ -3558,7 +3575,10 @@ public:
       enum init init = init::zeros,
       Options<typename Spline::value_type> options =
           iganet::Options<typename Spline::value_type>{})
-      : Base(kv, kv, init, options) {}
+      : Base(kv, kv, init, options) {
+    static_assert(Spline::is_nonuniform(),
+                  "Constructor only available for non-uniform splines");
+  }
   /// @}
 
   IGANET_FUNCTIONSPACE_DEFAULT_OPS(RT1);
@@ -3604,7 +3624,10 @@ public:
       enum init init = init::zeros,
       Options<typename Spline::value_type> options =
           iganet::Options<typename Spline::value_type>{})
-      : Base(kv, kv, kv, init, options) {}
+      : Base(kv, kv, kv, init, options) {
+    static_assert(Spline::is_nonuniform(),
+                  "Constructor only available for non-uniform splines");
+  }
   /// @}
 
   IGANET_FUNCTIONSPACE_DEFAULT_OPS(RT2);
@@ -3662,7 +3685,10 @@ public:
       enum init init = init::zeros,
       Options<typename Spline::value_type> options =
           iganet::Options<typename Spline::value_type>{})
-      : Base(kv, kv, kv, kv, init, options) {}
+      : Base(kv, kv, kv, kv, init, options) {
+    static_assert(Spline::is_nonuniform(),
+                  "Constructor only available for non-uniform splines");
+  }
   /// @}
 
   IGANET_FUNCTIONSPACE_DEFAULT_OPS(RT3);
@@ -3729,7 +3755,10 @@ public:
       enum init init = init::zeros,
       Options<typename Spline::value_type> options =
           iganet::Options<typename Spline::value_type>{})
-      : Base(kv, kv, kv, kv, kv, init, options) {}
+      : Base(kv, kv, kv, kv, kv, init, options) {
+    static_assert(Spline::is_nonuniform(),
+                  "Constructor only available for non-uniform splines");
+  }
   /// @}
 
   IGANET_FUNCTIONSPACE_DEFAULT_OPS(RT4);

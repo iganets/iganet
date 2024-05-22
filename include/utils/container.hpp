@@ -1,7 +1,7 @@
 /**
-   @file include/utils/convert.hpp
+   @file include/utils/container.hpp
 
-   @brief Convert utility functions
+   @brief Container utility functions
 
    @author Matthias Moller
 
@@ -27,7 +27,7 @@ namespace utils {
 
 /// @brief Converts an std::vector object into std::array
 template <std::size_t N, typename T>
-inline std::array<T, N> convert(std::vector<T> &&vector) {
+inline std::array<T, N> to_array(std::vector<T> &&vector) {
   std::array<T, N> array;
   std::move(vector.begin(), vector.end(), array.begin());
   return array;
@@ -35,7 +35,7 @@ inline std::array<T, N> convert(std::vector<T> &&vector) {
 
 /// @brief Converts an std::array object into std::vector
 template <typename T, std::size_t N>
-inline std::vector<T> convert(std::array<T, N> &&array) {
+inline std::vector<T> to_vector(std::array<T, N> &&array) {
   std::vector<T> vector;
   std::move(array.begin(), array.end(), vector.begin());
   return vector;
@@ -191,6 +191,90 @@ inline auto to_tensor(const std::vector<T> &vector,
 template <typename T, std::size_t N>
 auto to_ArrayRef(const std::array<T, N> &array) {
   return at::ArrayRef<T>{array};
+}
+
+/// @brief Concatenates multiple std::array objects
+/// @{
+template <typename T, std::size_t... N>
+inline auto concat(const std::array<T, N> &...arrays) {
+  std::array<T, (N + ...)> result;
+  std::size_t index{};
+
+  ((std::copy_n(arrays.begin(), N, result.begin() + index), index += N), ...);
+
+  return result;
+}
+
+template <typename T, std::size_t... N>
+inline auto concat(std::array<T, N> &&...arrays) {
+  std::array<T, (N + ...)> result;
+  std::size_t index{};
+
+  ((std::copy_n(std::make_move_iterator(arrays.begin()), N,
+                result.begin() + index),
+    index += N),
+   ...);
+
+  return result;
+}
+/// @}
+
+/// @brief Concatenates multiple std::vector objects
+/// @{
+template <typename... Ts>
+inline auto concat(const std::vector<Ts> &...vectors) {
+  std::vector<typename std::tuple_element<0, std::tuple<Ts...>>::type> result;
+
+  (result.insert(result.end(), vectors.begin(), vectors.end()), ...);
+
+  return result;
+}
+
+template <typename... Ts> inline auto concat(std::vector<Ts> &&...vectors) {
+  std::vector<typename std::tuple_element<0, std::tuple<Ts...>>::type> result;
+
+  (result.insert(result.end(), std::make_move_iterator(vectors.begin()),
+                 std::make_move_iterator(vectors.end())),
+   ...);
+
+  return result;
+}
+/// @}
+
+/// @brief Appends data to a torch::ArrayRef object
+template <typename T>
+inline constexpr auto append(torch::ArrayRef<T> array, T data) {
+  std::vector<T> Vec{array.vec()};
+  Vec.push_back(data);
+  return Vec;
+}
+
+/// @brief Appends data to a std::array object
+template <typename T, std::size_t N>
+inline constexpr auto append(std::array<T, N> array, T data) {
+  std::array<T, N + 1> result;
+  result[N] = data;
+  for (std::size_t i = 0; i < array.size(); ++i)
+    result[i] = array[i];
+  return result;
+}
+
+/// @brief Prepends data to a torch::ArrayRef object
+template <typename T>
+inline constexpr auto prepend(torch::ArrayRef<T> array, T data) {
+  std::vector<T> Vec{array.vec()};
+  Vec.insert(Vec.begin(), data);
+  return Vec;
+}
+
+/// @brief Prepends data to a std::array object
+template <typename T, std::size_t N>
+inline constexpr auto prepend(std::array<T, N> array, T data) {
+  std::array<T, N + 1> result;
+  result[0] = data;
+  for (std::size_t i = 0; i < array.size(); ++i)
+    result[i + 1] = array[i];
+  return result;
 }
 
 } // namespace utils
