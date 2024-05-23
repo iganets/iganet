@@ -25,96 +25,51 @@
 namespace iganet {
 namespace utils {
 
-using TensorArray0 = std::array<torch::Tensor, 0>;
-using TensorArray1 = std::array<torch::Tensor, 1>;
-using TensorArray2 = std::array<torch::Tensor, 2>;
-using TensorArray3 = std::array<torch::Tensor, 3>;
-using TensorArray4 = std::array<torch::Tensor, 4>;
+template <std::size_t N> using TensorArray = std::array<torch::Tensor, N>;
 
-/// @brief Converts an std::initializer_list to TensorArray1
+using TensorArray0 = TensorArray<0>;
+using TensorArray1 = TensorArray<1>;
+using TensorArray2 = TensorArray<2>;
+using TensorArray3 = TensorArray<3>;
+using TensorArray4 = TensorArray<4>;
+
+/// @brief Converts a set of std::initializer_list objects to a TensorArray
+/// object
 /// @{
-template <typename T>
-inline auto to_tensorArray(std::initializer_list<T> &&list,
-                           torch::IntArrayRef sizes = torch::IntArrayRef{-1},
-                           const iganet::Options<T> &options = Options<T>{}) {
-  return TensorArray1({to_tensor(list, sizes, options)});
+template <typename... Ts>
+inline constexpr TensorArray<sizeof...(Ts)>
+to_tensorArray(std::initializer_list<Ts> &&...lists) {
+  return {to_tensor(std::forward<std::initializer_list<Ts>>(lists),
+                    torch::IntArrayRef{-1}, Options<Ts>{})...};
 }
 
-template <typename T>
-inline auto to_tensorArray(std::initializer_list<T> &&list,
-                           const iganet::Options<T> &options) {
-  return TensorArray1({to_tensor(list, torch::IntArrayRef{-1}, options)});
-}
-/// @}
-
-/// @brief Converts two std::initializer_list's to TensorArray2
-/// @{
-template <typename T>
-inline auto to_tensorArray(std::initializer_list<T> &&list0,
-                           std::initializer_list<T> &&list1,
-                           torch::IntArrayRef sizes = torch::IntArrayRef{-1},
-                           const iganet::Options<T> &options = Options<T>{}) {
-  return TensorArray2(
-      {to_tensor(list0, sizes, options), to_tensor(list1, sizes, options)});
+template <typename... Ts>
+inline constexpr TensorArray<sizeof...(Ts)>
+to_tensorArray(torch::IntArrayRef sizes, std::initializer_list<Ts> &&...lists) {
+  return {to_tensor(std::forward<std::initializer_list<Ts>>(lists), sizes,
+                    Options<Ts>{})...};
 }
 
-template <typename T>
-inline auto to_tensorArray(std::initializer_list<T> &&list0,
-                           std::initializer_list<T> &&list1,
-                           const iganet::Options<T> &options) {
-  return TensorArray2({to_tensor(list0, torch::IntArrayRef{-1}, options),
-                       to_tensor(list1, torch::IntArrayRef{-1}, options)});
-}
-/// @}
-
-/// @brief Converts three std::initializer_list's to TensorArray3
-/// @{
-template <typename T>
-inline auto to_tensorArray(std::initializer_list<T> &&list0,
-                           std::initializer_list<T> &&list1,
-                           std::initializer_list<T> &&list2,
-                           torch::IntArrayRef sizes = torch::IntArrayRef{-1},
-                           const iganet::Options<T> &options = Options<T>{}) {
-  return TensorArray3({to_tensor(list0, sizes, options),
-                       to_tensor(list1, sizes, options),
-                       to_tensor(list2, sizes, options)});
+template <typename... Ts, typename T>
+inline constexpr TensorArray<sizeof...(Ts)>
+to_tensorArray(const iganet::Options<T> &options,
+               std::initializer_list<Ts> &&...lists) {
+  static_assert(
+      (std::is_same_v<T, Ts> && ...),
+      "Type mismatch between Options<T> and std::initializer_list<Ts>");
+  return {to_tensor(std::forward<std::initializer_list<Ts>>(lists),
+                    torch::IntArrayRef{-1}, options)...};
 }
 
-template <typename T>
-inline auto to_tensorArray(std::initializer_list<T> &&list0,
-                           std::initializer_list<T> &&list1,
-                           std::initializer_list<T> &&list2,
-                           const iganet::Options<T> &options) {
-  return TensorArray3({to_tensor(list0, torch::IntArrayRef{-1}, options),
-                       to_tensor(list1, torch::IntArrayRef{-1}, options),
-                       to_tensor(list2, torch::IntArrayRef{-1}, options)});
-}
-/// @}
-
-/// @brief Converts four std::initializer_list's to TensorArray4
-/// @{
-template <typename T>
-inline auto to_tensorArray(std::initializer_list<T> &&list0,
-                           std::initializer_list<T> &&list1,
-                           std::initializer_list<T> &&list2,
-                           std::initializer_list<T> &&list3,
-                           torch::IntArrayRef sizes = {-1},
-                           const iganet::Options<T> &options = Options<T>{}) {
-  return TensorArray4(
-      {to_tensor(list0, sizes, options), to_tensor(list1, sizes, options),
-       to_tensor(list2, sizes, options), to_tensor(list3, sizes, options)});
-}
-
-template <typename T>
-inline auto to_tensorArray(std::initializer_list<T> &&list0,
-                           std::initializer_list<T> &&list1,
-                           std::initializer_list<T> &&list2,
-                           std::initializer_list<T> &&list3,
-                           const iganet::Options<T> &options) {
-  return TensorArray4({to_tensor(list0, torch::IntArrayRef{-1}, options),
-                       to_tensor(list1, torch::IntArrayRef{-1}, options),
-                       to_tensor(list2, torch::IntArrayRef{-1}, options),
-                       to_tensor(list3, torch::IntArrayRef{-1}, options)});
+template <typename... Ts, typename T>
+inline constexpr TensorArray<sizeof...(Ts)>
+to_tensorArray(torch::IntArrayRef sizes, const iganet::Options<T> &options,
+               std::initializer_list<Ts> &&...lists) {
+  static_assert(
+      (std::is_same_v<T, Ts> && ...),
+      "Type mismatch between Options<T> and std::initializer_list<Ts>");
+  return {to_tensor(std::forward<std::initializer_list<Ts>>(lists), sizes,
+                    options)...};
 }
 /// @}
 

@@ -42,15 +42,13 @@ inline std::vector<T> to_vector(std::array<T, N> &&array) {
 }
 
 /// @brief Converts a list of arguments into std::array
-template <typename... Args>
-inline auto to_array(Args &&...args) {
+template <typename... Args> inline auto to_array(Args &&...args) {
   return std::array<typename std::common_type<Args...>::type, sizeof...(Args)>{
       std::move(args)...};
 }
 
 /// @brief Converts a list of arguments into std::vector
-template <typename... Args>
-inline auto to_vector(Args &&...args) {
+template <typename... Args> inline auto to_vector(Args &&...args) {
   return std::vector<typename std::common_type<Args...>::type>{
       std::move(args)...};
 }
@@ -246,7 +244,7 @@ template <typename... Ts> inline auto concat(std::vector<Ts> &&...vectors) {
 /// @brief Adds two std::arrays
 template <typename T, std::size_t size>
 inline constexpr std::array<T, size> operator+(std::array<T, size> lhs,
-                                     std::array<T, size> rhs) {
+                                               std::array<T, size> rhs) {
   std::array<T, size> result;
 
   for (std::size_t i = 0; i < size; ++i)
@@ -254,7 +252,7 @@ inline constexpr std::array<T, size> operator+(std::array<T, size> lhs,
 
   return result;
 }
-  
+
 /// @brief Appends data to a torch::ArrayRef object
 template <typename T>
 inline constexpr auto operator+(torch::ArrayRef<T> array, T data) {
@@ -306,6 +304,6 @@ inline constexpr auto operator+(T data, std::vector<T> vector) {
   result.insert(result.begin(), data);
   return result;
 }
-  
+
 } // namespace utils
 } // namespace iganet

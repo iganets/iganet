@@ -76,9 +76,9 @@ greville_kernel(torch::PackedTensorAccessor64<real_t, 1> greville,
 #define GENERATE_IEXPR_SEQ (icurl)(idiv)(igrad)(ihess)(ijac)(ilapl)
 
 namespace iganet {
-  using namespace literals;
-  using utils::operator+;
-  
+using namespace literals;
+using utils::operator+;
+
 //  clang-format off
 /// @brief Enumerator for specifying the initialization of B-spline coefficients
 enum class init : short_t {
@@ -581,8 +581,7 @@ public:
     assert(i >= 0 && i < geoDim_);
     if constexpr (parDim_ > 1)
       if (coeffs_[i].dim() > 1)
-        return coeffs_[i].view(
-            utils::to_ArrayRef(ncoeffs_reverse_) + (-1_i64));
+        return coeffs_[i].view(utils::to_ArrayRef(ncoeffs_reverse_) + (-1_i64));
       else
         return coeffs_[i].view(utils::to_ArrayRef(ncoeffs_reverse_));
     else
