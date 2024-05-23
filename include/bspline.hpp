@@ -4994,8 +4994,9 @@ public:
             utils::BlockTensor<torch::Tensor, 1, Base::geoDim_ - 1> pnts;
             utils::BlockTensor<torch::Tensor, 1, Base::geoDim_> Cw = Base::template eval<deriv::func, memory_optimized>(xi, knot_indices, coeff_indices);
             //Divide by weight
+            assert(std::abs(*Cw[Base::geoDim_ - 1]) > 0); // Avoid division by zero
             for (short_t i = 0; i < Base::geoDim_ - 1; ++i)
-                pnts.set(i, torch::div(*Cw[i], *Cw[Base::geoDim_ - 1])); // TODO: Catch division by zero error!
+                pnts.set(i, torch::div(*Cw[i], *Cw[Base::geoDim_ - 1])); 
             if constexpr (deriv == deriv::func) {
                 return pnts;
             }

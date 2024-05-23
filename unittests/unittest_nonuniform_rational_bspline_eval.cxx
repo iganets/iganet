@@ -44,9 +44,9 @@ protected:
       };
   static constexpr auto trafo_parDim1_geoDim4 =
       [](const std::array<real_t, 1> xi) {
-        return std::array<real_t, 4>{
-            xi[0] * xi[0], sin(static_cast<real_t>(M_PI) * xi[0]), xi[0],
-            cos(static_cast<real_t>(M_PI) * xi[0])};
+      return std::array<real_t, 5>{
+          xi[0] * xi[0], sin(static_cast<real_t>(M_PI)* xi[0]), xi[0],
+              cos(static_cast<real_t>(M_PI)* xi[0]), sin(static_cast<real_t>(M_PI)* xi[0]) + 0.3};
       };
   
   static constexpr auto trafo_parDim2_geoDim1 =
@@ -93,25 +93,25 @@ protected:
   
   static constexpr auto trafo_parDim4_geoDim1 =
       [](const std::array<real_t, 4> xi) {
-        return std::array<real_t, 2>{xi[0] * xi[1] * xi[2] * xi[3], sin(static_cast<real_t>(M_PI)* xi[0])};
+        return std::array<real_t, 2>{xi[0] * xi[1] * xi[2] * xi[3], sin(static_cast<real_t>(M_PI)* xi[0])+0.3};
       };
   static constexpr auto trafo_parDim4_geoDim2 =
       [](const std::array<real_t, 4> xi) {
         return std::array<real_t, 3>{xi[0] * xi[1] * xi[2] * xi[3],
-                                     sin(static_cast<real_t>(M_PI) * xi[0]), sin(static_cast<real_t>(M_PI)* xi[0])};
+                                     sin(static_cast<real_t>(M_PI) * xi[0]), sin(static_cast<real_t>(M_PI)* xi[0])+0.3};
       };
   static constexpr auto trafo_parDim4_geoDim3 =
       [](const std::array<real_t, 4> xi) {
         return std::array<real_t, 4>{xi[0] * xi[1] * xi[2] * xi[3],
                                      sin(static_cast<real_t>(M_PI) * xi[0]),
-                                     xi[1] * xi[2] * xi[3], sin(static_cast<real_t>(M_PI)* xi[0])};
+                                     xi[1] * xi[2] * xi[3], sin(static_cast<real_t>(M_PI)* xi[0])+0.3};
       };
   static constexpr auto trafo_parDim4_geoDim4 =
       [](const std::array<real_t, 4> xi) {
-        return std::array<real_t, 4>{xi[0] * xi[1] * xi[2] * xi[3],
+        return std::array<real_t, 5>{xi[0] * xi[1] * xi[2] * xi[3],
                                      sin(static_cast<real_t>(M_PI) * xi[0]),
                                      xi[1] * xi[2] * xi[3],
-                                     cos(static_cast<real_t>(M_PI) * xi[1])};
+                                     cos(static_cast<real_t>(M_PI) * xi[1]), sin(static_cast<real_t>(M_PI)* xi[0])+0.3};
       };
 };
 
@@ -362,10 +362,10 @@ TEST_F(BSplineTest, NonUniformRationalBSpline_eval_parDim1_geoDim3_degrees6) {
   test_nurbs_eval(geo, bspline, xi, 1e-11);
 }
 
-/*TEST_F(BSplineTest, NonUniformBSpline_eval_parDim1_geoDim4_degrees1) {
-  iganet::NonUniformBSpline<real_t, 1, 1> geo(
+TEST_F(BSplineTest, NonUniformRationalBSpline_eval_parDim1_geoDim4_degrees1) {
+  iganet::NonUniformRationalBSpline<real_t, 1, 1> geo(
       {{{0.0_r, 0.0_r, 0.5_r, 1.0_r, 1.0_r}}}, iganet::init::greville, options);
-  iganet::NonUniformBSpline<real_t, 4, 1> bspline(
+  iganet::NonUniformRationalBSpline<real_t, 4, 1> bspline(
       {{{0.0_r, 0.0_r, 0.5_r, 1.0_r, 1.0_r}}}, iganet::init::zeros, options);
   bspline.transform(trafo_parDim1_geoDim4);
   auto xi = iganet::utils::to_tensorArray<real_t>(
@@ -373,11 +373,11 @@ TEST_F(BSplineTest, NonUniformRationalBSpline_eval_parDim1_geoDim3_degrees6) {
   test_nurbs_eval(geo, bspline, xi, 1e-12);
 }
 
-TEST_F(BSplineTest, NonUniformBSpline_eval_parDim1_geoDim4_degrees2) {
-  iganet::NonUniformBSpline<real_t, 1, 2> geo(
+TEST_F(BSplineTest, NonUniformRationalBSpline_eval_parDim1_geoDim4_degrees2) {
+  iganet::NonUniformRationalBSpline<real_t, 1, 2> geo(
       {{{0.0_r, 0.0_r, 0.0_r, 0.5_r, 1.0_r, 1.0_r, 1.0_r}}},
       iganet::init::greville, options);
-  iganet::NonUniformBSpline<real_t, 4, 2> bspline(
+  iganet::NonUniformRationalBSpline<real_t, 4, 2> bspline(
       {{{0.0_r, 0.0_r, 0.0_r, 0.5_r, 1.0_r, 1.0_r, 1.0_r}}},
       iganet::init::zeros, options);
   bspline.transform(trafo_parDim1_geoDim4);
@@ -386,11 +386,11 @@ TEST_F(BSplineTest, NonUniformBSpline_eval_parDim1_geoDim4_degrees2) {
   test_nurbs_eval(geo, bspline, xi, 1e-12);
 }
 
-TEST_F(BSplineTest, NonUniformBSpline_eval_parDim1_geoDim4_degrees3) {
-  iganet::NonUniformBSpline<real_t, 1, 3> geo(
+TEST_F(BSplineTest, NonUniformRationalBSpline_eval_parDim1_geoDim4_degrees3) {
+  iganet::NonUniformRationalBSpline<real_t, 1, 3> geo(
       {{{0.0_r, 0.0_r, 0.0_r, 0.0_r, 0.5_r, 1.0_r, 1.0_r, 1.0_r, 1.0_r}}},
       iganet::init::greville, options);
-  iganet::NonUniformBSpline<real_t, 4, 3> bspline(
+  iganet::NonUniformRationalBSpline<real_t, 4, 3> bspline(
       {{{0.0_r, 0.0_r, 0.0_r, 0.0_r, 0.5_r, 1.0_r, 1.0_r, 1.0_r, 1.0_r}}},
       iganet::init::zeros, options);
   bspline.transform(trafo_parDim1_geoDim4);
@@ -399,12 +399,12 @@ TEST_F(BSplineTest, NonUniformBSpline_eval_parDim1_geoDim4_degrees3) {
   test_nurbs_eval(geo, bspline, xi, 1e-12);
 }
 
-TEST_F(BSplineTest, NonUniformBSpline_eval_parDim1_geoDim4_degrees4) {
-  iganet::NonUniformBSpline<real_t, 1, 4> geo(
+TEST_F(BSplineTest, NonUniformRationalBSpline_eval_parDim1_geoDim4_degrees4) {
+  iganet::NonUniformRationalBSpline<real_t, 1, 4> geo(
       {{{0.0_r, 0.0_r, 0.0_r, 0.0_r, 0.0_r, 0.5_r, 1.0_r, 1.0_r, 1.0_r, 1.0_r,
          1.0_r}}},
       iganet::init::greville, options);
-  iganet::NonUniformBSpline<real_t, 4, 4> bspline(
+  iganet::NonUniformRationalBSpline<real_t, 4, 4> bspline(
       {{{0.0_r, 0.0_r, 0.0_r, 0.0_r, 0.0_r, 0.5_r, 1.0_r, 1.0_r, 1.0_r, 1.0_r,
          1.0_r}}},
       iganet::init::zeros, options);
@@ -414,12 +414,12 @@ TEST_F(BSplineTest, NonUniformBSpline_eval_parDim1_geoDim4_degrees4) {
   test_nurbs_eval(geo, bspline, xi, 1e-12);
 }
 
-TEST_F(BSplineTest, NonUniformBSpline_eval_parDim1_geoDim4_degrees5) {
-  iganet::NonUniformBSpline<real_t, 1, 5> geo(
+TEST_F(BSplineTest, NonUniformRationalBSpline_eval_parDim1_geoDim4_degrees5) {
+  iganet::NonUniformRationalBSpline<real_t, 1, 5> geo(
       {{{0.0_r, 0.0_r, 0.0_r, 0.0_r, 0.0_r, 0.0_r, 0.5_r, 1.0_r, 1.0_r, 1.0_r,
          1.0_r, 1.0_r, 1.0_r}}},
       iganet::init::greville, options);
-  iganet::NonUniformBSpline<real_t, 4, 5> bspline(
+  iganet::NonUniformRationalBSpline<real_t, 4, 5> bspline(
       {{{0.0_r, 0.0_r, 0.0_r, 0.0_r, 0.0_r, 0.0_r, 0.5_r, 1.0_r, 1.0_r, 1.0_r,
          1.0_r, 1.0_r, 1.0_r}}},
       iganet::init::zeros, options);
@@ -429,12 +429,12 @@ TEST_F(BSplineTest, NonUniformBSpline_eval_parDim1_geoDim4_degrees5) {
   test_nurbs_eval(geo, bspline, xi, 1e-12);
 }
 
-TEST_F(BSplineTest, NonUniformBSpline_eval_parDim1_geoDim4_degrees6) {
-  iganet::NonUniformBSpline<real_t, 1, 6> geo(
+TEST_F(BSplineTest, NonUniformRationalBSpline_eval_parDim1_geoDim4_degrees6) {
+  iganet::NonUniformRationalBSpline<real_t, 1, 6> geo(
       {{{0.0_r, 0.0_r, 0.0_r, 0.0_r, 0.0_r, 0.0_r, 0.0_r, 0.5_r, 1.0_r, 1.0_r,
          1.0_r, 1.0_r, 1.0_r, 1.0_r, 1.0_r}}},
       iganet::init::greville, options);
-  iganet::NonUniformBSpline<real_t, 4, 6> bspline(
+  iganet::NonUniformRationalBSpline<real_t, 4, 6> bspline(
       {{{0.0_r, 0.0_r, 0.0_r, 0.0_r, 0.0_r, 0.0_r, 0.0_r, 0.5_r, 1.0_r, 1.0_r,
          1.0_r, 1.0_r, 1.0_r, 1.0_r, 1.0_r}}},
       iganet::init::zeros, options);
@@ -442,7 +442,7 @@ TEST_F(BSplineTest, NonUniformBSpline_eval_parDim1_geoDim4_degrees6) {
   auto xi = iganet::utils::to_tensorArray<real_t>(
       {0.0_r, 0.1_r, 0.2_r, 0.5_r, 0.75_r, 0.9_r, 1.0_r}, options);
   test_nurbs_eval(geo, bspline, xi, 1e-10);
-}*/
+}
 
 TEST_F(BSplineTest, NonUniformRationalBSpline_eval_parDim2_geoDim1_degrees22) {
   iganet::NonUniformRationalBSpline<real_t, 2, 2, 2> geo(
@@ -457,7 +457,7 @@ TEST_F(BSplineTest, NonUniformRationalBSpline_eval_parDim2_geoDim1_degrees22) {
   auto xi = iganet::utils::to_tensorArray<real_t>(
       {0.0_r, 0.1_r, 0.2_r, 0.5_r, 0.75_r, 0.9_r, 1.0_r},
       {0.0_r, 0.1_r, 0.2_r, 0.5_r, 0.75_r, 0.9_r, 1.0_r}, options);
-  test_nurbs_eval(geo, bspline, xi, 1e-6);
+  test_nurbs_eval(geo, bspline, xi, 1e-12);
 }
 
 TEST_F(BSplineTest, NonUniformRationalBSpline_eval_parDim2_geoDim1_degrees46) {
@@ -477,7 +477,7 @@ TEST_F(BSplineTest, NonUniformRationalBSpline_eval_parDim2_geoDim1_degrees46) {
   auto xi = iganet::utils::to_tensorArray<real_t>(
       {0.0_r, 0.1_r, 0.2_r, 0.5_r, 0.75_r, 0.9_r, 1.0_r},
       {0.0_r, 0.1_r, 0.2_r, 0.5_r, 0.75_r, 0.9_r, 1.0_r}, options);
-  test_nurbs_eval(geo, bspline, xi, 1e-6);
+  test_nurbs_eval(geo, bspline, xi, 1e-12);
 }
 
 TEST_F(BSplineTest, NonUniformRationalBSpline_eval_parDim2_geoDim1_degrees64) {
@@ -497,7 +497,7 @@ TEST_F(BSplineTest, NonUniformRationalBSpline_eval_parDim2_geoDim1_degrees64) {
   auto xi = iganet::utils::to_tensorArray<real_t>(
       {0.0_r, 0.1_r, 0.2_r, 0.5_r, 0.75_r, 0.9_r, 1.0_r},
       {0.0_r, 0.1_r, 0.2_r, 0.5_r, 0.75_r, 0.9_r, 1.0_r}, options);
-  test_nurbs_eval(geo, bspline, xi, 1e-5);
+  test_nurbs_eval(geo, bspline, xi, 1e-12);
 }
 
 TEST_F(BSplineTest, NonUniformRationalBSpline_eval_parDim2_geoDim2_degrees22) {
@@ -513,7 +513,7 @@ TEST_F(BSplineTest, NonUniformRationalBSpline_eval_parDim2_geoDim2_degrees22) {
   auto xi = iganet::utils::to_tensorArray<real_t>(
       {0.0_r, 0.1_r, 0.2_r, 0.5_r, 0.75_r, 0.9_r, 1.0_r},
       {0.0_r, 0.1_r, 0.2_r, 0.5_r, 0.75_r, 0.9_r, 1.0_r}, options);
-  test_nurbs_eval(geo, bspline, xi, 1e-6);
+  test_nurbs_eval(geo, bspline, xi, 1e-12);
 }
 
 TEST_F(BSplineTest, NonUniformRationalBSpline_eval_parDim2_geoDim2_degrees46) {
@@ -533,7 +533,7 @@ TEST_F(BSplineTest, NonUniformRationalBSpline_eval_parDim2_geoDim2_degrees46) {
   auto xi = iganet::utils::to_tensorArray<real_t>(
       {0.0_r, 0.1_r, 0.2_r, 0.5_r, 0.75_r, 0.9_r, 1.0_r},
       {0.0_r, 0.1_r, 0.2_r, 0.5_r, 0.75_r, 0.9_r, 1.0_r}, options);
-  test_nurbs_eval(geo, bspline, xi, 1e-5);
+  test_nurbs_eval(geo, bspline, xi, 1e-12);
 }
 
 TEST_F(BSplineTest, NonUniformRationalBSpline_eval_parDim2_geoDim2_degrees64) {
@@ -553,7 +553,7 @@ TEST_F(BSplineTest, NonUniformRationalBSpline_eval_parDim2_geoDim2_degrees64) {
   auto xi = iganet::utils::to_tensorArray<real_t>(
       {0.0_r, 0.1_r, 0.2_r, 0.5_r, 0.75_r, 0.9_r, 1.0_r},
       {0.0_r, 0.1_r, 0.2_r, 0.5_r, 0.75_r, 0.9_r, 1.0_r}, options);
-  test_nurbs_eval(geo, bspline, xi, 1e-5);
+  test_nurbs_eval(geo, bspline, xi, 1e-12);
 }
 
 TEST_F(BSplineTest, NonUniformRationalBSpline_eval_parDim2_geoDim3_degrees22) {
@@ -569,7 +569,7 @@ TEST_F(BSplineTest, NonUniformRationalBSpline_eval_parDim2_geoDim3_degrees22) {
   auto xi = iganet::utils::to_tensorArray<real_t>(
       {0.0_r, 0.1_r, 0.2_r, 0.5_r, 0.75_r, 0.9_r, 1.0_r},
       {0.0_r, 0.1_r, 0.2_r, 0.5_r, 0.75_r, 0.9_r, 1.0_r}, options);
-  test_nurbs_eval(geo, bspline, xi, 1e-6);
+  test_nurbs_eval(geo, bspline, xi, 1e-12);
 }
 
 TEST_F(BSplineTest, NonUniformRationalBSpline_eval_parDim2_geoDim3_degrees46) {
@@ -589,7 +589,7 @@ TEST_F(BSplineTest, NonUniformRationalBSpline_eval_parDim2_geoDim3_degrees46) {
   auto xi = iganet::utils::to_tensorArray<real_t>(
       {0.0_r, 0.1_r, 0.2_r, 0.5_r, 0.75_r, 0.9_r, 1.0_r},
       {0.0_r, 0.1_r, 0.2_r, 0.5_r, 0.75_r, 0.9_r, 1.0_r}, options);
-  test_nurbs_eval(geo, bspline, xi, 1e-5);
+  test_nurbs_eval(geo, bspline, xi, 1e-12);
 }
 
 TEST_F(BSplineTest, NonUniformRationalBSpline_eval_parDim2_geoDim3_degrees64) {
@@ -609,10 +609,10 @@ TEST_F(BSplineTest, NonUniformRationalBSpline_eval_parDim2_geoDim3_degrees64) {
   auto xi = iganet::utils::to_tensorArray<real_t>(
       {0.0_r, 0.1_r, 0.2_r, 0.5_r, 0.75_r, 0.9_r, 1.0_r},
       {0.0_r, 0.1_r, 0.2_r, 0.5_r, 0.75_r, 0.9_r, 1.0_r}, options);
-  test_nurbs_eval(geo, bspline, xi, 1e-5);
+  test_nurbs_eval(geo, bspline, xi, 1e-12);
 }
 
-/*TEST_F(BSplineTest, NonUniformRationalBSpline_eval_parDim2_geoDim4_degrees22) {
+TEST_F(BSplineTest, NonUniformRationalBSpline_eval_parDim2_geoDim4_degrees22) {
   iganet::NonUniformRationalBSpline<real_t, 2, 2, 2> geo(
       {{{0.0_r, 0.0_r, 0.0_r, 0.5_r, 1.0_r, 1.0_r, 1.0_r},
         {0.0_r, 0.0_r, 0.0_r, 0.5_r, 1.0_r, 1.0_r, 1.0_r}}},
@@ -625,7 +625,7 @@ TEST_F(BSplineTest, NonUniformRationalBSpline_eval_parDim2_geoDim3_degrees64) {
   auto xi = iganet::utils::to_tensorArray<real_t>(
       {0.0_r, 0.1_r, 0.2_r, 0.5_r, 0.75_r, 0.9_r, 1.0_r},
       {0.0_r, 0.1_r, 0.2_r, 0.5_r, 0.75_r, 0.9_r, 1.0_r}, options);
-  test_nurbs_eval(geo, bspline, xi, 1e-6);
+  test_nurbs_eval(geo, bspline, xi, 1e-12);
 }
 
 TEST_F(BSplineTest, NonUniformRationalBSpline_eval_parDim2_geoDim4_degrees46) {
@@ -645,7 +645,7 @@ TEST_F(BSplineTest, NonUniformRationalBSpline_eval_parDim2_geoDim4_degrees46) {
   auto xi = iganet::utils::to_tensorArray<real_t>(
       {0.0_r, 0.1_r, 0.2_r, 0.5_r, 0.75_r, 0.9_r, 1.0_r},
       {0.0_r, 0.1_r, 0.2_r, 0.5_r, 0.75_r, 0.9_r, 1.0_r}, options);
-  test_nurbs_eval(geo, bspline, xi, 1e-6);
+  test_nurbs_eval(geo, bspline, xi, 1e-12);
 }
 
 TEST_F(BSplineTest, NonUniformRationalBSpline_eval_parDim2_geoDim4_degrees64) {
@@ -665,8 +665,8 @@ TEST_F(BSplineTest, NonUniformRationalBSpline_eval_parDim2_geoDim4_degrees64) {
   auto xi = iganet::utils::to_tensorArray<real_t>(
       {0.0_r, 0.1_r, 0.2_r, 0.5_r, 0.75_r, 0.9_r, 1.0_r},
       {0.0_r, 0.1_r, 0.2_r, 0.5_r, 0.75_r, 0.9_r, 1.0_r}, options);
-  test_nurbs_eval(geo, bspline, xi, 1e-5);
-}*/
+  test_nurbs_eval(geo, bspline, xi, 1e-12);
+}
 
 TEST_F(BSplineTest, NonUniformRationalBSpline_eval_parDim3_geoDim1_degrees222) {
   iganet::NonUniformRationalBSpline<real_t, 3, 2, 2, 2> geo(
@@ -684,7 +684,7 @@ TEST_F(BSplineTest, NonUniformRationalBSpline_eval_parDim3_geoDim1_degrees222) {
       {0.0_r, 0.1_r, 0.2_r, 0.5_r, 0.75_r, 0.9_r, 1.0_r},
       {0.0_r, 0.1_r, 0.2_r, 0.5_r, 0.75_r, 0.9_r, 1.0_r},
       {0.0_r, 0.1_r, 0.2_r, 0.5_r, 0.75_r, 0.9_r, 1.0_r}, options);
-  test_nurbs_eval(geo, bspline, xi, 1e-6);
+  test_nurbs_eval(geo, bspline, xi, 1e-12);
 }
 
 TEST_F(BSplineTest, NonUniformRationalBSpline_eval_parDim3_geoDim1_degrees462) {
@@ -707,7 +707,7 @@ TEST_F(BSplineTest, NonUniformRationalBSpline_eval_parDim3_geoDim1_degrees462) {
       {0.0_r, 0.1_r, 0.2_r, 0.5_r, 0.75_r, 0.9_r, 1.0_r},
       {0.0_r, 0.1_r, 0.2_r, 0.5_r, 0.75_r, 0.9_r, 1.0_r},
       {0.0_r, 0.1_r, 0.2_r, 0.5_r, 0.75_r, 0.9_r, 1.0_r}, options);
-  test_nurbs_eval(geo, bspline, xi, 1e-5);
+  test_nurbs_eval(geo, bspline, xi, 1e-12);
 }
 
 TEST_F(BSplineTest, NonUniformRationalBSpline_eval_parDim3_geoDim1_degrees642) {
@@ -730,7 +730,7 @@ TEST_F(BSplineTest, NonUniformRationalBSpline_eval_parDim3_geoDim1_degrees642) {
       {0.0_r, 0.1_r, 0.2_r, 0.5_r, 0.75_r, 0.9_r, 1.0_r},
       {0.0_r, 0.1_r, 0.2_r, 0.5_r, 0.75_r, 0.9_r, 1.0_r},
       {0.0_r, 0.1_r, 0.2_r, 0.5_r, 0.75_r, 0.9_r, 1.0_r}, options);
-  test_nurbs_eval(geo, bspline, xi, 1e-6);
+  test_nurbs_eval(geo, bspline, xi, 1e-12);
 }
 
 TEST_F(BSplineTest, NonUniformRationalBSpline_eval_parDim3_geoDim2_degrees222) {
@@ -749,7 +749,7 @@ TEST_F(BSplineTest, NonUniformRationalBSpline_eval_parDim3_geoDim2_degrees222) {
       {0.0_r, 0.1_r, 0.2_r, 0.5_r, 0.75_r, 0.9_r, 1.0_r},
       {0.0_r, 0.1_r, 0.2_r, 0.5_r, 0.75_r, 0.9_r, 1.0_r},
       {0.0_r, 0.1_r, 0.2_r, 0.5_r, 0.75_r, 0.9_r, 1.0_r}, options);
-  test_nurbs_eval(geo, bspline, xi, 1e-6);
+  test_nurbs_eval(geo, bspline, xi, 1e-12);
 }
 
 TEST_F(BSplineTest, NonUniformRationalBSpline_eval_parDim3_geoDim2_degrees462) {
@@ -772,7 +772,7 @@ TEST_F(BSplineTest, NonUniformRationalBSpline_eval_parDim3_geoDim2_degrees462) {
       {0.0_r, 0.1_r, 0.2_r, 0.5_r, 0.75_r, 0.9_r, 1.0_r},
       {0.0_r, 0.1_r, 0.2_r, 0.5_r, 0.75_r, 0.9_r, 1.0_r},
       {0.0_r, 0.1_r, 0.2_r, 0.5_r, 0.75_r, 0.9_r, 1.0_r}, options);
-  test_nurbs_eval(geo, bspline, xi, 1e-5);
+  test_nurbs_eval(geo, bspline, xi, 1e-12);
 }
 
 TEST_F(BSplineTest, NonUniformRationalBSpline_eval_parDim3_geoDim2_degrees642) {
@@ -795,7 +795,7 @@ TEST_F(BSplineTest, NonUniformRationalBSpline_eval_parDim3_geoDim2_degrees642) {
       {0.0_r, 0.1_r, 0.2_r, 0.5_r, 0.75_r, 0.9_r, 1.0_r},
       {0.0_r, 0.1_r, 0.2_r, 0.5_r, 0.75_r, 0.9_r, 1.0_r},
       {0.0_r, 0.1_r, 0.2_r, 0.5_r, 0.75_r, 0.9_r, 1.0_r}, options);
-  test_nurbs_eval(geo, bspline, xi, 1e-6);
+  test_nurbs_eval(geo, bspline, xi, 1e-12);
 }
 
 TEST_F(BSplineTest, NonUniformRationalBSpline_eval_parDim3_geoDim3_degrees222) {
@@ -814,7 +814,7 @@ TEST_F(BSplineTest, NonUniformRationalBSpline_eval_parDim3_geoDim3_degrees222) {
       {0.0_r, 0.1_r, 0.2_r, 0.5_r, 0.75_r, 0.9_r, 1.0_r},
       {0.0_r, 0.1_r, 0.2_r, 0.5_r, 0.75_r, 0.9_r, 1.0_r},
       {0.0_r, 0.1_r, 0.2_r, 0.5_r, 0.75_r, 0.9_r, 1.0_r}, options);
-  test_nurbs_eval(geo, bspline, xi, 1e-6);
+  test_nurbs_eval(geo, bspline, xi, 1e-12);
 }
 
 TEST_F(BSplineTest, NonUniformRationalBSpline_eval_parDim3_geoDim3_degrees462) {
@@ -837,7 +837,7 @@ TEST_F(BSplineTest, NonUniformRationalBSpline_eval_parDim3_geoDim3_degrees462) {
       {0.0_r, 0.1_r, 0.2_r, 0.5_r, 0.75_r, 0.9_r, 1.0_r},
       {0.0_r, 0.1_r, 0.2_r, 0.5_r, 0.75_r, 0.9_r, 1.0_r},
       {0.0_r, 0.1_r, 0.2_r, 0.5_r, 0.75_r, 0.9_r, 1.0_r}, options);
-  test_nurbs_eval(geo, bspline, xi, 1e-6);
+  test_nurbs_eval(geo, bspline, xi, 1e-12);
 }
 
 TEST_F(BSplineTest, NonUniformRationalBSpline_eval_parDim3_geoDim3_degrees642) {
@@ -860,10 +860,10 @@ TEST_F(BSplineTest, NonUniformRationalBSpline_eval_parDim3_geoDim3_degrees642) {
       {0.0_r, 0.1_r, 0.2_r, 0.5_r, 0.75_r, 0.9_r, 1.0_r},
       {0.0_r, 0.1_r, 0.2_r, 0.5_r, 0.75_r, 0.9_r, 1.0_r},
       {0.0_r, 0.1_r, 0.2_r, 0.5_r, 0.75_r, 0.9_r, 1.0_r}, options);
-  test_nurbs_eval(geo, bspline, xi, 1e-6);
+  test_nurbs_eval(geo, bspline, xi, 1e-12);
 }
 
-/*TEST_F(BSplineTest, NonUniformRationalBSpline_eval_parDim3_geoDim4_degrees222) {
+TEST_F(BSplineTest, NonUniformRationalBSpline_eval_parDim3_geoDim4_degrees222) {
   iganet::NonUniformRationalBSpline<real_t, 3, 2, 2, 2> geo(
       {{{0.0_r, 0.0_r, 0.0_r, 0.5_r, 1.0_r, 1.0_r, 1.0_r},
         {0.0_r, 0.0_r, 0.0_r, 0.5_r, 1.0_r, 1.0_r, 1.0_r},
@@ -879,7 +879,7 @@ TEST_F(BSplineTest, NonUniformRationalBSpline_eval_parDim3_geoDim3_degrees642) {
       {0.0_r, 0.1_r, 0.2_r, 0.5_r, 0.75_r, 0.9_r, 1.0_r},
       {0.0_r, 0.1_r, 0.2_r, 0.5_r, 0.75_r, 0.9_r, 1.0_r},
       {0.0_r, 0.1_r, 0.2_r, 0.5_r, 0.75_r, 0.9_r, 1.0_r}, options);
-  test_nurbs_eval(geo, bspline, xi, 1e-6);
+  test_nurbs_eval(geo, bspline, xi, 1e-12);
 }
 
 TEST_F(BSplineTest, NonUniformRationalBSpline_eval_parDim3_geoDim4_degrees462) {
@@ -902,7 +902,7 @@ TEST_F(BSplineTest, NonUniformRationalBSpline_eval_parDim3_geoDim4_degrees462) {
       {0.0_r, 0.1_r, 0.2_r, 0.5_r, 0.75_r, 0.9_r, 1.0_r},
       {0.0_r, 0.1_r, 0.2_r, 0.5_r, 0.75_r, 0.9_r, 1.0_r},
       {0.0_r, 0.1_r, 0.2_r, 0.5_r, 0.75_r, 0.9_r, 1.0_r}, options);
-  test_nurbs_eval(geo, bspline, xi, 1e-6);
+  test_nurbs_eval(geo, bspline, xi, 1e-12);
 }
 
 TEST_F(BSplineTest, NonUniformRationalBSpline_eval_parDim3_geoDim4_degrees642) {
@@ -925,8 +925,8 @@ TEST_F(BSplineTest, NonUniformRationalBSpline_eval_parDim3_geoDim4_degrees642) {
       {0.0_r, 0.1_r, 0.2_r, 0.5_r, 0.75_r, 0.9_r, 1.0_r},
       {0.0_r, 0.1_r, 0.2_r, 0.5_r, 0.75_r, 0.9_r, 1.0_r},
       {0.0_r, 0.1_r, 0.2_r, 0.5_r, 0.75_r, 0.9_r, 1.0_r}, options);
-  test_nurbs_eval(geo, bspline, xi, 1e-6);
-}*/
+  test_nurbs_eval(geo, bspline, xi, 1e-12);
+}
 
 TEST_F(BSplineTest, NonUniformRationalBSpline_eval_parDim4_geoDim1_degrees2222) {
   iganet::NonUniformRationalBSpline<real_t, 4, 2, 2, 2, 2> geo(
@@ -1072,14 +1072,14 @@ TEST_F(BSplineTest, NonUniformRationalBSpline_eval_parDim4_geoDim3_degrees2463) 
   test_nurbs_eval(geo, bspline, xi, 1e-12);
 }
 
-/*TEST_F(BSplineTest, NonUniformBSpline_eval_parDim4_geoDim4_degrees2222) {
-  iganet::NonUniformBSpline<real_t, 4, 2, 2, 2, 2> geo(
+TEST_F(BSplineTest, NonUniformRationalBSpline_eval_parDim4_geoDim4_degrees2222) {
+  iganet::NonUniformRationalBSpline<real_t, 4, 2, 2, 2, 2> geo(
       {{{0.0_r, 0.0_r, 0.0_r, 0.5_r, 1.0_r, 1.0_r, 1.0_r},
         {0.0_r, 0.0_r, 0.0_r, 0.5_r, 1.0_r, 1.0_r, 1.0_r},
         {0.0_r, 0.0_r, 0.0_r, 0.5_r, 1.0_r, 1.0_r, 1.0_r},
         {0.0_r, 0.0_r, 0.0_r, 0.5_r, 1.0_r, 1.0_r, 1.0_r}}},
       iganet::init::greville, options);
-  iganet::NonUniformBSpline<real_t, 4, 2, 2, 2, 2> bspline(
+  iganet::NonUniformRationalBSpline<real_t, 4, 2, 2, 2, 2> bspline(
       {{{0.0_r, 0.0_r, 0.0_r, 0.5_r, 1.0_r, 1.0_r, 1.0_r},
         {0.0_r, 0.0_r, 0.0_r, 0.5_r, 1.0_r, 1.0_r, 1.0_r},
         {0.0_r, 0.0_r, 0.0_r, 0.5_r, 1.0_r, 1.0_r, 1.0_r},
@@ -1094,8 +1094,8 @@ TEST_F(BSplineTest, NonUniformRationalBSpline_eval_parDim4_geoDim3_degrees2463) 
   test_nurbs_eval(geo, bspline, xi, 1e-12);
 }
 
-TEST_F(BSplineTest, NonUniformBSpline_eval_parDim4_geoDim4_degrees2463) {
-  iganet::NonUniformBSpline<real_t, 4, 2, 4, 6, 3> geo(
+TEST_F(BSplineTest, NonUniformRationalBSpline_eval_parDim4_geoDim4_degrees2463) {
+  iganet::NonUniformRationalBSpline<real_t, 4, 2, 4, 6, 3> geo(
       {{{0.0_r, 0.0_r, 0.0_r, 0.5_r, 1.0_r, 1.0_r, 1.0_r},
         {0.0_r, 0.0_r, 0.0_r, 0.0_r, 0.0_r, 0.5_r, 1.0_r, 1.0_r, 1.0_r, 1.0_r,
          1.0_r},
@@ -1103,7 +1103,7 @@ TEST_F(BSplineTest, NonUniformBSpline_eval_parDim4_geoDim4_degrees2463) {
          1.0_r, 1.0_r, 1.0_r, 1.0_r, 1.0_r},
         {0.0_r, 0.0_r, 0.0_r, 0.0_r, 0.5_r, 1.0_r, 1.0_r, 1.0_r, 1.0_r}}},
       iganet::init::greville, options);
-  iganet::NonUniformBSpline<real_t, 4, 2, 4, 6, 3> bspline(
+  iganet::NonUniformRationalBSpline<real_t, 4, 2, 4, 6, 3> bspline(
       {{{0.0_r, 0.0_r, 0.0_r, 0.5_r, 1.0_r, 1.0_r, 1.0_r},
         {0.0_r, 0.0_r, 0.0_r, 0.0_r, 0.0_r, 0.5_r, 1.0_r, 1.0_r, 1.0_r, 1.0_r,
          1.0_r},
@@ -1118,7 +1118,7 @@ TEST_F(BSplineTest, NonUniformBSpline_eval_parDim4_geoDim4_degrees2463) {
       {0.0_r, 0.1_r, 0.2_r, 0.5_r, 0.75_r, 0.9_r, 1.0_r},
       {0.0_r, 0.1_r, 0.2_r, 0.5_r, 0.75_r, 0.9_r, 1.0_r}, options);
   test_nurbs_eval(geo, bspline, xi, 1e-12);
-}*/
+}
 
 int main(int argc, char **argv) {
   ::testing::InitGoogleTest(&argc, argv);

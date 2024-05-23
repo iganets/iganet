@@ -1186,7 +1186,7 @@ void test_nurbs_eval(const Geometry_t& geometry, const Spline& bspline,
     } 
     std::cout << "memory not optimized finished" << std::endl;
     // Evaluate function and derivatives (memory optimized)
-  /*  test_nurbs_eval<iganet::deriv::func, true, false>(
+   /* test_nurbs_eval<iganet::deriv::func, true, false>(
         bspline, bsplinelib_bspline, xi, tol);
     
     if constexpr (Spline::parDim() == 1) {
