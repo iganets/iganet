@@ -42,13 +42,15 @@ inline std::vector<T> to_vector(std::array<T, N> &&array) {
 }
 
 /// @brief Converts a list of arguments into std::array
-template <typename... Args> auto to_array(Args &&...args) {
+template <typename... Args>
+inline auto to_array(Args &&...args) {
   return std::array<typename std::common_type<Args...>::type, sizeof...(Args)>{
       std::move(args)...};
 }
 
 /// @brief Converts a list of arguments into std::vector
-template <typename... Args> auto to_vector(Args &&...args) {
+template <typename... Args>
+inline auto to_vector(Args &&...args) {
   return std::vector<typename std::common_type<Args...>::type>{
       std::move(args)...};
 }
@@ -189,7 +191,7 @@ inline auto to_tensor(const std::vector<T> &vector,
 
 /// @brief Converts an std::array<int64_t, N> to a at::IntArrayRef object
 template <typename T, std::size_t N>
-auto to_ArrayRef(const std::array<T, N> &array) {
+inline auto to_ArrayRef(const std::array<T, N> &array) {
   return at::ArrayRef<T>{array};
 }
 
@@ -223,7 +225,7 @@ inline auto concat(std::array<T, N> &&...arrays) {
 /// @{
 template <typename... Ts>
 inline auto concat(const std::vector<Ts> &...vectors) {
-  std::vector<typename std::tuple_element<0, std::tuple<Ts...>>::type> result;
+  std::vector<typename std::common_type<Ts...>::type> result;
 
   (result.insert(result.end(), vectors.begin(), vectors.end()), ...);
 
@@ -231,7 +233,7 @@ inline auto concat(const std::vector<Ts> &...vectors) {
 }
 
 template <typename... Ts> inline auto concat(std::vector<Ts> &&...vectors) {
-  std::vector<typename std::tuple_element<0, std::tuple<Ts...>>::type> result;
+  std::vector<typename std::common_type<Ts...>::type> result;
 
   (result.insert(result.end(), std::make_move_iterator(vectors.begin()),
                  std::make_move_iterator(vectors.end())),
@@ -241,41 +243,69 @@ template <typename... Ts> inline auto concat(std::vector<Ts> &&...vectors) {
 }
 /// @}
 
+/// @brief Adds two std::arrays
+template <typename T, std::size_t size>
+inline constexpr std::array<T, size> operator+(std::array<T, size> lhs,
+                                     std::array<T, size> rhs) {
+  std::array<T, size> result;
+
+  for (std::size_t i = 0; i < size; ++i)
+    result[i] = lhs[i] + rhs[i];
+
+  return result;
+}
+  
 /// @brief Appends data to a torch::ArrayRef object
 template <typename T>
-inline constexpr auto append(torch::ArrayRef<T> array, T data) {
-  std::vector<T> Vec{array.vec()};
-  Vec.push_back(data);
-  return Vec;
+inline constexpr auto operator+(torch::ArrayRef<T> array, T data) {
+  std::vector<T> result{array.vec()};
+  result.push_back(data);
+  return result;
 }
 
 /// @brief Appends data to a std::array object
 template <typename T, std::size_t N>
-inline constexpr auto append(std::array<T, N> array, T data) {
+inline constexpr auto operator+(std::array<T, N> array, T data) {
   std::array<T, N + 1> result;
-  result[N] = data;
-  for (std::size_t i = 0; i < array.size(); ++i)
+  for (std::size_t i = 0; i < N; ++i)
     result[i] = array[i];
+  result[N] = data;
+  return result;
+}
+
+/// @brief Appends data to a std::vector object
+template <typename T>
+inline constexpr auto operator+(std::vector<T> vector, T data) {
+  std::vector<T> result{vector};
+  result.push_back(data);
   return result;
 }
 
 /// @brief Prepends data to a torch::ArrayRef object
 template <typename T>
-inline constexpr auto prepend(torch::ArrayRef<T> array, T data) {
-  std::vector<T> Vec{array.vec()};
-  Vec.insert(Vec.begin(), data);
-  return Vec;
+inline constexpr auto operator+(T data, torch::ArrayRef<T> array) {
+  std::vector<T> result{array.vec()};
+  result.insert(result.begin(), data);
+  return result;
 }
 
 /// @brief Prepends data to a std::array object
 template <typename T, std::size_t N>
-inline constexpr auto prepend(std::array<T, N> array, T data) {
+inline constexpr auto operator+(T data, std::array<T, N> array) {
   std::array<T, N + 1> result;
   result[0] = data;
-  for (std::size_t i = 0; i < array.size(); ++i)
+  for (std::size_t i = 0; i < N; ++i)
     result[i + 1] = array[i];
   return result;
 }
 
+/// @brief Prepends data to a std::vector object
+template <typename T>
+inline constexpr auto operator+(T data, std::vector<T> vector) {
+  std::vector<T> result{vector};
+  result.insert(result.begin(), data);
+  return result;
+}
+  
 } // namespace utils
 } // namespace iganet

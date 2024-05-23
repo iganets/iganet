@@ -76,7 +76,9 @@ greville_kernel(torch::PackedTensorAccessor64<real_t, 1> greville,
 #define GENERATE_IEXPR_SEQ (icurl)(idiv)(igrad)(ihess)(ijac)(ilapl)
 
 namespace iganet {
-
+  using namespace literals;
+  using utils::operator+;
+  
 //  clang-format off
 /// @brief Enumerator for specifying the initialization of B-spline coefficients
 enum class init : short_t {
@@ -580,7 +582,7 @@ public:
     if constexpr (parDim_ > 1)
       if (coeffs_[i].dim() > 1)
         return coeffs_[i].view(
-            utils::append(utils::to_ArrayRef(ncoeffs_reverse_), int64_t{-1}));
+            utils::to_ArrayRef(ncoeffs_reverse_) + (-1_i64));
       else
         return coeffs_[i].view(utils::to_ArrayRef(ncoeffs_reverse_));
     else
@@ -1008,7 +1010,7 @@ public:
 
           if (coeffs(0).dim() > 1) {
             // coeffs has extra dimension
-            auto sizes = utils::append(xi[0].sizes(), int64_t(-1));
+            auto sizes = xi[0].sizes() + (-1_i64);
             for (short_t i = 0; i < geoDim_; ++i)
               result.set(i,
                          utils::dotproduct(
@@ -1039,7 +1041,7 @@ public:
                         .index_select(0, find_coeff_indices<memory_optimized>(
                                              knot_indices))
                         .view({-1, xi[0].numel(), coeffs(0).size(-1)}))
-                    .view(utils::append(xi[0].sizes(), int64_t(-1))));
+                    .view(xi[0].sizes() + (-1_i64)));
           } else {
             // coeffs does not have extra dimension
             return utils::BlockTensor<torch::Tensor, 1, 1>(
@@ -1108,7 +1110,7 @@ public:
 
           if (coeffs(0).dim() > 1) {
             // coeffs has extra dimension
-            auto sizes = utils::append(xi[0].sizes(), int64_t(-1));
+            auto sizes = xi[0].sizes() + (-1_i64);
             for (short_t i = 0; i < geoDim_; ++i)
               result.set(i,
                          utils::dotproduct(
@@ -1138,7 +1140,7 @@ public:
                     coeffs(0)
                         .index_select(0, coeff_indices)
                         .view({-1, xi[0].numel(), coeffs(0).size(-1)}))
-                    .view(utils::append(xi[0].sizes(), int64_t(-1))));
+                    .view(xi[0].sizes() + (-1_i64)));
           } else {
             // coeffs does not have extra dimension
             return utils::BlockTensor<torch::Tensor, 1, 1>(
@@ -1212,7 +1214,7 @@ public:
 
           if (coeffs(0).dim() > 1) {
             // coeffs has extra dimension
-            auto sizes = utils::append(xi[0].sizes(), int64_t(-1));
+            auto sizes = xi[0].sizes() + (-1_i64);
             for (short_t i = 0; i < geoDim_; ++i)
               result.set(i,
                          utils::dotproduct(
@@ -1243,7 +1245,7 @@ public:
                         .index_select(0, find_coeff_indices<memory_optimized>(
                                              knot_indices))
                         .view({-1, xi[0].numel(), coeffs(0).size(-1)}))
-                    .view(utils::append(xi[0].sizes(), int64_t(-1))));
+                    .view(xi[0].sizes() + (-1_i64)));
           } else {
             // coeffs does not have extra dimension
             return utils::BlockTensor<torch::Tensor, 1, 1>(
@@ -1318,7 +1320,7 @@ public:
 
           if (coeffs(0).dim() > 1) {
             // coeffs has extra dimension
-            auto sizes = utils::append(xi[0].sizes(), int64_t(-1));
+            auto sizes = xi[0].sizes() + (-1_i64);
             for (short_t i = 0; i < geoDim_; ++i)
               result.set(i,
                          utils::dotproduct(
@@ -1348,7 +1350,7 @@ public:
                     coeffs(0)
                         .index_select(0, coeff_indices)
                         .view({-1, xi[0].numel(), coeffs(0).size(-1)}))
-                    .view(utils::append(xi[0].sizes(), int64_t(-1))));
+                    .view(xi[0].sizes() + (-1_i64)));
           } else {
             // coeffs does not have extra dimension
             return utils::BlockTensor<torch::Tensor, 1, 1>(
@@ -1426,7 +1428,7 @@ public:
 
           if (coeffs(0).dim() > 1) {
             // coeffs has extra dimension
-            auto sizes = utils::append(xi[0].sizes(), int64_t(-1));
+            auto sizes = xi[0].sizes() + (-1_i64);
             for (short_t i = 0; i < geoDim_; ++i)
               result.set(i,
                          utils::dotproduct(
@@ -1457,7 +1459,7 @@ public:
                         .index_select(0, find_coeff_indices<memory_optimized>(
                                              knot_indices))
                         .view({-1, xi[0].numel(), coeffs(0).size(-1)}))
-                    .view(utils::append(xi[0].sizes(), int64_t(-1))));
+                    .view(xi[0].sizes() + (-1_i64)));
           } else {
             // coeffs does not have extra dimension
             return utils::BlockTensor<torch::Tensor, 1, 1>(
@@ -1538,7 +1540,7 @@ public:
 
           if (coeffs(0).dim() > 1) {
             // coeffs has extra dimension
-            auto sizes = utils::append(xi[0].sizes(), int64_t(-1));
+            auto sizes = xi[0].sizes() + (-1_i64);
             for (short_t i = 0; i < geoDim_; ++i)
               result.set(i,
                          utils::dotproduct(
@@ -1568,7 +1570,7 @@ public:
                     coeffs(0)
                         .index_select(0, coeff_indices)
                         .view({-1, xi[0].numel(), coeffs(0).size(-1)}))
-                    .view(utils::append(xi[0].sizes(), int64_t(-1))));
+                    .view(xi[0].sizes() + (-1_i64)));
           } else {
             // coeffs does not have extra dimension
             return utils::BlockTensor<torch::Tensor, 1, 1>(
@@ -1653,7 +1655,7 @@ public:
 
           if (coeffs(0).dim() > 1) {
             // coeffs has extra dimension
-            auto sizes = utils::append(xi[0].sizes(), int64_t(-1));
+            auto sizes = xi[0].sizes() + (-1_i64);
             for (short_t i = 0; i < geoDim_; ++i)
               result.set(i,
                          utils::dotproduct(
@@ -1684,7 +1686,7 @@ public:
                         .index_select(0, find_coeff_indices<memory_optimized>(
                                              knot_indices))
                         .view({-1, xi[0].numel(), coeffs(0).size(-1)}))
-                    .view(utils::append(xi[0].sizes(), int64_t(-1))));
+                    .view(xi[0].sizes() + (-1_i64)));
           } else {
             // coeffs does not have extra dimension
             return utils::BlockTensor<torch::Tensor, 1, 1>(
@@ -1770,7 +1772,7 @@ public:
 
           if (coeffs(0).dim() > 1) {
             // coeffs has extra dimension
-            auto sizes = utils::append(xi[0].sizes(), int64_t(-1));
+            auto sizes = xi[0].sizes() + (-1_i64);
             for (short_t i = 0; i < geoDim_; ++i)
               result.set(i,
                          utils::dotproduct(
@@ -1800,7 +1802,7 @@ public:
                     coeffs(0)
                         .index_select(0, coeff_indices)
                         .view({-1, xi[0].numel(), coeffs(0).size(-1)}))
-                    .view(utils::append(xi[0].sizes(), int64_t(-1))));
+                    .view(xi[0].sizes() + (-1_i64)));
           } else {
             // coeffs does not have extra dimension
             return utils::BlockTensor<torch::Tensor, 1, 1>(
