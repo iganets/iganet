@@ -4994,7 +4994,7 @@ public:
             utils::BlockTensor<torch::Tensor, 1, Base::geoDim_ - 1> pnts;
             utils::BlockTensor<torch::Tensor, 1, Base::geoDim_> Cw = Base::template eval<deriv::func, memory_optimized>(xi, knot_indices, coeff_indices);
             //Divide by weight
-            assert(std::abs(*Cw[Base::geoDim_ - 1]) > 0); // Avoid division by zero
+            assert(torch::abs(torch::prod(*Cw[Base::geoDim_ - 1])).item().toDouble() > 1e-12); // Avoid division by zero
             for (short_t i = 0; i < Base::geoDim_ - 1; ++i)
                 pnts.set(i, torch::div(*Cw[i], *Cw[Base::geoDim_ - 1])); 
             if constexpr (deriv == deriv::func) {
@@ -5010,8 +5010,98 @@ public:
                 return result;
             }
         }
-    }
+    } 
     /// @}
+
+    /// @brief Updates the B-spline object from .DAT file (compatible with geo_pdes and BEMBEL)
+    inline NonUniformRationalBSplineCore& from_dat(const std::string& file_name) {
+        // Assume one patch geometry
+        std::stringstream iss;
+        std::string word;
+        std::string row;
+        int infoInt[5];
+        std::ifstream file;
+        file.open(file_name);
+        if (!file) {
+            std::cerr << "File " << file_name << " doesn't exist!";
+            exit(1);
+        }
+        // first 4 rows are irrelevant
+        for (int i = 0; i < 5; i++) {
+            getline(file, row);
+        }
+        // main information (not necessary for one patch geometry)
+        iss.str(row);
+        for (int i = 0; i < 5; i++) {
+            iss >> word;
+
+            infoInt[i] = stoi(word);
+        }
+
+        std::vector<int> info;  // p and ncp / 0,1-p  2,3-ncp  //TODO: DO i need this?
+        getline(file, row);  // file_name
+
+        // get info
+        getline(file, row);  // first line contains degree per parDim
+        iss.str(row);
+        while (iss >> word) {
+            info.push_back(stoi(word));
+        }
+        // Assert that degrees match
+        for (int64_t i = 0; i < Base::parDim_; ++i)
+            assert(Base::degrees_[i] == info[i]);
+
+        getline(file, row);  // second line contains number of controlpoints per parDim
+
+        word = "";
+        iss.clear();
+        iss.str(row);
+        while (iss >> word) {
+            info.push_back(stoi(word));
+        }
+
+        word = "";
+        iss.clear();
+
+        // In textfiles are only [parDim] knotVectors and [Base::geoDim] Matrices
+
+        // Load knotVectors
+        for (int64_t i = 0; i < Base::parDim_; ++i) {
+            std::vector<real_t> temp;
+            getline(file, row);
+            iss.str(row);
+            word = "";
+
+            for (int k = 0; k < info[i] + info[i + Base::parDim_] + 1; k++) {
+                iss >> word;
+                temp.push_back(atof(word.c_str()));
+            }
+            iss.clear();
+            Base::knots_[i] = utils::to_tensor(temp, Base::options_);
+            Base::nknots_[i] = temp.size();
+            Base::ncoeffs_[i] = Base::nknots_[i] - Base::degrees_[i] - 1;
+        }
+        //update ncoeffs_reverse
+        Base::ncoeffs_reverse_ = Base::ncoeffs_;
+        std::reverse(Base::ncoeffs_reverse_.begin(), Base::ncoeffs_reverse_.end());
+
+        for (int64_t i = 0; i < Base::geoDim_; i++) {
+            std::vector<real_t> temp;
+            getline(file, row);
+            iss.str(row);
+            // for all in iss.
+            for (int64_t i = 0; i < Base::ncumcoeffs(); i++) {
+                iss >> word;
+                temp.push_back(atof(word.c_str()));
+            }
+            Base::coeffs_[i] = utils::to_tensor(temp, Base::options_);
+            iss.clear();
+        }
+        file.close();
+        return *this;
+    }
+
+  
 
 };
 

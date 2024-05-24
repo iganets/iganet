@@ -123,7 +123,6 @@ TEST_F(BSplineTest, NonUniformRationalBSpline_eval_parDim1_geoDim1_degrees1) {
   bspline.transform(trafo_parDim1_geoDim1);
   auto xi = iganet::utils::to_tensorArray<real_t>(
       {0.0_r, 0.1_r, 0.2_r, 0.5_r, 0.75_r, 0.9_r, 1.0_r}, options);
-  std::cout << "start" << std::endl;
   test_nurbs_eval(geo, bspline, xi, 1e-12);
 }
 

@@ -1184,7 +1184,7 @@ void test_nurbs_eval(const Geometry_t& geometry, const Spline& bspline,
         test_nurbs_eval<iganet::deriv::dt ^ 4, false, false>(
             bspline, bsplinelib_bspline, xi, tol);*/
     } 
-    std::cout << "memory not optimized finished" << std::endl;
+   
     // Evaluate function and derivatives (memory optimized)
    /* test_nurbs_eval<iganet::deriv::func, true, false>(
         bspline, bsplinelib_bspline, xi, tol);
@@ -1232,8 +1232,8 @@ void test_nurbs_eval(const Geometry_t& geometry, const Spline& bspline,
             test_nurbs_eval<iganet::deriv::dt ^ 4, true, false>(
                 bspline, bsplinelib_bspline, xi, tol);
     }
-    std::cout << "memory optimized finished" << std::endl;*/
-    // Evaluate function and derivatives from precomputed data (non-memory
+   
+   // Evaluate function and derivatives from precomputed data (non-memory
     // optimized)
    /* test_nurbs_eval<iganet::deriv::func, false, true>(
         bspline, bsplinelib_bspline, xi, tol);
@@ -1281,8 +1281,8 @@ void test_nurbs_eval(const Geometry_t& geometry, const Spline& bspline,
         test_nurbs_eval<iganet::deriv::dt ^ 4, false, true>(
             bspline, bsplinelib_bspline, xi, tol);
     }
-    std::cout << "precomputed memory not optimized finished" << std::endl; 
-    // Evaluate function and derivatives from precomputed data (memory optimized)
+   
+   // Evaluate function and derivatives from precomputed data (memory optimized)
     test_nurbs_eval<iganet::deriv::func, true, true>(
         bspline, bsplinelib_bspline, xi, tol);
 
@@ -1329,8 +1329,8 @@ void test_nurbs_eval(const Geometry_t& geometry, const Spline& bspline,
         test_nurbs_eval<iganet::deriv::dt ^ 4, true, true>(
             bspline, bsplinelib_bspline, xi, tol);
     }
-    std::cout << "precomp memory optimized finished" << std::endl; */
-    // Evaluate gradients
+   
+   // Evaluate gradients
     if constexpr (Spline::geoDim() == 1) {
         test_nurbs_grad<false, false>(bspline, xi, tol);
         test_nurbs_grad<false, true>(bspline, xi, tol);
