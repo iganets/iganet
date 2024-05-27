@@ -79,7 +79,7 @@ inline auto to_json(const torch::Tensor &tensor) {
 /// @brief Converts an std::array of torch::Tensor objects to a JSON
 /// object
 template <typename T, std::size_t N, std::size_t M>
-inline auto to_json(const std::array<torch::Tensor, M> &tensors) {
+inline auto to_json(const utils::TensorArray<M> &tensors) {
   auto json = nlohmann::json::array();
 
 #ifdef __CUDACC__
@@ -390,7 +390,7 @@ inline pugi::xml_node &to_xml(const torch::Tensor &tensor, pugi::xml_node &root,
 /// @brief Converts an std::array of torch::Tensor objects to an XML
 /// object
 template <typename T, std::size_t N, std::size_t M>
-inline pugi::xml_document to_xml(const std::array<torch::Tensor, M> &tensors,
+inline pugi::xml_document to_xml(const utils::TensorArray<M> &tensors,
                                  std::string tag = "Matrix", int id = 0,
                                  std::string label = "", int index = -1) {
   pugi::xml_document doc;
@@ -403,7 +403,7 @@ inline pugi::xml_document to_xml(const std::array<torch::Tensor, M> &tensors,
 /// @brief Converts an std::array of torch::Tensor objects to an XML
 /// object
 template <typename T, std::size_t N, std::size_t M>
-inline pugi::xml_node &to_xml(const std::array<torch::Tensor, M> &tensors,
+inline pugi::xml_node &to_xml(const utils::TensorArray<M> &tensors,
                               pugi::xml_node &root, std::string tag = "Matrix",
                               int id = 0, std::string label = "") {
 
@@ -633,8 +633,8 @@ from_xml(const pugi::xml_node &root, torch::Tensor &tensor,
 /// @brief Converts an XML document object to an std::array of torch::Tensor
 /// objects
 template <typename T, std::size_t N, std::size_t M>
-inline std::array<torch::Tensor, M> &
-from_xml(const pugi::xml_document &doc, std::array<torch::Tensor, M> &tensors,
+inline utils::TensorArray<M> &
+from_xml(const pugi::xml_document &doc, utils::TensorArray<M> &tensors,
          std::string tag = "Matrix", int id = 0, bool alloc = true,
          std::string label = "") {
 
@@ -643,8 +643,8 @@ from_xml(const pugi::xml_document &doc, std::array<torch::Tensor, M> &tensors,
 
 /// @brief Converts an XML object to an std::array of torch::Tensor objects
 template <typename T, std::size_t N, std::size_t M>
-inline std::array<torch::Tensor, M> &
-from_xml(const pugi::xml_node &root, std::array<torch::Tensor, M> &tensors,
+inline utils::TensorArray<M> &
+from_xml(const pugi::xml_node &root, utils::TensorArray<M> &tensors,
          std::string tag = "Matrix", int id = 0, bool alloc = true,
          std::string label = "") {
 

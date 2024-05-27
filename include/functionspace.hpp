@@ -114,7 +114,7 @@ public:
       typename std::common_type<typename Splines::value_type...>::type;
 
   /// @brief Evaluation type
-  using eval_type = std::tuple<std::array<torch::Tensor, Splines::parDim()>...>;
+  using eval_type = std::tuple<utils::TensorArray<Splines::parDim()>...>;
 
   /// @brief Default constructor
   FunctionSpace() = default;
@@ -2028,8 +2028,7 @@ private:                                                                       \
   template <functionspace comp = functionspace::interior,                      \
             bool memory_optimized = false, std::size_t... Is, std::size_t N>   \
   inline auto BOOST_PP_CAT(name, _)(std::index_sequence<Is...>,                \
-                                    const std::array<torch::Tensor, N> &xi)    \
-      const {                                                                  \
+                                    const utils::TensorArray<N> &xi) const {   \
     if constexpr (comp == functionspace::interior)                             \
       return name<comp, memory_optimized>(                                     \
           xi, std::tuple(std::get<Is>(*this).find_knot_indices(xi)...));       \
@@ -2042,7 +2041,7 @@ private:                                                                       \
             bool memory_optimized = false, std::size_t... Is, std::size_t N,   \
             typename... Knot_Indices>                                          \
   inline auto BOOST_PP_CAT(name, _)(                                           \
-      std::index_sequence<Is...>, const std::array<torch::Tensor, N> &xi,      \
+      std::index_sequence<Is...>, const utils::TensorArray<N> &xi,             \
       const std::tuple<Knot_Indices...> &knot_indices) const {                 \
     if constexpr (comp == functionspace::interior)                             \
       return name<comp, memory_optimized>(                                     \
@@ -2072,7 +2071,7 @@ public:                                                                        \
                                                                                \
   template <functionspace comp = functionspace::interior,                      \
             bool memory_optimized = false, std::size_t N>                      \
-  inline auto name(const std::array<torch::Tensor, N> &xi) const {             \
+  inline auto name(const utils::TensorArray<N> &xi) const {                    \
     return BOOST_PP_CAT(name, _)<comp, memory_optimized>(                      \
         std::make_index_sequence<FunctionSpace::nspaces()>{}, xi);             \
   }                                                                            \
@@ -2080,7 +2079,7 @@ public:                                                                        \
   template <functionspace comp = functionspace::interior,                      \
             bool memory_optimized = false, std::size_t N,                      \
             typename... Knot_Indices>                                          \
-  inline auto name(const std::array<torch::Tensor, N> &xi,                     \
+  inline auto name(const utils::TensorArray<N> &xi,                            \
                    const std::tuple<Knot_Indices...> &knot_indices) const {    \
     return BOOST_PP_CAT(name, _)<comp, memory_optimized>(                      \
         std::make_index_sequence<FunctionSpace::nspaces()>{}, xi,              \
@@ -2248,7 +2247,7 @@ public:
   using value_type = typename Base::value_type;
 
   /// @brief Evaluation type
-  using eval_type = std::array<torch::Tensor, Base::parDim()>;
+  using eval_type = utils::TensorArray<Base::parDim()>;
 
   /// @brief Default constructor
   FunctionSpace() = default;
@@ -3755,7 +3754,7 @@ public:
           Spline::degree(1) - 1, Spline::degree(2)>>,
       S<typename Spline::template derived_self_type<
           typename Spline::value_type, Spline::geoDim(), Spline::degree(0),
-          Spline::degree(1), Spline::degree(2) - 1>>>
+          Spline::degree(1), Spline::degree(2) - 1>>>;
 };
 
 #undef IGANET_FUNCTIONSPACE_TUPLE_WRAPPER
