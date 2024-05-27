@@ -101,14 +101,14 @@ namespace detail {
 /// array of torch::TensorAccessor objects
 /// @{
 template <typename T, std::size_t N, std::size_t... Is>
-auto to_tensorAccessor(const std::array<torch::Tensor, sizeof...(Is)> &tensors,
+auto to_tensorAccessor(const TensorArray<sizeof...(Is)> &tensors,
                        std::index_sequence<Is...>) {
   return std::array<torch::TensorAccessor<T, N>, sizeof...(Is)>{
       tensors[Is].template accessor<T, N>()...};
 }
 
 template <typename T, std::size_t N, std::size_t... Is>
-auto to_tensorAccessor(const std::array<torch::Tensor, sizeof...(Is)> &tensors,
+auto to_tensorAccessor(const TensorArray<sizeof...(Is)> &tensors,
                        c10::DeviceType deviceType, std::index_sequence<Is...>) {
   std::array<torch::TensorBase, sizeof...(Is)> tensors_device{
       tensors[Is].to(deviceType)...};
@@ -133,13 +133,13 @@ auto to_tensorAccessor(const BlockTensor<torch::Tensor, Dims...> &blocktensor,
 /// array of torch::TensorAccessor objects
 /// @{
 template <typename T, std::size_t N, std::size_t M>
-auto to_tensorAccessor(const std::array<torch::Tensor, M> &tensors) {
+auto to_tensorAccessor(const TensorArray<M> &tensors) {
   return detail::to_tensorAccessor<T, N>(tensors,
                                          std::make_index_sequence<M>());
 }
 
 template <typename T, std::size_t N, std::size_t M>
-auto to_tensorAccessor(const std::array<torch::Tensor, M> &tensors,
+auto to_tensorAccessor(const TensorArray<M> &tensors,
                        c10::DeviceType deviceType) {
   return detail::to_tensorAccessor<T, N>(tensors, deviceType,
                                          std::make_index_sequence<M>());
@@ -155,3 +155,33 @@ auto to_tensorAccessor(const BlockTensor<torch::Tensor, Dims...> &blocktensor,
 
 } // namespace utils
 } // namespace iganet
+
+namespace std {
+
+/// Print (as string) a TensorArray object
+template <std::size_t N>
+inline std::ostream &operator<<(std::ostream &os,
+                                const std::array<torch::Tensor, N> &obj) {
+  at::optional<std::string> name_ = c10::demangle(typeid(obj).name());
+
+#if defined(_WIN32)
+  // Windows adds "struct" or "class" as a prefix.
+  if (name_->find("struct ") == 0) {
+    name_->erase(name_->begin(), name_->begin() + 7);
+  } else if (name_->find("class ") == 0) {
+    name_->erase(name_->begin(), name_->begin() + 6);
+  }
+#endif // defined(_WIN32)
+
+  os << *name_ << "(\n";
+  for (const auto &i : obj)
+    if (!i.numel())
+      os << "{}\n";
+    else
+      os << ((i.sizes().size() == 1) ? i.view({1, i.size(0)}) : i) << "\n";
+  os << ")";
+
+  return os;
+}
+
+} // namespace std
