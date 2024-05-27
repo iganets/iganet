@@ -1986,7 +1986,7 @@ public:
       if constexpr (memory_optimized) {
 
         // Lambda expression to evaluate the vector of basis functions
-        auto basfunc_ = [&]<std::size_t... Is>(std::index_sequence<Is...>) {
+          auto basfunc_ = [&,this]<std::size_t... Is>(std::index_sequence<Is...>) {
           return utils::TensorArray<parDim_>{
               (eval_prefactor<degrees_[Is],
                               (short_t)deriv /
@@ -2012,7 +2012,7 @@ public:
         } else {
 
           // Lambda expression to evaluate the cumulated basis function
-          auto basfunc_ = [&]<std::size_t... Is>(std::index_sequence<Is...>) {
+          auto basfunc_ = [&,this]<std::size_t... Is>(std::index_sequence<Is...>) {
             return (1 * ... *
                     (eval_prefactor<degrees_[Is],
                                     (short_t)deriv /
@@ -5308,7 +5308,7 @@ public:
         assert(xi[0].sizes() == xi[i].sizes());
 
       // Lambda expression to evaluate the divergence
-      auto div_ = [&]<std::size_t... Is>(std::index_sequence<Is...>) {
+      auto div_ = [&,this]<std::size_t... Is>(std::index_sequence<Is...>) {
         return utils::BlockTensor<torch::Tensor, 1, 1>{
             (*BSplineCore::template eval<
                  (deriv)utils::integer_pow<10, Is>::value, memory_optimized>(
@@ -5583,7 +5583,7 @@ public:
         assert(xi[0].sizes() == xi[i].sizes());
 
       // Lambda expression to evaluate the gradient
-      auto grad_ = [&]<std::size_t... Is>(std::index_sequence<Is...>) {
+      auto grad_ = [&,this]<std::size_t... Is>(std::index_sequence<Is...>) {
         return utils::BlockTensor<torch::Tensor, 1, BSplineCore::parDim_>{
             BSplineCore::template eval<(deriv)utils::integer_pow<10, Is>::value,
                                        memory_optimized>(xi, knot_indices,
@@ -5883,7 +5883,7 @@ public:
         assert(xi[0].sizes() == xi[i].sizes());
 
       // Lambda expression to evaluate the hessian
-      auto hess_ = [&]<std::size_t... Is>(std::index_sequence<Is...>) {
+      auto hess_ = [&,this]<std::size_t... Is>(std::index_sequence<Is...>) {
         return utils::BlockTensor<torch::Tensor, BSplineCore::parDim_,
                                   BSplineCore::geoDim_, BSplineCore::parDim_>{
             BSplineCore::template eval<
@@ -6214,7 +6214,7 @@ public:
         assert(xi[0].sizes() == xi[i].sizes());
 
       // Lambda expression to evaluate the jacobian
-      auto jac_ = [&]<std::size_t... Is>(std::index_sequence<Is...>) {
+      auto jac_ = [&,this]<std::size_t... Is>(std::index_sequence<Is...>) {
         return utils::BlockTensor<torch::Tensor, BSplineCore::parDim_,
                                   BSplineCore::geoDim_>{
             BSplineCore::template eval<(deriv)utils::integer_pow<10, Is>::value,
@@ -6472,7 +6472,7 @@ public:
         assert(xi[0].sizes() == xi[i].sizes());
 
       // Lambda expression to evaluate the laplacian
-      auto lapl_ = [&]<std::size_t... Is>(std::index_sequence<Is...>) {
+      auto lapl_ = [&,this]<std::size_t... Is>(std::index_sequence<Is...>) {
         return utils::BlockTensor<torch::Tensor, 1, 1, BSplineCore::geoDim_>{
             (BSplineCore::template eval<
                  (deriv)utils::integer_pow<10, Is>::value ^ 2,
