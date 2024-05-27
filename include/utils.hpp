@@ -18,6 +18,7 @@
 #include <utils/container.hpp>
 #include <utils/fqn.hpp>
 #include <utils/getenv.hpp>
+#include <utils/index_sequence.hpp>
 #include <utils/integer_pow.hpp>
 #include <utils/linalg.hpp>
 #include <utils/serialize.hpp>
