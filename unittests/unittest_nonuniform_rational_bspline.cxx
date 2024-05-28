@@ -37,8 +37,8 @@ TEST_F(BSplineTest, NonUniformRationalBSpline_parDim1_geoDim1_degrees1) {
   iganet::NonUniformRationalBSpline<real_t, 1, 1> bspline(
       {{{0.0_r, 0.0_r, 0.5_r, 1.0_r, 1.0_r}}});
   EXPECT_EQ(bspline.parDim(), 1);
-  EXPECT_EQ(bspline.geoDim(), 2);
-  EXPECT_EQ(bspline.geoDim_proj(), 1);
+  EXPECT_EQ(bspline.controlPointDim(), 2);
+  EXPECT_EQ(bspline.geoDim(), 1);
   EXPECT_EQ(bspline.degree(0), 1);
   EXPECT_EQ(bspline.nknots(0), 5);
   EXPECT_EQ(bspline.ncoeffs(0), 3);
@@ -54,8 +54,8 @@ TEST_F(BSplineTest, NonUniformRationalBSpline_parDim1_geoDim2_degrees1) {
   iganet::NonUniformRationalBSpline<real_t, 2, 1> bspline(
       {{{0.0_r, 0.0_r, 0.5_r, 1.0_r, 1.0_r}}});
   EXPECT_EQ(bspline.parDim(), 1);
-  EXPECT_EQ(bspline.geoDim(), 3);
-  EXPECT_EQ(bspline.geoDim_proj(), 2);
+  EXPECT_EQ(bspline.controlPointDim(), 3);
+  EXPECT_EQ(bspline.geoDim(), 2);
   EXPECT_EQ(bspline.degree(0), 1);
   EXPECT_EQ(bspline.nknots(0), 5);
   EXPECT_EQ(bspline.ncoeffs(0), 3);
@@ -69,8 +69,8 @@ TEST_F(BSplineTest, NonUniformRationalBSpline_parDim1_geoDim3_degrees1) {
   iganet::NonUniformRationalBSpline<real_t, 3, 1> bspline(
       {{{0.0_r, 0.0_r, 0.5_r, 1.0_r, 1.0_r}}});
   EXPECT_EQ(bspline.parDim(), 1);
-  EXPECT_EQ(bspline.geoDim(), 4);
-  EXPECT_EQ(bspline.geoDim_proj(), 3);
+  EXPECT_EQ(bspline.controlPointDim(), 4);
+  EXPECT_EQ(bspline.geoDim(), 3);
   EXPECT_EQ(bspline.degree(0), 1);
   EXPECT_EQ(bspline.nknots(0), 5);
   EXPECT_EQ(bspline.ncoeffs(0), 3);
@@ -84,8 +84,8 @@ TEST_F(BSplineTest, NonUniformRationalBSpline_parDim1_geoDim4_degrees1) {
   iganet::NonUniformRationalBSpline<real_t, 4, 1> bspline(
       {{{0.0_r, 0.0_r, 0.5_r, 1.0_r, 1.0_r}}});
   EXPECT_EQ(bspline.parDim(), 1);
-  EXPECT_EQ(bspline.geoDim(), 5);
-  EXPECT_EQ(bspline.geoDim_proj(), 4);
+  EXPECT_EQ(bspline.controlPointDim(), 5);
+  EXPECT_EQ(bspline.geoDim(), 4);
   EXPECT_EQ(bspline.degree(0), 1);
   EXPECT_EQ(bspline.nknots(0), 5);
   EXPECT_EQ(bspline.ncoeffs(0), 3);
@@ -97,8 +97,8 @@ TEST_F(BSplineTest, NonUniformRationalBSpline_parDim2_geoDim1_degrees12) {
       {{{0.0_r, 0.0_r, 0.5_r, 1.0_r, 1.0_r},
         {0.0_r, 0.0_r, 0.0_r, 1.0_r, 1.0_r, 1.0_r}}});
   EXPECT_EQ(bspline.parDim(), 2);
-  EXPECT_EQ(bspline.geoDim(), 2);
-  EXPECT_EQ(bspline.geoDim_proj(), 1);
+  EXPECT_EQ(bspline.controlPointDim(), 2);
+  EXPECT_EQ(bspline.geoDim(), 1);
   EXPECT_EQ(bspline.degree(0), 1);
   EXPECT_EQ(bspline.degree(1), 2);
   EXPECT_EQ(bspline.nknots(0), 5);
@@ -113,8 +113,8 @@ TEST_F(BSplineTest, NonUniformRationalBSpline_parDim2_geoDim2_degrees12) {
       {{{0.0_r, 0.0_r, 0.5_r, 1.0_r, 1.0_r},
         {0.0_r, 0.0_r, 0.0_r, 1.0_r, 1.0_r, 1.0_r}}});
   EXPECT_EQ(bspline.parDim(), 2);
-  EXPECT_EQ(bspline.geoDim(), 3);
-  EXPECT_EQ(bspline.geoDim_proj(), 2);
+  EXPECT_EQ(bspline.controlPointDim(), 3);
+  EXPECT_EQ(bspline.geoDim(), 2);
   EXPECT_EQ(bspline.degree(0), 1);
   EXPECT_EQ(bspline.degree(1), 2);
   EXPECT_EQ(bspline.nknots(0), 5);
@@ -129,8 +129,8 @@ TEST_F(BSplineTest, NonUniformRationalBSpline_parDim2_geoDim3_degrees12) {
       {{{0.0_r, 0.0_r, 0.5_r, 1.0_r, 1.0_r},
         {0.0_r, 0.0_r, 0.0_r, 1.0_r, 1.0_r, 1.0_r}}});
   EXPECT_EQ(bspline.parDim(), 2);
-  EXPECT_EQ(bspline.geoDim(), 4);
-  EXPECT_EQ(bspline.geoDim_proj(), 3);
+  EXPECT_EQ(bspline.controlPointDim(), 4);
+  EXPECT_EQ(bspline.geoDim(), 3);
   EXPECT_EQ(bspline.degree(0), 1);
   EXPECT_EQ(bspline.degree(1), 2);
   EXPECT_EQ(bspline.nknots(0), 5);
@@ -145,8 +145,8 @@ TEST_F(BSplineTest, NonUniformRationalBSpline_parDim2_geoDim4_degrees12) {
       {{{0.0_r, 0.0_r, 0.5_r, 1.0_r, 1.0_r},
         {0.0_r, 0.0_r, 0.0_r, 1.0_r, 1.0_r, 1.0_r}}});
   EXPECT_EQ(bspline.parDim(), 2);
-  EXPECT_EQ(bspline.geoDim(), 5);
-  EXPECT_EQ(bspline.geoDim_proj(), 4);
+  EXPECT_EQ(bspline.controlPointDim(), 5);
+  EXPECT_EQ(bspline.geoDim(), 4);
   EXPECT_EQ(bspline.degree(0), 1);
   EXPECT_EQ(bspline.degree(1), 2);
   EXPECT_EQ(bspline.nknots(0), 5);
@@ -162,8 +162,8 @@ TEST_F(BSplineTest, NonUniformRationalBSpline_parDim3_geoDim1_degrees123) {
         {0.0_r, 0.0_r, 0.0_r, 1.0_r, 1.0_r, 1.0_r},
         {0.0_r, 0.0_r, 0.0_r, 0.0_r, 0.5_r, 1.0_r, 1.0_r, 1.0_r, 1.0_r}}});
   EXPECT_EQ(bspline.parDim(), 3);
-  EXPECT_EQ(bspline.geoDim(), 2);
-  EXPECT_EQ(bspline.geoDim_proj(), 1);
+  EXPECT_EQ(bspline.controlPointDim(), 2);
+  EXPECT_EQ(bspline.geoDim(), 1);
   EXPECT_EQ(bspline.degree(0), 1);
   EXPECT_EQ(bspline.degree(1), 2);
   EXPECT_EQ(bspline.degree(2), 3);
@@ -182,8 +182,8 @@ TEST_F(BSplineTest, NonUniformRationalBSpline_parDim3_geoDim2_degrees123) {
         {0.0_r, 0.0_r, 0.0_r, 1.0_r, 1.0_r, 1.0_r},
         {0.0_r, 0.0_r, 0.0_r, 0.0_r, 0.5_r, 1.0_r, 1.0_r, 1.0_r, 1.0_r}}});
   EXPECT_EQ(bspline.parDim(), 3);
-  EXPECT_EQ(bspline.geoDim(), 3);
-  EXPECT_EQ(bspline.geoDim_proj(), 2);
+  EXPECT_EQ(bspline.controlPointDim(), 3);
+  EXPECT_EQ(bspline.geoDim(), 2);
   EXPECT_EQ(bspline.degree(0), 1);
   EXPECT_EQ(bspline.degree(1), 2);
   EXPECT_EQ(bspline.degree(2), 3);
@@ -202,8 +202,8 @@ TEST_F(BSplineTest, NonUniformRationalBSpline_parDim3_geoDim3_degrees123) {
         {0.0_r, 0.0_r, 0.0_r, 1.0_r, 1.0_r, 1.0_r},
         {0.0_r, 0.0_r, 0.0_r, 0.0_r, 0.5_r, 1.0_r, 1.0_r, 1.0_r, 1.0_r}}});
   EXPECT_EQ(bspline.parDim(), 3);
-  EXPECT_EQ(bspline.geoDim(), 4);
-  EXPECT_EQ(bspline.geoDim_proj(), 3);
+  EXPECT_EQ(bspline.controlPointDim(), 4);
+  EXPECT_EQ(bspline.geoDim(), 3);
   EXPECT_EQ(bspline.degree(0), 1);
   EXPECT_EQ(bspline.degree(1), 2);
   EXPECT_EQ(bspline.degree(2), 3);
@@ -222,8 +222,8 @@ TEST_F(BSplineTest, NonUniformRationalBSpline_parDim3_geoDim4_degrees123) {
         {0.0_r, 0.0_r, 0.0_r, 1.0_r, 1.0_r, 1.0_r},
         {0.0_r, 0.0_r, 0.0_r, 0.0_r, 0.5_r, 1.0_r, 1.0_r, 1.0_r, 1.0_r}}});
   EXPECT_EQ(bspline.parDim(), 3);
-  EXPECT_EQ(bspline.geoDim(), 5);
-  EXPECT_EQ(bspline.geoDim_proj(), 4);
+  EXPECT_EQ(bspline.controlPointDim(), 5);
+  EXPECT_EQ(bspline.geoDim(), 4);
   EXPECT_EQ(bspline.degree(0), 1);
   EXPECT_EQ(bspline.degree(1), 2);
   EXPECT_EQ(bspline.degree(2), 3);
@@ -244,8 +244,8 @@ TEST_F(BSplineTest, NonUniformRationalBSpline_parDim4_geoDim1_degrees1234) {
         {0.0_r, 0.0_r, 0.0_r, 0.0_r, 0.0_r, 0.5_r, 1.0_r, 1.0_r, 1.0_r, 1.0_r,
          1.0_r}}});
   EXPECT_EQ(bspline.parDim(), 4);
-  EXPECT_EQ(bspline.geoDim(), 2);
-  EXPECT_EQ(bspline.geoDim_proj(), 1);
+  EXPECT_EQ(bspline.controlPointDim(), 2);
+  EXPECT_EQ(bspline.geoDim(), 1);
   EXPECT_EQ(bspline.degree(0), 1);
   EXPECT_EQ(bspline.degree(1), 2);
   EXPECT_EQ(bspline.degree(2), 3);
@@ -269,8 +269,8 @@ TEST_F(BSplineTest, NonUniformRationalBSpline_parDim4_geoDim2_degrees1234) {
         {0.0_r, 0.0_r, 0.0_r, 0.0_r, 0.0_r, 0.5_r, 1.0_r, 1.0_r, 1.0_r, 1.0_r,
          1.0_r}}});
   EXPECT_EQ(bspline.parDim(), 4);
-  EXPECT_EQ(bspline.geoDim(), 3);
-  EXPECT_EQ(bspline.geoDim_proj(), 2);
+  EXPECT_EQ(bspline.controlPointDim(), 3);
+  EXPECT_EQ(bspline.geoDim(), 2);
   EXPECT_EQ(bspline.degree(0), 1);
   EXPECT_EQ(bspline.degree(1), 2);
   EXPECT_EQ(bspline.degree(2), 3);
@@ -294,8 +294,8 @@ TEST_F(BSplineTest, NonUniformRationalBSpline_parDim4_geoDim3_degrees1234) {
         {0.0_r, 0.0_r, 0.0_r, 0.0_r, 0.0_r, 0.5_r, 1.0_r, 1.0_r, 1.0_r, 1.0_r,
          1.0_r}}});
   EXPECT_EQ(bspline.parDim(), 4);
-  EXPECT_EQ(bspline.geoDim(), 4);
-  EXPECT_EQ(bspline.geoDim_proj(), 3);
+  EXPECT_EQ(bspline.controlPointDim(), 4);
+  EXPECT_EQ(bspline.geoDim(), 3);
   EXPECT_EQ(bspline.degree(0), 1);
   EXPECT_EQ(bspline.degree(1), 2);
   EXPECT_EQ(bspline.degree(2), 3);
@@ -319,8 +319,8 @@ TEST_F(BSplineTest, NonUniformRationalBSpline_parDim4_geoDim4_degrees1234) {
         {0.0_r, 0.0_r, 0.0_r, 0.0_r, 0.0_r, 0.5_r, 1.0_r, 1.0_r, 1.0_r, 1.0_r,
          1.0_r}}});
   EXPECT_EQ(bspline.parDim(), 4);
-  EXPECT_EQ(bspline.geoDim(), 5);
-  EXPECT_EQ(bspline.geoDim_proj(), 4);
+  EXPECT_EQ(bspline.controlPointDim(), 5);
+  EXPECT_EQ(bspline.geoDim(), 4);
   EXPECT_EQ(bspline.degree(0), 1);
   EXPECT_EQ(bspline.degree(1), 2);
   EXPECT_EQ(bspline.degree(2), 3);
@@ -2122,22 +2122,22 @@ TEST_F(BSplineTest, NonUniformRationalBSpline_requires_grad) {
     for (iganet::short_t i = 0; i < bspline.parDim(); ++i)
       EXPECT_EQ(bspline.knots(i).requires_grad(), false);
 
-    for (iganet::short_t i = 0; i < bspline.geoDim(); ++i)
+    for (iganet::short_t i = 0; i < bspline.controlPointDim(); ++i)
       EXPECT_EQ(bspline.coeffs(i).requires_grad(), false);
 
-    auto xi = iganet::utils::to_tensorArray<real_t>({0.5_r}, {0.5_r}, options);
+    auto xi = iganet::utils::to_tensorArray<real_t>(options, { 0.5_r }, { 0.5_r });
     auto values = bspline.eval(xi);
 
     // We expect an error when calling backward() because no tensor
     // has requires_grad = true
     EXPECT_THROW(values[0]->backward(), c10::Error);
 
-    xi = iganet::utils::to_tensorArray<real_t>({0.5_r}, {0.5_r},
-                                               options.requires_grad(true));
+    xi = iganet::utils::to_tensorArray<real_t>(options.requires_grad(true), { 0.5_r },
+                                                { 0.5_r });
     values = bspline.eval(xi);
     values[0]->backward();
     EXPECT_TRUE(torch::allclose(
-        xi[0].grad(), iganet::utils::to_tensor<real_t>({1.0_r}, options)));
+        xi[0].grad(), iganet::utils::to_tensor({ 1.0_r }, options)));
   }
 
   {
@@ -2149,10 +2149,10 @@ TEST_F(BSplineTest, NonUniformRationalBSpline_requires_grad) {
     for (iganet::short_t i = 0; i < bspline.parDim(); ++i)
       EXPECT_TRUE(bspline.knots(i).requires_grad());
 
-    for (iganet::short_t i = 0; i < bspline.geoDim(); ++i)
+    for (iganet::short_t i = 0; i < bspline.controlPointDim(); ++i)
       EXPECT_TRUE(bspline.coeffs(i).requires_grad());
 
-    auto xi = iganet::utils::to_tensorArray<real_t>({0.5_r}, {0.5_r}, options);
+    auto xi = iganet::utils::to_tensorArray<real_t>(options, { 0.5_r }, { 0.5_r });
     auto values = bspline.eval(xi);
     values[0]->backward(
         {}, true); // otherwise we cannot run backward() a second time
@@ -2160,8 +2160,8 @@ TEST_F(BSplineTest, NonUniformRationalBSpline_requires_grad) {
     // We expect an error because xi[0].grad() is an undefined tensor
     EXPECT_THROW(torch::allclose(xi[0].grad(), torch::empty({})), c10::Error);
 
-    xi = iganet::utils::to_tensorArray<real_t>({0.5_r}, {0.5_r},
-                                               options.requires_grad(true));
+    xi = iganet::utils::to_tensorArray<real_t>(options.requires_grad(true), { 0.5_r },
+                                               { 0.5_r });
     values = bspline.eval(xi);
     values[0]->backward();
     EXPECT_TRUE(torch::allclose(

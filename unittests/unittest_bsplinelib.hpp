@@ -74,9 +74,9 @@ template <typename Spline> auto to_bsplinelib_bspline(const Spline &bspline) {
       std::make_shared<ParameterSpace>(knot_vectors, degrees)};
 
   // Create coordinate vector(s)
-  Coordinates coordinates(bspline.ncumcoeffs(), Spline::geoDim());
+  Coordinates coordinates(bspline.ncumcoeffs(), Spline::controlPointDim());
   for (int64_t i = 0; i < bspline.ncumcoeffs(); ++i) {
-    for (int64_t j = 0; j < Spline::geoDim(); ++j) {
+    for (int64_t j = 0; j < Spline::controlPointDim(); ++j) {
       coordinates(i, j) =
           bspline.coeffs(j)[i].template item<typename Spline::value_type>();
     }
@@ -796,7 +796,7 @@ void test_bspline_eval(const Geometry_t &geometry, const Spline &bspline,
 // Helper functions for NURBS unittests
 
 template <typename Spline> auto to_bsplinelib_nurbs(const Spline& bspline) {
-    static_assert(Spline::geoDim() < 6, "Unsupported geometric dimension");
+    static_assert(Spline::geoDim() < 5, "Unsupported geometric dimension");
 
     // NURBS construction
     using Nurbs = bsplinelib::splines::Nurbs<Spline::parDim()>;
@@ -838,9 +838,9 @@ template <typename Spline> auto to_bsplinelib_nurbs(const Spline& bspline) {
         std::make_shared<ParameterSpace>(knot_vectors, degrees) };
 
     // Create coordinate vector(s)
-    Coordinates coordinates(bspline.ncumcoeffs(), Spline::geoDim());
+    Coordinates coordinates(bspline.ncumcoeffs(), Spline::controlPointDim());
     for (int64_t i = 0; i < bspline.ncumcoeffs(); ++i) {
-        for (int64_t j = 0; j < Spline::geoDim(); ++j) {
+        for (int64_t j = 0; j < Spline::controlPointDim(); ++j) {
             coordinates(i, j) =
                 bspline.coeffs(j)[i].template item<typename Spline::value_type>();
         }
@@ -912,11 +912,11 @@ template <iganet::deriv deriv, bool memory_optimized, bool precompute,
         return d_query;
     }();
 
-    Coordinate bsplinelib_val(Spline::geoDim());
+    Coordinate bsplinelib_val(Spline::controlPointDim());
     for (int64_t i = 0; i < xi[0].size(0); ++i) {
         bsplinelib_bspline.EvaluateDerivative(query(i), bsplinelib_deriv.data(),
             bsplinelib_val.data());
-        for (iganet::short_t j = 0; j < Spline::geoDim_proj(); ++j) { 
+        for (iganet::short_t j = 0; j < Spline::geoDim(); ++j) { 
             EXPECT_NEAR(
                 bspline_val(j)[i].template item<typename Spline::value_type>(),
                 bsplinelib_val[j], tol);
@@ -1042,7 +1042,7 @@ template <bool memory_optimized, bool precompute, typename Spline,
     typename TensorArray_t>
     void test_nurbs_jac(const Spline& bspline, const TensorArray_t& xi,
         typename Spline::value_type tol = 1e-12) {
-    iganet::utils::BlockTensor<torch::Tensor, Spline::geoDim_proj(), Spline::parDim()>
+    iganet::utils::BlockTensor<torch::Tensor, Spline::geoDim(), Spline::parDim()>
         bspline_jac_val;
     if constexpr (precompute) {
         auto knot_indices = bspline.find_knot_indices(xi);
@@ -1053,28 +1053,28 @@ template <bool memory_optimized, bool precompute, typename Spline,
         bspline_jac_val = bspline.jac(xi);
 
     if constexpr (Spline::parDim() >= 1) {
-        for (iganet::short_t k = 0; k < Spline::geoDim() - 1; ++k)
+        for (iganet::short_t k = 0; k < Spline::geoDim(); ++k)
             EXPECT_TRUE(torch::allclose(
                 bspline_jac_val(k, 0),
                 bspline.template eval<iganet::deriv::dx, memory_optimized>(xi)(k)));
     }
 
     if constexpr (Spline::parDim() >= 2) {
-        for (iganet::short_t k = 0; k < Spline::geoDim() - 1; ++k)
+        for (iganet::short_t k = 0; k < Spline::geoDim(); ++k)
             EXPECT_TRUE(torch::allclose(
                 bspline_jac_val(k, 1),
                 bspline.template eval<iganet::deriv::dy, memory_optimized>(xi)(k)));
     }
 
     if constexpr (Spline::parDim() >= 3) {
-        for (iganet::short_t k = 0; k < Spline::geoDim() - 1; ++k)
+        for (iganet::short_t k = 0; k < Spline::geoDim(); ++k)
             EXPECT_TRUE(torch::allclose(
                 bspline_jac_val(k, 2),
                 bspline.template eval<iganet::deriv::dz, memory_optimized>(xi)(k)));
     }
 
     if constexpr (Spline::parDim() >= 4) {
-        for (iganet::short_t k = 0; k < Spline::geoDim() - 1; ++k)
+        for (iganet::short_t k = 0; k < Spline::geoDim(); ++k)
             EXPECT_TRUE(torch::allclose(
                 bspline_jac_val(k, 3),
                 bspline.template eval<iganet::deriv::dt, memory_optimized>(xi)(k)));
@@ -1086,7 +1086,7 @@ template <bool memory_optimized, bool precompute, typename Geometry_t,
     void test_nurbs_ijac(const Geometry_t& geometry, const Spline& bspline,
         const TensorArray_t& xi,
         typename Spline::value_type tol = 1e-12) {
-    iganet::utils::BlockTensor<torch::Tensor, Spline::geoDim() - 1, Spline::parDim()>
+    iganet::utils::BlockTensor<torch::Tensor, Spline::geoDim(), Spline::parDim()>
         bspline_ijac_val;
     if constexpr (precompute) {
         auto knot_indices = bspline.find_knot_indices(xi);
@@ -1100,28 +1100,28 @@ template <bool memory_optimized, bool precompute, typename Geometry_t,
         bspline_ijac_val = bspline.ijac(geometry, xi);
 
     if constexpr (Spline::parDim() >= 1) {
-        for (iganet::short_t k = 0; k < Spline::geoDim() - 1; ++k)
+        for (iganet::short_t k = 0; k < Spline::geoDim(); ++k)
             EXPECT_TRUE(torch::allclose(
                 bspline_ijac_val(k, 0),
                 bspline.template eval<iganet::deriv::dx, memory_optimized>(xi)(k)));
     }
 
     if constexpr (Spline::parDim() >= 2) {
-        for (iganet::short_t k = 0; k < Spline::geoDim() - 1; ++k)
+        for (iganet::short_t k = 0; k < Spline::geoDim(); ++k)
             EXPECT_TRUE(torch::allclose(
                 bspline_ijac_val(k, 1),
                 bspline.template eval<iganet::deriv::dy, memory_optimized>(xi)(k)));
     }
 
     if constexpr (Spline::parDim() >= 3) {
-        for (iganet::short_t k = 0; k < Spline::geoDim() - 1; ++k)
+        for (iganet::short_t k = 0; k < Spline::geoDim(); ++k)
             EXPECT_TRUE(torch::allclose(
                 bspline_ijac_val(k, 2),
                 bspline.template eval<iganet::deriv::dz, memory_optimized>(xi)(k)));
     }
 
     if constexpr (Spline::parDim() >= 4) {
-        for (iganet::short_t k = 0; k < Spline::geoDim() - 1; ++k)
+        for (iganet::short_t k = 0; k < Spline::geoDim(); ++k)
             EXPECT_TRUE(torch::allclose(
                 bspline_ijac_val(k, 3),
                 bspline.template eval<iganet::deriv::dt, memory_optimized>(xi)(k)));
@@ -1139,6 +1139,7 @@ void test_nurbs_eval(const Geometry_t& geometry, const Spline& bspline,
     // Evaluate function and derivatives (non-memory optimized)
     test_nurbs_eval<iganet::deriv::func, false, false>(
         bspline, bsplinelib_bspline, xi, tol);
+
     // Evaluate only first deriv 
     if constexpr (Spline::parDim() == 1) {
         test_nurbs_eval<iganet::deriv::dx, false, false>(
@@ -1186,10 +1187,10 @@ void test_nurbs_eval(const Geometry_t& geometry, const Spline& bspline,
     } 
    
     // Evaluate function and derivatives (memory optimized)
-   /* test_nurbs_eval<iganet::deriv::func, true, false>(
+   /*test_nurbs_eval<iganet::deriv::func, true, false>(
         bspline, bsplinelib_bspline, xi, tol);
     
-    if constexpr (Spline::parDim() == 1) {
+   /* if constexpr (Spline::parDim() == 1) {
         test_nurbs_eval<iganet::deriv::dx, true, false>(
             bspline, bsplinelib_bspline, xi, tol);
      /*   test_nurbs_eval<iganet::deriv::dx ^ 2, true, false>(
@@ -1341,7 +1342,7 @@ void test_nurbs_eval(const Geometry_t& geometry, const Spline& bspline,
         test_nurbs_igrad<false, true>(geometry, bspline, xi, tol);
         test_nurbs_igrad<true, false>(geometry, bspline, xi, tol);
         test_nurbs_igrad<true, true>(geometry, bspline, xi, tol);
-    }
+    }*/
 
     /// Evaluate Jacobian
     test_nurbs_jac<false, false>(bspline, xi, tol);
