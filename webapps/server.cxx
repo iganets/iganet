@@ -19,8 +19,8 @@
 #include <popl.hpp>
 
 #include <chrono>
+#include <ctime>
 #include <filesystem>
-#include <format>
 #include <thread>
 
 namespace iganet {
@@ -1729,13 +1729,11 @@ int main(int argc, char const *argv[]) {
                                    for (const auto &session :
                                         ws->getUserData()->getSessions()) {
                                      auto json = nlohmann::json();
+                                     auto creation_time = std::chrono::system_clock::to_time_t(session.second->getCreationTime());
+                                     auto access_time = std::chrono::system_clock::to_time_t(session.second->getAccessTime());
                                      json["id"] = session.first;
-                                     json["creation_time"] = std::format(
-                                         "{:%d/%m/%Y-%H:%M:%S}",
-                                         session.second->getCreationTime());
-                                     json["access_time"] = std::format(
-                                         "{:%d/%m/%Y-%H:%M:%S}",
-                                         session.second->getAccessTime());
+                                     json["creation_time"] = std::ctime(&creation_time);
+                                     json["access_time"] = std::ctime(&access_time);
                                      json["hasHash"] =
                                          session.second->hasHash();
 

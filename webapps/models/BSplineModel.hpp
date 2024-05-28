@@ -451,7 +451,7 @@ public:
         if (json["data"].contains("resolution"))
           res = json["data"]["resolution"].get<std::array<int64_t, 2>>();
 
-      utils::TensorArray2 xi = utils::convert<2>(torch::meshgrid(
+      utils::TensorArray2 xi = utils::to_array<2>(torch::meshgrid(
           {torch::linspace(0, 1, res[0],
                            Options<typename BSpline_t::value_type>{}),
            torch::linspace(0, 1, res[1],
@@ -479,7 +479,7 @@ public:
         if (json["data"].contains("resolution"))
           res = json["data"]["resolution"].get<std::array<int64_t, 3>>();
 
-      utils::TensorArray3 xi = utils::convert<3>(torch::meshgrid(
+      utils::TensorArray3 xi = utils::to_array<3>(torch::meshgrid(
           {torch::linspace(0, 1, res[0],
                            Options<typename BSpline_t::value_type>{}),
            torch::linspace(0, 1, res[1],
@@ -509,7 +509,7 @@ public:
         if (json["data"].contains("resolution"))
           res = json["data"]["resolution"].get<std::array<int64_t, 4>>();
 
-      utils::TensorArray4 xi = utils::convert<4>(torch::meshgrid(
+      utils::TensorArray4 xi = utils::to_array<4>(torch::meshgrid(
           {torch::linspace(0, 1, res[0],
                            Options<typename BSpline_t::value_type>{}),
            torch::linspace(0, 1, res[1],
