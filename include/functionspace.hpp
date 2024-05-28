@@ -1166,7 +1166,7 @@ public:
 
     if constexpr (comp == functionspace::interior) {
       static_assert(std::tuple_element_t<0, Base>::geoDim() == 1,
-                    "grad(.) for vector-valued spaces requires 1D variables");
+                    "grid(.) for vector-valued spaces requires 1D variables");
 
       return utils::BlockTensor<torch::Tensor, 1, 1>(
           std::get<0>(*this).template eval<deriv::dx, memory_optimized>(

@@ -121,14 +121,14 @@ public:
   inline auto &from_full_tensor(const torch::Tensor &tensor) {
 
     if (tensor.dim() > 1) {
-      auto tensor_view = tensor.view({Spline::controlPointDim(), -1, tensor.size(-1)});
+      auto tensor_view = tensor.view({Spline::geoDim(), -1, tensor.size(-1)});
 
       side<west>().from_tensor(tensor_view.index({torch::indexing::Slice(), 0})
                                    .reshape({-1, tensor.size(-1)}));
       side<east>().from_tensor(tensor_view.index({torch::indexing::Slice(), -1})
                                    .reshape({-1, tensor.size(-1)}));
     } else {
-      auto tensor_view = tensor.view({Spline::controlPointDim(), -1});
+      auto tensor_view = tensor.view({Spline::geoDim(), -1});
 
       side<west>().from_tensor(
           tensor_view.index({torch::indexing::Slice(), 0}).flatten());
@@ -319,7 +319,7 @@ public:
 
     if (tensor.dim() > 1) {
       auto tensor_view =
-          tensor.view({Spline::controlPointDim(), side<west>().ncoeffs(0),
+          tensor.view({Spline::geoDim(), side<west>().ncoeffs(0),
                        side<south>().ncoeffs(0), tensor.size(-1)});
 
       side<west>().from_tensor(
@@ -339,7 +339,7 @@ public:
               .index({torch::indexing::Slice(), -1, torch::indexing::Slice()})
               .reshape({-1, tensor.size(-1)}));
     } else {
-      auto tensor_view = tensor.view({Spline::controlPointDim(), side<west>().ncoeffs(0),
+      auto tensor_view = tensor.view({Spline::geoDim(), side<west>().ncoeffs(0),
                                       side<south>().ncoeffs(0)});
 
       side<west>().from_tensor(
@@ -584,7 +584,7 @@ public:
 
     if (tensor.dim() > 1) {
       auto tensor_view = tensor.view(
-          {Spline::controlPointDim(), side<west>().ncoeffs(1), side<west>().ncoeffs(0),
+          {Spline::geoDim(), side<west>().ncoeffs(1), side<west>().ncoeffs(0),
            side<south>().ncoeffs(0), tensor.size(-1)});
 
       side<west>().from_tensor(
@@ -619,7 +619,7 @@ public:
               .reshape({-1, tensor.size(-1)}));
     } else {
       auto tensor_view =
-          tensor.view({Spline::controlPointDim(), side<west>().ncoeffs(1),
+          tensor.view({Spline::geoDim(), side<west>().ncoeffs(1),
                        side<west>().ncoeffs(0), side<south>().ncoeffs(0)});
 
       side<west>().from_tensor(
@@ -919,7 +919,7 @@ public:
 
     if (tensor.dim() > 1) {
       auto tensor_view = tensor.view(
-          {Spline::controlPointDim(), side<west>().ncoeffs(2), side<west>().ncoeffs(1),
+          {Spline::geoDim(), side<west>().ncoeffs(2), side<west>().ncoeffs(1),
            side<west>().ncoeffs(0), side<south>().ncoeffs(0), tensor.size(-1)});
 
       side<west>().from_tensor(
@@ -964,7 +964,7 @@ public:
               .reshape({-1, tensor.size(-1)}));
     } else {
       auto tensor_view = tensor.view(
-          {Spline::controlPointDim(), side<west>().ncoeffs(2), side<west>().ncoeffs(1),
+          {Spline::geoDim(), side<west>().ncoeffs(2), side<west>().ncoeffs(1),
            side<west>().ncoeffs(0), side<south>().ncoeffs(0)});
 
       side<west>().from_tensor(
@@ -1172,7 +1172,7 @@ private:
     (std::get<Is>(BoundaryCore::bdr_)
          .from_tensor(tensor.index({torch::indexing::Slice(
              start, end(std::get<Is>(BoundaryCore::bdr_).ncumcoeffs() *
-                        std::get<Is>(BoundaryCore::bdr_).controlPointDim()))})),
+                        std::get<Is>(BoundaryCore::bdr_).geoDim()))})),
      ...);
 
     return *this;
