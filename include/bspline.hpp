@@ -4771,7 +4771,7 @@ public:
         else {
             utils::BlockTensor<torch::Tensor, 1, Base::geoDim_ - 1> result;
             utils::BlockTensor<torch::Tensor, 1, Base::geoDim_ - 1> pnts;
-            utils::BlockTensor<torch::Tensor, 1, Base::geoDim_> Cw = Base::template eval<deriv::func, memory_optimized>(xi, knot_indices, coeff_indices);
+            utils::BlockTensor<torch::Tensor, 1, Base::geoDim_> Cw = Base::template eval<deriv::func, false>(xi, knot_indices, coeff_indices);
             //Divide by weight
             assert(torch::abs(torch::prod(*Cw[Base::geoDim_ - 1])).item().toDouble() > 1e-12); // Avoid division by zero
             for (short_t i = 0; i < Base::geoDim_ - 1; ++i)
@@ -4791,6 +4791,44 @@ public:
         }
     } 
     /// @}
+
+
+    inline utils::BlockTensor<torch::Tensor, 1, geoDim()>
+        eval_from_precomputed(const utils::TensorArray0& basfunc,
+            const torch::Tensor& coeff_indices, int64_t numeval,
+            torch::IntArrayRef sizes) const {
+        throw std::runtime_error("Eval_from_precomputed not yet validated for NURBS");
+    }
+
+    inline utils::BlockTensor<torch::Tensor, 1, geoDim()>
+        eval_from_precomputed(const utils::TensorArray1& basfunc,
+            const torch::Tensor& coeff_indices, int64_t numeval,
+            torch::IntArrayRef sizes) const {
+        throw std::runtime_error("Eval_from_precomputed not yet validated for NURBS");
+    }
+
+    inline utils::BlockTensor<torch::Tensor, 1, geoDim()>
+        eval_from_precomputed(const utils::TensorArray2& basfunc,
+            const torch::Tensor& coeff_indices, int64_t numeval,
+            torch::IntArrayRef sizes) const {
+        throw std::runtime_error("Eval_from_precomputed not yet validated for NURBS");
+    }
+
+    inline utils::BlockTensor<torch::Tensor, 1, geoDim()>
+        eval_from_precomputed(const utils::TensorArray3& basfunc,
+            const torch::Tensor& coeff_indices, int64_t numeval,
+            torch::IntArrayRef sizes) const {
+        throw std::runtime_error("Eval_from_precomputed not yet validated for NURBS");
+    }
+
+    inline utils::BlockTensor<torch::Tensor, 1, geoDim()>
+        eval_from_precomputed(const utils::TensorArray4& basfunc,
+            const torch::Tensor& coeff_indices, int64_t numeval,
+            torch::IntArrayRef sizes) const {
+        throw std::runtime_error("Eval_from_precomputed not yet validated for NURBS");
+    }
+    /// @}
+
 
     /// @brief Updates the B-spline object from .DAT file (compatible with geo_pdes and BEMBEL)
     inline NonUniformRationalBSplineCore& from_dat(const std::string& file_name) {
