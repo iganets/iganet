@@ -12,7 +12,10 @@
    file, You can obtain one at http://mozilla.org/MPL/2.0/.
 */
 
+#pragma once
+
 #include <GismoModel.hpp>
+//#include <GismoSurfaceReparameterization.hpp>
 
 namespace iganet {
 
@@ -22,6 +25,7 @@ namespace webapp {
 template <short_t d, class T>
 class GismoPdeModel : public GismoModel<T>,
                       public ModelElevate,
+                      public ModelEval,
                       public ModelIncrease,
                       public ModelRefine,
                       public ModelReparameterize {
@@ -215,6 +219,17 @@ public:
               "type" : 2}])"_json;
   }
 
+  /// @brief Returns the model's outputs
+  nlohmann::json getOutputs() const override {
+    return R"([{
+           "name" : "ScaledJacobian",
+           "description" : "Scaled Jacobian of the geometry mapping as quality measure for orthogonality",
+           "type" : 1},{
+           "name" : "UniformityMetric",
+           "description" : "Uniformity metric quality measure for area distortion of the geometry map",
+           "type" : 1}])"_json;
+  }
+  
   /// @brief Serializes the model to JSON
   nlohmann::json to_json(const std::string &component,
                          const std::string &attribute) const override {
@@ -379,6 +394,70 @@ public:
       return GismoModel<T>::updateAttribute(component, attribute, json);
   }
 
+  /// @brief Evaluates the model
+  nlohmann::json eval(const std::string &component,
+                      const nlohmann::json &json) const override {
+
+    if (component == "ScaledJacobian" || component == "UniformityMetric") {
+      
+      // Create uniform grid
+      gsMatrix<T> ab = geo_.patch(0).support();
+      gsVector<T> a = ab.col(0);
+      gsVector<T> b = ab.col(1);
+
+      gsVector<unsigned> np(geo_.parDim());
+      np.setConstant(25);
+
+      if (json.contains("data"))
+        if (json["data"].contains("resolution")) {
+          auto res = json["data"]["resolution"].get<std::array<int64_t, d>>();
+
+          for (std::size_t i = 0; i < d; ++i)
+            np(i) = res[i];
+        }
+    
+      // Uniform parameters for evaluation
+      gsMatrix<T> pts = gsPointGrid(a, b, np);
+      gsMatrix<T> eval(1, pts.cols());
+      
+      gsExprEvaluator<T> ev;
+      gsMultiBasis<T> basis(geo_);
+      ev.setIntegrationElements(basis);
+      typename gsExprAssembler<T>::geometryMap G = ev.getMap(geo_);
+    
+      if (component == "ScaledJacobian") {
+
+        int parDim = geo_.parDim();
+        
+        for (std::size_t i = 0; i < pts.cols(); i++) {
+          auto jac = ev.eval(expr::jac(G), pts.col(i));
+          eval(0,i) = jac.determinant();
+          for (std::size_t j = 0; j < parDim; j++)
+            eval(0,i) /= (jac.col(j).norm());
+        }
+
+        return utils::to_json(eval, true);        
+      }
+      
+      else if (component == "UniformityMetric") {
+
+        T areaTotal = ev.integral(expr::jac(G).det());
+        gsConstantFunction<T> areaConstFunc(areaTotal, geo_.parDim());
+        auto area = ev.getVariable(areaConstFunc);
+        auto expr = expr::pow((expr::jac(G).det() - area.val()) / area.val(), 2);
+
+        for (std::size_t i = 0; i < pts.cols(); i++)
+          eval(0,i) = ev.eval(expr, pts.col(i))[0];
+        
+        return utils::to_json(eval, true);
+      }
+      else
+      return R"({ INVALID REQUEST })"_json;
+    }
+    else
+      return R"({ INVALID REQUEST })"_json;
+  }
+  
   /// @brief Elevates the model's degrees, preserves smoothness
   void elevate(const nlohmann::json &json = NULL) override {
     int num = 1, dim = -1;
@@ -443,12 +522,44 @@ public:
 
     if (type == "surface") {
 
-    } else if (type == "volume") {
-      gismo::gsBarrierPatch<d, T> opt(geo_, false);
-      opt.options().setInt("ParamMethod", 1);
-      opt.compute();
+#if 0
+      gismo::gsMatrix<T, 2, 2> alpha;
+      alpha.setConstant(0.5);      
+      gismo::gsMobiusDomain<2, T> mobiusDomain(alpha);
 
-      geo_ = opt.result();
+      gsObjFuncSurface<T> objFuncSurface(geo_, mobiusDomain);
+
+      gismo::gsVector<real_t> initialGuessVector(4);
+      initialGuessVector.setConstant(0.5);
+
+      gismo::gsHLBFGS<real_t> optimizer(&objFuncSurface);
+      optimizer.options().addReal("MinGradientLength", "Minimum gradient length", 1e-5);
+      optimizer.options().addReal("MinStepLength", "Minimum step length", 1e-5);
+      optimizer.options().addInt("MaxIterations", "Maximum number of iterations", 200);
+      optimizer.options().addInt("Verbose", "Verbose output", 0);
+      
+      optimizer.solve( initialGuessVector );
+      geo_ = convertIntoBSpline(geo_, optimizer.currentDesign());
+#endif      
+    } else if (type == "volume") {
+
+      if (geo_.parDim() == geo_.geoDim()) {      
+        gsBarrierPatch<d, T> opt(geo_, false);
+        opt.options().setInt("ParamMethod", 1);
+        opt.compute();
+
+        geo_ = opt.result();
+      }
+      else if (geo_.parDim() < geo_.parDim()) {
+
+        //gsMultiPatch<T> geo;
+        //for (auto patch : geo_) {
+        //geo.addPatch()
+        //
+        //
+        //}
+        
+      }
     }
   }
 };
