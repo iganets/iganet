@@ -22,8 +22,7 @@ namespace webapp {
 
 /// @brief G+Smo Poisson model
 template <short_t d, typename T>
-class GismoPoissonModel : public GismoPdeModel<d, T>,                          
-                          public ModelParameters {
+class GismoPoissonModel : public GismoPdeModel<d, T> {
 
 private:
   /// @brief Base class
@@ -107,7 +106,7 @@ public:
                     const std::array<int64_t, d> ncoeffs,
                     const std::array<int64_t, d> npatches)
     : Base(degrees, ncoeffs, npatches), basis_(Base::geo_, true),
-      rhsFuncParametric_(false),
+      rhsFuncParametric_(true),
         rhsFunc_(d == 1 ?
                  "2*pi^2*sin(pi*x)" :
                  d == 2 ?
@@ -146,7 +145,7 @@ public:
     assembler_.setIntegrationElements(basis_);
 
     // Set boundary conditions
-    bcFuncParametric_.fill(false),
+    bcFuncParametric_.fill(true);
     for (short_t i = 0; i < 2 * d; ++i) {
       if constexpr (d == 1)
         bcFunc_[i] = gismo::give(gsFunctionExpr<T>("sin(pi*x)", bcFuncParametric_[i] ? d : 3));
@@ -214,7 +213,7 @@ public:
          "description" : "Right-hand side function defined in parametric domain",
              "type" : "bool",
              "value" : 0,
-             "default" : ",
+             "default" : 0,
              "uiid" : 1},{
          "name" : "bc_east",
          "description" : "Boundary value at the east boundary",
@@ -226,12 +225,12 @@ public:
          "description" : "Boundary value at the east boundary defined in parametric domain",
              "type" : "bool",
              "value" : 0,
-             "default" : ",
+             "default" : 0,
              "uiid" : 3},{
          "name" : "bc_east_type",
          "description" : "Type of boundary condition at the east boundary",
              "type" : "select",
-             "value" : { "Dirichlet", "Neumann" },
+             "value" : [ "Dirichlet", "Neumann" ],
              "default" : "Dirichlet",
              "uiid" : 4},{
          "name" : "bc_west",
@@ -244,12 +243,12 @@ public:
          "description" : "Boundary value at the west boundary defined in parametric domain",
              "type" : "bool",
              "value" : 0,
-             "default" : ",
+             "default" : 0,
              "uiid" : 6},{
          "name" : "bc_west_type",
          "description" : "Type of boundary condition at the west boundary",
              "type" : "select",
-             "value" : { "Dirichlet", "Neumann" },
+             "value" : [ "Dirichlet", "Neumann" ],
              "default" : "Dirichlet",
              "uiid" : 7}])"_json;
     else if constexpr (d == 2)
@@ -264,7 +263,7 @@ public:
          "description" : "Right-hand side function defined in parametric domain",
              "type" : "bool",
              "value" : 0,
-             "default" : ",
+             "default" : 0,
              "uiid" : 1},{
          "name" : "bc_north",
          "description" : "Boundary value at the north boundary",
@@ -276,12 +275,12 @@ public:
          "description" : "Boundary value at the north boundary defined in parametric domain",
              "type" : "bool",
              "value" : 0,
-             "default" : ",
+             "default" : 0,
              "uiid" : 3},{
          "name" : "bc_north_type",
          "description" : "Type of boundary condition at the north boundary",
              "type" : "select",
-             "value" : { "Dirichlet", "Neumann" },
+             "value" : [ "Dirichlet", "Neumann" ],
              "default" : "Dirichlet",
              "uiid" : 4},{
          "name" : "bc_east",
@@ -294,12 +293,12 @@ public:
          "description" : "Boundary value at the east boundary defined in parametric domain",
              "type" : "bool",
              "value" : 0,
-             "default" : ",
+             "default" : 0,
              "uiid" : 6},{
          "name" : "bc_east_type",
          "description" : "Type of boundary condition at the east boundary",
              "type" : "select",
-             "value" : { "Dirichlet", "Neumann" },
+             "value" : [ "Dirichlet", "Neumann" ],
              "default" : "Dirichlet",
              "uiid" : 7},{
          "name" : "bc_south",
@@ -312,12 +311,12 @@ public:
          "description" : "Boundary value at the south boundary defined in parametric domain",
              "type" : "bool",
              "value" : 0,
-             "default" : ",
+             "default" : 0,
              "uiid" : 9},{
          "name" : "bc_south_type",
          "description" : "Type of boundary condition at the south boundary",
              "type" : "select",
-             "value" : { "Dirichlet", "Neumann" },
+             "value" : [ "Dirichlet", "Neumann" ],
              "default" : "Dirichlet",
              "uiid" : 10},{
          "name" : "bc_west",
@@ -330,14 +329,14 @@ public:
          "description" : "Boundary value at the west boundary defined in parametric domain",
              "type" : "bool",
              "value" : 0,
-             "default" : ",
+             "default" : 0,
              "uiid" : 12},{
          "name" : "bc_west_type",
          "description" : "Type of boundary condition at the west boundary",
              "type" : "select",
-             "value" : { "Dirichlet", "Neumann" },
+             "value" : [ "Dirichlet", "Neumann" ],
              "default" : "Dirichlet",
-             "uiid" : 13}])"_json;
+           "uiid" : 13}])"_json;
     else if constexpr (d == 3)
       return R"([{
          "name" : "rhs",
@@ -350,7 +349,7 @@ public:
          "description" : "Right-hand side function defined in parametric domain",
              "type" : "bool",
              "value" : 0,
-             "default" : ",
+             "default" : 0,
              "uiid" : 1},{
          "name" : "bc_north",
          "description" : "Boundary value at the north boundary",
@@ -362,12 +361,12 @@ public:
          "description" : "Boundary value at the north boundary defined in parametric domain",
              "type" : "bool",
              "value" : 0,
-             "default" : ",
+             "default" : 0,
              "uiid" : 3},{
          "name" : "bc_north_type",
          "description" : "Type of boundary condition at the north boundary",
              "type" : "select",
-             "value" : { "Dirichlet", "Neumann" },
+             "value" : [ "Dirichlet", "Neumann" ],
              "default" : "Dirichlet",
              "uiid" : 4},{
          "name" : "bc_east",
@@ -380,12 +379,12 @@ public:
          "description" : "Boundary value at the east boundary defined in parametric domain",
              "type" : "bool",
              "value" : 0,
-             "default" : ",
+             "default" : 0,
              "uiid" : 6},{
          "name" : "bc_east_type",
          "description" : "Type of boundary condition at the east boundary",
              "type" : "select",
-             "value" : { "Dirichlet", "Neumann" },
+             "value" : [ "Dirichlet", "Neumann" ],
              "default" : "Dirichlet",
              "uiid" : 7},{
          "name" : "bc_south",
@@ -398,12 +397,12 @@ public:
          "description" : "Boundary value at the south boundary defined in parametric domain",
              "type" : "bool",
              "value" : 0,
-             "default" : ",
+             "default" : 0,
              "uiid" : 9},{
          "name" : "bc_south_type",
          "description" : "Type of boundary condition at the south boundary",
              "type" : "select",
-             "value" : { "Dirichlet", "Neumann" },
+             "value" : [ "Dirichlet", "Neumann" ],
              "default" : "Dirichlet",
              "uiid" : 10},{
          "name" : "bc_west",
@@ -416,12 +415,12 @@ public:
          "description" : "Boundary value at the west boundary defined in parametric domain",
              "type" : "bool",
              "value" : 0,
-             "default" : ",
+             "default" : 0,
              "uiid" : 12},{
          "name" : "bc_west_type",
          "description" : "Type of boundary condition at the west boundary",
              "type" : "select",
-             "value" : { "Dirichlet", "Neumann" },
+             "value" : [ "Dirichlet", "Neumann" ],
              "default" : "Dirichlet",
              "uiid" : 13},{
          "name" : "bc_front",
@@ -434,12 +433,12 @@ public:
          "description" : "Boundary value at the front boundary defined in parametric domain",
              "type" : "bool",
              "value" : 0,
-             "default" : ",
+             "default" : 0,
              "uiid" : 15},{
          "name" : "bc_front_type",
          "description" : "Type of boundary condition at the front boundary",
              "type" : "select",
-             "value" : { "Dirichlet", "Neumann" },
+             "value" : [ "Dirichlet", "Neumann" ],
              "default" : "Dirichlet",
              "uiid" : 16},{
          "name" : "bc_back",
@@ -452,12 +451,12 @@ public:
          "description" : "Boundary value at the back boundary defined in parametric domain",
              "type" : "bool",
              "value" : 0,
-             "default" : ",
+             "default" : 0,
              "uiid" : 18},{
          "name" : "bc_back_type",
          "description" : "Type of boundary condition at the back boundary",
              "type" : "select",
-             "value" : { "Dirichlet", "Neumann" },
+             "value" : [ "Dirichlet", "Neumann" ],
              "default" : "Dirichlet",
              "uiid" : 19}])"_json;   
     else
@@ -530,8 +529,7 @@ public:
         throw InvalidModelAttributeException();
       bcFunc_[gismo::boundary::north] =
         gsFunctionExpr<T>(json["data"]["bc_north"].get<std::string>(),
-                          bcFuncParametric_[gismo::boundary::north] ? d : 3,
-                          bcFuncParametric_[gismo::boundary::north]);
+                          bcFuncParametric_[gismo::boundary::north] ? d : 3);
     }
 
     else if (attribute == "bc_east") {
@@ -541,8 +539,7 @@ public:
         throw InvalidModelAttributeException();
       bcFunc_[gismo::boundary::east] =
         gsFunctionExpr<T>(json["data"]["bc_east"].get<std::string>(),
-                          bcFuncParametric_[gismo::boundary::east] ? d : 3,
-                          bcFuncParametric_[gismo::boundary::east]);
+                          bcFuncParametric_[gismo::boundary::east] ? d : 3);
     }
 
     else if (attribute == "bc_south") {
@@ -552,8 +549,7 @@ public:
         throw InvalidModelAttributeException();
       bcFunc_[gismo::boundary::south] =
           gsFunctionExpr<T>(json["data"]["bc_south"].get<std::string>(),
-                          bcFuncParametric_[gismo::boundary::south] ? d : 3,
-                          bcFuncParametric_[gismo::boundary::south]);
+                          bcFuncParametric_[gismo::boundary::south] ? d : 3);
     }
 
     else if (attribute == "bc_west") {
@@ -563,8 +559,7 @@ public:
         throw InvalidModelAttributeException();
       bcFunc_[gismo::boundary::west] =
           gsFunctionExpr<T>(json["data"]["bc_west"].get<std::string>(),
-                          bcFuncParametric_[gismo::boundary::west] ? d : 3,
-                          bcFuncParametric_[gismo::boundary::west]);
+                          bcFuncParametric_[gismo::boundary::west] ? d : 3);
     }
 
     else if (attribute == "bc_front") {
@@ -574,8 +569,7 @@ public:
         throw InvalidModelAttributeException();
       bcFunc_[gismo::boundary::front] =
           gsFunctionExpr<T>(json["data"]["bc_front"].get<std::string>(),
-                          bcFuncParametric_[gismo::boundary::front] ? d : 3,
-                          bcFuncParametric_[gismo::boundary::front]);
+                          bcFuncParametric_[gismo::boundary::front] ? d : 3);
     }
 
     else if (attribute == "bc_back") {
@@ -585,8 +579,7 @@ public:
         throw InvalidModelAttributeException();
       bcFunc_[gismo::boundary::back] =
           gsFunctionExpr<T>(json["data"]["bc_back"].get<std::string>(),
-                          bcFuncParametric_[gismo::boundary::back] ? d : 3,
-                          bcFuncParametric_[gismo::boundary::back]);
+                          bcFuncParametric_[gismo::boundary::back] ? d : 3);
     }
 
     // rhs_parametric
@@ -642,17 +635,19 @@ public:
 
       // Uniform parameters for evaluation
       gsMatrix<T> pts = gsPointGrid(a, b, np);
-
+      
       if (component == "Solution") {
         gsMatrix<T> eval = solution_.patch(0).eval(pts);
-        return utils::to_json(eval, true);
+        eval.resize(np(0), np(1));
+        return utils::to_json(eval, true, true);
       } else if (component == "Rhs") {
         gsMatrix<T> eval;
-        if rhsFuncParametric_
-          eval = rhsFunc_.eval(Base::geo_.patch(0).eval(pts));
-        else
+        if (rhsFuncParametric_)
           eval = rhsFunc_.eval(pts);
-        return utils::to_json(eval, true);
+        else
+          eval = rhsFunc_.eval(Base::geo_.patch(0).eval(pts));
+        eval.resize(np(0), np(1));
+        return utils::to_json(eval, true, true);
       }
       else
         return R"({ INVALID REQUEST })"_json;

@@ -61,7 +61,12 @@ namespace iganet {
       gismo::gsMatrix<T> bbox;
       m_mp.boundingBox(bbox);
       m_mp.patch(0).translate(-bbox.col(0));
-      m_mp.patch(0).scale(1/(bbox.col(1)-bbox.col(0)).array());
+      gsVector<T> scaleFactor = bbox.col(1)-bbox.col(0);
+      for (int i=0; i!=scaleFactor.size();++i){
+        if (abs(scaleFactor(i))<1e-5)
+          scaleFactor(i) = (T)(1.0);
+      }
+      m_mp.patch(0).scale(1/scaleFactor.array());
 
       //    const gsBasis<T> & tbasis = m_mp.basis(0); // basis(u,v) -> deriv will give dphi/du ,dphi/dv
       //    const gsGeometry<T> & tgeom = m_mp.patch(0); //G(u,v) -> deriv will give dG/du, dG/dv
@@ -100,6 +105,9 @@ namespace iganet {
       // Set the geometry map
       geometryMap  G = m_evaluator.getMap(cgeom);
       auto FFF = gismo::expr::jac(G).tr() * gismo::expr::jac(G);
+
+      gsVector<> pt(2); pt.setConstant(0.5);
+      
       auto m_integration = (FFF.trace() / gismo::expr::meas(G)).val() + pow(FFF.det().val(),2)/pow(m_area,2);
       //  auto m_integration = (FFF.trace() / meas(G)).val() + 1e-4 * FFF.det().val();
       //  auto m_integration = pow(FFF.det().val(), 2);
@@ -226,8 +234,8 @@ namespace iganet {
 
     for (int ipatch = 0; ipatch < mp.nPatches(); ++ipatch) {
 
-      gsMatrix<T> uv = gsPointGrid(mp.parameterRange(0), mp.patch(0).basis().size()*2);
-
+      gsMatrix<T> uv = gsPointGrid(mp.parameterRange(0), mp.patch(ipatch).basis().size()*4);
+      
       gsVector<T, 2> tempUV, xieta;
       gsMatrix<T> eval_geo;
       eval_geo.resize(3, uv.cols());
@@ -241,19 +249,19 @@ namespace iganet {
         mobiusTransform(coefsMobius, tempUV, xieta, jacUV);
 
         // map surface
-        eval_geo.col(ipt) = mp.patch(0).eval(xieta);
+        eval_geo.col(ipt) = mp.patch(ipatch).eval(xieta);
       }
-
-      //  const int n = eval_geo.rows();
 
       gsTensorBSplineBasis<2,T> bbasis = static_cast<gsTensorBSplineBasis<2,T>&>( mp.patch(ipatch).basis() );
       gsFitting<> fittingSurface(uv, eval_geo, bbasis);
       fittingSurface.compute();
-      fittingSurface.parameterCorrection();
-
-      result.addPatch(mp.patch(ipatch));
+      // fittingSurface.parameterCorrection();
+      
+      result.addPatch( *fittingSurface.result() );
     }
-
+    
+    result.computeTopology();
+    
     return result;
   }
   
