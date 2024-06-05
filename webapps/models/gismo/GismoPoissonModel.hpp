@@ -620,7 +620,7 @@ public:
       // std::cout << "parametric" << rhsFuncParametric_ << std::endl;
       // std::cout << json["data"]["rhs"].get<std::string>() << std::endl;
       
-      Rhsfunc_ = gismo::give(gsFunctionExpr<T>(json["data"]["rhs"].get<std::string>(), 3));
+      rhsFunc_ = gismo::give(gsFunctionExpr<T>(json["data"]["rhs"].get<std::string>(), 3));
     }
 
     else
