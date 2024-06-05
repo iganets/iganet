@@ -22,9 +22,7 @@ namespace webapp {
 
 /// @brief G+Smo Linear elasticity model
 template <short_t d, typename T>
-class GismoLinearElasticityModel : public GismoPdeModel<d, T>,
-                                   public ModelEval,
-                                   public ModelParameters {
+class GismoLinearElasticityModel : public GismoPdeModel<d, T> {
 
 private:
   /// @brief Base class

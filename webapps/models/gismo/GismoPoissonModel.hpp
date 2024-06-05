@@ -106,7 +106,7 @@ public:
                     const std::array<int64_t, d> ncoeffs,
                     const std::array<int64_t, d> npatches)
     : Base(degrees, ncoeffs, npatches), basis_(Base::geo_, true),
-      rhsFuncParametric_(true),
+      rhsFuncParametric_(false),
         rhsFunc_(d == 1 ?
                  "2*pi^2*sin(pi*x)" :
                  d == 2 ?
@@ -468,8 +468,13 @@ public:
                                  const std::string &attribute,
                                  const nlohmann::json &json) override {
 
+    bool updateBC(false);
     nlohmann::json result = R"({})"_json;
 
+    // std::cout << "component" << component << std::endl;
+    // std::cout << "attribute" << attribute << std::endl;
+    // std::cout << json.dump(2) << std::endl;
+    
     // bc_*_parametric
     
     if (attribute == "bc_north_parametric") {
@@ -477,7 +482,8 @@ public:
         throw InvalidModelAttributeException();
       if (!json["data"].contains("bc_north_parametric"))
         throw InvalidModelAttributeException();
-      bcFuncParametric_[gismo::boundary::north] = json["data"]["bc_north_parametric"].get<bool>();
+      bcFuncParametric_[gismo::boundary::north-1] = json["data"]["bc_north_parametric"].get<bool>();
+      updateBC = true;
     }
 
     else if (attribute == "bc_east_parametric") {
@@ -485,7 +491,8 @@ public:
         throw InvalidModelAttributeException();
       if (!json["data"].contains("bc_east_parametric"))
         throw InvalidModelAttributeException();
-      bcFuncParametric_[gismo::boundary::east] = json["data"]["bc_east_parametric"].get<bool>();
+      bcFuncParametric_[gismo::boundary::east-1] = json["data"]["bc_east_parametric"].get<bool>();
+      updateBC = true;
     }
 
     else if (attribute == "bc_south_parametric") {
@@ -493,7 +500,8 @@ public:
         throw InvalidModelAttributeException();
       if (!json["data"].contains("bc_south_parametric"))
         throw InvalidModelAttributeException();
-      bcFuncParametric_[gismo::boundary::south] = json["data"]["bc_south_parametric"].get<bool>();
+      bcFuncParametric_[gismo::boundary::south-1] = json["data"]["bc_south_parametric"].get<bool>();
+      updateBC = true;
     }
 
     else if (attribute == "bc_west_parametric") {
@@ -501,7 +509,8 @@ public:
         throw InvalidModelAttributeException();
       if (!json["data"].contains("bc_west_parametric"))
         throw InvalidModelAttributeException();
-      bcFuncParametric_[gismo::boundary::west] = json["data"]["bc_west_parametric"].get<bool>();
+      bcFuncParametric_[gismo::boundary::west-1] = json["data"]["bc_west_parametric"].get<bool>();
+      updateBC = true;
     }
 
     else if (attribute == "bc_front_parametric") {
@@ -509,7 +518,8 @@ public:
         throw InvalidModelAttributeException();
       if (!json["data"].contains("bc_front_parametric"))
         throw InvalidModelAttributeException();
-      bcFuncParametric_[gismo::boundary::front] = json["data"]["bc_front_parametric"].get<bool>();
+      bcFuncParametric_[gismo::boundary::front-1] = json["data"]["bc_front_parametric"].get<bool>();
+      updateBC = true;
     }
 
     else if (attribute == "bc_back_parametric") {
@@ -517,7 +527,8 @@ public:
         throw InvalidModelAttributeException();
       if (!json["data"].contains("bc_back_parametric"))
         throw InvalidModelAttributeException();
-      bcFuncParametric_[gismo::boundary::back] = json["data"]["bc_back_parametric"].get<bool>();
+      bcFuncParametric_[gismo::boundary::back-1] = json["data"]["bc_back_parametric"].get<bool>();
+      updateBC = true;
     }
 
     // bc_*
@@ -527,9 +538,10 @@ public:
         throw InvalidModelAttributeException();
       if (!json["data"].contains("bc_north"))
         throw InvalidModelAttributeException();
-      bcFunc_[gismo::boundary::north] =
+      bcFunc_[gismo::boundary::north-1] = gismo::give(
         gsFunctionExpr<T>(json["data"]["bc_north"].get<std::string>(),
-                          bcFuncParametric_[gismo::boundary::north] ? d : 3);
+                          bcFuncParametric_[gismo::boundary::north-1] ? d : 3));
+      updateBC = true;
     }
 
     else if (attribute == "bc_east") {
@@ -537,9 +549,10 @@ public:
         throw InvalidModelAttributeException();
       if (!json["data"].contains("bc_east"))
         throw InvalidModelAttributeException();
-      bcFunc_[gismo::boundary::east] =
+      bcFunc_[gismo::boundary::east-1] = gismo::give(
         gsFunctionExpr<T>(json["data"]["bc_east"].get<std::string>(),
-                          bcFuncParametric_[gismo::boundary::east] ? d : 3);
+                          bcFuncParametric_[gismo::boundary::east-1] ? d : 3));
+      updateBC = true;
     }
 
     else if (attribute == "bc_south") {
@@ -547,9 +560,10 @@ public:
         throw InvalidModelAttributeException();
       if (!json["data"].contains("bc_south"))
         throw InvalidModelAttributeException();
-      bcFunc_[gismo::boundary::south] =
+      bcFunc_[gismo::boundary::south-1] = gismo::give(
           gsFunctionExpr<T>(json["data"]["bc_south"].get<std::string>(),
-                          bcFuncParametric_[gismo::boundary::south] ? d : 3);
+                            bcFuncParametric_[gismo::boundary::south-1] ? d : 3));
+      updateBC = true;
     }
 
     else if (attribute == "bc_west") {
@@ -557,9 +571,10 @@ public:
         throw InvalidModelAttributeException();
       if (!json["data"].contains("bc_west"))
         throw InvalidModelAttributeException();
-      bcFunc_[gismo::boundary::west] =
+      bcFunc_[gismo::boundary::west-1] = gismo::give(
           gsFunctionExpr<T>(json["data"]["bc_west"].get<std::string>(),
-                          bcFuncParametric_[gismo::boundary::west] ? d : 3);
+                            bcFuncParametric_[gismo::boundary::west-1] ? d : 3));
+      updateBC = true;
     }
 
     else if (attribute == "bc_front") {
@@ -567,9 +582,10 @@ public:
         throw InvalidModelAttributeException();
       if (!json["data"].contains("bc_front"))
         throw InvalidModelAttributeException();
-      bcFunc_[gismo::boundary::front] =
+      bcFunc_[gismo::boundary::front-1] = gismo::give(
           gsFunctionExpr<T>(json["data"]["bc_front"].get<std::string>(),
-                          bcFuncParametric_[gismo::boundary::front] ? d : 3);
+                            bcFuncParametric_[gismo::boundary::front-1] ? d : 3));
+      updateBC = true;
     }
 
     else if (attribute == "bc_back") {
@@ -577,9 +593,10 @@ public:
         throw InvalidModelAttributeException();
       if (!json["data"].contains("bc_back"))
         throw InvalidModelAttributeException();
-      bcFunc_[gismo::boundary::back] =
+      bcFunc_[gismo::boundary::back-1] = gismo::give(
           gsFunctionExpr<T>(json["data"]["bc_back"].get<std::string>(),
-                          bcFuncParametric_[gismo::boundary::back] ? d : 3);
+                            bcFuncParametric_[gismo::boundary::back-1] ? d : 3));
+      updateBC = true;
     }
 
     // rhs_parametric
@@ -599,17 +616,29 @@ public:
         throw InvalidModelAttributeException();
       if (!json["data"].contains("rhs"))
         throw InvalidModelAttributeException();
-      rhsFunc_ = gsFunctionExpr<T>(json["data"]["rhs"].get<std::string>(), rhsFuncParametric_ ? d : 3);
+
+      // std::cout << "parametric" << rhsFuncParametric_ << std::endl;
+      // std::cout << json["data"]["rhs"].get<std::string>() << std::endl;
+      
+      Rhsfunc_ = gismo::give(gsFunctionExpr<T>(json["data"]["rhs"].get<std::string>(), 3));
     }
 
     else
       result = Base::updateAttribute(component, attribute, json);
 
-    // Solve updated problem
-    solve();
+  if (updateBC) {
+    bc_.clear();
 
-    return result;
+    // Set boundary condition types
+    for (short_t i = 0; i < 2 * d; ++i)
+      bc_.addCondition(i + 1, gismo::condition_type::dirichlet, &bcFunc_[i], 0, bcFuncParametric_[i]);
   }
+  
+  // Solve updated problem
+  solve();
+
+  return result;
+}
 
   /// @brief Evaluates the model
   nlohmann::json eval(const std::string &component,
