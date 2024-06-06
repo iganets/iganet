@@ -215,7 +215,7 @@ public:
 
   /// @brief Return's the model's parameters
   virtual nlohmann::json getParameters() const = 0;
-  
+
   /// @brief Returns the model's JSON serialization
   virtual nlohmann::json getModel() const {
 

@@ -22,10 +22,8 @@
 namespace iganet {
 
 /// @brief Abstract patch function base class
-template <typename real_t, short_t GeoDim, short_t ParDim>
-class SplinePatch {
+template <typename real_t, short_t GeoDim, short_t ParDim> class SplinePatch {
 public:
-
   /// @brief Returns the `device` property
   virtual torch::Device device() const noexcept = 0;
 
@@ -65,19 +63,14 @@ public:
   /// @{
   virtual utils::BlockTensor<torch::Tensor, 1, GeoDim>
   eval_from_precomputed(const torch::Tensor &basfunc,
-                        const torch::Tensor &coeff_indices,
-                        int64_t numeval,
+                        const torch::Tensor &coeff_indices, int64_t numeval,
                         torch::IntArrayRef sizes) const = 0;
 
   virtual utils::BlockTensor<torch::Tensor, 1, GeoDim>
   eval_from_precomputed(const utils::TensorArray<ParDim> &basfunc,
-                        const torch::Tensor &coeff_indices,
-                        int64_t numeval,
+                        const torch::Tensor &coeff_indices, int64_t numeval,
                         torch::IntArrayRef sizes) const = 0;
   /// @}
-
-  
-  
 };
 
 } // namespace iganet

@@ -156,13 +156,12 @@ auto to_tensorAccessor(const BlockTensor<torch::Tensor, Dims...> &blocktensor,
 } // namespace utils
 } // namespace iganet
 
-#define TENSORARRAY_FORALL(obj, func, ...)                  \
-  []<std::size_t N>(const ::iganet::utils::TensorArray<N>& tensorArray) \
-  {                                                                 \
-    ::iganet::utils::TensorArray<N> result;                         \
-    for (std::size_t i=0; i<N; ++i)                                 \
-      result[i] = tensorArray[i]. func(__VA_ARGS__);                \
-    return result;                                                  \
+#define TENSORARRAY_FORALL(obj, func, ...)                                     \
+  []<std::size_t N>(const ::iganet::utils::TensorArray<N> &tensorArray) {      \
+    ::iganet::utils::TensorArray<N> result;                                    \
+    for (std::size_t i = 0; i < N; ++i)                                        \
+      result[i] = tensorArray[i].func(__VA_ARGS__);                            \
+    return result;                                                             \
   }(obj)
 
 namespace std {

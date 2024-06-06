@@ -206,8 +206,7 @@ inline auto kronproduct(T &&t, Ts &&...ts) {
 }
 
 /// @brief Computes the product of all std::array entries
-template <typename T, std::size_t N>
-inline T prod(std::array<T, N> array) {
+template <typename T, std::size_t N> inline T prod(std::array<T, N> array) {
   T result{1};
 
   for (std::size_t i = 0; i < N; ++i)
@@ -217,8 +216,7 @@ inline T prod(std::array<T, N> array) {
 }
 
 /// @brief Computes the sum of all std::array entries
-template <typename T, std::size_t N>
-inline T sum(std::array<T, N> array) {
+template <typename T, std::size_t N> inline T sum(std::array<T, N> array) {
   T result{0};
 
   for (std::size_t i = 0; i < N; ++i)
@@ -226,6 +224,6 @@ inline T sum(std::array<T, N> array) {
 
   return result;
 }
-  
+
 } // namespace utils
 } // namespace iganet

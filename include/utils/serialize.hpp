@@ -125,8 +125,8 @@ inline auto to_json(const gismo::gsMatrix<T, Rows, Cols, Options> &matrix,
     } else {
       if (transpose) {
         for (std::size_t j = 0; j < matrix.cols(); ++j) {
-        auto data = nlohmann::json::array();
-        for (std::size_t i = 0; i < matrix.rows(); ++i) {
+          auto data = nlohmann::json::array();
+          for (std::size_t i = 0; i < matrix.rows(); ++i) {
             data.push_back(matrix(i, j));
           }
           json.emplace_back(data);
@@ -156,8 +156,8 @@ inline auto to_json(const gismo::gsMatrix<T, Rows, Cols, Options> &matrix,
     } else {
       if (transpose) {
         for (std::size_t i = 0; i < matrix.rows(); ++i) {
-        auto data = nlohmann::json::array();
-        for (std::size_t j = 0; j < matrix.cols(); ++j) {
+          auto data = nlohmann::json::array();
+          for (std::size_t j = 0; j < matrix.cols(); ++j) {
             data.push_back(matrix(i, j));
           }
           json.emplace_back(data);
@@ -175,7 +175,7 @@ inline auto to_json(const gismo::gsMatrix<T, Rows, Cols, Options> &matrix,
 
   } else
     throw std::runtime_error("Invalid matrix options");
-  
+
   return json;
 }
 
