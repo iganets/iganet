@@ -16,6 +16,8 @@
 
 #include <GismoPdeModel.hpp>
 
+using namespace std::string_literals;
+
 namespace iganet {
 
 namespace webapp {
@@ -56,7 +58,7 @@ private:
   std::array<gsFunctionExpr<T>, 2 * d> bcFunc_;
 
   /// @brief Boundary values defined on parametric domain (default false)
-    std::array<bool, 2 * d> bcFuncParametric_;
+  std::array<bool, 2 * d> bcFuncParametric_;
   
   /// @brief Boundary condition type
   std::array<gismo::condition_type::type, 2 * d> bcType_;
@@ -85,6 +87,10 @@ private:
                         u * f * meas(G) // rhs vector
     );
 
+    // Compute the Neumann terms defined on physical space
+    auto g_N = assembler_.getBdrFunction(G);
+    assembler_.assembleBdr(bc_.get("Neumann"), u * g_N.tr() * nv(G) );
+    
     // Solve system
     typename gismo::gsSparseSolver<T>::CGDiagonal solver;
     solver.compute(assembler_.matrix());
@@ -201,266 +207,81 @@ public:
   /// @brief Returns the model's parameters
   nlohmann::json getParameters() const override {
 
+    auto json = nlohmann::json::array();
+    int uiid = 0;
+
+    // Lambda expression to add a JSON entry
+    auto add_json = [&json, &uiid]<typename Value>(const std::string& name,
+                                                   const std::string& description,
+                                                   const std::string& type,
+                                                   const Value& value)
+      {
+        nlohmann::json item;
+        item["name"] = name;
+        item["description"] = description;
+        item["type"] = type;
+        item["value"] = value;
+        item["default"] = value;
+        item["uuid"] = uiid++;
+        json.push_back(item);
+      };
+
+    // Lambda expression to add a JSON entry with different default type
+    auto add_json_default = [&json, &uiid]<typename Value, typename DefaultValue>(const std::string& name,
+                                                   const std::string& description,
+                                                   const std::string& type,
+                                                                                  const Value& value,
+                                                                                  const DefaultValue& defaultvalue)
+      {
+        nlohmann::json item;
+        item["name"] = name;
+        item["description"] = description;
+        item["type"] = type;
+        item["value"] = value;
+        item["default"] = defaultvalue;
+        item["uuid"] = uiid++;
+        json.push_back(item);
+      };
+
     if constexpr (d == 1)
-      return R"([{
-         "name" : "rhs",
-         "description" : "Right-hand side function",
-             "type" : "text",
-             "value" : "0",
-             "default" : "0",
-             "uiid" : 0},{
-         "name" : "rhs_parametric",
-         "description" : "Right-hand side function defined in parametric domain",
-             "type" : "bool",
-             "value" : 0,
-             "default" : 0,
-             "uiid" : 1},{
-         "name" : "bc_east",
-         "description" : "Boundary value at the east boundary",
-             "type" : "text",
-             "value" : "0",
-             "default" : "0",
-             "uiid" : 2},{
-         "name" : "bc_east_parametric",
-         "description" : "Boundary value at the east boundary defined in parametric domain",
-             "type" : "bool",
-             "value" : 0,
-             "default" : 0,
-             "uiid" : 3},{
-         "name" : "bc_east_type",
-         "description" : "Type of boundary condition at the east boundary",
-             "type" : "select",
-             "value" : [ "Dirichlet", "Neumann" ],
-             "default" : "Dirichlet",
-             "uiid" : 4},{
-         "name" : "bc_west",
-         "description" : "Boundary value at the west boundary",
-             "type" : "text",
-             "value" : "0",
-             "default" : "0",
-             "uiid" : 5},{
-         "name" : "bc_west_parametric",
-         "description" : "Boundary value at the west boundary defined in parametric domain",
-             "type" : "bool",
-             "value" : 0,
-             "default" : 0,
-             "uiid" : 6},{
-         "name" : "bc_west_type",
-         "description" : "Type of boundary condition at the west boundary",
-             "type" : "select",
-             "value" : [ "Dirichlet", "Neumann" ],
-             "default" : "Dirichlet",
-             "uiid" : 7}])"_json;
+      add_json("rhs", "Right-hand side function", "text", "2*pi^2*sin(pi*x)"s);
     else if constexpr (d == 2)
-      return R"([{
-         "name" : "rhs",
-         "description" : "Right-hand side function",
-             "type" : "text",
-             "value" : "0",
-             "default" : "0",
-             "uiid" : 0},{
-         "name" : "rhs_parametric",
-         "description" : "Right-hand side function defined in parametric domain",
-             "type" : "bool",
-             "value" : 0,
-             "default" : 0,
-             "uiid" : 1},{
-         "name" : "bc_north",
-         "description" : "Boundary value at the north boundary",
-             "type" : "text",
-             "value" : "0",
-             "default" : "0",
-             "uiid" : 2},{
-         "name" : "bc_north_parametric",
-         "description" : "Boundary value at the north boundary defined in parametric domain",
-             "type" : "bool",
-             "value" : 0,
-             "default" : 0,
-             "uiid" : 3},{
-         "name" : "bc_north_type",
-         "description" : "Type of boundary condition at the north boundary",
-             "type" : "select",
-             "value" : [ "Dirichlet", "Neumann" ],
-             "default" : "Dirichlet",
-             "uiid" : 4},{
-         "name" : "bc_east",
-         "description" : "Boundary value at the east boundary",
-             "type" : "text",
-             "value" : "0",
-             "default" : "0",
-             "uiid" : 5},{
-        "name" : "bc_east_parametric",
-         "description" : "Boundary value at the east boundary defined in parametric domain",
-             "type" : "bool",
-             "value" : 0,
-             "default" : 0,
-             "uiid" : 6},{
-         "name" : "bc_east_type",
-         "description" : "Type of boundary condition at the east boundary",
-             "type" : "select",
-             "value" : [ "Dirichlet", "Neumann" ],
-             "default" : "Dirichlet",
-             "uiid" : 7},{
-         "name" : "bc_south",
-         "description" : "Boundary value at the south boundary",
-             "type" : "text",
-             "value" : "0",
-             "default" : "0",
-             "uiid" : 8},{
-         "name" : "bc_south_parametric",
-         "description" : "Boundary value at the south boundary defined in parametric domain",
-             "type" : "bool",
-             "value" : 0,
-             "default" : 0,
-             "uiid" : 9},{
-         "name" : "bc_south_type",
-         "description" : "Type of boundary condition at the south boundary",
-             "type" : "select",
-             "value" : [ "Dirichlet", "Neumann" ],
-             "default" : "Dirichlet",
-             "uiid" : 10},{
-         "name" : "bc_west",
-         "description" : "Boundary value at the west boundary",
-             "type" : "text",
-             "value" : "0",
-             "default" : "0",
-             "uiid" : 11},{
-         "name" : "bc_west_parametric",
-         "description" : "Boundary value at the west boundary defined in parametric domain",
-             "type" : "bool",
-             "value" : 0,
-             "default" : 0,
-             "uiid" : 12},{
-         "name" : "bc_west_type",
-         "description" : "Type of boundary condition at the west boundary",
-             "type" : "select",
-             "value" : [ "Dirichlet", "Neumann" ],
-             "default" : "Dirichlet",
-           "uiid" : 13}])"_json;
+      add_json("rhs", "Right-hand side function", "text", "2*pi^2*sin(pi*x)*sin(pi*y)"s);
     else if constexpr (d == 3)
-      return R"([{
-         "name" : "rhs",
-         "description" : "Right-hand side function",
-             "type" : "text",
-             "value" : "0",
-             "default" : "0",
-             "uiid" : 0},{
-         "name" : "rhs_parametric",
-         "description" : "Right-hand side function defined in parametric domain",
-             "type" : "bool",
-             "value" : 0,
-             "default" : 0,
-             "uiid" : 1},{
-         "name" : "bc_north",
-         "description" : "Boundary value at the north boundary",
-             "type" : "text",
-             "value" : "0",
-             "default" : "0",
-             "uiid" : 2},{
-         "name" : "bc_north_parametric",
-         "description" : "Boundary value at the north boundary defined in parametric domain",
-             "type" : "bool",
-             "value" : 0,
-             "default" : 0,
-             "uiid" : 3},{
-         "name" : "bc_north_type",
-         "description" : "Type of boundary condition at the north boundary",
-             "type" : "select",
-             "value" : [ "Dirichlet", "Neumann" ],
-             "default" : "Dirichlet",
-             "uiid" : 4},{
-         "name" : "bc_east",
-         "description" : "Boundary value at the east boundary",
-             "type" : "text",
-             "value" : "0",
-             "default" : "0",
-             "uiid" : 5},{
-        "name" : "bc_east_parametric",
-         "description" : "Boundary value at the east boundary defined in parametric domain",
-             "type" : "bool",
-             "value" : 0,
-             "default" : 0,
-             "uiid" : 6},{
-         "name" : "bc_east_type",
-         "description" : "Type of boundary condition at the east boundary",
-             "type" : "select",
-             "value" : [ "Dirichlet", "Neumann" ],
-             "default" : "Dirichlet",
-             "uiid" : 7},{
-         "name" : "bc_south",
-         "description" : "Boundary value at the south boundary",
-             "type" : "text",
-             "value" : "0",
-             "default" : "0",
-             "uiid" : 8},{
-         "name" : "bc_south_parametric",
-         "description" : "Boundary value at the south boundary defined in parametric domain",
-             "type" : "bool",
-             "value" : 0,
-             "default" : 0,
-             "uiid" : 9},{
-         "name" : "bc_south_type",
-         "description" : "Type of boundary condition at the south boundary",
-             "type" : "select",
-             "value" : [ "Dirichlet", "Neumann" ],
-             "default" : "Dirichlet",
-             "uiid" : 10},{
-         "name" : "bc_west",
-         "description" : "Boundary value at the west boundary",
-             "type" : "text",
-             "value" : "0",
-             "default" : "0",
-             "uiid" : 11},{
-         "name" : "bc_west_parametric",
-         "description" : "Boundary value at the west boundary defined in parametric domain",
-             "type" : "bool",
-             "value" : 0,
-             "default" : 0,
-             "uiid" : 12},{
-         "name" : "bc_west_type",
-         "description" : "Type of boundary condition at the west boundary",
-             "type" : "select",
-             "value" : [ "Dirichlet", "Neumann" ],
-             "default" : "Dirichlet",
-             "uiid" : 13},{
-         "name" : "bc_front",
-         "description" : "Boundary value at the front boundary",
-             "type" : "text",
-             "value" : "0",
-             "default" : "0",
-             "uiid" : 14},{
-         "name" : "bc_front_parametric",
-         "description" : "Boundary value at the front boundary defined in parametric domain",
-             "type" : "bool",
-             "value" : 0,
-             "default" : 0,
-             "uiid" : 15},{
-         "name" : "bc_front_type",
-         "description" : "Type of boundary condition at the front boundary",
-             "type" : "select",
-             "value" : [ "Dirichlet", "Neumann" ],
-             "default" : "Dirichlet",
-             "uiid" : 16},{
-         "name" : "bc_back",
-         "description" : "Boundary value at the back boundary",
-             "type" : "text",
-             "value" : "0",
-             "default" : "0",
-             "uiid" : 17},{
-         "name" : "bc_back_parametric",
-         "description" : "Boundary value at the back boundary defined in parametric domain",
-             "type" : "bool",
-             "value" : 0,
-             "default" : 0,
-             "uiid" : 18},{
-         "name" : "bc_back_type",
-         "description" : "Type of boundary condition at the back boundary",
-             "type" : "select",
-             "value" : [ "Dirichlet", "Neumann" ],
-             "default" : "Dirichlet",
-             "uiid" : 19}])"_json;   
-    else
-      return R"({ INVALID REQUEST })"_json;
+      add_json("rhs", "Right-hand side function", "text", "2*pi^2*sin(pi*x)*sin(pi*y)*sin(pi*z)"s);
+
+    add_json("rhs_parametric", "Right-hand side function defined in parametric domain", "bool", false);
+    
+    std::vector<std::string> boundaries;
+
+    if constexpr (d >= 1) {
+      boundaries.push_back("west");
+      boundaries.push_back("east");
+    }
+
+    if constexpr (d >= 2) {
+      boundaries.push_back("south");
+      boundaries.push_back("north");
+    }
+
+    if constexpr (d >= 3) {
+      boundaries.push_back("front");
+      boundaries.push_back("back");
+    }
+
+    for (auto boundary : boundaries) {
+      add_json("bc_"s + boundary,
+               "Boundary value at the "s + boundary + " boundary"s,
+               "text", "0");
+       add_json("bc_"s + boundary + "_parametric",
+               "Boundary value at the "s + boundary + " boundary defined in parametric domain"s,
+                "bool", false);
+       add_json_default("bc_"s + boundary + "_type",
+               "Type of boundary condition at the "s + boundary + " boundary"s,
+                "select", R"([ "Dirichlet", "Neumann" ])"_json, "Dirichlet");
+    }
+
+    return json;
   }
 
   /// @brief Updates the attributes of the model
@@ -470,10 +291,6 @@ public:
 
     bool updateBC(false);
     nlohmann::json result = R"({})"_json;
-
-    // std::cout << "component" << component << std::endl;
-    // std::cout << "attribute" << attribute << std::endl;
-    // std::cout << json.dump(2) << std::endl;
     
     // bc_*_parametric
     
@@ -531,6 +348,62 @@ public:
       updateBC = true;
     }
 
+    // bc_*_type
+
+    if (attribute == "bc_north_type") {
+      if (!json.contains("data"))
+        throw InvalidModelAttributeException();
+      if (!json["data"].contains("bc_north_type"))
+        throw InvalidModelAttributeException();
+      bcType_[gismo::boundary::north-1] = json["data"]["bc_north_type"].get<gismo::condition_type::type>();
+      updateBC = true;
+    }
+
+    else if (attribute == "bc_east_type") {
+      if (!json.contains("data"))
+        throw InvalidModelAttributeException();
+      if (!json["data"].contains("bc_east_type"))
+        throw InvalidModelAttributeException();
+      bcType_[gismo::boundary::east-1] = json["data"]["bc_east_type"].get<gismo::condition_type::type>();
+      updateBC = true;
+    }
+
+    else if (attribute == "bc_south_type") {
+      if (!json.contains("data"))
+        throw InvalidModelAttributeException();
+      if (!json["data"].contains("bc_south_type"))
+        throw InvalidModelAttributeException();
+      bcType_[gismo::boundary::south-1] = json["data"]["bc_south_type"].get<gismo::condition_type::type>();
+      updateBC = true;
+    }
+
+    else if (attribute == "bc_west_type") {
+      if (!json.contains("data"))
+        throw InvalidModelAttributeException();
+      if (!json["data"].contains("bc_west_type"))
+        throw InvalidModelAttributeException();
+      bcType_[gismo::boundary::west-1] = json["data"]["bc_west_type"].get<gismo::condition_type::type>();
+      updateBC = true;
+    }
+
+    else if (attribute == "bc_front_type") {
+      if (!json.contains("data"))
+        throw InvalidModelAttributeException();
+      if (!json["data"].contains("bc_front_type"))
+        throw InvalidModelAttributeException();
+      bcType_[gismo::boundary::front-1] = json["data"]["bc_front_type"].get<gismo::condition_type::type>();
+      updateBC = true;
+    }
+
+    else if (attribute == "bc_back_type") {
+      if (!json.contains("data"))
+        throw InvalidModelAttributeException();
+      if (!json["data"].contains("bc_back_type"))
+        throw InvalidModelAttributeException();
+      bcType_[gismo::boundary::back-1] = json["data"]["bc_back_type"].get<gismo::condition_type::type>();
+      updateBC = true;
+    }
+    
     // bc_*
     
     else if (attribute == "bc_north") {
@@ -617,9 +490,6 @@ public:
       if (!json["data"].contains("rhs"))
         throw InvalidModelAttributeException();
 
-      // std::cout << "parametric" << rhsFuncParametric_ << std::endl;
-      // std::cout << json["data"]["rhs"].get<std::string>() << std::endl;
-      
       rhsFunc_ = gismo::give(gsFunctionExpr<T>(json["data"]["rhs"].get<std::string>(), 3));
     }
 
@@ -631,7 +501,7 @@ public:
 
     // Set boundary condition types
     for (short_t i = 0; i < 2 * d; ++i)
-      bc_.addCondition(i + 1, gismo::condition_type::dirichlet, &bcFunc_[i], 0, bcFuncParametric_[i]);
+      bc_.addCondition(i + 1, bcType_[i], &bcFunc_[i], 0, bcFuncParametric_[i]);
   }
   
   // Solve updated problem
