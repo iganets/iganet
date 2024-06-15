@@ -54,8 +54,7 @@ private:
 
 public:
   /// @brief Constructors from the base class
-  using iganet::IgANet<Optimizer, GeometryMap, Variable,
-                       iganet::IgABaseNoRefData>::IgANet;
+  using Base::Base;
 
   /// @brief Returns a constant reference to the collocation points
   auto const &collPts() const { return collPts_; }
@@ -69,16 +68,20 @@ public:
     // the variables since otherwise the respective tensors would be
     // empty. In all further epochs no updates are needed since we do
     // not change the inputs nor the variable function space.
-    collPts_ = Base::variable_collPts(iganet::collPts::greville);
+    if (epoch == 0) {
+      Base::inputs(epoch);
+      collPts_ = Base::variable_collPts(iganet::collPts::greville);
 
-    knot_indices_ =
-        Base::u_.template find_knot_indices<iganet::functionspace::interior>(
-            collPts_.first);
-    coeff_indices_ =
-        Base::u_.template find_coeff_indices<iganet::functionspace::interior>(
-            knot_indices_);
+      knot_indices_ =
+          Base::u_.template find_knot_indices<iganet::functionspace::interior>(
+              collPts_.first);
+      coeff_indices_ =
+          Base::u_.template find_coeff_indices<iganet::functionspace::interior>(
+              knot_indices_);
 
-    return true;
+      return true;
+    } else
+      return false;
   }
 
   /// @brief Computes the loss function
@@ -97,9 +100,18 @@ public:
       Base::u_.from_tensor(outputs.flatten());
 
     // Evaluate the loss function
-    return torch::mse_loss(
-        *Base::u_.eval(collPts_.first, knot_indices_, coeff_indices_)[0],
-        sin(M_PI * collPts_.first[0]) * sin(M_PI * collPts_.first[1]));
+    if (outputs.dim() > 1)
+      // If the batch size is larger than one we need to expand the symbolically
+      // evaluated reference data
+      return torch::mse_loss(
+          *Base::u_.eval(collPts_.first, knot_indices_, coeff_indices_)[0],
+          (sin(M_PI * collPts_.first[0]) * sin(M_PI * collPts_.first[1]))
+              .expand({outputs.size(0), -1})
+              .t());
+    else
+      return torch::mse_loss(
+          *Base::u_.eval(collPts_.first, knot_indices_, coeff_indices_)[0],
+          (sin(M_PI * collPts_.first[0]) * sin(M_PI * collPts_.first[1])));
   }
 };
 
@@ -136,13 +148,6 @@ int main() {
   dataset.add_geometryMap(geometry_t{iganet::utils::to_array(25_i64, 25_i64)},
                           IGANET_DATA_DIR "surfaces/2d");
 
-  // Impose solution value for supervised training (not right-hand side)
-  dataset.add_referenceData(variable_t{iganet::utils::to_array(30_i64, 30_i64)},
-                            [](const std::array<real_t, 2> xi) {
-                              return std::array<real_t, 1>{static_cast<real_t>(
-                                  sin(M_PI * xi[0]) * sin(M_PI * xi[1]))};
-                            });
-
   // Create data set
   auto train_dataset = dataset.map(
       torch::data::transforms::Stack<iganet::IgADataset<>::example_type>());
@@ -167,12 +172,15 @@ int main() {
 #endif
 
   // Loop over user-definded number of coefficients (default 32)
-  for (int64_t ncoeffs : iganet::utils::getenv("IGANET_NCOEFFS", {32})) {
+  for (int64_t ncoeffs : iganet::utils::getenv("IGANET_NCOEFFS", {30})) {
+
     // Loop over different activation functions (default ReLU)
     for (std::vector<std::any> activation :
-         {std::vector<std::any>{iganet::activation::relu}}) {
+         {std::vector<std::any>{iganet::activation::sigmoid}}) {
+
       // Loop over user-defined numbers of layers (default 1)
       for (int64_t nlayers : iganet::utils::getenv("IGANET_NLAYERS", {1})) {
+
         // Loop over user-defined number of neurons per layer (default 10)
         for (int64_t nneurons :
              iganet::utils::getenv("IGANET_NNEURONS", {10})) {
