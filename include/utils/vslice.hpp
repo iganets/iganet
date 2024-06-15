@@ -16,6 +16,7 @@
 
 #include <array>
 
+#include <utils/linalg.hpp>
 #include <utils/tensorarray.hpp>
 
 #include <torch/torch.h>
@@ -80,27 +81,17 @@ inline auto VSlice(const utils::TensorArray<N> &index,
 
   auto dist = stop_offset - start_offset;
 
-  // Lambda expression to calculate the partial product of array
-  // entrie from start_index to stop_index (including the latter)
-  auto partial_prod_ = []<typename T>(T array, std::size_t start_index,
-                                      std::size_t stop_index) {
-    typename T::value_type result{1};
-    for (std::size_t i = start_index; i <= stop_index; ++i)
-      result *= array[i];
-    return result;
-  };
-
   if constexpr (transpose) {
 
     // Lambda expression to evaluate the k-th summand of the vslice
     auto vslice_summand_ = [&](std::size_t k) {
       if (k == N - 1) {
-        return (index[k].repeat_interleave(partial_prod_(dist, 0, k)) +
+        return (index[k].repeat_interleave(utils::prod(dist, 0, k)) +
                 torch::linspace(start_offset[k], stop_offset[k] - 1, dist[k],
                                 index[0].options())
-                    .repeat_interleave(partial_prod_(dist, 0, k - 1))
+                    .repeat_interleave(utils::prod(dist, 0, k - 1))
                     .repeat(index[0].numel())) *
-               partial_prod_(leading_dim, 0, k - 1);
+               utils::prod(leading_dim, 0, k - 1);
       } else if (k == 0) {
         if constexpr (N == 2) {
           return index[0].repeat_interleave(dist[0]).repeat_interleave(
@@ -111,22 +102,22 @@ inline auto VSlice(const utils::TensorArray<N> &index,
                      .repeat(dist[1]);
         } else { // N > 2
           return index[0].repeat_interleave(dist[0]).repeat_interleave(
-                     partial_prod_(dist, 1, N - 1)) +
+                     utils::prod(dist, 1, N - 1)) +
                  torch::linspace(start_offset[0], stop_offset[0] - 1, dist[0],
                                  index[0].options())
                      .repeat(index[0].numel())
-                     .repeat(partial_prod_(dist, 1, N - 1));
+                     .repeat(utils::prod(dist, 1, N - 1));
         }
       } else {
         return (index[k]
-                    .repeat_interleave(partial_prod_(dist, 0, k))
-                    .repeat_interleave(partial_prod_(dist, k + 1, N - 1)) +
+                    .repeat_interleave(utils::prod(dist, 0, k))
+                    .repeat_interleave(utils::prod(dist, k + 1, N - 1)) +
                 torch::linspace(start_offset[k], stop_offset[k] - 1, dist[k],
                                 index[0].options())
-                    .repeat_interleave(partial_prod_(dist, 0, k - 1))
+                    .repeat_interleave(utils::prod(dist, 0, k - 1))
                     .repeat(index[0].numel())
-                    .repeat(partial_prod_(dist, k + 1, N - 1))) *
-               partial_prod_(leading_dim, 0, k - 1);
+                    .repeat(utils::prod(dist, k + 1, N - 1))) *
+               utils::prod(leading_dim, 0, k - 1);
       }
     };
 
@@ -141,34 +132,34 @@ inline auto VSlice(const utils::TensorArray<N> &index,
     // Lambda expression to evaluate the k-th summand of the vslice
     auto vslice_summand_ = [&](std::size_t k) {
       if (k == N - 1) {
-        return (index[k].repeat(partial_prod_(dist, 0, k)) +
+        return (index[k].repeat(utils::prod(dist, 0, k)) +
                 torch::linspace(start_offset[k], stop_offset[k] - 1, dist[k],
                                 index[0].options())
                     .repeat_interleave(index[0].numel() *
-                                       partial_prod_(dist, 0, k - 1))) *
-               partial_prod_(leading_dim, 0, k - 1);
+                                       utils::prod(dist, 0, k - 1))) *
+               utils::prod(leading_dim, 0, k - 1);
       } else if (k == 0) {
         if constexpr (N == 2) {
           return (index[0].repeat(dist[0]) +
                   torch::linspace(start_offset[0], stop_offset[0] - 1, dist[0],
                                   index[0].options())
                       .repeat_interleave(index[0].numel()))
-              .repeat(partial_prod_(dist, k + 1, N - 1));
+              .repeat(utils::prod(dist, k + 1, N - 1));
         } else { // N > 2
           return (index[0].repeat(dist[0]) +
                   torch::linspace(start_offset[0], stop_offset[0] - 1, dist[0],
                                   index[0].options())
                       .repeat_interleave(index[0].numel()))
-              .repeat(partial_prod_(dist, k + 1, N - 1));
+              .repeat(utils::prod(dist, k + 1, N - 1));
         }
       } else {
-        return (index[k].repeat(partial_prod_(dist, 0, k)) +
+        return (index[k].repeat(utils::prod(dist, 0, k)) +
                 torch::linspace(start_offset[k], stop_offset[k] - 1, dist[k],
                                 index[0].options())
                     .repeat_interleave(index[0].numel() *
-                                       partial_prod_(dist, 0, k - 1)))
-                   .repeat(partial_prod_(dist, k + 1, N - 1)) *
-               partial_prod_(leading_dim, 0, k - 1);
+                                       utils::prod(dist, 0, k - 1)))
+                   .repeat(utils::prod(dist, k + 1, N - 1)) *
+               utils::prod(leading_dim, 0, k - 1);
       }
     };
 
