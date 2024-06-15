@@ -2560,14 +2560,14 @@ public:
         if (bspline.degree(0) != degrees_[0])
           throw std::runtime_error("Degrees mismatch");
 
-        auto [knots0_cpu, knots0_accessor] =
+        auto [knots_cpu, knots_accessor] =
             utils::to_tensorAccessor<real_t, 1>(knots_[0], torch::kCPU);
-        auto knots0_cpu_ptr = knots0_cpu.template data_ptr<real_t>();
+        auto knots_cpu_ptr = knots_cpu.template data_ptr<real_t>();
 
-        gismo::gsKnotVector<real_t> kv0(degrees_[0], knots0_cpu_ptr,
-                                        knots0_cpu_ptr + knots0_cpu.size(0));
+        gismo::gsKnotVector<real_t> kv(degrees_[0], knots_cpu_ptr,
+                                       knots_cpu_ptr + knots_cpu.size(0));
 
-        bspline.knots(0).swap(kv0);
+        bspline.knots(0).swap(kv);
 
       } else
         throw std::runtime_error("Invalid parametric dimension");
@@ -2594,110 +2594,19 @@ public:
 
     if (updateKnotVector) {
 
-      if constexpr (parDim_ == 2) {
+      // Check compatibility of arguments
+      for (short_t i = 0; i < parDim_; ++i)
+        assert(bspline.degree(i) == degrees_[i]);
 
-        if (bspline.degree(0) != degrees_[0] ||
-            bspline.degree(1) != degrees_[1])
-          throw std::runtime_error("Degrees mismatch");
+      for (short_t i = 0; i < parDim_; ++i) {
+        auto [knots_cpu, knots_accessor] =
+            utils::to_tensorAccessor<real_t, 1>(knots_[i], torch::kCPU);
+        auto knots_cpu_ptr = knots_cpu.template data_ptr<real_t>();
 
-        auto [knots0_cpu, knots0_accessor] =
-            utils::to_tensorAccessor<real_t, 1>(knots_[0], torch::kCPU);
-        auto knots0_cpu_ptr = knots0_cpu.template data_ptr<real_t>();
-
-        gismo::gsKnotVector<real_t> kv0(degrees_[0], knots0_cpu_ptr,
-                                        knots0_cpu_ptr + knots0_cpu.size(0));
-
-        bspline.knots(0).swap(kv0);
-
-        auto [knots1_cpu, knots1_accessor] =
-            utils::to_tensorAccessor<real_t, 1>(knots_[1], torch::kCPU);
-        auto knots1_cpu_ptr = knots1_cpu.template data_ptr<real_t>();
-
-        gismo::gsKnotVector<real_t> kv1(degrees_[1], knots1_cpu_ptr,
-                                        knots1_cpu_ptr + knots1_cpu.size(0));
-
-        bspline.knots(1).swap(kv1);
-
-      } else if constexpr (parDim_ == 3) {
-
-        if (bspline.degree(0) != degrees_[0] ||
-            bspline.degree(1) != degrees_[1] ||
-            bspline.degree(2) != degrees_[2])
-          throw std::runtime_error("Degrees mismatch");
-
-        auto [knots0_cpu, knots0_accessor] =
-            utils::to_tensorAccessor<real_t, 1>(knots_[0], torch::kCPU);
-        auto knots0_cpu_ptr = knots0_cpu.template data_ptr<real_t>();
-
-        gismo::gsKnotVector<real_t> kv0(degrees_[0], knots0_cpu_ptr,
-                                        knots0_cpu_ptr + knots0_cpu.size(0));
-
-        bspline.knots(0).swap(kv0);
-
-        auto [knots1_cpu, knots1_accessor] =
-            utils::to_tensorAccessor<real_t, 1>(knots_[1], torch::kCPU);
-        auto knots1_cpu_ptr = knots1_cpu.template data_ptr<real_t>();
-
-        gismo::gsKnotVector<real_t> kv1(degrees_[1], knots1_cpu_ptr,
-                                        knots1_cpu_ptr + knots1_cpu.size(0));
-
-        bspline.knots(1).swap(kv1);
-
-        auto [knots2_cpu, knots2_accessor] =
-            utils::to_tensorAccessor<real_t, 1>(knots_[2], torch::kCPU);
-        auto knots2_cpu_ptr = knots2_cpu.template data_ptr<real_t>();
-
-        gismo::gsKnotVector<real_t> kv2(degrees_[2], knots2_cpu_ptr,
-                                        knots2_cpu_ptr + knots2_cpu.size(0));
-
-        bspline.knots(2).swap(kv2);
-
-      } else if constexpr (parDim_ == 4) {
-
-        if (bspline.degree(0) != degrees_[0] ||
-            bspline.degree(1) != degrees_[1] ||
-            bspline.degree(2) != degrees_[2] ||
-            bspline.degree(3) != degrees_[3])
-          throw std::runtime_error("Degrees mismatch");
-
-        auto [knots0_cpu, knots0_accessor] =
-            utils::to_tensorAccessor<real_t, 1>(knots_[0], torch::kCPU);
-        auto knots0_cpu_ptr = knots0_cpu.template data_ptr<real_t>();
-
-        gismo::gsKnotVector<real_t> kv0(degrees_[0], knots0_cpu_ptr,
-                                        knots0_cpu_ptr + knots0_cpu.size(0));
-
-        bspline.knots(0).swap(kv0);
-
-        auto [knots1_cpu, knots1_accessor] =
-            utils::to_tensorAccessor<real_t, 1>(knots_[1], torch::kCPU);
-        auto knots1_cpu_ptr = knots1_cpu.template data_ptr<real_t>();
-
-        gismo::gsKnotVector<real_t> kv1(degrees_[1], knots1_cpu_ptr,
-                                        knots1_cpu_ptr + knots1_cpu.size(0));
-
-        bspline.knots(1).swap(kv1);
-
-        auto [knots2_cpu, knots2_accessor] =
-            utils::to_tensorAccessor<real_t, 1>(knots_[2], torch::kCPU);
-        auto knots2_cpu_ptr = knots2_cpu.template data_ptr<real_t>();
-
-        gismo::gsKnotVector<real_t> kv2(degrees_[2], knots2_cpu_ptr,
-                                        knots2_cpu_ptr + knots2_cpu.size(0));
-
-        bspline.knots(2).swap(kv2);
-
-        auto [knots3_cpu, knots3_accessor] =
-            utils::to_tensorAccessor<real_t, 1>(knots_[3], torch::kCPU);
-        auto knots3_cpu_ptr = knots3_cpu.template data_ptr<real_t>();
-
-        gismo::gsKnotVector<real_t> kv3(degrees_[3], knots3_cpu_ptr,
-                                        knots3_cpu_ptr + knots3_cpu.size(0));
-
-        bspline.knots(3).swap(kv3);
-
-      } else
-        throw std::runtime_error("Invalid parametric dimension");
+        gismo::gsKnotVector<real_t> kv(degrees_[i], knots_cpu_ptr,
+                                       knots_cpu_ptr + knots_cpu.size(0));
+        bspline.knots(i).swap(kv);
+      }
     }
 
     if (updateCoeffs) {
