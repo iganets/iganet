@@ -23,6 +23,7 @@
 #include <layer.hpp>
 #include <memory.hpp>
 #include <multipatch.hpp>
+#include <nurbs.hpp>
 #include <options.hpp>
 #include <patch.hpp>
 #include <utils.hpp>
