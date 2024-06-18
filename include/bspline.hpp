@@ -83,10 +83,9 @@ using utils::operator+;
 //  clang-format off
 /// @brief Enumerator for specifying the initialization of B-spline coefficients
 enum class init : short_t {
-  zeros = 0, /*!< set coefficient values to zero */
-  ones = 1,  /*!< set coefficient values to one */
-  linear =
-      2, /*!< set coefficient values to \f$0,1,\dots \#\text{coeffs}-1\f$ */
+  zeros = 0,    /*!< set coefficient values to zero */
+  ones = 1,     /*!< set coefficient values to one */
+  linear = 2,   /*!< set coefficient values to \f$0,1,\dots \#\text{coeffs}-1\f$ */
   random = 3,   /*!< set coefficient values to random numbers */
   greville = 4, /*!< set coefficient values to the Greville abscissae */
   linspace = 5  /*!< set coefficient values to \f$0,1,\dots\f$ pattern (mostly
@@ -245,7 +244,6 @@ protected:
   /// @brief Array storing the coefficients of the control net
   /// \f$\left(\mathbf{c}_{i_d}\right)_{i_d=1}^{n_d}\f$,
   /// \f$\mathbf{c}_{i_d}\in\mathbb{R}^{d_\text{geo}}\f$
-
   utils::TensorArray<geoDim_> coeffs_;
 
   /// @brief Options
@@ -351,6 +349,8 @@ public:
   inline const Options<real_t> &options() const noexcept { return options_; }
 
   /// @brief Default constructor
+  ///
+  /// @param[in] options Options configuration
   UniformBSplineCore(Options<real_t> options = Options<real_t>{})
       : options_(options) {}
 
@@ -1064,16 +1064,16 @@ public:
   /// @result Indices of the knot spans containing `xi`
   ///
   /// @{
-  inline auto find_knot_indices(const torch::Tensor &xi) const {
+  inline auto find_knot_indices(const torch::Tensor &xi) const noexcept {
     if constexpr (parDim_ == 0)
       return torch::zeros_like(coeffs_[0]).to(torch::kInt64);
     else
       return find_knot_indices(utils::TensorArray1({xi}));
   }
 
-  inline auto find_knot_indices(const utils::TensorArray<parDim_> &xi) const {
+  inline utils::TensorArray<parDim_> find_knot_indices(const utils::TensorArray<parDim_> &xi) const noexcept {
     if constexpr (parDim_ == 0)
-      return utils::TensorArray0{};
+      return utils::TensorArray<parDim_>{};
     else {
       utils::TensorArray<parDim_> result;
 
@@ -6453,8 +6453,8 @@ public:
   /// @brief Returns a string representation of the BSplineCommon object
   inline virtual void
   pretty_print(std::ostream &os = Log(log::info)) const noexcept override {
-    os << name() << "(\nparDim = " << BSplineCore::parDim_
-       << ", geoDim = " << BSplineCore::geoDim_ << ", degrees = ";
+    os << name() << "(\nparDim = " << BSplineCore::parDim()
+       << ", geoDim = " << BSplineCore::geoDim() << ", degrees = ";
 
 #ifdef __CUDACC__
 #pragma nv_diag_suppress 68
@@ -6462,26 +6462,26 @@ public:
 #pragma nv_diag_suppress 514
 #endif
 
-    for (short_t i = 0; i < BSplineCore::parDim_ - 1; ++i)
+    for (short_t i = 0; i < BSplineCore::parDim() - 1; ++i)
       os << BSplineCore::degree(i) << "x";
-    if (BSplineCore::parDim_ > 0)
-      os << BSplineCore::degree(BSplineCore::parDim_ - 1);
+    if (BSplineCore::parDim() > 0)
+      os << BSplineCore::degree(BSplineCore::parDim() - 1);
     else
       os << 0;
 
     os << ", knots = ";
-    for (short_t i = 0; i < BSplineCore::parDim_ - 1; ++i)
+    for (short_t i = 0; i < BSplineCore::parDim() - 1; ++i)
       os << BSplineCore::nknots(i) << "x";
-    if (BSplineCore::parDim_ > 0)
-      os << BSplineCore::nknots(BSplineCore::parDim_ - 1);
+    if (BSplineCore::parDim() > 0)
+      os << BSplineCore::nknots(BSplineCore::parDim() - 1);
     else
       os << 0;
 
     os << ", coeffs = ";
-    for (short_t i = 0; i < BSplineCore::parDim_ - 1; ++i)
+    for (short_t i = 0; i < BSplineCore::parDim() - 1; ++i)
       os << BSplineCore::ncoeffs(i) << "x";
-    if (BSplineCore::parDim_ > 0)
-      os << BSplineCore::ncoeffs(BSplineCore::parDim_ - 1);
+    if (BSplineCore::parDim() > 0)
+      os << BSplineCore::ncoeffs(BSplineCore::parDim() - 1);
     else
       os << 1;
 
@@ -6496,7 +6496,7 @@ public:
 
     if (is_verbose(os)) {
       os << "\nknots = ";
-      if (BSplineCore::parDim_ > 0)
+      if (BSplineCore::parDim() > 0)
         os << BSplineCore::knots();
       else
         os << "{}";
