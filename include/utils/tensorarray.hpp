@@ -182,11 +182,13 @@ inline std::ostream &operator<<(std::ostream &os,
 #endif // defined(_WIN32)
 
   os << *name_ << "(\n";
-  for (const auto &i : obj)
-    if (!i.numel())
-      os << "{}\n";
-    else
-      os << ((i.sizes().size() == 1) ? i.view({1, i.size(0)}) : i) << "\n";
+  for (std::size_t i = 0; i < N; ++i) {
+    os << obj[i] << "\n";
+
+    if (iganet::is_verbose(os))
+      os << "[ " << obj[i].options() << " ]\n";
+  }
+
   os << ")";
 
   return os;
