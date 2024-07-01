@@ -1122,42 +1122,34 @@ public:
         if (inputs.dim() > 0) {
           if constexpr (Base::has_GeometryMap && Base::has_RefData) {
             Base::G_.from_tensor(
-                inputs.slice(1, 0, Base::G_.ncumcoeffs() * Base::G_.geoDim())
-                    .t());
-            Base::f_.from_tensor(
-                inputs
-                    .slice(1, Base::G_.ncumcoeffs() * Base::G_.geoDim(),
-                           Base::G_.ncumcoeffs() * Base::G_.geoDim() +
-                               Base::f_.ncumcoeffs() * Base::f_.geoDim())
-                    .t());
+                inputs.slice(1, 0, Base::G_.as_tensor_size()).t());
+            Base::f_.from_tensor(inputs
+                                     .slice(1, Base::G_.as_tensor_size(),
+                                            Base::G_.as_tensor_size() +
+                                                Base::f_.as_tensor_size())
+                                     .t());
           } else if constexpr (Base::has_GeometryMap && !Base::has_RefData)
             Base::G_.from_tensor(
-                inputs.slice(1, 0, Base::G_.ncumcoeffs() * Base::G_.geoDim())
-                    .t());
+                inputs.slice(1, 0, Base::G_.as_tensor_size()).t());
           else if constexpr (!Base::has_GeometryMap && Base::has_RefData)
             Base::f_.from_tensor(
-                inputs.slice(1, 0, Base::f_.ncumcoeffs() * Base::f_.geoDim())
-                    .t());
+                inputs.slice(1, 0, Base::f_.as_tensor_size()).t());
 
         } else {
           if constexpr (Base::has_GeometryMap && Base::has_RefData) {
             Base::G_.from_tensor(
-                inputs.slice(1, 0, Base::G_.ncumcoeffs() * Base::G_.geoDim())
-                    .flatten());
-            Base::f_.from_tensor(
-                inputs
-                    .slice(1, Base::G_.ncumcoeffs() * Base::G_.geoDim(),
-                           Base::G_.ncumcoeffs() * Base::G_.geoDim() +
-                               Base::f_.ncumcoeffs() * Base::f_.geoDim())
-                    .flatten());
+                inputs.slice(1, 0, Base::G_.as_tensor_size()).flatten());
+            Base::f_.from_tensor(inputs
+                                     .slice(1, Base::G_.as_tensor_size(),
+                                            Base::G_.as_tensor_size() +
+                                                Base::f_.as_tensor_size())
+                                     .flatten());
           } else if constexpr (Base::has_GeometryMap && !Base::has_RefData)
             Base::G_.from_tensor(
-                inputs.slice(1, 0, Base::G_.ncumcoeffs() * Base::G_.geoDim())
-                    .flatten());
+                inputs.slice(1, 0, Base::G_.as_tensor_size()).flatten());
           else if constexpr (!Base::has_GeometryMap && Base::has_RefData)
             Base::f_.from_tensor(
-                inputs.slice(1, 0, Base::f_.ncumcoeffs() * Base::f_.geoDim())
-                    .flatten());
+                inputs.slice(1, 0, Base::f_.as_tensor_size()).flatten());
         }
 
         this->epoch(epoch);
