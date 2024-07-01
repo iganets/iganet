@@ -183,8 +183,8 @@ int main() {
 
 #ifdef IGANET_WITH_GISMO
           // Convert B-spline objects to G+Smo
-          auto G_gismo = net.G().to_gismo();
-          auto u_gismo = net.u().to_gismo();
+          auto G_gismo = net.G().space().to_gismo();
+          auto u_gismo = net.u().space().to_gismo();
           gsFunctionExpr<real_t> f_gismo("sin(pi*x)*sin(pi*y)", 2);
 
           // Set up expression assembler
