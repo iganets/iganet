@@ -83,12 +83,14 @@ using utils::operator+;
 //  clang-format off
 /// @brief Enumerator for specifying the initialization of B-spline coefficients
 enum class init : short_t {
-  zeros = 0,    /*!< set coefficient values to zero */
-  ones = 1,     /*!< set coefficient values to one */
-  linear = 2,   /*!< set coefficient values to \f$0,1,\dots \#\text{coeffs}-1\f$ */
-  random = 3,   /*!< set coefficient values to random numbers */
-  greville = 4, /*!< set coefficient values to the Greville abscissae */
-  linspace = 5  /*!< set coefficient values to \f$0,1,\dots\f$ pattern (mostly
+  none = 0,  /*!< leave coefficient values uninitialized */
+  zeros = 1, /*!< set coefficient values to zero */
+  ones = 2,  /*!< set coefficient values to one */
+  linear =
+      3, /*!< set coefficient values to \f$0,1,\dots \#\text{coeffs}-1\f$ */
+  random = 4,   /*!< set coefficient values to random numbers */
+  greville = 5, /*!< set coefficient values to the Greville abscissae */
+  linspace = 6  /*!< set coefficient values to \f$0,1,\dots\f$ pattern (mostly
                    for testing) */
 };
 //  clang-format on
@@ -352,7 +354,11 @@ public:
   ///
   /// @param[in] options Options configuration
   UniformBSplineCore(Options<real_t> options = Options<real_t>{})
-      : options_(options) {}
+      : options_(options) {
+    nknots_.fill(0);
+    ncoeffs_.fill(0);
+    ncoeffs_reverse_.fill(0);
+  }
 
   /// @brief Constructor for equidistant knot vectors
   ///
@@ -1071,7 +1077,8 @@ public:
       return find_knot_indices(utils::TensorArray1({xi}));
   }
 
-  inline utils::TensorArray<parDim_> find_knot_indices(const utils::TensorArray<parDim_> &xi) const noexcept {
+  inline utils::TensorArray<parDim_>
+  find_knot_indices(const utils::TensorArray<parDim_> &xi) const noexcept {
     if constexpr (parDim_ == 0)
       return utils::TensorArray<parDim_>{};
     else {
@@ -2023,22 +2030,30 @@ public:
         throw std::runtime_error(
             "Not enough coefficients to create open knot vector");
 
-      // Create open uniform knot vector
-      std::vector<real_t> kv;
-      kv.reserve(ncoeffs_[i] + degrees_[i] + 1);
+      // Create empty vector
+      nknots_[i] = ncoeffs_[i] + degrees_[i] + 1;
+      knots_[i] = torch::empty({nknots_[i]}, options_);
 
-      for (int64_t j = 0; j < degrees_[i]; ++j)
-        kv.push_back(static_cast<real_t>(0));
+      if (knots_[i].is_cuda()) {
 
-      for (int64_t j = 0; j < ncoeffs_[i] - degrees_[i] + 1; ++j)
-        kv.push_back(static_cast<real_t>(j) /
-                     static_cast<real_t>(ncoeffs_[i] - degrees_[i]));
+        int64_t index(0);
+        auto knots = knots_[i].template packed_accessor64<real_t, 1>();
 
-      for (int64_t j = 0; j < degrees_[i]; ++j)
-        kv.push_back(static_cast<real_t>(1));
+      } else {
 
-      knots_[i] = utils::to_tensor(kv, options_);
-      nknots_[i] = kv.size();
+        int64_t index(0);
+        auto knots = knots_[i].template accessor<real_t, 1>();
+
+        for (int64_t j = 0; j < degrees_[i]; ++j)
+          knots[index++] = static_cast<real_t>(0);
+
+        for (int64_t j = 0; j < ncoeffs_[i] - degrees_[i] + 1; ++j)
+          knots[index++] = static_cast<real_t>(j) /
+                           static_cast<real_t>(ncoeffs_[i] - degrees_[i]);
+
+        for (int64_t j = 0; j < degrees_[i]; ++j)
+          knots[index++] = static_cast<real_t>(1);
+      }
     }
 
 #ifdef __CUDACC__
@@ -2049,6 +2064,10 @@ public:
   /// @brief Initializes the B-spline coefficients
   inline void init_coeffs(enum init init) {
     switch (init) {
+
+    case (init::none): {
+      break;
+    }
 
     case (init::zeros): {
 
@@ -3251,6 +3270,20 @@ public:
 #endif // IGANET_WITH_GISMO
 };
 
+namespace detail {
+/// @brief Spline type
+class SplineType {};
+} // namespace detail
+
+/// @brief Type trait to check if T is a valid Spline type
+template <typename... T>
+using is_SplineType =
+    std::conjunction<std::is_base_of<detail::SplineType, T>...>;
+
+/// @brief Alias to the value of is_SplineType
+template <typename... T>
+inline constexpr bool is_SplineType_v = is_SplineType<T...>::value;
+
 /// @brief B-spline (common high-level functionality)
 ///
 /// This class implements some high-level common functionality of
@@ -3265,7 +3298,9 @@ public:
 /// functionality here and 'inject' the core functionality by
 /// deriving from a particular base class.
 template <typename BSplineCore>
-class BSplineCommon : public BSplineCore, protected utils::FullQualifiedName {
+class BSplineCommon : private detail::SplineType,
+                      public BSplineCore,
+                      protected utils::FullQualifiedName {
 public:
   /// @brief Constructors from the base class
   using BSplineCore::BSplineCore;
@@ -6495,12 +6530,25 @@ public:
 #endif
 
     if (is_verbose(os)) {
-      os << "\nknots = ";
+      os << "\nknots [ ";
+      for (const torch::Tensor &knots : BSplineCore::knots()) {
+        os << (knots.is_view() ? "view/" : "owns/");
+        os << (knots.is_contiguous() ? "cont " : "non-cont ");
+      }
       if (BSplineCore::parDim() > 0)
-        os << BSplineCore::knots();
+        os << "] = " << BSplineCore::knots();
       else
-        os << "{}";
-      os << "\ncoeffs = " << BSplineCore::coeffs_view();
+        os << "] = {}";
+
+      os << "\ncoeffs [ ";
+      for (const torch::Tensor &coeffs : BSplineCore::coeffs()) {
+        os << (coeffs.is_view() ? "view/" : "owns/");
+        os << (coeffs.is_contiguous() ? "cont " : "non-cont ");
+      }
+      if (BSplineCore::ncumcoeffs() > 0)
+        os << "] = " << BSplineCore::coeffs_view();
+      else
+        os << "] = {}";
     }
 
     os << "\n)";

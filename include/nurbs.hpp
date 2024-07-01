@@ -106,7 +106,8 @@ public:
                    enum init init = init::greville,
                    Options<real_t> options = Options<real_t>{})
       : Base(ncoeffs, init, options) {
-    Base::coeffs_[GeoDim] = torch::ones_like(Base::coeffs_[GeoDim]);
+    if (Base::coeffs_[GeoDim].defined())
+      Base::coeffs_[GeoDim] = torch::ones_like(Base::coeffs_[GeoDim]);
   }
 
   /// @brief Constructor for equidistant knot vectors
