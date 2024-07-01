@@ -30,6 +30,8 @@ class GismoPdeModel : public GismoModel<T>,
                       public ModelRefine,
                       public ModelReparameterize {
 
+  static_assert(d >= 1 && d <= 4, "Spatial dimension must be between 1 and 3");
+
 protected:
   /// @brief Multi-patch geometry
   gsMultiPatch<T> geo_;
