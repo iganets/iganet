@@ -96,7 +96,7 @@ public:
                 Options<value_type> options = iganet::Options<value_type>{})
       : spline_({ncoeffs, init, options}...),
         boundary_({ncoeffs, init::none, options}...) {
-    boundaries_from_full_tensor(this->as_tensor());
+    boundary_from_full_tensor(this->as_tensor());
   }
 
   FunctionSpace(const std::array<std::vector<typename Splines::value_type>,
@@ -108,19 +108,19 @@ public:
 
     static_assert((Splines::is_nonuniform() && ... && true),
                   "Constructor is only available for non-uniform splines");
-    boundaries_from_full_tensor(this->as_tensor());
+    boundary_from_full_tensor(this->as_tensor());
   }
 
   explicit FunctionSpace(const std::tuple<Splines...> &splines)
       : spline_(splines) { //,
     //        boundary_({splines.ncoeffs(), init::none, splines.options()}...) {
-    boundaries_from_full_tensor(this->as_tensor());
+    boundary_from_full_tensor(this->as_tensor());
   }
 
   explicit FunctionSpace(std::tuple<Splines...> &&splines)
       : spline_(splines) { //,
     //        boundary_({splines.ncoeffs(), init::none, splines.options()}...) {
-    boundaries_from_full_tensor(this->as_tensor());
+    boundary_from_full_tensor(this->as_tensor());
   }
   /// @}
 
@@ -194,15 +194,15 @@ private:
   /// tuple of boundaries
   template <std::size_t... Is>
   inline torch::Tensor
-  boundaries_as_tensor_(std::index_sequence<Is...>) const noexcept {
+  boundary_as_tensor_(std::index_sequence<Is...>) const noexcept {
     return torch::cat({std::get<Is>(boundary_).as_tensor()...});
   }
 
 public:
   /// @brief Returns a single-tensor representation of the
   /// tuple of boundaries
-  virtual inline torch::Tensor boundaries_as_tensor() const noexcept {
-    return boundaries_as_tensor_(
+  virtual inline torch::Tensor boundary_as_tensor() const noexcept {
+    return boundary_as_tensor_(
         std::make_index_sequence<FunctionSpace::nboundaries()>{});
   }
 
@@ -239,7 +239,7 @@ private:
   /// the tuple of boundaries
   template <std::size_t... Is>
   inline int64_t
-  boundaries_as_tensor_size_(std::index_sequence<Is...>) const noexcept {
+  boundary_as_tensor_size_(std::index_sequence<Is...>) const noexcept {
     return std::apply(
         [](auto... v) { return (v + ...); },
         std::make_tuple(std::get<Is>(boundary_).as_tensor_size()...));
@@ -248,8 +248,8 @@ private:
 public:
   /// @brief Returns the size of the single-tensor representation of
   /// the tuple of boundaries
-  virtual inline int64_t boundaries_as_tensor_size() const noexcept {
-    return boundaries_as_tensor_size_(
+  virtual inline int64_t boundary_as_tensor_size() const noexcept {
+    return boundary_as_tensor_size_(
         std::make_index_sequence<FunctionSpace::nboundaries()>{});
   }
 
@@ -301,8 +301,8 @@ private:
   /// @brief Sets the tuple of boundaries from a single-tensor representation of
   /// the boundaries only
   template <std::size_t... Is>
-  inline FunctionSpace &boundaries_from_tensor_(std::index_sequence<Is...>,
-                                                const torch::Tensor &tensor) {
+  inline FunctionSpace &boundary_from_tensor_(std::index_sequence<Is...>,
+                                              const torch::Tensor &tensor) {
     (std::get<Is>(boundary_).from_tensor(std::get<Is>(spline_).as_tensor()),
      ...);
 
@@ -313,8 +313,8 @@ public:
   /// @brief Sets the tuple of boundaries from a single-tensor representation of
   /// the boundaries only
   virtual inline FunctionSpace &
-  boundaries_from_tensor(const torch::Tensor &tensor) {
-    return boundaries_from_tensor_(
+  boundary_from_tensor(const torch::Tensor &tensor) {
+    return boundary_from_tensor_(
         std::make_index_sequence<FunctionSpace::nboundaries()>{}, tensor);
   }
 
@@ -322,8 +322,8 @@ private:
   /// @brief Sets the tuple of boundaries from a single-tensor representation
   template <std::size_t... Is>
   inline FunctionSpace &
-  boundaries_from_full_tensor_(std::index_sequence<Is...>,
-                               const torch::Tensor &tensor) {
+  boundary_from_full_tensor_(std::index_sequence<Is...>,
+                             const torch::Tensor &tensor) {
     (std::get<Is>(boundary_).from_full_tensor(
          std::get<Is>(spline_).as_tensor()),
      ...);
@@ -334,8 +334,8 @@ private:
 public:
   /// @brief Sets the tuple of boundaries from a single-tensor representation
   virtual inline FunctionSpace &
-  boundaries_from_full_tensor(const torch::Tensor &tensor) {
-    return boundaries_from_full_tensor_(
+  boundary_from_full_tensor(const torch::Tensor &tensor) {
+    return boundary_from_full_tensor_(
         std::make_index_sequence<FunctionSpace::nboundaries()>{}, tensor);
   }
 
@@ -343,7 +343,7 @@ public:
   virtual inline FunctionSpace &from_tensor(const torch::Tensor &tensor) {
     spaces_from_tensor_(std::make_index_sequence<FunctionSpace::nspaces()>{},
                         tensor);
-    boundaries_from_full_tensor_(
+    boundary_from_full_tensor_(
         std::make_index_sequence<FunctionSpace::nboundaries()>{}, tensor);
     return *this;
   }
@@ -2414,7 +2414,7 @@ public:
   }
 
   /// @brief Returns a single-tensor representation of the boundary
-  virtual inline torch::Tensor boundaries_as_tensor() const noexcept {
+  virtual inline torch::Tensor boundary_as_tensor() const noexcept {
     return boundary_.as_tensor();
   }
 
@@ -2435,7 +2435,7 @@ public:
 
   /// @brief Returns the size of the single-tensor representation of
   /// the boundary
-  virtual inline int64_t boundaries_as_tensor_size() const noexcept {
+  virtual inline int64_t boundary_as_tensor_size() const noexcept {
     return boundary_.as_tensor_size();
   }
 
@@ -2458,14 +2458,14 @@ public:
   /// @brief Sets the boundary from a single-tensor representation of the
   /// boundary only
   virtual inline FunctionSpace &
-  boundaries_from_tensor(const torch::Tensor &coeffs) noexcept {
+  boundary_from_tensor(const torch::Tensor &coeffs) noexcept {
     boundary_.from_tensor(coeffs);
     return *this;
   }
 
   /// @brief Sets the boundary from a single-tensor representation
   virtual inline FunctionSpace &
-  boundaries_from_full_tensor(const torch::Tensor &coeffs) noexcept {
+  boundary_from_full_tensor(const torch::Tensor &coeffs) noexcept {
     boundary_.from_full_tensor(coeffs);
     return *this;
   }
