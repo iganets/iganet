@@ -41,6 +41,12 @@
 #ifdef IGANET_WITH_GISMO
 #include <gismo.h>
 #include <gsNurbs/gsMobiusDomain.h>
+
+#ifdef gsElasticity_ENABLED
+#include <gsElasticity/gsGeoUtils.h>
+#include <gsElasticity/gsElasticityAssembler.h>
+#include <gsElasticity/gsMassAssembler.h>
+#endif
 #endif
 
 #undef real_t
