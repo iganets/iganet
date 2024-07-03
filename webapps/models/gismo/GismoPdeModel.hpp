@@ -43,7 +43,8 @@ public:
   /// @brief Constructor for equidistant knot vectors
   GismoPdeModel(const std::array<short_t, d> degrees,
                 const std::array<int64_t, d> ncoeffs,
-                const std::array<int64_t, d> npatches)
+                const std::array<int64_t, d> npatches,
+                const std::array<T, d>       dimensions)
       : GismoModel<T>() {
     if constexpr (d == 1) {
       gsKnotVector<T> KV0(0, 1, ncoeffs[0] - degrees[0] - 1, degrees[0] + 1);
@@ -54,7 +55,9 @@ public:
         C(i, 1) = (T)0;
         C(i, 2) = (T)0;
       }
-
+      
+      C.col(0) *= dimensions[0];
+      
       geo_.addPatch(gsBSpline<T>(give(KV0), give(C)));
       geo_.computeTopology();
 
@@ -72,6 +75,9 @@ public:
           C(r, 2) = (T)0;
           ++r;
         }
+
+      C.col(0) *= dimensions[0];
+      C.col(1) *= dimensions[1];
 
       geo_.addPatch(gsTensorBSpline<2, T>(give(KV0), give(KV1), give(C)));
       geo_.computeTopology();
@@ -93,6 +99,10 @@ public:
             ++r;
           }
 
+      C.col(0) *= dimensions[0];
+      C.col(1) *= dimensions[1];
+      C.col(2) *= dimensions[2];
+      
       geo_.addPatch(
           gsTensorBSpline<3, T>(give(KV0), give(KV1), give(KV2), give(C)));
       geo_.computeTopology();
@@ -117,6 +127,11 @@ public:
               ++r;
             }
 
+      C.col(0) *= dimensions[0];
+      C.col(1) *= dimensions[1];
+      C.col(2) *= dimensions[2];
+      C.col(3) *= dimensions[3];
+      
       geo_.addPatch(gsTensorBSpline<4, T>(give(KV0), give(KV1), give(KV2),
                                           give(KV3), give(C)));
       geo_.computeTopology();
@@ -144,7 +159,13 @@ public:
              "type" : ["int"],
              "value" : [3],
              "default" : [3],
-             "uiid" : 2}])"_json;
+             "uiid" : 2},{
+             "name" : "dimension",
+             "description" : "Dimension in physical space",
+             "type" : ["float"],
+             "value" : [1.0],
+             "default" : [1.0],
+             "uiid" : 3}])"_json;
 
     else if constexpr (d == 2)
       return R"([{
@@ -165,7 +186,13 @@ public:
              "type" : ["int","int"],
              "value" : [3,3],
              "default" : [3,3],
-             "uiid" : 2}])"_json;
+             "uiid" : 2},{
+             "name" : "dimensions",
+             "description" : "Dimensions in physical space",
+             "type" : ["float", "float"],
+             "value" : [1.0, 1.0],
+             "default" : [1.0, 1.0],
+             "uiid" : 3}])"_json;
 
     else if constexpr (d == 3)
       return R"([{
@@ -186,7 +213,13 @@ public:
              "type" : ["int","int","int"],
              "value" : [3,3,3],
              "default" : [3,3,3],
-             "uiid" : 2}])"_json;
+             "uiid" : 2},{
+             "name" : "dimensions",
+             "description" : "Dimensions in physical space",
+             "type" : ["float", "float", "float"],
+             "value" : [1.0, 1.0, 1.0],
+             "default" : [1.0, 1.0, 1.0],
+             "uiid" : 3}])"_json;
 
     else if constexpr (d == 4)
       return R"([{
@@ -207,7 +240,13 @@ public:
              "type" : ["int","int","int","int"],
              "value" : [3,3,3,3],
              "default" : [3,3,3,3],
-             "uiid" : 2}])"_json;
+             "uiid" : 2},{
+             "name" : "dimensions",
+             "description" : "Dimensions in physical space",
+             "type" : ["float", "float", "float", "float"],
+             "value" : [1.0, 1.0, 1.0, 1.0],
+             "default" : [1.0, 1.0, 1.0, 1.0],
+             "uiid" : 3}])"_json;
 
     else
       return R"({ INVALID REQUEST })"_json;
@@ -402,11 +441,7 @@ public:
 
     if (component == "ScaledJacobian" || component == "UniformityMetric") {
 
-      // Create uniform grid
-      gsMatrix<T> ab = geo_.patch(0).support();
-      gsVector<T> a = ab.col(0);
-      gsVector<T> b = ab.col(1);
-
+      // Get grid resolution
       gsVector<unsigned> np(geo_.parDim());
       np.setConstant(25);
 
@@ -417,8 +452,11 @@ public:
           for (std::size_t i = 0; i < d; ++i)
             np(i) = res[i];
         }
-
-      // Uniform parameters for evaluation
+      
+      // Create uniform grid in physical space
+      gsMatrix<T> ab = geo_.patch(0).support();
+      gsVector<T> a = ab.col(0);
+      gsVector<T> b = ab.col(1);
       gsMatrix<T> pts = gsPointGrid(a, b, np);
       gsMatrix<T> eval(1, pts.cols());
 
@@ -447,7 +485,6 @@ public:
           }
         }
 
-        eval.resize(np(0), np(1));
         return utils::to_json(eval, true, true);
       }
 
@@ -461,7 +498,6 @@ public:
         for (std::size_t i = 0; i < pts.cols(); i++)
           eval(0, i) = ev.eval(expr, pts.col(i))(0);
 
-        eval.resize(np(0), np(1));
         return utils::to_json(eval, true, true);
       } else
         return R"({ INVALID REQUEST })"_json;

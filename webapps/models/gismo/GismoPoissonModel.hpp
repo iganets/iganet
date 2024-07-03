@@ -75,35 +75,43 @@ private:
   /// @brief Solve the Poisson problem
   void solve() {
 
-    std::cout << "RHS\n";
-    std::cout << rhsFunc_ << ":" << rhsFuncParametric_ << std::endl;
-    std::cout << rhsFunc_.domainDim() << "->" << rhsFunc_.targetDim()
-              << std::endl;
-
-    std::cout << "BC\n";
-    for (auto [f, t, p] : utils::zip(bcFunc_, bcType_, bcFuncParametric_))
-      std::cout << f << ":" << p << ":" << t << "\n"
-                << f.domainDim() << "->" << f.targetDim() << std::endl;
-
     // Set up expression assembler
     auto G = assembler_.getMap(Base::geo_);
     auto u = assembler_.getSpace(basis_);
-    auto f = assembler_.getCoeff(rhsFunc_);
 
     // Impose boundary conditions
     u.setup(bc_, gismo::dirichlet::l2Projection, 0);
 
     // Set up system
     assembler_.initSystem();
-    assembler_.assemble(igrad(u, G) * igrad(u, G).tr() * meas(G) // matrix
-                        ,
-                        u * f * meas(G) // rhs vector
-    );
+    if (rhsFuncParametric_) {
+      auto f = assembler_.getCoeff(rhsFunc_);
+      assembler_.assemble(igrad(u, G) * igrad(u, G).tr() * meas(G) // matrix
+                          ,
+                          u * f * meas(G) // rhs vector
+                          );
+    } else {
+      auto f = assembler_.getCoeff(rhsFunc_, G);
+      assembler_.assemble(igrad(u, G) * igrad(u, G).tr() * meas(G) // matrix
+                          ,
+                          u * f * meas(G) // rhs vector
+                          );
+    }
 
     // Compute the Neumann terms defined on physical space
-    auto g_N = assembler_.getBdrFunction(G);
-    assembler_.assembleBdr(bc_.get("Neumann"), u * g_N.tr() * nv(G));
+    auto bcNeumann = bc_.get("Neumann");
+    if (!bcNeumann.empty()) {
+      auto g = assembler_.getBdrFunction(G);
+      assembler_.assembleBdr(bcNeumann, u * g * meas(G));
+    }
 
+    // Compute the Neumann terms defined on parametric space
+    auto bcNeumannParametric = bc_.get("NeumannParametric");
+    if (!bcNeumannParametric.empty()) {
+      auto g = assembler_.getBdrFunction();
+      assembler_.assembleBdr(bcNeumannParametric, u * g * meas(G));
+    }
+    
     // Solve system
     typename gismo::gsSparseSolver<T>::CGDiagonal solver;
     solver.compute(assembler_.matrix());
@@ -123,8 +131,9 @@ public:
   /// @brief Constructor for equidistant knot vectors
   GismoPoissonModel(const std::array<short_t, d> degrees,
                     const std::array<int64_t, d> ncoeffs,
-                    const std::array<int64_t, d> npatches)
-      : Base(degrees, ncoeffs, npatches), basis_(Base::geo_, true),
+                    const std::array<int64_t, d> npatches,
+                    const std::array<T, d> dimensions)
+      : Base(degrees, ncoeffs, npatches, dimensions), basis_(Base::geo_, true),
         rhsFuncParametric_(true),
         rhsFunc_(d == 1   ? "2*pi^2*sin(pi*x)"
                  : d == 2 ? "2*pi^2*sin(pi*x)*sin(pi*y)"
@@ -133,27 +142,7 @@ public:
         assembler_(1, 1) {
 
     // Specify assembler options
-    gsOptionList Aopt;
-
-    Aopt.addInt("DirichletStrategy",
-                "Method for enforcement of Dirichlet BCs [11..14]", 11);
-    Aopt.addInt("DirichletValues",
-                "Method for computation of Dirichlet DoF values [100..103]",
-                101);
-    Aopt.addInt("InterfaceStrategy",
-                "Method of treatment of patch interfaces [0..3]", 1);
-    Aopt.addReal(
-        "bdA", "Estimated nonzeros per column of the matrix: bdA*deg + bdB", 2);
-    Aopt.addInt(
-        "bdB", "Estimated nonzeros per column of the matrix: bdA*deg + bdB", 1);
-    Aopt.addReal(
-        "bdO",
-        "Overhead of sparse mem. allocation: (1+bdO)(bdA*deg + bdB) [0..1]",
-        0.333);
-    Aopt.addReal("quA", "Number of quadrature points: quA*deg + quB", 1);
-    Aopt.addInt("quB", "Number of quadrature points: quA*deg + quB", 1);
-    Aopt.addInt("quRule", "Quadrature rule [1:GaussLegendre, 2:GaussLobatto]",
-                1);
+    gsOptionList Aopt = gsExprAssembler<>::defaultOptions();
 
     // Set assembler options
     assembler_.setOptions(Aopt);
@@ -216,9 +205,9 @@ public:
     int uiid = 0;
 
     // Lambda expression to add a JSON entry
-    auto add_json = [&json, &uiid]<typename Value>(
+    auto add_json = [&json, &uiid]<typename Type, typename Value>(
                         const std::string &name, const std::string &description,
-                        const std::string &type, const Value &value) {
+                        const Type &type, const Value &value) {
       nlohmann::json item;
       item["name"] = name;
       item["description"] = description;
@@ -231,16 +220,16 @@ public:
 
     // Lambda expression to add a JSON entry with different default type
     auto add_json_default =
-        [&json, &uiid]<typename Value, typename DefaultValue>(
+        [&json, &uiid]<typename Type, typename Value, typename DefaultValue>(
             const std::string &name, const std::string &description,
-            const std::string &type, const Value &value,
-            const DefaultValue &defaultvalue) {
+            const Type &type, const Value &value,
+            const DefaultValue &defaultValue) {
           nlohmann::json item;
           item["name"] = name;
           item["description"] = description;
           item["type"] = type;
           item["value"] = value;
-          item["default"] = defaultvalue;
+          item["default"] = defaultValue;
           item["uuid"] = uiid++;
           json.push_back(item);
         };
@@ -289,6 +278,10 @@ public:
         bcFuncParametric_[side - 1] =
             json["data"]["bc_parametric["s + str + "]"s].template get<bool>();
 
+        bcFunc_[side - 1] =
+            gismo::give(gsFunctionExpr<T>(bcFunc_[side - 1].expression(0),
+                                          bcFuncParametric_[side - 1] ? d : 3));
+        
         updateBC = true;
         break;
       }
@@ -309,10 +302,6 @@ public:
           bcType_[side - 1] = gismo::condition_type::type::neumann;
         else
           throw InvalidModelAttributeException();
-
-        bcFunc_[side - 1] =
-            gismo::give(gsFunctionExpr<T>(bcFunc_[side - 1].expression(0),
-                                          bcFuncParametric_[side - 1] ? d : 3));
 
         updateBC = true;
         break;
@@ -361,10 +350,21 @@ public:
     if (updateBC) {
       bc_.clear();
 
-      // Set boundary condition types
-      for (short_t i = 0; i < 2 * d; ++i)
-        bc_.addCondition(i + 1, bcType_[i], &bcFunc_[i], 0,
-                         bcFuncParametric_[i]);
+      // Set boundary conditions
+      for (const auto &side : GismoBoundarySides<d>) {
+        switch(bcType_[side-1]) {
+        case gismo::condition_type::type::dirichlet:
+          bc_.add(0, side, "Dirichlet", &bcFunc_[side-1], 0, -1,
+                  bcFuncParametric_[side-1]);
+          break;
+        case gismo::condition_type::type::neumann:
+          bc_.add(0, side, bcFuncParametric_[side-1] ? "NeumannParametric" : "Neumann",
+                  &bcFunc_[side-1], 0, -1, bcFuncParametric_[side-1]);
+          break;
+        default:
+          break;
+        }
+      }      
     }
 
     // Solve updated problem
@@ -379,48 +379,48 @@ public:
 
     if (component == "Solution" || component == "Rhs") {
 
-      // Create uniform grid
-      gsMatrix<T> ab = Base::geo_.patch(0).support();
-      gsVector<T> a = ab.col(0);
-      gsVector<T> b = ab.col(1);
+      // Get grid resolution
       gsVector<unsigned> npts(Base::geo_.parDim());
       npts.setConstant(25);
 
       if (json.contains("data"))
         if (json["data"].contains("resolution")) {
           auto res = json["data"]["resolution"].get<std::array<int64_t, d>>();
-
+          
           for (std::size_t i = 0; i < d; ++i)
             npts(i) = res[i];
         }
 
-      // Uniform parameters for evaluation
-      gsMatrix<T> pts = gsPointGrid(a, b, npts);
+      if (component == "Solution" || component == "Rhs" && !rhsFuncParametric_) {
+        
+        // Create uniform grid in physical domain
+        gsMatrix<T> ab = Base::geo_.patch(0).support();
+        gsVector<T> a = ab.col(0);
+        gsVector<T> b = ab.col(1);
+        gsMatrix<T> pts = gsPointGrid(a, b, npts);
+      
+        if (component == "Solution") {
+          gsMatrix<T> eval = solution_.patch(0).eval(pts);
+          return utils::to_json(eval, true, false);        
+        } else {
+          gsMatrix<T> eval = rhsFunc_.eval(Base::geo_.patch(0).eval(pts));
+          return utils::to_json(eval, true, false);
+        }
 
-      if (component == "Solution") {
-        gsMatrix<T> eval = solution_.patch(0).eval(pts);
+      } else {
+
+        // Create uniform grid in parametric domain
+        gsMatrix<T> ab = Base::geo_.patch(0).parameterRange();
+        gsVector<T> a = ab.col(0);
+        gsVector<T> b = ab.col(1);
+        gsMatrix<T> pts = gsPointGrid(a, b, npts);
+
+        gsMatrix<T> eval = rhsFunc_.eval(pts);
         return utils::to_json(eval, true, false);
-      } else if (component == "Rhs") {
-        gsMatrix<T> eval;
-
-        std::cout << rhsFunc_ << std::endl;
-        std::cout << rhsFunc_.domainDim() << "->" << rhsFunc_.targetDim()
-                  << std::endl;
-
-        if (rhsFuncParametric_) {
-
-          gsMatrix<T> ab = Base::geo_.patch(0).parameterRange();
-          gsVector<T> a = ab.col(0);
-          gsVector<T> b = ab.col(1);
-          gsMatrix<T> pts = gsPointGrid(a, b, npts);
-
-          eval = rhsFunc_.eval(pts);
-        } else
-          eval = rhsFunc_.eval(Base::geo_.patch(0).eval(pts));
-        return utils::to_json(eval, true, false);
-      } else
-        return R"({ INVALID REQUEST })"_json;
-    } else
+      }
+    }
+    
+    else
       return Base::eval(component, json);
   }
 

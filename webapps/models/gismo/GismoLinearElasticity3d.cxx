@@ -34,6 +34,7 @@ extern "C"
     std::array<iganet::short_t, 3> degrees = {1, 1, 1};
     std::array<int64_t, 3> ncoeffs = {4, 4, 4};
     std::array<int64_t, 3> npatches = {1, 1, 1};
+    std::array<iganet::real_t, 3> dimensions = {1.0, 1.0, 1.0};
 
     if (json.contains("data")) {
 
@@ -45,11 +46,14 @@ extern "C"
 
       if (json["data"].contains("npatches"))
         npatches = json["data"]["npatches"].get<std::array<int64_t, 3>>();
+
+      if (json["data"].contains("dimensions"))
+        dimensions = json["data"]["dimensions"].get<std::array<iganet::real_t, 3>>();
     }
 
     return std::make_shared<
         iganet::webapp::GismoLinearElasticityModel<3, iganet::real_t>>(
-        degrees, ncoeffs, npatches);
+                                                                       degrees, ncoeffs, npatches, dimensions);
   }
 
 #pragma clang diagnostic pop
