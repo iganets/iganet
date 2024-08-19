@@ -71,8 +71,8 @@ const std::initializer_list<std::string> GismoBoundarySideStrings<4>{
     "west", "east", "south", "north", "front", "back", "stime", "etime"};
 /// @}
 
-/// @brief G+Smo model
-template <class T> class GismoModel : public Model {
+/// @brief G+Smo base model
+template <class T> class GismoModel : public Model<T> {
 
 protected:
   /// @brief Global offset vector

@@ -19,38 +19,6 @@
 
 namespace iganet {
 
-/// @brief Enumerator for specifying the capabilities
-enum class capability {
-  /*! Model create/remove */
-  create = 0, /*!< create object */
-  remove = 1, /*!< remove object */
-
-  /*! Model parameters */
-  parameters = 2, /*!< model has extra parameters */
-
-  /*!< Model evaluation and adaption */
-  eval = 3,     /*!< evaluates object */
-  refine = 4,   /*!< h-refines object */
-  elevate = 5,  /*!< p-refines object */
-  increase = 6, /*!< p-refines object */
-
-  /*!< Model reparameterization */
-  reparameterize = 7, /*!< reparameterizes the model's geometry */
-
-  /*!< Model loading/saving */
-  load = 8, /*!< loads model from PyTorch file */
-  save = 9, /*!< saves model to PyTorch file */
-
-  /*!< Model import/export */
-  importXML = 10, /*!< imports object from G+Smo XML file */
-  exportXML = 11, /*!< exports object to G+Smo XML file */
-
-  /*!< Error computation */
-  computeL1error = 12, /*!< computes model's L1-error */
-  computeL2error = 13, /*!< computes model's L2-error */
-  computeH1error = 14  /*!< computes model's H1-error */
-};
-
 /// @brief Enumerator for specifying the output type
 enum class io {
   scalar = 0,               /*!< scalar value */
@@ -59,7 +27,7 @@ enum class io {
   scalarfield_boundary = 3, /*!< scalar field at the boundary */
   vectorfield_boundary = 4  /*!< vector field at the boundary */
 };
-
+  
 /// @brief IndexOutOfBounds exception
 struct IndexOutOfBoundsException : public std::exception {
   const char *what() const throw() { return "Index is out of bounds"; }
@@ -190,10 +158,11 @@ public:
 };
 
 /// @brief Model interface
+template <typename T> 
 class Model {
 public:
   /// @brief Constructor
-  Model() : transform_(torch::eye(4, Options<iganet::real_t>{})){};
+  Model() : transform_(torch::eye(4, Options<T>{})){};
 
   /// @brief Destructor
   virtual ~Model(){};
@@ -281,7 +250,7 @@ public:
     if (component == "transform") {
 
       nlohmann::json json;
-      json["matrix"] = utils::to_json<iganet::real_t, 1>(transform_.flatten());
+      json["matrix"] = utils::to_json<T, 1>(transform_.flatten());
 
       return json;
     }
@@ -300,13 +269,13 @@ public:
       if (!json["data"].contains("matrix"))
         throw InvalidModelAttributeException();
 
-      auto matrix = json["data"]["matrix"].get<std::vector<iganet::real_t>>();
+      auto matrix = json["data"]["matrix"].get<std::vector<T>>();
 
       if (matrix.size() != 16)
         throw IndexOutOfBoundsException();
 
       auto transform_cpu =
-          utils::to_tensorAccessor<iganet::real_t, 2>(transform_, torch::kCPU);
+          utils::to_tensorAccessor<T, 2>(transform_, torch::kCPU);
       auto transformAccessor = std::get<1>(transform_cpu);
 
       std::size_t index(0);

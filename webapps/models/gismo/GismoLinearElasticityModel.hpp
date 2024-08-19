@@ -54,9 +54,6 @@ private:
   /// @brief Poisson's ratio
   T PoissonsRatio_;
 
-  /// @brief Material law
-  gismo::material_law::law MaterialLaw_;
-  
   /// @brief Solution
   gsMultiPatch<T> solution_;
   
@@ -67,7 +64,7 @@ private:
     gsElasticityAssembler<T> assembler(Base::geo_, basis_, bc_, rhsFunc_);
     assembler.options().setReal("YoungsModulus", YoungsModulus_);
     assembler.options().setReal("PoissonsRatio", PoissonsRatio_);
-    assembler.options().setInt("MaterialLaw", MaterialLaw_);
+    assembler.options().setInt("MaterialLaw", material_law::hooke);
     assembler.options().setInt("DirichletStrategy", dirichlet::elimination);
 
     // Initialize assembler
@@ -91,14 +88,14 @@ public:
                              const std::array<int64_t, d> npatches,
                              const std::array<T, d> dimensions)
     : Base(degrees, ncoeffs, npatches, dimensions), basis_(Base::geo_, true),
-      YoungsModulus_(210e9), PoissonsRatio_(0.3), MaterialLaw_(material_law::hooke),
+      YoungsModulus_(210e9), PoissonsRatio_(0.3),
       rhsFunc_("0", "0", "0", 3), loadFunc_("0", "0", "-1e5", 3) {
 
     // Set boundary conditions type and expression
     for (const auto &side : GismoBoundarySides<d>) {
       bcType_[side - 1] = gismo::condition_type::unknownType;
       bcFunc_[side - 1] = gismo::give(gsFunctionExpr<T>("0", "0", "0", 3));
-      bc_.addCondition(0, side, bcType_[side - 1], &bcFunc_[side - 1]);
+      //bc_.addCondition(0, side, bcType_[side - 1], &bcFunc_[side - 1]);
     }
     
     bc_.addCondition(0, gismo::boundary::west, gismo::condition_type::dirichlet, nullptr, 0);
@@ -128,6 +125,14 @@ public:
            " dimensions";
   };
 
+  /// @brief Returns the model's options
+  nlohmann::json getOptions() const override {
+
+    nlohmann::json json = Base::getOptions();
+    
+    return json;    
+  }
+    
   /// @brief Returns the model's outputs
   nlohmann::json getOutputs() const override {
     auto json = R"([{
@@ -188,8 +193,6 @@ public:
 
     add_json("YoungModulus", "Young's modulus", "float", YoungsModulus_);
     add_json("PoissonRatio", "Poisson's ratio", "float", PoissonsRatio_);
-//    add_json_default("MaterialLaw", "Material law", "select",
-//                     std::vector<std::string>{"Hooke", "Saint-Venant-Kirchhoff", "Neo-Hooke-ln", "Neo-Hooke-Quad", "Mixed-Hooke", "Mixed-Neo-Hooke-ln"}, "Hooke");
 
 //    add_json("rhs", "Right-hand side function",
 //             std::vector<std::string>{"text", "text", "text"},
@@ -223,7 +226,7 @@ public:
         throw InvalidModelAttributeException();
 
       PoissonsRatio_ = json["data"]["PoissonRatio"].get<T>();
-    }
+    }      
     
     else
       result = Base::updateAttribute(component, attribute, json);

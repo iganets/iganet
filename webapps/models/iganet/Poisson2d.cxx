@@ -1,5 +1,5 @@
 /**
-   @file webapps/models/Poisson2d.cxx
+   @file webapps/models/iganet/Poisson2d.cxx
 
    @brief Poisson equation in 2d model
 
@@ -18,7 +18,8 @@
 namespace iganet {
 
 /// @brief Poisson equation in 2d model
-class Poisson2dModel : public Model,
+template<typename T>
+class Poisson2dModel : public Model<T>,
                        public ModelEval,
                        public ModelRefine,
                        public ModelSerialize,
@@ -117,8 +118,8 @@ extern "C"
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Wreturn-type-c-linkage"
 
-  std::shared_ptr<iganet::Model> create(const nlohmann::json &json) {
-    return std::make_shared<iganet::Poisson2dModel>();
+  std::shared_ptr<iganet::Model<iganet::real_t>> create(const nlohmann::json &json) {
+    return std::make_shared<iganet::Poisson2dModel<iganet::real_t>>();
   }
 
 #pragma clang diagnostic pop

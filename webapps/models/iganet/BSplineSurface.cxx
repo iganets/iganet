@@ -1,5 +1,5 @@
 /**
-   @file webapps/models/BSplineSurface.cxx
+   @file webapps/models/iganet/BSplineSurface.cxx
 
    @brief B-Spline surface
 
@@ -29,7 +29,7 @@ extern "C"
 #pragma clang diagnostic ignored "-Wreturn-type-c-linkage"
 
   /// @brief Create a B-spline surface
-  std::shared_ptr<iganet::Model> create(const nlohmann::json &json) {
+  std::shared_ptr<iganet::Model<iganet::real_t>> create(const nlohmann::json &json) {
     enum iganet::webapp::degree degree = iganet::webapp::degree::linear;
     enum iganet::init init = iganet::init::linear;
     std::array<int64_t, 2> ncoeffs = {4, 4};
@@ -58,7 +58,7 @@ extern "C"
 
         // generate source code
         std::string src =
-            "std::shared_ptr<iganet::Model> create(const std::array<int64_t, "
+            "std::shared_ptr<iganet::Model<iganet::real_t>> create(const std::array<int64_t, "
             "2>& ncoeffs, enum iganet::init init)\n{\n";
 
         if (nonuniform)
@@ -87,9 +87,9 @@ extern "C"
         }
 
         // create model instance
-        std::shared_ptr<iganet::Model> (*create)(const std::array<int64_t, 2> &,
+        std::shared_ptr<iganet::Model<iganet::real_t>> (*create)(const std::array<int64_t, 2> &,
                                                  enum iganet::init);
-        create = reinterpret_cast<std::shared_ptr<iganet::Model> (*)(
+        create = reinterpret_cast<std::shared_ptr<iganet::Model<iganet::real_t>> (*)(
             const std::array<int64_t, 2> &, enum iganet::init)>(
             model->second->getSymbol("create"));
         return create(ncoeffs, init);
@@ -105,7 +105,7 @@ extern "C"
   }
 
   /// @brief Load a B-spline surface
-  std::shared_ptr<iganet::Model> load(const nlohmann::json &json) {
+  std::shared_ptr<iganet::Model<iganet::real_t>> load(const nlohmann::json &json) {
 
     if (json.contains("data")) {
       if (json["data"].contains("binary")) {
@@ -168,7 +168,7 @@ extern "C"
 
             // generate source code
             std::string src =
-                "std::shared_ptr<iganet::Model> create(const "
+                "std::shared_ptr<iganet::Model<iganet::real_t>> create(const "
                 "std::array<int64_t, 2>& ncoeffs, enum iganet::init init)\n{\n";
 
             if (nonuniform)
@@ -199,9 +199,9 @@ extern "C"
             }
 
             // create model instance and load data
-            std::shared_ptr<iganet::Model> (*create)(
+            std::shared_ptr<iganet::Model<iganet::real_t>> (*create)(
                 const std::array<int64_t, 2> &, enum iganet::init);
-            create = reinterpret_cast<std::shared_ptr<iganet::Model> (*)(
+            create = reinterpret_cast<std::shared_ptr<iganet::Model<iganet::real_t>> (*)(
                 const std::array<int64_t, 2> &, enum iganet::init)>(
                 model->second->getSymbol("create"));
 

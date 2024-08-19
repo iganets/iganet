@@ -105,7 +105,7 @@ public:
   inline auto &getModels() { return models; }
 
   /// @brief Returns the requested model or throws an exception
-  inline std::shared_ptr<Model> getModel(int64_t id) {
+  inline std::shared_ptr<Model<iganet::real_t>> getModel(int64_t id) {
     auto it = models.find(id);
     if (it == models.end())
       throw InvalidModelIdException();
@@ -114,7 +114,7 @@ public:
   }
 
   /// @brief Returns the model and removes it from the list of models
-  inline std::shared_ptr<Model> removeModel(int64_t id) {
+  inline std::shared_ptr<Model<iganet::real_t>> removeModel(int64_t id) {
     auto it = models.find(id);
     if (it == models.end())
       throw InvalidModelIdException();
@@ -145,7 +145,7 @@ public:
   }
 
   /// @brief List of models
-  std::map<int64_t, std::shared_ptr<Model>> models;
+  std::map<int64_t, std::shared_ptr<Model<iganet::real_t>>> models;
 };
 
 /// @brief Sessions structure

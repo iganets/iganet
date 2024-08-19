@@ -30,15 +30,21 @@ enum class degree {
 };
 
 /// @brief B-spline model
-template <class BSpline_t>
-class BSplineModel : public Model,
+template <class Spline>
+class BSplineModel : public Model<typename Spline::value_type>,
                      public ModelEval,
                      public ModelReparameterize,
                      public ModelRefine,
                      public ModelSerialize,
                      public ModelXML,
-                     public BSpline_t {
+                     public Spline {
+
+  static_assert(is_SplineType_v<Spline>, "Spline must be a valid SplineType");
+  
 private:
+  /// @brief Base model
+  using Base = Model<typename Spline::value_type>;
+  
   /// @brief Global offset vector
   torch::Tensor offset_;
 
@@ -46,42 +52,42 @@ private:
   torch::Tensor rotation_;
 
   /// @brief "fake" solution vector
-  BSpline_t solution_;
+  Spline solution_;
 
 public:
   /// @brief Default constructor
   BSplineModel()
-      : offset_(torch::zeros({3}, Options<typename BSpline_t::value_type>{})),
+      : offset_(torch::zeros({3}, Options<typename Spline::value_type>{})),
         rotation_(
-            torch::zeros({3}, Options<typename BSpline_t::value_type>{})) {}
+            torch::zeros({3}, Options<typename Spline::value_type>{})) {}
 
   /// @brief Constructor for equidistant knot vectors
-  BSplineModel(const std::array<int64_t, BSpline_t::parDim()> ncoeffs,
+  BSplineModel(const std::array<int64_t, Spline::parDim()> ncoeffs,
                enum iganet::init init = iganet::init::zeros)
-      : BSpline_t(ncoeffs, init), solution_(ncoeffs, init),
-        offset_(torch::zeros({3}, Options<typename BSpline_t::value_type>{})),
+      : Spline(ncoeffs, init), solution_(ncoeffs, init),
+        offset_(torch::zeros({3}, Options<typename Spline::value_type>{})),
         rotation_(
-            torch::zeros({3}, Options<typename BSpline_t::value_type>{})) {
-    if constexpr (BSpline_t::parDim() == 1)
-      solution_.transform([](const std::array<typename BSpline_t::value_type, 1>
+            torch::zeros({3}, Options<typename Spline::value_type>{})) {
+    if constexpr (Spline::parDim() == 1)
+      solution_.transform([](const std::array<typename Spline::value_type, 1>
                                  xi) {
-        return std::array<typename BSpline_t::value_type, BSpline_t::geoDim()>{
+        return std::array<typename Spline::value_type, Spline::geoDim()>{
             static_cast<iganet::real_t>(std::sin(M_PI * xi[0])), 0.0, 0.0};
       });
 
-    else if constexpr (BSpline_t::parDim() == 2)
-      solution_.transform([](const std::array<typename BSpline_t::value_type, 2>
+    else if constexpr (Spline::parDim() == 2)
+      solution_.transform([](const std::array<typename Spline::value_type, 2>
                                  xi) {
-        return std::array<typename BSpline_t::value_type, BSpline_t::geoDim()>{
+        return std::array<typename Spline::value_type, Spline::geoDim()>{
             static_cast<iganet::real_t>(std::sin(M_PI * xi[0]) *
                                         std::sin(M_PI * xi[1])),
             0.0, 0.0};
       });
 
-    else if constexpr (BSpline_t::parDim() == 3)
-      solution_.transform([](const std::array<typename BSpline_t::value_type, 3>
+    else if constexpr (Spline::parDim() == 3)
+      solution_.transform([](const std::array<typename Spline::value_type, 3>
                                  xi) {
-        return std::array<typename BSpline_t::value_type, BSpline_t::geoDim()>{
+        return std::array<typename Spline::value_type, Spline::geoDim()>{
             static_cast<iganet::real_t>(std::sin(M_PI * xi[0]) *
                                         std::sin(M_PI * xi[1]) *
                                         std::sin(M_PI * xi[2])),
@@ -94,13 +100,13 @@ public:
 
   /// @brief Returns the model's name
   std::string getName() const override {
-    if constexpr (BSpline_t::parDim() == 1)
+    if constexpr (Spline::parDim() == 1)
       return "BSplineCurve";
-    else if constexpr (BSpline_t::parDim() == 2)
+    else if constexpr (Spline::parDim() == 2)
       return "BSplineSurface";
-    else if constexpr (BSpline_t::parDim() == 3)
+    else if constexpr (Spline::parDim() == 3)
       return "BSplineVolume";
-    else if constexpr (BSpline_t::parDim() == 4)
+    else if constexpr (Spline::parDim() == 4)
       return "BSplineHyperVolume";
     else
       return "invalidName";
@@ -108,13 +114,13 @@ public:
 
   /// @brief Returns the model's description
   std::string getDescription() const override {
-    if constexpr (BSpline_t::parDim() == 1)
+    if constexpr (Spline::parDim() == 1)
       return "B-spline curve";
-    else if constexpr (BSpline_t::parDim() == 2)
+    else if constexpr (Spline::parDim() == 2)
       return "B-spline surface";
-    else if constexpr (BSpline_t::parDim() == 3)
+    else if constexpr (Spline::parDim() == 3)
       return "B-spline volume";
-    else if constexpr (BSpline_t::parDim() == 4)
+    else if constexpr (Spline::parDim() == 4)
       return "B-spline hypervolume";
     else
       return "invalidDescription";
@@ -122,109 +128,125 @@ public:
 
   /// @brief Returns the model's options
   nlohmann::json getOptions() const override {
-    if constexpr (BSpline_t::parDim() == 1)
+    if constexpr (Spline::parDim() == 1)
       return R"([{
              "name" : "degree",
-             "description" : "Polynomial degree of the B-spline",
+             "label" : "Spline degree",
+             "description" : "Spline degree",
              "type" : "select",
              "value" : ["constant", "linear", "quadratic", "cubic", "quartic", "quintic"],
              "default" : 2,
              "uiid" : 0},{
              "name" : "ncoeffs",
-             "description" : "Number of coefficients per parametric dimension",
+             "label" : "Number of coefficients",
+             "description" : "Number of coefficients",
              "type" : ["int"],
              "value" : [3],
              "default" : [3],
              "uiid" : 1},{
              "name" : "init",
+             "label" : "Initialization of the coefficients",
              "description" : "Initialization of the coefficients",
              "type" : "select",
              "value" : ["zeros", "ones", "linear", "random", "greville"],
              "default" : 4,
              "uiid" : 2},{
              "name" : "nonuniform",
-             "description" : "Create non-uniform B-spline",
+             "label" : "Create non-uniform knot vector",
+             "description" : "Create non-uniform knot vector",
              "type" : "select",
              "value" : ["false", "true"],
              "default" : 0,
              "uiid" : 3}])"_json;
 
-    else if constexpr (BSpline_t::parDim() == 2)
+    else if constexpr (Spline::parDim() == 2)
       return R"([{
              "name" : "degree",
-             "description" : "Polynomial degree of the B-spline",
+             "label" : "Spline degrees",
+             "description" : "Spline degrees per parametric dimension",
              "type" : "select",
              "value" : ["constant", "linear", "quadratic", "cubic", "quartic", "quintic"],
              "default" : 2,
              "uiid" : 0},{
              "name" : "ncoeffs",
+             "label" : "Number of coefficients",
              "description" : "Number of coefficients per parametric dimension",
              "type" : ["int","int"],
              "value" : [3,3],
              "default" : [3,3],
              "uiid" : 1},{
              "name" : "init",
+             "label" : "Initialization of the coefficients",
              "description" : "Initialization of the coefficients",
              "type" : "select",
              "value" : ["zeros", "ones", "linear", "random", "greville"],
              "default" : 4,
              "uiid" : 2},{
              "name" : "nonuniform",
-             "description" : "Create non-uniform B-spline",
+             "label" : "Create non-uniform knot vectors",
+             "description" : "Create non-uniform knot vectors",
              "type" : "select",
              "value" : ["false", "true"],
              "default" : 0,
              "uiid" : 3}])"_json;
 
-    else if constexpr (BSpline_t::parDim() == 3)
+    else if constexpr (Spline::parDim() == 3)
       return R"([{
              "name" : "degree",
-             "description" : "Polynomial degree of the B-spline",
+             "label" : "Spline degrees",
+             "description" : "Spline degrees per parametric dimension",
              "type" : "select",
              "value" : ["constant", "linear", "quadratic", "cubic", "quartic", "quintic"],
              "default" : 2,
              "uiid" : 0},{
              "name" : "ncoeffs",
+             "label" : "Number of coefficients",
              "description" : "Number of coefficients per parametric dimension",
              "type" : ["int","int","int"],
              "value" : [3,3,3],
              "default" : [3,3,3],
              "uiid" : 1},{
              "name" : "init",
+             "label" : "Initialization of the coefficients",
              "description" : "Initialization of the coefficients",
              "type" : "select",
              "value" : ["zeros", "ones", "linear", "random", "greville"],
              "default" : 4,
              "uiid" : 2},{
              "name" : "nonuniform",
-             "description" : "Create non-uniform B-spline",
+             "label" : "Create non-uniform knot vectors",
+             "description" : "Create non-uniform knot vectors",
              "type" : "select",
              "value" : ["false", "true"],
              "default" : 0,
              "uiid" : 3}])"_json;
 
-    else if constexpr (BSpline_t::parDim() == 4)
+    else if constexpr (Spline::parDim() == 4)
       return R"([{
              "name" : "degree",
-             "description" : "Polynomial degree of the B-spline",
+             "label" : "Spline degrees",
+             "description" : "Spline degrees per parametric dimension",
              "type" : "select",
              "value" : ["constant", "linear", "quadratic", "cubic", "quartic", "quintic"],
              "default" : 2,
              "uiid" : 0},{
              "name" : "ncoeffs",
+             "label" : "Number of coefficients",
              "description" : "Number of coefficients per parametric dimension",
              "type" : [int,int,int,int],
              "value" : [3,3,3,3],
              "default" : [3,3,3,3],
              "uiid" : 1},{
              "name" : "init",
+             "label" : "Initialization of the coefficients",
              "description" : "Initialization of the coefficients",
              "type" : "select",
              "value" : ["zeros", "ones", "linear", "random", "greville"],
              "default" : 4,
              "uiid" : 2},{
              "name" : "nonuniform",
-             "description" : "Create non-uniform B-spline",
+             "label" : "Create non-uniform knot vectors",
+             "description" : "Create non-uniform knot vectors",
              "type" : "select",
              "value" : ["false", "true"],
              "default" : 0,
@@ -244,7 +266,7 @@ public:
 
   /// @brief Returns the model's outputs
   nlohmann::json getOutputs() const override {
-    if constexpr (BSpline_t::geoDim() == 1)
+    if constexpr (Spline::geoDim() == 1)
       return R"([{
                 "name" : "ValueFieldMagnitude",
                 "description" : "Magnitude of the B-spline values",
@@ -288,8 +310,8 @@ public:
         return json;
 
       } else {
-        auto json = BSpline_t::to_json();
-        json.update(Model::to_json("transform", ""), true);
+        auto json = Spline::to_json();
+        json.update(Base::to_json("transform", ""), true);
 
         return json;
       }
@@ -320,7 +342,7 @@ public:
     }
 
     else
-      return Model::to_json(component, attribute);
+      return Base::to_json(component, attribute);
   }
 
   /// @brief Updates the attributes of the model
@@ -335,18 +357,18 @@ public:
 
       auto indices = json["data"]["indices"].get<std::vector<int64_t>>();
       auto coeffs_cpu =
-          utils::to_tensorAccessor<typename BSpline_t::value_type, 1>(
-              BSpline_t::coeffs(), torch::kCPU);
+          utils::to_tensorAccessor<typename Spline::value_type, 1>(
+              Spline::coeffs(), torch::kCPU);
 
-      switch (BSpline_t::geoDim()) {
+      switch (Spline::geoDim()) {
       case (1): {
         auto coords =
             json["data"]["coeffs"]
-                .get<std::vector<std::tuple<typename BSpline_t::value_type>>>();
+                .get<std::vector<std::tuple<typename Spline::value_type>>>();
         auto xAccessor = std::get<1>(coeffs_cpu)[0];
 
         for (const auto &[index, coord] : iganet::utils::zip(indices, coords)) {
-          if (index < 0 || index >= BSpline_t::ncumcoeffs())
+          if (index < 0 || index >= Spline::ncumcoeffs())
             throw IndexOutOfBoundsException();
           xAccessor[index] = std::get<0>(coord);
         }
@@ -355,13 +377,13 @@ public:
       case (2): {
         auto coords =
             json["data"]["coeffs"]
-                .get<std::vector<std::tuple<typename BSpline_t::value_type,
-                                            typename BSpline_t::value_type>>>();
+                .get<std::vector<std::tuple<typename Spline::value_type,
+                                            typename Spline::value_type>>>();
         auto xAccessor = std::get<1>(coeffs_cpu)[0];
         auto yAccessor = std::get<1>(coeffs_cpu)[1];
 
         for (const auto &[index, coord] : iganet::utils::zip(indices, coords)) {
-          if (index < 0 || index >= BSpline_t::ncumcoeffs())
+          if (index < 0 || index >= Spline::ncumcoeffs())
             throw IndexOutOfBoundsException();
 
           xAccessor[index] = std::get<0>(coord);
@@ -372,15 +394,15 @@ public:
       case (3): {
         auto coords =
             json["data"]["coeffs"]
-                .get<std::vector<std::tuple<typename BSpline_t::value_type,
-                                            typename BSpline_t::value_type,
-                                            typename BSpline_t::value_type>>>();
+                .get<std::vector<std::tuple<typename Spline::value_type,
+                                            typename Spline::value_type,
+                                            typename Spline::value_type>>>();
         auto xAccessor = std::get<1>(coeffs_cpu)[0];
         auto yAccessor = std::get<1>(coeffs_cpu)[1];
         auto zAccessor = std::get<1>(coeffs_cpu)[2];
 
         for (const auto &[index, coord] : iganet::utils::zip(indices, coords)) {
-          if (index < 0 || index >= BSpline_t::ncumcoeffs())
+          if (index < 0 || index >= Spline::ncumcoeffs())
             throw IndexOutOfBoundsException();
 
           xAccessor[index] = std::get<0>(coord);
@@ -392,17 +414,17 @@ public:
       case (4): {
         auto coords =
             json["data"]["coeffs"]
-                .get<std::vector<std::tuple<typename BSpline_t::value_type,
-                                            typename BSpline_t::value_type,
-                                            typename BSpline_t::value_type,
-                                            typename BSpline_t::value_type>>>();
+                .get<std::vector<std::tuple<typename Spline::value_type,
+                                            typename Spline::value_type,
+                                            typename Spline::value_type,
+                                            typename Spline::value_type>>>();
         auto xAccessor = std::get<1>(coeffs_cpu)[0];
         auto yAccessor = std::get<1>(coeffs_cpu)[1];
         auto zAccessor = std::get<1>(coeffs_cpu)[2];
         auto tAccessor = std::get<1>(coeffs_cpu)[3];
 
         for (const auto &[index, coord] : iganet::utils::zip(indices, coords)) {
-          if (index < 0 || index >= BSpline_t::ncumcoeffs())
+          if (index < 0 || index >= Spline::ncumcoeffs())
             throw IndexOutOfBoundsException();
 
           xAccessor[index] = std::get<0>(coord);
@@ -417,14 +439,14 @@ public:
       }
       return "{}";
     } else
-      return Model::updateAttribute(component, attribute, json);
+      return Base::updateAttribute(component, attribute, json);
   }
 
   /// @brief Evaluates the model
   nlohmann::json eval(const std::string &component,
                       const nlohmann::json &json) const override {
 
-    if constexpr (BSpline_t::parDim() == 1) {
+    if constexpr (Spline::parDim() == 1) {
 
       std::array<int64_t, 1> res({25});
       if (json.contains("data"))
@@ -437,9 +459,9 @@ public:
         return nlohmann::json::array().emplace_back(
             utils::to_json<iganet::real_t, 1>(*(solution_.eval(xi)[0])));
       } else if (component == "ValueField") {
-        auto values = BSpline_t::eval(xi);
+        auto values = Spline::eval(xi);
         auto result = nlohmann::json::array();
-        for (short_t dim = 0; dim < BSpline_t::geoDim(); ++dim)
+        for (short_t dim = 0; dim < Spline::geoDim(); ++dim)
           result.emplace_back(
               utils::to_json<iganet::real_t, 1>(*(values[dim])));
         return result;
@@ -447,7 +469,7 @@ public:
         return R"({ INVALID REQUEST })"_json;
     }
 
-    else if constexpr (BSpline_t::parDim() == 2) {
+    else if constexpr (Spline::parDim() == 2) {
 
       std::array<int64_t, 2> res({25, 25});
       if (json.contains("data"))
@@ -456,18 +478,18 @@ public:
 
       utils::TensorArray2 xi = utils::to_array<2>(torch::meshgrid(
           {torch::linspace(0, 1, res[0],
-                           Options<typename BSpline_t::value_type>{}),
+                           Options<typename Spline::value_type>{}),
            torch::linspace(0, 1, res[1],
-                           Options<typename BSpline_t::value_type>{})},
+                           Options<typename Spline::value_type>{})},
           "xy"));
 
       if (component == "ValueFieldMagnitude") {
         return nlohmann::json::array().emplace_back(
             utils::to_json<iganet::real_t, 2>(*(solution_.eval(xi)[0])));
       } else if (component == "ValueField") {
-        auto values = BSpline_t::eval(xi);
+        auto values = Spline::eval(xi);
         auto result = nlohmann::json::array();
-        for (short_t dim = 0; dim < BSpline_t::geoDim(); ++dim)
+        for (short_t dim = 0; dim < Spline::geoDim(); ++dim)
           result.emplace_back(
               utils::to_json<iganet::real_t, 2>(*(values[dim])));
         return result;
@@ -475,7 +497,7 @@ public:
         return R"({ INVALID REQUEST })"_json;
     }
 
-    else if constexpr (BSpline_t::parDim() == 3) {
+    else if constexpr (Spline::parDim() == 3) {
 
       std::array<int64_t, 3> res({25, 25, 25});
       if (json.contains("data"))
@@ -484,20 +506,20 @@ public:
 
       utils::TensorArray3 xi = utils::to_array<3>(torch::meshgrid(
           {torch::linspace(0, 1, res[0],
-                           Options<typename BSpline_t::value_type>{}),
+                           Options<typename Spline::value_type>{}),
            torch::linspace(0, 1, res[1],
-                           Options<typename BSpline_t::value_type>{}),
+                           Options<typename Spline::value_type>{}),
            torch::linspace(0, 1, res[2],
-                           Options<typename BSpline_t::value_type>{})},
+                           Options<typename Spline::value_type>{})},
           "xy"));
 
       if (component == "ValueFieldMagnitude") {
         return nlohmann::json::array().emplace_back(
             utils::to_json<iganet::real_t, 3>(*(solution_.eval(xi)[0])));
       } else if (component == "ValueField") {
-        auto values = BSpline_t::eval(xi);
+        auto values = Spline::eval(xi);
         auto result = nlohmann::json::array();
-        for (short_t dim = 0; dim < BSpline_t::geoDim(); ++dim)
+        for (short_t dim = 0; dim < Spline::geoDim(); ++dim)
           result.emplace_back(
               utils::to_json<iganet::real_t, 3>(*(values[dim])));
         return result;
@@ -505,7 +527,7 @@ public:
         return R"({ INVALID REQUEST })"_json;
     }
 
-    else if constexpr (BSpline_t::parDim() == 4) {
+    else if constexpr (Spline::parDim() == 4) {
 
       std::array<int64_t, 4> res({25, 25, 25, 25});
       if (json.contains("data"))
@@ -514,22 +536,22 @@ public:
 
       utils::TensorArray4 xi = utils::to_array<4>(torch::meshgrid(
           {torch::linspace(0, 1, res[0],
-                           Options<typename BSpline_t::value_type>{}),
+                           Options<typename Spline::value_type>{}),
            torch::linspace(0, 1, res[1],
-                           Options<typename BSpline_t::value_type>{}),
+                           Options<typename Spline::value_type>{}),
            torch::linspace(0, 1, res[2],
-                           Options<typename BSpline_t::value_type>{}),
+                           Options<typename Spline::value_type>{}),
            torch::linspace(0, 1, res[3],
-                           Options<typename BSpline_t::value_type>{})},
+                           Options<typename Spline::value_type>{})},
           "xy"));
 
       if (component == "ValueFieldMagnitude") {
         return nlohmann::json::array().emplace_back(
             utils::to_json<iganet::real_t, 4>(*(solution_.eval(xi)[0])));
       } else if (component == "ValueField") {
-        auto values = BSpline_t::eval(xi);
+        auto values = Spline::eval(xi);
         auto result = nlohmann::json::array();
-        for (short_t dim = 0; dim < BSpline_t::geoDim(); ++dim)
+        for (short_t dim = 0; dim < Spline::geoDim(); ++dim)
           result.emplace_back(
               utils::to_json<iganet::real_t, 4>(*(values[dim])));
         return result;
@@ -550,29 +572,29 @@ public:
         dim = json["data"]["dim"].get<int>();
     }
 
-    BSpline_t::uniform_refine(num, dim);
+    Spline::uniform_refine(num, dim);
 
     solution_.uniform_refine(num, dim);
-    if constexpr (BSpline_t::parDim() == 1)
-      solution_.transform([](const std::array<typename BSpline_t::value_type, 1>
+    if constexpr (Spline::parDim() == 1)
+      solution_.transform([](const std::array<typename Spline::value_type, 1>
                                  xi) {
-        return std::array<typename BSpline_t::value_type, BSpline_t::geoDim()>{
+        return std::array<typename Spline::value_type, Spline::geoDim()>{
             static_cast<iganet::real_t>(std::sin(M_PI * xi[0])), 0.0, 0.0};
       });
 
-    else if constexpr (BSpline_t::parDim() == 2)
-      solution_.transform([](const std::array<typename BSpline_t::value_type, 2>
+    else if constexpr (Spline::parDim() == 2)
+      solution_.transform([](const std::array<typename Spline::value_type, 2>
                                  xi) {
-        return std::array<typename BSpline_t::value_type, BSpline_t::geoDim()>{
+        return std::array<typename Spline::value_type, Spline::geoDim()>{
             static_cast<iganet::real_t>(std::sin(M_PI * xi[0]) *
                                         std::sin(M_PI * xi[1])),
             0.0, 0.0};
       });
 
-    else if constexpr (BSpline_t::parDim() == 3)
-      solution_.transform([](const std::array<typename BSpline_t::value_type, 3>
+    else if constexpr (Spline::parDim() == 3)
+      solution_.transform([](const std::array<typename Spline::value_type, 3>
                                  xi) {
-        return std::array<typename BSpline_t::value_type, BSpline_t::geoDim()>{
+        return std::array<typename Spline::value_type, Spline::geoDim()>{
             static_cast<iganet::real_t>(std::sin(M_PI * xi[0]) *
                                         std::sin(M_PI * xi[1]) *
                                         std::sin(M_PI * xi[2])),
@@ -604,8 +626,8 @@ public:
         archive.load_from(reinterpret_cast<const char *>(binary.data()),
                           binary.size());
 
-        archive.read("transform", transform_);
-        BSpline_t::read(archive, "geometry");
+        archive.read("transform", Base::transform_);
+        Spline::read(archive, "geometry");
         solution_.read(archive, "solution");
 
         return;
@@ -622,10 +644,10 @@ public:
     torch::serialize::OutputArchive archive;
     archive.write("model",
                   static_cast<int64_t>(std::hash<std::string>{}(getName())));
-    archive.write("nonuniform", static_cast<bool>(BSpline_t::is_nonuniform()));
-    archive.write("transform", transform_);
+    archive.write("nonuniform", static_cast<bool>(Spline::is_nonuniform()));
+    archive.write("transform", Base::transform_);
 
-    BSpline_t::write(archive, "geometry");
+    Spline::write(archive, "geometry");
     solution_.write(archive, "solution");
 
     // store output archive in binary vector
@@ -678,14 +700,14 @@ public:
                  int id) override {
 
     if (component.empty()) {
-      BSpline_t::from_xml(xml, id, "geometry");
+      Spline::from_xml(xml, id, "geometry");
       solution_.from_xml(xml, id, "solution");
-      iganet::utils::from_xml<iganet::real_t, 2>(xml, transform_, "Matrix", id,
+      iganet::utils::from_xml<iganet::real_t, 2>(xml, Base::transform_, "Matrix", id,
                                                  "transform", false);
     } else {
       if (component == "geometry") {
-        BSpline_t::from_xml(xml, id, "geometry");
-        iganet::utils::from_xml<iganet::real_t, 2>(xml, transform_, "Matrix",
+        Spline::from_xml(xml, id, "geometry");
+        iganet::utils::from_xml<iganet::real_t, 2>(xml, Base::transform_, "Matrix",
                                                    id, "transform", false);
       } else if (component == "solution")
         solution_.from_xml(xml, id, "solution");
@@ -714,14 +736,14 @@ public:
                             int id) override {
 
     if (component.empty()) {
-      BSpline_t::to_xml(xml, id, "geometry");
+      Spline::to_xml(xml, id, "geometry");
       solution_.to_xml(xml, id, "solution");
-      iganet::utils::to_xml<iganet::real_t, 2>(transform_, xml, "Matrix", id,
+      iganet::utils::to_xml<iganet::real_t, 2>(Base::transform_, xml, "Matrix", id,
                                                "transform");
     } else {
       if (component == "geometry") {
-        BSpline_t::to_xml(xml, id, "geometry");
-        iganet::utils::to_xml<iganet::real_t, 2>(transform_, xml, "Matrix", id,
+        Spline::to_xml(xml, id, "geometry");
+        iganet::utils::to_xml<iganet::real_t, 2>(Base::transform_, xml, "Matrix", id,
                                                  "transform");
       } else if (component == "solution")
         solution_.to_xml(xml, id, "solution");

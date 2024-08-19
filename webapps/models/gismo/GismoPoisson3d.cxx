@@ -12,7 +12,6 @@
    file, You can obtain one at http://mozilla.org/MPL/2.0/.
 */
 
-#include <jit.hpp>
 #include <modelmanager.hpp>
 
 #include <GismoPoissonModel.hpp>
@@ -30,7 +29,7 @@ extern "C"
 #pragma clang diagnostic ignored "-Wreturn-type-c-linkage"
 
   /// @brief Create a G+Smo Poisson solver
-  std::shared_ptr<iganet::Model> create(const nlohmann::json &json) {
+  std::shared_ptr<iganet::Model<iganet::real_t>> create(const nlohmann::json &json) {
     std::array<iganet::short_t, 3> degrees = {1, 1, 1};
     std::array<int64_t, 3> ncoeffs = {4, 4, 4};
     std::array<int64_t, 3> npatches = {1, 1, 1};
