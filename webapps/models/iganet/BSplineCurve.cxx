@@ -49,7 +49,7 @@ extern "C"
       if (json["data"].contains("nonuniform"))
         nonuniform = json["data"]["nonuniform"].get<bool>();
 
-      //try {
+      try {
         // generate list of include files
         std::string includes =
             "#include <BSplineModel.hpp>\n"
