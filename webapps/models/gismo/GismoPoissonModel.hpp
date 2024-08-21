@@ -89,13 +89,13 @@ private:
       assembler_.assemble(igrad(u, G) * igrad(u, G).tr() * meas(G) // matrix
                           ,
                           u * f * meas(G) // rhs vector
-                          );
+      );
     } else {
       auto f = assembler_.getCoeff(rhsFunc_, G);
       assembler_.assemble(igrad(u, G) * igrad(u, G).tr() * meas(G) // matrix
                           ,
                           u * f * meas(G) // rhs vector
-                          );
+      );
     }
 
     // Compute the Neumann terms defined on physical space
@@ -111,7 +111,7 @@ private:
       auto g = assembler_.getBdrFunction();
       assembler_.assembleBdr(bcNeumannParametric, u * g * meas(G));
     }
-    
+
     // Solve system
     typename gismo::gsSparseSolver<T>::CGDiagonal solver;
     solver.compute(assembler_.matrix());
@@ -281,7 +281,7 @@ public:
         bcFunc_[side - 1] =
             gismo::give(gsFunctionExpr<T>(bcFunc_[side - 1].expression(0),
                                           bcFuncParametric_[side - 1] ? d : 3));
-        
+
         updateBC = true;
         break;
       }
@@ -352,19 +352,20 @@ public:
 
       // Set boundary conditions
       for (const auto &side : GismoBoundarySides<d>) {
-        switch(bcType_[side-1]) {
+        switch (bcType_[side - 1]) {
         case gismo::condition_type::type::dirichlet:
-          bc_.add(0, side, "Dirichlet", &bcFunc_[side-1], 0, -1,
-                  bcFuncParametric_[side-1]);
+          bc_.add(0, side, "Dirichlet", &bcFunc_[side - 1], 0, -1,
+                  bcFuncParametric_[side - 1]);
           break;
         case gismo::condition_type::type::neumann:
-          bc_.add(0, side, bcFuncParametric_[side-1] ? "NeumannParametric" : "Neumann",
-                  &bcFunc_[side-1], 0, -1, bcFuncParametric_[side-1]);
+          bc_.add(0, side,
+                  bcFuncParametric_[side - 1] ? "NeumannParametric" : "Neumann",
+                  &bcFunc_[side - 1], 0, -1, bcFuncParametric_[side - 1]);
           break;
         default:
           break;
         }
-      }      
+      }
     }
 
     // Solve updated problem
@@ -386,22 +387,23 @@ public:
       if (json.contains("data"))
         if (json["data"].contains("resolution")) {
           auto res = json["data"]["resolution"].get<std::array<int64_t, d>>();
-          
+
           for (std::size_t i = 0; i < d; ++i)
             npts(i) = res[i];
         }
 
-      if (component == "Solution" || component == "Rhs" && !rhsFuncParametric_) {
-        
+      if (component == "Solution" ||
+          component == "Rhs" && !rhsFuncParametric_) {
+
         // Create uniform grid in physical domain
         gsMatrix<T> ab = Base::geo_.patch(0).support();
         gsVector<T> a = ab.col(0);
         gsVector<T> b = ab.col(1);
         gsMatrix<T> pts = gsPointGrid(a, b, npts);
-      
+
         if (component == "Solution") {
           gsMatrix<T> eval = solution_.patch(0).eval(pts);
-          return utils::to_json(eval, true, false);        
+          return utils::to_json(eval, true, false);
         } else {
           gsMatrix<T> eval = rhsFunc_.eval(Base::geo_.patch(0).eval(pts));
           return utils::to_json(eval, true, false);
@@ -419,7 +421,7 @@ public:
         return utils::to_json(eval, true, false);
       }
     }
-    
+
     else
       return Base::eval(component, json);
   }

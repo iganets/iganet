@@ -24,11 +24,11 @@ namespace webapp {
 /// @brief G+Smo geometry model
 template <short_t d, class T>
 class GismoGeometryModel : public GismoModel<T>,
-                      public ModelElevate,
-                      public ModelEval,
-                      public ModelIncrease,
-                      public ModelRefine,
-                      public ModelReparameterize {
+                           public ModelElevate,
+                           public ModelEval,
+                           public ModelIncrease,
+                           public ModelRefine,
+                           public ModelReparameterize {
 
   static_assert(d >= 1 && d <= 4, "Spatial dimension must be between 1 and 4");
 
@@ -42,9 +42,9 @@ public:
 
   /// @brief Constructor for equidistant knot vectors
   GismoGeometryModel(const std::array<short_t, d> degrees,
-                const std::array<int64_t, d> ncoeffs,
-                const std::array<int64_t, d> npatches,
-                const std::array<T, d>       dimensions)
+                     const std::array<int64_t, d> ncoeffs,
+                     const std::array<int64_t, d> npatches,
+                     const std::array<T, d> dimensions)
       : GismoModel<T>() {
     if constexpr (d == 1) {
       gsKnotVector<T> KV0(0, 1, ncoeffs[0] - degrees[0] - 1, degrees[0] + 1);
@@ -55,9 +55,9 @@ public:
         C(i, 1) = (T)0;
         C(i, 2) = (T)0;
       }
-      
+
       C.col(0) *= dimensions[0];
-      
+
       geo_.addPatch(gsBSpline<T>(give(KV0), give(C)));
       geo_.computeTopology();
 
@@ -102,7 +102,7 @@ public:
       C.col(0) *= dimensions[0];
       C.col(1) *= dimensions[1];
       C.col(2) *= dimensions[2];
-      
+
       geo_.addPatch(
           gsTensorBSpline<3, T>(give(KV0), give(KV1), give(KV2), give(C)));
       geo_.computeTopology();
@@ -131,7 +131,7 @@ public:
       C.col(1) *= dimensions[1];
       C.col(2) *= dimensions[2];
       C.col(3) *= dimensions[3];
-      
+
       geo_.addPatch(gsTensorBSpline<4, T>(give(KV0), give(KV1), give(KV2),
                                           give(KV3), give(C)));
       geo_.computeTopology();
@@ -468,7 +468,7 @@ public:
           for (std::size_t i = 0; i < d; ++i)
             np(i) = res[i];
         }
-      
+
       // Create uniform grid in physical space
       gsMatrix<T> ab = geo_.patch(0).support();
       gsVector<T> a = ab.col(0);

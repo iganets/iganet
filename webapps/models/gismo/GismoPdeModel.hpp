@@ -26,9 +26,8 @@ class GismoPdeModel : public GismoGeometryModel<d, T> {
 
 public:
   /// @brief Constructors
-  using GismoGeometryModel<d, T>::GismoGeometryModel;  
+  using GismoGeometryModel<d, T>::GismoGeometryModel;
 };
 
-  
 } // namespace webapp
 } // namespace iganet

@@ -43,8 +43,8 @@
 #include <gsNurbs/gsMobiusDomain.h>
 
 #ifdef gsElasticity_ENABLED
-#include <gsElasticity/gsGeoUtils.h>
 #include <gsElasticity/gsElasticityAssembler.h>
+#include <gsElasticity/gsGeoUtils.h>
 #include <gsElasticity/gsMassAssembler.h>
 #endif
 #endif

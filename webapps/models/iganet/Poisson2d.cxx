@@ -18,7 +18,7 @@
 namespace iganet {
 
 /// @brief Poisson equation in 2d model
-template<typename T>
+template <typename T>
 class Poisson2dModel : public Model<T>,
                        public ModelEval,
                        public ModelRefine,
@@ -118,7 +118,8 @@ extern "C"
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Wreturn-type-c-linkage"
 
-  std::shared_ptr<iganet::Model<iganet::real_t>> create(const nlohmann::json &json) {
+  std::shared_ptr<iganet::Model<iganet::real_t>> create(
+      const nlohmann::json &json) {
     return std::make_shared<iganet::Poisson2dModel<iganet::real_t>>();
   }
 

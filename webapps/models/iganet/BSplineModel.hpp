@@ -40,11 +40,11 @@ class BSplineModel : public Model<typename Spline::value_type>,
                      public Spline {
 
   static_assert(is_SplineType_v<Spline>, "Spline must be a valid SplineType");
-  
+
 private:
   /// @brief Base model
   using Base = Model<typename Spline::value_type>;
-  
+
   /// @brief Global offset vector
   torch::Tensor offset_;
 
@@ -58,41 +58,39 @@ public:
   /// @brief Default constructor
   BSplineModel()
       : offset_(torch::zeros({3}, Options<typename Spline::value_type>{})),
-        rotation_(
-            torch::zeros({3}, Options<typename Spline::value_type>{})) {}
+        rotation_(torch::zeros({3}, Options<typename Spline::value_type>{})) {}
 
   /// @brief Constructor for equidistant knot vectors
   BSplineModel(const std::array<int64_t, Spline::parDim()> ncoeffs,
                enum iganet::init init = iganet::init::zeros)
       : Spline(ncoeffs, init), solution_(ncoeffs, init),
         offset_(torch::zeros({3}, Options<typename Spline::value_type>{})),
-        rotation_(
-            torch::zeros({3}, Options<typename Spline::value_type>{})) {
+        rotation_(torch::zeros({3}, Options<typename Spline::value_type>{})) {
     if constexpr (Spline::parDim() == 1)
-      solution_.transform([](const std::array<typename Spline::value_type, 1>
-                                 xi) {
-        return std::array<typename Spline::value_type, Spline::geoDim()>{
-            static_cast<iganet::real_t>(std::sin(M_PI * xi[0])), 0.0, 0.0};
-      });
+      solution_.transform(
+          [](const std::array<typename Spline::value_type, 1> xi) {
+            return std::array<typename Spline::value_type, Spline::geoDim()>{
+                static_cast<iganet::real_t>(std::sin(M_PI * xi[0])), 0.0, 0.0};
+          });
 
     else if constexpr (Spline::parDim() == 2)
-      solution_.transform([](const std::array<typename Spline::value_type, 2>
-                                 xi) {
-        return std::array<typename Spline::value_type, Spline::geoDim()>{
-            static_cast<iganet::real_t>(std::sin(M_PI * xi[0]) *
-                                        std::sin(M_PI * xi[1])),
-            0.0, 0.0};
-      });
+      solution_.transform(
+          [](const std::array<typename Spline::value_type, 2> xi) {
+            return std::array<typename Spline::value_type, Spline::geoDim()>{
+                static_cast<iganet::real_t>(std::sin(M_PI * xi[0]) *
+                                            std::sin(M_PI * xi[1])),
+                0.0, 0.0};
+          });
 
     else if constexpr (Spline::parDim() == 3)
-      solution_.transform([](const std::array<typename Spline::value_type, 3>
-                                 xi) {
-        return std::array<typename Spline::value_type, Spline::geoDim()>{
-            static_cast<iganet::real_t>(std::sin(M_PI * xi[0]) *
-                                        std::sin(M_PI * xi[1]) *
-                                        std::sin(M_PI * xi[2])),
-            0.0, 0.0};
-      });
+      solution_.transform(
+          [](const std::array<typename Spline::value_type, 3> xi) {
+            return std::array<typename Spline::value_type, Spline::geoDim()>{
+                static_cast<iganet::real_t>(std::sin(M_PI * xi[0]) *
+                                            std::sin(M_PI * xi[1]) *
+                                            std::sin(M_PI * xi[2])),
+                0.0, 0.0};
+          });
   }
 
   /// @brief Destructor
@@ -576,30 +574,30 @@ public:
 
     solution_.uniform_refine(num, dim);
     if constexpr (Spline::parDim() == 1)
-      solution_.transform([](const std::array<typename Spline::value_type, 1>
-                                 xi) {
-        return std::array<typename Spline::value_type, Spline::geoDim()>{
-            static_cast<iganet::real_t>(std::sin(M_PI * xi[0])), 0.0, 0.0};
-      });
+      solution_.transform(
+          [](const std::array<typename Spline::value_type, 1> xi) {
+            return std::array<typename Spline::value_type, Spline::geoDim()>{
+                static_cast<iganet::real_t>(std::sin(M_PI * xi[0])), 0.0, 0.0};
+          });
 
     else if constexpr (Spline::parDim() == 2)
-      solution_.transform([](const std::array<typename Spline::value_type, 2>
-                                 xi) {
-        return std::array<typename Spline::value_type, Spline::geoDim()>{
-            static_cast<iganet::real_t>(std::sin(M_PI * xi[0]) *
-                                        std::sin(M_PI * xi[1])),
-            0.0, 0.0};
-      });
+      solution_.transform(
+          [](const std::array<typename Spline::value_type, 2> xi) {
+            return std::array<typename Spline::value_type, Spline::geoDim()>{
+                static_cast<iganet::real_t>(std::sin(M_PI * xi[0]) *
+                                            std::sin(M_PI * xi[1])),
+                0.0, 0.0};
+          });
 
     else if constexpr (Spline::parDim() == 3)
-      solution_.transform([](const std::array<typename Spline::value_type, 3>
-                                 xi) {
-        return std::array<typename Spline::value_type, Spline::geoDim()>{
-            static_cast<iganet::real_t>(std::sin(M_PI * xi[0]) *
-                                        std::sin(M_PI * xi[1]) *
-                                        std::sin(M_PI * xi[2])),
-            0.0, 0.0};
-      });
+      solution_.transform(
+          [](const std::array<typename Spline::value_type, 3> xi) {
+            return std::array<typename Spline::value_type, Spline::geoDim()>{
+                static_cast<iganet::real_t>(std::sin(M_PI * xi[0]) *
+                                            std::sin(M_PI * xi[1]) *
+                                            std::sin(M_PI * xi[2])),
+                0.0, 0.0};
+          });
   }
 
   /// @brief Reparameterize the model
@@ -702,13 +700,13 @@ public:
     if (component.empty()) {
       Spline::from_xml(xml, id, "geometry");
       solution_.from_xml(xml, id, "solution");
-      iganet::utils::from_xml<iganet::real_t, 2>(xml, Base::transform_, "Matrix", id,
-                                                 "transform", false);
+      iganet::utils::from_xml<iganet::real_t, 2>(
+          xml, Base::transform_, "Matrix", id, "transform", false);
     } else {
       if (component == "geometry") {
         Spline::from_xml(xml, id, "geometry");
-        iganet::utils::from_xml<iganet::real_t, 2>(xml, Base::transform_, "Matrix",
-                                                   id, "transform", false);
+        iganet::utils::from_xml<iganet::real_t, 2>(
+            xml, Base::transform_, "Matrix", id, "transform", false);
       } else if (component == "solution")
         solution_.from_xml(xml, id, "solution");
       else
@@ -738,13 +736,13 @@ public:
     if (component.empty()) {
       Spline::to_xml(xml, id, "geometry");
       solution_.to_xml(xml, id, "solution");
-      iganet::utils::to_xml<iganet::real_t, 2>(Base::transform_, xml, "Matrix", id,
-                                               "transform");
+      iganet::utils::to_xml<iganet::real_t, 2>(Base::transform_, xml, "Matrix",
+                                               id, "transform");
     } else {
       if (component == "geometry") {
         Spline::to_xml(xml, id, "geometry");
-        iganet::utils::to_xml<iganet::real_t, 2>(Base::transform_, xml, "Matrix", id,
-                                                 "transform");
+        iganet::utils::to_xml<iganet::real_t, 2>(Base::transform_, xml,
+                                                 "Matrix", id, "transform");
       } else if (component == "solution")
         solution_.to_xml(xml, id, "solution");
       else

@@ -27,7 +27,7 @@ enum class io {
   scalarfield_boundary = 3, /*!< scalar field at the boundary */
   vectorfield_boundary = 4  /*!< vector field at the boundary */
 };
-  
+
 /// @brief IndexOutOfBounds exception
 struct IndexOutOfBoundsException : public std::exception {
   const char *what() const throw() { return "Index is out of bounds"; }
@@ -158,8 +158,7 @@ public:
 };
 
 /// @brief Model interface
-template <typename T> 
-class Model {
+template <typename T> class Model {
 public:
   /// @brief Constructor
   Model() : transform_(torch::eye(4, Options<T>{})){};

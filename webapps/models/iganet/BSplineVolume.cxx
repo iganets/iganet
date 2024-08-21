@@ -29,7 +29,8 @@ extern "C"
 #pragma clang diagnostic ignored "-Wreturn-type-c-linkage"
 
   /// @brief Create a B-spline volume
-  std::shared_ptr<iganet::Model<iganet::real_t>> create(const nlohmann::json &json) {
+  std::shared_ptr<iganet::Model<iganet::real_t>> create(
+      const nlohmann::json &json) {
     enum iganet::webapp::degree degree = iganet::webapp::degree::linear;
     enum iganet::init init = iganet::init::linear;
     std::array<int64_t, 3> ncoeffs = {4, 4, 4};
@@ -57,9 +58,9 @@ extern "C"
             "#pragma clang diagnostic ignored \"-Wreturn-type-c-linkage\"\n";
 
         // generate source code
-        std::string src =
-            "std::shared_ptr<iganet::Model<iganet::real_t>> create(const std::array<int64_t, "
-            "3>& ncoeffs, enum iganet::init init)\n{\n";
+        std::string src = "std::shared_ptr<iganet::Model<iganet::real_t>> "
+                          "create(const std::array<int64_t, "
+                          "3>& ncoeffs, enum iganet::init init)\n{\n";
 
         if (nonuniform)
           src.append("return "
@@ -88,11 +89,12 @@ extern "C"
         }
 
         // create model instance
-        std::shared_ptr<iganet::Model<iganet::real_t>> (*create)(const std::array<int64_t, 3> &,
-                                                 enum iganet::init);
-        create = reinterpret_cast<std::shared_ptr<iganet::Model<iganet::real_t>> (*)(
-            const std::array<int64_t, 3> &, enum iganet::init)>(
-            model->second->getSymbol("create"));
+        std::shared_ptr<iganet::Model<iganet::real_t>> (*create)(
+            const std::array<int64_t, 3> &, enum iganet::init);
+        create =
+            reinterpret_cast<std::shared_ptr<iganet::Model<iganet::real_t>> (*)(
+                const std::array<int64_t, 3> &, enum iganet::init)>(
+                model->second->getSymbol("create"));
         return create(ncoeffs, init);
       } catch (...) {
         throw iganet::InvalidModelException();
@@ -107,7 +109,8 @@ extern "C"
   }
 
   /// @brief Load a B-spline volume
-  std::shared_ptr<iganet::Model<iganet::real_t>> load(const nlohmann::json &json) {
+  std::shared_ptr<iganet::Model<iganet::real_t>> load(
+      const nlohmann::json &json) {
 
     if (json.contains("data")) {
       if (json["data"].contains("binary")) {
@@ -204,8 +207,9 @@ extern "C"
             // create model instance and load data
             std::shared_ptr<iganet::Model<iganet::real_t>> (*create)(
                 const std::array<int64_t, 3> &, enum iganet::init);
-            create = reinterpret_cast<std::shared_ptr<iganet::Model<iganet::real_t>> (*)(
-                const std::array<int64_t, 3> &, enum iganet::init)>(
+            create = reinterpret_cast<
+                std::shared_ptr<iganet::Model<iganet::real_t>> (*)(
+                    const std::array<int64_t, 3> &, enum iganet::init)>(
                 model->second->getSymbol("create"));
 
             auto m = create(ncoeffs, iganet::init::greville);

@@ -37,7 +37,7 @@ private:
 
   /// @brief Boundary conditions
   gsBoundaryConditions<T> bc_;
-  
+
   /// @brief Right-hand side function
   gsFunctionExpr<T> rhsFunc_;
   gsFunctionExpr<T> loadFunc_;
@@ -47,7 +47,7 @@ private:
 
   /// @brief Boundary condition type
   std::array<gismo::condition_type::type, 2 * d> bcType_;
-    
+
   /// @brief Young's modulus
   T YoungsModulus_;
 
@@ -56,10 +56,10 @@ private:
 
   /// @brief Solution
   gsMultiPatch<T> solution_;
-  
+
   /// @brief Solve the Linear elasticity problem
   void solve() {
-    
+
     // Setup assembler
     gsElasticityAssembler<T> assembler(Base::geo_, basis_, bc_, rhsFunc_);
     assembler.options().setReal("YoungsModulus", YoungsModulus_);
@@ -73,7 +73,7 @@ private:
     // Solve system
     typename gismo::gsSparseSolver<T>::CGDiagonal solver(assembler.matrix());
     gsMatrix<T> solution(solver.solve(assembler.rhs()));
-    
+
     // Extract solution
     assembler.constructSolution(solution, assembler.allFixedDofs(), solution_);
   }
@@ -87,22 +87,26 @@ public:
                              const std::array<int64_t, d> ncoeffs,
                              const std::array<int64_t, d> npatches,
                              const std::array<T, d> dimensions)
-    : Base(degrees, ncoeffs, npatches, dimensions), basis_(Base::geo_, true),
-      YoungsModulus_(210e9), PoissonsRatio_(0.3),
-      rhsFunc_("0", "0", "0", 3), loadFunc_("0", "0", "-1e5", 3) {
+      : Base(degrees, ncoeffs, npatches, dimensions), basis_(Base::geo_, true),
+        YoungsModulus_(210e9), PoissonsRatio_(0.3), rhsFunc_("0", "0", "0", 3),
+        loadFunc_("0", "0", "-1e5", 3) {
 
     // Set boundary conditions type and expression
     for (const auto &side : GismoBoundarySides<d>) {
       bcType_[side - 1] = gismo::condition_type::unknownType;
       bcFunc_[side - 1] = gismo::give(gsFunctionExpr<T>("0", "0", "0", 3));
-      //bc_.addCondition(0, side, bcType_[side - 1], &bcFunc_[side - 1]);
+      // bc_.addCondition(0, side, bcType_[side - 1], &bcFunc_[side - 1]);
     }
-    
-    bc_.addCondition(0, gismo::boundary::west, gismo::condition_type::dirichlet, nullptr, 0);
-    bc_.addCondition(0, gismo::boundary::west, gismo::condition_type::dirichlet, nullptr, 1);
-    bc_.addCondition(0, gismo::boundary::west, gismo::condition_type::dirichlet, nullptr, 2);
 
-    bc_.addCondition(0, gismo::boundary::east, gismo::condition_type::neumann, &loadFunc_);
+    bc_.addCondition(0, gismo::boundary::west, gismo::condition_type::dirichlet,
+                     nullptr, 0);
+    bc_.addCondition(0, gismo::boundary::west, gismo::condition_type::dirichlet,
+                     nullptr, 1);
+    bc_.addCondition(0, gismo::boundary::west, gismo::condition_type::dirichlet,
+                     nullptr, 2);
+
+    bc_.addCondition(0, gismo::boundary::east, gismo::condition_type::neumann,
+                     &loadFunc_);
 
     // Set geometry
     bc_.setGeoMap(Base::geo_);
@@ -129,10 +133,10 @@ public:
   nlohmann::json getOptions() const override {
 
     nlohmann::json json = Base::getOptions();
-    
-    return json;    
+
+    return json;
   }
-    
+
   /// @brief Returns the model's outputs
   nlohmann::json getOutputs() const override {
     auto json = R"([{
@@ -151,7 +155,7 @@ public:
 
     for (auto const &output : Base::getOutputs())
       json.push_back(output);
-    
+
     return json;
   }
 
@@ -189,17 +193,17 @@ public:
           item["default"] = defaultValue;
           item["uuid"] = uiid++;
           json.push_back(item);
-    };
+        };
 
     add_json("YoungModulus", "Young's modulus", "float", YoungsModulus_);
     add_json("PoissonRatio", "Poisson's ratio", "float", PoissonsRatio_);
 
-//    add_json("rhs", "Right-hand side function",
-//             std::vector<std::string>{"text", "text", "text"},
-//             std::vector<std::string>{rhsFunc_.expression(0),
-//                                      rhsFunc_.expression(1),
-//                                      rhsFunc_.expression(2)});
-    
+    //    add_json("rhs", "Right-hand side function",
+    //             std::vector<std::string>{"text", "text", "text"},
+    //             std::vector<std::string>{rhsFunc_.expression(0),
+    //                                      rhsFunc_.expression(1),
+    //                                      rhsFunc_.expression(2)});
+
     return json;
   }
 
@@ -207,7 +211,7 @@ public:
   nlohmann::json updateAttribute(const std::string &component,
                                  const std::string &attribute,
                                  const nlohmann::json &json) override {
-    
+
     nlohmann::json result = R"({})"_json;
 
     if (attribute == "YoungModulus") {
@@ -226,8 +230,8 @@ public:
         throw InvalidModelAttributeException();
 
       PoissonsRatio_ = json["data"]["PoissonRatio"].get<T>();
-    }      
-    
+    }
+
     else
       result = Base::updateAttribute(component, attribute, json);
 
@@ -260,24 +264,21 @@ public:
     // Uniform parameters for evaluation
     gsMatrix<T> pts = gsPointGrid(a, b, np);
     gsMatrix<T> eval = solution_.patch(0).eval(pts);
-    
+
     if (component == "Displacement") {
       gsMatrix<T> result = eval.colwise().norm();
       return utils::to_json(result, true, false);
-    }
-    else if (component == "Displacement_x") {
+    } else if (component == "Displacement_x") {
       gsMatrix<T> result = eval.row(0);
       return utils::to_json(result, true, false);
-    }
-    else if (component == "Displacement_y") {
+    } else if (component == "Displacement_y") {
       gsMatrix<T> result = eval.row(1);
       return utils::to_json(result, true, false);
-    }
-    else if (component == "Displacement_z") {
+    } else if (component == "Displacement_z") {
       gsMatrix<T> result = eval.row(2);
       return utils::to_json(result, true, false);
     }
-    
+
     else
       return Base::eval(component, json);
   }
