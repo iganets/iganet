@@ -2036,7 +2036,6 @@ public:
 
       if (knots_[i].is_cuda()) {
 
-        int64_t index(0);
         auto knots = knots_[i].template packed_accessor64<real_t, 1>();
 
       } else {
