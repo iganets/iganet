@@ -187,7 +187,7 @@ int main() {
 
 #ifdef IGANET_WITH_MPI
 	  if (pg->getRank() == 0)
-#endfi
+#endif
           iganet::Log(iganet::log::info)
               << "#coeff: " << ncoeffs << ", #layers: " << nlayers
               << ", #neurons: " << nneurons << std::endl;
