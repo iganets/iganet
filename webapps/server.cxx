@@ -1736,9 +1736,9 @@ int main(int argc, char const *argv[]) {
                                          std::chrono::system_clock::to_time_t(
                                              session.second->getAccessTime());
                                      json["id"] = session.first;
-                                     json["creation_time"] =
+                                     json["creationTime"] =
                                          std::ctime(&creation_time);
-                                     json["access_time"] =
+                                     json["accessTime"] =
                                          std::ctime(&access_time);
                                      json["hasHash"] =
                                          session.second->hasHash();
