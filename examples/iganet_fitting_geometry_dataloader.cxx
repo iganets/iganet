@@ -185,6 +185,9 @@ int main() {
         for (int64_t nneurons :
              iganet::utils::getenv("IGANET_NNEURONS", {10})) {
 
+#ifdef IGANET_WITH_MPI
+	  if (pg->getRank() == 0)
+#endfi
           iganet::Log(iganet::log::info)
               << "#coeff: " << ncoeffs << ", #layers: " << nlayers
               << ", #neurons: " << nneurons << std::endl;
@@ -224,6 +227,10 @@ int main() {
 
           // Stop time measurement
           auto t2 = std::chrono::high_resolution_clock::now();
+
+#ifdef IGANET_WITH_MPI
+	  if (pg->getRank() == 0)
+#endif
           iganet::Log(iganet::log::info)
               << "Training took "
               << std::chrono::duration_cast<std::chrono::duration<double>>(t2 -
@@ -250,11 +257,17 @@ int main() {
           // Compute L2- and H2-error
           gsExprEvaluator<real_t> ev(A);
 
+#ifdef IGANET_WITH_MPI
+	  if (pg->getRank() == 0)
+#endif
           iganet::Log(iganet::log::info)
               << "L2-error : "
               << gismo::math::sqrt(ev.integral((u - f).sqNorm() * meas(G)))
               << std::endl;
 
+#ifdef IGANET_WITH_MPI
+	  if (pg->getRank() == 0)
+#endif
           iganet::Log(iganet::log::info)
               << "H1-error : "
               << gismo::math::sqrt(ev.integral(
