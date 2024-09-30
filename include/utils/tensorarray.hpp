@@ -181,6 +181,10 @@ inline std::ostream &operator<<(std::ostream &os,
   }
 #endif // defined(_WIN32)
 
+#ifdef __CUDACC__
+#pragma nv_diag_suppress 186
+#endif
+  
   os << *name_ << "(\n";
   for (std::size_t i = 0; i < N; ++i) {
     os << obj[i] << "\n";
@@ -189,6 +193,10 @@ inline std::ostream &operator<<(std::ostream &os,
       os << "[ " << obj[i].options() << " ]\n";
   }
 
+#ifdef __CUDACC__
+#pragma nv_diag_default 186
+#endif
+  
   os << ")";
 
   return os;
