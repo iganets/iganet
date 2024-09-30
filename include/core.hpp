@@ -178,6 +178,12 @@ inline void init(std::ostream &os = Log(log::info)) {
   at::set_num_interop_threads(utils::getenv("IGANET_INTEROP_NUM_THREADS", 1));
 
 #ifdef IGANET_WITH_MPI
+  int flag;
+  MPI_Initialized(&flag);
+
+  if (flag == 0)
+    MPI_Init(NULL, NULL);
+  
   int rank;
   MPI_Comm_rank(MPI_COMM_WORLD, &rank);
   if (rank == 0)
