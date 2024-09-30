@@ -86,7 +86,7 @@ In addition to the optional components, IgANets can be compiled with several opt
 
 2.  Configure
     ```shell
-    cmake .. -DTorch_DIR=-DTorch_DIR=/opt/homebrew/Cellar/pytorch/2.1.2_1/share/cmake/Torch -DCMAKE_PREFIX_PATH=/opt/homebrew/Cellar/protobuf/25.2
+    cmake .. -DTorch_DIR=/opt/homebrew/Cellar/pytorch/2.1.2_1/share/cmake/Torch -DCMAKE_PREFIX_PATH=/opt/homebrew/Cellar/protobuf/25.2
     ```
 
     Note that the specific version of PyTorch and/or protobuf might be different on your system.
