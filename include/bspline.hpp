@@ -870,10 +870,9 @@ public:
       };
 
       for (short_t i = 0; i < geoDim_; ++i)
-        result.set(i, (eval_(i, parDim_ - 1)).view(sizes));
-
-      return result;
+        result.set(i, (eval_(i, parDim_ - 1)).view(sizes));   
     }
+    return result;
   }
   /// @}
 
