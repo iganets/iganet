@@ -184,7 +184,7 @@ inline std::ostream &operator<<(std::ostream &os,
 #ifdef __CUDACC__
 #pragma nv_diag_suppress 186
 #endif
-  
+
   os << *name_ << "(\n";
   for (std::size_t i = 0; i < N; ++i) {
     os << obj[i] << "\n";
@@ -196,7 +196,7 @@ inline std::ostream &operator<<(std::ostream &os,
 #ifdef __CUDACC__
 #pragma nv_diag_default 186
 #endif
-  
+
   os << ")";
 
   return os;

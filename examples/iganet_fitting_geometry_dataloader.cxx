@@ -186,11 +186,11 @@ int main() {
              iganet::utils::getenv("IGANET_NNEURONS", {10})) {
 
 #ifdef IGANET_WITH_MPI
-	  if (pg->getRank() == 0)
+          if (pg->getRank() == 0)
 #endif
-          iganet::Log(iganet::log::info)
-              << "#coeff: " << ncoeffs << ", #layers: " << nlayers
-              << ", #neurons: " << nneurons << std::endl;
+            iganet::Log(iganet::log::info)
+                << "#coeff: " << ncoeffs << ", #layers: " << nlayers
+                << ", #neurons: " << nneurons << std::endl;
 
           std::vector<int64_t> layers(nlayers, nneurons);
           std::vector<std::vector<std::any>> activations(nlayers, activation);
@@ -229,14 +229,14 @@ int main() {
           auto t2 = std::chrono::high_resolution_clock::now();
 
 #ifdef IGANET_WITH_MPI
-	  if (pg->getRank() == 0)
+          if (pg->getRank() == 0)
 #endif
-          iganet::Log(iganet::log::info)
-              << "Training took "
-              << std::chrono::duration_cast<std::chrono::duration<double>>(t2 -
-                                                                           t1)
-                     .count()
-              << " seconds\n";
+            iganet::Log(iganet::log::info)
+                << "Training took "
+                << std::chrono::duration_cast<std::chrono::duration<double>>(
+                       t2 - t1)
+                       .count()
+                << " seconds\n";
 
 #ifdef IGANET_WITH_GISMO
           // Convert B-spline objects to G+Smo
@@ -258,23 +258,23 @@ int main() {
           gsExprEvaluator<real_t> ev(A);
 
 #ifdef IGANET_WITH_MPI
-	  if (pg->getRank() == 0)
+          if (pg->getRank() == 0)
 #endif
-          iganet::Log(iganet::log::info)
-              << "L2-error : "
-              << gismo::math::sqrt(ev.integral((u - f).sqNorm() * meas(G)))
-              << std::endl;
+            iganet::Log(iganet::log::info)
+                << "L2-error : "
+                << gismo::math::sqrt(ev.integral((u - f).sqNorm() * meas(G)))
+                << std::endl;
 
 #ifdef IGANET_WITH_MPI
-	  if (pg->getRank() == 0)
+          if (pg->getRank() == 0)
 #endif
-          iganet::Log(iganet::log::info)
-              << "H1-error : "
-              << gismo::math::sqrt(ev.integral(
-                     (gismo::expr::igrad(u, G) - gismo::expr::igrad(f, G))
-                         .sqNorm() *
-                     meas(G)))
-              << std::endl;
+            iganet::Log(iganet::log::info)
+                << "H1-error : "
+                << gismo::math::sqrt(ev.integral(
+                       (gismo::expr::igrad(u, G) - gismo::expr::igrad(f, G))
+                           .sqNorm() *
+                       meas(G)))
+                << std::endl;
 #endif
         }
       }

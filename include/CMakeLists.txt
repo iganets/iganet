@@ -27,11 +27,11 @@ if(IGANET_BUILD_PCH AND NOT WIN32 AND NOT ${CMAKE_VERSION} VERSION_LESS "3.16.0"
   if (NOT IGANET_BUILD_CPUONLY AND CMAKE_CUDA_COMPILER)
     set_source_files_properties(.iganet_pch.cxx PROPERTIES LANGUAGE CUDA)
   endif()
-  
+
   add_executable(iganet_pch .iganet_pch.cxx iganet.h ${HEADERS})
   target_link_libraries(iganet_pch PUBLIC ${TORCH_LIBRARIES})
   target_link_libraries(iganet_pch PUBLIC pugixml)
-  
+
   if (IGANET_WITH_GISMO)
     target_link_libraries(iganet_pch PUBLIC gismo_static)
   endif()

@@ -50,7 +50,6 @@ protected:
             xi[0] * xi[1] * xi[2], sin(static_cast<real_t>(M_PI) * xi[0]),
             xi[1] * xi[2], cos(static_cast<real_t>(M_PI) * xi[1])};
       };
-
 };
 
 TEST_F(BSplineTest, NonUniformBSpline_eval_parDim3_geoDim1_degrees222) {

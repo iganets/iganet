@@ -16,36 +16,35 @@
 
 class Test {
 public:
-  Test() {
-    std::cout << "Creating Test object\n";
-  }
+  Test() { std::cout << "Creating Test object\n"; }
 };
 
 class MexFunction : public matlab::mex::Function {
 public:
-
-  void operator()(matlab::mex::ArgumentList outputs, matlab::mex::ArgumentList inputs) {
+  void operator()(matlab::mex::ArgumentList outputs,
+                  matlab::mex::ArgumentList inputs) {
 
     checkArguments(outputs, inputs);
   }
 
-  void checkArguments(matlab::mex::ArgumentList outputs, matlab::mex::ArgumentList inputs) {
+  void checkArguments(matlab::mex::ArgumentList outputs,
+                      matlab::mex::ArgumentList inputs) {
     // Get pointer to engine
     std::shared_ptr<matlab::engine::MATLABEngine> matlabPtr = getEngine();
 
     // Get array factory
     matlab::data::ArrayFactory factory;
-    
+
     switch (inputs.size()) {
 
     case 1:
-      
+
       break;
-      
+
     default:
-      matlabPtr->feval(u"error",
-                       0,
-                       std::vector<matlab::data::Array>({ factory.createScalar("Input must be double array") }));
+      matlabPtr->feval(u"error", 0,
+                       std::vector<matlab::data::Array>({factory.createScalar(
+                           "Input must be double array")}));
     }
   }
 

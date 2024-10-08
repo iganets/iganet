@@ -1036,7 +1036,8 @@ public:
   /// @brief Trains the IgANet
   virtual void train(
 #ifdef IGANET_WITH_MPI
-      c10::intrusive_ptr<c10d::ProcessGroupMPI> pg = c10d::ProcessGroupMPI::createProcessGroupMPI()
+      c10::intrusive_ptr<c10d::ProcessGroupMPI> pg =
+          c10d::ProcessGroupMPI::createProcessGroupMPI()
 #endif
   ) {
     torch::Tensor inputs, outputs, loss;
@@ -1106,7 +1107,8 @@ public:
   void train(DataLoader &loader
 #ifdef IGANET_WITH_MPI
              ,
-             c10::intrusive_ptr<c10d::ProcessGroupMPI> pg = c10d::ProcessGroupMPI::createProcessGroupMPI()
+             c10::intrusive_ptr<c10d::ProcessGroupMPI> pg =
+                 c10d::ProcessGroupMPI::createProcessGroupMPI()
 #endif
   ) {
     torch::Tensor inputs, outputs, loss;
