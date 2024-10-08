@@ -23,7 +23,7 @@ By providing additional CMake flags you can configure IgANet to build the follow
 
 - `-DIGANET_BUILD_PERFTESTS=ON` builds the performance tests (default `OFF`).
 
-- `-DIGANET_BUILD_PYIGANET=ON` builds the Python module `pyiganet` (default `OFF`). This option requires a Python interpreter to be installed on your system.
+- `-DIGANET_BUILD_PYTHON=ON` builds the Python module `pyiganet` (default `OFF`). This option requires a Python interpreter to be installed on your system.
 
 - `-DIGANET_BUILD_UNITTESTS=ON` builds the unit tests (default `OFF`).
 

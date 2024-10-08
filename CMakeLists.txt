@@ -14,9 +14,10 @@
 #
 # IGANET_BUILD_DOCS
 # IGANET_BUILD_EXAMPLES
+# IGANET_BUILD_MEX
 # IGANET_BUILD_PCH
 # IGANET_BUILD_PERFTESTS
-# IGANET_BUILD_PYIGANET
+# IGANET_BUILD_PYTHON
 # IGANET_BUILD_UNITTESTS
 # IGANET_BUILD_WEBAPPS
 #
@@ -103,9 +104,10 @@ list(APPEND CMAKE_MODULE_PATH "${PROJECT_SOURCE_DIR}/cmake")
 option(IGANET_BUILD_CPUONLY     "Build CPU-only code"       OFF)
 option(IGANET_BUILD_DOCS        "Build documentation"       OFF)
 option(IGANET_BUILD_EXAMPLES    "Build examples"            ON )
+option(IGANET_BUILD_MEX         "Build Matlab bindings"     OFF)
 option(IGANET_BUILD_PCH         "Build precompiled headers" ON )
 option(IGANET_BUILD_PERFTESTS   "Build perftests"           OFF)
-option(IGANET_BUILD_PYIGANET    "Build Python bindings"     OFF)
+option(IGANET_BUILD_PYTHON      "Build Python bindings"     OFF)
 option(IGANET_BUILD_UNITTESTS   "Build unittests"           OFF)
 option(IGANET_BUILD_WEBAPPS     "Build WebApps"             OFF)
 option(IGANET_WITH_GISMO        "With G+Smo support"        OFF)
@@ -286,9 +288,10 @@ message("Options:")
 message("IGANET_BUILD_CPUONLY...............: ${IGANET_BUILD_CPUONLY}")
 message("IGANET_BUILD_DOCS..................: ${IGANET_BUILD_DOCS}")
 message("IGANET_BUILD_EXAMPLES..............: ${IGANET_BUILD_EXAMPLES}")
+message("IGANET_BUILD_MEX...................: ${IGANET_BUILD_MEX}")
 message("IGANET_BUILD_PCH...................: ${IGANET_BUILD_PCH}")
 message("IGANET_BUILD_PERFTESTS.............: ${IGANET_BUILD_PERFTESTS}")
-message("IGANET_BUILD_PYIGANET..............: ${IGANET_BUILD_PYIGANET}")
+message("IGANET_BUILD_PYTHON................: ${IGANET_BUILD_PYTHON}")
 message("IGANET_BUILD_UNITTESTS.............: ${IGANET_BUILD_UNITTESTS}")
 message("IGANET_BUILD_WEBAPPS...............: ${IGANET_BUILD_WEBAPPS}")
 
@@ -315,6 +318,13 @@ if (IGANET_BUILD_EXAMPLES)
 endif()
 
 ########################################################################
+# Add Matlab bindings (if enabled)
+########################################################################
+if (IGANET_BUILD_MEX)
+  add_subdirectory(${PROJECT_SOURCE_DIR}/mex/src)
+endif()
+
+########################################################################
 # Add perftests (if enabled)
 ########################################################################
 if (IGANET_BUILD_PERFTESTS)
@@ -325,8 +335,8 @@ endif()
 ########################################################################
 # Add Python bindings (if enabled)
 ########################################################################
-if (IGANET_BUILD_PYIGANET)
-  add_subdirectory(${PROJECT_SOURCE_DIR}/pyiganet/src)
+if (IGANET_BUILD_PYTHON)
+  add_subdirectory(${PROJECT_SOURCE_DIR}/python/src)
 endif()
 
 ########################################################################
