@@ -60,6 +60,24 @@ greville_kernel(torch::PackedTensorAccessor64<real_t, 1> greville,
     greville[k] /= real_t(degree);
   }
 }
+
+/**
+   @brief Compute knot vector
+*/
+template <typename real_t>
+__global__ void
+knots_kernel(torch::PackedTensorAccessor64<real_t, 1> knots,
+	     int64_t ncoeffs, short_t degree) {
+  for (int64_t k = blockIdx.x * blockDim.x + threadIdx.x;
+       k < ncoeffs + degree +1; k += blockDim.x * gridDim.x) {
+    knots[k] = (k < degree ?
+		   static_cast<real_t>(0) :
+		   k < ncoeffs +1 ?
+		   static_cast<real_t>(k - degree) / static_cast<real_t>(ncoeffs - degree)
+		   :
+		   static_cast<real_t>(1));
+  }
+} 
 } // namespace cuda
 } // namespace iganet
 #endif
@@ -2035,9 +2053,29 @@ public:
       knots_[i] = torch::empty({nknots_[i]}, options_);
 
       if (knots_[i].is_cuda()) {
-
+	
         auto knots = knots_[i].template packed_accessor64<real_t, 1>();
 
+#if defined(__CUDACC__)
+	int blockSize, minGridSize, gridSize;
+	cudaOccupancyMaxPotentialBlockSize(
+                  &minGridSize, &blockSize,
+                  (const void *)cuda::knots_kernel<real_t>, 0, 0);
+              gridSize = (ncoeffs_[i] + blockSize - 1) / blockSize;
+              cuda::knots_kernel<<<gridSize, blockSize>>>(
+                  knots, ncoeffs_[i], degrees_[i]);
+#elif defined(__HIPCC__)
+              int blockSize, minGridSize, gridSize;
+              static_cast<void>(hipOccupancyMaxPotentialBlockSize(
+                  &minGridSize, &blockSize,
+                  (const void *)cuda::knots_kernel<real_t>, 0, 0));
+              gridSize = (ncoeffs_[i] + blockSize - 1) / blockSize;
+              cuda::knots_kernel<<<gridSize, blockSize>>>(
+                  knots, ncoeffs_[i], degrees_[i]);
+#else
+              throw std::runtime_error(
+                  "Code must be compiled with CUDA or HIP enabled");
+#endif
       } else {
 
         int64_t index(0);
