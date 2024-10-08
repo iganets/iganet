@@ -70,5 +70,6 @@ int main() {
   gsWriteParaview(mesh, out);
 #endif
 
+  iganet::finalize();
   return 0;
 }

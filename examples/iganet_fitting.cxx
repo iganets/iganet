@@ -218,5 +218,6 @@ int main() {
     }
   }
 
+  iganet::finalize();
   return 0;
 }

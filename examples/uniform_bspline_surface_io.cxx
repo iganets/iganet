@@ -50,5 +50,6 @@ int main() {
   // Export B-spline to XML
   bspline.to_xml().save(iganet::Log(iganet::log::info));
 
+  iganet::finalize();
   return 0;
 }

@@ -227,5 +227,6 @@ int main() {
   net.G().plot(net.ref().abs_diff(net.u()), net.collPts().first, json)->show();
 #endif
 
+  iganet::finalize();
   return 0;
 }

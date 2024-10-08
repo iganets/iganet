@@ -19,6 +19,8 @@
 #include <gtest/gtest.h>
 #include <unittest_config.hpp>
 
+#pragma nv_diag_suppress 20208
+
 using namespace iganet::unittests::literals;
 
 class FunctionSpaceTest : public ::testing::Test {
@@ -4776,5 +4778,9 @@ TEST_F(FunctionSpaceTest, FunctionSpace_to_device) {}
 int main(int argc, char **argv) {
   ::testing::InitGoogleTest(&argc, argv);
   iganet::init();
-  return RUN_ALL_TESTS();
+  int result = RUN_ALL_TESTS();
+  iganet::finalize();
+  return result;
 }
+
+#pragma nv_diag_default 20208

@@ -213,5 +213,6 @@ int main() {
     bspline.to_xml().print(iganet::Log(iganet::log::info));
   }
 
+  iganet::finalize();
   return 0;
 }

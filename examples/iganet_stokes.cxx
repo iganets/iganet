@@ -232,5 +232,6 @@ int main() {
   // json)->show();
 #endif
 
+  iganet::finalize();
   return 0;
 }
