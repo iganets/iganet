@@ -499,6 +499,14 @@ inline std::string getExtraLibsVersion() {
        std::to_string((CUDA_VERSION % 100) / 10);
 #endif
 
+#if defined(HIP_VERSION)
+  if (!s.empty())
+    s += ", ";
+  s += "HIP " + std::to_string(HIP_VERSION_MAJOR) + "." +
+    std::to_string(HIP_VERSION_MINOR) + "." +
+    std::to_string(HIP_VERSION_PATCH);
+#endif
+
   // Intel MKL library
 #if defined(INTEL_MKL_VERSION)
   if (!s.empty())
@@ -516,15 +524,6 @@ inline std::string getExtraLibsVersion() {
        " (#intraop threads: " + std::to_string(at::get_num_threads()) +
        ", #interop threads: " + std::to_string(at::get_num_interop_threads()) +
        ")";
-#endif
-
-  // ROCm
-#if defined(ROCM_VERSION_MAJOR)
-  if (!s.empty())
-    s += ", ";
-  s += "ROCm " + std::to_string(ROCM_VERSION_MAJOR) + "." +
-       std::to_string(ROCM_VERSION_MINOR) + "." +
-       std::to_string(ROCM_VERSION_PATCH);
 #endif
 
   return s;
