@@ -210,13 +210,28 @@ inline std::string memory_summary(c10::DeviceIndex device =
   DeviceStats deviceStats = getDeviceStats(device);
 
   os << "|====================================================================="
-        "======|\n"    
+        "======|\n"
+#ifdef __CUDACC__    
      << "|                 LibTorch CUDA memory summary, device ID "
+#elif __HIPCC__
+     << "|                 LibTorch ROCm memory summary, device ID "
+#endif
      << std::setw(18) << std::left << static_cast<int>(device) << "|\n"
      << "|---------------------------------------------------------------------"
         "------|\n"
-     << "|            CUDA OOMs: " << std::setw(13) << std::left
-     << deviceStats.num_ooms << "|        cudaMalloc retries: " << std::setw(10)
+#ifdef __CUDACC__    
+     << "|            CUDA OOMs: "
+#elif __HIPCC__
+     << "|            ROCm OOMs: "
+#endif
+     << std::setw(13) << std::left
+     << deviceStats.num_ooms
+#ifdef __CUDACC__    
+     << "|        cudaMalloc retries: "
+#elif __HIPCC__
+     << "|         hipMalloc retries: "
+#endif
+     << std::setw(10)
      << std::left << deviceStats.num_alloc_retries << "|\n"
      << "|====================================================================="
         "======|\n"
