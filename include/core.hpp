@@ -38,9 +38,14 @@
 #include <torch/csrc/api/include/torch/types.h>
 #include <torch/torch.h>
 
-#if defined(__CUDACC__) || defined(__HIPCC__)
+#ifdef __CUDACC__
 #include <c10/cuda/CUDACachingAllocator.h>
 #include <c10/cuda/CUDAFunctions.h>
+#endif
+
+#ifdef __HIPCC__
+#include <c10/hip/HIPCachingAllocator.h>
+#include <c10/hip/HIPFunctions.h>
 #endif
 
 #ifdef IGANET_WITH_GISMO
@@ -170,10 +175,12 @@ public:
 /// @brief Return a human-readable printout of the current memory allocator
 /// statistics for a given device
 inline std::string memory_summary(c10::DeviceIndex device =
-#if defined(__CUDACC__) || defined(__HIPCC__)
-                                      c10::cuda::current_device()
+#ifdef __CUDACC__
+				  c10::cuda::current_device()
+#elif __HIPCC__
+				  c10::hip::current_device()
 #else
-                                      0
+				  0
 #endif
 ) {
 
@@ -194,11 +201,16 @@ inline std::string memory_summary(c10::DeviceIndex device =
            prefixes[n];
   };
 
-  c10::cuda::CUDACachingAllocator::DeviceStats deviceStats =
-      c10::cuda::CUDACachingAllocator::getDeviceStats(device);
+#ifdef __CUDACC__
+  using namespace c10::cuda::CUDACachingAllocator;
+#elif __HIPCC__
+  using namespace c10::hip::HIPCachingAllocator;
+#endif
+  
+  DeviceStats deviceStats = getDeviceStats(device);
 
   os << "|====================================================================="
-        "======|\n"
+        "======|\n"    
      << "|                 LibTorch CUDA memory summary, device ID "
      << std::setw(18) << std::left << static_cast<int>(device) << "|\n"
      << "|---------------------------------------------------------------------"
@@ -216,75 +228,75 @@ inline std::string memory_summary(c10::DeviceIndex device =
      << _format_size(
             deviceStats
                 .allocated_bytes[static_cast<std::size_t>(
-                    c10::cuda::CUDACachingAllocator::StatType::AGGREGATE)]
+                    StatType::AGGREGATE)]
                 .current)
      << " | " << std::setw(10) << std::right
      << _format_size(
             deviceStats
                 .allocated_bytes[static_cast<std::size_t>(
-                    c10::cuda::CUDACachingAllocator::StatType::AGGREGATE)]
+                    StatType::AGGREGATE)]
                 .peak)
      << " | " << std::setw(10) << std::right
      << _format_size(
             deviceStats
                 .allocated_bytes[static_cast<std::size_t>(
-                    c10::cuda::CUDACachingAllocator::StatType::AGGREGATE)]
+                    StatType::AGGREGATE)]
                 .allocated)
      << " | " << std::setw(10) << std::right
      << _format_size(
             deviceStats
                 .allocated_bytes[static_cast<std::size_t>(
-                    c10::cuda::CUDACachingAllocator::StatType::AGGREGATE)]
+                    StatType::AGGREGATE)]
                 .freed)
      << " |\n"
      << "|       from large pool | " << std::setw(10) << std::right
      << _format_size(
             deviceStats
                 .allocated_bytes[static_cast<std::size_t>(
-                    c10::cuda::CUDACachingAllocator::StatType::LARGE_POOL)]
+                    StatType::LARGE_POOL)]
                 .current)
      << " | " << std::setw(10) << std::right
      << _format_size(
             deviceStats
                 .allocated_bytes[static_cast<std::size_t>(
-                    c10::cuda::CUDACachingAllocator::StatType::LARGE_POOL)]
+                    StatType::LARGE_POOL)]
                 .peak)
      << " | " << std::setw(10) << std::right
      << _format_size(
             deviceStats
                 .allocated_bytes[static_cast<std::size_t>(
-                    c10::cuda::CUDACachingAllocator::StatType::LARGE_POOL)]
+                    StatType::LARGE_POOL)]
                 .allocated)
      << " | " << std::setw(10) << std::right
      << _format_size(
             deviceStats
                 .allocated_bytes[static_cast<std::size_t>(
-                    c10::cuda::CUDACachingAllocator::StatType::LARGE_POOL)]
+                    StatType::LARGE_POOL)]
                 .freed)
      << " |\n"
      << "|       from small pool | " << std::setw(10) << std::right
      << _format_size(
             deviceStats
                 .allocated_bytes[static_cast<std::size_t>(
-                    c10::cuda::CUDACachingAllocator::StatType::SMALL_POOL)]
+                    StatType::SMALL_POOL)]
                 .current)
      << " | " << std::setw(10) << std::right
      << _format_size(
             deviceStats
                 .allocated_bytes[static_cast<std::size_t>(
-                    c10::cuda::CUDACachingAllocator::StatType::SMALL_POOL)]
+                    StatType::SMALL_POOL)]
                 .peak)
      << " | " << std::setw(10) << std::right
      << _format_size(
             deviceStats
                 .allocated_bytes[static_cast<std::size_t>(
-                    c10::cuda::CUDACachingAllocator::StatType::SMALL_POOL)]
+                    StatType::SMALL_POOL)]
                 .allocated)
      << " | " << std::setw(10) << std::right
      << _format_size(
             deviceStats
                 .allocated_bytes[static_cast<std::size_t>(
-                    c10::cuda::CUDACachingAllocator::StatType::SMALL_POOL)]
+                    StatType::SMALL_POOL)]
                 .freed)
      << " |\n"
      << "|---------------------------------------------------------------------"
@@ -293,75 +305,75 @@ inline std::string memory_summary(c10::DeviceIndex device =
      << _format_size(
             deviceStats
                 .active_bytes[static_cast<std::size_t>(
-                    c10::cuda::CUDACachingAllocator::StatType::AGGREGATE)]
+                    StatType::AGGREGATE)]
                 .current)
      << " | " << std::setw(10) << std::right
      << _format_size(
             deviceStats
                 .active_bytes[static_cast<std::size_t>(
-                    c10::cuda::CUDACachingAllocator::StatType::AGGREGATE)]
+                    StatType::AGGREGATE)]
                 .peak)
      << " | " << std::setw(10) << std::right
      << _format_size(
             deviceStats
                 .active_bytes[static_cast<std::size_t>(
-                    c10::cuda::CUDACachingAllocator::StatType::AGGREGATE)]
+                    StatType::AGGREGATE)]
                 .allocated)
      << " | " << std::setw(10) << std::right
      << _format_size(
             deviceStats
                 .active_bytes[static_cast<std::size_t>(
-                    c10::cuda::CUDACachingAllocator::StatType::AGGREGATE)]
+                    StatType::AGGREGATE)]
                 .freed)
      << " |\n"
      << "|       from large pool | " << std::setw(10) << std::right
      << _format_size(
             deviceStats
                 .active_bytes[static_cast<std::size_t>(
-                    c10::cuda::CUDACachingAllocator::StatType::LARGE_POOL)]
+                    StatType::LARGE_POOL)]
                 .current)
      << " | " << std::setw(10) << std::right
      << _format_size(
             deviceStats
                 .active_bytes[static_cast<std::size_t>(
-                    c10::cuda::CUDACachingAllocator::StatType::LARGE_POOL)]
+                    StatType::LARGE_POOL)]
                 .peak)
      << " | " << std::setw(10) << std::right
      << _format_size(
             deviceStats
                 .active_bytes[static_cast<std::size_t>(
-                    c10::cuda::CUDACachingAllocator::StatType::LARGE_POOL)]
+                    StatType::LARGE_POOL)]
                 .allocated)
      << " | " << std::setw(10) << std::right
      << _format_size(
             deviceStats
                 .active_bytes[static_cast<std::size_t>(
-                    c10::cuda::CUDACachingAllocator::StatType::LARGE_POOL)]
+                    StatType::LARGE_POOL)]
                 .freed)
      << " |\n"
      << "|       from small pool | " << std::setw(10) << std::right
      << _format_size(
             deviceStats
                 .active_bytes[static_cast<std::size_t>(
-                    c10::cuda::CUDACachingAllocator::StatType::SMALL_POOL)]
+                    StatType::SMALL_POOL)]
                 .current)
      << " | " << std::setw(10) << std::right
      << _format_size(
             deviceStats
                 .active_bytes[static_cast<std::size_t>(
-                    c10::cuda::CUDACachingAllocator::StatType::SMALL_POOL)]
+                    StatType::SMALL_POOL)]
                 .peak)
      << " | " << std::setw(10) << std::right
      << _format_size(
             deviceStats
                 .active_bytes[static_cast<std::size_t>(
-                    c10::cuda::CUDACachingAllocator::StatType::SMALL_POOL)]
+                    StatType::SMALL_POOL)]
                 .allocated)
      << " | " << std::setw(10) << std::right
      << _format_size(
             deviceStats
                 .active_bytes[static_cast<std::size_t>(
-                    c10::cuda::CUDACachingAllocator::StatType::SMALL_POOL)]
+                    StatType::SMALL_POOL)]
                 .freed)
      << " |\n"
      << "|---------------------------------------------------------------------"
@@ -370,75 +382,75 @@ inline std::string memory_summary(c10::DeviceIndex device =
      << _format_size(
             deviceStats
                 .requested_bytes[static_cast<std::size_t>(
-                    c10::cuda::CUDACachingAllocator::StatType::AGGREGATE)]
+                    StatType::AGGREGATE)]
                 .current)
      << " | " << std::setw(10) << std::right
      << _format_size(
             deviceStats
                 .requested_bytes[static_cast<std::size_t>(
-                    c10::cuda::CUDACachingAllocator::StatType::AGGREGATE)]
+                    StatType::AGGREGATE)]
                 .peak)
      << " | " << std::setw(10) << std::right
      << _format_size(
             deviceStats
                 .requested_bytes[static_cast<std::size_t>(
-                    c10::cuda::CUDACachingAllocator::StatType::AGGREGATE)]
+                    StatType::AGGREGATE)]
                 .allocated)
      << " | " << std::setw(10) << std::right
      << _format_size(
             deviceStats
                 .requested_bytes[static_cast<std::size_t>(
-                    c10::cuda::CUDACachingAllocator::StatType::AGGREGATE)]
+                    StatType::AGGREGATE)]
                 .freed)
      << " |\n"
      << "|       from large pool | " << std::setw(10) << std::right
      << _format_size(
             deviceStats
                 .requested_bytes[static_cast<std::size_t>(
-                    c10::cuda::CUDACachingAllocator::StatType::LARGE_POOL)]
+                    StatType::LARGE_POOL)]
                 .current)
      << " | " << std::setw(10) << std::right
      << _format_size(
             deviceStats
                 .requested_bytes[static_cast<std::size_t>(
-                    c10::cuda::CUDACachingAllocator::StatType::LARGE_POOL)]
+                    StatType::LARGE_POOL)]
                 .peak)
      << " | " << std::setw(10) << std::right
      << _format_size(
             deviceStats
                 .requested_bytes[static_cast<std::size_t>(
-                    c10::cuda::CUDACachingAllocator::StatType::LARGE_POOL)]
+                    StatType::LARGE_POOL)]
                 .allocated)
      << " | " << std::setw(10) << std::right
      << _format_size(
             deviceStats
                 .requested_bytes[static_cast<std::size_t>(
-                    c10::cuda::CUDACachingAllocator::StatType::LARGE_POOL)]
+                    StatType::LARGE_POOL)]
                 .freed)
      << " |\n"
      << "|       from small pool | " << std::setw(10) << std::right
      << _format_size(
             deviceStats
                 .requested_bytes[static_cast<std::size_t>(
-                    c10::cuda::CUDACachingAllocator::StatType::SMALL_POOL)]
+                    StatType::SMALL_POOL)]
                 .current)
      << " | " << std::setw(10) << std::right
      << _format_size(
             deviceStats
                 .requested_bytes[static_cast<std::size_t>(
-                    c10::cuda::CUDACachingAllocator::StatType::SMALL_POOL)]
+                    StatType::SMALL_POOL)]
                 .peak)
      << " | " << std::setw(10) << std::right
      << _format_size(
             deviceStats
                 .requested_bytes[static_cast<std::size_t>(
-                    c10::cuda::CUDACachingAllocator::StatType::SMALL_POOL)]
+                    StatType::SMALL_POOL)]
                 .allocated)
      << " | " << std::setw(10) << std::right
      << _format_size(
             deviceStats
                 .requested_bytes[static_cast<std::size_t>(
-                    c10::cuda::CUDACachingAllocator::StatType::SMALL_POOL)]
+                    StatType::SMALL_POOL)]
                 .freed)
      << " |\n"
      << "|---------------------------------------------------------------------"
@@ -447,75 +459,75 @@ inline std::string memory_summary(c10::DeviceIndex device =
      << _format_size(
             deviceStats
                 .reserved_bytes[static_cast<std::size_t>(
-                    c10::cuda::CUDACachingAllocator::StatType::AGGREGATE)]
+                    StatType::AGGREGATE)]
                 .current)
      << " | " << std::setw(10) << std::right
      << _format_size(
             deviceStats
                 .reserved_bytes[static_cast<std::size_t>(
-                    c10::cuda::CUDACachingAllocator::StatType::AGGREGATE)]
+                    StatType::AGGREGATE)]
                 .peak)
      << " | " << std::setw(10) << std::right
      << _format_size(
             deviceStats
                 .reserved_bytes[static_cast<std::size_t>(
-                    c10::cuda::CUDACachingAllocator::StatType::AGGREGATE)]
+                    StatType::AGGREGATE)]
                 .allocated)
      << " | " << std::setw(10) << std::right
      << _format_size(
             deviceStats
                 .reserved_bytes[static_cast<std::size_t>(
-                    c10::cuda::CUDACachingAllocator::StatType::AGGREGATE)]
+                    StatType::AGGREGATE)]
                 .freed)
      << " |\n"
      << "|       from large pool | " << std::setw(10) << std::right
      << _format_size(
             deviceStats
                 .reserved_bytes[static_cast<std::size_t>(
-                    c10::cuda::CUDACachingAllocator::StatType::LARGE_POOL)]
+                    StatType::LARGE_POOL)]
                 .current)
      << " | " << std::setw(10) << std::right
      << _format_size(
             deviceStats
                 .reserved_bytes[static_cast<std::size_t>(
-                    c10::cuda::CUDACachingAllocator::StatType::LARGE_POOL)]
+                    StatType::LARGE_POOL)]
                 .peak)
      << " | " << std::setw(10) << std::right
      << _format_size(
             deviceStats
                 .reserved_bytes[static_cast<std::size_t>(
-                    c10::cuda::CUDACachingAllocator::StatType::LARGE_POOL)]
+                    StatType::LARGE_POOL)]
                 .allocated)
      << " | " << std::setw(10) << std::right
      << _format_size(
             deviceStats
                 .reserved_bytes[static_cast<std::size_t>(
-                    c10::cuda::CUDACachingAllocator::StatType::LARGE_POOL)]
+                    StatType::LARGE_POOL)]
                 .freed)
      << " |\n"
      << "|       from small pool | " << std::setw(10) << std::right
      << _format_size(
             deviceStats
                 .reserved_bytes[static_cast<std::size_t>(
-                    c10::cuda::CUDACachingAllocator::StatType::SMALL_POOL)]
+                    StatType::SMALL_POOL)]
                 .current)
      << " | " << std::setw(10) << std::right
      << _format_size(
             deviceStats
                 .reserved_bytes[static_cast<std::size_t>(
-                    c10::cuda::CUDACachingAllocator::StatType::SMALL_POOL)]
+                    StatType::SMALL_POOL)]
                 .peak)
      << " | " << std::setw(10) << std::right
      << _format_size(
             deviceStats
                 .reserved_bytes[static_cast<std::size_t>(
-                    c10::cuda::CUDACachingAllocator::StatType::SMALL_POOL)]
+                    StatType::SMALL_POOL)]
                 .allocated)
      << " | " << std::setw(10) << std::right
      << _format_size(
             deviceStats
                 .reserved_bytes[static_cast<std::size_t>(
-                    c10::cuda::CUDACachingAllocator::StatType::SMALL_POOL)]
+                    StatType::SMALL_POOL)]
                 .freed)
      << " |\n"
      << "|---------------------------------------------------------------------"
@@ -524,75 +536,75 @@ inline std::string memory_summary(c10::DeviceIndex device =
      << _format_size(
             deviceStats
                 .inactive_split_bytes[static_cast<std::size_t>(
-                    c10::cuda::CUDACachingAllocator::StatType::AGGREGATE)]
+                    StatType::AGGREGATE)]
                 .current)
      << " | " << std::setw(10) << std::right
      << _format_size(
             deviceStats
                 .inactive_split_bytes[static_cast<std::size_t>(
-                    c10::cuda::CUDACachingAllocator::StatType::AGGREGATE)]
+                    StatType::AGGREGATE)]
                 .peak)
      << " | " << std::setw(10) << std::right
      << _format_size(
             deviceStats
                 .inactive_split_bytes[static_cast<std::size_t>(
-                    c10::cuda::CUDACachingAllocator::StatType::AGGREGATE)]
+                    StatType::AGGREGATE)]
                 .allocated)
      << " | " << std::setw(10) << std::right
      << _format_size(
             deviceStats
                 .inactive_split_bytes[static_cast<std::size_t>(
-                    c10::cuda::CUDACachingAllocator::StatType::AGGREGATE)]
+                    StatType::AGGREGATE)]
                 .freed)
      << " |\n"
      << "|       from large pool | " << std::setw(10) << std::right
      << _format_size(
             deviceStats
                 .inactive_split_bytes[static_cast<std::size_t>(
-                    c10::cuda::CUDACachingAllocator::StatType::LARGE_POOL)]
+                    StatType::LARGE_POOL)]
                 .current)
      << " | " << std::setw(10) << std::right
      << _format_size(
             deviceStats
                 .inactive_split_bytes[static_cast<std::size_t>(
-                    c10::cuda::CUDACachingAllocator::StatType::LARGE_POOL)]
+                    StatType::LARGE_POOL)]
                 .peak)
      << " | " << std::setw(10) << std::right
      << _format_size(
             deviceStats
                 .inactive_split_bytes[static_cast<std::size_t>(
-                    c10::cuda::CUDACachingAllocator::StatType::LARGE_POOL)]
+                    StatType::LARGE_POOL)]
                 .allocated)
      << " | " << std::setw(10) << std::right
      << _format_size(
             deviceStats
                 .inactive_split_bytes[static_cast<std::size_t>(
-                    c10::cuda::CUDACachingAllocator::StatType::LARGE_POOL)]
+                    StatType::LARGE_POOL)]
                 .freed)
      << " |\n"
      << "|       from small pool | " << std::setw(10) << std::right
      << _format_size(
             deviceStats
                 .inactive_split_bytes[static_cast<std::size_t>(
-                    c10::cuda::CUDACachingAllocator::StatType::SMALL_POOL)]
+                    StatType::SMALL_POOL)]
                 .current)
      << " | " << std::setw(10) << std::right
      << _format_size(
             deviceStats
                 .inactive_split_bytes[static_cast<std::size_t>(
-                    c10::cuda::CUDACachingAllocator::StatType::SMALL_POOL)]
+                    StatType::SMALL_POOL)]
                 .peak)
      << " | " << std::setw(10) << std::right
      << _format_size(
             deviceStats
                 .inactive_split_bytes[static_cast<std::size_t>(
-                    c10::cuda::CUDACachingAllocator::StatType::SMALL_POOL)]
+                    StatType::SMALL_POOL)]
                 .allocated)
      << " | " << std::setw(10) << std::right
      << _format_size(
             deviceStats
                 .inactive_split_bytes[static_cast<std::size_t>(
-                    c10::cuda::CUDACachingAllocator::StatType::SMALL_POOL)]
+                    StatType::SMALL_POOL)]
                 .freed)
      << " |\n"
      << "|---------------------------------------------------------------------"
@@ -600,22 +612,22 @@ inline std::string memory_summary(c10::DeviceIndex device =
      << "| Allocations           | " << std::setw(10) << std::right
      << deviceStats
             .allocation[static_cast<std::size_t>(
-                c10::cuda::CUDACachingAllocator::StatType::AGGREGATE)]
+                StatType::AGGREGATE)]
             .current
      << " | " << std::setw(10) << std::right
      << deviceStats
             .allocation[static_cast<std::size_t>(
-                c10::cuda::CUDACachingAllocator::StatType::AGGREGATE)]
+                StatType::AGGREGATE)]
             .peak
      << " | " << std::setw(10) << std::right
      << deviceStats
             .allocation[static_cast<std::size_t>(
-                c10::cuda::CUDACachingAllocator::StatType::AGGREGATE)]
+                StatType::AGGREGATE)]
             .allocated
      << " | " << std::setw(10) << std::right
      << deviceStats
             .allocation[static_cast<std::size_t>(
-                c10::cuda::CUDACachingAllocator::StatType::AGGREGATE)]
+                StatType::AGGREGATE)]
             .freed
      << " |\n"
      << "|---------------------------------------------------------------------"
@@ -623,22 +635,22 @@ inline std::string memory_summary(c10::DeviceIndex device =
      << "|       from large pool | " << std::setw(10) << std::right
      << deviceStats
             .allocation[static_cast<std::size_t>(
-                c10::cuda::CUDACachingAllocator::StatType::LARGE_POOL)]
+                StatType::LARGE_POOL)]
             .current
      << " | " << std::setw(10) << std::right
      << deviceStats
             .allocation[static_cast<std::size_t>(
-                c10::cuda::CUDACachingAllocator::StatType::LARGE_POOL)]
+                StatType::LARGE_POOL)]
             .peak
      << " | " << std::setw(10) << std::right
      << deviceStats
             .allocation[static_cast<std::size_t>(
-                c10::cuda::CUDACachingAllocator::StatType::LARGE_POOL)]
+                StatType::LARGE_POOL)]
             .allocated
      << " | " << std::setw(10) << std::right
      << deviceStats
             .allocation[static_cast<std::size_t>(
-                c10::cuda::CUDACachingAllocator::StatType::LARGE_POOL)]
+                StatType::LARGE_POOL)]
             .freed
      << " |\n"
      << "|---------------------------------------------------------------------"
@@ -646,22 +658,22 @@ inline std::string memory_summary(c10::DeviceIndex device =
      << "|       from small pool | " << std::setw(10) << std::right
      << deviceStats
             .allocation[static_cast<std::size_t>(
-                c10::cuda::CUDACachingAllocator::StatType::SMALL_POOL)]
+                StatType::SMALL_POOL)]
             .current
      << " | " << std::setw(10) << std::right
      << deviceStats
             .allocation[static_cast<std::size_t>(
-                c10::cuda::CUDACachingAllocator::StatType::SMALL_POOL)]
+                StatType::SMALL_POOL)]
             .peak
      << " | " << std::setw(10) << std::right
      << deviceStats
             .allocation[static_cast<std::size_t>(
-                c10::cuda::CUDACachingAllocator::StatType::SMALL_POOL)]
+                StatType::SMALL_POOL)]
             .allocated
      << " | " << std::setw(10) << std::right
      << deviceStats
             .allocation[static_cast<std::size_t>(
-                c10::cuda::CUDACachingAllocator::StatType::SMALL_POOL)]
+                StatType::SMALL_POOL)]
             .freed
      << " |\n"
      << "|---------------------------------------------------------------------"
@@ -669,22 +681,22 @@ inline std::string memory_summary(c10::DeviceIndex device =
      << "| Active allocs         | " << std::setw(10) << std::right
      << deviceStats
             .active[static_cast<std::size_t>(
-                c10::cuda::CUDACachingAllocator::StatType::AGGREGATE)]
+                StatType::AGGREGATE)]
             .current
      << " | " << std::setw(10) << std::right
      << deviceStats
             .active[static_cast<std::size_t>(
-                c10::cuda::CUDACachingAllocator::StatType::AGGREGATE)]
+                StatType::AGGREGATE)]
             .peak
      << " | " << std::setw(10) << std::right
      << deviceStats
             .active[static_cast<std::size_t>(
-                c10::cuda::CUDACachingAllocator::StatType::AGGREGATE)]
+                StatType::AGGREGATE)]
             .allocated
      << " | " << std::setw(10) << std::right
      << deviceStats
             .active[static_cast<std::size_t>(
-                c10::cuda::CUDACachingAllocator::StatType::AGGREGATE)]
+                StatType::AGGREGATE)]
             .freed
      << " |\n"
      << "|---------------------------------------------------------------------"
@@ -692,22 +704,22 @@ inline std::string memory_summary(c10::DeviceIndex device =
      << "|       from large pool | " << std::setw(10) << std::right
      << deviceStats
             .active[static_cast<std::size_t>(
-                c10::cuda::CUDACachingAllocator::StatType::LARGE_POOL)]
+                StatType::LARGE_POOL)]
             .current
      << " | " << std::setw(10) << std::right
      << deviceStats
             .active[static_cast<std::size_t>(
-                c10::cuda::CUDACachingAllocator::StatType::LARGE_POOL)]
+                StatType::LARGE_POOL)]
             .peak
      << " | " << std::setw(10) << std::right
      << deviceStats
             .active[static_cast<std::size_t>(
-                c10::cuda::CUDACachingAllocator::StatType::LARGE_POOL)]
+                StatType::LARGE_POOL)]
             .allocated
      << " | " << std::setw(10) << std::right
      << deviceStats
             .active[static_cast<std::size_t>(
-                c10::cuda::CUDACachingAllocator::StatType::LARGE_POOL)]
+                StatType::LARGE_POOL)]
             .freed
      << " |\n"
      << "|---------------------------------------------------------------------"
@@ -715,22 +727,22 @@ inline std::string memory_summary(c10::DeviceIndex device =
      << "|       from small pool | " << std::setw(10) << std::right
      << deviceStats
             .active[static_cast<std::size_t>(
-                c10::cuda::CUDACachingAllocator::StatType::SMALL_POOL)]
+                StatType::SMALL_POOL)]
             .current
      << " | " << std::setw(10) << std::right
      << deviceStats
             .active[static_cast<std::size_t>(
-                c10::cuda::CUDACachingAllocator::StatType::SMALL_POOL)]
+                StatType::SMALL_POOL)]
             .peak
      << " | " << std::setw(10) << std::right
      << deviceStats
             .active[static_cast<std::size_t>(
-                c10::cuda::CUDACachingAllocator::StatType::SMALL_POOL)]
+                StatType::SMALL_POOL)]
             .allocated
      << " | " << std::setw(10) << std::right
      << deviceStats
             .active[static_cast<std::size_t>(
-                c10::cuda::CUDACachingAllocator::StatType::SMALL_POOL)]
+                StatType::SMALL_POOL)]
             .freed
      << " |\n"
      << "|---------------------------------------------------------------------"
@@ -738,22 +750,22 @@ inline std::string memory_summary(c10::DeviceIndex device =
      << "| GPU reserved segments | " << std::setw(10) << std::right
      << deviceStats
             .segment[static_cast<std::size_t>(
-                c10::cuda::CUDACachingAllocator::StatType::AGGREGATE)]
+                StatType::AGGREGATE)]
             .current
      << " | " << std::setw(10) << std::right
      << deviceStats
             .segment[static_cast<std::size_t>(
-                c10::cuda::CUDACachingAllocator::StatType::AGGREGATE)]
+                StatType::AGGREGATE)]
             .peak
      << " | " << std::setw(10) << std::right
      << deviceStats
             .segment[static_cast<std::size_t>(
-                c10::cuda::CUDACachingAllocator::StatType::AGGREGATE)]
+                StatType::AGGREGATE)]
             .allocated
      << " | " << std::setw(10) << std::right
      << deviceStats
             .segment[static_cast<std::size_t>(
-                c10::cuda::CUDACachingAllocator::StatType::AGGREGATE)]
+                StatType::AGGREGATE)]
             .freed
      << " |\n"
      << "|---------------------------------------------------------------------"
@@ -761,22 +773,22 @@ inline std::string memory_summary(c10::DeviceIndex device =
      << "|       from large pool | " << std::setw(10) << std::right
      << deviceStats
             .segment[static_cast<std::size_t>(
-                c10::cuda::CUDACachingAllocator::StatType::LARGE_POOL)]
+                StatType::LARGE_POOL)]
             .current
      << " | " << std::setw(10) << std::right
      << deviceStats
             .segment[static_cast<std::size_t>(
-                c10::cuda::CUDACachingAllocator::StatType::LARGE_POOL)]
+                StatType::LARGE_POOL)]
             .peak
      << " | " << std::setw(10) << std::right
      << deviceStats
             .segment[static_cast<std::size_t>(
-                c10::cuda::CUDACachingAllocator::StatType::LARGE_POOL)]
+                StatType::LARGE_POOL)]
             .allocated
      << " | " << std::setw(10) << std::right
      << deviceStats
             .segment[static_cast<std::size_t>(
-                c10::cuda::CUDACachingAllocator::StatType::LARGE_POOL)]
+                StatType::LARGE_POOL)]
             .freed
      << " |\n"
      << "|---------------------------------------------------------------------"
@@ -784,22 +796,22 @@ inline std::string memory_summary(c10::DeviceIndex device =
      << "|       from small pool | " << std::setw(10) << std::right
      << deviceStats
             .segment[static_cast<std::size_t>(
-                c10::cuda::CUDACachingAllocator::StatType::SMALL_POOL)]
+                StatType::SMALL_POOL)]
             .current
      << " | " << std::setw(10) << std::right
      << deviceStats
             .segment[static_cast<std::size_t>(
-                c10::cuda::CUDACachingAllocator::StatType::SMALL_POOL)]
+                StatType::SMALL_POOL)]
             .peak
      << " | " << std::setw(10) << std::right
      << deviceStats
             .segment[static_cast<std::size_t>(
-                c10::cuda::CUDACachingAllocator::StatType::SMALL_POOL)]
+                StatType::SMALL_POOL)]
             .allocated
      << " | " << std::setw(10) << std::right
      << deviceStats
             .segment[static_cast<std::size_t>(
-                c10::cuda::CUDACachingAllocator::StatType::SMALL_POOL)]
+                StatType::SMALL_POOL)]
             .freed
      << " |\n"
      << "|---------------------------------------------------------------------"
@@ -807,22 +819,22 @@ inline std::string memory_summary(c10::DeviceIndex device =
      << "| Non-releasable allocs | " << std::setw(10) << std::right
      << deviceStats
             .inactive_split[static_cast<std::size_t>(
-                c10::cuda::CUDACachingAllocator::StatType::AGGREGATE)]
+                StatType::AGGREGATE)]
             .current
      << " | " << std::setw(10) << std::right
      << deviceStats
             .inactive_split[static_cast<std::size_t>(
-                c10::cuda::CUDACachingAllocator::StatType::AGGREGATE)]
+                StatType::AGGREGATE)]
             .peak
      << " | " << std::setw(10) << std::right
      << deviceStats
             .inactive_split[static_cast<std::size_t>(
-                c10::cuda::CUDACachingAllocator::StatType::AGGREGATE)]
+                StatType::AGGREGATE)]
             .allocated
      << " | " << std::setw(10) << std::right
      << deviceStats
             .inactive_split[static_cast<std::size_t>(
-                c10::cuda::CUDACachingAllocator::StatType::AGGREGATE)]
+                StatType::AGGREGATE)]
             .freed
      << " |\n"
      << "|---------------------------------------------------------------------"
@@ -830,22 +842,22 @@ inline std::string memory_summary(c10::DeviceIndex device =
      << "|       from large pool | " << std::setw(10) << std::right
      << deviceStats
             .inactive_split[static_cast<std::size_t>(
-                c10::cuda::CUDACachingAllocator::StatType::LARGE_POOL)]
+                StatType::LARGE_POOL)]
             .current
      << " | " << std::setw(10) << std::right
      << deviceStats
             .inactive_split[static_cast<std::size_t>(
-                c10::cuda::CUDACachingAllocator::StatType::LARGE_POOL)]
+                StatType::LARGE_POOL)]
             .peak
      << " | " << std::setw(10) << std::right
      << deviceStats
             .inactive_split[static_cast<std::size_t>(
-                c10::cuda::CUDACachingAllocator::StatType::LARGE_POOL)]
+                StatType::LARGE_POOL)]
             .allocated
      << " | " << std::setw(10) << std::right
      << deviceStats
             .inactive_split[static_cast<std::size_t>(
-                c10::cuda::CUDACachingAllocator::StatType::LARGE_POOL)]
+                StatType::LARGE_POOL)]
             .freed
      << " |\n"
      << "|---------------------------------------------------------------------"
@@ -853,22 +865,22 @@ inline std::string memory_summary(c10::DeviceIndex device =
      << "|       from small pool | " << std::setw(10) << std::right
      << deviceStats
             .inactive_split[static_cast<std::size_t>(
-                c10::cuda::CUDACachingAllocator::StatType::SMALL_POOL)]
+                StatType::SMALL_POOL)]
             .current
      << " | " << std::setw(10) << std::right
      << deviceStats
             .inactive_split[static_cast<std::size_t>(
-                c10::cuda::CUDACachingAllocator::StatType::SMALL_POOL)]
+                StatType::SMALL_POOL)]
             .peak
      << " | " << std::setw(10) << std::right
      << deviceStats
             .inactive_split[static_cast<std::size_t>(
-                c10::cuda::CUDACachingAllocator::StatType::SMALL_POOL)]
+                StatType::SMALL_POOL)]
             .allocated
      << " | " << std::setw(10) << std::right
      << deviceStats
             .inactive_split[static_cast<std::size_t>(
-                c10::cuda::CUDACachingAllocator::StatType::SMALL_POOL)]
+                StatType::SMALL_POOL)]
             .freed
      << " |\n"
      << "|---------------------------------------------------------------------"
