@@ -93,6 +93,8 @@ if(${CMAKE_VERSION} VERSION_GREATER_EQUAL 3.24)
   cmake_policy(SET CMP0135 NEW)
 endif()
 
+
+
 ########################################################################
 # Append path to additional modules
 ########################################################################
@@ -120,6 +122,11 @@ option(IGANET_WITH_OPENMP       "With OpenMP support"       ON )
 ########################################################################
 find_package(Torch REQUIRED)
 list(APPEND CMAKE_CXX_FLAGS ${TORCH_CXX_FLAGS})
+
+if(DEFINED HIP_COMPILER AND IGANET_BUILD_PCH)
+  message(WARNING "HIP compiler does not (yet) support precompiled headers")
+  set(IGANET_BUILD_PCH OFF CACHE BOOL "Build precompiled headers" FORCE)
+endif()
 
 find_package(IPEX)
 
