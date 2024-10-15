@@ -507,11 +507,11 @@ inline std::string getExtraLibsVersion() {
        std::to_string(HIP_VERSION_PATCH);
 #endif
 
-  // Intel MKL library
-#if defined(INTEL_MKL_VERSION)
+  // G+Smo
+#if defined(GISMO_VERSION)
   if (!s.empty())
     s += ", ";
-  s += "MKL " + std::to_string(INTEL_MKL_VERSION);
+  s += "G+Smo " + std::string(GISMO_VERSION);
 #endif
 
   // LibTorch
@@ -524,6 +524,13 @@ inline std::string getExtraLibsVersion() {
        " (#intraop threads: " + std::to_string(at::get_num_threads()) +
        ", #interop threads: " + std::to_string(at::get_num_interop_threads()) +
        ")";
+#endif
+
+  // Intel MKL library
+#if defined(INTEL_MKL_VERSION)
+  if (!s.empty())
+    s += ", ";
+  s += "MKL " + std::to_string(INTEL_MKL_VERSION);
 #endif
 
   return s;
