@@ -503,8 +503,8 @@ inline std::string getExtraLibsVersion() {
   if (!s.empty())
     s += ", ";
   s += "HIP " + std::to_string(HIP_VERSION_MAJOR) + "." +
-    std::to_string(HIP_VERSION_MINOR) + "." +
-    std::to_string(HIP_VERSION_PATCH);
+       std::to_string(HIP_VERSION_MINOR) + "." +
+       std::to_string(HIP_VERSION_PATCH);
 #endif
 
   // Intel MKL library
