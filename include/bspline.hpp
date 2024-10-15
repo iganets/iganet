@@ -734,10 +734,9 @@ public:
   ///
   /// @result Array of Greville abscissae
   inline auto greville(bool interior = false) const {
-    if constexpr (parDim_ == 0)
-      return torch::zeros(ncoeffs_[0] - (interior ? 2 : 0), options_);
-
-    else {
+    if constexpr (parDim_ == 0) {
+      return torch::zeros(1, options_);
+    } else {
       utils::TensorArray<parDim_> coeffs;
 
       // Fill coefficients with the tensor-product of Greville
