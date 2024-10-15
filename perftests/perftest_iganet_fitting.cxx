@@ -26,9 +26,11 @@ template <typename Optimizer, typename GeometryMap, typename Variable,
 class Fitting;
 
 /// @brief Specialization of the abstract IgANet class for function fitting
-template <typename Optimizer, typename GeometryMap, typename Variable, bool memory_optimized>
-class Fitting<Optimizer, GeometryMap, Variable, memory_optimized, false> :
-  public iganet::IgANet<Optimizer, GeometryMap, Variable, iganet::IgABaseNoRefData> {
+template <typename Optimizer, typename GeometryMap, typename Variable,
+          bool memory_optimized>
+class Fitting<Optimizer, GeometryMap, Variable, memory_optimized, false>
+    : public iganet::IgANet<Optimizer, GeometryMap, Variable,
+                            iganet::IgABaseNoRefData> {
 
 private:
   /// @brief Type of the base class
@@ -84,12 +86,13 @@ public:
 };
 
 /// @brief Specialization of the abstract IgANet class for function fitting
-template <typename Optimizer, typename GeometryMap, typename Variable, bool memory_optimized>
-class Fitting<Optimizer, GeometryMap, Variable, memory_optimized, true> :
-  public iganet::IgANet<Optimizer, GeometryMap, Variable,
-                        iganet::IgABaseNoRefData>,
-  public iganet::IgANetCustomizable<GeometryMap, Variable> {
-  
+template <typename Optimizer, typename GeometryMap, typename Variable,
+          bool memory_optimized>
+class Fitting<Optimizer, GeometryMap, Variable, memory_optimized, true>
+    : public iganet::IgANet<Optimizer, GeometryMap, Variable,
+                            iganet::IgABaseNoRefData>,
+      public iganet::IgANetCustomizable<GeometryMap, Variable> {
+
 private:
   /// @brief Type of the base class
   using Base = iganet::IgANet<Optimizer, GeometryMap, Variable,
@@ -166,8 +169,8 @@ public:
   ///
   /// @note GoogleTest does not support fixtures with multiple
   /// non-type template parameters. This functor is a work-around
-  template <typename GeometryMap, typename Variable,
-            bool memory_optimized, bool precompute>
+  template <typename GeometryMap, typename Variable, bool memory_optimized,
+            bool precompute>
   struct train {
 
     /// @brief Call operator
@@ -175,24 +178,25 @@ public:
 
       using namespace iganet::literals;
       using optimizer_t = torch::optim::Adam;
-      
+
       std::vector<int64_t> layers(nlayers, nneurons);
-      std::vector<std::vector<std::any>> activations(nlayers,
-                                                     std::vector<std::any>{iganet::activation::relu});
+      std::vector<std::vector<std::any>> activations(
+          nlayers, std::vector<std::any>{iganet::activation::relu});
       activations.emplace_back(std::vector<std::any>{iganet::activation::none});
 
       // 1D
       if constexpr (GeometryMap::spline_type::parDim() == 1) {
-        Fitting<optimizer_t, GeometryMap, Variable, memory_optimized, precompute>
-          net(layers, activations,
-              std::tuple(iganet::utils::to_array(GeometryMap::spline_type::degree(0)+1_i64)),
-              std::tuple(iganet::utils::to_array(ncoeffs)));
+        Fitting<optimizer_t, GeometryMap, Variable, memory_optimized,
+                precompute>
+            net(layers, activations,
+                std::tuple(iganet::utils::to_array(
+                    GeometryMap::spline_type::degree(0) + 1_i64)),
+                std::tuple(iganet::utils::to_array(ncoeffs)));
 
         net.options().max_epoch(
-                                iganet::utils::getenv("IGANET_MAX_EPOCH", 1000_i64));
+            iganet::utils::getenv("IGANET_MAX_EPOCH", 1000_i64));
 
-        net.options().min_loss(
-                               iganet::utils::getenv("IGANET_MIN_LOSS", 1e-12));
+        net.options().min_loss(iganet::utils::getenv("IGANET_MIN_LOSS", 1e-12));
 
         auto t1 = std::chrono::high_resolution_clock::now();
         net.train();
@@ -200,24 +204,25 @@ public:
 
         std::cout << std::right << std::setw(10)
                   << std::chrono::duration_cast<std::chrono::milliseconds>(t2 -
-                                                                      t1)
-          .count()
+                                                                           t1)
+                         .count()
                   << "\t";
       }
 
       // 2D
       else if constexpr (GeometryMap::spline_type::parDim() == 2) {
-        Fitting<optimizer_t, GeometryMap, Variable, memory_optimized, precompute>
-          net(layers, activations,
-              std::tuple(iganet::utils::to_array(GeometryMap::spline_type::degree(0)+1_i64,
-                                                 GeometryMap::spline_type::degree(1)+1_i64)),
-              std::tuple(iganet::utils::to_array(ncoeffs, ncoeffs)));
+        Fitting<optimizer_t, GeometryMap, Variable, memory_optimized,
+                precompute>
+            net(layers, activations,
+                std::tuple(iganet::utils::to_array(
+                    GeometryMap::spline_type::degree(0) + 1_i64,
+                    GeometryMap::spline_type::degree(1) + 1_i64)),
+                std::tuple(iganet::utils::to_array(ncoeffs, ncoeffs)));
 
-         net.options().max_epoch(
-                                iganet::utils::getenv("IGANET_MAX_EPOCH", 1000_i64));
+        net.options().max_epoch(
+            iganet::utils::getenv("IGANET_MAX_EPOCH", 1000_i64));
 
-        net.options().min_loss(
-                               iganet::utils::getenv("IGANET_MIN_LOSS", 1e-12));
+        net.options().min_loss(iganet::utils::getenv("IGANET_MIN_LOSS", 1e-12));
 
         auto t1 = std::chrono::high_resolution_clock::now();
         net.train();
@@ -225,25 +230,26 @@ public:
 
         std::cout << std::right << std::setw(10)
                   << std::chrono::duration_cast<std::chrono::milliseconds>(t2 -
-                                                                      t1)
-          .count()
+                                                                           t1)
+                         .count()
                   << "\t";
       }
 
       // 3D
       else if constexpr (GeometryMap::spline_type::parDim() == 3) {
-        Fitting<optimizer_t, GeometryMap, Variable, memory_optimized, precompute>
-          net(layers, activations,
-              std::tuple(iganet::utils::to_array(GeometryMap::spline_type::degree(0)+1_i64,
-                                                 GeometryMap::spline_type::degree(1)+1_i64,
-                                                 GeometryMap::spline_type::degree(2)+1_i64)),
-              std::tuple(iganet::utils::to_array(ncoeffs, ncoeffs, ncoeffs)));
+        Fitting<optimizer_t, GeometryMap, Variable, memory_optimized,
+                precompute>
+            net(layers, activations,
+                std::tuple(iganet::utils::to_array(
+                    GeometryMap::spline_type::degree(0) + 1_i64,
+                    GeometryMap::spline_type::degree(1) + 1_i64,
+                    GeometryMap::spline_type::degree(2) + 1_i64)),
+                std::tuple(iganet::utils::to_array(ncoeffs, ncoeffs, ncoeffs)));
 
-         net.options().max_epoch(
-                                iganet::utils::getenv("IGANET_MAX_EPOCH", 1000_i64));
+        net.options().max_epoch(
+            iganet::utils::getenv("IGANET_MAX_EPOCH", 1000_i64));
 
-        net.options().min_loss(
-                               iganet::utils::getenv("IGANET_MIN_LOSS", 1e-12));
+        net.options().min_loss(iganet::utils::getenv("IGANET_MIN_LOSS", 1e-12));
 
         auto t1 = std::chrono::high_resolution_clock::now();
         net.train();
@@ -251,26 +257,28 @@ public:
 
         std::cout << std::right << std::setw(10)
                   << std::chrono::duration_cast<std::chrono::milliseconds>(t2 -
-                                                                      t1)
-          .count()
+                                                                           t1)
+                         .count()
                   << "\t";
       }
 
       // 4D
       else if constexpr (GeometryMap::spline_type::parDim() == 4) {
-        Fitting<optimizer_t, GeometryMap, Variable, memory_optimized, precompute>
-          net(layers, activations,
-              std::tuple(iganet::utils::to_array(GeometryMap::spline_type::degree(0)+1_i64,
-                                                 GeometryMap::spline_type::degree(1)+1_i64,
-                                                 GeometryMap::spline_type::degree(2)+1_i64,
-                                                 GeometryMap::spline_type::degree(3)+1_i64)),
-              std::tuple(iganet::utils::to_array(ncoeffs, ncoeffs, ncoeffs, ncoeffs)));
+        Fitting<optimizer_t, GeometryMap, Variable, memory_optimized,
+                precompute>
+            net(layers, activations,
+                std::tuple(iganet::utils::to_array(
+                    GeometryMap::spline_type::degree(0) + 1_i64,
+                    GeometryMap::spline_type::degree(1) + 1_i64,
+                    GeometryMap::spline_type::degree(2) + 1_i64,
+                    GeometryMap::spline_type::degree(3) + 1_i64)),
+                std::tuple(iganet::utils::to_array(ncoeffs, ncoeffs, ncoeffs,
+                                                   ncoeffs)));
 
-         net.options().max_epoch(
-                                iganet::utils::getenv("IGANET_MAX_EPOCH", 1000_i64));
+        net.options().max_epoch(
+            iganet::utils::getenv("IGANET_MAX_EPOCH", 1000_i64));
 
-        net.options().min_loss(
-                               iganet::utils::getenv("IGANET_MIN_LOSS", 1e-12));
+        net.options().min_loss(iganet::utils::getenv("IGANET_MIN_LOSS", 1e-12));
 
         auto t1 = std::chrono::high_resolution_clock::now();
         net.train();
@@ -278,319 +286,397 @@ public:
 
         std::cout << std::right << std::setw(10)
                   << std::chrono::duration_cast<std::chrono::milliseconds>(t2 -
-                                                                      t1)
-          .count()
+                                                                           t1)
+                         .count()
                   << "\t";
       }
 
       else
-        throw std::runtime_error("Unsupported parametric dimension");      
+        throw std::runtime_error("Unsupported parametric dimension");
     }
   };
 };
 
 template <bool memory_optimized, bool precompute>
 void make_test_UniformBSpline_parDim1() {
-  
+
   std::cout << "memory_optimized : " << memory_optimized
             << ", precompute : " << precompute << std::endl;
-  
+
   for (int64_t ncoeffs : iganet::utils::getenv("IGANET_NCOEFFS", {32})) {
     for (std::vector<std::any> activation :
          {std::vector<std::any>{iganet::activation::relu}}) {
       for (int64_t nlayers : iganet::utils::getenv("IGANET_NLAYERS", {1})) {
         for (int64_t nneurons :
-               iganet::utils::getenv("IGANET_NNEURONS", {10})) {
+             iganet::utils::getenv("IGANET_NNEURONS", {10})) {
 
           std::cout << std::right << std::setw(8) << ncoeffs << "\t"
                     << std::right << std::setw(8) << nlayers << "\t"
                     << std::right << std::setw(8) << nneurons << "\t";
 
-          std::apply([&](auto &&...args) { ((args(ncoeffs, nlayers, nneurons)), ...); },
-                 std::make_tuple(FittingPerformanceTest::train<
-                                 iganet::S<iganet::UniformBSpline<iganet::perftests::real_t, 1, 1>>,
-                                 iganet::S<iganet::UniformBSpline<iganet::perftests::real_t, 1, 1>>,
-                                 memory_optimized, precompute>{},
-                                 FittingPerformanceTest::train<
-                                 iganet::S<iganet::UniformBSpline<iganet::perftests::real_t, 1, 2>>,
-                                 iganet::S<iganet::UniformBSpline<iganet::perftests::real_t, 1, 2>>,
-                                 memory_optimized, precompute>{},
-                                 FittingPerformanceTest::train<
-                                 iganet::S<iganet::UniformBSpline<iganet::perftests::real_t, 1, 3>>,
-                                 iganet::S<iganet::UniformBSpline<iganet::perftests::real_t, 1, 3>>,
-                                 memory_optimized, precompute>{},
-                                 FittingPerformanceTest::train<
-                                 iganet::S<iganet::UniformBSpline<iganet::perftests::real_t, 1, 4>>,
-                                 iganet::S<iganet::UniformBSpline<iganet::perftests::real_t, 1, 4>>,
-                                 memory_optimized, precompute>{},
-                                 FittingPerformanceTest::train<
-                                 iganet::S<iganet::UniformBSpline<iganet::perftests::real_t, 1, 5>>,
-                                 iganet::S<iganet::UniformBSpline<iganet::perftests::real_t, 1, 5>>,
-                                 memory_optimized, precompute>{}));
-          
+          std::apply(
+              [&](auto &&...args) {
+                ((args(ncoeffs, nlayers, nneurons)), ...);
+              },
+              std::make_tuple(FittingPerformanceTest::train<
+                                  iganet::S<iganet::UniformBSpline<
+                                      iganet::perftests::real_t, 1, 1>>,
+                                  iganet::S<iganet::UniformBSpline<
+                                      iganet::perftests::real_t, 1, 1>>,
+                                  memory_optimized, precompute>{},
+                              FittingPerformanceTest::train<
+                                  iganet::S<iganet::UniformBSpline<
+                                      iganet::perftests::real_t, 1, 2>>,
+                                  iganet::S<iganet::UniformBSpline<
+                                      iganet::perftests::real_t, 1, 2>>,
+                                  memory_optimized, precompute>{},
+                              FittingPerformanceTest::train<
+                                  iganet::S<iganet::UniformBSpline<
+                                      iganet::perftests::real_t, 1, 3>>,
+                                  iganet::S<iganet::UniformBSpline<
+                                      iganet::perftests::real_t, 1, 3>>,
+                                  memory_optimized, precompute>{},
+                              FittingPerformanceTest::train<
+                                  iganet::S<iganet::UniformBSpline<
+                                      iganet::perftests::real_t, 1, 4>>,
+                                  iganet::S<iganet::UniformBSpline<
+                                      iganet::perftests::real_t, 1, 4>>,
+                                  memory_optimized, precompute>{},
+                              FittingPerformanceTest::train<
+                                  iganet::S<iganet::UniformBSpline<
+                                      iganet::perftests::real_t, 1, 5>>,
+                                  iganet::S<iganet::UniformBSpline<
+                                      iganet::perftests::real_t, 1, 5>>,
+                                  memory_optimized, precompute>{}));
+
           std::cout << std::endl;
         }
       }
     }
   }
-  
+
   std::cout << std::scientific << std::setprecision(3);
 }
 
 template <bool memory_optimized, bool precompute>
 void make_test_UniformBSpline_parDim2() {
-  
+
   std::cout << "memory_optimized : " << memory_optimized
             << ", precompute : " << precompute << std::endl;
-  
+
   for (int64_t ncoeffs : iganet::utils::getenv("IGANET_NCOEFFS", {32})) {
     for (std::vector<std::any> activation :
          {std::vector<std::any>{iganet::activation::relu}}) {
       for (int64_t nlayers : iganet::utils::getenv("IGANET_NLAYERS", {1})) {
         for (int64_t nneurons :
-               iganet::utils::getenv("IGANET_NNEURONS", {10})) {
+             iganet::utils::getenv("IGANET_NNEURONS", {10})) {
 
           std::cout << std::right << std::setw(8) << ncoeffs << "\t"
                     << std::right << std::setw(8) << nlayers << "\t"
                     << std::right << std::setw(8) << nneurons << "\t";
 
-          std::apply([&](auto &&...args) { ((args(ncoeffs, nlayers, nneurons)), ...); },
-                 std::make_tuple(FittingPerformanceTest::train<
-                                 iganet::S<iganet::UniformBSpline<iganet::perftests::real_t, 2, 1, 1>>,
-                                 iganet::S<iganet::UniformBSpline<iganet::perftests::real_t, 1, 1, 1>>,
-                                 memory_optimized, precompute>{},
-                                 FittingPerformanceTest::train<
-                                 iganet::S<iganet::UniformBSpline<iganet::perftests::real_t, 2, 2, 2>>,
-                                 iganet::S<iganet::UniformBSpline<iganet::perftests::real_t, 1, 2, 2>>,
-                                 memory_optimized, precompute>{},
-                                 FittingPerformanceTest::train<
-                                 iganet::S<iganet::UniformBSpline<iganet::perftests::real_t, 2, 3, 3>>,
-                                 iganet::S<iganet::UniformBSpline<iganet::perftests::real_t, 1, 3, 3>>,
-                                 memory_optimized, precompute>{},
-                                 FittingPerformanceTest::train<
-                                 iganet::S<iganet::UniformBSpline<iganet::perftests::real_t, 2, 4, 4>>,
-                                 iganet::S<iganet::UniformBSpline<iganet::perftests::real_t, 1, 4, 4>>,
-                                 memory_optimized, precompute>{},
-                                 FittingPerformanceTest::train<
-                                 iganet::S<iganet::UniformBSpline<iganet::perftests::real_t, 2, 5, 5>>,
-                                 iganet::S<iganet::UniformBSpline<iganet::perftests::real_t, 1, 5, 5>>,
-                                 memory_optimized, precompute>{}));
-          
+          std::apply(
+              [&](auto &&...args) {
+                ((args(ncoeffs, nlayers, nneurons)), ...);
+              },
+              std::make_tuple(FittingPerformanceTest::train<
+                                  iganet::S<iganet::UniformBSpline<
+                                      iganet::perftests::real_t, 2, 1, 1>>,
+                                  iganet::S<iganet::UniformBSpline<
+                                      iganet::perftests::real_t, 1, 1, 1>>,
+                                  memory_optimized, precompute>{},
+                              FittingPerformanceTest::train<
+                                  iganet::S<iganet::UniformBSpline<
+                                      iganet::perftests::real_t, 2, 2, 2>>,
+                                  iganet::S<iganet::UniformBSpline<
+                                      iganet::perftests::real_t, 1, 2, 2>>,
+                                  memory_optimized, precompute>{},
+                              FittingPerformanceTest::train<
+                                  iganet::S<iganet::UniformBSpline<
+                                      iganet::perftests::real_t, 2, 3, 3>>,
+                                  iganet::S<iganet::UniformBSpline<
+                                      iganet::perftests::real_t, 1, 3, 3>>,
+                                  memory_optimized, precompute>{},
+                              FittingPerformanceTest::train<
+                                  iganet::S<iganet::UniformBSpline<
+                                      iganet::perftests::real_t, 2, 4, 4>>,
+                                  iganet::S<iganet::UniformBSpline<
+                                      iganet::perftests::real_t, 1, 4, 4>>,
+                                  memory_optimized, precompute>{},
+                              FittingPerformanceTest::train<
+                                  iganet::S<iganet::UniformBSpline<
+                                      iganet::perftests::real_t, 2, 5, 5>>,
+                                  iganet::S<iganet::UniformBSpline<
+                                      iganet::perftests::real_t, 1, 5, 5>>,
+                                  memory_optimized, precompute>{}));
+
           std::cout << std::endl;
         }
       }
     }
   }
-  
+
   std::cout << std::scientific << std::setprecision(3);
 }
 
 template <bool memory_optimized, bool precompute>
 void make_test_UniformBSpline_parDim3() {
-  
+
   std::cout << "memory_optimized : " << memory_optimized
             << ", precompute : " << precompute << std::endl;
-  
+
   for (int64_t ncoeffs : iganet::utils::getenv("IGANET_NCOEFFS", {32})) {
     for (std::vector<std::any> activation :
          {std::vector<std::any>{iganet::activation::relu}}) {
       for (int64_t nlayers : iganet::utils::getenv("IGANET_NLAYERS", {1})) {
         for (int64_t nneurons :
-               iganet::utils::getenv("IGANET_NNEURONS", {10})) {
+             iganet::utils::getenv("IGANET_NNEURONS", {10})) {
 
           std::cout << std::right << std::setw(8) << ncoeffs << "\t"
                     << std::right << std::setw(8) << nlayers << "\t"
                     << std::right << std::setw(8) << nneurons << "\t";
 
-          std::apply([&](auto &&...args) { ((args(ncoeffs, nlayers, nneurons)), ...); },
-                 std::make_tuple(FittingPerformanceTest::train<
-                                 iganet::S<iganet::UniformBSpline<iganet::perftests::real_t, 3, 1, 1, 1>>,
-                                 iganet::S<iganet::UniformBSpline<iganet::perftests::real_t, 1, 1, 1, 1>>,
-                                 memory_optimized, precompute>{},
-                                 FittingPerformanceTest::train<
-                                 iganet::S<iganet::UniformBSpline<iganet::perftests::real_t, 3, 2, 2, 2>>,
-                                 iganet::S<iganet::UniformBSpline<iganet::perftests::real_t, 1, 2, 2, 2>>,
-                                 memory_optimized, precompute>{},
-                                 FittingPerformanceTest::train<
-                                 iganet::S<iganet::UniformBSpline<iganet::perftests::real_t, 3, 3, 3, 3>>,
-                                 iganet::S<iganet::UniformBSpline<iganet::perftests::real_t, 1, 3, 3, 3>>,
-                                 memory_optimized, precompute>{},
-                                 FittingPerformanceTest::train<
-                                 iganet::S<iganet::UniformBSpline<iganet::perftests::real_t, 3, 4, 4, 4>>,
-                                 iganet::S<iganet::UniformBSpline<iganet::perftests::real_t, 1, 4, 4, 4>>,
-                                 memory_optimized, precompute>{},
-                                 FittingPerformanceTest::train<
-                                 iganet::S<iganet::UniformBSpline<iganet::perftests::real_t, 3, 5, 5, 5>>,
-                                 iganet::S<iganet::UniformBSpline<iganet::perftests::real_t, 1, 5, 5, 5>>,
-                                 memory_optimized, precompute>{}));
-          
+          std::apply(
+              [&](auto &&...args) {
+                ((args(ncoeffs, nlayers, nneurons)), ...);
+              },
+              std::make_tuple(FittingPerformanceTest::train<
+                                  iganet::S<iganet::UniformBSpline<
+                                      iganet::perftests::real_t, 3, 1, 1, 1>>,
+                                  iganet::S<iganet::UniformBSpline<
+                                      iganet::perftests::real_t, 1, 1, 1, 1>>,
+                                  memory_optimized, precompute>{},
+                              FittingPerformanceTest::train<
+                                  iganet::S<iganet::UniformBSpline<
+                                      iganet::perftests::real_t, 3, 2, 2, 2>>,
+                                  iganet::S<iganet::UniformBSpline<
+                                      iganet::perftests::real_t, 1, 2, 2, 2>>,
+                                  memory_optimized, precompute>{},
+                              FittingPerformanceTest::train<
+                                  iganet::S<iganet::UniformBSpline<
+                                      iganet::perftests::real_t, 3, 3, 3, 3>>,
+                                  iganet::S<iganet::UniformBSpline<
+                                      iganet::perftests::real_t, 1, 3, 3, 3>>,
+                                  memory_optimized, precompute>{},
+                              FittingPerformanceTest::train<
+                                  iganet::S<iganet::UniformBSpline<
+                                      iganet::perftests::real_t, 3, 4, 4, 4>>,
+                                  iganet::S<iganet::UniformBSpline<
+                                      iganet::perftests::real_t, 1, 4, 4, 4>>,
+                                  memory_optimized, precompute>{},
+                              FittingPerformanceTest::train<
+                                  iganet::S<iganet::UniformBSpline<
+                                      iganet::perftests::real_t, 3, 5, 5, 5>>,
+                                  iganet::S<iganet::UniformBSpline<
+                                      iganet::perftests::real_t, 1, 5, 5, 5>>,
+                                  memory_optimized, precompute>{}));
+
           std::cout << std::endl;
         }
       }
     }
   }
-  
+
   std::cout << std::scientific << std::setprecision(3);
 }
 
 template <bool memory_optimized, bool precompute>
 void make_test_NonUniformBSpline_parDim1() {
-  
+
   std::cout << "memory_optimized : " << memory_optimized
             << ", precompute : " << precompute << std::endl;
-  
+
   for (int64_t ncoeffs : iganet::utils::getenv("IGANET_NCOEFFS", {32})) {
     for (std::vector<std::any> activation :
          {std::vector<std::any>{iganet::activation::relu}}) {
       for (int64_t nlayers : iganet::utils::getenv("IGANET_NLAYERS", {1})) {
         for (int64_t nneurons :
-               iganet::utils::getenv("IGANET_NNEURONS", {10})) {
+             iganet::utils::getenv("IGANET_NNEURONS", {10})) {
 
           std::cout << std::right << std::setw(8) << ncoeffs << "\t"
                     << std::right << std::setw(8) << nlayers << "\t"
                     << std::right << std::setw(8) << nneurons << "\t";
 
-          std::apply([&](auto &&...args) { ((args(ncoeffs, nlayers, nneurons)), ...); },
-                 std::make_tuple(FittingPerformanceTest::train<
-                                 iganet::S<iganet::NonUniformBSpline<iganet::perftests::real_t, 1, 1>>,
-                                 iganet::S<iganet::NonUniformBSpline<iganet::perftests::real_t, 1, 1>>,
-                                 memory_optimized, precompute>{},
-                                 FittingPerformanceTest::train<
-                                 iganet::S<iganet::NonUniformBSpline<iganet::perftests::real_t, 1, 2>>,
-                                 iganet::S<iganet::NonUniformBSpline<iganet::perftests::real_t, 1, 2>>,
-                                 memory_optimized, precompute>{},
-                                 FittingPerformanceTest::train<
-                                 iganet::S<iganet::NonUniformBSpline<iganet::perftests::real_t, 1, 3>>,
-                                 iganet::S<iganet::NonUniformBSpline<iganet::perftests::real_t, 1, 3>>,
-                                 memory_optimized, precompute>{},
-                                 FittingPerformanceTest::train<
-                                 iganet::S<iganet::NonUniformBSpline<iganet::perftests::real_t, 1, 4>>,
-                                 iganet::S<iganet::NonUniformBSpline<iganet::perftests::real_t, 1, 4>>,
-                                 memory_optimized, precompute>{},
-                                 FittingPerformanceTest::train<
-                                 iganet::S<iganet::NonUniformBSpline<iganet::perftests::real_t, 1, 5>>,
-                                 iganet::S<iganet::NonUniformBSpline<iganet::perftests::real_t, 1, 5>>,
-                                 memory_optimized, precompute>{}));
-          
+          std::apply(
+              [&](auto &&...args) {
+                ((args(ncoeffs, nlayers, nneurons)), ...);
+              },
+              std::make_tuple(FittingPerformanceTest::train<
+                                  iganet::S<iganet::NonUniformBSpline<
+                                      iganet::perftests::real_t, 1, 1>>,
+                                  iganet::S<iganet::NonUniformBSpline<
+                                      iganet::perftests::real_t, 1, 1>>,
+                                  memory_optimized, precompute>{},
+                              FittingPerformanceTest::train<
+                                  iganet::S<iganet::NonUniformBSpline<
+                                      iganet::perftests::real_t, 1, 2>>,
+                                  iganet::S<iganet::NonUniformBSpline<
+                                      iganet::perftests::real_t, 1, 2>>,
+                                  memory_optimized, precompute>{},
+                              FittingPerformanceTest::train<
+                                  iganet::S<iganet::NonUniformBSpline<
+                                      iganet::perftests::real_t, 1, 3>>,
+                                  iganet::S<iganet::NonUniformBSpline<
+                                      iganet::perftests::real_t, 1, 3>>,
+                                  memory_optimized, precompute>{},
+                              FittingPerformanceTest::train<
+                                  iganet::S<iganet::NonUniformBSpline<
+                                      iganet::perftests::real_t, 1, 4>>,
+                                  iganet::S<iganet::NonUniformBSpline<
+                                      iganet::perftests::real_t, 1, 4>>,
+                                  memory_optimized, precompute>{},
+                              FittingPerformanceTest::train<
+                                  iganet::S<iganet::NonUniformBSpline<
+                                      iganet::perftests::real_t, 1, 5>>,
+                                  iganet::S<iganet::NonUniformBSpline<
+                                      iganet::perftests::real_t, 1, 5>>,
+                                  memory_optimized, precompute>{}));
+
           std::cout << std::endl;
         }
       }
     }
   }
-  
+
   std::cout << std::scientific << std::setprecision(3);
 }
 
 template <bool memory_optimized, bool precompute>
 void make_test_NonUniformBSpline_parDim2() {
-  
+
   std::cout << "memory_optimized : " << memory_optimized
             << ", precompute : " << precompute << std::endl;
-  
+
   for (int64_t ncoeffs : iganet::utils::getenv("IGANET_NCOEFFS", {32})) {
     for (std::vector<std::any> activation :
          {std::vector<std::any>{iganet::activation::relu}}) {
       for (int64_t nlayers : iganet::utils::getenv("IGANET_NLAYERS", {1})) {
         for (int64_t nneurons :
-               iganet::utils::getenv("IGANET_NNEURONS", {10})) {
+             iganet::utils::getenv("IGANET_NNEURONS", {10})) {
 
           std::cout << std::right << std::setw(8) << ncoeffs << "\t"
                     << std::right << std::setw(8) << nlayers << "\t"
                     << std::right << std::setw(8) << nneurons << "\t";
 
-          std::apply([&](auto &&...args) { ((args(ncoeffs, nlayers, nneurons)), ...); },
-                 std::make_tuple(FittingPerformanceTest::train<
-                                 iganet::S<iganet::NonUniformBSpline<iganet::perftests::real_t, 2, 1, 1>>,
-                                 iganet::S<iganet::NonUniformBSpline<iganet::perftests::real_t, 1, 1, 1>>,
-                                 memory_optimized, precompute>{},
-                                 FittingPerformanceTest::train<
-                                 iganet::S<iganet::NonUniformBSpline<iganet::perftests::real_t, 2, 2, 2>>,
-                                 iganet::S<iganet::NonUniformBSpline<iganet::perftests::real_t, 1, 2, 2>>,
-                                 memory_optimized, precompute>{},
-                                 FittingPerformanceTest::train<
-                                 iganet::S<iganet::NonUniformBSpline<iganet::perftests::real_t, 2, 3, 3>>,
-                                 iganet::S<iganet::NonUniformBSpline<iganet::perftests::real_t, 1, 3, 3>>,
-                                 memory_optimized, precompute>{},
-                                 FittingPerformanceTest::train<
-                                 iganet::S<iganet::NonUniformBSpline<iganet::perftests::real_t, 2, 4, 4>>,
-                                 iganet::S<iganet::NonUniformBSpline<iganet::perftests::real_t, 1, 4, 4>>,
-                                 memory_optimized, precompute>{},
-                                 FittingPerformanceTest::train<
-                                 iganet::S<iganet::NonUniformBSpline<iganet::perftests::real_t, 2, 5, 5>>,
-                                 iganet::S<iganet::NonUniformBSpline<iganet::perftests::real_t, 1, 5, 5>>,
-                                 memory_optimized, precompute>{}));
-          
+          std::apply(
+              [&](auto &&...args) {
+                ((args(ncoeffs, nlayers, nneurons)), ...);
+              },
+              std::make_tuple(FittingPerformanceTest::train<
+                                  iganet::S<iganet::NonUniformBSpline<
+                                      iganet::perftests::real_t, 2, 1, 1>>,
+                                  iganet::S<iganet::NonUniformBSpline<
+                                      iganet::perftests::real_t, 1, 1, 1>>,
+                                  memory_optimized, precompute>{},
+                              FittingPerformanceTest::train<
+                                  iganet::S<iganet::NonUniformBSpline<
+                                      iganet::perftests::real_t, 2, 2, 2>>,
+                                  iganet::S<iganet::NonUniformBSpline<
+                                      iganet::perftests::real_t, 1, 2, 2>>,
+                                  memory_optimized, precompute>{},
+                              FittingPerformanceTest::train<
+                                  iganet::S<iganet::NonUniformBSpline<
+                                      iganet::perftests::real_t, 2, 3, 3>>,
+                                  iganet::S<iganet::NonUniformBSpline<
+                                      iganet::perftests::real_t, 1, 3, 3>>,
+                                  memory_optimized, precompute>{},
+                              FittingPerformanceTest::train<
+                                  iganet::S<iganet::NonUniformBSpline<
+                                      iganet::perftests::real_t, 2, 4, 4>>,
+                                  iganet::S<iganet::NonUniformBSpline<
+                                      iganet::perftests::real_t, 1, 4, 4>>,
+                                  memory_optimized, precompute>{},
+                              FittingPerformanceTest::train<
+                                  iganet::S<iganet::NonUniformBSpline<
+                                      iganet::perftests::real_t, 2, 5, 5>>,
+                                  iganet::S<iganet::NonUniformBSpline<
+                                      iganet::perftests::real_t, 1, 5, 5>>,
+                                  memory_optimized, precompute>{}));
+
           std::cout << std::endl;
         }
       }
     }
   }
-  
+
   std::cout << std::scientific << std::setprecision(3);
 }
 
 template <bool memory_optimized, bool precompute>
 void make_test_NonUniformBSpline_parDim3() {
-  
+
   std::cout << "memory_optimized : " << memory_optimized
             << ", precompute : " << precompute << std::endl;
-  
+
   for (int64_t ncoeffs : iganet::utils::getenv("IGANET_NCOEFFS", {32})) {
     for (std::vector<std::any> activation :
          {std::vector<std::any>{iganet::activation::relu}}) {
       for (int64_t nlayers : iganet::utils::getenv("IGANET_NLAYERS", {1})) {
         for (int64_t nneurons :
-               iganet::utils::getenv("IGANET_NNEURONS", {10})) {
+             iganet::utils::getenv("IGANET_NNEURONS", {10})) {
 
           std::cout << std::right << std::setw(8) << ncoeffs << "\t"
                     << std::right << std::setw(8) << nlayers << "\t"
                     << std::right << std::setw(8) << nneurons << "\t";
 
-          std::apply([&](auto &&...args) { ((args(ncoeffs, nlayers, nneurons)), ...); },
-                 std::make_tuple(FittingPerformanceTest::train<
-                                 iganet::S<iganet::NonUniformBSpline<iganet::perftests::real_t, 3, 1, 1, 1>>,
-                                 iganet::S<iganet::NonUniformBSpline<iganet::perftests::real_t, 1, 1, 1, 1>>,
-                                 memory_optimized, precompute>{},
-                                 FittingPerformanceTest::train<
-                                 iganet::S<iganet::NonUniformBSpline<iganet::perftests::real_t, 3, 2, 2, 2>>,
-                                 iganet::S<iganet::NonUniformBSpline<iganet::perftests::real_t, 1, 2, 2, 2>>,
-                                 memory_optimized, precompute>{},
-                                 FittingPerformanceTest::train<
-                                 iganet::S<iganet::NonUniformBSpline<iganet::perftests::real_t, 3, 3, 3, 3>>,
-                                 iganet::S<iganet::NonUniformBSpline<iganet::perftests::real_t, 1, 3, 3, 3>>,
-                                 memory_optimized, precompute>{},
-                                 FittingPerformanceTest::train<
-                                 iganet::S<iganet::NonUniformBSpline<iganet::perftests::real_t, 3, 4, 4, 4>>,
-                                 iganet::S<iganet::NonUniformBSpline<iganet::perftests::real_t, 1, 4, 4, 4>>,
-                                 memory_optimized, precompute>{},
-                                 FittingPerformanceTest::train<
-                                 iganet::S<iganet::NonUniformBSpline<iganet::perftests::real_t, 3, 5, 5, 5>>,
-                                 iganet::S<iganet::NonUniformBSpline<iganet::perftests::real_t, 1, 5, 5, 5>>,
-                                 memory_optimized, precompute>{}));
-          
+          std::apply(
+              [&](auto &&...args) {
+                ((args(ncoeffs, nlayers, nneurons)), ...);
+              },
+              std::make_tuple(FittingPerformanceTest::train<
+                                  iganet::S<iganet::NonUniformBSpline<
+                                      iganet::perftests::real_t, 3, 1, 1, 1>>,
+                                  iganet::S<iganet::NonUniformBSpline<
+                                      iganet::perftests::real_t, 1, 1, 1, 1>>,
+                                  memory_optimized, precompute>{},
+                              FittingPerformanceTest::train<
+                                  iganet::S<iganet::NonUniformBSpline<
+                                      iganet::perftests::real_t, 3, 2, 2, 2>>,
+                                  iganet::S<iganet::NonUniformBSpline<
+                                      iganet::perftests::real_t, 1, 2, 2, 2>>,
+                                  memory_optimized, precompute>{},
+                              FittingPerformanceTest::train<
+                                  iganet::S<iganet::NonUniformBSpline<
+                                      iganet::perftests::real_t, 3, 3, 3, 3>>,
+                                  iganet::S<iganet::NonUniformBSpline<
+                                      iganet::perftests::real_t, 1, 3, 3, 3>>,
+                                  memory_optimized, precompute>{},
+                              FittingPerformanceTest::train<
+                                  iganet::S<iganet::NonUniformBSpline<
+                                      iganet::perftests::real_t, 3, 4, 4, 4>>,
+                                  iganet::S<iganet::NonUniformBSpline<
+                                      iganet::perftests::real_t, 1, 4, 4, 4>>,
+                                  memory_optimized, precompute>{},
+                              FittingPerformanceTest::train<
+                                  iganet::S<iganet::NonUniformBSpline<
+                                      iganet::perftests::real_t, 3, 5, 5, 5>>,
+                                  iganet::S<iganet::NonUniformBSpline<
+                                      iganet::perftests::real_t, 1, 5, 5, 5>>,
+                                  memory_optimized, precompute>{}));
+
           std::cout << std::endl;
         }
       }
     }
   }
-  
+
   std::cout << std::scientific << std::setprecision(3);
 }
 
 TEST_F(FittingPerformanceTest, UniformBSpline_parDim1_memopt_precomp) {
-  make_test_UniformBSpline_parDim1<true, true>();  
+  make_test_UniformBSpline_parDim1<true, true>();
 }
 
 TEST_F(FittingPerformanceTest, UniformBSpline_parDim1_memopt_noprecomp) {
-  make_test_UniformBSpline_parDim1<true, false>();  
+  make_test_UniformBSpline_parDim1<true, false>();
 }
 
 TEST_F(FittingPerformanceTest, UniformBSpline_parDim1_nomemopt_precomp) {
-  make_test_UniformBSpline_parDim1<false, true>();  
+  make_test_UniformBSpline_parDim1<false, true>();
 }
 
 TEST_F(FittingPerformanceTest, UniformBSpline_parDim1_nomemopt_noprecomp) {
-  make_test_UniformBSpline_parDim1<false, false>();  
+  make_test_UniformBSpline_parDim1<false, false>();
 }
 
 TEST_F(FittingPerformanceTest, UniformBSpline_parDim2_memopt_precomp) {
@@ -626,19 +712,19 @@ TEST_F(FittingPerformanceTest, UniformBSpline_parDim3_nomemopt_noprecomp) {
 }
 
 TEST_F(FittingPerformanceTest, NonUniformBSpline_parDim1_memopt_precomp) {
-  make_test_NonUniformBSpline_parDim1<true, true>();  
+  make_test_NonUniformBSpline_parDim1<true, true>();
 }
 
 TEST_F(FittingPerformanceTest, NonUniformBSpline_parDim1_memopt_noprecomp) {
-  make_test_NonUniformBSpline_parDim1<true, false>();  
+  make_test_NonUniformBSpline_parDim1<true, false>();
 }
 
 TEST_F(FittingPerformanceTest, NonUniformBSpline_parDim1_nomemopt_precomp) {
-  make_test_NonUniformBSpline_parDim1<false, true>();  
+  make_test_NonUniformBSpline_parDim1<false, true>();
 }
 
 TEST_F(FittingPerformanceTest, NonUniformBSpline_parDim1_nomemopt_noprecomp) {
-  make_test_NonUniformBSpline_parDim1<false, false>();  
+  make_test_NonUniformBSpline_parDim1<false, false>();
 }
 
 TEST_F(FittingPerformanceTest, NonUniformBSpline_parDim2_memopt_precomp) {
