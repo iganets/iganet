@@ -173,7 +173,8 @@ int main() {
 
           // Plot the solution
           net.G()
-              .plot(net.u(),
+              .space()
+              .plot(net.u().space(),
                     std::array<torch::Tensor, 2>{*colPts[0], *colPts[1]}, json)
               ->show();
 #endif
