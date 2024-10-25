@@ -188,11 +188,8 @@ int main() {
 #ifdef IGANET_WITH_MPI
           if (pg->getRank() == 0)
 #endif
-            iganet::Log(iganet::log::info)
-                << "#coeff: " << ncoeffs << ", #layers: " << nlayers
-                << ", #neurons: " << nneurons << std::endl;
 
-          std::vector<int64_t> layers(nlayers, nneurons);
+            std::vector<int64_t> layers(nlayers, nneurons);
           std::vector<std::vector<std::any>> activations(nlayers, activation);
           activations.emplace_back(
               std::vector<std::any>{iganet::activation::none});
@@ -203,9 +200,14 @@ int main() {
                   // Activation functions
                   activations,
                   // Number of B-spline coefficients of the geometry
-                  std::tuple(iganet::utils::to_array(25_i64, 25_i64)),
+                  iganet::utils::to_array(25_i64, 25_i64),
                   // Number of B-spline coefficients of the variable
-                  std::tuple(iganet::utils::to_array(ncoeffs, ncoeffs)));
+                  iganet::utils::to_array(ncoeffs, ncoeffs));
+
+          iganet::Log(iganet::log::info)
+              << "#coeff: " << ncoeffs << ", #layers: " << nlayers
+              << ", #neurons: " << nneurons
+              << ", #parameters: " << net.nparameters() << std::endl;
 
           // Set maximum number of epochs
           net.options().max_epoch(

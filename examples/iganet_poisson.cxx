@@ -55,13 +55,18 @@ private:
 
 public:
   /// @brief Constructor
-  template <typename... Args>
+  template <std::size_t GeometryMapNumCoeffs, std::size_t VariableNumCoeffs>
   poisson(std::vector<int64_t> &&layers,
-          std::vector<std::vector<std::any>> &&activations, Args &&...args)
+          std::vector<std::vector<std::any>> &&activations,
+          std::array<int64_t, GeometryMapNumCoeffs> &&geometryMapNumCoeffs,
+          std::array<int64_t, VariableNumCoeffs> &&variableNumCoeffs)
       : Base(std::forward<std::vector<int64_t>>(layers),
              std::forward<std::vector<std::vector<std::any>>>(activations),
-             std::forward<Args>(args)...),
-        ref_(iganet::utils::to_array(10_i64, 10_i64)) {}
+             std::forward<std::array<int64_t, GeometryMapNumCoeffs>>(
+                 geometryMapNumCoeffs),
+             std::forward<std::array<int64_t, VariableNumCoeffs>>(
+                 variableNumCoeffs)),
+        ref_(variableNumCoeffs) {}
 
   /// @brief Returns a constant reference to the collocation points
   auto const &collPts() const { return collPts_; }
@@ -162,9 +167,9 @@ int main() {
            {iganet::activation::sigmoid},
            {iganet::activation::none}},
           // Number of B-spline coefficients of the geometry, just [0,1] x [0,1]
-          std::tuple(iganet::utils::to_array(2_i64, 2_i64)),
+          iganet::utils::to_array(2_i64, 2_i64),
           // Number of B-spline coefficients of the variable
-          std::tuple(iganet::utils::to_array(10_i64, 10_i64)));
+          iganet::utils::to_array(10_i64, 10_i64));
 
   // Impose the negative of the second derivative of sin(M_PI*x) *
   // sin(M_PI*y) as right-hand side vector (manufactured solution)

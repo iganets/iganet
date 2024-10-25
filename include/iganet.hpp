@@ -958,26 +958,53 @@ public:
   /// @brief Constructor: number of layers, activation functions, and
   /// number of spline coefficients (same for geometry map and
   /// variables)
-  template <typename... Splines>
+  /// @{
+  template <std::size_t Coeffs>
   IgANet(const std::vector<int64_t> &layers,
          const std::vector<std::vector<std::any>> &activations,
-         std::tuple<Splines...> splines, IgANetOptions defaults = {},
+         std::array<int64_t, Coeffs> ncoeffs, IgANetOptions defaults = {},
          iganet::Options<typename Base::value_type> options =
              iganet::Options<typename Base::value_type>{})
-      : IgANet(layers, activations, splines, splines, defaults, options) {}
+      : IgANet(layers, activations, std::tuple{ncoeffs}, std::tuple{ncoeffs},
+               defaults, options) {}
+
+  template <std::size_t... Coeffs>
+  IgANet(const std::vector<int64_t> &layers,
+         const std::vector<std::vector<std::any>> &activations,
+         std::tuple<std::array<int64_t, Coeffs>...> ncoeffs,
+         IgANetOptions defaults = {},
+         iganet::Options<typename Base::value_type> options =
+             iganet::Options<typename Base::value_type>{})
+      : IgANet(layers, activations, ncoeffs, ncoeffs, defaults, options) {}
+  /// @}
 
   /// @brief Constructor: number of layers, activation functions, and
   /// number of spline coefficients (different for geometry map and
   /// variables)
-  template <typename... GeometryMapSplines, typename... VariableSplines>
+  /// @{
+  template <std::size_t GeometryMapNumCoeffs, std::size_t VariableNumCoeffs>
   IgANet(const std::vector<int64_t> &layers,
          const std::vector<std::vector<std::any>> &activations,
-         std::tuple<GeometryMapSplines...> geometryMap_splines,
-         std::tuple<VariableSplines...> variable_splines,
+         std::array<int64_t, GeometryMapNumCoeffs> geometryMapNumCoeffs,
+         std::array<int64_t, VariableNumCoeffs> variableNumCoeffs,
          IgANetOptions defaults = {},
          iganet::Options<typename Base::value_type> options =
              iganet::Options<typename Base::value_type>{})
-      : Base(geometryMap_splines, variable_splines, options),
+      : IgANet(layers, activations, std::tuple{geometryMapNumCoeffs},
+               std::tuple{variableNumCoeffs}, defaults, options) {}
+
+  template <std::size_t... GeometryMapNumCoeffs,
+            std::size_t... VariableNumCoeffs>
+  IgANet(
+      const std::vector<int64_t> &layers,
+      const std::vector<std::vector<std::any>> &activations,
+      std::tuple<std::array<int64_t, GeometryMapNumCoeffs>...>
+          geometryMapNumCoeffs,
+      std::tuple<std::array<int64_t, VariableNumCoeffs>...> variableNumCoeffs,
+      IgANetOptions defaults = {},
+      iganet::Options<typename Base::value_type> options =
+          iganet::Options<typename Base::value_type>{})
+      : Base(geometryMapNumCoeffs, variableNumCoeffs, options),
         // Construct the deep neural network
         net_(utils::concat(std::vector<int64_t>{inputs(/* epoch */ 0).size(0)},
                            layers,
@@ -1196,6 +1223,27 @@ public:
   /// @brief Returns the IgANet object as JSON object
   inline virtual nlohmann::json to_json() const override {
     return "Not implemented yet";
+  }
+
+  /// @brief Returns a constant reference to the parameters of the IgANet object
+  inline std::vector<torch::Tensor> parameters() const noexcept {
+    return net_->parameters();
+  }
+
+  /// @brief Returns a constant reference to the named parameters of the IgANet
+  /// object
+  inline torch::OrderedDict<std::string, torch::Tensor>
+  named_parameters() const noexcept {
+    return net_->named_parameters();
+  }
+
+  /// @brief Returns the total number of parameters of the IgANet object
+  inline const std::size_t nparameters() const noexcept {
+    std::size_t result = 0;
+    for (const auto &param : this->parameters()) {
+      result += param.numel();
+    }
+    return result;
   }
 
   /// @brief Returns a string representation of the IgANet object

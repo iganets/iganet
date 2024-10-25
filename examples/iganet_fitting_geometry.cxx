@@ -142,10 +142,6 @@ int main() {
         for (int64_t nneurons :
              iganet::utils::getenv("IGANET_NNEURONS", {10})) {
 
-          iganet::Log(iganet::log::info)
-              << "#coeff: " << ncoeffs << ", #layers: " << nlayers
-              << ", #neurons: " << nneurons << std::endl;
-
           std::vector<int64_t> layers(nlayers, nneurons);
           std::vector<std::vector<std::any>> activations(nlayers, activation);
           activations.emplace_back(
@@ -158,9 +154,14 @@ int main() {
                   activations,
                   // Number of B-spline coefficients of the geometry, has to
                   // correspond to number of coefficients in input file
-                  std::tuple(iganet::utils::to_array(25_i64, 25_i64)),
+                  iganet::utils::to_array(25_i64, 25_i64),
                   // Number of B-spline coefficients of the variable
-                  std::tuple(iganet::utils::to_array(ncoeffs, ncoeffs)));
+                  iganet::utils::to_array(ncoeffs, ncoeffs));
+
+          iganet::Log(iganet::log::info)
+              << "#coeff: " << ncoeffs << ", #layers: " << nlayers
+              << ", #neurons: " << nneurons
+              << ", #parameters: " << net.nparameters() << std::endl;
 
           // Load geometry parameterization from XML
           net.G().from_xml(xml);
