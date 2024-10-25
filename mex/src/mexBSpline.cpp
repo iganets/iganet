@@ -1,5 +1,5 @@
 /**
-   @file mexiganet/src/mexbspline.cxx
+   @file mexiganet/src/mexbspline.cpp
 
    @brief MexIgANet multivariate B-splines
 
@@ -12,7 +12,8 @@
    file, You can obtain one at http://mozilla.org/MPL/2.0/.
 */
 
-#include "mexAdapter.hpp"
+#include <iganet.h>
+#include <mexAdapter.hpp>
 
 class Test {
 public:
