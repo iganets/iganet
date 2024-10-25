@@ -203,9 +203,10 @@ public:
         auto t2 = std::chrono::high_resolution_clock::now();
 
         std::cout << std::right << std::setw(10)
-                  << std::chrono::duration_cast<std::chrono::milliseconds>(t2 -
-                                                                           t1)
-                         .count()
+                  << std::chrono::duration_cast<std::chrono::nanoseconds>(t2 -
+                                                                          t1)
+                             .count() /
+                         net.nparameters()
                   << "\t";
       }
 
@@ -229,9 +230,10 @@ public:
         auto t2 = std::chrono::high_resolution_clock::now();
 
         std::cout << std::right << std::setw(10)
-                  << std::chrono::duration_cast<std::chrono::milliseconds>(t2 -
-                                                                           t1)
-                         .count()
+                  << std::chrono::duration_cast<std::chrono::nanoseconds>(t2 -
+                                                                          t1)
+                             .count() /
+                         net.nparameters()
                   << "\t";
       }
 
@@ -256,9 +258,10 @@ public:
         auto t2 = std::chrono::high_resolution_clock::now();
 
         std::cout << std::right << std::setw(10)
-                  << std::chrono::duration_cast<std::chrono::milliseconds>(t2 -
-                                                                           t1)
-                         .count()
+                  << std::chrono::duration_cast<std::chrono::nanoseconds>(t2 -
+                                                                          t1)
+                             .count() /
+                         net.nparameters()
                   << "\t";
       }
 
@@ -285,9 +288,10 @@ public:
         auto t2 = std::chrono::high_resolution_clock::now();
 
         std::cout << std::right << std::setw(10)
-                  << std::chrono::duration_cast<std::chrono::milliseconds>(t2 -
-                                                                           t1)
-                         .count()
+                  << std::chrono::duration_cast<std::chrono::nanoseconds>(t2 -
+                                                                          t1)
+                             .count() /
+                         net.nparameters()
                   << "\t";
       }
 
