@@ -15,9 +15,9 @@
 find_package( Matlab COMPONENTS MX_LIBRARY )
 
 if (Matlab_FOUND)
-  
+
   file(GLOB MEXFILES *.cpp)
-  
+
   foreach(mexfile ${MEXFILES})
 
     get_filename_component(mexname ${mexfile} NAME_WE)
@@ -51,6 +51,6 @@ if (Matlab_FOUND)
     if (IGANET_WITH_OPENMP)
       target_link_libraries(${name} OpenMP::OpenMP_CXX)
     endif()
-    
+
   endforeach()
 endif()
