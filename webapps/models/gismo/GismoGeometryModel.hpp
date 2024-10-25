@@ -587,59 +587,66 @@ public:
 
       if (geo_.parDim() == 2) {
         // bivariate surface
-        gismo::gsMatrix<T, 2, 2> alpha;
-        alpha.setConstant(0.5);
-        gismo::gsMobiusDomain<2, T> mobiusDomain(alpha);
-        gismo::gsVector<real_t> initialGuessVector(4);
-        initialGuessVector.setConstant(0.5);
+        SurfaceReparameterization<T> reparam(geo_);
+        geo_ = reparam.solve();
 
-        gsObjFuncSurface<T> objFuncSurface(geo_, mobiusDomain);
-        gismo::gsHLBFGS<real_t> optimizer(&objFuncSurface);
+        // gismo::gsMatrix<T, 2, 2> alpha;
+        // alpha.setConstant(0.5);
+        // gismo::gsMobiusDomain<2, T> mobiusDomain(alpha);
+        // gismo::gsVector<real_t> initialGuessVector(4);
+        // initialGuessVector.setConstant(0.5);
 
-        optimizer.options().addReal("MinGradientLength",
-                                    "Minimum gradient length", 1e-5);
-        optimizer.options().addReal("MinStepLength", "Minimum step length",
-                                    1e-5);
-        optimizer.options().addInt("MaxIterations",
-                                   "Maximum number of iterations", 200);
-        optimizer.options().addInt("Verbose", "Verbose output", 1);
+        // gsObjFuncSurface<T> objFuncSurface(geo_, mobiusDomain);
+        // gismo::gsHLBFGS<real_t> optimizer(&objFuncSurface);
 
-        optimizer.solve(initialGuessVector);
-        geo_ = convertIntoBSpline(geo_, optimizer.currentDesign());
+        // optimizer.options().addReal("MinGradientLength",
+        //                             "Minimum gradient length", 1e-5);
+        // optimizer.options().addReal("MinStepLength", "Minimum step length",
+        //                             1e-5);
+        // optimizer.options().addInt("MaxIterations",
+        //                            "Maximum number of iterations", 200);
+        // optimizer.options().addInt("Verbose", "Verbose output", 1);
+
+        // optimizer.solve(initialGuessVector);
+        // geo_ = convertIntoBSpline(geo_, optimizer.currentDesign());
       }
 
       else if (geo_.parDim() == 3) {
         // trivariate surface
-        gismo::gsMatrix<T, 2, 2> alpha;
-        alpha.setConstant(0.5);
-        gismo::gsMobiusDomain<2, T> mobiusDomain(alpha);
-        gismo::gsVector<real_t> initialGuessVector(4);
-        initialGuessVector.setConstant(0.5);
+        SurfaceReparameterization<T> reparam(geo_);
+        geo_ = reparam.solve();
 
-        for (std::size_t i = 1; i <= 6; ++i) {
+        // gismo::gsMatrix<T, 2, 2> alpha;
+        // alpha.setConstant(0.5);
+        // gismo::gsMobiusDomain<2, T> mobiusDomain(alpha);
+        // gismo::gsVector<real_t> initialGuessVector(4);
+        // initialGuessVector.setConstant(0.5);
 
-          gsMultiPatch<T> mp;
-          mp.addPatch(*(geo_.patch(0).boundary(i)));
+        // for (std::size_t i = 1; i <= 6; ++i) {
 
-          gsObjFuncSurface<T> objFuncSurface(mp, mobiusDomain);
-          gismo::gsHLBFGS<real_t> optimizer(&objFuncSurface);
+        //   gsMultiPatch<T> mp;
+        //   mp.addPatch(*(geo_.patch(0).boundary(i)));
 
-          optimizer.options().addReal("MinGradientLength",
-                                      "Minimum gradient length", 1e-5);
-          optimizer.options().addReal("MinStepLength", "Minimum step length",
-                                      1e-5);
-          optimizer.options().addInt("MaxIterations",
-                                     "Maximum number of iterations", 200);
-          optimizer.options().addInt("Verbose", "Verbose output", 1);
+        //   gsObjFuncSurface<T> objFuncSurface(mp, mobiusDomain);
+        //   gismo::gsHLBFGS<real_t> optimizer(&objFuncSurface);
 
-          optimizer.solve(initialGuessVector);
-          mp = convertIntoBSpline(mp, optimizer.currentDesign());
+        //   optimizer.options().addReal("MinGradientLength",
+        //                               "Minimum gradient length", 1e-5);
+        //   optimizer.options().addReal("MinStepLength", "Minimum step length",
+        //                               1e-5);
+        //   optimizer.options().addInt("MaxIterations",
+        //                              "Maximum number of iterations", 200);
+        //   optimizer.options().addInt("Verbose", "Verbose output", 1);
 
-          auto ind = geo_.patch(0).basis().boundary(i);
+        //   optimizer.solve(initialGuessVector);
+        //   mp = convertIntoBSpline(mp, optimizer.currentDesign());
 
-          for (std::size_t j = 0; j != ind.size(); ++j)
-            geo_.patch(0).coefs().row(ind(j, 0)) = mp.patch(0).coefs().row(j);
-        }
+        //   auto ind = geo_.patch(0).basis().boundary(i);
+
+        //   for (std::size_t j = 0; j != ind.size(); ++j)
+        //     geo_.patch(0).coefs().row(ind(j, 0)) =
+        //     mp.patch(0).coefs().row(j);
+        //}
       }
 
     } else if (type == "volume") {
