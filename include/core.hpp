@@ -50,6 +50,7 @@
 
 #ifdef IGANET_WITH_GISMO
 #include <gismo.h>
+#include <gsModeling/gsSurfaceReparameterization.h>
 #include <gsNurbs/gsMobiusDomain.h>
 
 #ifdef gsElasticity_ENABLED
@@ -809,6 +810,8 @@ inline void finalize(std::ostream &os = Log(log::info)) {
   if (MPI_Finalize() != MPI_SUCCESS)
     throw std::runtime_error("An error occured during MPI finalization");
 #endif
+
+  os << "Succeeded\n";
 }
 
 /// Stream manipulator
