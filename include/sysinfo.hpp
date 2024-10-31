@@ -520,10 +520,7 @@ inline std::string getExtraLibsVersion() {
     s += ", ";
   s += "LibTorch " + std::to_string(TORCH_VERSION_MAJOR) + "." +
        std::to_string(TORCH_VERSION_MINOR) + "." +
-       std::to_string(TORCH_VERSION_PATCH) +
-       " (#intraop threads: " + std::to_string(at::get_num_threads()) +
-       ", #interop threads: " + std::to_string(at::get_num_interop_threads()) +
-       ")";
+       std::to_string(TORCH_VERSION_PATCH);
 #endif
 
   // Intel MKL library
@@ -669,7 +666,13 @@ inline std::string getVersion() {
          " (version " + getIgANetVersion() + ")\n" + "Compiled by " +
          getCompilerVersion() + " (" + getCppVersion() + ", " +
          getStdLibVersion() + ", " + getExtraLibsVersion() + ")\n" +
-         "Running on " + getCpuInfo() + " (memory " + getMemoryInfo() + ")\n";
+         "Running on " + getCpuInfo() + " (memory " + getMemoryInfo() +
+         ", #intraop threads: " + std::to_string(at::get_num_threads()) +
+         ", #interop threads: " +
+         std::to_string(at::get_num_interop_threads()) + ", devices: CPU" +
+         (torch::cuda::is_available() ? ", CUDA" : "") +
+         (torch::mps::is_available() ? ", MPS" : "") +
+         (torch::xpu::is_available() ? ", XPU" : "") + ")\n";
 }
 
 } // namespace iganet
