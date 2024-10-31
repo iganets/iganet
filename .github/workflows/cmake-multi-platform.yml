@@ -64,21 +64,21 @@ jobs:
     - name: Install PyTorch - Linux
       if: matrix.os == 'ubuntu-latest'
       run: >
-        wget https://download.pytorch.org/libtorch/cpu/libtorch-cxx11-abi-shared-with-deps-2.3.0%2Bcpu.zip -O libtorch.zip &&
+        wget https://download.pytorch.org/libtorch/cpu/libtorch-cxx11-abi-shared-with-deps-2.5.1%2Bcpu.zip -O libtorch.zip &&
         unzip libtorch.zip -d $HOME &&
         rm -f libtorch.zip
 
     - name: Install PyTorch - MacOS
       if: matrix.os == 'macos-latest'
       run: >
-        wget https://download.pytorch.org/libtorch/cpu/libtorch-macos-arm64-2.3.0.zip -O libtorch.zip &&
+        wget https://download.pytorch.org/libtorch/cpu/libtorch-macos-arm64-2.5.1.zip -O libtorch.zip &&
         unzip libtorch.zip -d $HOME &&
         rm -f libtorch.zip
 
     - name: Install PyTorch - Windows
       if: matrix.os == 'windows-latest'
       run: >
-        Invoke-WebRequest -Uri "https://download.pytorch.org/libtorch/cpu/libtorch-win-shared-with-deps-2.3.0%2Bcpu.zip" -OutFile libtorch.zip;
+        Invoke-WebRequest -Uri "https://download.pytorch.org/libtorch/cpu/libtorch-win-shared-with-deps-2.5.1%2Bcpu.zip" -OutFile libtorch.zip;
         Expand-Archive -Path libtorch.zip -DestinationPath C:\;
         Remove-Item -Path "libtorch.zip" -Force
 
