@@ -1355,6 +1355,88 @@ public:
     return *this;
   }
 
+  /// @brief Transforms the coefficients based on the given mapping
+  template <std::size_t N>
+  inline UniformBSplineCore &
+  transform(const std::function<
+                std::array<real_t, N>(const std::array<real_t, parDim_> &)>
+                transformation,
+            std::array<short_t, N> dims) {
+    static_assert(parDim_ <= 4, "Unsupported parametric dimension");
+
+    // 0D
+    if constexpr (parDim_ == 0) {
+      auto c = transformation(std::array<real_t, parDim_>{});
+      for (std::size_t d = 0; d < N; ++d)
+        coeffs_[dims[d]].detach()[0] = c[d];
+    }
+
+    // 1D
+    else if constexpr (parDim_ == 1) {
+#pragma omp parallel for
+      for (int64_t i = 0; i < ncoeffs_[0]; ++i) {
+        auto c = transformation(
+            std::array<real_t, parDim_>{i / real_t(ncoeffs_[0] - 1)});
+        for (std::size_t d = 0; d < N; ++d)
+          coeffs_[dims[d]].detach()[i] = c[d];
+      }
+    }
+
+    // 2D
+    else if constexpr (parDim_ == 2) {
+#pragma omp parallel for collapse(2)
+      for (int64_t j = 0; j < ncoeffs_[1]; ++j) {
+        for (int64_t i = 0; i < ncoeffs_[0]; ++i) {
+          auto c = transformation(std::array<real_t, parDim_>{
+              i / real_t(ncoeffs_[0] - 1), j / real_t(ncoeffs_[1] - 1)});
+          for (std::size_t d = 0; d < N; ++d)
+            coeffs_[dims[d]].detach()[j * ncoeffs_[0] + i] = c[d];
+        }
+      }
+    }
+
+    // 3D
+    else if constexpr (parDim_ == 3) {
+#pragma omp parallel for collapse(3)
+      for (int64_t k = 0; k < ncoeffs_[2]; ++k) {
+        for (int64_t j = 0; j < ncoeffs_[1]; ++j) {
+          for (int64_t i = 0; i < ncoeffs_[0]; ++i) {
+            auto c = transformation(std::array<real_t, parDim_>{
+                i / real_t(ncoeffs_[0] - 1), j / real_t(ncoeffs_[1] - 1),
+                k / real_t(ncoeffs_[2] - 1)});
+            for (std::size_t d = 0; d < N; ++d)
+              coeffs_[dims[d]].detach()[k * ncoeffs_[0] * ncoeffs_[1] +
+                                        j * ncoeffs_[0] + i] = c[d];
+          }
+        }
+      }
+    }
+
+    // 4D
+    else if constexpr (parDim_ == 4) {
+#pragma omp parallel for collapse(4)
+      for (int64_t l = 0; l < ncoeffs_[3]; ++l) {
+        for (int64_t k = 0; k < ncoeffs_[2]; ++k) {
+          for (int64_t j = 0; j < ncoeffs_[1]; ++j) {
+            for (int64_t i = 0; i < ncoeffs_[0]; ++i) {
+              auto c = transformation(std::array<real_t, parDim_>{
+                  i / real_t(ncoeffs_[0] - 1), j / real_t(ncoeffs_[1] - 1),
+                  k / real_t(ncoeffs_[2] - 1), l / real_t(ncoeffs_[3] - 1)});
+              for (std::size_t d = 0; d < N; ++d)
+                coeffs_[dims[d]]
+                    .detach()[l * ncoeffs_[0] * ncoeffs_[1] * ncoeffs_[2] +
+                              k * ncoeffs_[0] * ncoeffs_[1] + j * ncoeffs_[0] +
+                              i] = c[d];
+            }
+          }
+        }
+      }
+    } else
+      throw std::runtime_error("Unsupported parametric dimension");
+
+    return *this;
+  }
+
   /// @brief Returns the B-spline object as JSON object
   inline nlohmann::json to_json() const override {
     nlohmann::json json;
@@ -3656,7 +3738,7 @@ public:
       BSplineCore::coeffs(i) *= v[i];
     return *this;
   }
-  
+
   /// @brief Translates the B-spline object by a vector
   inline auto translate(
       std::array<typename BSplineCore::value_type, BSplineCore::geoDim()> v) {
@@ -6593,11 +6675,11 @@ public:
   /// B-spline objects are compatible. It simply adds the two
   /// coefficients arrays and throws an error if their sizes do not
   /// match. Any compatibility checks must be performed outside.
-  BSplineCommon operator+(const BSplineCommon& other) const {
+  BSplineCommon operator+(const BSplineCommon &other) const {
 
     BSplineCommon result{*this};
-    
-    for (short_t i=0; i<BSplineCore::geoDim(); ++i)
+
+    for (short_t i = 0; i < BSplineCore::geoDim(); ++i)
       result.coeffs(i) += other.coeffs(i);
 
     return result;
@@ -6611,11 +6693,11 @@ public:
   /// coefficients arrays of two B-spline objects from each other and
   /// throws an error if their sizes do not match. Any compatibility
   /// checks must be performed outside.
-  BSplineCommon operator-(const BSplineCommon& other) const {
+  BSplineCommon operator-(const BSplineCommon &other) const {
 
     BSplineCommon result{*this};
-    
-    for (short_t i=0; i<BSplineCore::geoDim(); ++i)
+
+    for (short_t i = 0; i < BSplineCore::geoDim(); ++i)
       result.coeffs(i) -= other.coeffs(i);
 
     return result;
@@ -6626,22 +6708,24 @@ public:
   BSplineCommon operator*(typename BSplineCore::value_type s) const {
 
     BSplineCommon result{*this};
-    
-    for (short_t i=0; i<BSplineCore::geoDim(); ++i)
+
+    for (short_t i = 0; i < BSplineCore::geoDim(); ++i)
       result.coeffs(i) *= s;
-    
+
     return result;
   }
 
   /// @brief Returns a new B-spline object whose coefficients are
   /// scaled by a vector
-  BSplineCommon operator*(std::array<typename BSplineCore::value_type, BSplineCore::geoDim()> v) const {
+  BSplineCommon operator*(
+      std::array<typename BSplineCore::value_type, BSplineCore::geoDim()> v)
+      const {
 
     BSplineCommon result{*this};
-    
-    for (short_t i=0; i<BSplineCore::geoDim(); ++i)
+
+    for (short_t i = 0; i < BSplineCore::geoDim(); ++i)
       result.coeffs(i) *= v[i];
-    
+
     return result;
   }
 
@@ -6650,36 +6734,38 @@ public:
   BSplineCommon operator/(typename BSplineCore::value_type s) const {
 
     BSplineCommon result{*this};
-    
-    for (short_t i=0; i<BSplineCore::geoDim(); ++i)
+
+    for (short_t i = 0; i < BSplineCore::geoDim(); ++i)
       result.coeffs(i) /= s;
-    
+
     return result;
   }
 
   /// @brief Returns a new B-spline object whose coefficients are
   /// scaled by a vector
-  BSplineCommon operator/(std::array<typename BSplineCore::value_type, BSplineCore::geoDim()> v) const {
+  BSplineCommon operator/(
+      std::array<typename BSplineCore::value_type, BSplineCore::geoDim()> v)
+      const {
 
     BSplineCommon result{*this};
-    
-    for (short_t i=0; i<BSplineCore::geoDim(); ++i)
+
+    for (short_t i = 0; i < BSplineCore::geoDim(); ++i)
       result.coeffs(i) /= v[i];
-    
+
     return result;
   }
-  
+
   /// @brief Adds the coefficients of another B-spline object
   ///
   /// @note This method does not check if the knot vectors of the two
   /// B-spline objects are compatible. It simply adds the two
   /// coefficients arrays and throws an error if their sizes do not
   /// match. Any compatibility checks must be performed outside.
-  BSplineCommon& operator+=(const BSplineCommon& other) {
-    
-    for (short_t i=0; i<BSplineCore::geoDim(); ++i)
+  BSplineCommon &operator+=(const BSplineCommon &other) {
+
+    for (short_t i = 0; i < BSplineCore::geoDim(); ++i)
       BSplineCore::coeffs(i) += other.coeffs(i);
-    
+
     return *this;
   }
 
@@ -6689,47 +6775,49 @@ public:
   /// B-spline objects are compatible. It simply substracts the two
   /// coefficients arrays and throws an error if their sizes do not
   /// match. Any compatibility checks must be performed outside.
-  BSplineCommon& operator-=(const BSplineCommon& other) {
-    
-    for (short_t i=0; i<BSplineCore::geoDim(); ++i)
+  BSplineCommon &operator-=(const BSplineCommon &other) {
+
+    for (short_t i = 0; i < BSplineCore::geoDim(); ++i)
       BSplineCore::coeffs(i) -= other.coeffs(i);
-    
+
     return *this;
   }
 
   /// @brief Scales the coefficients by a scalar
-  BSplineCommon& operator*=(typename BSplineCore::value_type s) {
+  BSplineCommon &operator*=(typename BSplineCore::value_type s) {
 
-    for (short_t i=0; i<BSplineCore::geoDim(); ++i)
+    for (short_t i = 0; i < BSplineCore::geoDim(); ++i)
       BSplineCore::coeffs(i) *= s;
-    
+
     return *this;
   }
 
   /// @brief Scales the coefficients by a vector
-  BSplineCommon& operator*=(std::array<typename BSplineCore::value_type, BSplineCore::geoDim()> v) {
-    
-    for (short_t i=0; i<BSplineCore::geoDim(); ++i)
+  BSplineCommon &operator*=(
+      std::array<typename BSplineCore::value_type, BSplineCore::geoDim()> v) {
+
+    for (short_t i = 0; i < BSplineCore::geoDim(); ++i)
       BSplineCore::coeffs(i) *= v[i];
-    
+
     return *this;
   }
 
   /// @brief Scales the coefficients by a scalar
-  BSplineCommon& operator/=(typename BSplineCore::value_type s) {
+  BSplineCommon &operator/=(typename BSplineCore::value_type s) {
 
-    for (short_t i=0; i<BSplineCore::geoDim(); ++i)
+    for (short_t i = 0; i < BSplineCore::geoDim(); ++i)
       BSplineCore::coeffs(i) /= s;
-    
+
     return *this;
   }
 
   /// @brief Scales the coefficients by a vector
-  BSplineCommon& operator/=(std::array<typename BSplineCore::value_type, BSplineCore::geoDim()> v) {
-    
-    for (short_t i=0; i<BSplineCore::geoDim(); ++i)
+  BSplineCommon &operator/=(
+      std::array<typename BSplineCore::value_type, BSplineCore::geoDim()> v) {
+
+    for (short_t i = 0; i < BSplineCore::geoDim(); ++i)
       BSplineCore::coeffs(i) /= v[i];
-    
+
     return *this;
   }
 };
