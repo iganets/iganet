@@ -4950,25 +4950,25 @@ public:
       return utils::BlockTensor<torch::Tensor, 1, 1>{
           torch::zeros_like(BSplineCore::coeffs_[0])};
     else {
-      auto hessu =
-          hess<memory_optimized>(xi, knot_indices, coeff_indices).slice(0);
-
-      {
-        auto igradG =
-            igrad<memory_optimized>(G, xi, knot_indices, coeff_indices,
-                                    knot_indices_G, coeff_indices_G);
-        auto hessG = G.template hess<memory_optimized>(xi, knot_indices_G,
+      std::array<utils::BlockTensor<torch::Tensor, 3, 3>, 3> hessu_array;
+      auto hessG = G.template hess<memory_optimized>(xi, knot_indices_G,
                                                        coeff_indices_G);
-        assert(igradG.cols() == hessG.slices());
-        for (short_t k = 0; k < hessG.slices(); ++k)
-          hessu -= igradG(0, k) * hessG.slice(k);
+      auto ijacG = ijac<memory_optimized>(G, xi, knot_indices, coeff_indices,
+                                            knot_indices_G, coeff_indices_G);
+
+      for (int component = 0; component < 3; ++component) {
+          auto hess_component = hess<memory_optimized>(xi, knot_indices, coeff_indices).slice(component);
+
+          for (short_t k = 0; k < hessG.slices(); ++k) {
+              hess_component -= ijacG(component, k) * hessG.slice(k);
+          }
+
+          auto jacInv = G.template jac<memory_optimized>(xi, knot_indices_G, coeff_indices_G).ginv();
+          hessu_array[component] = jacInv.tr() * hess_component * jacInv;
       }
 
-      auto jacInv =
-          G.template jac<memory_optimized>(xi, knot_indices_G, coeff_indices_G)
-              .ginv();
+      return hessu_array;
 
-      return jacInv.tr() * hessu * jacInv;
     }
   }
 
