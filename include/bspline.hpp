@@ -3656,7 +3656,7 @@ public:
       BSplineCore::coeffs(i) *= v[i];
     return *this;
   }
-
+  
   /// @brief Translates the B-spline object by a vector
   inline auto translate(
       std::array<typename BSplineCore::value_type, BSplineCore::geoDim()> v) {
@@ -6584,6 +6584,153 @@ public:
     }
 
     os << "\n)";
+  }
+
+  /// @brief Returns a new B-spline object whose coefficients are the
+  /// sum of that of two compatible B-spline objects
+  ///
+  /// @note This method does not check if the knot vectors of the two
+  /// B-spline objects are compatible. It simply adds the two
+  /// coefficients arrays and throws an error if their sizes do not
+  /// match. Any compatibility checks must be performed outside.
+  BSplineCommon operator+(const BSplineCommon& other) const {
+
+    BSplineCommon result{*this};
+    
+    for (short_t i=0; i<BSplineCore::geoDim(); ++i)
+      result.coeffs(i) += other.coeffs(i);
+
+    return result;
+  }
+
+  /// @brief Returns a new B-spline object whose coefficients are the
+  /// difference of that of two compatible B-spline objects
+  ///
+  /// @note This method does not check if the knot vectors of the two
+  /// B-spline objects are compatible. It simply subtracts the
+  /// coefficients arrays of two B-spline objects from each other and
+  /// throws an error if their sizes do not match. Any compatibility
+  /// checks must be performed outside.
+  BSplineCommon operator-(const BSplineCommon& other) const {
+
+    BSplineCommon result{*this};
+    
+    for (short_t i=0; i<BSplineCore::geoDim(); ++i)
+      result.coeffs(i) -= other.coeffs(i);
+
+    return result;
+  }
+
+  /// @brief Returns a new B-spline object whose coefficients are
+  /// scaled by a scalar
+  BSplineCommon operator*(typename BSplineCore::value_type s) const {
+
+    BSplineCommon result{*this};
+    
+    for (short_t i=0; i<BSplineCore::geoDim(); ++i)
+      result.coeffs(i) *= s;
+    
+    return result;
+  }
+
+  /// @brief Returns a new B-spline object whose coefficients are
+  /// scaled by a vector
+  BSplineCommon operator*(std::array<typename BSplineCore::value_type, BSplineCore::geoDim()> v) const {
+
+    BSplineCommon result{*this};
+    
+    for (short_t i=0; i<BSplineCore::geoDim(); ++i)
+      result.coeffs(i) *= v[i];
+    
+    return result;
+  }
+
+  /// @brief Returns a new B-spline object whose coefficients are
+  /// scaled by a scalar
+  BSplineCommon operator/(typename BSplineCore::value_type s) const {
+
+    BSplineCommon result{*this};
+    
+    for (short_t i=0; i<BSplineCore::geoDim(); ++i)
+      result.coeffs(i) /= s;
+    
+    return result;
+  }
+
+  /// @brief Returns a new B-spline object whose coefficients are
+  /// scaled by a vector
+  BSplineCommon operator/(std::array<typename BSplineCore::value_type, BSplineCore::geoDim()> v) const {
+
+    BSplineCommon result{*this};
+    
+    for (short_t i=0; i<BSplineCore::geoDim(); ++i)
+      result.coeffs(i) /= v[i];
+    
+    return result;
+  }
+  
+  /// @brief Adds the coefficients of another B-spline object
+  ///
+  /// @note This method does not check if the knot vectors of the two
+  /// B-spline objects are compatible. It simply adds the two
+  /// coefficients arrays and throws an error if their sizes do not
+  /// match. Any compatibility checks must be performed outside.
+  BSplineCommon& operator+=(const BSplineCommon& other) {
+    
+    for (short_t i=0; i<BSplineCore::geoDim(); ++i)
+      BSplineCore::coeffs(i) += other.coeffs(i);
+    
+    return *this;
+  }
+
+  /// @brief Substracts the coefficients of another B-spline object
+  ///
+  /// @note This method does not check if the knot vectors of the two
+  /// B-spline objects are compatible. It simply substracts the two
+  /// coefficients arrays and throws an error if their sizes do not
+  /// match. Any compatibility checks must be performed outside.
+  BSplineCommon& operator-=(const BSplineCommon& other) {
+    
+    for (short_t i=0; i<BSplineCore::geoDim(); ++i)
+      BSplineCore::coeffs(i) -= other.coeffs(i);
+    
+    return *this;
+  }
+
+  /// @brief Scales the coefficients by a scalar
+  BSplineCommon& operator*=(typename BSplineCore::value_type s) {
+
+    for (short_t i=0; i<BSplineCore::geoDim(); ++i)
+      BSplineCore::coeffs(i) *= s;
+    
+    return *this;
+  }
+
+  /// @brief Scales the coefficients by a vector
+  BSplineCommon& operator*=(std::array<typename BSplineCore::value_type, BSplineCore::geoDim()> v) {
+    
+    for (short_t i=0; i<BSplineCore::geoDim(); ++i)
+      BSplineCore::coeffs(i) *= v[i];
+    
+    return *this;
+  }
+
+  /// @brief Scales the coefficients by a scalar
+  BSplineCommon& operator/=(typename BSplineCore::value_type s) {
+
+    for (short_t i=0; i<BSplineCore::geoDim(); ++i)
+      BSplineCore::coeffs(i) /= s;
+    
+    return *this;
+  }
+
+  /// @brief Scales the coefficients by a vector
+  BSplineCommon& operator/=(std::array<typename BSplineCore::value_type, BSplineCore::geoDim()> v) {
+    
+    for (short_t i=0; i<BSplineCore::geoDim(); ++i)
+      BSplineCore::coeffs(i) /= v[i];
+    
+    return *this;
   }
 };
 
