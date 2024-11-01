@@ -1,5 +1,5 @@
 /**
-   @file webapps/models/BSplineModel.hpp
+   @file webapps/models/iganet/BSplineModel.hpp
 
    @brief BSpline model
 
