@@ -45,7 +45,7 @@ jobs:
           -S ${{ github.workspace }}
           
       - name: Generate Documentation
-        run: make docs
+        run: cmake --build ./build
 
       - name: Deploy to GitHub Pages
         uses: peaceiris/actions-gh-pages@v3
