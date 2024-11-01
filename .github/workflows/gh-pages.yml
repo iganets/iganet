@@ -16,8 +16,8 @@ jobs:
 
       - name: Install Doxygen and BibTeX
         run: |
-          apt-get update
-          apt-get install -y doxygen texlive-bibtex-extra
+          sudo apt-get update
+          sudo apt-get install -y doxygen texlive-bibtex-extra
         
       - name: Set up Python
         uses: actions/setup-python@v2
