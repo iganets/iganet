@@ -98,6 +98,7 @@ jobs:
         -DCMAKE_CXX_COMPILER=${{ matrix.cpp_compiler }}
         -DCMAKE_C_COMPILER=${{ matrix.c_compiler }}
         -DCMAKE_BUILD_TYPE=${{ matrix.build_type }}
+        -DIGANET_BUILD_UNITTESTS=ON
         -DTorch_DIR=$HOME/libtorch/share/cmake/Torch
         -S ${{ github.workspace }}
 
@@ -110,6 +111,7 @@ jobs:
         -DCMAKE_CXX_COMPILER=clang++-17
         -DCMAKE_C_COMPILER=clang-17
         -DCMAKE_BUILD_TYPE=${{ matrix.build_type }}
+        -DIGANET_BUILD_UNITTESTS=ON
         -DTorch_DIR=$HOME/libtorch/share/cmake/Torch
         -DIGANET_WITH_OPENMP=OFF
         -S ${{ github.workspace }}
@@ -123,6 +125,7 @@ jobs:
         -DCMAKE_CXX_COMPILER=${{ matrix.cpp_compiler }}
         -DCMAKE_C_COMPILER=${{ matrix.c_compiler }}
         -DCMAKE_BUILD_TYPE=${{ matrix.build_type }}
+        -DIGANET_BUILD_UNITTESTS=ON
         -DTorch_DIR=$HOME/libtorch/share/cmake/Torch
         -DIGANET_WITH_OPENMP=OFF
         -S ${{ github.workspace }}
