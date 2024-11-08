@@ -22,19 +22,19 @@ private:
   typename Customizable::geometryMap_interior_knot_indices_type G_knot_indices_;
   typename Customizable::geometryMap_interior_coeff_indices_type G_coeff_indices_;
 
-  // material properties
-  double E_; // Young's modulus
-  double nu_; // Poisson's ratio
+  // material properties - lame's parameters
+  double lambda_;
+  double mu_;
 
 public:
   /// @brief Constructor
   template <typename... Args>
-  linear_elasticity(double E, double nu, std::vector<int64_t> &&layers,
+  linear_elasticity(double lambda, double mu, std::vector<int64_t> &&layers,
                     std::vector<std::vector<std::any>> &&activations, Args &&...args)
       : Base(std::forward<std::vector<int64_t>>(layers),
              std::forward<std::vector<std::vector<std::any>>>(activations),
              std::forward<Args>(args)...),
-        E_(E), nu_(nu), ref_(iganet::utils::to_array(4_i64, 4_i64, 4_i64)) {}
+        lambda_(lambda), mu_(mu), ref_(iganet::utils::to_array(4_i64, 4_i64, 4_i64)) {}
 
   /// @brief Returns a constant reference to the collocation points
   auto const &collPts() const { return collPts_; }
@@ -80,44 +80,37 @@ public:
 
     // calculation of the second derivative of the displacements
     auto hessian_coll = Base::u_.ihess(Base::G_, collPts_.first, var_knot_indices_, var_coeff_indices_, G_knot_indices_, G_coeff_indices_);
-    auto hessian_ux = hessian_coll[0];
-    auto hessian_uy = hessian_coll[1];
-    auto hessian_uz = hessian_coll[2];
 
     // partial derivatives of the displacements - each variable has 216 entries of the collPts
-    auto ux_xx = *(hessian_ux[0]);
-    auto ux_xy = *(hessian_ux[1]);
-    auto ux_xz = *(hessian_ux[2]);
-    auto ux_yx = *(hessian_ux[3]);
-    auto ux_yy = *(hessian_ux[4]);
-    auto ux_yz = *(hessian_ux[5]);
-    auto ux_zx = *(hessian_ux[6]);
-    auto ux_zy = *(hessian_ux[7]);
-    auto ux_zz = *(hessian_ux[8]);
+    auto& ux_xx = *(hessian_coll[0][0]);
+    auto& ux_xy = *(hessian_coll[0][1]);
+    auto& ux_xz = *(hessian_coll[0][2]);
+    auto& ux_yx = *(hessian_coll[0][3]);
+    auto& ux_yy = *(hessian_coll[0][4]);
+    auto& ux_yz = *(hessian_coll[0][5]);
+    auto& ux_zx = *(hessian_coll[0][6]);
+    auto& ux_zy = *(hessian_coll[0][7]);
+    auto& ux_zz = *(hessian_coll[0][8]);
 
-    auto uy_xx = *(hessian_uy[0]);
-    auto uy_xy = *(hessian_uy[1]);
-    auto uy_xz = *(hessian_uy[2]);
-    auto uy_yx = *(hessian_uy[3]);
-    auto uy_yy = *(hessian_uy[4]);
-    auto uy_yz = *(hessian_uy[5]);
-    auto uy_zx = *(hessian_uy[6]);
-    auto uy_zy = *(hessian_uy[7]);
-    auto uy_zz = *(hessian_uy[8]);
+    auto& uy_xx = *(hessian_coll[1][0]);
+    auto& uy_xy = *(hessian_coll[1][1]);
+    auto& uy_xz = *(hessian_coll[1][2]);
+    auto& uy_yx = *(hessian_coll[1][3]);
+    auto& uy_yy = *(hessian_coll[1][4]);
+    auto& uy_yz = *(hessian_coll[1][5]);
+    auto& uy_zx = *(hessian_coll[1][6]);
+    auto& uy_zy = *(hessian_coll[1][7]);
+    auto& uy_zz = *(hessian_coll[1][8]);
 
-    auto uz_xx = *(hessian_uz[0]);
-    auto uz_xy = *(hessian_uz[1]);
-    auto uz_xz = *(hessian_uz[2]);
-    auto uz_yx = *(hessian_uz[3]);
-    auto uz_yy = *(hessian_uz[4]);
-    auto uz_yz = *(hessian_uz[5]);
-    auto uz_zx = *(hessian_uz[6]);
-    auto uz_zy = *(hessian_uz[7]);
-    auto uz_zz = *(hessian_uz[8]);
-
-    // calculation of lame parameters
-    double lambda = (E_ * nu_) / ((1 + nu_) * (1 - 2 * nu_));
-    double mu = E_ / (2 * (1 + nu_));
+    auto& uz_xx = *(hessian_coll[2][0]);
+    auto& uz_xy = *(hessian_coll[2][1]);
+    auto& uz_xz = *(hessian_coll[2][2]);
+    auto& uz_yx = *(hessian_coll[2][3]);
+    auto& uz_yy = *(hessian_coll[2][4]);
+    auto& uz_yz = *(hessian_coll[2][5]);
+    auto& uz_zx = *(hessian_coll[2][6]);
+    auto& uz_zy = *(hessian_coll[2][7]);
+    auto& uz_zz = *(hessian_coll[2][8]);
 
     // pre-allocation of the results
     torch::Tensor results_x = torch::zeros({216});
@@ -128,20 +121,20 @@ public:
     // calculation of the divergence of the stress tensor
     for (int i = 0; i < 216; ++i) {
 
-        // x-dircection
-        results_x[i] = lambda * (ux_xx[i] + uy_xy[i] + uz_xz[i]) +
-                          2 * mu * ux_xx[i] + mu * ux_yy[i] + mu * ux_zz[i] +
-                          mu * (uy_xy[i] + uz_xz[i]);
+        // x-direction
+        results_x[i] = lambda_ * (ux_xx[i] + uy_xy[i] + uz_xz[i]) +
+                          2 * mu_ * ux_xx[i] + mu_ * ux_yy[i] + mu_ * ux_zz[i] +
+                          mu_ * (uy_xy[i] + uz_xz[i]);
 
         // y-direction
-        results_y[i] = mu * (uy_xx[i] + ux_yx[i]) +
-                          lambda * (ux_yx[i] + uy_yy[i] + uz_yz[i]) +
-                          2 * mu * uy_yy[i] + mu * uy_zz[i];
+        results_y[i] = mu_ * (uy_xx[i] + ux_yx[i]) +
+                          lambda_ * (ux_yx[i] + uy_yy[i] + uz_yz[i]) +
+                          2 * mu_ * uy_yy[i] + mu_ * uy_zz[i];
 
         // z-direction
-        results_z[i] = mu * (uz_xx[i] + ux_zx[i]) +
-                          lambda * (ux_xz[i] + uy_yz[i] + uz_zz[i]) +
-                          mu * uz_yy[i] + 2 * mu * uz_zz[i];
+        results_z[i] = mu_ * (uz_xx[i] + ux_zx[i]) +
+                          lambda_ * (ux_xz[i] + uy_yz[i] + uz_zz[i]) +
+                          mu_ * uz_yy[i] + 2 * mu_ * uz_zz[i];
     }
     
     // create a tensor of the divergence of the stress tensor
@@ -150,16 +143,21 @@ public:
     // evaluation at the boundary
     auto u_bdr = Base::u_.template eval<iganet::functionspace::boundary>(collPts_.second);
     auto bdr = ref_.template eval<iganet::functionspace::boundary>(collPts_.second);
-    
-    // print the result of the loss function
-    std::cout << torch::mse_loss(div_stress, zeros) +
-           10e1 * torch::mse_loss(*std::get<0>(u_bdr)[0], *std::get<0>(bdr)[0]) +
-           10e1 * torch::mse_loss(*std::get<1>(u_bdr)[0], *std::get<1>(bdr)[0]) << std::endl;
 
+    // calculation of the loss function for double-sided constraint solid
     // div_stress is compared to zero since "divergence*sigma = 0" is the governing equation
-    return torch::mse_loss(div_stress, zeros) +
+    torch::Tensor loss = torch::mse_loss(div_stress, zeros) +
            10e1 * torch::mse_loss(*std::get<0>(u_bdr)[0], *std::get<0>(bdr)[0]) +
-           10e1 * torch::mse_loss(*std::get<1>(u_bdr)[0], *std::get<1>(bdr)[0]);
+           10e1 * torch::mse_loss(*std::get<0>(u_bdr)[1], *std::get<0>(bdr)[1]) +
+           10e1 * torch::mse_loss(*std::get<0>(u_bdr)[2], *std::get<0>(bdr)[2]) +
+           10e1 * torch::mse_loss(*std::get<1>(u_bdr)[0], *std::get<1>(bdr)[0]) +
+           10e1 * torch::mse_loss(*std::get<1>(u_bdr)[1], *std::get<1>(bdr)[1]) +
+           10e1 * torch::mse_loss(*std::get<1>(u_bdr)[2], *std::get<1>(bdr)[2]);
+
+    // print loss
+    std::cout << loss << std::endl;
+
+    return loss;
   }
 };
 
@@ -167,66 +165,91 @@ int main() {
   iganet::init();
   iganet::verbose(std::cout);
 
+  nlohmann::json json;
+  json["res0"] = 50;
+  json["res1"] = 50;
+  json["res2"] = 50;
+
   // user inputs for material properties
   double E, nu;
   E = 210;
   nu = 0.4;
+  // calculation of lame parameters
+  double lambda = (E * nu) / ((1 + nu) * (1 - 2 * nu));
+  double mu = E / (2 * (1 + nu));
 
   using namespace iganet::literals;
   using optimizer_t = torch::optim::LBFGS;
   using real_t = double;
 
-  using geometry_t = iganet::S<iganet::UniformBSpline<real_t, 3, 1, 1, 1>>;
+  using geometry_t = iganet::S<iganet::UniformBSpline<real_t, 3, 2, 2, 2>>;
   using variable_t = iganet::S<iganet::UniformBSpline<real_t, 3, 2, 2, 2>>;
 
   linear_elasticity<optimizer_t, geometry_t, variable_t>
-      net(E, nu, // Material properties
-          {20, 20},
+      net(// Material properties
+          lambda, mu, 
+          // Number of neurons per layer
+          {100, 100},
           // Activation functions
           {{iganet::activation::sigmoid},
            {iganet::activation::sigmoid},
            {iganet::activation::none}},
           // Number of B-spline coefficients of the geometry
-          std::tuple(iganet::utils::to_array(2_i64, 2_i64, 2_i64)),
+          std::tuple(iganet::utils::to_array(4_i64, 4_i64, 4_i64)),
           // Number of B-spline coefficients of the variable
           std::tuple(iganet::utils::to_array(4_i64, 4_i64, 4_i64)));
-
-  // // initial values for later comparison
-  // auto anfangswert = net.u().as_tensor();
-  // std::cout << anfangswert << std::endl;
 
   // // imposing rhs f is not necessary, since 0
   // net.f().transform([=](const std::array<real_t, 3> xi) {
   //   return std::array<real_t, 3>{0.0, 0.0, 0.0};
   // });
 
-  // Impose boundary conditions (Dirichlet BCs)
-  net.ref().boundary().template side<1>().transform(
-      [](const std::array<real_t, 2> xi) {
-        return std::array<real_t, 3>{0.0, 0.0, 0.0};
-      });
-  
- // Impose boundary conditions (Dirichlet BCs)
-  net.ref().boundary().template side<2>().transform(
-      [](const std::array<real_t, 2> xi) {
-        return std::array<real_t, 3>{2.0, 0, 0};
-      });
+  // BC SIDE WEST
+  net.ref().boundary().template side<1>().transform<1>(
+      [](const std::array<real_t, 2> &xi) {
+          return std::array<real_t, 1>{0.0}; 
+      },
+      std::array<iganet::short_t, 1>{0} 
+  );
 
-  // // MERLE BC SETTING
-  // // SIDE 1 - x value = 0
-  // net.ref().template boundary<0>().template side<1>().transform(
-  //     [](const std::array<real_t, 2> xi) {
-  //         return std::array<real_t, 1>{0.0 };
-  //     });
+  net.ref().boundary().template side<1>().transform<1>(
+      [](const std::array<real_t, 2> &xi) {
+          return std::array<real_t, 1>{0.0}; 
+      },
+      std::array<iganet::short_t, 1>{1} 
+  );
 
-  // // SIDE 6 - x value = 0
-  // net.ref().template boundary<0>().template side<6>().transform(
-  //     [](const std::array<real_t, 2> xi) {
-  //         return std::array<real_t, 1>{10.0 };
-  //     });
+  net.ref().boundary().template side<1>().transform<1>(
+      [](const std::array<real_t, 2> &xi) {
+          return std::array<real_t, 1>{0.0}; 
+      },
+      std::array<iganet::short_t, 1>{2} 
+  );
+
+  // BC SIDE EAST
+  net.ref().boundary().template side<2>().transform<1>(
+    [](const std::array<real_t, 2> &xi) {
+        return std::array<real_t, 1>{2.0};
+    },
+    std::array<iganet::short_t, 1>{0}
+  );
+
+  net.ref().boundary().template side<2>().transform<1>(
+    [](const std::array<real_t, 2> &xi) {
+        return std::array<real_t, 1>{0.0};
+    },
+    std::array<iganet::short_t, 1>{1}
+  );
+
+  net.ref().boundary().template side<2>().transform<1>(
+    [](const std::array<real_t, 2> &xi) {
+        return std::array<real_t, 1>{0.0};
+    },
+    std::array<iganet::short_t, 1>{2}
+  );
 
   // Set maximum number of epochs
-  net.options().max_epoch(35);
+  net.options().max_epoch(60);
 
   // Set tolerance for the loss functions
   net.options().min_loss(1e-8);
@@ -246,20 +269,28 @@ int main() {
       << " seconds\n";
 
 #ifdef IGANET_WITH_MATPLOT
-  // // Plot the solution
-  // net.G().plot(net.u(), net.collPts().first, json)->show();
-
+  // Plot the solution
+  // net.G().space().plot(net.u().space(), net.collPts().first, json)->show();
+  // net.G().space().plot(net.collPts().first, json)->show();
   // // Plot the difference between the exact and predicted solutions
   // net.G().plot(net.ref().abs_diff(net.u()), net.collPts().first, json)->show();
 #endif
 
-  // final values of the solution
-  auto endwert = net.u();
+  // // final values of the solution
+  // auto final_displacement = net.u().space();
+  // std::cout << endwert << std::endl;
 
   // auto inner_values = net.u().template eval<iganet::functionspace::interior>(net.collPts().first);
-  auto outer_values = net.u().template eval<iganet::functionspace::boundary>(net.collPts().second);
+  // auto outer_values = net.u().template eval<iganet::functionspace::boundary>(net.collPts().second);
   // std::cout << inner_values << std::endl;
-  std::cout << outer_values << std::endl;
+  // std::cout << outer_values << std::endl;
+
+  // applying displacement to the geometry
+  net.G().space().operator+=(net.u().space());
+  // std::cout << net.G().space() << std::endl;
+
+  // final values of the geometry
+  std::cout << net.G() << std::endl;
 
   iganet::finalize();
   return 0;
