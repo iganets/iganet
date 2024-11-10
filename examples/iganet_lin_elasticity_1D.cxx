@@ -33,7 +33,7 @@ public:
       : Base(std::forward<std::vector<int64_t>>(layers),
              std::forward<std::vector<std::vector<std::any>>>(activations),
              std::forward<Args>(args)...),
-        E_(E), ref_(iganet::utils::to_array(5_i64)) {}
+        E_(E), ref_(iganet::utils::to_array(4_i64)) {}
 
   /// @brief Returns a constant reference to the collocation points
   auto const &collPts() const { return collPts_; }
@@ -48,7 +48,7 @@ public:
   bool epoch(int64_t epoch) override {
     if (epoch == 0) {
       Base::inputs(epoch);
-      collPts_ = Base::variable_collPts(iganet::collPts::greville_ref1);
+      collPts_ = Base::variable_collPts(iganet::collPts::greville);
 
       var_knot_indices_ =
           Base::f_.template find_knot_indices<iganet::functionspace::interior>(
@@ -73,22 +73,27 @@ public:
   torch::Tensor loss(const torch::Tensor &outputs, int64_t epoch) override {
     Base::u_.from_tensor(outputs);
 
-    std::cout << collPts_.first << std::endl;
-    exit(0);
     // Compute strain
-    // auto lapl = Base::u_.ilapl(collPts_.first, var_knot_indices_, var_coeff_indices_);
+    auto lapl = Base::u_.ilapl(Base::G_, collPts_.first);
+    
+    int nr_of_eval_collPts = std::get<0>(collPts_.first).size(0);
 
     // Compute the derivative of the stress
-    // auto der_stress = E_ * lapl[0];
+    auto der_stress = E_ * *(lapl[0]);
 
-    // auto f = Base::f_.eval(collPts_.first, var_knot_indices_, var_coeff_indices_);
+    auto u_bdr = Base::u_.eval(iganet::utils::to_tensorArray({0.0, 1.0}));
 
-    // auto u_bdr = Base::u_.template eval<iganet::functionspace::boundary>(collPts_.second);
-    // auto bdr = ref_.template eval<iganet::functionspace::boundary>(collPts_.second);
+    auto bdr = ref_.eval(iganet::utils::to_tensorArray({0.0, 1.0}));
 
-    // return torch::mse_loss(*der_stress[0], 0); //+
-    //       //  1e1 * torch::mse_loss(*std::get<0>(u_bdr)[0], *std::get<0>(bdr)[0]);
-    return torch::mse_loss(outputs, outputs);
+    torch::Tensor zeros = torch::zeros({nr_of_eval_collPts}, torch::dtype(torch::kDouble));
+
+    torch::Tensor loss = torch::mse_loss(der_stress, zeros) +
+            1e1 * torch::mse_loss(*u_bdr[0], *bdr[0]);
+
+    std::cout << loss << std::endl;
+
+    return loss;
+
   }
 };
 
@@ -119,21 +124,21 @@ int main() {
            {iganet::activation::sigmoid},
            {iganet::activation::none}},
           // Number of B-spline coefficients of the geometry
-          std::tuple(iganet::utils::to_array(4_i64)),
+          std::tuple(iganet::utils::to_array(8_i64)),
           // Number of B-spline coefficients of the variable
-          std::tuple(iganet::utils::to_array(4_i64)));
+          std::tuple(iganet::utils::to_array(8_i64)));
 
-  // Applying rhs to every point xi
-  net.f().transform([=](const std::array<real_t, 1> xi) {
-    return std::array<real_t, 1>{0.0};
-  });
-
+  // // Applying rhs to every point xi
+  // net.f().transform([=](const std::array<real_t, 1> xi) {
+  //   return std::array<real_t, 1>{0.0};
+  // });
 
   // Impose boundary conditions (Dirichlet BCs)
   net.ref().boundary().template side<1>().transform(
       [](const std::array<real_t, 0> xi) {
         return std::array<real_t, 1>{0.0};
-      });
+      }
+      );
   
     // Impose boundary conditions (Dirichlet BCs)
   net.ref().boundary().template side<2>().transform(
@@ -163,11 +168,13 @@ int main() {
 
 #ifdef IGANET_WITH_MATPLOT
   // // Plot the solution
-  // net.G().plot(net.u(), net.collPts().first, json)->show();
-
+  // net.G().space().plot(net.u().space(), net.collPts().first, json)->show();
   // // Plot the difference between the exact and predicted solutions
   // net.G().plot(net.ref().abs_diff(net.u()), net.collPts().first, json)->show();
 #endif
+
+  net.G().space().operator+=(net.u().space());
+  std::cout << net.G() << std::endl;
 
   iganet::finalize();
   return 0;
