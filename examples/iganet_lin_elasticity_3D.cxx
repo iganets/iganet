@@ -276,6 +276,75 @@ int main() {
   // net.G().plot(net.ref().abs_diff(net.u()), net.collPts().first, json)->show();
 #endif
 
+#ifdef IGANET_WITH_GISMO
+  // transform network output into g+smo-compatible objects
+  auto G_gismo = net.G().space().to_gismo(); // geometry of the domain
+  auto u_gismo = net.u().space().to_gismo(); // displacement field
+
+  // setting material properties
+  real_t youngsModulus = 210.0;
+  real_t poissonsRatio = 0.4;
+
+  // creating a multi-patch object for the geometry
+  gsMultiPatch<real_t> geometry;
+  // adding the geometry as a patch
+  geometry.addPatch(G_gismo);
+  // creating a multi-basis object for the geometry
+  gsMultiBasis<> basis(geometry);
+
+  // creating boundary condition variable
+  gsBoundaryConditions<real_t> bcInfo;
+
+  // setting Dirichlet boundary conditions (west: no displacement, east: displacement of 2.0 in x-direction)
+  for (int d = 0; d < 3; d++) {
+      bcInfo.addCondition(0, boundary::west, condition_type::dirichlet, gsConstantFunction<real_t>(0.0, 3), d);
+  }
+  bcInfo.addCondition(0, boundary::east, condition_type::dirichlet, gsConstantFunction<real_t>(2.0, 3), 0);
+
+  // setting body force to zero for this calculation
+  gsConstantFunction<real_t> body_force(0.,0.,0., 3);
+  gsInfo << "Geometry dimension: " << geometry.parDim() << "\n";
+
+  // initializing the elasticity assembler with the material behavior 
+  gsElasticityAssembler<real_t> assembler(geometry, basis, bcInfo, body_force);
+  assembler.options().setReal("YoungsModulus", youngsModulus);
+  assembler.options().setReal("PoissonsRatio", poissonsRatio);
+  assembler.options().setInt("DirichletValues", dirichlet::l2Projection);
+
+  // assembling the system
+  assembler.assemble();
+
+  // solving the system
+  gsSparseSolver<>::CGDiagonal solver;
+  gsMatrix<real_t> solution;
+  solver.compute(assembler.matrix());
+  solution = solver.solve(assembler.rhs());
+
+  // creating a multi-patch object for the solution
+  gsMultiPatch<real_t> solution_patch;
+  // constructing the solution
+  assembler.constructSolution(solution, assembler.allFixedDofs(), solution_patch);
+  
+  // creating a mesh object for the control net
+  gsMesh<real_t> controlNetMesh;
+  // loading the control net of our geometry into the mesh object
+  geometry.patch(0).controlNet(controlNetMesh);
+
+  // printing the position and displacement of the control points
+  for (int i = 0; i < controlNetMesh.numVertices(); ++i) {
+      gsVector<real_t> controlPoint = controlNetMesh.vertex(i);
+      gsVector<real_t> displacement = solution_patch.patch(0).eval(controlPoint);
+
+      gsInfo << "Control Point " << std::setw(2) << i 
+            << " Position: (" << std::setw(5) << controlPoint[0]
+            << ", " << std::setw(5) << controlPoint[1]
+            << ", " << std::setw(5) << controlPoint[2] << ")"
+            << "  Displacement: (" << std::setw(10) << displacement[0]
+            << ", " << std::setw(10) << displacement[1]
+            << ", " << std::setw(10) << displacement[2] << ")\n";
+  }
+#endif
+
   // // final values of the solution
   // auto final_displacement = net.u().space();
   // std::cout << endwert << std::endl;
@@ -286,11 +355,14 @@ int main() {
   // std::cout << outer_values << std::endl;
 
   // applying displacement to the geometry
-  net.G().space().operator+=(net.u().space());
+  // net.G().space().operator+=(net.u().space());
   // std::cout << net.G().space() << std::endl;
 
+  // printing final displacement
+  std::cout << net.u().space() << std::endl;
+  
   // final values of the geometry
-  std::cout << net.G() << std::endl;
+  // std::cout << net.G() << std::endl;
 
   iganet::finalize();
   return 0;
