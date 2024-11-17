@@ -300,6 +300,8 @@ int main() {
       bcInfo.addCondition(0, boundary::west, condition_type::dirichlet, gsConstantFunction<real_t>(0.0, 3), d);
   }
   bcInfo.addCondition(0, boundary::east, condition_type::dirichlet, gsConstantFunction<real_t>(2.0, 3), 0);
+  bcInfo.addCondition(0, boundary::east, condition_type::dirichlet, gsConstantFunction<real_t>(0.0, 3), 1);
+  bcInfo.addCondition(0, boundary::east, condition_type::dirichlet, gsConstantFunction<real_t>(0.0, 3), 2);
 
   // setting body force to zero for this calculation
   gsConstantFunction<real_t> body_force(0.,0.,0., 3);
@@ -330,18 +332,35 @@ int main() {
   // loading the control net of our geometry into the mesh object
   geometry.patch(0).controlNet(controlNetMesh);
 
+  // create collection matrix for all the control points (gismo)
+  gsMatrix<real_t> controlPoints(64, 3);
+  // create collection matrix for all the displacements (gismo)
+  gsMatrix<real_t> displacements(64, 3);
+
   // printing the position and displacement of the control points
   for (int i = 0; i < controlNetMesh.numVertices(); ++i) {
-      gsVector<real_t> controlPoint = controlNetMesh.vertex(i);
-      gsVector<real_t> displacement = solution_patch.patch(0).eval(controlPoint);
+      controlPoints(i, 0) = controlNetMesh.vertex(i)(0);
+      controlPoints(i, 1) = controlNetMesh.vertex(i)(1);
+      controlPoints(i, 2) = controlNetMesh.vertex(i)(2);
 
-      gsInfo << "Control Point " << std::setw(2) << i 
-            << " Position: (" << std::setw(5) << controlPoint[0]
-            << ", " << std::setw(5) << controlPoint[1]
-            << ", " << std::setw(5) << controlPoint[2] << ")"
-            << "  Displacement: (" << std::setw(10) << displacement[0]
-            << ", " << std::setw(10) << displacement[1]
-            << ", " << std::setw(10) << displacement[2] << ")\n";
+      gsMatrix<real_t> point(3, 1);
+      point(0, 0) = controlPoints(i, 0);
+      point(1, 0) = controlPoints(i, 1);
+      point(2, 0) = controlPoints(i, 2);
+
+      auto displacement = solution_patch.patch(0).eval(point);
+      displacements(i, 0) = displacement(0);
+      displacements(i, 1) = displacement(1);
+      displacements(i, 2) = displacement(2);
+
+      // // printing gismo control points and displacements
+      // gsInfo << "Control Point " << std::setw(2) << i 
+      //       << " Position: (" << std::setw(5) << controlPoints(i, 0)
+      //       << ", " << std::setw(5) << controlPoints(i, 1)
+      //       << ", " << std::setw(5) << controlPoints(i, 2) << ")"
+      //       << "  Displacement: (" << std::setw(12) << displacements(i, 0)
+      //       << ", " << std::setw(12) << displacements(i, 1)
+      //       << ", " << std::setw(12) << displacements(i, 2) << ")\n";
   }
 #endif
 
@@ -359,10 +378,54 @@ int main() {
   // std::cout << net.G().space() << std::endl;
 
   // printing final displacement
-  std::cout << net.u().space() << std::endl;
+  // std::cout << net.u().space() << std::endl;
   
   // final values of the geometry
-  // std::cout << net.G() << std::endl;
+  // std::cout << net.G().as_tensor() << std::endl;
+
+
+  at::Tensor geo_as_tensor = net.G().as_tensor();
+  at::Tensor displ_as_tensor = net.u().as_tensor();
+
+  // creating collection matrix for all the control points (iganet)
+  gsMatrix<real_t> net_controlPoints(64, 3);
+  // creating collection matrix for all the displacements (iganet)
+  gsMatrix<real_t> net_displacements(64, 3);
+
+  // filling the collection matrices with the values from the tensors
+  for (int i = 0; i < 64; ++i) {
+      double x = geo_as_tensor[i].item<double>();          
+      double y = geo_as_tensor[i + 64].item<double>();
+      double z = geo_as_tensor[i + 128].item<double>();
+      net_controlPoints(i, 0) = x;
+      net_controlPoints(i, 1) = y;
+      net_controlPoints(i, 2) = z;
+
+      double ux = displ_as_tensor[i].item<double>();
+      double uy = displ_as_tensor[i + 64].item<double>();
+      double uz = displ_as_tensor[i + 128].item<double>();
+      net_displacements(i, 0) = ux;
+      net_displacements(i, 1) = uy;
+      net_displacements(i, 2) = uz;
+  }
+
+  // // printing net control points and displacements
+  // for (size_t i = 0; i < net_controlPoints.rows(); ++i) {
+  //     std::cout << "Control Point " << std::setw(2) << i 
+  //               << " Position: (" << std::setw(5) << net_controlPoints(i, 0)
+  //               << ", " << std::setw(5) << net_controlPoints(i, 1)
+  //               << ", " << std::setw(5) << net_controlPoints(i, 2) << ")"
+  //               << "  Displacement: (" << std::setw(12) << net_displacements(i, 0)
+  //               << ", " << std::setw(12) << net_displacements(i, 1)
+  //               << ", " << std::setw(12) << net_displacements(i, 2) << ")" << std::endl;
+  // }
+
+  // GISMO SOLUTION - printing the new position of the control points
+  std::cout << "Neue CPs von Gismo:\n"
+            << controlPoints + displacements << std::endl;
+  // NET SOLUTION - printing the new position of the control points 
+  std::cout << "Neue CPs von IgANet:\n"
+            << net_controlPoints + net_displacements << std::endl;
 
   iganet::finalize();
   return 0;
