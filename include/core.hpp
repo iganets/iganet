@@ -93,7 +93,7 @@ inline int64_t operator""_i64(unsigned long long value) { return value; };
 } // namespace literals
 
 //  clang-format off
-/// @brief Enumerator for specifying the initialization of B-spline coefficients
+/// @brief Enumerator for specifying the logging level
 enum class log : short_t {
   none = 0,    /*!< no logging */
   fatal = 1,   /*!< log fatal errors */
