@@ -4950,13 +4950,14 @@ public:
       return utils::BlockTensor<torch::Tensor, 1, 1>{
           torch::zeros_like(BSplineCore::coeffs_[0])};
     else {
-      std::array<utils::BlockTensor<torch::Tensor, 3, 3>, 3> hessu_array;
+      std::array<utils::BlockTensor<torch::Tensor, BSplineCore::geoDim_, BSplineCore::geoDim_>, BSplineCore::geoDim_> hessu_array;
+
       auto hessG = G.template hess<memory_optimized>(xi, knot_indices_G,
                                                        coeff_indices_G);
       auto ijacG = ijac<memory_optimized>(G, xi, knot_indices, coeff_indices,
                                             knot_indices_G, coeff_indices_G);
 
-      for (int component = 0; component < 3; ++component) {
+      for (int component = 0; component < BSplineCore::geoDim_; ++component) {
           auto hess_component = hess<memory_optimized>(xi, knot_indices, coeff_indices).slice(component);
 
           for (short_t k = 0; k < hessG.slices(); ++k) {
