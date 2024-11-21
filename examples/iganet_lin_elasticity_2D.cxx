@@ -54,24 +54,24 @@ public:
   /// @brief Returns a non-constant reference to the reference solution
   auto &ref() { return ref_; }
 
-  /// @brief GISMO workflow as an inline method
+  /// @brief GISMO workflow
   static std::tuple<gsMatrix<double>, gsMatrix<double>> RunGismoSimulation() {
-    int degree = 2;       // Grad der B-Splines
-    int numCtrlPts = 4;   // Anzahl der Kontrollpunkte in jeder Richtung
+    int degree = 2;
+    int numCtrlPts = 4;  
 
-    // create collection matrix for all the control points (gismo)
+    // initialize control points and displacements
     gsMatrix<double> gs_controlPoints(16, 2);
-    // create collection matrix for all the gs_displacements (gismo)
     gsMatrix<double> gs_displacements(16, 2);
 
-    // Knotensequenzen
+    // create knot vectors
     gsKnotVector<double> knot_vector_u(0.0, 1.0, 1, degree + 1);
     gsKnotVector<double> knot_vector_v(0.0, 1.0, 1, degree + 1);
 
-    // Kontrollpunkte initialisieren
+    // create control points
     std::vector<double> ctrlValues = {0.0, 0.25, 0.75, 1.0};
     gsMatrix<double> control_points(numCtrlPts * numCtrlPts, 2);
 
+    // systematic placement of control points
     int index = 0;
     for (int j = 0; j < numCtrlPts; ++j) {
         for (int i = 0; i < numCtrlPts; ++i) {
@@ -81,17 +81,15 @@ public:
         }
     }
 
-    // Tensor-BSpline-Objekt erstellen
+    // create geometry
     gsTensorBSpline<2, double> geometry(knot_vector_u, knot_vector_v, control_points);
 
-    // Geometrie in einen MultiPatch umwandeln
+    // create multipatch and add the geometry
     gsMultiPatch<double> multiPatch;
     multiPatch.addPatch(geometry);
-
-    // Basis für die Geometrie erstellen
     gsMultiBasis<> basis(multiPatch);
 
-    // Materialeigenschaften setzen
+    // boundary conditions
     gsBoundaryConditions<double> bcInfo;
     bcInfo.addCondition(0, boundary::west, condition_type::dirichlet, 
             gsConstantFunction<double>(0.0, 2), 0);
@@ -102,26 +100,30 @@ public:
     bcInfo.addCondition(0, boundary::east, condition_type::dirichlet, 
             gsConstantFunction<double>(0.0, 2), 1);
 
-    // Elasticity assembler initialisieren
+    // body force (currently set to zero)
     gsConstantFunction<double> body_force(0., 0., 2);
+
+    // initialize the elasticity assembler
     gsElasticityAssembler<double> assembler(geometry, basis, bcInfo, body_force);
     assembler.options().setReal("YoungsModulus", 210.0);
     assembler.options().setReal("PoissonsRatio", 0.4);
     assembler.assemble();
 
-    // Lösen des Systems
+    // solve the system
     gsSparseSolver<>::CGDiagonal solver;
     gsMatrix<double> solution;
     solver.compute(assembler.matrix());
     solution = solver.solve(assembler.rhs());
 
-    // Ergebnisse extrahieren
+    // create a multipatch object for the solution
     gsMultiPatch<double> solution_patch;
     assembler.constructSolution(solution, assembler.allFixedDofs(), solution_patch);
 
+    // create a mesh object for the control net
     gsMesh<double> controlNetMesh;
     geometry.controlNet(controlNetMesh);
 
+    // create collection matrices for all the control points and displacements
     gs_controlPoints.resize(controlNetMesh.numVertices(), 2);
     gs_displacements.resize(controlNetMesh.numVertices(), 2);
 
@@ -138,9 +140,9 @@ public:
         gs_displacements(i, 1) = displacement(1);
     }
 
+    // return the control points and displacements
     return std::make_tuple(gs_controlPoints, gs_displacements);
   }
-
 
 
   /// @brief Initializes the epoch
@@ -290,7 +292,7 @@ int main() {
   gsMatrix<double> gs_controlPoints;
   gsMatrix<double> gs_displacements;
   std::tie(gs_controlPoints, gs_displacements) = linear_elasticity_t::RunGismoSimulation();
-
+  
   linear_elasticity_t
       net(// Material properties
           lambda, mu, supervised_learning, gs_displacements,
@@ -389,10 +391,10 @@ int main() {
   }
 
   // GISMO SOLUTION - printing the new position of the control points
-  std::cout << "Neue CPs von Gismo:\n"
+  std::cout << "New CPs from Gismo:\n"
             << gs_controlPoints + gs_displacements << std::endl;
   // NET SOLUTION - printing the new position of the control points 
-  std::cout << "Neue CPs von IgANet:\n"
+  std::cout << "New CPs from IgANet:\n"
             << net_controlPoints + net_displacements << std::endl;
 
 // #endif
