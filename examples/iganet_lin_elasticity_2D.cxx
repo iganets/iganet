@@ -32,7 +32,6 @@ private:
   // supervised learning (true) or unsupervised learning (false)
   bool supervised_learning_ = false;
 
-
 public:
   /// @brief Constructor
   template <typename... Args>
@@ -60,8 +59,8 @@ public:
     int numCtrlPts = 4;  
 
     // initialize control points and displacements
-    gsMatrix<double> gs_controlPoints(16, 2);
-    gsMatrix<double> gs_displacements(16, 2);
+    gsMatrix<double> gs_controlPoints(numCtrlPts * numCtrlPts, 2);
+    gsMatrix<double> gs_displacements(numCtrlPts * numCtrlPts, 2);
 
     // create knot vectors
     gsKnotVector<double> knot_vector_u(0.0, 1.0, 1, degree + 1);
@@ -281,9 +280,8 @@ int main() {
   double lambda = (E * nu) / ((1 + nu) * (1 - 2 * nu));
   double mu = E / (2 * (1 + nu));
 
-  using namespace iganet::literals;
-
   using real_t = double;
+  using namespace iganet::literals;
   using optimizer_t = torch::optim::LBFGS;
   using geometry_t = iganet::S<iganet::UniformBSpline<real_t, 2, 2, 2>>;
   using variable_t = iganet::S<iganet::UniformBSpline<real_t, 2, 2, 2>>;
@@ -294,7 +292,7 @@ int main() {
   std::tie(gs_controlPoints, gs_displacements) = linear_elasticity_t::RunGismoSimulation();
   
   linear_elasticity_t
-      net(// Material properties
+      net(// simulation parameters
           lambda, mu, supervised_learning, gs_displacements,
           // Number of neurons per layer
           {100, 100},
@@ -370,8 +368,11 @@ int main() {
   // net.G().plot(net.ref().abs_diff(net.u()), net.collPts().first, json)->show();
 #endif
 
+  // PROCESSING NETWORK OUTPUT FOR SPLINEPY
+
   at::Tensor geo_as_tensor = net.G().as_tensor();
   at::Tensor displ_as_tensor = net.u().as_tensor();
+  
   // creating collection matrix for all the control points (iganet)
   gsMatrix<real_t> net_controlPoints(16, 2);
   // creating collection matrix for all the displacements (iganet)
@@ -396,8 +397,6 @@ int main() {
   // NET SOLUTION - printing the new position of the control points 
   std::cout << "New CPs from IgANet:\n"
             << net_controlPoints + net_displacements << std::endl;
-
-// #endif
 
   iganet::finalize();
   return 0;
