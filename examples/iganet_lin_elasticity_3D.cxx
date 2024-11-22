@@ -26,15 +26,23 @@ private:
   double lambda_;
   double mu_;
 
+  // gismo solution
+  gsMatrix<double> gs_displacements_;
+  
+  // supervised learning (true) or unsupervised learning (false)
+  bool supervised_learning_ = false;
+
 public:
   /// @brief Constructor
   template <typename... Args>
-  linear_elasticity(double lambda, double mu, std::vector<int64_t> &&layers,
+  linear_elasticity(double lambda, double mu, bool supervised_learning, 
+                    gsMatrix<double> gs_displacements, std::vector<int64_t> &&layers,
                     std::vector<std::vector<std::any>> &&activations, Args &&...args)
       : Base(std::forward<std::vector<int64_t>>(layers),
              std::forward<std::vector<std::vector<std::any>>>(activations),
              std::forward<Args>(args)...),
-        lambda_(lambda), mu_(mu), ref_(iganet::utils::to_array(4_i64, 4_i64, 4_i64)) {}
+        lambda_(lambda), mu_(mu), supervised_learning_(supervised_learning), 
+        gs_displacements_(std::move(gs_displacements)), ref_(iganet::utils::to_array(4_i64, 4_i64, 4_i64)) {}
 
   /// @brief Returns a constant reference to the collocation points
   auto const &collPts() const { return collPts_; }
@@ -44,6 +52,108 @@ public:
 
   /// @brief Returns a non-constant reference to the reference solution
   auto &ref() { return ref_; }
+
+  /// @brief GISMO workflow
+  static std::tuple<gsMatrix<double>, gsMatrix<double>> RunGismoSimulation() {
+    int degree = 2;       
+    int numCtrlPts = 4;
+
+    // initialize control points and displacements
+    gsMatrix<double> gs_controlPoints(numCtrlPts * numCtrlPts * numCtrlPts, 3);
+    gsMatrix<double> gs_displacements(numCtrlPts * numCtrlPts * numCtrlPts, 3);
+
+    // create knot vectors
+    gsKnotVector<double> knot_vector_u(0.0, 1.0, 1, degree+1);
+    gsKnotVector<double> knot_vector_v(0.0, 1.0, 1, degree+1);
+    gsKnotVector<double> knot_vector_w(0.0, 1.0, 1, degree+1);
+
+    // create control points
+    std::vector<double> ctrlValues = {0.0, 0.25, 0.75, 1.0};
+    gsMatrix<double> control_points(numCtrlPts * numCtrlPts * numCtrlPts, 3);
+
+    // systematic placement of control points
+    int index = 0;
+    for (int k = 0; k < numCtrlPts; ++k) {         // Z-Koordinate zuerst
+        for (int j = 0; j < numCtrlPts; ++j) {     // Y-Koordinate als nächstes
+            for (int i = 0; i < numCtrlPts; ++i) { // X-Koordinate zuletzt
+                control_points(index, 0) = ctrlValues[i];  // x-Koordinate
+                control_points(index, 1) = ctrlValues[j];  // y-Koordinate
+                control_points(index, 2) = ctrlValues[k];  // z-Koordinate
+                ++index;
+            }
+        }
+    }
+
+    // create geometry
+    gsTensorBSpline<3, double> geometry(knot_vector_u, knot_vector_v, knot_vector_w, control_points);
+
+    // create multipatch and add the geometry
+    gsMultiPatch<double> multiPatch;
+    multiPatch.addPatch(geometry);
+    gsMultiBasis<> basis(multiPatch);
+
+    // boundary conditions
+    gsBoundaryConditions<double> bcInfo;
+    bcInfo.addCondition(0, boundary::west, condition_type::dirichlet, 
+            gsConstantFunction<double>(0.0, 3), 0);
+    bcInfo.addCondition(0, boundary::west, condition_type::dirichlet, 
+            gsConstantFunction<double>(0.0, 3), 1);
+    bcInfo.addCondition(0, boundary::west, condition_type::dirichlet, 
+            gsConstantFunction<double>(0.0, 3), 2);    
+    bcInfo.addCondition(0, boundary::east, condition_type::dirichlet, 
+            gsConstantFunction<double>(2.0, 3), 0);
+    bcInfo.addCondition(0, boundary::east, condition_type::dirichlet, 
+            gsConstantFunction<double>(0.0, 3), 1);
+    bcInfo.addCondition(0, boundary::east, condition_type::dirichlet, 
+            gsConstantFunction<double>(0.0, 3), 2);
+
+    // body force (currently set to zero)
+    gsConstantFunction<double> body_force(0.,0.,0., 3);
+
+    // initialize the elasticity assembler
+    gsElasticityAssembler<double> assembler(geometry, basis, bcInfo, body_force);
+    assembler.options().setReal("YoungsModulus", 210.0);
+    assembler.options().setReal("PoissonsRatio", 0.4);
+    assembler.options().setInt("DirichletValues", dirichlet::l2Projection);
+    assembler.assemble();
+
+    // solve the system
+    gsSparseSolver<>::CGDiagonal solver;
+    gsMatrix<double> solution;
+    solver.compute(assembler.matrix());
+    solution = solver.solve(assembler.rhs());
+
+    // create a multipatch object for the solution
+    gsMultiPatch<double> solution_patch;
+    assembler.constructSolution(solution, assembler.allFixedDofs(), solution_patch);
+    
+    // creating a mesh object for the control net
+    gsMesh<double> controlNetMesh;
+    geometry.controlNet(controlNetMesh);
+
+    // create collection matrices for all the control points and displacements
+    gs_controlPoints.resize(controlNetMesh.numVertices(), 3);
+    gs_displacements.resize(controlNetMesh.numVertices(), 3);
+
+    for (int i = 0; i < controlNetMesh.numVertices(); ++i) {
+        gs_controlPoints(i, 0) = controlNetMesh.vertex(i)(0);
+        gs_controlPoints(i, 1) = controlNetMesh.vertex(i)(1);
+        gs_controlPoints(i, 2) = controlNetMesh.vertex(i)(2);
+
+        gsMatrix<double> point(3, 1);
+        point(0, 0) = gs_controlPoints(i, 0);
+        point(1, 0) = gs_controlPoints(i, 1);
+        point(2, 0) = gs_controlPoints(i, 2);
+
+        auto displacement = solution_patch.patch(0).eval(point);
+        gs_displacements(i, 0) = displacement(0);
+        gs_displacements(i, 1) = displacement(1);
+        gs_displacements(i, 2) = displacement(2);
+    }   
+
+    // return the control points and displacements
+    return std::make_tuple(gs_controlPoints, gs_displacements);
+  }
 
   /// @brief Initializes the epoch
   bool epoch(int64_t epoch) override {
@@ -77,11 +187,13 @@ public:
   torch::Tensor loss(const torch::Tensor &outputs, int64_t epoch) override {
 
     Base::u_.from_tensor(outputs);
+    torch::Tensor loss; 
 
-    // calculation of the second derivative of the displacements
-    auto hessian_coll = Base::u_.ihess(Base::G_, collPts_.first, var_knot_indices_, var_coeff_indices_, G_knot_indices_, G_coeff_indices_);
+    // calculation of the second derivative of the gs_displacements
+    auto hessian_coll = Base::u_.ihess(Base::G_, collPts_.first, var_knot_indices_, 
+          var_coeff_indices_, G_knot_indices_, G_coeff_indices_);
 
-    // partial derivatives of the displacements - each variable has 216 entries of the collPts
+    // partial derivatives of the gs_displacements - each variable has 216 entries of the collPts
     auto& ux_xx = *(hessian_coll[0][0]);
     auto& ux_xy = *(hessian_coll[0][1]);
     auto& ux_xz = *(hessian_coll[0][2]);
@@ -144,19 +256,57 @@ public:
     auto u_bdr = Base::u_.template eval<iganet::functionspace::boundary>(collPts_.second);
     auto bdr = ref_.template eval<iganet::functionspace::boundary>(collPts_.second);
 
-    // calculation of the loss function for double-sided constraint solid
-    // div_stress is compared to zero since "divergence*sigma = 0" is the governing equation
-    torch::Tensor loss = torch::mse_loss(div_stress, zeros) +
-           10e1 * torch::mse_loss(*std::get<0>(u_bdr)[0], *std::get<0>(bdr)[0]) +
-           10e1 * torch::mse_loss(*std::get<0>(u_bdr)[1], *std::get<0>(bdr)[1]) +
-           10e1 * torch::mse_loss(*std::get<0>(u_bdr)[2], *std::get<0>(bdr)[2]) +
-           10e1 * torch::mse_loss(*std::get<1>(u_bdr)[0], *std::get<1>(bdr)[0]) +
-           10e1 * torch::mse_loss(*std::get<1>(u_bdr)[1], *std::get<1>(bdr)[1]) +
-           10e1 * torch::mse_loss(*std::get<1>(u_bdr)[2], *std::get<1>(bdr)[2]);
+    // UNSUPERVISED LEARNING (default)
+    if (supervised_learning_ == false) {
+        // calculation of the loss function for double-sided constraint solid
+        // div_stress is compared to zero since "divergence*sigma = 0" is the governing equation
+        loss = torch::mse_loss(div_stress, zeros) +
+              10e1 * torch::mse_loss(*std::get<0>(u_bdr)[0], *std::get<0>(bdr)[0]) +
+              10e1 * torch::mse_loss(*std::get<0>(u_bdr)[1], *std::get<0>(bdr)[1]) +
+              10e1 * torch::mse_loss(*std::get<0>(u_bdr)[2], *std::get<0>(bdr)[2]) +
+              10e1 * torch::mse_loss(*std::get<1>(u_bdr)[0], *std::get<1>(bdr)[0]) +
+              10e1 * torch::mse_loss(*std::get<1>(u_bdr)[1], *std::get<1>(bdr)[1]) +
+              10e1 * torch::mse_loss(*std::get<1>(u_bdr)[2], *std::get<1>(bdr)[2]);
+    }
 
-    // print loss
+    // SUPERVISED LEARNING
+    else if (supervised_learning_ == true) {
+        torch::Tensor modified_outputs = outputs * 1.0;     
+        // Create net_displacements from slices of modified_outputs
+        torch::Tensor net_displacements = torch::stack({
+            modified_outputs.slice(0, 0, 64),
+            modified_outputs.slice(0, 64, 128),
+            modified_outputs.slice(0, 128, 192)
+        }, 1);
+
+        // create new tensor with requires_grad=true for training
+        auto options = torch::TensorOptions().dtype(torch::kDouble).device(torch::kCPU);
+        // dimensions of the matrix
+        int rows_gs = gs_displacements_.rows();
+        int cols_gs = gs_displacements_.cols();
+        // transforming matrix into row vector
+        std::vector<double> data_gs(rows_gs * cols_gs);
+        // writing data column-wise in matrix
+        for (int col = 0; col < cols_gs; ++col) {
+            for (int row = 0; row < rows_gs; ++row) {
+                data_gs[row * cols_gs + col] = gs_displacements_(row, col);
+            }
+        }
+
+        // creating tensor from the transformed data
+        torch::Tensor torch_gs_displacements = torch::from_blob(data_gs.data(), 
+                {rows_gs, cols_gs}, options).clone();
+
+        // superivsed learning loss
+        loss = torch::mse_loss(net_displacements, torch_gs_displacements) 
+                + torch::mse_loss(div_stress, zeros);
+    }
+
+    else {
+        throw std::runtime_error("Invalid value for supervised_learning_");
+    }
+
     std::cout << loss << std::endl;
-
     return loss;
   }
 };
@@ -170,24 +320,31 @@ int main() {
   json["res1"] = 50;
   json["res2"] = 50;
 
-  // user inputs for material properties
-  double E, nu;
-  E = 210;
-  nu = 0.4;
+  // USER INPUTS
+  double E = 210;
+  double nu = 0.4;
+  int max_epoch = 20;
+  double min_loss = 1e-8;
+  bool supervised_learning = false;
+
   // calculation of lame parameters
   double lambda = (E * nu) / ((1 + nu) * (1 - 2 * nu));
   double mu = E / (2 * (1 + nu));
 
+  using real_t = double;
   using namespace iganet::literals;
   using optimizer_t = torch::optim::LBFGS;
-  using real_t = double;
-
   using geometry_t = iganet::S<iganet::UniformBSpline<real_t, 3, 2, 2, 2>>;
   using variable_t = iganet::S<iganet::UniformBSpline<real_t, 3, 2, 2, 2>>;
+  using linear_elasticity_t = linear_elasticity<optimizer_t, geometry_t, variable_t>;
 
-  linear_elasticity<optimizer_t, geometry_t, variable_t>
-      net(// Material properties
-          lambda, mu, 
+  gsMatrix<double> gs_controlPoints;
+  gsMatrix<double> gs_displacements;
+  std::tie(gs_controlPoints, gs_displacements) = linear_elasticity_t::RunGismoSimulation();
+
+  linear_elasticity_t
+      net(// simulation parameters
+          lambda, mu, supervised_learning, gs_displacements,
           // Number of neurons per layer
           {100, 100},
           // Activation functions
@@ -249,10 +406,10 @@ int main() {
   );
 
   // Set maximum number of epochs
-  net.options().max_epoch(60);
+  net.options().max_epoch(max_epoch);
 
   // Set tolerance for the loss functions
-  net.options().min_loss(1e-8);
+  net.options().min_loss(min_loss);
 
   // Start time measurement
   auto t1 = std::chrono::high_resolution_clock::now();
@@ -276,113 +433,7 @@ int main() {
   // net.G().plot(net.ref().abs_diff(net.u()), net.collPts().first, json)->show();
 #endif
 
-#ifdef IGANET_WITH_GISMO
-  // transform network output into g+smo-compatible objects
-  auto G_gismo = net.G().space().to_gismo(); // geometry of the domain
-  auto u_gismo = net.u().space().to_gismo(); // displacement field
-
-  // setting material properties
-  real_t youngsModulus = 210.0;
-  real_t poissonsRatio = 0.4;
-
-  // creating a multi-patch object for the geometry
-  gsMultiPatch<real_t> geometry;
-  // adding the geometry as a patch
-  geometry.addPatch(G_gismo);
-  // creating a multi-basis object for the geometry
-  gsMultiBasis<> basis(geometry);
-
-  // creating boundary condition variable
-  gsBoundaryConditions<real_t> bcInfo;
-
-  // setting Dirichlet boundary conditions (west: no displacement, east: displacement of 2.0 in x-direction)
-  for (int d = 0; d < 3; d++) {
-      bcInfo.addCondition(0, boundary::west, condition_type::dirichlet, gsConstantFunction<real_t>(0.0, 3), d);
-  }
-  bcInfo.addCondition(0, boundary::east, condition_type::dirichlet, gsConstantFunction<real_t>(2.0, 3), 0);
-  bcInfo.addCondition(0, boundary::east, condition_type::dirichlet, gsConstantFunction<real_t>(0.0, 3), 1);
-  bcInfo.addCondition(0, boundary::east, condition_type::dirichlet, gsConstantFunction<real_t>(0.0, 3), 2);
-
-  // setting body force to zero for this calculation
-  gsConstantFunction<real_t> body_force(0.,0.,0., 3);
-  gsInfo << "Geometry dimension: " << geometry.parDim() << "\n";
-
-  // initializing the elasticity assembler with the material behavior 
-  gsElasticityAssembler<real_t> assembler(geometry, basis, bcInfo, body_force);
-  assembler.options().setReal("YoungsModulus", youngsModulus);
-  assembler.options().setReal("PoissonsRatio", poissonsRatio);
-  assembler.options().setInt("DirichletValues", dirichlet::l2Projection);
-
-  // assembling the system
-  assembler.assemble();
-
-  // solving the system
-  gsSparseSolver<>::CGDiagonal solver;
-  gsMatrix<real_t> solution;
-  solver.compute(assembler.matrix());
-  solution = solver.solve(assembler.rhs());
-
-  // creating a multi-patch object for the solution
-  gsMultiPatch<real_t> solution_patch;
-  // constructing the solution
-  assembler.constructSolution(solution, assembler.allFixedDofs(), solution_patch);
-  
-  // creating a mesh object for the control net
-  gsMesh<real_t> controlNetMesh;
-  // loading the control net of our geometry into the mesh object
-  geometry.patch(0).controlNet(controlNetMesh);
-
-  // create collection matrix for all the control points (gismo)
-  gsMatrix<real_t> controlPoints(64, 3);
-  // create collection matrix for all the displacements (gismo)
-  gsMatrix<real_t> displacements(64, 3);
-
-  // printing the position and displacement of the control points
-  for (int i = 0; i < controlNetMesh.numVertices(); ++i) {
-      controlPoints(i, 0) = controlNetMesh.vertex(i)(0);
-      controlPoints(i, 1) = controlNetMesh.vertex(i)(1);
-      controlPoints(i, 2) = controlNetMesh.vertex(i)(2);
-
-      gsMatrix<real_t> point(3, 1);
-      point(0, 0) = controlPoints(i, 0);
-      point(1, 0) = controlPoints(i, 1);
-      point(2, 0) = controlPoints(i, 2);
-
-      auto displacement = solution_patch.patch(0).eval(point);
-      displacements(i, 0) = displacement(0);
-      displacements(i, 1) = displacement(1);
-      displacements(i, 2) = displacement(2);
-
-      // // printing gismo control points and displacements
-      // gsInfo << "Control Point " << std::setw(2) << i 
-      //       << " Position: (" << std::setw(5) << controlPoints(i, 0)
-      //       << ", " << std::setw(5) << controlPoints(i, 1)
-      //       << ", " << std::setw(5) << controlPoints(i, 2) << ")"
-      //       << "  Displacement: (" << std::setw(12) << displacements(i, 0)
-      //       << ", " << std::setw(12) << displacements(i, 1)
-      //       << ", " << std::setw(12) << displacements(i, 2) << ")\n";
-  }
-#endif
-
-  // // final values of the solution
-  // auto final_displacement = net.u().space();
-  // std::cout << endwert << std::endl;
-
-  // auto inner_values = net.u().template eval<iganet::functionspace::interior>(net.collPts().first);
-  // auto outer_values = net.u().template eval<iganet::functionspace::boundary>(net.collPts().second);
-  // std::cout << inner_values << std::endl;
-  // std::cout << outer_values << std::endl;
-
-  // applying displacement to the geometry
-  // net.G().space().operator+=(net.u().space());
-  // std::cout << net.G().space() << std::endl;
-
-  // printing final displacement
-  // std::cout << net.u().space() << std::endl;
-  
-  // final values of the geometry
-  // std::cout << net.G().as_tensor() << std::endl;
-
+  // PROCESSING NETWORK OUTPUT FOR SPLINEPY
 
   at::Tensor geo_as_tensor = net.G().as_tensor();
   at::Tensor displ_as_tensor = net.u().as_tensor();
@@ -409,23 +460,31 @@ int main() {
       net_displacements(i, 2) = uz;
   }
 
-  // // printing net control points and displacements
-  // for (size_t i = 0; i < net_controlPoints.rows(); ++i) {
-  //     std::cout << "Control Point " << std::setw(2) << i 
-  //               << " Position: (" << std::setw(5) << net_controlPoints(i, 0)
-  //               << ", " << std::setw(5) << net_controlPoints(i, 1)
-  //               << ", " << std::setw(5) << net_controlPoints(i, 2) << ")"
-  //               << "  Displacement: (" << std::setw(12) << net_displacements(i, 0)
-  //               << ", " << std::setw(12) << net_displacements(i, 1)
-  //               << ", " << std::setw(12) << net_displacements(i, 2) << ")" << std::endl;
-  // }
-
   // GISMO SOLUTION - printing the new position of the control points
   std::cout << "Neue CPs von Gismo:\n"
-            << controlPoints + displacements << std::endl;
+            << gs_controlPoints + gs_displacements << std::endl;
   // NET SOLUTION - printing the new position of the control points 
   std::cout << "Neue CPs von IgANet:\n"
             << net_controlPoints + net_displacements << std::endl;
+
+  // // final values of the solution
+  // auto final_displacement = net.u().space();
+  // std::cout << endwert << std::endl;
+
+  // auto inner_values = net.u().template eval<iganet::functionspace::interior>(net.collPts().first);
+  // auto outer_values = net.u().template eval<iganet::functionspace::boundary>(net.collPts().second);
+  // std::cout << inner_values << std::endl;
+  // std::cout << outer_values << std::endl;
+
+  // applying displacement to the geometry
+  // net.G().space().operator+=(net.u().space());
+  // std::cout << net.G().space() << std::endl;
+
+  // printing final displacement
+  // std::cout << net.u().space() << std::endl;
+  
+  // final values of the geometry
+  // std::cout << net.G().as_tensor() << std::endl;
 
   iganet::finalize();
   return 0;
