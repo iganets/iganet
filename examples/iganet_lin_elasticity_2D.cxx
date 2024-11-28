@@ -42,7 +42,7 @@ public:
              std::forward<std::vector<std::vector<std::any>>>(activations),
              std::forward<Args>(args)...),
         lambda_(lambda), mu_(mu), supervised_learning_(supervised_learning), 
-        gs_displacements_(std::move(gs_displacements)), ref_(iganet::utils::to_array(4_i64, 4_i64)) {}
+        gs_displacements_(std::move(gs_displacements)), ref_(iganet::utils::to_array(8_i64, 8_i64)) {}
 
   /// @brief Returns a constant reference to the collocation points
   auto const &collPts() const { return collPts_; }
@@ -54,26 +54,27 @@ public:
   auto &ref() { return ref_; }
 
   /// @brief GISMO workflow
-  static std::tuple<gsMatrix<double>, gsMatrix<double>> RunGismoSimulation() {
-    int degree = 2;
-    int numCtrlPts = 4;  
+  static std::tuple<gsMatrix<double>, gsMatrix<double>> RunGismoSimulation(int64_t nrCtrlPts, int degree) {
 
     // initialize control points and displacements
-    gsMatrix<double> gs_controlPoints(numCtrlPts * numCtrlPts, 2);
-    gsMatrix<double> gs_displacements(numCtrlPts * numCtrlPts, 2);
+    gsMatrix<double> gs_controlPoints(nrCtrlPts * nrCtrlPts, 2);
+    gsMatrix<double> gs_displacements(nrCtrlPts * nrCtrlPts, 2);
 
     // create knot vectors
-    gsKnotVector<double> knot_vector_u(0.0, 1.0, 1, degree + 1);
-    gsKnotVector<double> knot_vector_v(0.0, 1.0, 1, degree + 1);
+    gsKnotVector<double> knot_vector_u(0.0, 1.0, nrCtrlPts-degree-1, degree+1);
+    gsKnotVector<double> knot_vector_v(0.0, 1.0, nrCtrlPts-degree-1, degree+1);
 
     // create control points
-    std::vector<double> ctrlValues = {0.0, 0.25, 0.75, 1.0};
-    gsMatrix<double> control_points(numCtrlPts * numCtrlPts, 2);
+    std::vector<double> ctrlValues = {0.0};
+    for(int i = 1; i < nrCtrlPts; ++i) {
+        ctrlValues.push_back(i * 1.0 / (nrCtrlPts - 1));
+    }
+    gsMatrix<double> control_points(nrCtrlPts * nrCtrlPts, 2);
 
     // systematic placement of control points
     int index = 0;
-    for (int j = 0; j < numCtrlPts; ++j) {
-        for (int i = 0; i < numCtrlPts; ++i) {
+    for (int j = 0; j < nrCtrlPts; ++j) {
+        for (int i = 0; i < nrCtrlPts; ++i) {
             control_points(index, 0) = ctrlValues[i];
             control_points(index, 1) = ctrlValues[j];
             ++index;
@@ -95,7 +96,7 @@ public:
     bcInfo.addCondition(0, boundary::west, condition_type::dirichlet, 
             gsConstantFunction<double>(0.0, 2), 1);
     bcInfo.addCondition(0, boundary::east, condition_type::dirichlet, 
-            gsConstantFunction<double>(1.0, 2), 0);
+            gsConstantFunction<double>(2.0, 2), 0);
     bcInfo.addCondition(0, boundary::east, condition_type::dirichlet, 
             gsConstantFunction<double>(0.0, 2), 1);
 
@@ -125,12 +126,12 @@ public:
     // create collection matrices for all the control points and displacements
     gs_controlPoints.resize(controlNetMesh.numVertices(), 2);
     gs_displacements.resize(controlNetMesh.numVertices(), 2);
+    gsMatrix<double> point(2, 1);
 
     for (int i = 0; i < controlNetMesh.numVertices(); ++i) {
         gs_controlPoints(i, 0) = controlNetMesh.vertex(i)(0);
         gs_controlPoints(i, 1) = controlNetMesh.vertex(i)(1);
 
-        gsMatrix<double> point(2, 1);
         point(0, 0) = gs_controlPoints(i, 0);
         point(1, 0) = gs_controlPoints(i, 1);
 
@@ -177,6 +178,8 @@ public:
 
     Base::u_.from_tensor(outputs);
     torch::Tensor loss; 
+    // number of DOFs
+    int dofs = outputs.size(0);
 
     // calculation of the second derivative of the gs_displacements
     auto hessian_coll = Base::u_.ihess(Base::G_, collPts_.first, var_knot_indices_, 
@@ -194,12 +197,12 @@ public:
     auto& uy_yy = *(hessian_coll[1][3]);
 
     // pre-allocation of the results
-    torch::Tensor results_x = torch::zeros({36});
-    torch::Tensor results_y = torch::zeros({36});
+    torch::Tensor results_x = torch::zeros({hessian_coll[0][0]->size(0)});
+    torch::Tensor results_y = torch::zeros({hessian_coll[0][0]->size(0)});
     torch::Tensor zeros = torch::stack({results_x, results_y}, /*dim=*/1);
 
     // calculation of the divergence of the stress tensor
-    for (int i = 0; i < 36; ++i) {
+    for (int i = 0; i < hessian_coll[0][0]->size(0); ++i) {
 
         // x-direction
         results_x[i] = (lambda_ + 2 * mu_) * ux_xx[i] + mu_ * ux_yy[i] + (lambda_ + mu_) * uy_xy[i];
@@ -230,8 +233,8 @@ public:
         torch::Tensor modified_outputs = outputs * 1.0;
         // Create net_displacements from slices of modified_outputs
         torch::Tensor net_displacements = torch::stack({
-            modified_outputs.slice(0, 0, 16),
-            modified_outputs.slice(0, 16, 32),
+            modified_outputs.slice(0, 0, dofs/2),
+            modified_outputs.slice(0, dofs/2, dofs),
         }, 1);
         // create new tensor with requires_grad=true for training
         auto options = torch::TensorOptions().dtype(torch::kDouble).device(torch::kCPU);
@@ -275,6 +278,8 @@ int main() {
   int max_epoch = 100;
   double min_loss = 1e-8;
   bool supervised_learning = false;
+  int64_t nrCtrlPts = 8; // in each direction
+  int degree = 2;
 
   // calculation of lame parameters
   double lambda = (E * nu) / ((1 + nu) * (1 - 2 * nu));
@@ -289,7 +294,7 @@ int main() {
 
   gsMatrix<double> gs_controlPoints;
   gsMatrix<double> gs_displacements;
-  std::tie(gs_controlPoints, gs_displacements) = linear_elasticity_t::RunGismoSimulation();
+  std::tie(gs_controlPoints, gs_displacements) = linear_elasticity_t::RunGismoSimulation(nrCtrlPts, degree);
   
   linear_elasticity_t
       net(// simulation parameters
@@ -301,9 +306,9 @@ int main() {
            {iganet::activation::sigmoid},
            {iganet::activation::none}},
           // Number of B-spline coefficients of the geometry
-          std::tuple(iganet::utils::to_array(4_i64, 4_i64)),
+          std::tuple(iganet::utils::to_array(nrCtrlPts, nrCtrlPts)),
           // Number of B-spline coefficients of the variable
-          std::tuple(iganet::utils::to_array(4_i64, 4_i64)));
+          std::tuple(iganet::utils::to_array(nrCtrlPts, nrCtrlPts)));
 
   // // imposing rhs f is not necessary, since 0
   // net.f().transform([=](const std::array<real_t, 3> xi) {
@@ -328,7 +333,7 @@ int main() {
   // BC SIDE EAST
   net.ref().boundary().template side<2>().transform<1>(
     [](const std::array<real_t, 1> &xi) {
-        return std::array<real_t, 1>{2.0};
+        return std::array<real_t, 1>{1.0};
     },
     std::array<iganet::short_t, 1>{0}
   );
@@ -374,19 +379,19 @@ int main() {
   at::Tensor displ_as_tensor = net.u().as_tensor();
   
   // creating collection matrix for all the control points (iganet)
-  gsMatrix<real_t> net_controlPoints(16, 2);
+  gsMatrix<real_t> net_controlPoints(nrCtrlPts * nrCtrlPts, 2);
   // creating collection matrix for all the displacements (iganet)
-  gsMatrix<real_t> net_displacements(16, 2);
+  gsMatrix<real_t> net_displacements(nrCtrlPts * nrCtrlPts, 2);
 
   // filling the collection matrices with the values from the tensors
-  for (int i = 0; i < 16; ++i) {
+  for (int i = 0; i < nrCtrlPts * nrCtrlPts; ++i) {
       double x = geo_as_tensor[i].item<double>();          
-      double y = geo_as_tensor[i + 16].item<double>();
+      double y = geo_as_tensor[i + nrCtrlPts * nrCtrlPts].item<double>();
       net_controlPoints(i, 0) = x;
       net_controlPoints(i, 1) = y;
 
       double ux = displ_as_tensor[i].item<double>();
-      double uy = displ_as_tensor[i + 16].item<double>();
+      double uy = displ_as_tensor[i + nrCtrlPts * nrCtrlPts].item<double>();
       net_displacements(i, 0) = ux;
       net_displacements(i, 1) = uy;
   }
