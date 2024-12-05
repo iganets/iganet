@@ -65,16 +65,31 @@ public:
     gsKnotVector<double> knot_vector_v(0.0, 1.0, nrCtrlPts-degree-1, degree+1);
     gsKnotVector<double> knot_vector_w(0.0, 1.0, nrCtrlPts-degree-1, degree+1);
 
-    // create control points
-    std::vector<double> ctrlValues = {0.0};
-    if (nrCtrlPts == 4) {
-        ctrlValues = {0.0, 0.25, 0.75, 1.0};
+    // create control points in the according distribution 
+    std::vector<double> ctrlValues{0.0};
+    if (nrCtrlPts < degree) {
+        throw std::invalid_argument("Number of control points must be at least " 
+                                    + std::to_string(degree+1) + ".");    }
+    double gap = 1.0 / (nrCtrlPts - degree);
+    ctrlValues.push_back(gap/degree);
+    double setting_number = nrCtrlPts - 4;
+    double setting_start =  1.0 / (setting_number + 1);
+    double setter = setting_start;
+    // loop to create the inner control points
+    for (int i = 1; i <= setting_number; ++i) {
+        // arrange setting_number control points around the center
+        ctrlValues.push_back(setter);
+        setter += setting_start;
     }
-    else {
-        for(int i = 1; i < nrCtrlPts; ++i) {
-            ctrlValues.push_back(i * 1.0 / (nrCtrlPts - 1));
-        } 
+    ctrlValues.push_back(1.0-gap/degree);
+    ctrlValues.push_back(1.0);
+
+    if ((setting_number >= 4) && (ctrlValues[1]*degree != ctrlValues[2])) {
+        for (int j = 2; j <= setting_number+2; ++j) {
+            ctrlValues[j] = ctrlValues[j-1] + gap;
+        }
     }
+
     gsMatrix<double> control_points(std::pow(nrCtrlPts, 3), 3);
 
     // systematic placement of control points
@@ -107,7 +122,7 @@ public:
     bcInfo.addCondition(0, boundary::west, condition_type::dirichlet, 
             gsConstantFunction<double>(0.0, 3), 2);    
     bcInfo.addCondition(0, boundary::east, condition_type::dirichlet, 
-            gsConstantFunction<double>(2.0, 3), 0);
+            gsConstantFunction<double>(1.0, 3), 0);
     bcInfo.addCondition(0, boundary::east, condition_type::dirichlet, 
             gsConstantFunction<double>(0.0, 3), 1);
     bcInfo.addCondition(0, boundary::east, condition_type::dirichlet, 
@@ -269,12 +284,12 @@ public:
         // calculation of the loss function for double-sided constraint solid
         // div_stress is compared to zero since "divergence*sigma = 0" is the governing equation
         loss = torch::mse_loss(div_stress, zeros) +
-              10e1 * torch::mse_loss(*std::get<0>(u_bdr)[0], *std::get<0>(bdr)[0]) +
-              10e1 * torch::mse_loss(*std::get<0>(u_bdr)[1], *std::get<0>(bdr)[1]) +
-              10e1 * torch::mse_loss(*std::get<0>(u_bdr)[2], *std::get<0>(bdr)[2]) +
-              10e1 * torch::mse_loss(*std::get<1>(u_bdr)[0], *std::get<1>(bdr)[0]) +
-              10e1 * torch::mse_loss(*std::get<1>(u_bdr)[1], *std::get<1>(bdr)[1]) +
-              10e1 * torch::mse_loss(*std::get<1>(u_bdr)[2], *std::get<1>(bdr)[2]);
+              100 * torch::mse_loss(*std::get<0>(u_bdr)[0], *std::get<0>(bdr)[0]) +
+              100 * torch::mse_loss(*std::get<0>(u_bdr)[1], *std::get<0>(bdr)[1]) +
+              100 * torch::mse_loss(*std::get<0>(u_bdr)[2], *std::get<0>(bdr)[2]) +
+              100 * torch::mse_loss(*std::get<1>(u_bdr)[0], *std::get<1>(bdr)[0]) +
+              100 * torch::mse_loss(*std::get<1>(u_bdr)[1], *std::get<1>(bdr)[1]) +
+              100 * torch::mse_loss(*std::get<1>(u_bdr)[2], *std::get<1>(bdr)[2]);
     }
 
     // SUPERVISED LEARNING
@@ -306,14 +321,14 @@ public:
                 {rows_gs, cols_gs}, options).clone();
 
         // superivsed learning loss
-        loss = 100 * torch::mse_loss(net_displacements, torch_gs_displacements) 
+        loss = torch::mse_loss(net_displacements, torch_gs_displacements)
                 + torch::mse_loss(div_stress, zeros);
     }
 
     else {
         throw std::runtime_error("Invalid value for supervised_learning_");
     }
-
+    std::cout << torch::mse_loss(div_stress, zeros) << std::endl;
     std::cout << loss << std::endl;
     return loss;
   }
@@ -323,19 +338,19 @@ int main() {
   iganet::init();
   iganet::verbose(std::cout);
 
-  nlohmann::json json;
-  json["res0"] = 50;
-  json["res1"] = 50;
-  json["res2"] = 50;
+//   nlohmann::json json;
+//   json["res0"] = 50;
+//   json["res1"] = 50;
+//   json["res2"] = 50;
 
   // USER INPUTS
   double E = 210;
   double nu = 0.4;
-  int max_epoch = 20;
+  int max_epoch = 80;
   double min_loss = 1e-8;
   bool supervised_learning = false;
   int64_t nrCtrlPts = 4; // in each direction
-  int degree = 2; 
+  constexpr int degree = 2; 
 
   // calculation of lame parameters
   double lambda = (E * nu) / ((1 + nu) * (1 - 2 * nu));
@@ -344,8 +359,8 @@ int main() {
   using real_t = double;
   using namespace iganet::literals;
   using optimizer_t = torch::optim::LBFGS;
-  using geometry_t = iganet::S<iganet::UniformBSpline<real_t, 3, 2, 2, 2>>;
-  using variable_t = iganet::S<iganet::UniformBSpline<real_t, 3, 2, 2, 2>>;
+  using geometry_t = iganet::S<iganet::UniformBSpline<real_t, 3, degree, degree, degree>>;
+  using variable_t = iganet::S<iganet::UniformBSpline<real_t, 3, degree, degree, degree>>;
   using linear_elasticity_t = linear_elasticity<optimizer_t, geometry_t, variable_t>;
 
   gsMatrix<double> gs_controlPoints;
@@ -356,7 +371,7 @@ int main() {
       net(// simulation parameters
           lambda, mu, supervised_learning, gs_displacements,
           // Number of neurons per layer
-          {100, 100},
+          {25, 25},
           // Activation functions
           {{iganet::activation::sigmoid},
            {iganet::activation::sigmoid},
@@ -396,7 +411,7 @@ int main() {
   // BC SIDE EAST
   net.ref().boundary().template side<2>().transform<1>(
     [](const std::array<real_t, 2> &xi) {
-        return std::array<real_t, 1>{2.0};
+        return std::array<real_t, 1>{1.0};
     },
     std::array<iganet::short_t, 1>{0}
   );
