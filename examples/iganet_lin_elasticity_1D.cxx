@@ -33,7 +33,7 @@ public:
       : Base(std::forward<std::vector<int64_t>>(layers),
              std::forward<std::vector<std::vector<std::any>>>(activations),
              std::forward<Args>(args)...),
-        E_(E), ref_(iganet::utils::to_array(4_i64)) {}
+        E_(E), ref_(iganet::utils::to_array(8_i64)) {}
 
   /// @brief Returns a constant reference to the collocation points
   auto const &collPts() const { return collPts_; }
@@ -74,16 +74,17 @@ public:
     Base::u_.from_tensor(outputs);
 
     // Compute strain
-    auto lapl = Base::u_.ilapl(Base::G_, collPts_.first);
+    auto hess = Base::u_.ihess(Base::G_, collPts_.first);
     
     int nr_of_eval_collPts = std::get<0>(collPts_.first).size(0);
 
     // Compute the derivative of the stress
-    auto der_stress = E_ * *(lapl[0]);
+    auto der_stress = E_ * *(hess[0][0]);
 
     auto u_bdr = Base::u_.eval(iganet::utils::to_tensorArray({0.0, 1.0}));
-
     auto bdr = ref_.eval(iganet::utils::to_tensorArray({0.0, 1.0}));
+    // auto u_bdr = Base::u_.template eval<iganet::functionspace::boundary>(collPts_.second);
+    // auto bdr = ref_.template eval<iganet::functionspace::boundary>(collPts_.second);
 
     torch::Tensor zeros = torch::zeros({nr_of_eval_collPts}, torch::dtype(torch::kDouble));
 
@@ -118,7 +119,7 @@ int main() {
 
   linear_elasticity<optimizer_t, geometry_t, variable_t>
       net(E, // Material properties
-          {120, 120},
+          {25, 25},
           // Activation functions
           {{iganet::activation::sigmoid},
            {iganet::activation::sigmoid},
@@ -133,18 +134,18 @@ int main() {
   //   return std::array<real_t, 1>{0.0};
   // });
 
-  // Impose boundary conditions (Dirichlet BCs)
-  net.ref().boundary().template side<1>().transform(
-      [](const std::array<real_t, 0> xi) {
-        return std::array<real_t, 1>{0.0};
-      }
-      );
+  // // Impose boundary conditions (Dirichlet BCs)
+  // net.ref().boundary().template side<1>().transform(
+  //     [](const std::array<real_t, 0> xi) {
+  //       return std::array<real_t, 1>{0.0};
+  //     }
+  //     );
   
-    // Impose boundary conditions (Dirichlet BCs)
-  net.ref().boundary().template side<2>().transform(
-      [](const std::array<real_t, 0> xi) {
-        return std::array<real_t, 1>{1.0};
-      });
+  //   // Impose boundary conditions (Dirichlet BCs)
+  // net.ref().boundary().template side<2>().transform(
+  //     [](const std::array<real_t, 0> xi) {
+  //       return std::array<real_t, 1>{1.0};
+  //     });
 
   // Set maximum number of epochs
   net.options().max_epoch(20);
@@ -173,61 +174,61 @@ int main() {
   // net.G().plot(net.ref().abs_diff(net.u()), net.collPts().first, json)->show();
 #endif
 
-#ifdef IGANET_WITH_GISMO
-   // transform network output into g+smo-compatible objects
-  auto G_gismo = net.G().space().to_gismo(); // geometry of the domain
-  auto u_gismo = net.u().space().to_gismo(); // displacement field
+// #ifdef IGANET_WITH_GISMO
+//    // transform network output into g+smo-compatible objects
+//   auto G_gismo = net.G().space().to_gismo(); // geometry of the domain
+//   auto u_gismo = net.u().space().to_gismo(); // displacement field
 
-  // setting material properties
-  real_t youngsModulus = 210.0;
+//   // setting material properties
+//   real_t youngsModulus = 210.0;
 
-  // creating a multi-patch object for the geometry
-  gsMultiPatch<real_t> geometry;
-  // adding the geometry as a patch
-  geometry.addPatch(G_gismo);
-  // creating a multi-basis object for the geometry
-  gsMultiBasis<> basis(geometry);
+//   // creating a multi-patch object for the geometry
+//   gsMultiPatch<real_t> geometry;
+//   // adding the geometry as a patch
+//   geometry.addPatch(G_gismo);
+//   // creating a multi-basis object for the geometry
+//   gsMultiBasis<> basis(geometry);
 
-  // creating boundary condition variable
-  gsBoundaryConditions<real_t> bcInfo;
+//   // creating boundary condition variable
+//   gsBoundaryConditions<real_t> bcInfo;
 
-  // setting dirichlet boundary conditions
-  bcInfo.addCondition(0, boundary::left, condition_type::dirichlet, gsConstantFunction<real_t> (0.0, 1));
-  bcInfo.addCondition(0, boundary::right, condition_type::dirichlet, gsConstantFunction<real_t> (1.0, 1));
+//   // setting dirichlet boundary conditions
+//   bcInfo.addCondition(0, boundary::left, condition_type::dirichlet, gsConstantFunction<real_t> (0.0, 1));
+//   bcInfo.addCondition(0, boundary::right, condition_type::dirichlet, gsConstantFunction<real_t> (1.0, 1));
 
-  // setting body force to zero for this calculation
-  gsConstantFunction<real_t> body_force(0., 1);
-  gsInfo << "Geometry dimension: " << geometry.parDim() << "\n";
+//   // setting body force to zero for this calculation
+//   gsConstantFunction<real_t> body_force(0., 1);
+//   gsInfo << "Geometry dimension: " << geometry.parDim() << "\n";
 
-  // initializing the elasticity assembler with the material behavior 
-  gsElasticityAssembler<real_t> assembler(geometry, basis, bcInfo, body_force);
-  assembler.options().setReal("YoungsModulus", youngsModulus);
-  assembler.options().setInt("DirichletValues", dirichlet::l2Projection);
+//   // initializing the elasticity assembler with the material behavior 
+//   gsElasticityAssembler<real_t> assembler(geometry, basis, bcInfo, body_force);
+//   assembler.options().setReal("YoungsModulus", youngsModulus);
+//   assembler.options().setInt("DirichletValues", dirichlet::l2Projection);
 
-  // assembling the system
-  assembler.assemble();
+//   // assembling the system
+//   assembler.assemble();
 
-  // solving the system
-  gsSparseSolver<>::CGDiagonal solver;
-  gsMatrix<real_t> solution;
-  solver.compute(assembler.matrix());
-  solution = solver.solve(assembler.rhs());
+//   // solving the system
+//   gsSparseSolver<>::CGDiagonal solver;
+//   gsMatrix<real_t> solution;
+//   solver.compute(assembler.matrix());
+//   solution = solver.solve(assembler.rhs());
 
-  // creating a multi-patch object for the solution
-  gsMultiPatch<real_t> solution_patch;
-  // constructing the solution
-  assembler.constructSolution(solution, assembler.allFixedDofs(), solution_patch);
+//   // creating a multi-patch object for the solution
+//   gsMultiPatch<real_t> solution_patch;
+//   // constructing the solution
+//   assembler.constructSolution(solution, assembler.allFixedDofs(), solution_patch);
   
-  // creating a mesh object for the control net
-  gsMesh<real_t> controlNetMesh;
-  // loading the control net of our geometry into the mesh object
-  geometry.patch(0).controlNet(controlNetMesh);
+//   // creating a mesh object for the control net
+//   gsMesh<real_t> controlNetMesh;
+//   // loading the control net of our geometry into the mesh object
+//   geometry.patch(0).controlNet(controlNetMesh);
 
-#endif
+// #endif
   
-
+  std::cout << net.u() << std::endl;
   net.G().space().operator+=(net.u().space());
-  // std::cout << net.G() << std::endl;
+  std::cout << net.G() << std::endl;
 
   iganet::finalize();
   return 0;
