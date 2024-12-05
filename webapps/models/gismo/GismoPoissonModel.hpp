@@ -206,11 +206,13 @@ public:
 
     // Lambda expression to add a JSON entry
     auto add_json = [&json, &uiid]<typename Type, typename Value>(
-                        const std::string &name, const std::string &description,
+                                                                  const std::string &name, const std::string &label, const std::string &group, const std::string &description,
                         const Type &type, const Value &value) {
       nlohmann::json item;
       item["name"] = name;
+      item["label"] = label;
       item["description"] = description;
+      item["group"] = group;
       item["type"] = type;
       item["value"] = value;
       item["default"] = value;
@@ -221,12 +223,14 @@ public:
     // Lambda expression to add a JSON entry with different default type
     auto add_json_default =
         [&json, &uiid]<typename Type, typename Value, typename DefaultValue>(
-            const std::string &name, const std::string &description,
+                                                                             const std::string &name, const std::string &label, const std::string &group, const std::string &description,
             const Type &type, const Value &value,
             const DefaultValue &defaultValue) {
           nlohmann::json item;
           item["name"] = name;
+          item["label"] = label;
           item["description"] = description;
+          item["group"] = group;
           item["type"] = type;
           item["value"] = value;
           item["default"] = defaultValue;
@@ -234,22 +238,22 @@ public:
           json.push_back(item);
         };
 
-    add_json("rhs", "Right-hand side function", "text", rhsFunc_.expression(0));
-    add_json("rhs_parametric",
+    add_json("rhs", "Rhs function", "rhs", "Right-hand side function", "text", rhsFunc_.expression(0));
+    add_json("rhs_parametric", "Parametric", "rhs",
              "Right-hand side function defined in parametric domain", "bool",
              rhsFuncParametric_);
 
     for (const auto &[side, str] :
          utils::zip(GismoBoundarySides<d>, GismoBoundarySideStrings<d>)) {
-      add_json("bc["s + str + "]"s,
+      add_json("bc["s + str + "]"s, "Value", str,
                "Boundary value at the "s + str + " boundary"s, "text",
                bcFunc_[side - 1].expression(0));
-      add_json("bc_parametric["s + str + "]",
+      add_json("bc_parametric["s + str + "]", "Parametric", str,
                "Boundary value at the "s + str +
                    " boundary defined in parametric domain"s,
                "bool", bcFuncParametric_[side - 1]);
       add_json_default(
-          "bc_type["s + str + "]",
+                       "bc_type["s + str + "]", "Type", str,
           "Type of boundary condition at the "s + str + " boundary"s, "select",
           R"([ "Dirichlet", "Neumann" ])"_json, "Dirichlet");
     }
