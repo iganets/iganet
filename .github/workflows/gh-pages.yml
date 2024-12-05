@@ -41,6 +41,8 @@ jobs:
         run: >
           cmake -B ./build
           -DIGANET_BUILD_DOCS=ON
+          -DIGANET_BUILD_EXAMPLES=OFF
+          -DIGANET_BUILD_PCH=OFF
           -DTorch_DIR=$HOME/libtorch/share/cmake/Torch
           -S ${{ github.workspace }}
           

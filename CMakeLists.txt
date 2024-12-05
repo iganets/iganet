@@ -318,6 +318,13 @@ include_directories(${PROJECT_SOURCE_DIR}/include)
 add_subdirectory(${PROJECT_SOURCE_DIR}/include)
 
 ########################################################################
+# Add documentation (if enabled)
+########################################################################
+if (IGANET_BUILD_DOCS)
+  add_subdirectory(${PROJECT_SOURCE_DIR}/docs)
+endif()
+
+########################################################################
 # Add examples (if enabled)
 ########################################################################
 if (IGANET_BUILD_EXAMPLES)
