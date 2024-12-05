@@ -1238,7 +1238,7 @@ public:
   }
 
   /// @brief Returns the total number of parameters of the IgANet object
-  inline const std::size_t nparameters() const noexcept {
+  inline std::size_t nparameters() const noexcept {
     std::size_t result = 0;
     for (const auto &param : this->parameters()) {
       result += param.numel();
