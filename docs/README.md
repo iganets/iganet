@@ -28,6 +28,8 @@ The library is licenced under the [Mozilla Public License Version 2.0](https://w
 
 ## Mathematical notation
 
+IgANets adopts the following mathematical symbols and notation conventions.
+
 ### B-Spline basis functions
 
 - \f$ \xi_d \f$ is the value of the parametric coordinate in the \f$ d \f$-th parametric dimension
