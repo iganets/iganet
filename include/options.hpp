@@ -111,7 +111,8 @@ public:
                                                        : torch::kCPU))) {}
 
   /// Constructor from torch::TensorOptions
-  explicit Options(torch::TensorOptions &&options) : options_(options.dtype(::iganet::dtype<real_t>())) {}
+  explicit Options(torch::TensorOptions &&options)
+      : options_(options.dtype(::iganet::dtype<real_t>())) {}
 
   /// @brief Implicit conversion operator
   operator torch::TensorOptions() const { return options_; }
