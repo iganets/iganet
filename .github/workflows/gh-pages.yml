@@ -18,7 +18,7 @@ jobs:
         run: |
           sudo apt-get update
           sudo apt-get install -y doxygen sphinx texlive-bibtex-extra
-        
+
       - name: Set up Python
         uses: actions/setup-python@v2
         with:
@@ -45,7 +45,7 @@ jobs:
           -DIGANET_BUILD_PCH=OFF
           -DTorch_DIR=$HOME/libtorch/share/cmake/Torch
           -S ${{ github.workspace }}
-          
+
       - name: Generate Documentation
         run: cmake --build ./build
 
