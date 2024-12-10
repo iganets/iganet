@@ -25,13 +25,6 @@ class Poisson2dModel : public Model<T>,
                        public ModelSerialize,
                        public ModelXML {
 
-private:
-  /// @brief Global offset vector
-  torch::Tensor offset;
-
-  /// @brief Global rotation vector
-  torch::Tensor rotation;
-
 public:
   /// @brief Default constructor
   Poisson2dModel() = default;
@@ -58,20 +51,21 @@ public:
   nlohmann::json getParameters() const override { return R"([])"_json; }
 
   /// @brief Serializes the model to JSON
-  nlohmann::json to_json(const std::string &component,
+  nlohmann::json to_json(const std::string &patch, const std::string &component,
                          const std::string &attribute) const override {
     return R"({ "reason" : "Not implemented yet" })"_json;
   }
 
   /// @brief Updates the attrbutes of the model
-  nlohmann::json updateAttribute(const std::string &component,
+  nlohmann::json updateAttribute(const std::string &patch,
+                                 const std::string &component,
                                  const std::string &attribute,
                                  const nlohmann::json &json) override {
     return R"({ "reason" : "Not implemented yet" })"_json;
   }
 
   /// @brief Evaluates the model
-  nlohmann::json eval(const std::string &component,
+  nlohmann::json eval(const std::string &patch, const std::string &component,
                       const nlohmann::json &json) const override {
     return R"({ "reason" : "Not implemented yet" })"_json;
   }
