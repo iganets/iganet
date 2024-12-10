@@ -38,7 +38,7 @@
 #include <torch/csrc/api/include/torch/types.h>
 #include <torch/torch.h>
 
-#include <c10/core/CachingDeviceAllocator.h>
+//#include <c10/core/CachingDeviceAllocator.h>
 
 #ifdef __CUDACC__
 #include <c10/cuda/CUDACachingAllocator.h>
@@ -204,7 +204,10 @@ inline std::string memory_summary(c10::DeviceIndex device =
            prefixes[n];
   };
 
+#if TORCH_VERSION_MAJOR > 2 || (TORCH_VERSION_MAJOR == 2 && TORCH_VERSION_MINOR > 4)
   using namespace c10::CachingDeviceAllocator;
+#endif
+  
 #ifdef __CUDACC__
   using namespace c10::cuda::CUDACachingAllocator;
 #elif __HIPCC__
