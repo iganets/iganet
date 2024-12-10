@@ -469,7 +469,7 @@ int main(int argc, char const *argv[]) {
 
                                  else if (tokens.size() == 3) {
                                    //
-                                   // request: get/<session-id>/<model-instance>
+                                   // request: get/<session-id>/<instance>
                                    //
 
                                    // Get session
@@ -481,7 +481,8 @@ int main(int argc, char const *argv[]) {
                                        session->getModel(stoi(tokens[2]));
 
                                    // Serialize model to JSON
-                                   response["data"] = model->to_json("", "");
+                                   response["data"] =
+                                       model->to_json("", "", "");
                                    response["data"]["model"] =
                                        model->getModel();
                                    ws->send(response.dump(), uWS::OpCode::TEXT,
@@ -491,12 +492,7 @@ int main(int argc, char const *argv[]) {
                                  else if (tokens.size() == 4) {
                                    //
                                    // request:
-                                   // get/<session-id>/<model-instance>/<model-component>
-                                   //
-                                   // or
-                                   //
-                                   // request:
-                                   // get/<session-id>/<model-instance>/<attribute>
+                                   // get/<session-id>/<instance>/<patch>
                                    //
 
                                    // Get session
@@ -507,9 +503,11 @@ int main(int argc, char const *argv[]) {
                                    auto model =
                                        session->getModel(stoi(tokens[2]));
 
-                                   // Serialize model component to JSON
+                                   // Serialize model patch to JSON
                                    response["data"] =
-                                       model->to_json(tokens[3], "");
+                                       model->to_json(tokens[3], "", "");
+                                   response["data"]["model"] =
+                                       model->getModel();
                                    ws->send(response.dump(), uWS::OpCode::TEXT,
                                             true);
                                  }
@@ -517,7 +515,29 @@ int main(int argc, char const *argv[]) {
                                  else if (tokens.size() == 5) {
                                    //
                                    // request:
-                                   // get/<session-id>/<model-instance>/<model-component>/<attribute>
+                                   // get/<session-id>/<instance>/<patch>/<component>
+                                   //
+
+                                   // Get session
+                                   auto session =
+                                       ws->getUserData()->getSession(tokens[1]);
+
+                                   // Get model
+                                   auto model =
+                                       session->getModel(stoi(tokens[2]));
+
+                                   // Serialize model component or attribute to
+                                   // JSON
+                                   response["data"] =
+                                       model->to_json(tokens[3], tokens[4], "");
+                                   ws->send(response.dump(), uWS::OpCode::TEXT,
+                                            true);
+                                 }
+
+                                 else if (tokens.size() == 6) {
+                                   //
+                                   // request:
+                                   // get/<session-id>/<instance>/<patch>/<component>/<attribute>
                                    //
 
                                    // Get session
@@ -530,8 +550,8 @@ int main(int argc, char const *argv[]) {
 
                                    // Serialize attribute of model component to
                                    // JSON
-                                   response["data"] =
-                                       model->to_json(tokens[3], tokens[4]);
+                                   response["data"] = model->to_json(
+                                       tokens[3], tokens[4], tokens[5]);
                                    ws->send(response.dump(), uWS::OpCode::TEXT,
                                             true);
                                  }
@@ -547,12 +567,13 @@ int main(int argc, char const *argv[]) {
                                      "Invalid GET request. Valid GET requests "
                                      "are "
                                      "\"get\", \"get/<session-id>\", "
-                                     "\"get/<session-id>/<model-instance>\", "
-                                     "and "
-                                     "\"get/<session-id>/<model-instance>/"
-                                     "<model-component>\", and "
-                                     "\"get/<session-id>/<model-instance>/"
-                                     "<model-component>/<attribute>\"";
+                                     "\"get/<session-id>/<instance>\", "
+                                     "\"get/<session-id>/<instance>/"
+                                     "<patch>\", "
+                                     "\"get/<session-id>/<instance>/"
+                                     "<patch>/<component>\", and "
+                                     "\"get/<session-id>/<instance>/"
+                                     "<patch>/<component>/<attribute>\"";
                                  ws->send(response.dump(), uWS::OpCode::TEXT,
                                           true);
                                }
@@ -566,10 +587,10 @@ int main(int argc, char const *argv[]) {
 
                                try {
 
-                                 if (tokens.size() == 4) {
+                                 if (tokens.size() == 5) {
                                    //
                                    // request:
-                                   // put/<session-id>/<model-instance>/<attribute>
+                                   // put/<session-id>/<instance>/<patch>/<attribute>
                                    //
 
                                    // Get session
@@ -582,7 +603,7 @@ int main(int argc, char const *argv[]) {
 
                                    // Update model attribute
                                    response["data"] = model->updateAttribute(
-                                       "", tokens[3], request);
+                                       tokens[3], "", tokens[4], request);
                                    ws->send(response.dump(), uWS::OpCode::TEXT,
                                             true);
 
@@ -591,17 +612,18 @@ int main(int argc, char const *argv[]) {
                                    broadcast["id"] = session->getUUID();
                                    broadcast["request"] = "update/instance";
                                    broadcast["data"]["id"] = stoi(tokens[2]);
+                                   broadcast["data"]["patch"] = tokens[3];
                                    broadcast["data"]["component"] = "";
-                                   broadcast["data"]["attribute"] = tokens[3];
+                                   broadcast["data"]["attribute"] = tokens[4];
                                    ws->publish(session->getUUID(),
                                                broadcast.dump(),
                                                uWS::OpCode::TEXT);
                                  }
 
-                                 else if (tokens.size() == 5) {
+                                 else if (tokens.size() == 6) {
                                    //
                                    // request:
-                                   // put/<session-id>/<model-instance>/<model-component>/<attribute>
+                                   // put/<session-id>/<instance>/<patch>/<component>/<attribute>
                                    //
 
                                    // Get session
@@ -614,7 +636,8 @@ int main(int argc, char const *argv[]) {
 
                                    // Update model attribute
                                    response["data"] = model->updateAttribute(
-                                       tokens[3], tokens[4], request);
+                                       tokens[3], tokens[4], tokens[5],
+                                       request);
                                    ws->send(response.dump(), uWS::OpCode::TEXT,
                                             true);
 
@@ -623,8 +646,9 @@ int main(int argc, char const *argv[]) {
                                    broadcast["id"] = session->getUUID();
                                    broadcast["request"] = "update/instance";
                                    broadcast["data"]["id"] = stoi(tokens[2]);
-                                   broadcast["data"]["component"] = tokens[3];
-                                   broadcast["data"]["attribute"] = tokens[4];
+                                   broadcast["data"]["patch"] = tokens[3];
+                                   broadcast["data"]["component"] = tokens[4];
+                                   broadcast["data"]["attribute"] = tokens[5];
                                    ws->publish(session->getUUID(),
                                                broadcast.dump(),
                                                uWS::OpCode::TEXT);
@@ -640,10 +664,10 @@ int main(int argc, char const *argv[]) {
                                  response["reason"] =
                                      "Invalid PUT request. Valid PUT requests "
                                      "are "
-                                     "\"put/<session-id>/<model-instance>/"
-                                     "<attribute>\", and "
-                                     "\"put/<session-id>/<model-instance>/"
-                                     "<model-component>/<attribute>\"";
+                                     "\"put/<session-id>/<instance>/"
+                                     "<patch>/<attribute>\", and "
+                                     "\"put/<session-id>/<instance>/"
+                                     "<patch>/<component>/<attribute>\"";
                                  ws->send(response.dump(), uWS::OpCode::TEXT,
                                           true);
                                }
@@ -784,7 +808,7 @@ int main(int argc, char const *argv[]) {
                                  else if (tokens.size() == 3) {
                                    //
                                    // request:
-                                   // remove/<session-id>/<model-instance>
+                                   // remove/<session-id>/<instance>
                                    //
 
                                    // Get session
@@ -819,7 +843,7 @@ int main(int argc, char const *argv[]) {
                                      "requests "
                                      "are "
                                      "\"remove/<session-id>\" and "
-                                     "\"remove/<session-id>/<model-instance>\"";
+                                     "\"remove/<session-id>/<instance>\"";
                                  ws->send(response.dump(), uWS::OpCode::TEXT,
                                           true);
                                }
@@ -934,10 +958,10 @@ int main(int argc, char const *argv[]) {
 
                                try {
 
-                                 if (tokens.size() == 4) {
+                                 if (tokens.size() == 5) {
                                    //
                                    // request:
-                                   // eval/<session-id>/<model-instance>/<model-component>
+                                   // eval/<session-id>/<instance>/<patch>/<component>
                                    //
 
                                    // Get session
@@ -952,7 +976,7 @@ int main(int argc, char const *argv[]) {
                                    if (auto m = std::dynamic_pointer_cast<
                                            iganet::ModelEval>(model))
                                      response["data"] =
-                                         m->eval(tokens[3], request);
+                                         m->eval(tokens[3], tokens[4], request);
                                    else {
                                      response["status"] = iganet::webapp::
                                          status::invalidEvalRequest;
@@ -960,8 +984,8 @@ int main(int argc, char const *argv[]) {
                                          "Invalid EVAL request. Valid EVAL "
                                          "requests "
                                          "are "
-                                         "\"eval/<session-id>/<model-instance>/"
-                                         "<model-component>\"";
+                                         "\"eval/<session-id>/<instance>/"
+                                         "<component>\"";
                                    }
                                    ws->send(response.dump(), uWS::OpCode::TEXT,
                                             true);
@@ -977,8 +1001,8 @@ int main(int argc, char const *argv[]) {
                                  response["reason"] =
                                      "Invalid EVAL request. Valid EVAL "
                                      "requests are "
-                                     "\"eval/<session-id>/<model-instance>/"
-                                     "<model-component>\"";
+                                     "\"eval/<session-id>/<instance>/"
+                                     "<patch>/<component>\"";
                                  ws->send(response.dump(), uWS::OpCode::TEXT,
                                           true);
                                }
@@ -1103,7 +1127,7 @@ int main(int argc, char const *argv[]) {
                                  else if (tokens.size() == 3) {
                                    //
                                    // request:
-                                   // save/<session-id>/<model-instance>
+                                   // save/<session-id>/<instance>
                                    //
 
                                    // Get session
@@ -1127,7 +1151,7 @@ int main(int argc, char const *argv[]) {
                                          "are "
                                          "\"save/<session-id>\" and "
                                          "\"save/<session-id>/"
-                                         "<model-instance>\"";
+                                         "<instance>\"";
                                    }
                                    ws->send(response.dump(), uWS::OpCode::TEXT,
                                             true);
@@ -1144,7 +1168,7 @@ int main(int argc, char const *argv[]) {
                                      "Invalid SAVE request. Valid SAVE "
                                      "requests are "
                                      "\"save/<session-id>\" and "
-                                     "\"save/<session-id>/<model-instance>\"";
+                                     "\"save/<session-id>/<instance>\"";
                                  ws->send(response.dump(), uWS::OpCode::TEXT,
                                           true);
                                }
@@ -1182,10 +1206,10 @@ int main(int argc, char const *argv[]) {
                                            "requests are "
                                            "\"importxml/<session-id>\", "
                                            "\"importxml/<session-id>/"
-                                           "<model-instance>\" and "
+                                           "<instance>\" and "
                                            "\"importxml/<session-id>/"
-                                           "<model-instance>/"
-                                           "<model-component>\"";
+                                           "<instance>/"
+                                           "<component>\"";
                                        ws->send(response.dump(),
                                                 uWS::OpCode::TEXT, true);
                                        break;
@@ -1213,7 +1237,7 @@ int main(int argc, char const *argv[]) {
                                  else if (tokens.size() == 3) {
                                    //
                                    // request:
-                                   // importxml/<session-id>/<model-instance>
+                                   // importxml/<session-id>/<instance>
                                    //
 
                                    // Get session
@@ -1237,11 +1261,11 @@ int main(int argc, char const *argv[]) {
                                          "requests are "
                                          "\"importxml/<session-id>\", "
                                          "\"importxml/<session-id>/"
-                                         "<model-instance>\" "
+                                         "<instance>\" "
                                          "and "
                                          "\"importxml/<session-id>/"
-                                         "<model-instance>/"
-                                         "<model-component>\"";
+                                         "<instance>/"
+                                         "<component>\"";
                                    }
                                    ws->send(response.dump(), uWS::OpCode::TEXT,
                                             true);
@@ -1259,7 +1283,7 @@ int main(int argc, char const *argv[]) {
                                  else if (tokens.size() == 4) {
                                    //
                                    // request:
-                                   // importxml/<session-id>/<model-instance>/<model-component>
+                                   // importxml/<session-id>/<instance>/<component>
                                    //
 
                                    // Get session
@@ -1284,11 +1308,11 @@ int main(int argc, char const *argv[]) {
                                          "requests are "
                                          "\"importxml/<session-id>\", "
                                          "\"importxml/<session-id>/"
-                                         "<model-instance>\" "
+                                         "<instance>\" "
                                          "and "
                                          "\"importxml/<session-id>/"
-                                         "<model-instance>/"
-                                         "<model-component>\"";
+                                         "<instance>/"
+                                         "<component>\"";
                                    }
                                    ws->send(response.dump(), uWS::OpCode::TEXT,
                                             true);
@@ -1316,10 +1340,10 @@ int main(int argc, char const *argv[]) {
                                      "IMPORTXML "
                                      "requests are \"importxml/<session-id>\", "
                                      "\"importxml/<session-id>/"
-                                     "<model-instance>\" and "
+                                     "<instance>\" and "
                                      "\"importxml/<session-id>/"
-                                     "<model-instance>/"
-                                     "<model-component>\"";
+                                     "<instance>/"
+                                     "<component>\"";
                                  ws->send(response.dump(), uWS::OpCode::TEXT,
                                           true);
                                }
@@ -1366,7 +1390,7 @@ int main(int argc, char const *argv[]) {
                                  else if (tokens.size() == 3) {
                                    //
                                    // request:
-                                   // exportxml/<session-id>/<model-instance>
+                                   // exportxml/<session-id>/<instance>
                                    //
 
                                    // Get session
@@ -1393,7 +1417,7 @@ int main(int argc, char const *argv[]) {
                                  else if (tokens.size() == 4) {
                                    //
                                    // request:
-                                   // exportxml/<session-id>/<model-instance>/<model-component>
+                                   // exportxml/<session-id>/<instance>/<component>
                                    //
 
                                    // Get session
@@ -1430,11 +1454,11 @@ int main(int argc, char const *argv[]) {
                                      "EXPORTXML "
                                      "requests are \"exportxml/<session-id>\", "
                                      "\"exportxml/<session-id>/"
-                                     "<model-instance>\" and "
+                                     "<instance>\" and "
                                      "and "
                                      "\"exportxml/<session-id>/"
-                                     "<model-instance>/"
-                                     "<model-component>\"";
+                                     "<instance>/"
+                                     "<component>\"";
                                  ws->send(response.dump(), uWS::OpCode::TEXT,
                                           true);
                                }
@@ -1451,7 +1475,7 @@ int main(int argc, char const *argv[]) {
                                  if (tokens.size() == 3) {
                                    //
                                    // request:
-                                   // refine/<session-id>/<model-instance>
+                                   // refine/<session-id>/<instance>
                                    //
 
                                    // Get session
@@ -1473,7 +1497,7 @@ int main(int argc, char const *argv[]) {
                                          "Invalid REFINE request. Valid REFINE "
                                          "requests are "
                                          "\"refine/<session-id>/"
-                                         "<model-instance>\"";
+                                         "<instance>\"";
                                    }
                                    ws->send(response.dump(), uWS::OpCode::TEXT,
                                             true);
@@ -1499,7 +1523,7 @@ int main(int argc, char const *argv[]) {
                                      "Invalid REFINE request. Valid REFINE "
                                      "requests "
                                      "are "
-                                     "\"refine/<session-id>/<model-instance>\"";
+                                     "\"refine/<session-id>/<instance>\"";
                                  ws->send(response.dump(), uWS::OpCode::TEXT,
                                           true);
                                }
@@ -1516,7 +1540,7 @@ int main(int argc, char const *argv[]) {
                                  if (tokens.size() == 3) {
                                    //
                                    // request:
-                                   // elevate/<session-id>/<model-instance>
+                                   // elevate/<session-id>/<instance>
                                    //
 
                                    // Get session
@@ -1539,7 +1563,7 @@ int main(int argc, char const *argv[]) {
                                          "ELEVATE "
                                          "requests are "
                                          "\"elevate/<session-id>/"
-                                         "<model-instance>\"";
+                                         "<instance>\"";
                                    }
                                    ws->send(response.dump(), uWS::OpCode::TEXT,
                                             true);
@@ -1567,7 +1591,7 @@ int main(int argc, char const *argv[]) {
                                      "requests "
                                      "are "
                                      "\"elevate/<session-id>/"
-                                     "<model-instance>\"";
+                                     "<instance>\"";
                                  ws->send(response.dump(), uWS::OpCode::TEXT,
                                           true);
                                }
@@ -1584,7 +1608,7 @@ int main(int argc, char const *argv[]) {
                                  if (tokens.size() == 3) {
                                    //
                                    // request:
-                                   // increase/<session-id>/<model-instance>
+                                   // increase/<session-id>/<instance>
                                    //
 
                                    // Get session
@@ -1607,7 +1631,7 @@ int main(int argc, char const *argv[]) {
                                          "INCREASE "
                                          "requests are "
                                          "\"increase/<session-id>/"
-                                         "<model-instance>\"";
+                                         "<instance>\"";
                                    }
                                    ws->send(response.dump(), uWS::OpCode::TEXT,
                                             true);
@@ -1635,7 +1659,7 @@ int main(int argc, char const *argv[]) {
                                      "requests "
                                      "are "
                                      "\"increase/<session-id>/"
-                                     "<model-instance>\"";
+                                     "<instance>\"";
                                  ws->send(response.dump(), uWS::OpCode::TEXT,
                                           true);
                                }
@@ -1652,7 +1676,7 @@ int main(int argc, char const *argv[]) {
                                  if (tokens.size() == 3) {
                                    //
                                    // request:
-                                   // reparameterize/<session-id>/<model-instance>
+                                   // reparameterize/<session-id>/<instance>
                                    //
 
                                    // Get session
@@ -1675,7 +1699,7 @@ int main(int argc, char const *argv[]) {
                                          "Valid REPARAMETERIZE "
                                          "requests are "
                                          "\"reparameterize/<session-id>/"
-                                         "<model-instance>\"";
+                                         "<instance>\"";
                                    }
                                    ws->send(response.dump(), uWS::OpCode::TEXT,
                                             true);
@@ -1705,7 +1729,7 @@ int main(int argc, char const *argv[]) {
                                      "requests "
                                      "are "
                                      "\"reparameterize/<session-id>/"
-                                     "<model-instance>\"";
+                                     "<instance>\"";
                                  ws->send(response.dump(), uWS::OpCode::TEXT,
                                           true);
                                }
