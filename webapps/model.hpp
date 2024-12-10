@@ -73,7 +73,8 @@ public:
 class ModelEval {
 public:
   /// @brief Evaluates model
-  virtual nlohmann::json eval(const std::string &component,
+  virtual nlohmann::json eval(const std::string &patch,
+                              const std::string &component,
                               const nlohmann::json &json) const = 0;
 
   // @brief Returns model capabilities
@@ -161,7 +162,7 @@ public:
 template <typename T> class Model {
 public:
   /// @brief Constructor
-  Model() : transform_(torch::eye(4, Options<T>{})){};
+  Model(){};
 
   /// @brief Destructor
   virtual ~Model(){};
@@ -244,55 +245,21 @@ public:
   }
 
   /// @brief Serializes the model to JSON
-  virtual nlohmann::json to_json(const std::string &component,
+  virtual nlohmann::json to_json(const std::string &patch,
+                                 const std::string &component,
                                  const std::string &attribute) const {
-    if (component == "transform") {
 
-      nlohmann::json json;
-      json["matrix"] = utils::to_json<T, 1>(transform_.flatten());
-
-      return json;
-    }
-
-    else
-      return "{ INVALID REQUEST }";
+    return "{ INVALID REQUEST }";
   }
 
   /// @brief Updates the attributes of the model
-  virtual nlohmann::json updateAttribute(const std::string &component,
+  virtual nlohmann::json updateAttribute(const std::string &patch,
+                                         const std::string &component,
                                          const std::string &attribute,
                                          const nlohmann::json &json) {
-    if (attribute == "transform") {
-      if (!json.contains("data"))
-        throw InvalidModelAttributeException();
-      if (!json["data"].contains("matrix"))
-        throw InvalidModelAttributeException();
 
-      auto matrix = json["data"]["matrix"].get<std::vector<T>>();
-
-      if (matrix.size() != 16)
-        throw IndexOutOfBoundsException();
-
-      auto transform_cpu =
-          utils::to_tensorAccessor<T, 2>(transform_, torch::kCPU);
-      auto transformAccessor = std::get<1>(transform_cpu);
-
-      std::size_t index(0);
-      for (const auto &entry : matrix) {
-        transformAccessor[index / 4][index % 4] = entry;
-        index++;
-      }
-
-      return "{}";
-    }
-
-    else
-      return "{ INVALID REQUEST }";
+    return "{ INVALID REQUEST }";
   }
-
-protected:
-  /// @brief Global transformation matrix
-  torch::Tensor transform_;
 };
 
 } // namespace iganet
