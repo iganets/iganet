@@ -46,26 +46,34 @@ public:
                      const std::array<int64_t, d> npatches,
                      const std::array<T, d> dimensions)
       : GismoModel<T>() {
+
     if constexpr (d == 1) {
       gsKnotVector<T> KV0(0, 1, ncoeffs[0] - degrees[0] - 1, degrees[0] + 1);
 
-      gsMatrix<T> C(ncoeffs[0], 3);
+      gsMatrix<T> C(ncoeffs[0], 3), P;
+
       for (int64_t i = 0; i < ncoeffs[0]; ++i) {
         C(i, 0) = ((T)i) / (T)(ncoeffs[0] - 1);
         C(i, 1) = (T)0;
         C(i, 2) = (T)0;
       }
 
-      C.col(0) *= dimensions[0];
+      for (int64_t i = 0; i < npatches[0]; ++i) {
+        P = C;
 
-      geo_.addPatch(gsBSpline<T>(give(KV0), give(C)));
+        P.col(0) *= dimensions[0] / npatches[0];
+
+        P.col(0).array() += (T)(i) / (T)npatches[0];
+
+        geo_.addPatch(gsBSpline<T>(KV0, give(P)));
+      }
       geo_.computeTopology();
 
     } else if constexpr (d == 2) {
       gsKnotVector<T> KV0(0, 1, ncoeffs[0] - degrees[0] - 1, degrees[0] + 1);
       gsKnotVector<T> KV1(0, 1, ncoeffs[1] - degrees[1] - 1, degrees[1] + 1);
 
-      gsMatrix<T> C(ncoeffs[0] * ncoeffs[1], 3);
+      gsMatrix<T> C(ncoeffs[0] * ncoeffs[1], 3), P;
 
       int64_t r = 0;
       for (int64_t j = 0; j < ncoeffs[1]; ++j)
@@ -76,10 +84,18 @@ public:
           ++r;
         }
 
-      C.col(0) *= dimensions[0];
-      C.col(1) *= dimensions[1];
+      for (int64_t j = 0; j < npatches[1]; ++j)
+        for (int64_t i = 0; i < npatches[0]; ++i) {
+          P = C;
 
-      geo_.addPatch(gsTensorBSpline<2, T>(give(KV0), give(KV1), give(C)));
+          P.col(0) *= dimensions[0] / (T)npatches[0];
+          P.col(1) *= dimensions[1] / (T)npatches[1];
+
+          P.col(0).array() += (T)(i) / (T)npatches[0];
+          P.col(1).array() += (T)(j) / (T)npatches[1];
+
+          geo_.addPatch(gsTensorBSpline<2, T>(KV0, KV1, give(P)));
+        }
       geo_.computeTopology();
 
     } else if constexpr (d == 3) {
@@ -87,7 +103,7 @@ public:
       gsKnotVector<T> KV1(0, 1, ncoeffs[1] - degrees[1] - 1, degrees[1] + 1);
       gsKnotVector<T> KV2(0, 1, ncoeffs[2] - degrees[2] - 1, degrees[2] + 1);
 
-      gsMatrix<T> C(ncoeffs[0] * ncoeffs[1] * ncoeffs[2], 3);
+      gsMatrix<T> C(ncoeffs[0] * ncoeffs[1] * ncoeffs[2], 3), P;
 
       int64_t r = 0;
       for (int64_t k = 0; k < ncoeffs[2]; ++k)
@@ -99,12 +115,21 @@ public:
             ++r;
           }
 
-      C.col(0) *= dimensions[0];
-      C.col(1) *= dimensions[1];
-      C.col(2) *= dimensions[2];
+      for (int64_t k = 0; k < npatches[2]; ++k)
+        for (int64_t j = 0; j < npatches[1]; ++j)
+          for (int64_t i = 0; i < npatches[0]; ++i) {
+            P = C;
 
-      geo_.addPatch(
-          gsTensorBSpline<3, T>(give(KV0), give(KV1), give(KV2), give(C)));
+            P.col(0) *= dimensions[0] / npatches[0];
+            P.col(1) *= dimensions[1] / npatches[1];
+            P.col(2) *= dimensions[2] / npatches[2];
+
+            P.col(0).array() += (T)(i) / (T)npatches[0];
+            P.col(1).array() += (T)(j) / (T)npatches[1];
+            P.col(2).array() += (T)(k) / (T)npatches[2];
+
+            geo_.addPatch(gsTensorBSpline<3, T>(KV0, KV1, KV2, give(P)));
+          }
       geo_.computeTopology();
 
     } else if constexpr (d == 4) {
@@ -113,7 +138,7 @@ public:
       gsKnotVector<T> KV2(0, 1, ncoeffs[2] - degrees[2] - 1, degrees[2] + 1);
       gsKnotVector<T> KV3(0, 1, ncoeffs[3] - degrees[3] - 1, degrees[3] + 1);
 
-      gsMatrix<T> C(ncoeffs[0] * ncoeffs[1] * ncoeffs[2] * ncoeffs[3], 4);
+      gsMatrix<T> C(ncoeffs[0] * ncoeffs[1] * ncoeffs[2] * ncoeffs[3], 4), P;
 
       int64_t r = 0;
       for (int64_t l = 0; l < ncoeffs[3]; ++l)
@@ -127,13 +152,24 @@ public:
               ++r;
             }
 
-      C.col(0) *= dimensions[0];
-      C.col(1) *= dimensions[1];
-      C.col(2) *= dimensions[2];
-      C.col(3) *= dimensions[3];
+      for (int64_t l = 0; l < npatches[3]; ++l)
+        for (int64_t k = 0; k < npatches[2]; ++k)
+          for (int64_t j = 0; j < npatches[1]; ++j)
+            for (int64_t i = 0; i < npatches[0]; ++i) {
+              P = C;
 
-      geo_.addPatch(gsTensorBSpline<4, T>(give(KV0), give(KV1), give(KV2),
-                                          give(KV3), give(C)));
+              P.col(0) *= dimensions[0] / npatches[0];
+              P.col(1) *= dimensions[1] / npatches[1];
+              P.col(2) *= dimensions[2] / npatches[2];
+              P.col(3) *= dimensions[3] / npatches[3];
+
+              P.col(0).array() += (T)(i) / (T)npatches[0];
+              P.col(1).array() += (T)(j) / (T)npatches[1];
+              P.col(2).array() += (T)(k) / (T)npatches[2];
+              P.col(3).array() += (T)(l) / (T)npatches[3];
+
+              geo_.addPatch(gsTensorBSpline<4, T>(KV0, KV1, KV2, KV3, give(P)));
+            }
       geo_.computeTopology();
     }
   }
@@ -288,33 +324,65 @@ public:
   }
 
   /// @brief Serializes the model to JSON
-  nlohmann::json to_json(const std::string &component,
+  nlohmann::json to_json(const std::string &patch, const std::string &component,
                          const std::string &attribute) const override {
 
-    if (attribute != "") {
+    if (patch == "" && (component == "geometry" || component == "") &&
+        attribute == "") {
+
+      return utils::to_json(geo_);
+    }
+
+    else if (patch != "" && component == "geometry" && attribute == "") {
+
+      int patchId(0);
+
+      try {
+        patchId = stoi(patch);
+      } catch (...) {
+        // Invalid patchId
+        return R"({ INVALID REQUEST })"_json;
+      }
+
+      return utils::to_json(geo_.patch(patchId));
+
+    }
+
+    else if (patch != "" && component == "geometry" && attribute != "") {
+
+      int patchId(0);
+
+      try {
+        patchId = stoi(patch);
+      } catch (...) {
+        // Invalid patchId
+        return R"({ INVALID REQUEST })"_json;
+      }
+
       nlohmann::json json;
 
       if (attribute == "degrees") {
         json["degrees"] = nlohmann::json::array();
 
-        for (std::size_t i = 0; i < geo_.patch(0).parDim(); ++i)
-          json["degrees"].push_back(geo_.patch(0).degree(i));
+        for (std::size_t i = 0; i < geo_.patch(patchId).parDim(); ++i)
+          json["degrees"].push_back(geo_.patch(patchId).degree(i));
       }
 
       else if (attribute == "geoDim")
-        json["geoDim"] = geo_.patch(0).geoDim();
+        json["geoDim"] = geo_.patch(patchId).geoDim();
 
       else if (attribute == "parDim")
-        json["parDim"] = geo_.patch(0).parDim();
+        json["parDim"] = geo_.patch(patchId).parDim();
 
       else if (attribute == "ncoeffs") {
         json["ncoeffs"] = nlohmann::json::array();
 
-        if (auto bspline = dynamic_cast<const gsBSpline<T> *>(&geo_.patch(0)))
+        if (auto bspline =
+                dynamic_cast<const gsBSpline<T> *>(&geo_.patch(patchId)))
           for (std::size_t i = 0; i < bspline->parDim(); ++i)
             json["ncoeffs"].push_back(bspline->basis().size(i));
         else if (auto bspline = dynamic_cast<const gsTensorBSpline<d, T> *>(
-                     &geo_.patch(0)))
+                     &geo_.patch(patchId)))
           for (std::size_t i = 0; i < bspline->parDim(); ++i)
             json["ncoeffs"].push_back(bspline->basis().size(i));
         else
@@ -325,11 +393,12 @@ public:
       else if (attribute == "nknots") {
         json["nknots"] = nlohmann::json::array();
 
-        if (auto bspline = dynamic_cast<const gsBSpline<T> *>(&geo_.patch(0)))
+        if (auto bspline =
+                dynamic_cast<const gsBSpline<T> *>(&geo_.patch(patchId)))
           for (std::size_t i = 0; i < bspline->parDim(); ++i)
             json["nknots"].push_back(bspline->knots(i).size());
         else if (auto bspline = dynamic_cast<const gsTensorBSpline<d, T> *>(
-                     &geo_.patch(0)))
+                     &geo_.patch(patchId)))
           for (std::size_t i = 0; i < bspline->parDim(); ++i)
             json["nknots"].push_back(bspline->knots(i).size());
         else
@@ -338,10 +407,11 @@ public:
 
       else if (attribute == "coeffs") {
 
-        if (auto bspline = dynamic_cast<const gsBSpline<T> *>(&geo_.patch(0)))
+        if (auto bspline =
+                dynamic_cast<const gsBSpline<T> *>(&geo_.patch(patchId)))
           json["coeffs"] = utils::to_json(bspline->coefs());
         else if (auto bspline = dynamic_cast<const gsTensorBSpline<d, T> *>(
-                     &geo_.patch(0)))
+                     &geo_.patch(patchId)))
           json["coeffs"] = utils::to_json(bspline->coefs());
         else
           return R"({ INVALID REQUEST })"_json;
@@ -351,22 +421,21 @@ public:
       else if (attribute == "knots") {
         json["knots"] = nlohmann::json::array();
 
-        if (auto bspline = dynamic_cast<const gsBSpline<T> *>(&geo_.patch(0)))
+        if (auto bspline =
+                dynamic_cast<const gsBSpline<T> *>(&geo_.patch(patchId)))
           for (std::size_t i = 0; i < bspline->parDim(); ++i)
             json["knots"].push_back(bspline->knots(i));
         else if (auto bspline = dynamic_cast<const gsTensorBSpline<d, T> *>(
-                     &geo_.patch(0)))
+                     &geo_.patch(patchId)))
           for (std::size_t i = 0; i < bspline->parDim(); ++i)
             json["knots"].push_back(bspline->knots(i));
         else
           return R"({ INVALID REQUEST })"_json;
       }
 
-      return json;
-
-    } else {
-      auto json = utils::to_json(geo_);
-      json.update(GismoModel<T>::to_json("transform", ""), true);
+      else
+        // Invalid attribute
+        return R"({ INVALID REQUEST })"_json;
 
       return json;
     }
@@ -375,9 +444,18 @@ public:
   }
 
   /// @brief Updates the attributes of the model
-  nlohmann::json updateAttribute(const std::string &component,
+  nlohmann::json updateAttribute(const std::string &patch,
+                                 const std::string &component,
                                  const std::string &attribute,
                                  const nlohmann::json &json) override {
+
+    int patchId(0);
+
+    try {
+      patchId = stoi(patch);
+    } catch (...) {
+      return R"({ INVALID REQUEST })"_json;
+    }
 
     if (attribute == "coeffs") {
       if (!json.contains("data"))
@@ -386,7 +464,7 @@ public:
         throw InvalidModelAttributeException();
 
       auto indices = json["data"]["indices"].get<std::vector<int64_t>>();
-      auto ncoeffs = geo_.patch(0).coefs().rows();
+      auto ncoeffs = geo_.patch(patchId).coefs().rows();
 
       switch (geo_.geoDim()) {
       case (1): {
@@ -396,7 +474,7 @@ public:
           if (index < 0 || index >= ncoeffs)
             throw IndexOutOfBoundsException();
 
-          geo_.patch(0).coef(index, 0) = std::get<0>(coord);
+          geo_.patch(patchId).coef(index, 0) = std::get<0>(coord);
         }
         break;
       }
@@ -408,8 +486,8 @@ public:
           if (index < 0 || index >= ncoeffs)
             throw IndexOutOfBoundsException();
 
-          geo_.patch(0).coef(index, 0) = std::get<0>(coord);
-          geo_.patch(0).coef(index, 1) = std::get<1>(coord);
+          geo_.patch(patchId).coef(index, 0) = std::get<0>(coord);
+          geo_.patch(patchId).coef(index, 1) = std::get<1>(coord);
         }
         break;
       }
@@ -421,9 +499,9 @@ public:
           if (index < 0 || index >= ncoeffs)
             throw IndexOutOfBoundsException();
 
-          geo_.patch(0).coef(index, 0) = std::get<0>(coord);
-          geo_.patch(0).coef(index, 1) = std::get<1>(coord);
-          geo_.patch(0).coef(index, 2) = std::get<2>(coord);
+          geo_.patch(patchId).coef(index, 0) = std::get<0>(coord);
+          geo_.patch(patchId).coef(index, 1) = std::get<1>(coord);
+          geo_.patch(patchId).coef(index, 2) = std::get<2>(coord);
         }
         break;
       }
@@ -435,10 +513,10 @@ public:
           if (index < 0 || index >= ncoeffs)
             throw IndexOutOfBoundsException();
 
-          geo_.patch(0).coef(index, 0) = std::get<0>(coord);
-          geo_.patch(0).coef(index, 1) = std::get<1>(coord);
-          geo_.patch(0).coef(index, 2) = std::get<2>(coord);
-          geo_.patch(0).coef(index, 3) = std::get<3>(coord);
+          geo_.patch(patchId).coef(index, 0) = std::get<0>(coord);
+          geo_.patch(patchId).coef(index, 1) = std::get<1>(coord);
+          geo_.patch(patchId).coef(index, 2) = std::get<2>(coord);
+          geo_.patch(patchId).coef(index, 3) = std::get<3>(coord);
         }
         break;
       }
@@ -448,12 +526,20 @@ public:
 
       return R"({})"_json;
     } else
-      return GismoModel<T>::updateAttribute(component, attribute, json);
+      return GismoModel<T>::updateAttribute(patch, component, attribute, json);
   }
 
   /// @brief Evaluates the model
-  nlohmann::json eval(const std::string &component,
+  nlohmann::json eval(const std::string &patch, const std::string &component,
                       const nlohmann::json &json) const override {
+
+    int patchId(0);
+
+    try {
+      patchId = stoi(patch);
+    } catch (...) {
+      return R"({ INVALID REQUEST })"_json;
+    }
 
     if (component == "ScaledJacobian" || component == "UniformityMetric") {
 
@@ -470,7 +556,7 @@ public:
         }
 
       // Create uniform grid in physical space
-      gsMatrix<T> ab = geo_.patch(0).support();
+      gsMatrix<T> ab = geo_.patch(patchId).support();
       gsVector<T> a = ab.col(0);
       gsVector<T> b = ab.col(1);
       gsMatrix<T> pts = gsPointGrid(a, b, np);
@@ -523,7 +609,7 @@ public:
 
   /// @brief Elevates the model's degrees, preserves smoothness
   void elevate(const nlohmann::json &json = NULL) override {
-    int num = 1, dim = -1;
+    int num(1), dim(-1), patchId(-1);
 
     if (json.contains("data")) {
       if (json["data"].contains("num"))
@@ -531,14 +617,20 @@ public:
 
       if (json["data"].contains("dim"))
         dim = json["data"]["dim"].get<int>();
+
+      if (json["data"].contains("patch"))
+        patchId = json["data"]["patch"].get<int>();
     }
 
-    geo_.patch(0).degreeElevate(num, dim);
+    if (patchId == -1)
+      geo_.degreeElevate(num, dim);
+    else
+      geo_.patch(patchId).degreeElevate(num, dim);
   }
 
   /// @brief Increases the model's degrees, preserves multiplicity
   void increase(const nlohmann::json &json = NULL) override {
-    int num = 1, dim = -1;
+    int num(1), dim(-1), patchId(-1);
 
     if (json.contains("data")) {
       if (json["data"].contains("num"))
@@ -546,14 +638,20 @@ public:
 
       if (json["data"].contains("dim"))
         dim = json["data"]["dim"].get<int>();
+
+      if (json["data"].contains("patch"))
+        patchId = json["data"]["patch"].get<int>();
     }
 
-    geo_.patch(0).degreeIncrease(num, dim);
+    if (patchId == -1)
+      geo_.degreeIncrease(num, dim);
+    else
+      geo_.patch(patchId).degreeIncrease(num, dim);
   }
 
   /// @brief Refines the model
   void refine(const nlohmann::json &json = NULL) override {
-    int num = 1, dim = -1;
+    int num(1), dim(-1), patchId(-1);
 
     if (json.contains("data")) {
       if (json["data"].contains("num"))
@@ -561,9 +659,15 @@ public:
 
       if (json["data"].contains("dim"))
         dim = json["data"]["dim"].get<int>();
+
+      if (json["data"].contains("patch"))
+        patchId = json["data"]["patch"].get<int>();
     }
 
-    geo_.patch(0).uniformRefine(num, 1, dim);
+    if (patchId == -1)
+      geo_.uniformRefine(num, dim);
+    else
+      geo_.patch(patchId).uniformRefine(num, 1, dim);
   }
 
   /// @brief Reparameterize the model
