@@ -1081,7 +1081,7 @@ inline auto operator*(const BlockTensor<T, Rows, Common, Slices> &lhs,
   return result;
 }
 
-#define blocktensor_unary_op(name)                                                         \
+#define blocktensor_unary_op(name)                                             \
   template <typename T, std::size_t... Dims>                                   \
   inline auto name(const BlockTensor<T, Dims...> &input) {                     \
     BlockTensor<T, Dims...> result;                                            \
@@ -1090,7 +1090,7 @@ inline auto operator*(const BlockTensor<T, Rows, Common, Slices> &lhs,
     return result;                                                             \
   }
 
-#define blocktensor_unary_special_op(name)                                                 \
+#define blocktensor_unary_special_op(name)                                     \
   template <typename T, std::size_t... Dims>                                   \
   inline auto name(const BlockTensor<T, Dims...> &input) {                     \
     BlockTensor<T, Dims...> result;                                            \
@@ -1099,7 +1099,7 @@ inline auto operator*(const BlockTensor<T, Rows, Common, Slices> &lhs,
     return result;                                                             \
   }
 
-#define blocktensor_binary_op(name)                                                        \
+#define blocktensor_binary_op(name)                                            \
   template <typename T, typename U, std::size_t... Dims>                       \
   inline auto name(const BlockTensor<T, Dims...> &input,                       \
                    const BlockTensor<U, Dims...> &other) {                     \
@@ -1110,7 +1110,7 @@ inline auto operator*(const BlockTensor<T, Rows, Common, Slices> &lhs,
     return result;                                                             \
   }
 
-#define blocktensor_binary_special_op(name)                                                \
+#define blocktensor_binary_special_op(name)                                    \
   template <typename T, typename U, std::size_t... Dims>                       \
   inline auto name(const BlockTensor<T, Dims...> &input,                       \
                    const BlockTensor<U, Dims...> &other) {                     \
