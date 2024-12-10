@@ -54,7 +54,7 @@ int main() {
 
   // Clean up internals
   finalize();
-  
+
   return 0;
 }
 ```
@@ -107,11 +107,11 @@ The following device types are supported depending on your system
 
 | `IGANET_DEVICE` | description |
 |:---:|:---|
-| `CUDA` | NVIDIA GPUs, requires CUDA-enabled LibTorch library | 
-| `HIP`  | AMD GPUs, requires ROCM-enabled LibTorch library    | 
+| `CUDA` | NVIDIA GPUs, requires CUDA-enabled LibTorch library |
+| `HIP`  | AMD GPUs, requires ROCM-enabled LibTorch library    |
 | `MPS`  | Apple Silicon Metal Performance Shaders             |
-| `XLA`  | XLA devices such as Google's TPUs, requires XLA-enabled LibTorch library, see [documentation](https://github.com/pytorch/xla/) |
-| `XPU`  | Intel GPUs, see [documentation](https://pytorch.org/docs/stable/xpu.html) |
+| `XLA`  | XLA devices such as Google's TPUs, requires XLA-enabled LibTorch library, see [documentation](https://github.com/pytorch/xla) |
+| `XPU`  | Intel GPUs, see [documentation](https://pytorch.org/docs/stable/notes/get_start_xpu.html) |
 
 ### The `Options` class
 
