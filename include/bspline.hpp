@@ -420,6 +420,11 @@ public:
     // Initialize knot vectors
     init_knots();
 
+    // Check compatibility
+    for (short_t i = 0; i < geoDim_; ++i)
+      if (coeffs[i].numel() != ncumcoeffs())
+        throw std::runtime_error("Invalid number of coefficients");
+
     // Copy/clone coefficients
     if (clone)
       for (short_t i = 0; i < geoDim_; ++i)
@@ -1970,6 +1975,9 @@ public:
 
     for (short_t i = 0; i < parDim_; ++i)
       result *= (ncoeffs(i) == other.ncoeffs(i));
+
+    if (!result)
+      return result;
 
     for (short_t i = 0; i < parDim_; ++i)
       result *= torch::allclose(knots(i), other.knots(i), rtol, atol);
