@@ -16,6 +16,8 @@ find_package( Matlab COMPONENTS MX_LIBRARY )
 
 if (Matlab_FOUND)
 
+  add_custom_target(iganet_mexs)
+
   file(GLOB MEXFILES *.cpp)
 
   foreach(mexfile ${MEXFILES})
@@ -24,6 +26,7 @@ if (Matlab_FOUND)
     string(REGEX REPLACE "^mex" "" name "${mexname}")
 
     matlab_add_mex(NAME ${name} SRC ${mexfile})
+    add_dependencies(iganet_mexs ${name})
 
     target_compile_options(${name} PUBLIC "-DIGANET_DATA_DIR=\"${PROJECT_SOURCE_DIR}/filedata/\"")
 

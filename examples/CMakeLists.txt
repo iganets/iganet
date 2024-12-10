@@ -12,6 +12,8 @@
 #
 ########################################################################
 
+add_custom_target(iganet_examples)
+
 file(GLOB EXAMPLES *.cxx)
 
 foreach(example ${EXAMPLES})
@@ -22,6 +24,7 @@ foreach(example ${EXAMPLES})
 
   get_filename_component(name ${example} NAME_WE)
   add_executable(${name} ${example})
+  add_dependencies(iganet_examples ${name})
 
   if(IGANET_BUILD_PCH AND NOT WIN32 AND NOT ${CMAKE_VERSION} VERSION_LESS "3.16.0")
     target_precompile_headers(${name} REUSE_FROM iganet_pch)

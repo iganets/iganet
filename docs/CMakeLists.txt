@@ -12,16 +12,19 @@
 #
 ########################################################################
 
+add_custom_target(iganet_tutorials)
+
 file(GLOB TUTORIALS *.cxx)
 
-foreach(example ${TUTORIALS})
+foreach(tutorial ${TUTORIALS})
 
   if (NOT IGANET_BUILD_CPUONLY AND CMAKE_CUDA_COMPILER)
-    set_source_files_properties(${example} PROPERTIES LANGUAGE CUDA)
+    set_source_files_properties(${tutorial} PROPERTIES LANGUAGE CUDA)
   endif()
 
-  get_filename_component(name ${example} NAME_WE)
-  add_executable(${name} ${example})
+  get_filename_component(name ${tutorial} NAME_WE)
+  add_executable(${name} ${tutorial})
+  add_dependencies(iganet_tutorials ${name})
 
   if(IGANET_BUILD_PCH AND NOT WIN32 AND NOT ${CMAKE_VERSION} VERSION_LESS "3.16.0")
     target_precompile_headers(${name} REUSE_FROM iganet_pch)

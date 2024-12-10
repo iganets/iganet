@@ -66,6 +66,9 @@ include_directories(${bsplinelib_SOURCE_DIR}/Sources)
 ########################################################################
 # Collect perftest sources
 ########################################################################
+
+add_custom_target(iganet_perftests)
+
 file(GLOB PERFTESTS *.cxx)
 
 foreach(perftest ${PERFTESTS})
@@ -76,6 +79,7 @@ foreach(perftest ${PERFTESTS})
 
   get_filename_component(name ${perftest} NAME_WE)
   add_executable(${name} ${perftest})
+  add_dependencies(iganet_perftests ${name})
 
   if(IGANET_BUILD_PCH AND NOT WIN32 AND NOT ${CMAKE_VERSION} VERSION_LESS "3.16.0")
     target_precompile_headers(${name} REUSE_FROM iganet_pch)
