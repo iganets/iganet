@@ -167,8 +167,10 @@ public:
 
     // Lambda expression to add a JSON entry
     auto add_json = [&json, &uiid]<typename Type, typename Value>(
-                        const std::string &name, const std::string &label, const std::string &group, const std::string &description,
-                        const Type &type, const Value &value) {
+                        const std::string &name, const std::string &label,
+                        const std::string &group,
+                        const std::string &description, const Type &type,
+                        const Value &value) {
       nlohmann::json item;
       item["name"] = name;
       item["label"] = label;
@@ -184,7 +186,8 @@ public:
     // Lambda expression to add a JSON entry with different default type
     auto add_json_default =
         [&json, &uiid]<typename Type, typename Value, typename DefaultValue>(
-            const std::string &name, const std::string &label, const std::string &group, const std::string &description,
+            const std::string &name, const std::string &label,
+            const std::string &group, const std::string &description,
             const Type &type, const Value &value,
             const DefaultValue &defaultValue) {
           nlohmann::json item;
@@ -199,8 +202,10 @@ public:
           json.push_back(item);
         };
 
-    add_json("YoungModulus", "Young", "", "Young's modulus", "float", YoungsModulus_);
-    add_json("PoissonRatio", "Poisson", "", "Poisson's ratio", "float", PoissonsRatio_);
+    add_json("YoungModulus", "Young", "", "Young's modulus", "float",
+             YoungsModulus_);
+    add_json("PoissonRatio", "Poisson", "", "Poisson's ratio", "float",
+             PoissonsRatio_);
 
     //    add_json("rhs", "Right-hand side function",
     //             std::vector<std::string>{"text", "text", "text"},

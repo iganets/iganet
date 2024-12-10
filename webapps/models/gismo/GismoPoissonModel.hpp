@@ -206,8 +206,10 @@ public:
 
     // Lambda expression to add a JSON entry
     auto add_json = [&json, &uiid]<typename Type, typename Value>(
-                                                                  const std::string &name, const std::string &label, const std::string &group, const std::string &description,
-                        const Type &type, const Value &value) {
+                        const std::string &name, const std::string &label,
+                        const std::string &group,
+                        const std::string &description, const Type &type,
+                        const Value &value) {
       nlohmann::json item;
       item["name"] = name;
       item["label"] = label;
@@ -223,7 +225,8 @@ public:
     // Lambda expression to add a JSON entry with different default type
     auto add_json_default =
         [&json, &uiid]<typename Type, typename Value, typename DefaultValue>(
-                                                                             const std::string &name, const std::string &label, const std::string &group, const std::string &description,
+            const std::string &name, const std::string &label,
+            const std::string &group, const std::string &description,
             const Type &type, const Value &value,
             const DefaultValue &defaultValue) {
           nlohmann::json item;
@@ -238,7 +241,8 @@ public:
           json.push_back(item);
         };
 
-    add_json("rhs", "Rhs function", "rhs", "Right-hand side function", "text", rhsFunc_.expression(0));
+    add_json("rhs", "Rhs function", "rhs", "Right-hand side function", "text",
+             rhsFunc_.expression(0));
     add_json("rhs_parametric", "Parametric", "rhs",
              "Right-hand side function defined in parametric domain", "bool",
              rhsFuncParametric_);
@@ -253,7 +257,7 @@ public:
                    " boundary defined in parametric domain"s,
                "bool", bcFuncParametric_[side - 1]);
       add_json_default(
-                       "bc_type["s + str + "]", "Type", str,
+          "bc_type["s + str + "]", "Type", str,
           "Type of boundary condition at the "s + str + " boundary"s, "select",
           R"([ "Dirichlet", "Neumann" ])"_json, "Dirichlet");
     }
