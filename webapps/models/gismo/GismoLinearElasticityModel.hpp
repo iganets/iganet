@@ -54,9 +54,6 @@ private:
   /// @brief Poisson's ratio
   T PoissonsRatio_;
 
-  /// @brief Solution
-  gsMultiPatch<T> solution_;
-
   /// @brief Solve the Linear elasticity problem
   void solve() {
 
@@ -75,7 +72,8 @@ private:
     gsMatrix<T> solution(solver.solve(assembler.rhs()));
 
     // Extract solution
-    assembler.constructSolution(solution, assembler.allFixedDofs(), solution_);
+    assembler.constructSolution(solution, assembler.allFixedDofs(),
+                                Base::solution_);
   }
 
 public:
@@ -217,7 +215,8 @@ public:
   }
 
   /// @brief Updates the attributes of the model
-  nlohmann::json updateAttribute(const std::string &component,
+  nlohmann::json updateAttribute(const std::string &patch,
+                                 const std::string &component,
                                  const std::string &attribute,
                                  const nlohmann::json &json) override {
 
@@ -242,7 +241,7 @@ public:
     }
 
     else
-      result = Base::updateAttribute(component, attribute, json);
+      result = Base::updateAttribute(patch, component, attribute, json);
 
     // Solve updated problem
     solve();
@@ -251,11 +250,20 @@ public:
   }
 
   /// @brief Evaluates the model
-  nlohmann::json eval(const std::string &component,
+  nlohmann::json eval(const std::string &patch, const std::string &component,
                       const nlohmann::json &json) const override {
 
+    std::size_t patchIndex(0);
+
+    try {
+      patchIndex = stoi(patch);
+    } catch (...) {
+      // Invalid patchIndex
+      return R"({ INVALID REQUEST })"_json;
+    }
+    
     // Create uniform grid
-    gsMatrix<T> ab = Base::geo_.patch(0).support();
+    gsMatrix<T> ab = Base::geo_.patch(patchIndex).support();
     gsVector<T> a = ab.col(0);
     gsVector<T> b = ab.col(1);
 
@@ -272,7 +280,7 @@ public:
 
     // Uniform parameters for evaluation
     gsMatrix<T> pts = gsPointGrid(a, b, np);
-    gsMatrix<T> eval = solution_.patch(0).eval(pts);
+    gsMatrix<T> eval = Base::solution_.patch(patchIndex).eval(pts);
 
     if (component == "Displacement") {
       gsMatrix<T> result = eval.colwise().norm();
@@ -289,7 +297,7 @@ public:
     }
 
     else
-      return Base::eval(component, json);
+      return Base::eval(patch, component, json);
   }
 
   /// @brief Elevates the model's degrees, preserves smoothness
@@ -309,7 +317,8 @@ public:
       bc_.setGeoMap(Base::geo_);
     }
 
-    int num = 1, dim = -1;
+    int num(1), dim(-1);
+    std::size_t patchIndex(-1);
 
     if (json.contains("data")) {
       if (json["data"].contains("num"))
@@ -317,10 +326,16 @@ public:
 
       if (json["data"].contains("dim"))
         dim = json["data"]["dim"].get<int>();
+
+      if (json["data"].contains("patch"))
+        patchIndex = json["data"]["patch"].get<std::size_t>();
     }
 
     // Degree elevate basis of solution space
-    basis_.basis(0).degreeElevate(num, dim);
+    if (patchIndex == -1)
+      basis_.degreeElevate(num, dim);
+    else
+      basis_.basis(patchIndex).degreeElevate(num, dim);
 
     // Generate solution
     solve();
@@ -343,7 +358,8 @@ public:
       bc_.setGeoMap(Base::geo_);
     }
 
-    int num = 1, dim = -1;
+    int num(1), dim(-1);
+    std::size_t patchIndex(-1);
 
     if (json.contains("data")) {
       if (json["data"].contains("num"))
@@ -351,10 +367,16 @@ public:
 
       if (json["data"].contains("dim"))
         dim = json["data"]["dim"].get<int>();
+
+      if (json["data"].contains("patch"))
+        patchIndex = json["data"]["patch"].get<std::size_t>();
     }
 
     // Degree increase basis of solution space
-    basis_.basis(0).degreeIncrease(num, dim);
+    if (patchIndex == -1)
+      basis_.degreeIncrease(num, dim);
+    else
+      basis_.basis(patchIndex).degreeIncrease(num, dim);
 
     // Generate solution
     solve();
@@ -377,7 +399,8 @@ public:
       bc_.setGeoMap(Base::geo_);
     }
 
-    int num = 1, dim = -1;
+    int num(1), dim(-1);
+    std::size_t patchIndex(-1);
 
     if (json.contains("data")) {
       if (json["data"].contains("num"))
@@ -385,10 +408,16 @@ public:
 
       if (json["data"].contains("dim"))
         dim = json["data"]["dim"].get<int>();
+
+      if (json["data"].contains("patch"))
+        patchIndex = json["data"]["patch"].get<std::size_t>();
     }
 
     // Refine basis of solution space
-    basis_.basis(0).uniformRefine(num, 1, dim);
+    if (patchIndex == -1)
+      basis_.uniformRefine(num, dim);
+    else
+      basis_.basis(patchIndex).uniformRefine(num, 1, dim);
 
     // Generate solution
     solve();

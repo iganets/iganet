@@ -69,9 +69,6 @@ private:
   /// @brief Expression assembler
   gsExprAssembler<T> assembler_;
 
-  /// @brief Solution
-  gsMultiPatch<T> solution_;
-
   /// @brief Solve the Poisson problem
   void solve() {
 
@@ -121,7 +118,7 @@ private:
     solutionVector = solver.solve(assembler_.rhs());
 
     // Extract solution
-    solution.extract(solution_);
+    solution.extract(Base::solution_);
   }
 
 public:
@@ -140,7 +137,7 @@ public:
                           : "2*pi^2*sin(pi*x)*sin(pi*y)*sin(pi*z)",
                  /* rhsFuncParametric_ == false */ d),
         assembler_(1, 1) {
-
+      
     // Specify assembler options
     gsOptionList Aopt = gsExprAssembler<>::defaultOptions();
 
@@ -266,7 +263,8 @@ public:
   }
 
   /// @brief Updates the attributes of the model
-  nlohmann::json updateAttribute(const std::string &component,
+  nlohmann::json updateAttribute(const std::string &patch,
+                                 const std::string &component,
                                  const std::string &attribute,
                                  const nlohmann::json &json) override {
 
@@ -353,7 +351,7 @@ public:
     }
 
     else if (!updateBC)
-      result = Base::updateAttribute(component, attribute, json);
+      result = Base::updateAttribute(patch, component, attribute, json);
 
     if (updateBC) {
       bc_.clear();
@@ -383,9 +381,18 @@ public:
   }
 
   /// @brief Evaluates the model
-  nlohmann::json eval(const std::string &component,
+  nlohmann::json eval(const std::string &patch, const std::string &component,
                       const nlohmann::json &json) const override {
 
+    std::size_t patchIndex(0);
+
+    try {
+      patchIndex = stoi(patch);
+    } catch (...) {
+      // Invalid patchIndex
+      return R"({ INVALID REQUEST })"_json;
+    }
+    
     if (component == "Solution" || component == "Rhs") {
 
       // Get grid resolution
@@ -404,23 +411,23 @@ public:
           component == "Rhs" && !rhsFuncParametric_) {
 
         // Create uniform grid in physical domain
-        gsMatrix<T> ab = Base::geo_.patch(0).support();
+        gsMatrix<T> ab = Base::geo_.patch(patchIndex).support();
         gsVector<T> a = ab.col(0);
         gsVector<T> b = ab.col(1);
         gsMatrix<T> pts = gsPointGrid(a, b, npts);
 
         if (component == "Solution") {
-          gsMatrix<T> eval = solution_.patch(0).eval(pts);
+          gsMatrix<T> eval = Base::solution_.patch(patchIndex).eval(pts);
           return utils::to_json(eval, true, false);
         } else {
-          gsMatrix<T> eval = rhsFunc_.eval(Base::geo_.patch(0).eval(pts));
+          gsMatrix<T> eval = rhsFunc_.eval(Base::geo_.patch(patchIndex).eval(pts));
           return utils::to_json(eval, true, false);
         }
 
       } else {
 
         // Create uniform grid in parametric domain
-        gsMatrix<T> ab = Base::geo_.patch(0).parameterRange();
+        gsMatrix<T> ab = Base::geo_.patch(patchIndex).parameterRange();
         gsVector<T> a = ab.col(0);
         gsVector<T> b = ab.col(1);
         gsMatrix<T> pts = gsPointGrid(a, b, npts);
@@ -431,7 +438,7 @@ public:
     }
 
     else
-      return Base::eval(component, json);
+      return Base::eval(patch, component, json);
   }
 
   /// @brief Elevates the model's degrees, preserves smoothness
@@ -451,7 +458,8 @@ public:
       bc_.setGeoMap(Base::geo_);
     }
 
-    int num = 1, dim = -1;
+    int num(1), dim(-1);
+    std::size_t patchIndex(-1);
 
     if (json.contains("data")) {
       if (json["data"].contains("num"))
@@ -459,10 +467,16 @@ public:
 
       if (json["data"].contains("dim"))
         dim = json["data"]["dim"].get<int>();
+
+      if (json["data"].contains("patch"))
+        patchIndex = json["data"]["patch"].get<std::size_t>();
     }
 
     // Degree elevate basis of solution space
-    basis_.basis(0).degreeElevate(num, dim);
+    if (patchIndex == -1)
+      basis_.degreeElevate(num, dim);
+    else
+      basis_.basis(patchIndex).degreeElevate(num, dim);
 
     // Set assembler basis
     assembler_.setIntegrationElements(basis_);
@@ -488,7 +502,8 @@ public:
       bc_.setGeoMap(Base::geo_);
     }
 
-    int num = 1, dim = -1;
+    int num(1), dim(-1);
+    std::size_t patchIndex(-1);
 
     if (json.contains("data")) {
       if (json["data"].contains("num"))
@@ -496,10 +511,16 @@ public:
 
       if (json["data"].contains("dim"))
         dim = json["data"]["dim"].get<int>();
+
+      if (json["data"].contains("patch"))
+        patchIndex = json["data"]["patch"].get<std::size_t>();
     }
 
     // Degree increase basis of solution space
-    basis_.basis(0).degreeIncrease(num, dim);
+    if (patchIndex == -1)
+      basis_.degreeIncrease(num, dim);
+    else
+      basis_.basis(patchIndex).degreeIncrease(num, dim);
 
     // Set assembler basis
     assembler_.setIntegrationElements(basis_);
@@ -525,7 +546,8 @@ public:
       bc_.setGeoMap(Base::geo_);
     }
 
-    int num = 1, dim = -1;
+    int num(1), dim(-1);
+    std::size_t patchIndex(-1);
 
     if (json.contains("data")) {
       if (json["data"].contains("num"))
@@ -533,10 +555,16 @@ public:
 
       if (json["data"].contains("dim"))
         dim = json["data"]["dim"].get<int>();
+
+      if (json["data"].contains("patch"))
+        patchIndex = json["data"]["patch"].get<std::size_t>();
     }
 
     // Refine basis of solution space
-    basis_.basis(0).uniformRefine(num, 1, dim);
+    if (patchIndex == -1)
+      basis_.uniformRefine(num, dim);
+    else
+      basis_.basis(patchIndex).uniformRefine(num, 1, dim);
 
     // Set assembler basis
     assembler_.setIntegrationElements(basis_);

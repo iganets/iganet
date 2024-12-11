@@ -326,121 +326,126 @@ public:
   /// @brief Serializes the model to JSON
   nlohmann::json to_json(const std::string &patch, const std::string &component,
                          const std::string &attribute) const override {
+    
+    if (component == "geometry" || component == "") {
 
-    if (patch == "" && (component == "geometry" || component == "") &&
-        attribute == "") {
+      if (patch == "" && attribute == "") {
 
-      return utils::to_json(geo_);
-    }
-
-    else if (patch != "" && component == "geometry" && attribute == "") {
-
-      int patchId(0);
-
-      try {
-        patchId = stoi(patch);
-      } catch (...) {
-        // Invalid patchId
-        return R"({ INVALID REQUEST })"_json;
+        // Return solution as multipatch structure
+        return utils::to_json(geo_);
       }
 
-      return utils::to_json(geo_.patch(patchId));
+      else if (patch != "") {
 
-    }
+        // Return individual patch of the solution
+        std::size_t patchIndex(0);
 
-    else if (patch != "" && component == "geometry" && attribute != "") {
+        try {
+          patchIndex = stoi(patch);
+        } catch (...) {
+          // Invalid patchIndex
+          return R"({ INVALID REQUEST })"_json;
+        }
 
-      int patchId(0);
-
-      try {
-        patchId = stoi(patch);
-      } catch (...) {
-        // Invalid patchId
-        return R"({ INVALID REQUEST })"_json;
-      }
-
-      nlohmann::json json;
-
-      if (attribute == "degrees") {
-        json["degrees"] = nlohmann::json::array();
-
-        for (std::size_t i = 0; i < geo_.patch(patchId).parDim(); ++i)
-          json["degrees"].push_back(geo_.patch(patchId).degree(i));
-      }
-
-      else if (attribute == "geoDim")
-        json["geoDim"] = geo_.patch(patchId).geoDim();
-
-      else if (attribute == "parDim")
-        json["parDim"] = geo_.patch(patchId).parDim();
-
-      else if (attribute == "ncoeffs") {
-        json["ncoeffs"] = nlohmann::json::array();
-
-        if (auto bspline =
-                dynamic_cast<const gsBSpline<T> *>(&geo_.patch(patchId)))
-          for (std::size_t i = 0; i < bspline->parDim(); ++i)
-            json["ncoeffs"].push_back(bspline->basis().size(i));
-        else if (auto bspline = dynamic_cast<const gsTensorBSpline<d, T> *>(
-                     &geo_.patch(patchId)))
-          for (std::size_t i = 0; i < bspline->parDim(); ++i)
-            json["ncoeffs"].push_back(bspline->basis().size(i));
-        else
+        if (patchIndex >= geo_.nPatches())
           return R"({ INVALID REQUEST })"_json;
 
-      }
+        if (attribute == "") {
 
-      else if (attribute == "nknots") {
-        json["nknots"] = nlohmann::json::array();
+          // Return all attributes                  
+          return utils::to_json(geo_.patch(patchIndex));
 
-        if (auto bspline =
-                dynamic_cast<const gsBSpline<T> *>(&geo_.patch(patchId)))
-          for (std::size_t i = 0; i < bspline->parDim(); ++i)
-            json["nknots"].push_back(bspline->knots(i).size());
-        else if (auto bspline = dynamic_cast<const gsTensorBSpline<d, T> *>(
-                     &geo_.patch(patchId)))
-          for (std::size_t i = 0; i < bspline->parDim(); ++i)
-            json["nknots"].push_back(bspline->knots(i).size());
-        else
-          return R"({ INVALID REQUEST })"_json;
-      }
+        } else {
 
-      else if (attribute == "coeffs") {
+          nlohmann::json json;
 
-        if (auto bspline =
-                dynamic_cast<const gsBSpline<T> *>(&geo_.patch(patchId)))
-          json["coeffs"] = utils::to_json(bspline->coefs());
-        else if (auto bspline = dynamic_cast<const gsTensorBSpline<d, T> *>(
-                     &geo_.patch(patchId)))
-          json["coeffs"] = utils::to_json(bspline->coefs());
-        else
-          return R"({ INVALID REQUEST })"_json;
+          // Return an individual attribute
+          if (attribute == "degrees") {
+            json["degrees"] = nlohmann::json::array();
 
-      }
+            for (std::size_t i = 0; i < geo_.patch(patchIndex).parDim(); ++i)
+              json["degrees"].push_back(geo_.patch(patchIndex).degree(i));
+          }
 
-      else if (attribute == "knots") {
-        json["knots"] = nlohmann::json::array();
+          else if (attribute == "geoDim")
+            json["geoDim"] = geo_.patch(patchIndex).geoDim();
 
-        if (auto bspline =
-                dynamic_cast<const gsBSpline<T> *>(&geo_.patch(patchId)))
-          for (std::size_t i = 0; i < bspline->parDim(); ++i)
-            json["knots"].push_back(bspline->knots(i));
-        else if (auto bspline = dynamic_cast<const gsTensorBSpline<d, T> *>(
-                     &geo_.patch(patchId)))
-          for (std::size_t i = 0; i < bspline->parDim(); ++i)
-            json["knots"].push_back(bspline->knots(i));
-        else
-          return R"({ INVALID REQUEST })"_json;
+          else if (attribute == "parDim")
+            json["parDim"] = geo_.patch(patchIndex).parDim();
+
+          else if (attribute == "ncoeffs") {
+            json["ncoeffs"] = nlohmann::json::array();
+
+            if (auto bspline =
+                dynamic_cast<const gsBSpline<T> *>(&geo_.patch(patchIndex)))
+              for (std::size_t i = 0; i < bspline->parDim(); ++i)
+                json["ncoeffs"].push_back(bspline->basis().size(i));
+            else if (auto bspline = dynamic_cast<const gsTensorBSpline<d, T> *>(
+                                                                                &geo_.patch(patchIndex)))
+              for (std::size_t i = 0; i < bspline->parDim(); ++i)
+                json["ncoeffs"].push_back(bspline->basis().size(i));
+            else
+              return R"({ INVALID REQUEST })"_json;
+
+          }
+
+          else if (attribute == "nknots") {
+            json["nknots"] = nlohmann::json::array();
+
+            if (auto bspline =
+                dynamic_cast<const gsBSpline<T> *>(&geo_.patch(patchIndex)))
+              for (std::size_t i = 0; i < bspline->parDim(); ++i)
+                json["nknots"].push_back(bspline->knots(i).size());
+            else if (auto bspline = dynamic_cast<const gsTensorBSpline<d, T> *>(
+                                                                                &geo_.patch(patchIndex)))
+              for (std::size_t i = 0; i < bspline->parDim(); ++i)
+                json["nknots"].push_back(bspline->knots(i).size());
+            else
+              return R"({ INVALID REQUEST })"_json;
+          }
+
+          else if (attribute == "coeffs") {
+
+            if (auto bspline =
+                dynamic_cast<const gsBSpline<T> *>(&geo_.patch(patchIndex)))
+              json["coeffs"] = utils::to_json(bspline->coefs());
+            else if (auto bspline = dynamic_cast<const gsTensorBSpline<d, T> *>(
+                                                                                &geo_.patch(patchIndex)))
+              json["coeffs"] = utils::to_json(bspline->coefs());
+            else
+              return R"({ INVALID REQUEST })"_json;
+
+          }
+
+          else if (attribute == "knots") {
+            json["knots"] = nlohmann::json::array();
+
+            if (auto bspline =
+                dynamic_cast<const gsBSpline<T> *>(&geo_.patch(patchIndex)))
+              for (std::size_t i = 0; i < bspline->parDim(); ++i)
+                json["knots"].push_back(bspline->knots(i));
+            else if (auto bspline = dynamic_cast<const gsTensorBSpline<d, T> *>(
+                                                                                &geo_.patch(patchIndex)))
+              for (std::size_t i = 0; i < bspline->parDim(); ++i)
+                json["knots"].push_back(bspline->knots(i));
+            else
+              return R"({ INVALID REQUEST })"_json;
+          }
+
+          else
+            // Invalid attribute
+            return R"({ INVALID REQUEST })"_json;
+
+          return json;
+        }
       }
 
       else
-        // Invalid attribute
         return R"({ INVALID REQUEST })"_json;
-
-      return json;
     }
 
-    return R"({ INVALID REQUEST })"_json;
+    // Handle component != "geometry"
+    return GismoModel<T>::to_json(patch, component, attribute);
   }
 
   /// @brief Updates the attributes of the model
@@ -449,10 +454,10 @@ public:
                                  const std::string &attribute,
                                  const nlohmann::json &json) override {
 
-    int patchId(0);
+    std::size_t patchIndex(0);
 
     try {
-      patchId = stoi(patch);
+      patchIndex = stoi(patch);
     } catch (...) {
       return R"({ INVALID REQUEST })"_json;
     }
@@ -464,7 +469,7 @@ public:
         throw InvalidModelAttributeException();
 
       auto indices = json["data"]["indices"].get<std::vector<int64_t>>();
-      auto ncoeffs = geo_.patch(patchId).coefs().rows();
+      auto ncoeffs = geo_.patch(patchIndex).coefs().rows();
 
       switch (geo_.geoDim()) {
       case (1): {
@@ -474,7 +479,7 @@ public:
           if (index < 0 || index >= ncoeffs)
             throw IndexOutOfBoundsException();
 
-          geo_.patch(patchId).coef(index, 0) = std::get<0>(coord);
+          geo_.patch(patchIndex).coef(index, 0) = std::get<0>(coord);
         }
         break;
       }
@@ -486,8 +491,8 @@ public:
           if (index < 0 || index >= ncoeffs)
             throw IndexOutOfBoundsException();
 
-          geo_.patch(patchId).coef(index, 0) = std::get<0>(coord);
-          geo_.patch(patchId).coef(index, 1) = std::get<1>(coord);
+          geo_.patch(patchIndex).coef(index, 0) = std::get<0>(coord);
+          geo_.patch(patchIndex).coef(index, 1) = std::get<1>(coord);
         }
         break;
       }
@@ -499,9 +504,9 @@ public:
           if (index < 0 || index >= ncoeffs)
             throw IndexOutOfBoundsException();
 
-          geo_.patch(patchId).coef(index, 0) = std::get<0>(coord);
-          geo_.patch(patchId).coef(index, 1) = std::get<1>(coord);
-          geo_.patch(patchId).coef(index, 2) = std::get<2>(coord);
+          geo_.patch(patchIndex).coef(index, 0) = std::get<0>(coord);
+          geo_.patch(patchIndex).coef(index, 1) = std::get<1>(coord);
+          geo_.patch(patchIndex).coef(index, 2) = std::get<2>(coord);
         }
         break;
       }
@@ -513,10 +518,10 @@ public:
           if (index < 0 || index >= ncoeffs)
             throw IndexOutOfBoundsException();
 
-          geo_.patch(patchId).coef(index, 0) = std::get<0>(coord);
-          geo_.patch(patchId).coef(index, 1) = std::get<1>(coord);
-          geo_.patch(patchId).coef(index, 2) = std::get<2>(coord);
-          geo_.patch(patchId).coef(index, 3) = std::get<3>(coord);
+          geo_.patch(patchIndex).coef(index, 0) = std::get<0>(coord);
+          geo_.patch(patchIndex).coef(index, 1) = std::get<1>(coord);
+          geo_.patch(patchIndex).coef(index, 2) = std::get<2>(coord);
+          geo_.patch(patchIndex).coef(index, 3) = std::get<3>(coord);
         }
         break;
       }
@@ -533,10 +538,10 @@ public:
   nlohmann::json eval(const std::string &patch, const std::string &component,
                       const nlohmann::json &json) const override {
 
-    int patchId(0);
+    std::size_t patchIndex(0);
 
     try {
-      patchId = stoi(patch);
+      patchIndex = stoi(patch);
     } catch (...) {
       return R"({ INVALID REQUEST })"_json;
     }
@@ -556,7 +561,7 @@ public:
         }
 
       // Create uniform grid in physical space
-      gsMatrix<T> ab = geo_.patch(patchId).support();
+      gsMatrix<T> ab = geo_.patch(patchIndex).support();
       gsVector<T> a = ab.col(0);
       gsVector<T> b = ab.col(1);
       gsMatrix<T> pts = gsPointGrid(a, b, np);
@@ -609,7 +614,8 @@ public:
 
   /// @brief Elevates the model's degrees, preserves smoothness
   void elevate(const nlohmann::json &json = NULL) override {
-    int num(1), dim(-1), patchId(-1);
+    int num(1), dim(-1);
+    std::size_t patchIndex(-1);
 
     if (json.contains("data")) {
       if (json["data"].contains("num"))
@@ -619,18 +625,19 @@ public:
         dim = json["data"]["dim"].get<int>();
 
       if (json["data"].contains("patch"))
-        patchId = json["data"]["patch"].get<int>();
+        patchIndex = json["data"]["patch"].get<std::size_t>();
     }
 
-    if (patchId == -1)
+    if (patchIndex == -1)
       geo_.degreeElevate(num, dim);
     else
-      geo_.patch(patchId).degreeElevate(num, dim);
+      geo_.patch(patchIndex).degreeElevate(num, dim);
   }
 
   /// @brief Increases the model's degrees, preserves multiplicity
   void increase(const nlohmann::json &json = NULL) override {
-    int num(1), dim(-1), patchId(-1);
+    int num(1), dim(-1);
+    std::size_t patchIndex(-1);
 
     if (json.contains("data")) {
       if (json["data"].contains("num"))
@@ -640,18 +647,19 @@ public:
         dim = json["data"]["dim"].get<int>();
 
       if (json["data"].contains("patch"))
-        patchId = json["data"]["patch"].get<int>();
+        patchIndex = json["data"]["patch"].get<std::size_t>();
     }
 
-    if (patchId == -1)
+    if (patchIndex == -1)
       geo_.degreeIncrease(num, dim);
     else
-      geo_.patch(patchId).degreeIncrease(num, dim);
+      geo_.patch(patchIndex).degreeIncrease(num, dim);
   }
 
   /// @brief Refines the model
   void refine(const nlohmann::json &json = NULL) override {
-    int num(1), dim(-1), patchId(-1);
+    int num(1), dim(-1);
+    std::size_t patchIndex(-1);
 
     if (json.contains("data")) {
       if (json["data"].contains("num"))
@@ -661,13 +669,13 @@ public:
         dim = json["data"]["dim"].get<int>();
 
       if (json["data"].contains("patch"))
-        patchId = json["data"]["patch"].get<int>();
+        patchIndex = json["data"]["patch"].get<std::size_t>();
     }
 
-    if (patchId == -1)
+    if (patchIndex == -1)
       geo_.uniformRefine(num, dim);
     else
-      geo_.patch(patchId).uniformRefine(num, 1, dim);
+      geo_.patch(patchIndex).uniformRefine(num, 1, dim);
   }
 
   /// @brief Reparameterize the model
