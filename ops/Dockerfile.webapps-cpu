@@ -62,8 +62,12 @@ RUN curl -fsSL --insecure -o libtorch.zip ${LIBTORCH_URL} \
 WORKDIR /opt/iganet
 COPY ./ .
 
-RUN rm -f /opt/iganet/webapps/models/Poisson2d.cxx
-RUN rm -f /opt/iganet/webapps/models/gismo/GismoLinearElasticity2d.cxx
+RUN rm -f /opt/iganet/webapps/models/iganet/BSplineCurve.cxx
+RUN rm -f /opt/iganet/webapps/models/iganet/BSplineSurface.cxx
+RUN rm -f /opt/iganet/webapps/models/iganet/BSplineVolume.cxx
+RUN rm -f /opt/iganet/webapps/models/iganet/Poisson2d.cxx
+
+#RUN rm -f /opt/iganet/webapps/models/gismo/GismoLinearElasticity2d.cxx
 RUN rm -f /opt/iganet/webapps/models/gismo/GismoLinearElasticity3d.cxx
 
 WORKDIR /opt/iganet/build
