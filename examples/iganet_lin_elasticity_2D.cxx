@@ -196,15 +196,53 @@ public:
   torch::Tensor loss(const torch::Tensor &outputs, int64_t epoch) override {
 
     Base::u_.from_tensor(outputs);
-    torch::Tensor loss; 
+    torch::Tensor total_loss; 
+    torch::Tensor elast_loss;
+    torch::Tensor trac_loss;
+    torch::Tensor bc_loss;
+    torch::Tensor gs_loss;
+
     // number of DOFs
     int dofs = outputs.size(0);
 
-    // calculation of the second derivative of the gs_displacements
+    // TRACTION FREE BOUNDARY CONDITIONS
+    // // reduce collPts by every first and last point of the upper and lower edge (points at the corners)
+    // at::Tensor reduced_collPts_second = std::get<0>(collPts_.second)[0].slice(0, 1, std::get<0>(collPts_.second)[0].size(0) - 1);
+    // std::array<at::Tensor, 2ul> secollPts_upper = {reduced_collPts_second, torch::ones(reduced_collPts_second.size(0))};    
+    // std::array<at::Tensor, 2ul> secollPts_lower = {reduced_collPts_second, torch::zeros(reduced_collPts_second.size(0))};
+    std::array<at::Tensor, 2ul> secollPts_upper = {std::get<0>(collPts_.second)[0], torch::ones(std::get<0>(collPts_.second)[0].size(0))};
+    std::array<at::Tensor, 2ul> secollPts_lower = {std::get<0>(collPts_.second)[0], torch::zeros(std::get<0>(collPts_.second)[0].size(0))};
+    std::array<at::Tensor, 2ul> secollPts = {torch::cat({secollPts_upper[0], secollPts_lower[0]}, 0), torch::cat({secollPts_upper[1], secollPts_lower[1]}, 0)};
+
+    auto jacobian = Base::u_.ijac(Base::G_, secollPts);
+
+    auto ux_x = *jacobian[0];
+    auto ux_y = *jacobian[1];
+    auto uy_x = *jacobian[2];
+    auto uy_y = *jacobian[3];
+
+    torch::Tensor traction_free_x = torch::zeros({secollPts[0].size(0)});
+    torch::Tensor traction_free_y = torch::zeros({secollPts[0].size(0)});
+    torch::Tensor boundary_zeros = torch::stack({traction_free_x, traction_free_y}, /*dim=*/1);
+    
+    for(int i=0; i<secollPts[0].size(0); ++i) {
+        // traction-free condition for linear elasticity
+        traction_free_x[i] = mu_ * (uy_x[i] + ux_y[i]);
+        traction_free_y[i] = lambda_ * ux_x[i] + (lambda_ + 2 * mu_) * uy_y[i];
+        
+        // traction-free condition for laplace equation
+        // traction_free_x[i] = ux_y[i];
+        // traction_free_y[i] = uy_y[i];
+    }
+    torch::Tensor traction_free = torch::stack({traction_free_x, traction_free_y}, /*dim=*/1);
+    
+    // LINEAR ELASTICITY EQUATION
+
+    // calculation of the second derivatives of the displacements (u)
     auto hessian_coll = Base::u_.ihess(Base::G_, collPts_.first, var_knot_indices_, 
             var_coeff_indices_, G_knot_indices_, G_coeff_indices_);
 
-    // partial derivatives of the gs_displacements - each variable has 36 entries of the collPts
+    // partial derivatives of the displacements (u)
     auto& ux_xx = *(hessian_coll[0][0]);
     auto& ux_xy = *(hessian_coll[0][1]);
     auto& ux_yx = *(hessian_coll[0][2]);
@@ -228,6 +266,10 @@ public:
 
         // y-direction
         results_y[i] = mu_ * uy_xx[i] + (lambda_ + 2 * mu_) * uy_yy[i] + (lambda_ + mu_) * ux_xy[i];
+        
+        // Laplace equation for testing
+        // results_x[i] = ux_xx[i] + ux_yy[i];
+        // results_y[i] = uy_xx[i] + uy_yy[i];
     }
     
     // create a tensor of the divergence of the stress tensor
@@ -239,13 +281,24 @@ public:
 
     // UNSUPERVISED LEARNING (default)
     if (supervised_learning_ == false) {
+        int bc_weight = 10;
         // calculation of the loss function for double-sided constraint solid
         // div_stress is compared to 0 since "divergence*sigma = 0" is the governing equation
-        loss = torch::mse_loss(div_stress, zeros) +
-             10 * torch::mse_loss(*std::get<0>(u_bdr)[1], *std::get<0>(bdr)[1]) +
-             10 * torch::mse_loss(*std::get<1>(u_bdr)[0], *std::get<1>(bdr)[0]) +
-             10 * torch::mse_loss(*std::get<0>(u_bdr)[0], *std::get<0>(bdr)[0]) +
-             10 * torch::mse_loss(*std::get<1>(u_bdr)[1], *std::get<1>(bdr)[1]);
+        elast_loss = torch::mse_loss(div_stress, zeros);
+        trac_loss = torch::mse_loss(traction_free, boundary_zeros);
+        bc_loss = bc_weight * ( torch::mse_loss(*std::get<0>(u_bdr)[0], *std::get<0>(bdr)[0]) +
+                                torch::mse_loss(*std::get<0>(u_bdr)[1], *std::get<0>(bdr)[1]) +
+                                torch::mse_loss(*std::get<1>(u_bdr)[0], *std::get<1>(bdr)[0]) +
+                                torch::mse_loss(*std::get<1>(u_bdr)[1], *std::get<1>(bdr)[1]) );
+
+        // calculate the total loss
+        total_loss = elast_loss + bc_loss + trac_loss;
+
+        // print the loss values
+        std::cout   << std::setw(10) << total_loss.item<double>()        << " = "
+           << "EL " << std::setw(10) << elast_loss.item<double>()        << " + "
+           << "TL " << std::setw(10) << trac_loss.item<double>()         << " + "
+           << "BC " << std::setw(10) << bc_loss.item<double>()/bc_weight << std::endl;    
     }
     // SUPERVISED LEARNING
     else if (supervised_learning_ == true) {
@@ -272,17 +325,30 @@ public:
         torch::Tensor torch_gs_displacements = torch::from_blob(data_gs.data(), 
                 {rows_gs, cols_gs}, options).clone();
         // supervised learning loss
-        loss =  torch::mse_loss(net_displacements, torch_gs_displacements);
-                //  + 0.1 * torch::mse_loss(div_stress, zeros);
+        gs_loss =  torch::mse_loss(net_displacements, torch_gs_displacements);
+        trac_loss = torch::mse_loss(traction_free, boundary_zeros);
+        elast_loss = torch::mse_loss(div_stress, zeros);
+        bc_loss =   torch::mse_loss(*std::get<0>(u_bdr)[0], *std::get<0>(bdr)[0]) +
+                    torch::mse_loss(*std::get<0>(u_bdr)[1], *std::get<0>(bdr)[1]) +
+                    torch::mse_loss(*std::get<1>(u_bdr)[0], *std::get<1>(bdr)[0]) +
+                    torch::mse_loss(*std::get<1>(u_bdr)[1], *std::get<1>(bdr)[1]);
+       
+        // calculate the total loss
+        total_loss = gs_loss + trac_loss + elast_loss + bc_loss;
+
+        // print the loss values
+        std::cout   << std::setw(11) << total_loss.item<double>() << " = "
+           << "EL " << std::setw(11) << elast_loss.item<double>() << " + "
+           << "TL " << std::setw(11) << trac_loss.item<double>()  << " + "
+           << "BL " << std::setw(11) << bc_loss.item<double>()    << " + "
+           << "GL " << std::setw(11) << gs_loss.item<double>()    << std::endl;
     }
 
     else {
         throw std::runtime_error("Invalid value for supervised_learning_");
     }
 
-    std::cout << loss << std::endl;
-    // std::cout << torch::mse_loss(div_stress, zeros) << std::endl;
-    return loss;
+    return total_loss;
   }
 };
 
@@ -420,7 +486,7 @@ int main() {
   std::cout << "New CPs from Gismo:\n"
             << gs_controlPoints + gs_displacements << std::endl;
   // NET SOLUTION - printing the new position of the control points 
-  std::cout << "New CPs from IgANet:\n"
+  std::cout << "\n\nNew CPs from IgANet:\n"
             << net_controlPoints + net_displacements << std::endl;
 
   iganet::finalize();
