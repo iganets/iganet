@@ -1,5 +1,6 @@
 #include <iganet.h>
 #include <iostream>
+#include <fstream>
 
 using namespace iganet::literals;
 
@@ -32,6 +33,9 @@ private:
   // supervised learning (true) or unsupervised learning (false)
   bool supervised_learning_ = false;
 
+  // json path
+  static constexpr const char* json_path = "/home/obergue/Documents/pytest/splinepy/results.json";
+
 public:
   /// @brief Constructor
   template <typename... Args>
@@ -52,9 +56,38 @@ public:
 
   /// @brief Returns a non-constant reference to the reference solution
   auto &ref() { return ref_; }
+  
+  static void appendToJsonFile(const std::string& key, const nlohmann::json& data) {
+    
+    // create json object
+    nlohmann::json jsonData;
+    // try to read the JSON data from the file
+    std::ifstream jsonFileIn(json_path);
+    if (jsonFileIn.is_open()) {
+        try {
+            jsonFileIn >> jsonData;
+        } catch (const std::exception& e) {
+            std::cerr << "Warning: json file could not be read.\n";
+        }
+        jsonFileIn.close();
+    }
+
+    // add new data to the JSON object
+    jsonData[key] = data;
+
+    // write the JSON data to the file
+    std::ofstream jsonFileOut(json_path);
+    if (!jsonFileOut.is_open()) {
+        std::cerr << "Error: json file could not be opened.\n";
+        return;
+    }
+
+    jsonFileOut << jsonData.dump(1);
+    jsonFileOut.close();
+  }
 
   /// @brief GISMO workflow
-  static std::tuple<gsMatrix<double>, gsMatrix<double>> RunGismoSimulation(int64_t nrCtrlPts, int degree) {
+  static std::tuple<gsMatrix<double>, gsMatrix<double>, gsMatrix<double>> RunGismoSimulation(int64_t nrCtrlPts, int degree) {
 
     // initialize control points and displacements
     gsMatrix<double> gs_controlPoints(nrCtrlPts * nrCtrlPts, 2);
@@ -159,9 +192,34 @@ public:
         gs_displacements(i, 1) = displacement(1);
     }
 
-    // return the control points and displacements
-    return std::make_tuple(gs_controlPoints, gs_displacements);
-  }
+    // create a piecewise function for the stresses
+    gsPiecewiseFunction<double> stressFunction;
+
+    // calculet von Mises stresses (cauchy form)
+    assembler.constructCauchyStresses(solution_patch, stressFunction, stress_components::von_mises);
+
+    // allocate a matrix for the von Mises stresses at every control point
+    gsMatrix<double> gs_stresses(gs_controlPoints.rows(), 1);
+
+    // loop all control points
+    for (int i = 0; i < gs_controlPoints.rows(); ++i) {
+        gsMatrix<double> point(2, 1);
+        point(0, 0) = gs_controlPoints(i, 0);
+        point(1, 0) = gs_controlPoints(i, 1);
+
+        const auto &segment = stressFunction.piece(0); // patch index 0 (bc only 1 patch)
+
+        // eval the von Mises stress at the control point
+        gsMatrix<double> stressValue(1, 1);
+        segment.eval_into(point, stressValue);
+
+        // collect all von Mises stresses
+        gs_stresses(i, 0) = stressValue(0, 0);
+       
+    }
+    // return the control points, displacements and stresses
+    return std::make_tuple(gs_controlPoints, gs_displacements, gs_stresses);
+}
 
 
   /// @brief Initializes the epoch
@@ -206,6 +264,7 @@ public:
     int dofs = outputs.size(0);
 
     // TRACTION FREE BOUNDARY CONDITIONS
+
     // // reduce collPts by every first and last point of the upper and lower edge (points at the corners)
     // at::Tensor reduced_collPts_second = std::get<0>(collPts_.second)[0].slice(0, 1, std::get<0>(collPts_.second)[0].size(0) - 1);
     // std::array<at::Tensor, 2ul> secollPts_upper = {reduced_collPts_second, torch::ones(reduced_collPts_second.size(0))};    
@@ -214,12 +273,12 @@ public:
     std::array<at::Tensor, 2ul> secollPts_lower = {std::get<0>(collPts_.second)[0], torch::zeros(std::get<0>(collPts_.second)[0].size(0))};
     std::array<at::Tensor, 2ul> secollPts = {torch::cat({secollPts_upper[0], secollPts_lower[0]}, 0), torch::cat({secollPts_upper[1], secollPts_lower[1]}, 0)};
 
-    auto jacobian = Base::u_.ijac(Base::G_, secollPts);
+    auto jacobian_boundary = Base::u_.ijac(Base::G_, secollPts);
 
-    auto ux_x = *jacobian[0];
-    auto ux_y = *jacobian[1];
-    auto uy_x = *jacobian[2];
-    auto uy_y = *jacobian[3];
+    auto ux_x = *jacobian_boundary[0];
+    auto ux_y = *jacobian_boundary[1];
+    auto uy_x = *jacobian_boundary[2];
+    auto uy_y = *jacobian_boundary[3];
 
     torch::Tensor traction_free_x = torch::zeros({secollPts[0].size(0)});
     torch::Tensor traction_free_y = torch::zeros({secollPts[0].size(0)});
@@ -235,9 +294,9 @@ public:
         // traction_free_y[i] = uy_y[i];
     }
     torch::Tensor traction_free = torch::stack({traction_free_x, traction_free_y}, /*dim=*/1);
-    
+ 
     // LINEAR ELASTICITY EQUATION
-
+  
     // calculation of the second derivatives of the displacements (u)
     auto hessian_coll = Base::u_.ihess(Base::G_, collPts_.first, var_knot_indices_, 
             var_coeff_indices_, G_knot_indices_, G_coeff_indices_);
@@ -254,18 +313,19 @@ public:
     auto& uy_yy = *(hessian_coll[1][3]);
 
     // pre-allocation of the results
-    torch::Tensor results_x = torch::zeros({hessian_coll[0][0]->size(0)});
-    torch::Tensor results_y = torch::zeros({hessian_coll[0][0]->size(0)});
-    torch::Tensor zeros = torch::stack({results_x, results_y}, /*dim=*/1);
+
+    torch::Tensor div_stress_x = torch::zeros({hessian_coll[0][0]->size(0)});
+    torch::Tensor div_stress_y = torch::zeros({hessian_coll[0][0]->size(0)});
+    torch::Tensor zeros = torch::stack({div_stress_x, div_stress_y}, /*dim=*/1);
 
     // calculation of the divergence of the stress tensor
     for (int i = 0; i < hessian_coll[0][0]->size(0); ++i) {
 
         // x-direction
-        results_x[i] = (lambda_ + 2 * mu_) * ux_xx[i] + mu_ * ux_yy[i] + (lambda_ + mu_) * uy_xy[i];
+        div_stress_x[i] = (lambda_ + 2 * mu_) * ux_xx[i] + mu_ * ux_yy[i] + (lambda_ + mu_) * uy_xy[i];
 
         // y-direction
-        results_y[i] = mu_ * uy_xx[i] + (lambda_ + 2 * mu_) * uy_yy[i] + (lambda_ + mu_) * ux_xy[i];
+        div_stress_y[i] = mu_ * uy_xx[i] + (lambda_ + 2 * mu_) * uy_yy[i] + (lambda_ + mu_) * ux_xy[i];
         
         // Laplace equation for testing
         // results_x[i] = ux_xx[i] + ux_yy[i];
@@ -273,15 +333,75 @@ public:
     }
     
     // create a tensor of the divergence of the stress tensor
-    torch::Tensor div_stress = torch::stack({results_x, results_y}, /*dim=*/1);
+    torch::Tensor div_stress = torch::stack({div_stress_x, div_stress_y}, /*dim=*/1);
+    
 
+    // STRESS CALCULATION AND NEW POSITION OF THE COLLPTS
+
+    // only calculate this at the end of the simulation (only valid for 120 epochs)
+    if (epoch % 119 == 0 && epoch != 0) {
+        
+        // STRESS CALCULATION
+
+        // calculate the jacobian of the displacements (u) at the collocation points
+        auto jacobian = Base::u_.ijac(Base::G_, collPts_.first, var_knot_indices_, 
+            var_coeff_indices_, G_knot_indices_, G_coeff_indices_);
+        
+        auto ux_x = *jacobian[0];
+        auto ux_y = *jacobian[1];
+        auto uy_x = *jacobian[2];
+        auto uy_y = *jacobian[3];
+
+        // allocate the stress tensor
+        torch::Tensor sigma_xx = torch::zeros({hessian_coll[0][0]->size(0)});
+        torch::Tensor sigma_xy = torch::zeros({hessian_coll[0][0]->size(0)});
+        torch::Tensor sigma_yy = torch::zeros({hessian_coll[0][0]->size(0)}); 
+        torch::Tensor sigma_vm = torch::zeros({hessian_coll[0][0]->size(0)});   
+
+        // create json object for the stresses
+        nlohmann::json net_stresses = nlohmann::json::array();
+
+        // calculate the stress tensor
+        for (int i = 0; i < hessian_coll[0][0]->size(0); ++i) {
+            sigma_xx[i] = lambda_ * (ux_x[i] + uy_y[i]) + 2 * mu_ * ux_x[i];
+            sigma_xy[i] = mu_ * (uy_x[i] + ux_y[i]);
+            sigma_yy[i] = lambda_ * (ux_x[i] + uy_y[i]) + 2 * mu_ * uy_y[i];
+             // calculate von mises stress
+            sigma_vm[i] = sqrt(sigma_xx[i] * sigma_xx[i] + sigma_yy[i] * 
+                            sigma_yy[i] - sigma_xx[i] * sigma_yy[i] + 3 * sigma_xy[i] * sigma_xy[i]);
+            // add the von mises stress to the json object
+            net_stresses.push_back({sigma_vm[i].item<double>()});
+        }
+        // write the von mises stresses to the json file
+        appendToJsonFile("net_stresses", net_stresses);
+
+        // CALCULATE THE NEW POSITION OF THE COLLPTS
+
+        // create a tensor of the collocation points
+        at::Tensor collPts_first_as_tensor = torch::stack({std::get<0>(collPts_.first), std::get<1>(collPts_.first)}, 1);
+        auto displacement_of_collPts = Base::u_.eval(collPts_.first);
+        at::Tensor displacement_as_tensor = torch::stack({*(displacement_of_collPts[0]), *(displacement_of_collPts[1]) }, 1);
+
+        // create json objects for the collocation points' reference and deformed position
+        nlohmann::json collPts_first_as_json = nlohmann::json::array();
+        nlohmann::json collPts_first_after_displacement_as_json = nlohmann::json::array();
+        for (int i = 0; i < collPts_first_as_tensor.size(0); ++i) {
+            collPts_first_as_json.push_back({collPts_first_as_tensor[i][0].item<double>(), collPts_first_as_tensor[i][1].item<double>()});
+            collPts_first_after_displacement_as_json.push_back({collPts_first_as_tensor[i][0].item<double>() + displacement_as_tensor[i][0].item<double>(), 
+                                                                collPts_first_as_tensor[i][1].item<double>() + displacement_as_tensor[i][1].item<double>()});
+        }
+        // write the collocation points' original position to the json file
+        appendToJsonFile("collPts_first_as_tensor", collPts_first_as_json);
+        // write the collocation points' new position to the json file
+        appendToJsonFile("collPts_first_after_displacement_as_tensor", collPts_first_after_displacement_as_json);
+    }
     // evaluation at the boundary
     auto u_bdr = Base::u_.template eval<iganet::functionspace::boundary>(collPts_.second);
     auto bdr = ref_.template eval<iganet::functionspace::boundary>(collPts_.second);
 
     // UNSUPERVISED LEARNING (default)
     if (supervised_learning_ == false) {
-        int bc_weight = 10;
+        int bc_weight = 10e8;
         // calculation of the loss function for double-sided constraint solid
         // div_stress is compared to 0 since "divergence*sigma = 0" is the governing equation
         elast_loss = torch::mse_loss(div_stress, zeros);
@@ -289,17 +409,18 @@ public:
         bc_loss = bc_weight * ( torch::mse_loss(*std::get<0>(u_bdr)[0], *std::get<0>(bdr)[0]) +
                                 torch::mse_loss(*std::get<0>(u_bdr)[1], *std::get<0>(bdr)[1]) +
                                 torch::mse_loss(*std::get<1>(u_bdr)[0], *std::get<1>(bdr)[0]) +
-                                torch::mse_loss(*std::get<1>(u_bdr)[1], *std::get<1>(bdr)[1]) );
+                                torch::mse_loss(*std::get<1>(u_bdr)[1], *std::get<1>(bdr)[1]));
 
         // calculate the total loss
         total_loss = elast_loss + bc_loss + trac_loss;
 
         // print the loss values
-        std::cout   << std::setw(10) << total_loss.item<double>()        << " = "
-           << "EL " << std::setw(10) << elast_loss.item<double>()        << " + "
-           << "TL " << std::setw(10) << trac_loss.item<double>()         << " + "
-           << "BC " << std::setw(10) << bc_loss.item<double>()/bc_weight << std::endl;    
+        std::cout   << std::setw(11) << total_loss.item<double>()        << " = "
+           << "EL " << std::setw(11) << elast_loss.item<double>()        << " + "
+           << "TL " << std::setw(11) << trac_loss.item<double>()         << " + "
+           << "BC " << std::setw(11) << bc_loss.item<double>()/bc_weight << std::endl;    
     }
+
     // SUPERVISED LEARNING
     else if (supervised_learning_ == true) {
         torch::Tensor modified_outputs = outputs * 1.0;
@@ -380,8 +501,9 @@ int main() {
 
   gsMatrix<double> gs_controlPoints;
   gsMatrix<double> gs_displacements;
-  std::tie(gs_controlPoints, gs_displacements) = linear_elasticity_t::RunGismoSimulation(nrCtrlPts, degree);
-  
+  gsMatrix<double> gs_stresses;
+  std::tie(gs_controlPoints, gs_displacements, gs_stresses) = linear_elasticity_t::RunGismoSimulation(nrCtrlPts, degree);
+
   linear_elasticity_t
       net(// simulation parameters
           lambda, mu, supervised_learning, gs_displacements,
@@ -482,13 +604,39 @@ int main() {
       net_displacements(i, 1) = uy;
   }
 
-  // GISMO SOLUTION - printing the new position of the control points
-  std::cout << "New CPs from Gismo:\n"
-            << gs_controlPoints + gs_displacements << std::endl;
-  // NET SOLUTION - printing the new position of the control points 
-  std::cout << "\n\nNew CPs from IgANet:\n"
-            << net_controlPoints + net_displacements << std::endl;
+//   // GISMO SOLUTION - printing the new position of the control points
+//   std::cout << "New CPs from Gismo:\n"
+//             << gs_controlPoints + gs_displacements << std::endl;
+//   // NET SOLUTION - printing the new position of the control points 
+//   std::cout << "\n\nNew CPs from IgANet:\n"
+//             << net_controlPoints + net_displacements << std::endl;
 
+  // deformed position of the control points
+  gsMatrix<double> new_gs_controlPoints = gs_controlPoints + gs_displacements;
+  gsMatrix<double> new_net_controlPoints = net_controlPoints + net_displacements;
+  
+  // json objects for the deformed positions of the control points
+  nlohmann::json new_gs_cps = nlohmann::json::array();
+  nlohmann::json new_net_cps = nlohmann::json::array();
+  nlohmann::json new_gs_stresses = nlohmann::json::array();
+
+  // write data from the matrices to the json objects
+  for (int i = 0; i < new_gs_controlPoints.rows(); ++i) {
+      // new control points Gismo
+      new_gs_cps.push_back({new_gs_controlPoints(i, 0), new_gs_controlPoints(i, 1)});
+  
+      // new control points IgANet
+      new_net_cps.push_back({new_net_controlPoints(i, 0), new_net_controlPoints(i, 1)});
+
+      // write the von Mises stresses to the json object (calculated at the beginning of the main function)
+      new_gs_stresses.push_back({gs_stresses(i, 0)});
+  }
+
+  // write data to the json file
+  linear_elasticity_t::appendToJsonFile("cps_gismo", new_gs_cps);
+  linear_elasticity_t::appendToJsonFile("cps_iganet", new_net_cps);
+  linear_elasticity_t::appendToJsonFile("gs_stresses", new_gs_stresses);
+  
   iganet::finalize();
   return 0;
 }
