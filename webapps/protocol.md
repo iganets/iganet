@@ -110,19 +110,30 @@ In what follows, only the non-generic parts of the protocol are specified in mor
 
 _Client request_
 ```json
-"request" : "get"
+"request" : "get/sessions"
 ```
 
 _Server response_
 ```json
 "status"  : success (0)
-"data"    : { "ids" : [<comma-separated list of session ids>] }
+"data"    : { "ids" : [<comma-separated list of session ids>],
+              "sessions" : [<comma-separated list of session informations>] }
 ```
 or
 ```json
 "status"  : invalidGetRequest (6)
 "reason"  : <string>
 ```
+-   The `session information` list describes the sessions running onthe server.
+
+      -   Each list entry has the form
+          ```json
+          { "id"            : session-id,
+             "creationTime" : <string>,
+             "accessTime"   : <time stamp>,
+             "hasHash"      : <time stamp>,
+             "nmodels"      : <integer> }
+          ```
 
 ### Create a new session
 
@@ -147,7 +158,7 @@ or
 
       -   Each list entry has the form
           ```json
-          { "name"        : <string>,
+          { "name"         : <string>,
              "description" : <string>,
              "options"     : [<comma-separated list of options>],
              "inputs"      : [<comma-separated list of inputs>],
