@@ -338,7 +338,7 @@ public:
       else if (patch != "") {
 
         // Return individual patch of the solution
-        std::size_t patchIndex(0);
+        int patchIndex(-1);
 
         try {
           patchIndex = stoi(patch);
@@ -454,7 +454,7 @@ public:
                                  const std::string &attribute,
                                  const nlohmann::json &json) override {
 
-    std::size_t patchIndex(0);
+    int patchIndex(-1);
 
     try {
       patchIndex = stoi(patch);
@@ -538,7 +538,7 @@ public:
   nlohmann::json eval(const std::string &patch, const std::string &component,
                       const nlohmann::json &json) const override {
 
-    std::size_t patchIndex(0);
+    int patchIndex(-1);
 
     try {
       patchIndex = stoi(patch);
@@ -614,8 +614,7 @@ public:
 
   /// @brief Elevates the model's degrees, preserves smoothness
   void elevate(const nlohmann::json &json = NULL) override {
-    int num(1), dim(-1);
-    std::size_t patchIndex(-1);
+    int num(1), dim(-1), patchIndex(-1);
 
     if (json.contains("data")) {
       if (json["data"].contains("num"))
@@ -625,7 +624,7 @@ public:
         dim = json["data"]["dim"].get<int>();
 
       if (json["data"].contains("patch"))
-        patchIndex = json["data"]["patch"].get<std::size_t>();
+        patchIndex = json["data"]["patch"].get<int>();
     }
 
     if (patchIndex == -1)
@@ -636,8 +635,7 @@ public:
 
   /// @brief Increases the model's degrees, preserves multiplicity
   void increase(const nlohmann::json &json = NULL) override {
-    int num(1), dim(-1);
-    std::size_t patchIndex(-1);
+    int num(1), dim(-1), patchIndex(-1);
 
     if (json.contains("data")) {
       if (json["data"].contains("num"))
@@ -647,7 +645,7 @@ public:
         dim = json["data"]["dim"].get<int>();
 
       if (json["data"].contains("patch"))
-        patchIndex = json["data"]["patch"].get<std::size_t>();
+        patchIndex = json["data"]["patch"].get<int>();
     }
 
     if (patchIndex == -1)
@@ -658,8 +656,7 @@ public:
 
   /// @brief Refines the model
   void refine(const nlohmann::json &json = NULL) override {
-    int num(1), dim(-1);
-    std::size_t patchIndex(-1);
+    int num(1), dim(-1), patchIndex(-1);
 
     if (json.contains("data")) {
       if (json["data"].contains("num"))
@@ -669,13 +666,25 @@ public:
         dim = json["data"]["dim"].get<int>();
 
       if (json["data"].contains("patch"))
-        patchIndex = json["data"]["patch"].get<std::size_t>();
+        patchIndex = json["data"]["patch"].get<int>();
     }
 
+    std::cout << num << "," << dim << "," << patchIndex << std::endl;
+
+    std::cout << geo_ << std::endl;
+    
+    try {
     if (patchIndex == -1)
-      geo_.uniformRefine(num, dim);
+      geo_.uniformRefine(num, 1, dim);
     else
       geo_.patch(patchIndex).uniformRefine(num, 1, dim);
+
+    std::cout << geo_ << std::endl;
+    
+    } catch (std::exception & e) {
+      std::cout << "GismoGeometryModel exception: " << e.what() << std::endl;
+    }
+    std::cout << "Geometry refinement done\n";
   }
 
   /// @brief Reparameterize the model

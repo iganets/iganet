@@ -253,7 +253,7 @@ public:
   nlohmann::json eval(const std::string &patch, const std::string &component,
                       const nlohmann::json &json) const override {
 
-    std::size_t patchIndex(0);
+    int patchIndex(-1);
 
     try {
       patchIndex = stoi(patch);
@@ -317,8 +317,7 @@ public:
       bc_.setGeoMap(Base::geo_);
     }
 
-    int num(1), dim(-1);
-    std::size_t patchIndex(-1);
+    int num(1), dim(-1), patchIndex(-1);
 
     if (json.contains("data")) {
       if (json["data"].contains("num"))
@@ -328,7 +327,7 @@ public:
         dim = json["data"]["dim"].get<int>();
 
       if (json["data"].contains("patch"))
-        patchIndex = json["data"]["patch"].get<std::size_t>();
+        patchIndex = json["data"]["patch"].get<int>();
     }
 
     // Degree elevate basis of solution space
@@ -358,8 +357,7 @@ public:
       bc_.setGeoMap(Base::geo_);
     }
 
-    int num(1), dim(-1);
-    std::size_t patchIndex(-1);
+    int num(1), dim(-1), patchIndex(-1);
 
     if (json.contains("data")) {
       if (json["data"].contains("num"))
@@ -369,7 +367,7 @@ public:
         dim = json["data"]["dim"].get<int>();
 
       if (json["data"].contains("patch"))
-        patchIndex = json["data"]["patch"].get<std::size_t>();
+        patchIndex = json["data"]["patch"].get<int>();
     }
 
     // Degree increase basis of solution space
@@ -399,8 +397,7 @@ public:
       bc_.setGeoMap(Base::geo_);
     }
 
-    int num(1), dim(-1);
-    std::size_t patchIndex(-1);
+    int num(1), dim(-1), patchIndex(-1);
 
     if (json.contains("data")) {
       if (json["data"].contains("num"))
@@ -410,12 +407,12 @@ public:
         dim = json["data"]["dim"].get<int>();
 
       if (json["data"].contains("patch"))
-        patchIndex = json["data"]["patch"].get<std::size_t>();
+        patchIndex = json["data"]["patch"].get<int>();
     }
 
     // Refine basis of solution space
     if (patchIndex == -1)
-      basis_.uniformRefine(num, dim);
+      basis_.uniformRefine(num, 1, dim);
     else
       basis_.basis(patchIndex).uniformRefine(num, 1, dim);
 
