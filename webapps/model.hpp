@@ -138,19 +138,27 @@ public:
 class ModelXML {
 public:
   /// @brief Imports model from XML (as JSON object)
-  virtual void importXML(const nlohmann::json &json,
-                         const std::string &component, int id) = 0;
+  virtual void importXML(const std::string &patch,
+                         const std::string &component,
+                         const nlohmann::json &json,
+                         int id) = 0;
 
   /// @brief Imports model from XML (as XML object)
-  virtual void importXML(const pugi::xml_node &xml,
-                         const std::string &component, int id) = 0;
+  virtual void importXML(const std::string &patch,
+                         const std::string &component,
+                         const pugi::xml_node &xml,
+                         int id) = 0;
 
   /// @brief Exports model to XML (as JSON object)
-  virtual nlohmann::json exportXML(const std::string &component, int id) = 0;
+  virtual nlohmann::json exportXML(const std::string &patch,
+                                   const std::string &component,
+                                   int id) = 0;
 
   /// @brief Exports model to XML (as XML object)
-  virtual pugi::xml_node &exportXML(pugi::xml_node &root,
-                                    const std::string &component, int id) = 0;
+  virtual pugi::xml_node &exportXML(const std::string &patch,
+                                    const std::string &component,
+                                    pugi::xml_node &root,
+                                    int id) = 0;
 
   // @brief Returns model capabilities
   std::vector<std::string> getCapabilities() const {
