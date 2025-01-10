@@ -37,7 +37,7 @@ private:
   bool SUPERVISED_LEARNING_ = false;
 
   // json path
-  static constexpr const char* JSON_PATH = "/home/obergue/Documents/pytest/splinepy/results.json";
+  static constexpr const char* JSON_PATH = "/home/obergue/Documents/pytest/splinepy/results_2D.json";
 
 public:
   /// @brief Constructor
