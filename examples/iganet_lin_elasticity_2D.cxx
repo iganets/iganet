@@ -29,6 +29,7 @@ private:
 
   // simulation parameter
   double MAX_EPOCH_;
+  double MIN_LOSS_;
 
   // gismo solution
   gsMatrix<double> gsDisplacements_;
@@ -42,13 +43,13 @@ private:
 public:
   /// @brief Constructor
   template <typename... Args>
-  linear_elasticity(double lambda, double mu, bool SUPERVISED_LEARNING, double MAX_EPOCH,
+  linear_elasticity(double lambda, double mu, bool SUPERVISED_LEARNING, double MAX_EPOCH, double MIN_LOSS,
                     gsMatrix<double> gsDisplacements, std::vector<int64_t> &&layers,
                     std::vector<std::vector<std::any>> &&activations, Args &&...args)
       : Base(std::forward<std::vector<int64_t>>(layers),
              std::forward<std::vector<std::vector<std::any>>>(activations),
              std::forward<Args>(args)...),
-        lambda_(lambda), mu_(mu), SUPERVISED_LEARNING_(SUPERVISED_LEARNING), MAX_EPOCH_(MAX_EPOCH),
+        lambda_(lambda), mu_(mu), SUPERVISED_LEARNING_(SUPERVISED_LEARNING), MAX_EPOCH_(MAX_EPOCH), MIN_LOSS_(MIN_LOSS),
         gsDisplacements_(std::move(gsDisplacements)), ref_(iganet::utils::to_array(8_i64, 8_i64)) {}
 
   /// @brief Returns a constant reference to the collocation points
@@ -102,7 +103,8 @@ public:
   }
 
   /// @brief GISMO workflow
-  static std::tuple<gsMatrix<double>, gsMatrix<double>, gsMatrix<double>> RunGismoSimulation(int64_t NR_CTRL_PTS, int DEGREE) {
+  static std::tuple<gsMatrix<double>, gsMatrix<double>, gsMatrix<double>> 
+    RunGismoSimulation(int64_t NR_CTRL_PTS, int DEGREE, double YOUNG_MODULUS, double POISSON_RATIO) {
 
     // initialize control points and displacements
     gsMatrix<double> gsCtrlPts(NR_CTRL_PTS * NR_CTRL_PTS, 2);
@@ -121,19 +123,41 @@ public:
     ctrlValues.push_back(gap/DEGREE);
     double settingNumber = NR_CTRL_PTS - 4;
     double settingStart =  1.0 / (settingNumber + 1);
-    double setter = settingStart;
+    double setter = settingStart;    
     // loop to create the inner control points
     for (int i = 1; i <= settingNumber; ++i) {
         // arrange settingNumber control points around the center
         ctrlValues.push_back(setter);
         setter += settingStart;
     }
+    // set forelast control point
     ctrlValues.push_back(1.0-gap/DEGREE);
+    // set last control point
     ctrlValues.push_back(1.0);
-
-    if ((settingNumber >= 4) && (ctrlValues[1]*DEGREE != ctrlValues[2])) {
-        for (int j = 2; j <= settingNumber+2; ++j) {
-            ctrlValues[j] = ctrlValues[j-1] + gap;
+    
+    if (settingNumber >= 4) {
+        if (((DEGREE == 2)||(DEGREE==3)) && (ctrlValues[1]*DEGREE != ctrlValues[2])) {
+            for (int j = 2; j <= settingNumber+2; ++j) {
+                ctrlValues[j] = ctrlValues[j-1] + gap;
+            }
+        }
+        else if (((DEGREE == 4)||(DEGREE==5)) && (ctrlValues[1]*3 != ctrlValues[2])) {
+            int m=1;
+            std::vector<int> ctr{0};
+            ctr.push_back(0);
+            while (ctrlValues[m]<0.5)
+            {
+                ctrlValues[m] = ctrlValues[1] * (m+ctr[m]);
+                ctrlValues[NR_CTRL_PTS-1-m] = 1 - ctrlValues[m];
+                if (ctr[m]-ctr[m-1]<DEGREE-1){
+                    ctr.push_back(ctr[m]+m);
+                }
+                else if (ctr[m]-ctr[m-1]==DEGREE-1){
+                    ctr.push_back(ctr[m]+DEGREE-1);
+                }
+                m++;
+            }
+            
         }
     }
 
@@ -172,8 +196,8 @@ public:
 
     // initialize the elasticity assembler
     gsElasticityAssembler<double> assembler(geometry, basis, bcInfo, bodyForce);
-    assembler.options().setReal("YoungsModulus", 210.0);
-    assembler.options().setReal("PoissonsRatio", 0.4);
+    assembler.options().setReal("YoungsModulus", YOUNG_MODULUS);
+    assembler.options().setReal("PoissonsRatio", POISSON_RATIO);
     assembler.assemble();
 
     // solve the system
@@ -274,6 +298,7 @@ public:
     torch::Tensor tracLoss;
     torch::Tensor bcLoss;
     torch::Tensor gsLoss;
+    // torch::Tensor forceLoss;
 
     // number of DOFs (every CP has 2 DOFs)
     int dofs = outputs.size(0);
@@ -310,6 +335,29 @@ public:
     }
     torch::Tensor tractionFree = torch::stack({tractionFreeX, tractionFreeY}, /*dim=*/1);
  
+    // // FORCE BOUNDARY CONDITIONS
+
+    // std::array<at::Tensor, 2ul> secollPtsRight = {torch::ones(std::get<0>(collPts_.second)[0].size(0)), std::get<0>(collPts_.second)[0]};
+    // // std::cout << secollPtsRight << std::endl;
+    // auto jacobianRight = Base::u_.ijac(Base::G_, secollPtsRight);
+
+    // auto ux_x_right = *jacobianRight[0];
+    // auto ux_y_right = *jacobianRight[1];
+    // auto uy_x_right = *jacobianRight[2];
+    // auto uy_y_right = *jacobianRight[3];
+
+    // torch::Tensor tractionForceX = torch::zeros({secollPtsRight[0].size(0)});
+    // torch::Tensor tractionForceY = torch::zeros({secollPtsRight[0].size(0)});
+
+    // for(int i=0; i<secollPtsRight[0].size(0); ++i) {
+    //     // traction-free condition for linear elasticity
+    //     tractionForceX[i] = lambda_ * (ux_x_right[i] + uy_y_right[i]) + 2 * mu_ * ux_x_right[i];
+    //     tractionForceY[i] = mu_ * (uy_x_right[i] + ux_y_right[i]);  
+    // }
+    // torch::Tensor tractionForce = torch::stack({tractionForceX, tractionForceY}, /*dim=*/1);
+    // torch::Tensor targetForce = torch::zeros_like(tractionForce);
+    // targetForce.select(1,0).fill_(100.0);
+
     // LINEAR ELASTICITY EQUATION
   
     // calculation of the second derivatives of the displacements (u)
@@ -365,14 +413,16 @@ public:
                                 torch::mse_loss(*std::get<0>(u_bdr)[1], *std::get<0>(bdr)[1]) +
                                 torch::mse_loss(*std::get<1>(u_bdr)[0], *std::get<1>(bdr)[0]) +
                                 torch::mse_loss(*std::get<1>(u_bdr)[1], *std::get<1>(bdr)[1]));
+        // forceLoss = torch::mse_loss(tractionForce, targetForce);
 
         // calculate the total loss
-        totalLoss = elastLoss + bcLoss + tracLoss;
+        totalLoss = elastLoss + bcLoss + tracLoss; // + forceLoss;
 
         // print the loss values
         std::cout   << std::setw(11) << totalLoss.item<double>()        << " = "
            << "EL " << std::setw(11) << elastLoss.item<double>()        << " + "
            << "TL " << std::setw(11) << tracLoss.item<double>()         << " + "
+        //    << "FL " << std::setw(11) << forceLoss.item<double>()        << " + "
            << "BL " << std::setw(11) << bcLoss.item<double>()/bcWeight  << " * 1e" 
            << static_cast<int>(std::log10(bcWeight)) << std::endl;
     }
@@ -411,7 +461,7 @@ public:
                       torch::mse_loss(*std::get<1>(u_bdr)[1], *std::get<1>(bdr)[1]);
        
         // calculate the total loss
-        totalLoss = gsLoss + tracLoss + elastLoss + bcLoss;
+        totalLoss = gsLoss; // + tracLoss + elastLoss + bcLoss;
 
         // print the loss values
         std::cout   << std::setw(11) << totalLoss.item<double>() << " = "
@@ -428,7 +478,7 @@ public:
     // POSTPROCESSING PREPARATION - WRITING DATA TO JSON FILE
 
     // only calculate this at the end of the simulation
-    if (epoch == MAX_EPOCH_ - 1) {
+    if ((epoch == MAX_EPOCH_ - 1) || (totalLoss.item<double>() <= MIN_LOSS_)) {
         
         // STRESS CALCULATION
 
@@ -448,7 +498,9 @@ public:
         torch::Tensor sigma_vm = torch::zeros({hessianColl[0][0]->size(0)});   
 
         // create json object for the stresses
-        nlohmann::json netStresses_j = nlohmann::json::array();
+        nlohmann::json netVmStresses_j = nlohmann::json::array();
+        nlohmann::json netXStresses_j = nlohmann::json::array();
+        nlohmann::json netYStresses_j = nlohmann::json::array();
 
         // calculate the stress tensor
         for (int i = 0; i < hessianColl[0][0]->size(0); ++i) {
@@ -460,11 +512,15 @@ public:
             sigma_vm[i] = sqrt(sigma_xx[i] * sigma_xx[i] + sigma_yy[i] * 
                             sigma_yy[i] - sigma_xx[i] * sigma_yy[i] + 3 * sigma_xy[i] * sigma_xy[i]);
 
-            // add the von mises stress to the json object
-            netStresses_j.push_back({sigma_vm[i].item<double>()});
+            // add the stresses to the json objects
+            netVmStresses_j.push_back({sigma_vm[i].item<double>()});
+            netXStresses_j.push_back({sigma_xx[i].item<double>()});
+            netYStresses_j.push_back({sigma_yy[i].item<double>()});
         }
         // write the von mises stresses to the json file
-        appendToJsonFile("netStresses", netStresses_j);
+        appendToJsonFile("netVmStresses", netVmStresses_j);
+        appendToJsonFile("netXStresses", netXStresses_j);
+        appendToJsonFile("netYStresses", netYStresses_j);
 
         // CALCULATE THE NEW POSITION OF THE COLLPTS
 
@@ -509,13 +565,13 @@ int main() {
   iganet::verbose(std::cout);
 
   // USER INPUTS
-  double YOUNG_MODULUS = 210;
-  double POISSON_RATIO = 0.4;
-  int MAX_EPOCH = 120;
+  double YOUNG_MODULUS = 210.0;
+  double POISSON_RATIO = 0.25;
+  int MAX_EPOCH = 150;
   double MIN_LOSS = 1e-8;
   bool SUPERVISED_LEARNING = false;
-  int64_t NR_CTRL_PTS = 8; // in each direction
-  constexpr int DEGREE = 2;
+  int64_t NR_CTRL_PTS = 8; // in each direction 
+  constexpr int DEGREE = 4;
 
   // calculation of lame parameters
   double lambda = (YOUNG_MODULUS * POISSON_RATIO) / ((1 + POISSON_RATIO) * (1 - 2 * POISSON_RATIO));
@@ -531,11 +587,11 @@ int main() {
   gsMatrix<double> gsCtrlPts;
   gsMatrix<double> gsDisplacements;
   gsMatrix<double> gsStresses;
-  std::tie(gsCtrlPts, gsDisplacements, gsStresses) = linear_elasticity_t::RunGismoSimulation(NR_CTRL_PTS, DEGREE);
+  std::tie(gsCtrlPts, gsDisplacements, gsStresses) = linear_elasticity_t::RunGismoSimulation(NR_CTRL_PTS, DEGREE, YOUNG_MODULUS, POISSON_RATIO);
 
   linear_elasticity_t
       net(// simulation parameters
-          lambda, mu, SUPERVISED_LEARNING, MAX_EPOCH, gsDisplacements,
+          lambda, mu, SUPERVISED_LEARNING, MAX_EPOCH, MIN_LOSS, gsDisplacements,
           // Number of neurons per layer
           {25, 25},
           // Activation functions
