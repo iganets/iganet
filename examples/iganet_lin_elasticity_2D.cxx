@@ -268,7 +268,16 @@ public:
 
     if (epoch == 0) {
       Base::inputs(epoch);
-      collPts_ = Base::variable_collPts(iganet::collPts::greville_ref1);
+      collPts_ = Base::variable_collPts(iganet::collPts::greville);
+      int nrCollPts = static_cast<int>(std::sqrt(std::get<0>(collPts_)[0].size(0)));
+      at::Tensor collPtsCoeffs = std::get<0>(collPts_)[0].slice(0, 0, nrCollPts);
+      nlohmann::json collPtsCoeffs_j = nlohmann::json::array();
+      for (int i = 0; i < collPtsCoeffs.size(0); ++i) {
+          collPtsCoeffs_j.push_back({collPtsCoeffs[i].item<double>()});
+      }
+      appendToJsonFile("collPtsCoeffsRef0", collPtsCoeffs_j);
+      appendToJsonFile("nrCollPtsRef0", {nrCollPts});
+      
 
       var_knot_indices_ =
           Base::f_.template find_knot_indices<iganet::functionspace::interior>(
@@ -480,6 +489,16 @@ public:
     // only calculate this at the end of the simulation
     if ((epoch == MAX_EPOCH_ - 1) || (totalLoss.item<double>() <= MIN_LOSS_)) {
         
+        nlohmann::json tractionX = nlohmann::json::array();
+        nlohmann::json tractionY = nlohmann::json::array();
+
+        for (int i = 0; i < tractionFreeX.size(0); ++i) {
+            tractionX.push_back({tractionFreeX[i].item<double>()});
+            tractionY.push_back({tractionFreeY[i].item<double>()});
+        }
+        appendToJsonFile("tractionXRef0", tractionX);
+        appendToJsonFile("tractionYRef0", tractionY);
+
         // STRESS CALCULATION
 
         // calculate the jacobian of the displacements (u) at the collocation points
@@ -497,10 +516,16 @@ public:
         torch::Tensor sigma_yy = torch::zeros({hessianColl[0][0]->size(0)}); 
         torch::Tensor sigma_vm = torch::zeros({hessianColl[0][0]->size(0)});   
 
+        torch::Tensor epsilon_xx = torch::zeros({hessianColl[0][0]->size(0)});
+        torch::Tensor epsilon_yy = torch::zeros({hessianColl[0][0]->size(0)});
+        torch::Tensor poisson_sigma = torch::zeros({hessianColl[0][0]->size(0)});
+        torch::Tensor poisson_u = torch::zeros({hessianColl[0][0]->size(0)});
+
         // create json object for the stresses
         nlohmann::json netVmStresses_j = nlohmann::json::array();
         nlohmann::json netXStresses_j = nlohmann::json::array();
         nlohmann::json netYStresses_j = nlohmann::json::array();
+        nlohmann::json netPoisson_j = nlohmann::json::array();
 
         // calculate the stress tensor
         for (int i = 0; i < hessianColl[0][0]->size(0); ++i) {
@@ -511,16 +536,24 @@ public:
             // calculate von mises stress
             sigma_vm[i] = sqrt(sigma_xx[i] * sigma_xx[i] + sigma_yy[i] * 
                             sigma_yy[i] - sigma_xx[i] * sigma_yy[i] + 3 * sigma_xy[i] * sigma_xy[i]);
+              
+            epsilon_xx[i] = (lambda_+mu_) / (mu_*(3*lambda_+2*mu_)) * (sigma_xx[i] - lambda_/(2*(lambda_+mu_)) * sigma_yy[i]);
+            epsilon_yy[i] = (lambda_+mu_) / (mu_*(3*lambda_+2*mu_)) * (sigma_yy[i] - lambda_/(2*(lambda_+mu_)) * sigma_xx[i]);
+            poisson_sigma[i] = - epsilon_yy[i] / epsilon_xx[i];
 
             // add the stresses to the json objects
             netVmStresses_j.push_back({sigma_vm[i].item<double>()});
             netXStresses_j.push_back({sigma_xx[i].item<double>()});
             netYStresses_j.push_back({sigma_yy[i].item<double>()});
+
+            // add the poisson ratio to the json object
+            netPoisson_j.push_back({poisson_sigma[i].item<double>()});
         }
-        // write the von mises stresses to the json file
+        // write the stresses and poisson ratios to the json file
         appendToJsonFile("netVmStresses", netVmStresses_j);
         appendToJsonFile("netXStresses", netXStresses_j);
         appendToJsonFile("netYStresses", netYStresses_j);
+        appendToJsonFile("netPoisson", netPoisson_j);
 
         // CALCULATE THE NEW POSITION OF THE COLLPTS
 
@@ -607,6 +640,13 @@ int main() {
   // net.f().transform([=](const std::array<real_t, 3> xi) {
   //   return std::array<real_t, 3>{0.0, 0.0, 0.0};
   // });
+
+  at::Tensor ctrlPtsCoeffs = net.G().as_tensor().slice(0, 0, NR_CTRL_PTS);
+  nlohmann::json ctrlPtsCoeffs_j = nlohmann::json::array();
+  for (int i = 0; i < NR_CTRL_PTS; ++i) {
+      ctrlPtsCoeffs_j.push_back({ctrlPtsCoeffs[i].item<double>()});
+  }
+  linear_elasticity_t::appendToJsonFile("ctrlPtsCoeffs", ctrlPtsCoeffs_j);
 
   // BC SIDE WEST
   net.ref().boundary().template side<1>().transform<1>(
@@ -721,6 +761,7 @@ int main() {
   linear_elasticity_t::appendToJsonFile("gsCtrlPts", displacedGsCtrlPts_j);
   linear_elasticity_t::appendToJsonFile("netCtrlPts", displacedNetCtrlPts_j);
   linear_elasticity_t::appendToJsonFile("gsStresses", gsStresses_j);
+  linear_elasticity_t::appendToJsonFile("degree", DEGREE);
   
   iganet::finalize();
   return 0;
