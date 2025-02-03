@@ -13,6 +13,7 @@ private:
   using Base = iganet::IgANet<Optimizer, GeometryMap, Variable>;
 
   typename Base::variable_collPts_type collPts_;
+  int nrCollPts_;
   Variable ref_;
 
   using Customizable = iganet::IgANetCustomizable<GeometryMap, Variable>;
@@ -30,6 +31,8 @@ private:
   // simulation parameter
   double MAX_EPOCH_;
   double MIN_LOSS_;
+  std::vector<int> TFBC_SIDES_;
+  std::vector<std::tuple<int, double, double>> FORCE_SIDES_;
 
   // gismo solution
   gsMatrix<double> gsDisplacements_;
@@ -43,13 +46,13 @@ private:
 public:
   /// @brief Constructor
   template <typename... Args>
-  linear_elasticity(double lambda, double mu, bool SUPERVISED_LEARNING, double MAX_EPOCH, double MIN_LOSS,
+  linear_elasticity(double lambda, double mu, bool SUPERVISED_LEARNING, double MAX_EPOCH, double MIN_LOSS, std::vector<int> TFBC_SIDES, std::vector<std::tuple<int, double, double>> FORCE_SIDES,
                     gsMatrix<double> gsDisplacements, std::vector<int64_t> &&layers,
                     std::vector<std::vector<std::any>> &&activations, Args &&...args)
       : Base(std::forward<std::vector<int64_t>>(layers),
              std::forward<std::vector<std::vector<std::any>>>(activations),
              std::forward<Args>(args)...),
-        lambda_(lambda), mu_(mu), SUPERVISED_LEARNING_(SUPERVISED_LEARNING), MAX_EPOCH_(MAX_EPOCH), MIN_LOSS_(MIN_LOSS),
+        lambda_(lambda), mu_(mu), SUPERVISED_LEARNING_(SUPERVISED_LEARNING), MAX_EPOCH_(MAX_EPOCH), MIN_LOSS_(MIN_LOSS), TFBC_SIDES_(TFBC_SIDES), FORCE_SIDES_(FORCE_SIDES),
         gsDisplacements_(std::move(gsDisplacements)), ref_(iganet::utils::to_array(8_i64, 8_i64)) {}
 
   /// @brief Returns a constant reference to the collocation points
@@ -269,14 +272,14 @@ public:
     if (epoch == 0) {
       Base::inputs(epoch);
       collPts_ = Base::variable_collPts(iganet::collPts::greville_ref1);
-      int nrCollPts = static_cast<int>(std::sqrt(std::get<0>(collPts_)[0].size(0)));
-      at::Tensor collPtsCoeffs = std::get<0>(collPts_)[0].slice(0, 0, nrCollPts);
+      nrCollPts_ = static_cast<int>(std::sqrt(std::get<0>(collPts_)[0].size(0)));
+      torch::Tensor collPtsCoeffs = std::get<0>(collPts_)[0].slice(0, 0, nrCollPts_);
       nlohmann::json collPtsCoeffs_j = nlohmann::json::array();
       for (int i = 0; i < collPtsCoeffs.size(0); ++i) {
           collPtsCoeffs_j.push_back({collPtsCoeffs[i].item<double>()});
       }
       appendToJsonFile("collPtsCoeffsRef1", collPtsCoeffs_j);
-      appendToJsonFile("nrCollPtsRef1", {nrCollPts});
+      appendToJsonFile("nrCollPtsRef1", {nrCollPts_});
       
 
       var_knot_indices_ =
@@ -301,99 +304,135 @@ public:
   /// @brief Computes the loss function
   torch::Tensor loss(const torch::Tensor &outputs, int64_t epoch) override {
 
+    // create u_ from the training's outputs
     Base::u_.from_tensor(outputs);
+
+    // pre-allocation of the loss values
     torch::Tensor totalLoss; 
     torch::Tensor elastLoss;
-    torch::Tensor tracLoss;
     torch::Tensor bcLoss;
-    torch::Tensor gsLoss;
-    torch::Tensor forceLoss;
+    std::optional<torch::Tensor> tfbcLoss;
+    std::optional<torch::Tensor> gsLoss;
+    std::optional<torch::Tensor> forceLoss;
 
-    // number of DOFs (every CP has 2 DOFs)
-    int dofs = outputs.size(0);
+    // pre-allocation of the tensors for the traction boundary conditions
+    std::optional<torch::Tensor> forceValues;
+    std::optional<torch::Tensor> targetForce;
+    std::optional<torch::Tensor> tractionFreeValues;
+    std::optional<torch::Tensor> tractionZeros;
 
-    // TRACTION FREE BOUNDARY CONDITIONS
-
-    // // reduce collPts by every first and last point of the upper and lower edge (points at the corners)
-    // at::Tensor reduced_collPts_second = std::get<0>(collPts_.second)[0].slice(0, 1, std::get<0>(collPts_.second)[0].size(0) - 1);
-    // std::array<at::Tensor, 2ul> secCollPtsUpper = {reduced_collPts_second, torch::ones(reduced_collPts_second.size(0))};    
-    // std::array<at::Tensor, 2ul> secCollPtsLower = {reduced_collPts_second, torch::zeros(reduced_collPts_second.size(0))};
-    std::array<at::Tensor, 2ul> secCollPtsUpper = {std::get<0>(collPts_.second)[0], torch::ones(std::get<0>(collPts_.second)[0].size(0))};
-    std::array<at::Tensor, 2ul> secCollPtsLower = {std::get<0>(collPts_.second)[0], torch::zeros(std::get<0>(collPts_.second)[0].size(0))};
-    // std::array<at::Tensor, 2ul> secCollPtsRight = {torch::ones(std::get<0>(collPts_.second)[0].size(0)), std::get<0>(collPts_.second)[0]};
-    std::array<at::Tensor, 2ul> secCollPtsUpLow = {torch::cat({secCollPtsUpper[0], secCollPtsLower[0]}, 0), 
-                                                   torch::cat({secCollPtsUpper[1], secCollPtsLower[1]}, 0),};
-                                        
-    auto jacobianBoundary = Base::u_.ijac(Base::G_, secCollPtsUpLow);
-
-    auto ux_x = *jacobianBoundary[0];
-    auto ux_y = *jacobianBoundary[1];
-    auto uy_x = *jacobianBoundary[2];
-    auto uy_y = *jacobianBoundary[3];
-
-    torch::Tensor tractionFreeUpLowX = torch::zeros({secCollPtsUpLow[0].size(0)});
-    torch::Tensor tractionFreeUpLowY = torch::zeros({secCollPtsUpLow[0].size(0)});
-    // torch::Tensor tractionFreeRightX = torch::zeros({secCollPtsRight[0].size(0)});
-    // torch::Tensor tractionFreeRightY = torch::zeros({secCollPtsRight[0].size(0)});
-
-    // IF RHS IS TRACTION FREE
-    // torch::Tensor boundaryZeros1 = torch::stack({tractionFreeUpLowX, tractionFreeUpLowY}, 1);
-    // torch::Tensor boundaryZeros2 = torch::stack({tractionFreeRightX, tractionFreeRightY}, 1);
-    // torch::Tensor boundaryZeros = torch::cat({boundaryZeros1, boundaryZeros2}, 0);
-
-    // IF RHS IS DIRICHLET
-    torch::Tensor boundaryZeros = torch::stack({tractionFreeUpLowX, tractionFreeUpLowY}, 1);
-
+    // TRACTION BOUNDARY CONDITIONS
     
-    for(int i=0; i<secCollPtsUpLow[0].size(0); ++i) {
-        // traction-free condition for linear elasticity
-        tractionFreeUpLowX[i] = mu_ * (uy_x[i] + ux_y[i]);
-        tractionFreeUpLowY[i] = lambda_ * (ux_x[i] + uy_y[i]) + 2 * mu_ * uy_y[i];
+    // only calculate the traction-free boundary conditions if there are any
+    if (!TFBC_SIDES_.empty() || !FORCE_SIDES_.empty())
+    {       
+        // add the two vectors of force- and traction-free-BCs
+        std::vector<int> neumannSides;
+        neumannSides.reserve(TFBC_SIDES_.size() + FORCE_SIDES_.size());
+        neumannSides.insert(neumannSides.end(), TFBC_SIDES_.begin(), TFBC_SIDES_.end());
+        for (const auto& force : FORCE_SIDES_) {
+            neumannSides.push_back(std::get<0>(force));
+        }
+
+        // allocate tensors for the traction-free boundary conditions
+        std::vector<torch::Tensor> tractionCollPtsX;
+        std::vector<torch::Tensor> tractionCollPtsY;
+
+        // evaluate the boundary points depending on traction-free sides
+        for (int side : neumannSides) {
+            if (side == 1) {
+                tractionCollPtsX.push_back(torch::zeros(nrCollPts_));
+                tractionCollPtsY.push_back(std::get<0>(collPts_.second)[0]);
+            }
+            else if (side == 2) {
+                tractionCollPtsX.push_back(torch::ones(nrCollPts_));
+                tractionCollPtsY.push_back(std::get<0>(collPts_.second)[0]);
+            }
+            else if (side == 3) {
+                tractionCollPtsX.push_back(std::get<0>(collPts_.second)[0]);
+                tractionCollPtsY.push_back(torch::zeros(nrCollPts_));
+            }
+            else if (side == 4) {
+                tractionCollPtsX.push_back(std::get<0>(collPts_.second)[0]);
+                tractionCollPtsY.push_back(torch::ones(nrCollPts_));
+            }
+            else {
+                throw std::invalid_argument("Side for traction BC has to be 1, 2, 3 or 4.");
+            }
+        }
+        // merge the tensors to get a (nrTractionCollPts, 2) tensor
+        std::array<torch::Tensor, 2ul> tractionCollPts;
+        if (!tractionCollPtsX.empty() && !tractionCollPtsY.empty()) {
+            tractionCollPts = {
+                torch::cat(tractionCollPtsX, 0), 
+                torch::cat(tractionCollPtsY, 0)
+            };
+        }   
+
+        // calculate the derivatives at the considered boundary points                                     
+        auto jacobianBoundary = Base::u_.ijac(Base::G_, tractionCollPts);
+        auto ux_x = *jacobianBoundary[0];
+        auto ux_y = *jacobianBoundary[1];
+        auto uy_x = *jacobianBoundary[2];
+        auto uy_y = *jacobianBoundary[3];
+
+        // allocate tensors for the traction-free boundary conditions (tfbc)
+        torch::Tensor tractionValuesX = torch::zeros({tractionCollPts[0].size(0)});
+        torch::Tensor tractionValuesY = torch::zeros({tractionCollPts[0].size(0)});
+
+        // calculate the traction values at the boundary points
+        int64_t ctr = 0;
+        for (int side : neumannSides) {
+            for(int i=ctr*nrCollPts_; i<(ctr+1)*nrCollPts_; ++i) {
+                // traction-free condition for linear elasticity
+                if (side == 1) {
+                    tractionValuesX[i] =  - lambda_ * (ux_x[i] + uy_y[i]) - 2 * mu_ * ux_x[i];
+                    tractionValuesY[i] =  - mu_ * (uy_x[i] + ux_y[i]);
+                }
+                else if (side == 2) {
+                    tractionValuesX[i] = lambda_ * (ux_x[i] + uy_y[i]) + 2 * mu_ * ux_x[i];
+                    tractionValuesY[i] = mu_ * (uy_x[i] + ux_y[i]);
+                }
+                else if (side == 3) {
+                    tractionValuesX[i] =  - mu_ * (uy_x[i] + ux_y[i]);
+                    tractionValuesY[i] =  - lambda_ * (ux_x[i] + uy_y[i]) - 2 * mu_ * uy_y[i];
+                }
+                else if (side == 4) {
+                    tractionValuesX[i] = mu_ * (uy_x[i] + ux_y[i]);
+                    tractionValuesY[i] = lambda_ * (ux_x[i] + uy_y[i]) + 2 * mu_ * uy_y[i];
+                }
+            }
+            ctr++;
+        }
+        ctr = 0;
+
+        // merge the traction tensors of x- and y-directions
+        torch::Tensor tractionValues = torch::stack({tractionValuesX, tractionValuesY}, 1);
+
+        // cut the tensors to separate between the values of the traction-free sides and the force sides
+        int cutlength = FORCE_SIDES_.size() * nrCollPts_;
+        // traction values for the traction-free sides
+        tractionFreeValues.emplace(tractionValues.slice(0, 0, tractionValues.size(0)-cutlength)); 
+        // target values (0) for the traction-free sides
+        tractionZeros.emplace(torch::zeros_like(*tractionFreeValues)); 
+        // force values for the force sides
+        forceValues.emplace(tractionValues.slice(0, tractionValues.size(0)-cutlength, tractionValues.size(0)));
+        // target values for the force sides
+        targetForce.emplace(torch::zeros_like(*forceValues));
+
+        for (const auto& side : FORCE_SIDES_) {
+            // setting x-values (first column)
+            (*targetForce).slice(0, ctr * nrCollPts_, (ctr + 1) * nrCollPts_)  // take first ctr*nrCollPts_ rows
+                          .slice(1, 0, 1)                                      // only take first column
+                          .fill_(std::get<1>(side));                           // fill with x-force value
+
+            // setting y-values (second column)
+            (*targetForce).slice(0, ctr * nrCollPts_, (ctr + 1) * nrCollPts_)  // take first ctr*nrCollPts_ rows
+                          .slice(1, 1, 2)                                      // only take second column
+                          .fill_(std::get<2>(side));                           // fill with y-force value
+            ctr++;
+        }
     }
-    
-    // auto rjacobianBoundary = Base::u_.ijac(Base::G_, secCollPtsRight);
-
-    // auto rux_x = *rjacobianBoundary[0];
-    // auto rux_y = *rjacobianBoundary[1];
-    // auto ruy_x = *rjacobianBoundary[2];
-    // auto ruy_y = *rjacobianBoundary[3];
-
-    // for(int i=0; i<secCollPtsRight[0].size(0); ++i) {
-    //     // traction-free condition for linear elasticity
-    //     tractionFreeRightX[i] = lambda_ * (rux_x[i] + ruy_y[i]) + 2 * mu_ * rux_x[i];
-    //     tractionFreeRightY[i] = mu_ * (ruy_x[i] + rux_y[i]);
-    // }
-
-    // IF RHS IS TRACTION FREE
-    // torch::Tensor tractionFree1 = torch::stack({tractionFreeUpLowX, tractionFreeUpLowY}, 1);
-    // torch::Tensor tractionFree2 = torch::stack({tractionFreeRightX, tractionFreeRightY}, 1);
-    // torch::Tensor tractionFree = torch::cat({tractionFree1, tractionFree2}, 0);
-
-    // IF RHS IS DIRICHLET
-    torch::Tensor tractionFree = torch::stack({tractionFreeUpLowX, tractionFreeUpLowY}, 1);
-
- 
-    // FORCE BOUNDARY CONDITIONS
-
-    std::array<at::Tensor, 2ul> secollPtsRight = {torch::ones(std::get<0>(collPts_.second)[0].size(0)), std::get<0>(collPts_.second)[0]};
-    auto jacobianRight = Base::u_.ijac(Base::G_, secollPtsRight);
-
-    auto ux_x_right = *jacobianRight[0];
-    auto ux_y_right = *jacobianRight[1];
-    auto uy_x_right = *jacobianRight[2];
-    auto uy_y_right = *jacobianRight[3];
-
-    torch::Tensor tractionForceX = torch::zeros({secollPtsRight[0].size(0)});
-    torch::Tensor tractionForceY = torch::zeros({secollPtsRight[0].size(0)});
-
-    for(int i=0; i<secollPtsRight[0].size(0); ++i) {
-        // traction-free condition for linear elasticity
-        tractionForceX[i] = lambda_ * (ux_x_right[i] + uy_y_right[i]) + 2 * mu_ * ux_x_right[i];
-        tractionForceY[i] = mu_ * (uy_x_right[i] + ux_y_right[i]);  
-    }
-    torch::Tensor tractionForce = torch::stack({tractionForceX, tractionForceY}, /*dim=*/1);
-    torch::Tensor targetForce = torch::zeros_like(tractionForce);
-    targetForce.select(1,0).fill_(100.0);
 
     // LINEAR ELASTICITY EQUATION
   
@@ -413,7 +452,6 @@ public:
     auto& uy_yy = *(hessianColl[1][3]);
 
     // pre-allocation of the results
-
     torch::Tensor divStressX = torch::zeros({hessianColl[0][0]->size(0)});
     torch::Tensor divStressY = torch::zeros({hessianColl[0][0]->size(0)});
 
@@ -426,19 +464,21 @@ public:
         // y-direction
         divStressY[i] = mu_ * uy_xx[i] + (lambda_ + 2 * mu_) * uy_yy[i] + (lambda_ + mu_) * ux_xy[i];
         
-        // Laplace equation for testing
-        // results_x[i] = ux_xx[i] + ux_yy[i];
-        // results_y[i] = uy_xx[i] + uy_yy[i];
     }
     
     // create a tensor of the divergence of the stress tensor
     torch::Tensor divStress = torch::stack({divStressX, divStressY}, /*dim=*/1);
     
-    // evaluation at the boundary
+    // DIRICHLET BOUNDARY CONDITIONS
+
+    // evaluation of the displacements at the boundary points
     auto u_bdr = Base::u_.template eval<iganet::functionspace::boundary>(collPts_.second);
+    // evaluation of the displacements at the reference boundary points
     auto bdr = ref_.template eval<iganet::functionspace::boundary>(collPts_.second);
 
-    // evaluate body force f
+    // BODY FORCE
+
+    // evaluate the reference body force f at all collocation points
     auto f = Base::f_.eval(collPts_.first, var_knot_indices_, var_coeff_indices_);
     torch::Tensor bodyForce = torch::stack({*f[0], *f[1]}, /*dim=*/1).to(torch::kFloat32);
 
@@ -446,34 +486,35 @@ public:
     if (SUPERVISED_LEARNING_ == false) {
         int bcWeight = 10e8;
         // calculation of the loss function for double-sided constraint solid
-        // divStress is compared to 0 since "divergence*sigma = 0" is the governing equation
+        // div(sigma) + f = 0 --> div(sigma) = -f
         elastLoss = torch::mse_loss(divStress, bodyForce);
-        tracLoss = torch::mse_loss(tractionFree, boundaryZeros);
-        bcLoss = bcWeight *   ( torch::mse_loss(*std::get<0>(u_bdr)[0], *std::get<0>(bdr)[0]) +
-                                torch::mse_loss(*std::get<0>(u_bdr)[1], *std::get<0>(bdr)[1]));
-                                // torch::mse_loss(*std::get<1>(u_bdr)[0], *std::get<1>(bdr)[0]) +
-                                // torch::mse_loss(*std::get<1>(u_bdr)[1], *std::get<1>(bdr)[1]));
-        forceLoss = torch::mse_loss(tractionForce, targetForce);
+        tfbcLoss = torch::mse_loss(*tractionFreeValues, *tractionZeros);
+        bcLoss = bcWeight *   ( torch::mse_loss(*std::get<0>(u_bdr)[0], *std::get<0>(bdr)[0]) +         // side 1
+                                torch::mse_loss(*std::get<0>(u_bdr)[1], *std::get<0>(bdr)[1]));// +     // side 2
+                                // torch::mse_loss(*std::get<1>(u_bdr)[0], *std::get<1>(bdr)[0]) +      // side 3
+                                // torch::mse_loss(*std::get<1>(u_bdr)[1], *std::get<1>(bdr)[1]));      // side 4
+        forceLoss = torch::mse_loss(*forceValues, *targetForce);
 
         // calculate the total loss
-        totalLoss = elastLoss + bcLoss + tracLoss + forceLoss;
+        totalLoss = elastLoss + bcLoss + *tfbcLoss + *forceLoss;
 
         // print the loss values
         std::cout   << std::setw(11) << totalLoss.item<double>()        << " = "
            << "EL " << std::setw(11) << elastLoss.item<double>()        << " + "
-           << "TL " << std::setw(11) << tracLoss.item<double>()         << " + "
-           << "FL " << std::setw(11) << forceLoss.item<double>()        << " + "
+           << "TL " << std::setw(11) << (*tfbcLoss).item<double>()      << " + "
+           << "FL " << std::setw(11) << (*forceLoss).item<double>()     << " + "
            << "BL " << std::setw(11) << bcLoss.item<double>()/bcWeight  << " * 1e" 
            << static_cast<int>(std::log10(bcWeight)) << std::endl;
     }
 
     // SUPERVISED LEARNING
     else if (SUPERVISED_LEARNING_ == true) {
+        // preprocess the outputs for comparison with the G+Smo solution
         torch::Tensor modifiedOutputs = outputs * 1.0;
-        // Create netDisplacements_ from slices of modifiedOutputs
+        // create netDisplacements_ from slices of modifiedOutputs
         torch::Tensor netDisplacements_ = torch::stack({
-            modifiedOutputs.slice(0, 0, dofs/2),
-            modifiedOutputs.slice(0, dofs/2, dofs),
+            modifiedOutputs.slice(0, 0, outputs.size(0)/2),
+            modifiedOutputs.slice(0, outputs.size(0)/2, outputs.size(0)),
         }, 1);
         // create new tensor with requires_grad=true for training
         auto options = torch::TensorOptions().dtype(torch::kDouble).device(torch::kCPU);
@@ -491,9 +532,10 @@ public:
         // creating tensor from the transformed data
         torch::Tensor torchGsDisplacements = torch::from_blob(data_gs.data(), 
                 {gsRows, gsCols}, options).clone();
+
         // supervised learning loss
         gsLoss      = torch::mse_loss(netDisplacements_, torchGsDisplacements);
-        tracLoss    = torch::mse_loss(tractionFree, boundaryZeros);
+        tfbcLoss    = torch::mse_loss(*tractionFreeValues, *tractionZeros);
         elastLoss   = torch::mse_loss(divStress, bodyForce);
         bcLoss      = torch::mse_loss(*std::get<0>(u_bdr)[0], *std::get<0>(bdr)[0]) +
                       torch::mse_loss(*std::get<0>(u_bdr)[1], *std::get<0>(bdr)[1]) +
@@ -501,14 +543,14 @@ public:
                       torch::mse_loss(*std::get<1>(u_bdr)[1], *std::get<1>(bdr)[1]);
        
         // calculate the total loss
-        totalLoss = gsLoss; // + tracLoss + elastLoss + bcLoss;
+        totalLoss = *gsLoss; // + tfbcLoss + elastLoss + bcLoss;
 
         // print the loss values
         std::cout   << std::setw(11) << totalLoss.item<double>() << " = "
            << "EL " << std::setw(11) << elastLoss.item<double>() << " + "
-           << "TL " << std::setw(11) << tracLoss.item<double>()  << " + "
+           << "TL " << std::setw(11) << (*tfbcLoss).item<double>()  << " + "
            << "BL " << std::setw(11) << bcLoss.item<double>()    << " + "
-           << "GL " << std::setw(11) << gsLoss.item<double>()    << std::endl;
+           << "GL " << std::setw(11) << (*gsLoss).item<double>()    << std::endl;
     }
 
     else {
@@ -525,9 +567,9 @@ public:
         nlohmann::json tractionX = nlohmann::json::array();
         nlohmann::json tractionY = nlohmann::json::array();
 
-        for (int i = 0; i < tractionFreeUpLowX.size(0); ++i) {
-            tractionX.push_back({tractionFreeUpLowX[i].item<double>()});
-            tractionY.push_back({tractionFreeUpLowY[i].item<double>()});
+        for (int i = 0; i < (*tractionFreeValues).size(0); ++i) {
+            tractionX.push_back({(*tractionFreeValues)[i][0].item<double>()});
+            tractionY.push_back({(*tractionFreeValues)[i][1].item<double>()});
         }
         appendToJsonFile("tractionXRef1", tractionX);
         appendToJsonFile("tractionYRef1", tractionY);
@@ -551,8 +593,7 @@ public:
 
         torch::Tensor epsilon_xx = torch::zeros({hessianColl[0][0]->size(0)});
         torch::Tensor epsilon_yy = torch::zeros({hessianColl[0][0]->size(0)});
-        torch::Tensor poisson_sigma = torch::zeros({hessianColl[0][0]->size(0)});
-        torch::Tensor poisson_u = torch::zeros({hessianColl[0][0]->size(0)});
+        torch::Tensor poisson_re = torch::zeros({hessianColl[0][0]->size(0)});
 
         // create json object for the stresses
         nlohmann::json netVmStresses_j = nlohmann::json::array();
@@ -562,26 +603,30 @@ public:
 
         // calculate the stress tensor
         for (int i = 0; i < hessianColl[0][0]->size(0); ++i) {
+            // caluclate the stress values for all collocation points
             sigma_xx[i] = lambda_ * (ux_x[i] + uy_y[i]) + 2 * mu_ * ux_x[i];
             sigma_xy[i] = mu_ * (uy_x[i] + ux_y[i]);
             sigma_yy[i] = lambda_ * (ux_x[i] + uy_y[i]) + 2 * mu_ * uy_y[i];
             
-            // calculate von mises stress
-            sigma_vm[i] = sqrt(sigma_xx[i] * sigma_xx[i] + sigma_yy[i] * 
-                            sigma_yy[i] - sigma_xx[i] * sigma_yy[i] + 3 * sigma_xy[i] * sigma_xy[i]);
-              
-            epsilon_xx[i] = (lambda_+mu_) / (mu_*(3*lambda_+2*mu_)) * (sigma_xx[i] - lambda_/(2*(lambda_+mu_)) * sigma_yy[i]);
-            epsilon_yy[i] = (lambda_+mu_) / (mu_*(3*lambda_+2*mu_)) * (sigma_yy[i] - lambda_/(2*(lambda_+mu_)) * sigma_xx[i]);
-            poisson_sigma[i] = - epsilon_yy[i] / epsilon_xx[i];
+            // calculate von mises stress at the collocation points
+            sigma_vm[i] = sqrt(sigma_xx[i] * sigma_xx[i] + sigma_yy[i] * sigma_yy[i] 
+                             - sigma_xx[i] * sigma_yy[i] + sigma_xy[i] * sigma_xy[i] * 3);
+            
+            // calculate the strains at the collocation points
+            epsilon_xx[i] = (lambda_ + mu_) / (mu_ * (3 * lambda_ + 2 * mu_)) * (sigma_xx[i] - lambda_ / (2 * (lambda_ + mu_)) * sigma_yy[i]);
+            epsilon_yy[i] = (lambda_ + mu_) / (mu_ * (3 * lambda_ + 2 * mu_)) * (sigma_yy[i] - lambda_ / (2 * (lambda_ + mu_)) * sigma_xx[i]);
+
+            // calculate the actual poisson ratio at the collocation points
+            poisson_re[i] = - epsilon_yy[i] / epsilon_xx[i];
 
             // add the stresses to the json objects
             netVmStresses_j.push_back({sigma_vm[i].item<double>()});
             netXStresses_j.push_back({sigma_xx[i].item<double>()});
             netYStresses_j.push_back({sigma_yy[i].item<double>()});
-
             // add the poisson ratio to the json object
-            netPoisson_j.push_back({poisson_sigma[i].item<double>()});
+            netPoisson_j.push_back({poisson_re[i].item<double>()});
         }
+
         // write the stresses and poisson ratios to the json file
         appendToJsonFile("netVmStresses", netVmStresses_j);
         appendToJsonFile("netXStresses", netXStresses_j);
@@ -591,22 +636,24 @@ public:
         // CALCULATE THE NEW POSITION OF THE COLLPTS
 
         // create a tensor of the collocation points
-        at::Tensor collPtsFirstAsTensor = torch::stack({std::get<0>(collPts_.first), std::get<1>(collPts_.first)}, 1);
+        torch::Tensor collPtsFirstAsTensor = torch::stack({std::get<0>(collPts_.first), std::get<1>(collPts_.first)}, 1);
         auto displacementOfCollPts = Base::u_.eval(collPts_.first);
-        at::Tensor displacementAsTensor = torch::stack({*(displacementOfCollPts[0]), *(displacementOfCollPts[1]) }, 1);
+        torch::Tensor displacementAsTensor = torch::stack({*(displacementOfCollPts[0]), *(displacementOfCollPts[1]) }, 1);
 
-        // create json objects for the collocation points' reference and deformed position
+        // create json objects for the collocation points' reference and displaced position
         nlohmann::json collPtsFirst_j = nlohmann::json::array();
-        nlohmann::json collPtsFirstAfterDisplacement_j = nlohmann::json::array();
+        nlohmann::json collPtsFirstDispl_j = nlohmann::json::array();
         for (int i = 0; i < collPtsFirstAsTensor.size(0); ++i) {
+            // reference position of the collocation points
             collPtsFirst_j.push_back({collPtsFirstAsTensor[i][0].item<double>(), collPtsFirstAsTensor[i][1].item<double>()});
-            collPtsFirstAfterDisplacement_j.push_back({collPtsFirstAsTensor[i][0].item<double>() + displacementAsTensor[i][0].item<double>(), 
-                                                                collPtsFirstAsTensor[i][1].item<double>() + displacementAsTensor[i][1].item<double>()});
+            // new position of the collocation points
+            collPtsFirstDispl_j.push_back({collPtsFirstAsTensor[i][0].item<double>() + displacementAsTensor[i][0].item<double>(), 
+                                           collPtsFirstAsTensor[i][1].item<double>() + displacementAsTensor[i][1].item<double>()});
         }
         // write the collocation points' original position to the json file
         appendToJsonFile("collPtsFirstAsTensor", collPtsFirst_j);
         // write the collocation points' new position to the json file
-        appendToJsonFile("collPtsFirstAfterDisplacementAsTensor", collPtsFirstAfterDisplacement_j);
+        appendToJsonFile("collPtsFirstAfterDisplacementAsTensor", collPtsFirstDispl_j);
 
         // WRITING DIVERGENCE OF THE STRESS TENSOR TO JSON FILE
 
@@ -633,11 +680,17 @@ int main() {
   // USER INPUTS
   double YOUNG_MODULUS = 210.0;
   double POISSON_RATIO = 0.25;
-  int MAX_EPOCH = 300;
+  int MAX_EPOCH = 150;
   double MIN_LOSS = 1e-8;
   bool SUPERVISED_LEARNING = false;
   int64_t NR_CTRL_PTS = 8; // in each direction 
   constexpr int DEGREE = 4;
+  std::vector<int> TFBC_SIDES = {2}; 
+  std::vector<std::tuple<int, double, double>> FORCE_SIDES = {
+    {3, 0.0,  -50.0}, // {side, x-force, y-force}
+    {4, 0.0,  50.0}
+  };
+
 
   // calculation of lame parameters
   double lambda = (YOUNG_MODULUS * POISSON_RATIO) / ((1 + POISSON_RATIO) * (1 - 2 * POISSON_RATIO));
@@ -657,7 +710,7 @@ int main() {
 
   linear_elasticity_t
       net(// simulation parameters
-          lambda, mu, SUPERVISED_LEARNING, MAX_EPOCH, MIN_LOSS, gsDisplacements,
+          lambda, mu, SUPERVISED_LEARNING, MAX_EPOCH, MIN_LOSS, TFBC_SIDES, FORCE_SIDES, gsDisplacements,
           // Number of neurons per layer
           {25, 25},
           // Activation functions
@@ -669,22 +722,21 @@ int main() {
           // Number of B-spline coefficients of the variable
           std::tuple(iganet::utils::to_array(NR_CTRL_PTS, NR_CTRL_PTS)));
 
-  // imposing rhs f
+  // imposing body force
   net.f().transform([=](const std::array<real_t, 2> xi) {
-    // IF BODY FORCE IS NOT ZERO
-    // return std::array<real_t, 2>{-100.0, 0};
-    // FOR NO BODY FORCE
+    // body force {f_x, f_y}
     return std::array<real_t, 2>{0, 0};
   });
 
-  at::Tensor ctrlPtsCoeffs = net.G().as_tensor().slice(0, 0, NR_CTRL_PTS);
+  // get the coefficients of the control points
+  torch::Tensor ctrlPtsCoeffs = net.G().as_tensor().slice(0, 0, NR_CTRL_PTS);
   nlohmann::json ctrlPtsCoeffs_j = nlohmann::json::array();
   for (int i = 0; i < NR_CTRL_PTS; ++i) {
       ctrlPtsCoeffs_j.push_back({ctrlPtsCoeffs[i].item<double>()});
   }
   linear_elasticity_t::appendToJsonFile("ctrlPtsCoeffs", ctrlPtsCoeffs_j);
 
-  // BC SIDE WEST
+  // BC SIDE WEST - Dirichlet
   net.ref().boundary().template side<1>().transform<1>(
       [](const std::array<real_t, 1> &xi) {
           return std::array<real_t, 1>{0.0}; 
@@ -699,7 +751,7 @@ int main() {
       std::array<iganet::short_t, 1>{1} // 1 for y-direction
   );
 
-  // BC SIDE EAST
+  // BC SIDE EAST - Dirichlet
   net.ref().boundary().template side<2>().transform<1>(
     [](const std::array<real_t, 1> &xi) {
         return std::array<real_t, 1>{1.0};
@@ -744,8 +796,9 @@ int main() {
 
   // PROCESSING NETWORK OUTPUT FOR SPLINEPY
 
-  at::Tensor geometryAsTensor = net.G().as_tensor();
-  at::Tensor displacementAsTensor = net.u().as_tensor();
+  // get the geometry and displacement as tensors
+  torch::Tensor geometryAsTensor = net.G().as_tensor();
+  torch::Tensor displacementAsTensor = net.u().as_tensor();
   
   // creating collection matrix for all the control points (iganet)
   gsMatrix<real_t> netCtrlPts(NR_CTRL_PTS * NR_CTRL_PTS, 2);
