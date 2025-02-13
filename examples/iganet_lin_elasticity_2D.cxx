@@ -33,6 +33,7 @@ private:
   double MIN_LOSS_;
   std::vector<int> TFBC_SIDES_;
   std::vector<std::tuple<int, double, double>> FORCE_SIDES_;
+  std::vector<std::tuple<int, double, double>> DIRI_SIDES_;
 
   // gismo solution
   gsMatrix<double> gsDisplacements_;
@@ -47,12 +48,12 @@ public:
   /// @brief Constructor
   template <typename... Args>
   linear_elasticity(double lambda, double mu, bool SUPERVISED_LEARNING, double MAX_EPOCH, double MIN_LOSS, std::vector<int> TFBC_SIDES, std::vector<std::tuple<int, double, double>> FORCE_SIDES,
-                    gsMatrix<double> gsDisplacements, std::vector<int64_t> &&layers,
+                    std::vector<std::tuple<int, double, double>> DIRI_SIDES, gsMatrix<double> gsDisplacements, std::vector<int64_t> &&layers,
                     std::vector<std::vector<std::any>> &&activations, Args &&...args)
       : Base(std::forward<std::vector<int64_t>>(layers),
              std::forward<std::vector<std::vector<std::any>>>(activations),
              std::forward<Args>(args)...),
-        lambda_(lambda), mu_(mu), SUPERVISED_LEARNING_(SUPERVISED_LEARNING), MAX_EPOCH_(MAX_EPOCH), MIN_LOSS_(MIN_LOSS), TFBC_SIDES_(TFBC_SIDES), FORCE_SIDES_(FORCE_SIDES),
+        lambda_(lambda), mu_(mu), SUPERVISED_LEARNING_(SUPERVISED_LEARNING), MAX_EPOCH_(MAX_EPOCH), MIN_LOSS_(MIN_LOSS), TFBC_SIDES_(TFBC_SIDES), FORCE_SIDES_(FORCE_SIDES), DIRI_SIDES_(DIRI_SIDES),
         gsDisplacements_(std::move(gsDisplacements)), ref_(iganet::utils::to_array(8_i64, 8_i64)) {}
 
   /// @brief Returns a constant reference to the collocation points
@@ -185,17 +186,25 @@ public:
 
     // boundary conditions
     gsBoundaryConditions<double> bcInfo;
+    // dirichlet BCs
     bcInfo.addCondition(0, boundary::west, condition_type::dirichlet, 
             gsConstantFunction<double>(0.0, 2), 0);
     bcInfo.addCondition(0, boundary::west, condition_type::dirichlet, 
             gsConstantFunction<double>(0.0, 2), 1);
-    // bcInfo.addCondition(0, boundary::east, condition_type::dirichlet, 
-    //         gsConstantFunction<double>(1.0, 2), 0);
-    // bcInfo.addCondition(0, boundary::east, condition_type::dirichlet, 
-    //         gsConstantFunction<double>(0.0, 2), 1);
+
+    // traction BCs
+    // gsFunctionExpr<> tractionWest("0.0", "0.0", 2);
+    gsFunctionExpr<> tractionEast("100.0", "0.0", 2);
+    // gsFunctionExpr<> tractionSouth("0.0", "-50.0", 2);
+    // gsFunctionExpr<> tractionNorth("0.0", "50.0", 2);
+
+    // bcInfo.addCondition(0, boundary::west, condition_type::neumann, tractionWest);
+    bcInfo.addCondition(0, boundary::east, condition_type::neumann, tractionEast);
+    // bcInfo.addCondition(0, boundary::south, condition_type::neumann, tractionSouth);
+    // bcInfo.addCondition(0, boundary::north, condition_type::neumann, tractionNorth);
 
     // body force (currently set to zero)
-    gsConstantFunction<double> bodyForce(100., 0., 2);
+    gsConstantFunction<double> bodyForce(0., 0., 2);
 
     // initialize the elasticity assembler
     gsElasticityAssembler<double> assembler(geometry, basis, bcInfo, bodyForce);
@@ -310,7 +319,7 @@ public:
     // pre-allocation of the loss values
     torch::Tensor totalLoss; 
     torch::Tensor elastLoss;
-    torch::Tensor bcLoss;
+    std::optional<torch::Tensor> bcLoss;
     std::optional<torch::Tensor> tfbcLoss;
     std::optional<torch::Tensor> gsLoss;
     std::optional<torch::Tensor> forceLoss;
@@ -409,29 +418,38 @@ public:
         // merge the traction tensors of x- and y-directions
         torch::Tensor tractionValues = torch::stack({tractionValuesX, tractionValuesY}, 1);
 
-        // cut the tensors to separate between the values of the traction-free sides and the force sides
-        int cutlength = FORCE_SIDES_.size() * nrCollPts_;
-        // traction values for the traction-free sides
-        tractionFreeValues.emplace(tractionValues.slice(0, 0, tractionValues.size(0)-cutlength)); 
-        // target values (0) for the traction-free sides
-        tractionZeros.emplace(torch::zeros_like(*tractionFreeValues)); 
-        // force values for the force sides
-        forceValues.emplace(tractionValues.slice(0, tractionValues.size(0)-cutlength, tractionValues.size(0)));
-        // target values for the force sides
-        targetForce.emplace(torch::zeros_like(*forceValues));
+        if (!FORCE_SIDES_.empty()) {
+            // cut the tensors to separate between the values of the traction-free sides and the force sides
+            int cutlength = FORCE_SIDES_.size() * nrCollPts_;
+            // traction values for the traction-free sides
+            tractionFreeValues.emplace(tractionValues.slice(0, 0, tractionValues.size(0)-cutlength)); 
+            // target values (0) for the traction-free sides
+            tractionZeros.emplace(torch::zeros_like(*tractionFreeValues)); 
+            // force values for the force sides
+            forceValues.emplace(tractionValues.slice(0, tractionValues.size(0)-cutlength, tractionValues.size(0)));
+            // target values for the force sides
+            targetForce.emplace(torch::zeros_like(*forceValues));
 
-        for (const auto& side : FORCE_SIDES_) {
-            // setting x-values (first column)
-            (*targetForce).slice(0, ctr * nrCollPts_, (ctr + 1) * nrCollPts_)  // take first ctr*nrCollPts_ rows
-                          .slice(1, 0, 1)                                      // only take first column
-                          .fill_(std::get<1>(side));                           // fill with x-force value
+            for (const auto& side : FORCE_SIDES_) {
+                // setting x-values (first column)
+                (*targetForce).slice(0, ctr * nrCollPts_, (ctr + 1) * nrCollPts_)  // take first ctr*nrCollPts_ rows
+                            .slice(1, 0, 1)                                        // only take first column
+                            .fill_(std::get<1>(side));                             // fill with x-force value
 
-            // setting y-values (second column)
-            (*targetForce).slice(0, ctr * nrCollPts_, (ctr + 1) * nrCollPts_)  // take first ctr*nrCollPts_ rows
-                          .slice(1, 1, 2)                                      // only take second column
-                          .fill_(std::get<2>(side));                           // fill with y-force value
-            ctr++;
+                // setting y-values (second column)
+                (*targetForce).slice(0, ctr * nrCollPts_, (ctr + 1) * nrCollPts_)  // take first ctr*nrCollPts_ rows
+                            .slice(1, 1, 2)                                        // only take second column
+                            .fill_(std::get<2>(side));                             // fill with y-force value
+                ctr++;
+            }
         }
+        else {
+            // set the traction-free values
+            tractionFreeValues.emplace(tractionValues);
+            // set the target values to zero
+            tractionZeros.emplace(torch::zeros_like(*tractionFreeValues));
+        }
+
     }
 
     // LINEAR ELASTICITY EQUATION
@@ -468,13 +486,6 @@ public:
     
     // create a tensor of the divergence of the stress tensor
     torch::Tensor divStress = torch::stack({divStressX, divStressY}, /*dim=*/1);
-    
-    // DIRICHLET BOUNDARY CONDITIONS
-
-    // evaluation of the displacements at the boundary points
-    auto u_bdr = Base::u_.template eval<iganet::functionspace::boundary>(collPts_.second);
-    // evaluation of the displacements at the reference boundary points
-    auto bdr = ref_.template eval<iganet::functionspace::boundary>(collPts_.second);
 
     // BODY FORCE
 
@@ -484,73 +495,185 @@ public:
 
     // UNSUPERVISED LEARNING (default)
     if (SUPERVISED_LEARNING_ == false) {
-        int bcWeight = 10e8;
+
+        // create command line output variable for all the different losses
+        std::ostringstream singleLossOutput;
+
         // calculation of the loss function for double-sided constraint solid
         // div(sigma) + f = 0 --> div(sigma) = -f
         elastLoss = torch::mse_loss(divStress, bodyForce);
-        tfbcLoss = torch::mse_loss(*tractionFreeValues, *tractionZeros);
-        bcLoss = bcWeight *   ( torch::mse_loss(*std::get<0>(u_bdr)[0], *std::get<0>(bdr)[0]) +         // side 1
-                                torch::mse_loss(*std::get<0>(u_bdr)[1], *std::get<0>(bdr)[1]));// +     // side 2
-                                // torch::mse_loss(*std::get<1>(u_bdr)[0], *std::get<1>(bdr)[0]) +      // side 3
-                                // torch::mse_loss(*std::get<1>(u_bdr)[1], *std::get<1>(bdr)[1]));      // side 4
-        forceLoss = torch::mse_loss(*forceValues, *targetForce);
+        
+        // add the elasticity loss to the total loss
+        totalLoss = elastLoss;
 
-        // calculate the total loss
-        totalLoss = elastLoss + bcLoss + *tfbcLoss + *forceLoss;
+        // add the elasticity loss to the cmd-output variable
+        singleLossOutput << "EL " << std::setw(11) << elastLoss.item<double>();
+
+        // only consider traction-free-bc (tfbc) loss if tfbcs are applied
+        if (!TFBC_SIDES_.empty()) {
+            tfbcLoss = torch::mse_loss(*tractionFreeValues, *tractionZeros);
+            totalLoss += *tfbcLoss;
+            singleLossOutput << " + TL " << std::setw(11) << (*tfbcLoss).item<double>();
+        }
+
+        // only consider force loss if force is applied
+        if (!FORCE_SIDES_.empty()) {
+            forceLoss = torch::mse_loss(*forceValues, *targetForce);
+            totalLoss += *forceLoss;
+            singleLossOutput << " + FL " << std::setw(11) << (*forceLoss).item<double>();
+        }
+
+        // only consider BC loss if dirichlet BCs are applied
+        if (!DIRI_SIDES_.empty()) {
+            // add a BC weight for penalization of the training
+            int bcWeight = 1e9;
+            // initialize bcLoss variable
+            bcLoss = torch::tensor(0.0);
+
+            // evaluation of the displacements at the boundary points
+            auto u_bdr = Base::u_.template eval<iganet::functionspace::boundary>(collPts_.second);
+            // evaluation of the displacements at the reference boundary points
+            auto bdr = ref_.template eval<iganet::functionspace::boundary>(collPts_.second);
+
+            // loop through all dirichlet sides
+            for (const auto& side : DIRI_SIDES_) {
+                int sideNr = std::get<0>(side)-1;
+                
+                switch (sideNr) {
+                    case 0: 
+                        *bcLoss += bcWeight * (torch::mse_loss(*std::get<0>(u_bdr)[0], *std::get<0>(bdr)[0]) + 
+                                              torch::mse_loss(*std::get<0>(u_bdr)[1], *std::get<0>(bdr)[1]));
+                        break;
+                    case 1:
+                        *bcLoss += bcWeight * (torch::mse_loss(*std::get<1>(u_bdr)[0], *std::get<1>(bdr)[0]) + 
+                                              torch::mse_loss(*std::get<1>(u_bdr)[1], *std::get<1>(bdr)[1]));
+                        break;
+                    case 2:
+                        *bcLoss += bcWeight * (torch::mse_loss(*std::get<2>(u_bdr)[0], *std::get<2>(bdr)[0]) + 
+                                              torch::mse_loss(*std::get<2>(u_bdr)[1], *std::get<2>(bdr)[1]));
+                        break;
+                    case 3:
+                        *bcLoss += bcWeight * (torch::mse_loss(*std::get<3>(u_bdr)[0], *std::get<3>(bdr)[0]) + 
+                                              torch::mse_loss(*std::get<3>(u_bdr)[1], *std::get<3>(bdr)[1]));
+                        break;
+                    default:
+                        std::cerr << "Error: Invalid side number for Dirichlet BC!" << std::endl;
+                }
+            }
+            totalLoss += *bcLoss;
+            singleLossOutput << " + BL " << std::setw(11) << (*bcLoss).item<double>() / bcWeight 
+                             << " * 1e" << static_cast<int>(std::log10(bcWeight));
+        }
 
         // print the loss values
-        std::cout   << std::setw(11) << totalLoss.item<double>()        << " = "
-           << "EL " << std::setw(11) << elastLoss.item<double>()        << " + "
-           << "TL " << std::setw(11) << (*tfbcLoss).item<double>()      << " + "
-           << "FL " << std::setw(11) << (*forceLoss).item<double>()     << " + "
-           << "BL " << std::setw(11) << bcLoss.item<double>()/bcWeight  << " * 1e" 
-           << static_cast<int>(std::log10(bcWeight)) << std::endl;
+        std::cout << std::setw(11) << totalLoss.item<double>() << " = " << singleLossOutput.str() << std::endl;
     }
 
     // SUPERVISED LEARNING
     else if (SUPERVISED_LEARNING_ == true) {
+
+        // create command line output variable for all the different losses
+        std::ostringstream singleLossOutput;
+
         // preprocess the outputs for comparison with the G+Smo solution
         torch::Tensor modifiedOutputs = outputs * 1.0;
+
         // create netDisplacements_ from slices of modifiedOutputs
         torch::Tensor netDisplacements_ = torch::stack({
-            modifiedOutputs.slice(0, 0, outputs.size(0)/2),
-            modifiedOutputs.slice(0, outputs.size(0)/2, outputs.size(0)),
+            modifiedOutputs.slice(0, 0, outputs.size(0) / 2),
+            modifiedOutputs.slice(0, outputs.size(0) / 2, outputs.size(0)),
         }, 1);
+
         // create new tensor with requires_grad=true for training
         auto options = torch::TensorOptions().dtype(torch::kDouble).device(torch::kCPU);
-        // dimensions of the matrix
+
+        // transforming matrix into row vector for tensor creation
         int gsRows = gsDisplacements_.rows();
         int gsCols = gsDisplacements_.cols();
-        // transforming matrix into row vector
         std::vector<double> data_gs(gsRows * gsCols);
-        // writing data column-wise in matrix
+
         for (int col = 0; col < gsCols; ++col) {
             for (int row = 0; row < gsRows; ++row) {
                 data_gs[row * gsCols + col] = gsDisplacements_(row, col);
             }
         }
-        // creating tensor from the transformed data
-        torch::Tensor torchGsDisplacements = torch::from_blob(data_gs.data(), 
-                {gsRows, gsCols}, options).clone();
 
-        // supervised learning loss
-        gsLoss      = torch::mse_loss(netDisplacements_, torchGsDisplacements);
-        tfbcLoss    = torch::mse_loss(*tractionFreeValues, *tractionZeros);
-        elastLoss   = torch::mse_loss(divStress, bodyForce);
-        bcLoss      = torch::mse_loss(*std::get<0>(u_bdr)[0], *std::get<0>(bdr)[0]) +
-                      torch::mse_loss(*std::get<0>(u_bdr)[1], *std::get<0>(bdr)[1]) +
-                      torch::mse_loss(*std::get<1>(u_bdr)[0], *std::get<1>(bdr)[0]) +
-                      torch::mse_loss(*std::get<1>(u_bdr)[1], *std::get<1>(bdr)[1]);
-       
-        // calculate the total loss
-        totalLoss = *gsLoss; // + tfbcLoss + elastLoss + bcLoss;
+        // ´creating tensor from the transformed data
+        torch::Tensor torchGsDisplacements = torch::from_blob(data_gs.data(),
+            {gsRows, gsCols}, options).clone();
+
+        // calculation of the supervised loss
+        gsLoss = torch::mse_loss(netDisplacements_, torchGsDisplacements);
+
+        // calculation of the loss function for double-sided constraint solid
+        // div(sigma) + f = 0 --> div(sigma) = -f
+        elastLoss = torch::mse_loss(divStress, bodyForce);
+
+        // add the elasticity loss and supervised loss to the total loss
+        totalLoss = *gsLoss + elastLoss;
+
+        // add the elasticity and supervised losses to the cmd-output variable
+        singleLossOutput << "GL " << std::setw(11) << (*gsLoss).item<double>()
+                        << " + EL " << std::setw(11) << elastLoss.item<double>();
+
+        // only consider traction-free-bc (tfbc) loss if tfbcs are applied
+        if (!TFBC_SIDES_.empty()) {
+            tfbcLoss = torch::mse_loss(*tractionFreeValues, *tractionZeros);
+            totalLoss += *tfbcLoss;
+            singleLossOutput << " + TL " << std::setw(11) << (*tfbcLoss).item<double>();
+        }
+
+        // only consider force loss if force is applied
+        if (!FORCE_SIDES_.empty()) {
+            forceLoss = torch::mse_loss(*forceValues, *targetForce);
+            totalLoss += *forceLoss;
+            singleLossOutput << " + FL " << std::setw(11) << (*forceLoss).item<double>();
+        }
+
+        // only consider BC loss if dirichlet BCs are applied
+        if (!DIRI_SIDES_.empty()) {
+            // add a BC weight for penalization of the training
+            int bcWeight = 1e9;
+            // initialize bcLoss variable
+            bcLoss = torch::tensor(0.0);
+
+            // evaluation of the displacements at the boundary points
+            auto u_bdr = Base::u_.template eval<iganet::functionspace::boundary>(collPts_.second);
+            // evaluation of the displacements at the reference boundary points
+            auto bdr = ref_.template eval<iganet::functionspace::boundary>(collPts_.second);
+
+            // loop through all dirichlet sides
+            for (const auto& side : DIRI_SIDES_) {
+                int sideNr = std::get<0>(side) - 1;
+
+                switch (sideNr) {
+                    case 0:
+                        *bcLoss += bcWeight * (torch::mse_loss(*std::get<0>(u_bdr)[0], *std::get<0>(bdr)[0]) + 
+                                            torch::mse_loss(*std::get<0>(u_bdr)[1], *std::get<0>(bdr)[1]));
+                        break;
+                    case 1:
+                        *bcLoss += bcWeight * (torch::mse_loss(*std::get<1>(u_bdr)[0], *std::get<1>(bdr)[0]) + 
+                                            torch::mse_loss(*std::get<1>(u_bdr)[1], *std::get<1>(bdr)[1]));
+                        break;
+                    case 2:
+                        *bcLoss += bcWeight * (torch::mse_loss(*std::get<2>(u_bdr)[0], *std::get<2>(bdr)[0]) + 
+                                            torch::mse_loss(*std::get<2>(u_bdr)[1], *std::get<2>(bdr)[1]));
+                        break;
+                    case 3:
+                        *bcLoss += bcWeight * (torch::mse_loss(*std::get<3>(u_bdr)[0], *std::get<3>(bdr)[0]) + 
+                                            torch::mse_loss(*std::get<3>(u_bdr)[1], *std::get<3>(bdr)[1]));
+                        break;
+                    default:
+                        std::cerr << "Error: Invalid side number for Dirichlet BC!" << std::endl;
+                }
+            }
+            totalLoss += *bcLoss;
+            singleLossOutput << " + BL " << std::setw(11) << (*bcLoss).item<double>() / bcWeight 
+                            << " * 1e" << static_cast<int>(std::log10(bcWeight));
+        }
 
         // print the loss values
-        std::cout   << std::setw(11) << totalLoss.item<double>() << " = "
-           << "EL " << std::setw(11) << elastLoss.item<double>() << " + "
-           << "TL " << std::setw(11) << (*tfbcLoss).item<double>()  << " + "
-           << "BL " << std::setw(11) << bcLoss.item<double>()    << " + "
-           << "GL " << std::setw(11) << (*gsLoss).item<double>()    << std::endl;
+        std::cout << std::setw(11) << totalLoss.item<double>() << " = " << singleLossOutput.str() << std::endl;
     }
 
     else {
@@ -617,8 +740,13 @@ public:
             epsilon_yy[i] = (lambda_ + mu_) / (mu_ * (3 * lambda_ + 2 * mu_)) * (sigma_yy[i] - lambda_ / (2 * (lambda_ + mu_)) * sigma_xx[i]);
 
             // calculate the actual poisson ratio at the collocation points
-            poisson_re[i] = - epsilon_yy[i] / epsilon_xx[i];
+            // poisson_re[i] = ( - ( ux_x[i] * (mu_ * (3 * lambda_ + 2 * mu_)) / (lambda_ + mu_) - sigma_xx[i] ) / sigma_yy[i] );
+            //                   - ( uy_y[i] * (mu_ * (3 * lambda_ + 2 * mu_)) / (lambda_ + mu_) - sigma_yy[i] ) / sigma_xx[i] ) / 2;
+            // poisson_re[i] = - ( uy_y[i] * (mu_ * (3 * lambda_ + 2 * mu_)) / (lambda_ + mu_) - sigma_yy[i] ) / sigma_xx[i];
 
+            // only valid for load in x-direction
+            poisson_re[i] = - epsilon_yy[i] / epsilon_xx[i];
+            
             // add the stresses to the json objects
             netVmStresses_j.push_back({sigma_vm[i].item<double>()});
             netXStresses_j.push_back({sigma_xx[i].item<double>()});
@@ -677,19 +805,28 @@ int main() {
   iganet::init();
   iganet::verbose(std::cout);
 
-  // USER INPUTS
+  // ------- USER INPUTS ------- //
+
+  // material parameters
   double YOUNG_MODULUS = 210.0;
   double POISSON_RATIO = 0.25;
-  int MAX_EPOCH = 150;
+  // simulation parameters
+  int MAX_EPOCH = 300;
   double MIN_LOSS = 1e-8;
-  bool SUPERVISED_LEARNING = false;
-  int64_t NR_CTRL_PTS = 8; // in each direction 
+  bool SUPERVISED_LEARNING = true;
+  // spline parameters
+  int64_t NR_CTRL_PTS = 8;  // in each direction 
   constexpr int DEGREE = 4;
-  std::vector<int> TFBC_SIDES = {2}; 
+  // boundary conditions
   std::vector<std::tuple<int, double, double>> FORCE_SIDES = {
-    {3, 0.0,  -50.0}, // {side, x-force, y-force}
-    {4, 0.0,  50.0}
-  };
+      {2, 100.0,  0.0},     // {side, x-traction, y-traction}
+    };
+    std::vector<std::tuple<int, double, double>> DIRI_SIDES = {
+      {1, 0.0,  0.0},       // {side, x-displ, y-displ}
+    };
+  std::vector<int> TFBC_SIDES = {3, 4}; // {sides}
+    
+  // --------------------------- //
 
 
   // calculation of lame parameters
@@ -710,7 +847,7 @@ int main() {
 
   linear_elasticity_t
       net(// simulation parameters
-          lambda, mu, SUPERVISED_LEARNING, MAX_EPOCH, MIN_LOSS, TFBC_SIDES, FORCE_SIDES, gsDisplacements,
+          lambda, mu, SUPERVISED_LEARNING, MAX_EPOCH, MIN_LOSS, TFBC_SIDES, FORCE_SIDES, DIRI_SIDES, gsDisplacements,
           // Number of neurons per layer
           {25, 25},
           // Activation functions
@@ -736,35 +873,73 @@ int main() {
   }
   linear_elasticity_t::appendToJsonFile("ctrlPtsCoeffs", ctrlPtsCoeffs_j);
 
-  // BC SIDE WEST - Dirichlet
-  net.ref().boundary().template side<1>().transform<1>(
-      [](const std::array<real_t, 1> &xi) {
-          return std::array<real_t, 1>{0.0}; 
-      },
-      std::array<iganet::short_t, 1>{0} // 0 for x-direction
-  );
+  // run through all DIRI_SIDES
+  for (const auto& side : DIRI_SIDES) {
+    int sideNr = std::get<0>(side);
+    double xDispl = std::get<1>(side);
+    double yDispl = std::get<2>(side);
 
-  net.ref().boundary().template side<1>().transform<1>(
-      [](const std::array<real_t, 1> &xi) {
-          return std::array<real_t, 1>{0.0}; 
-      },
-      std::array<iganet::short_t, 1>{1} // 1 for y-direction
-  );
-
-  // BC SIDE EAST - Dirichlet
-  net.ref().boundary().template side<2>().transform<1>(
-    [](const std::array<real_t, 1> &xi) {
-        return std::array<real_t, 1>{1.0};
-    },
-    std::array<iganet::short_t, 1>{0} // 0 for x-direction
-  );
-
-  net.ref().boundary().template side<2>().transform<1>(
-    [](const std::array<real_t, 1> &xi) {
-        return std::array<real_t, 1>{0.0};
-    },
-    std::array<iganet::short_t, 1>{1} // 1 for y-direction
-  );
+    switch (sideNr) {
+        case 1:
+            net.ref().boundary().side<1>().transform<1>(
+                [=](const std::array<real_t, 1> &xi) {
+                    return std::array<real_t, 1>{xDispl};
+                },
+                std::array<iganet::short_t, 1>{0} 
+            );
+            net.ref().boundary().side<1>().transform<1>(
+                [=](const std::array<real_t, 1> &xi) {
+                    return std::array<real_t, 1>{yDispl};
+                },
+                std::array<iganet::short_t, 1>{1}
+            );
+            break;
+        case 2:
+            net.ref().boundary().side<2>().transform<1>(
+                [=](const std::array<real_t, 1> &xi) {
+                    return std::array<real_t, 1>{xDispl};
+                },
+                std::array<iganet::short_t, 1>{0} 
+            );
+            net.ref().boundary().side<2>().transform<1>(
+                [=](const std::array<real_t, 1> &xi) {
+                    return std::array<real_t, 1>{yDispl};
+                },
+                std::array<iganet::short_t, 1>{1}
+            );
+            break;
+        case 3:
+            net.ref().boundary().side<3>().transform<1>(
+                [=](const std::array<real_t, 1> &xi) {
+                    return std::array<real_t, 1>{xDispl};
+                },
+                std::array<iganet::short_t, 1>{0} 
+            );
+            net.ref().boundary().side<3>().transform<1>(
+                [=](const std::array<real_t, 1> &xi) {
+                    return std::array<real_t, 1>{yDispl};
+                },
+                std::array<iganet::short_t, 1>{1}
+            );
+            break;
+        case 4:
+            net.ref().boundary().side<4>().transform<1>(
+                [=](const std::array<real_t, 1> &xi) {
+                    return std::array<real_t, 1>{xDispl};
+                },
+                std::array<iganet::short_t, 1>{0} 
+            );
+            net.ref().boundary().side<4>().transform<1>(
+                [=](const std::array<real_t, 1> &xi) {
+                    return std::array<real_t, 1>{yDispl};
+                },
+                std::array<iganet::short_t, 1>{1}
+            );
+            break;
+        default:
+            std::cerr << "Error: Invalid side number " << sideNr << std::endl;
+    }
+}
 
   // Set maximum number of epochs
   net.options().max_epoch(MAX_EPOCH);
