@@ -13,6 +13,8 @@ private:
   using Base = iganet::IgANet<Optimizer, GeometryMap, Variable>;
 
   typename Base::variable_collPts_type collPts_;
+  typename Base::variable_collPts_type interiorCollPts_;
+
   int nrCollPts_;
   Variable ref_;
 
@@ -58,6 +60,9 @@ public:
 
   /// @brief Returns a constant reference to the collocation points
   auto const &collPts() const { return collPts_; }
+
+  /// @brief Returns a constant reference to the interior collocation points
+  auto const &interiorCollPts() const { return interiorCollPts_; }
 
   /// @brief Returns a constant reference to the reference solution
   auto const &ref() const { return ref_; }
@@ -106,72 +111,45 @@ public:
     }
   }
 
+  /// @brief helper function to calculate the Greville abscissae
+  static std::vector<double> computeGrevilleAbscissae(const gsKnotVector<double>& knotVector, int degree, int numCtrlPts) {
+      std::vector<double> greville(numCtrlPts, 0.0);
+      
+      for (int i = 0; i < numCtrlPts; ++i) {
+          double sum = 0.0;
+          for (int j = i + 1; j <= i + degree; ++j) {
+              sum += knotVector.at(j);
+          }
+          greville[i] = sum / degree;
+      }
+      return greville;
+  }
+
   /// @brief GISMO workflow
   static std::tuple<gsMatrix<double>, gsMatrix<double>, gsMatrix<double>> 
     RunGismoSimulation(int64_t NR_CTRL_PTS, int DEGREE, double YOUNG_MODULUS, double POISSON_RATIO) {
-
+    
     // initialize control points and displacements
     gsMatrix<double> gsCtrlPts(NR_CTRL_PTS * NR_CTRL_PTS, 2);
     gsMatrix<double> gsDisplacements(NR_CTRL_PTS * NR_CTRL_PTS, 2);
 
     // create knot vectors
-    gsKnotVector<double> knotVector_u(0.0, 1.0, NR_CTRL_PTS-DEGREE-1, DEGREE+1);
-    gsKnotVector<double> knotVector_v(0.0, 1.0, NR_CTRL_PTS-DEGREE-1, DEGREE+1);
-
-     // create control points in the according distribution 
-    std::vector<double> ctrlValues{0.0};
-    if (NR_CTRL_PTS < DEGREE) {
-        throw std::invalid_argument("Number of control points must be at least " 
-                                    + std::to_string(DEGREE+1) + ".");    }
-    double gap = 1.0 / (NR_CTRL_PTS - DEGREE);
-    ctrlValues.push_back(gap/DEGREE);
-    double settingNumber = NR_CTRL_PTS - 4;
-    double settingStart =  1.0 / (settingNumber + 1);
-    double setter = settingStart;    
-    // loop to create the inner control points
-    for (int i = 1; i <= settingNumber; ++i) {
-        // arrange settingNumber control points around the center
-        ctrlValues.push_back(setter);
-        setter += settingStart;
-    }
-    // set forelast control point
-    ctrlValues.push_back(1.0-gap/DEGREE);
-    // set last control point
-    ctrlValues.push_back(1.0);
+    gsKnotVector<double> knotVector_u(0.0, 1.0, NR_CTRL_PTS - DEGREE - 1, DEGREE + 1);
+    gsKnotVector<double> knotVector_v(0.0, 1.0, NR_CTRL_PTS - DEGREE - 1, DEGREE + 1);
     
-    if (settingNumber >= 4) {
-        if (((DEGREE == 2)||(DEGREE==3)) && (ctrlValues[1]*DEGREE != ctrlValues[2])) {
-            for (int j = 2; j <= settingNumber+2; ++j) {
-                ctrlValues[j] = ctrlValues[j-1] + gap;
-            }
-        }
-        else if (((DEGREE == 4)||(DEGREE==5)) && (ctrlValues[1]*3 != ctrlValues[2])) {
-            int m=1;
-            std::vector<int> ctr{0};
-            ctr.push_back(0);
-            while (ctrlValues[m]<0.5)
-            {
-                ctrlValues[m] = ctrlValues[1] * (m+ctr[m]);
-                ctrlValues[NR_CTRL_PTS-1-m] = 1 - ctrlValues[m];
-                if (ctr[m]-ctr[m-1]<DEGREE-1){
-                    ctr.push_back(ctr[m]+m);
-                }
-                else if (ctr[m]-ctr[m-1]==DEGREE-1){
-                    ctr.push_back(ctr[m]+DEGREE-1);
-                }
-                m++;
-            }
-            
-        }
-    }
+    // calculation of the Greville points
+    std::vector<double> grevilleU = computeGrevilleAbscissae(knotVector_u, DEGREE, NR_CTRL_PTS);
+    std::vector<double> grevilleV = computeGrevilleAbscissae(knotVector_v, DEGREE, NR_CTRL_PTS);
 
+    // initialize control points matrix
     gsMatrix<double> controlPoints(NR_CTRL_PTS * NR_CTRL_PTS, 2); 
-    // systematic placement of control points
+    
+    // systematic placement of control points according to greville abscissae
     int index = 0;
     for (int j = 0; j < NR_CTRL_PTS; ++j) {
         for (int i = 0; i < NR_CTRL_PTS; ++i) {
-            controlPoints(index, 0) = ctrlValues[i];
-            controlPoints(index, 1) = ctrlValues[j];
+            controlPoints(index, 0) = grevilleU[i];
+            controlPoints(index, 1) = grevilleV[j];
             ++index;
         }
     }
@@ -191,15 +169,19 @@ public:
             gsConstantFunction<double>(0.0, 2), 0);
     bcInfo.addCondition(0, boundary::west, condition_type::dirichlet, 
             gsConstantFunction<double>(0.0, 2), 1);
+    bcInfo.addCondition(0, boundary::east, condition_type::dirichlet,
+            gsConstantFunction<double>(1.0, 2), 0);
+    bcInfo.addCondition(0, boundary::east, condition_type::dirichlet,
+            gsConstantFunction<double>(0.0, 2), 1);
 
     // traction BCs
     // gsFunctionExpr<> tractionWest("0.0", "0.0", 2);
-    gsFunctionExpr<> tractionEast("100.0", "0.0", 2);
+    // gsFunctionExpr<> tractionEast("100.0", "0.0", 2);
     // gsFunctionExpr<> tractionSouth("0.0", "-50.0", 2);
     // gsFunctionExpr<> tractionNorth("0.0", "50.0", 2);
 
     // bcInfo.addCondition(0, boundary::west, condition_type::neumann, tractionWest);
-    bcInfo.addCondition(0, boundary::east, condition_type::neumann, tractionEast);
+    // bcInfo.addCondition(0, boundary::east, condition_type::neumann, tractionEast);
     // bcInfo.addCondition(0, boundary::south, condition_type::neumann, tractionSouth);
     // bcInfo.addCondition(0, boundary::north, condition_type::neumann, tractionNorth);
 
@@ -281,6 +263,8 @@ public:
     if (epoch == 0) {
       Base::inputs(epoch);
       collPts_ = Base::variable_collPts(iganet::collPts::greville_ref1);
+      interiorCollPts_ = Base::variable_collPts(iganet::collPts::greville_interior_ref1);
+      
       nrCollPts_ = static_cast<int>(std::sqrt(std::get<0>(collPts_)[0].size(0)));
       torch::Tensor collPtsCoeffs = std::get<0>(collPts_)[0].slice(0, 0, nrCollPts_);
       nlohmann::json collPtsCoeffs_j = nlohmann::json::array();
@@ -453,10 +437,9 @@ public:
     }
 
     // LINEAR ELASTICITY EQUATION
-  
+
     // calculation of the second derivatives of the displacements (u)
-    auto hessianColl = Base::u_.ihess(Base::G_, collPts_.first, var_knot_indices_, 
-            var_coeff_indices_, G_knot_indices_, G_coeff_indices_);
+    auto hessianColl = Base::u_.ihess(Base::G_, interiorCollPts_.first);
 
     // partial derivatives of the displacements (u)
     auto& ux_xx = *(hessianColl[0][0]);
@@ -489,8 +472,9 @@ public:
 
     // BODY FORCE
 
-    // evaluate the reference body force f at all collocation points
-    auto f = Base::f_.eval(collPts_.first, var_knot_indices_, var_coeff_indices_);
+    // evaluate the reference body force f at all interior collocation points
+    auto f = Base::f_.eval(interiorCollPts_.first);
+
     torch::Tensor bodyForce = torch::stack({*f[0], *f[1]}, /*dim=*/1).to(torch::kFloat32);
 
     // UNSUPERVISED LEARNING (default)
@@ -709,14 +693,14 @@ public:
         auto uy_y = *jacobian[3];
 
         // allocate the stress tensor
-        torch::Tensor sigma_xx = torch::zeros({hessianColl[0][0]->size(0)});
-        torch::Tensor sigma_xy = torch::zeros({hessianColl[0][0]->size(0)});
-        torch::Tensor sigma_yy = torch::zeros({hessianColl[0][0]->size(0)}); 
-        torch::Tensor sigma_vm = torch::zeros({hessianColl[0][0]->size(0)});   
+        torch::Tensor sigma_xx = torch::zeros({jacobian[0]->size(0)});
+        torch::Tensor sigma_xy = torch::zeros({jacobian[0]->size(0)});
+        torch::Tensor sigma_yy = torch::zeros({jacobian[0]->size(0)}); 
+        torch::Tensor sigma_vm = torch::zeros({jacobian[0]->size(0)});   
 
-        torch::Tensor epsilon_xx = torch::zeros({hessianColl[0][0]->size(0)});
-        torch::Tensor epsilon_yy = torch::zeros({hessianColl[0][0]->size(0)});
-        torch::Tensor poisson_re = torch::zeros({hessianColl[0][0]->size(0)});
+        torch::Tensor epsilon_xx = torch::zeros({jacobian[0]->size(0)});
+        torch::Tensor epsilon_yy = torch::zeros({jacobian[0]->size(0)});
+        torch::Tensor poisson_re = torch::zeros({jacobian[0]->size(0)});
 
         // create json object for the stresses
         nlohmann::json netVmStresses_j = nlohmann::json::array();
@@ -725,8 +709,8 @@ public:
         nlohmann::json netPoisson_j = nlohmann::json::array();
 
         // calculate the stress tensor
-        for (int i = 0; i < hessianColl[0][0]->size(0); ++i) {
-            // caluclate the stress values for all collocation points
+        for (int i = 0; i < jacobian[0]->size(0); ++i) {
+            // calculate the stress values for all collocation points
             sigma_xx[i] = lambda_ * (ux_x[i] + uy_y[i]) + 2 * mu_ * ux_x[i];
             sigma_xy[i] = mu_ * (uy_x[i] + ux_y[i]);
             sigma_yy[i] = lambda_ * (ux_x[i] + uy_y[i]) + 2 * mu_ * uy_y[i];
@@ -810,19 +794,23 @@ int main() {
   // material parameters
   double YOUNG_MODULUS = 210.0;
   double POISSON_RATIO = 0.25;
+
   // simulation parameters
-  int MAX_EPOCH = 300;
+  int MAX_EPOCH = 150;
   double MIN_LOSS = 1e-8;
-  bool SUPERVISED_LEARNING = true;
+  bool SUPERVISED_LEARNING = false;
+
   // spline parameters
   int64_t NR_CTRL_PTS = 8;  // in each direction 
   constexpr int DEGREE = 4;
+
   // boundary conditions
   std::vector<std::tuple<int, double, double>> FORCE_SIDES = {
-      {2, 100.0,  0.0},     // {side, x-traction, y-traction}
+    //   {2, 100.0,  0.0},     // {side, x-traction, y-traction}
     };
-    std::vector<std::tuple<int, double, double>> DIRI_SIDES = {
+  std::vector<std::tuple<int, double, double>> DIRI_SIDES = {
       {1, 0.0,  0.0},       // {side, x-displ, y-displ}
+      {2, 1.0,  0.0},
     };
   std::vector<int> TFBC_SIDES = {3, 4}; // {sides}
     
@@ -1009,16 +997,18 @@ int main() {
   nlohmann::json displacedNetCtrlPts_j = nlohmann::json::array();
   nlohmann::json gsStresses_j = nlohmann::json::array();
 
-  // write data from the matrices to the json objects
+  // write G+Smo data from the matrices to the json objects
   for (int i = 0; i < displacedGsCtrlPts.rows(); ++i) {
-      // new control points Gismo
+      // new control points G+Smo
       displacedGsCtrlPts_j.push_back({displacedGsCtrlPts(i, 0), displacedGsCtrlPts(i, 1)});
-  
-      // new control points IgANet
-      displacedNetCtrlPts_j.push_back({displacedNetCtrlPts(i, 0), displacedNetCtrlPts(i, 1)});
-
       // write the von Mises stresses to the json object (calculated at the beginning of the main function)
       gsStresses_j.push_back({gsStresses(i, 0)});
+  }
+  
+  // write net data from the matrices to the json objects
+  for (int i = 0; i < displacedNetCtrlPts.rows(); ++i) {
+      // new control points IgANet
+      displacedNetCtrlPts_j.push_back({displacedNetCtrlPts(i, 0), displacedNetCtrlPts(i, 1)});
   }
 
   // write data to the json file
