@@ -133,9 +133,10 @@ public:
   static std::tuple<gsMatrix<double>, gsMatrix<double>, gsMatrix<double>> 
     RunGismoSimulation(int64_t NR_CTRL_PTS, int DEGREE, double YOUNG_MODULUS, double POISSON_RATIO) {
     
-    // initialize control points and displacements
+    // initialize the reference control points and the calculated displacements & stresses
     gsMatrix<double> gsCtrlPts(NR_CTRL_PTS * NR_CTRL_PTS, 2);
     gsMatrix<double> gsDisplacements(NR_CTRL_PTS * NR_CTRL_PTS, 2);
+    gsMatrix<double> gsStresses(gsCtrlPts.rows(), 1); //von Mises stresses (only one component)
 
     // create knot vectors
     gsKnotVector<double> knotVector_u(0.0, 1.0, NR_CTRL_PTS - DEGREE - 1, DEGREE + 1);
@@ -144,22 +145,19 @@ public:
     // calculation of the Greville points
     std::vector<double> grevilleU = computeGrevilleAbscissae(knotVector_u, DEGREE, NR_CTRL_PTS);
     std::vector<double> grevilleV = computeGrevilleAbscissae(knotVector_v, DEGREE, NR_CTRL_PTS);
-
-    // initialize control points matrix
-    gsMatrix<double> controlPoints(NR_CTRL_PTS * NR_CTRL_PTS, 2); 
     
     // systematic placement of control points according to greville abscissae
     int index = 0;
     for (int j = 0; j < NR_CTRL_PTS; ++j) {
         for (int i = 0; i < NR_CTRL_PTS; ++i) {
-            controlPoints(index, 0) = grevilleU[i];
-            controlPoints(index, 1) = grevilleV[j];
+            gsCtrlPts(index, 0) = grevilleU[i];
+            gsCtrlPts(index, 1) = grevilleV[j];
             ++index;
         }
     }
 
     // create geometry
-    gsTensorBSpline<2, double> geometry(knotVector_u, knotVector_v, controlPoints);
+    gsTensorBSpline<2, double> geometry(knotVector_u, knotVector_v, gsCtrlPts);
 
     // create multipatch and add the geometry
     gsMultiPatch<double> multiPatch;
@@ -208,51 +206,29 @@ public:
     gsMultiPatch<double> solutionPatch;
     assembler.constructSolution(solution, assembler.allFixedDofs(), solutionPatch);
 
-    // create a mesh object for the control net
-    gsMesh<double> controlNetMesh;
-    geometry.controlNet(controlNetMesh);
-
-    // create collection matrices for all the control points and displacements
-    gsCtrlPts.resize(controlNetMesh.numVertices(), 2);
-    gsDisplacements.resize(controlNetMesh.numVertices(), 2);
-    gsMatrix<double> point(2, 1);
-
-    for (int i = 0; i < controlNetMesh.numVertices(); ++i) {
-        gsCtrlPts(i, 0) = controlNetMesh.vertex(i)(0);
-        gsCtrlPts(i, 1) = controlNetMesh.vertex(i)(1);
-
-        point(0, 0) = gsCtrlPts(i, 0);
-        point(1, 0) = gsCtrlPts(i, 1);
-
-        auto displacement = solutionPatch.patch(0).eval(point);
-        gsDisplacements(i, 0) = displacement(0);
-        gsDisplacements(i, 1) = displacement(1);
-    }
-
     // create a piecewise function for the stresses
     gsPiecewiseFunction<double> stressFunction;
 
-    // calculet von Mises stresses (cauchy form)
+    // calculate von Mises stresses (cauchy form)
     assembler.constructCauchyStresses(solutionPatch, stressFunction, stress_components::von_mises);
-
-    // allocate a matrix for the von Mises stresses at every control point
-    gsMatrix<double> gsStresses(gsCtrlPts.rows(), 1);
 
     // loop all control points
     for (int i = 0; i < gsCtrlPts.rows(); ++i) {
+        // create temp point
         gsMatrix<double> point(2, 1);
         point(0, 0) = gsCtrlPts(i, 0);
         point(1, 0) = gsCtrlPts(i, 1);
 
+        // DISPLACEMENT EVALUATION
+        auto displacement = solutionPatch.patch(0).eval(point);
+        gsDisplacements(i, 0) = displacement(0);
+        gsDisplacements(i, 1) = displacement(1);
         const auto &segment = stressFunction.piece(0); // patch index 0 (bc only 1 patch)
 
-        // eval the von Mises stress at the control point
+        // STRESS EVALUATION
         gsMatrix<double> stressValue(1, 1);
         segment.eval_into(point, stressValue);
-
-        // collect all von Mises stresses
         gsStresses(i, 0) = stressValue(0, 0);
-       
     }
     // return the control points, displacements and stresses
     return std::make_tuple(gsCtrlPts, gsDisplacements, gsStresses);
@@ -269,6 +245,7 @@ public:
       collPts_ = Base::variable_collPts(iganet::collPts::greville_ref1);
       interiorCollPts_ = Base::variable_collPts(iganet::collPts::greville_interior_ref1);
       
+      // WARNING, only works for equal number of control points in x and y direction
       nrCollPts_ = static_cast<int>(std::sqrt(std::get<0>(collPts_)[0].size(0)));
       torch::Tensor collPtsCoeffs = std::get<0>(collPts_)[0].slice(0, 0, nrCollPts_);
       nlohmann::json collPtsCoeffs_j = nlohmann::json::array();
@@ -341,6 +318,7 @@ public:
         std::vector<torch::Tensor> tractionCollPtsX;
         std::vector<torch::Tensor> tractionCollPtsY;
         
+        // diriCtr is used to determine the intersection of dirichlet and traction-free sides
         int diriCtr = 1;
 
         // evaluate the boundary points depending on traction-free sides
@@ -369,8 +347,8 @@ public:
                     at::Tensor collPtsY_tensor = std::get<0>(collPts_.second)[0];
                     tractionCollPtsX.push_back(torch::zeros({nrCollPts_ - 2}));  
                     tractionCollPtsY.push_back(collPtsY_tensor.slice(0, 1, -1));
+                    // 2 collPts have to be removed
                     diriCtr=2;
-
                 }
                 else {
                     tractionCollPtsX.push_back(torch::zeros(nrCollPts_));
@@ -648,22 +626,22 @@ public:
 
             // loop through all dirichlet sides
             for (const auto& side : DIRI_SIDES_) {
-                int sideNr = std::get<0>(side)-1;
+                int sideNr = std::get<0>(side);
                 
                 switch (sideNr) {
-                    case 0: 
+                    case 1: 
                         *bcLoss += bcWeight * (torch::mse_loss(*std::get<0>(u_bdr)[0], *std::get<0>(bdr)[0]) + 
                                               torch::mse_loss(*std::get<0>(u_bdr)[1], *std::get<0>(bdr)[1]));
                         break;
-                    case 1:
+                    case 2:
                         *bcLoss += bcWeight * (torch::mse_loss(*std::get<1>(u_bdr)[0], *std::get<1>(bdr)[0]) + 
                                               torch::mse_loss(*std::get<1>(u_bdr)[1], *std::get<1>(bdr)[1]));
                         break;
-                    case 2:
+                    case 3:
                         *bcLoss += bcWeight * (torch::mse_loss(*std::get<2>(u_bdr)[0], *std::get<2>(bdr)[0]) + 
                                               torch::mse_loss(*std::get<2>(u_bdr)[1], *std::get<2>(bdr)[1]));
                         break;
-                    case 3:
+                    case 4:
                         *bcLoss += bcWeight * (torch::mse_loss(*std::get<3>(u_bdr)[0], *std::get<3>(bdr)[0]) + 
                                               torch::mse_loss(*std::get<3>(u_bdr)[1], *std::get<3>(bdr)[1]));
                         break;
@@ -755,22 +733,22 @@ public:
 
             // loop through all dirichlet sides
             for (const auto& side : DIRI_SIDES_) {
-                int sideNr = std::get<0>(side) - 1;
+                int sideNr = std::get<0>(side);
 
                 switch (sideNr) {
-                    case 0:
+                    case 1:
                         *bcLoss += bcWeight * (torch::mse_loss(*std::get<0>(u_bdr)[0], *std::get<0>(bdr)[0]) + 
                                             torch::mse_loss(*std::get<0>(u_bdr)[1], *std::get<0>(bdr)[1]));
                         break;
-                    case 1:
+                    case 2:
                         *bcLoss += bcWeight * (torch::mse_loss(*std::get<1>(u_bdr)[0], *std::get<1>(bdr)[0]) + 
                                             torch::mse_loss(*std::get<1>(u_bdr)[1], *std::get<1>(bdr)[1]));
                         break;
-                    case 2:
+                    case 3:
                         *bcLoss += bcWeight * (torch::mse_loss(*std::get<2>(u_bdr)[0], *std::get<2>(bdr)[0]) + 
                                             torch::mse_loss(*std::get<2>(u_bdr)[1], *std::get<2>(bdr)[1]));
                         break;
-                    case 3:
+                    case 4:
                         *bcLoss += bcWeight * (torch::mse_loss(*std::get<3>(u_bdr)[0], *std::get<3>(bdr)[0]) + 
                                             torch::mse_loss(*std::get<3>(u_bdr)[1], *std::get<3>(bdr)[1]));
                         break;
@@ -934,6 +912,7 @@ int main() {
   int MAX_EPOCH = 150;
   double MIN_LOSS = 1e-8;
   bool SUPERVISED_LEARNING = false;
+  bool RUN_REF_SIM = false;
 
   // spline parameters
   int64_t NR_CTRL_PTS = 8;  // in each direction 
@@ -968,6 +947,30 @@ int main() {
   gsMatrix<double> gsStresses;
   std::tie(gsCtrlPts, gsDisplacements, gsStresses) = 
     linear_elasticity_t::RunGismoSimulation(NR_CTRL_PTS, DEGREE, YOUNG_MODULUS, POISSON_RATIO);
+  
+  if (RUN_REF_SIM) {
+      int NR_CTRL_PTS_REF = 64;
+      gsMatrix<double> gsRefCtrlPts;
+      gsMatrix<double> gsRefDisplacements;
+      gsMatrix<double> gsRefStresses;
+
+      std::tie(gsRefCtrlPts, gsRefDisplacements, gsRefStresses) = 
+      linear_elasticity_t::RunGismoSimulation(NR_CTRL_PTS_REF, DEGREE, YOUNG_MODULUS, POISSON_RATIO);
+
+      gsMatrix<double> displacedGsRefCtrlPts = gsRefCtrlPts + gsRefDisplacements;
+      nlohmann::json displacedGsRefCtrlPts_j = nlohmann::json::array();
+      nlohmann::json gsRefStresses_j = nlohmann::json::array();
+
+      // write G+Smo reference data from the matrices to the json objects
+      for (int i = 0; i < displacedGsRefCtrlPts.rows(); ++i) {
+          // new control points G+Smo
+          displacedGsRefCtrlPts_j.push_back({displacedGsRefCtrlPts(i, 0), displacedGsRefCtrlPts(i, 1)});
+          // write the von Mises stresses to the json object (calculated at the beginning of the main function)
+          gsRefStresses_j.push_back({gsRefStresses(i, 0)});
+      }
+      linear_elasticity_t::appendToJsonFile("gsRefCtrlPts", displacedGsRefCtrlPts_j);
+      linear_elasticity_t::appendToJsonFile("gsRefStresses", gsRefStresses_j);
+  }
 
   linear_elasticity_t
       net(// simulation parameters
@@ -1111,7 +1114,7 @@ int main() {
       double y = geometryAsTensor[i + NR_CTRL_PTS * NR_CTRL_PTS].item<double>();
       netCtrlPts(i, 0) = x;
       netCtrlPts(i, 1) = y;
-
+         
       double ux = displacementAsTensor[i].item<double>();
       double uy = displacementAsTensor[i + NR_CTRL_PTS * NR_CTRL_PTS].item<double>();
       netDisplacements(i, 0) = ux;
@@ -1136,12 +1139,12 @@ int main() {
 
   // write G+Smo data from the matrices to the json objects
   for (int i = 0; i < displacedGsCtrlPts.rows(); ++i) {
-      // new control points G+Smo
-      displacedGsCtrlPts_j.push_back({displacedGsCtrlPts(i, 0), displacedGsCtrlPts(i, 1)});
-      // write the von Mises stresses to the json object (calculated at the beginning of the main function)
-      gsStresses_j.push_back({gsStresses(i, 0)});
+        // new control points G+Smo
+        displacedGsCtrlPts_j.push_back({displacedGsCtrlPts(i, 0), displacedGsCtrlPts(i, 1)});
+        // write the von Mises stresses to the json object (calculated at the beginning of the main function)
+        gsStresses_j.push_back({gsStresses(i, 0)});
   }
-  
+ 
   // write net data from the matrices to the json objects
   for (int i = 0; i < displacedNetCtrlPts.rows(); ++i) {
       // new control points IgANet
