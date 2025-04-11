@@ -23,6 +23,7 @@ int main() {
   nlohmann::json json;
   json["res0"] = 50;
   json["res1"] = 50;
+  json["cnet"] = true;
 
   // Bivariate uniform B-spline of degree 2 in both directions
   iganet::UniformBSpline<real_t, 2, 2, 2> bspline;
@@ -36,7 +37,7 @@ int main() {
 
 #ifdef IGANET_WITH_MATPLOT
   // Plot B-spline
-  bspline.plot(json);
+  bspline.plot(json)->show();
 #endif
 
   // Refine B-Spline
@@ -44,7 +45,7 @@ int main() {
 
 #ifdef IGANET_WITH_MATPLOT
   // Plot B-spline
-  bspline.plot(json);
+  bspline.plot(json)->show();
 #endif
 
   // Export B-spline to XML
