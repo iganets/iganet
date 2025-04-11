@@ -241,6 +241,28 @@ int main() {
                        .count()
                 << " seconds\n";
 
+#ifdef IGANET_WITH_MATPLOT
+          // Load XML file
+          pugi::xml_document xml;
+          xml.load_file(IGANET_DATA_DIR "surfaces/2d/geo02.xml");
+
+          // Load geometry parameterization from XML
+          net.G().from_xml(xml);
+
+          // Evaluate network
+          net.eval();
+
+          // Evaluate position of collocation points in physical domain
+          auto colPts = net.G().eval(net.collPts().first);
+
+          // Plot the solution
+          net.G()
+              .space()
+              .plot(net.u().space(),
+                    std::array<torch::Tensor, 2>{*colPts[0], *colPts[1]}, json)
+              ->show();
+#endif
+          
 #ifdef IGANET_WITH_GISMO
           // Convert B-spline objects to G+Smo
           auto G_gismo = net.G().space().to_gismo();
