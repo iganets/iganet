@@ -242,13 +242,13 @@ inline auto to_json(const gismo::gsTensorBSpline<d, T> &bspline) {
 template <typename T>
 inline auto to_json(const gismo::gsGeometry<T> &geometry) {
 
-  if (auto patch = dynamic_cast<const gsBSpline<T> *>(&geometry))
+  if (auto patch = dynamic_cast<const gismo::gsBSpline<T> *>(&geometry))
     return to_json(*patch);
-  else if (auto patch = dynamic_cast<const gsTensorBSpline<2, T> *>(&geometry))
+  else if (auto patch = dynamic_cast<const gismo::gsTensorBSpline<2, T> *>(&geometry))
     return to_json(*patch);
-  else if (auto patch = dynamic_cast<const gsTensorBSpline<3, T> *>(&geometry))
+  else if (auto patch = dynamic_cast<const gismo::gsTensorBSpline<3, T> *>(&geometry))
     return to_json(*patch);
-  else if (auto patch = dynamic_cast<const gsTensorBSpline<4, T> *>(&geometry))
+  else if (auto patch = dynamic_cast<const gismo::gsTensorBSpline<4, T> *>(&geometry))
     return to_json(*patch);
   else
     return nlohmann::json("{ Invalid patch type }");

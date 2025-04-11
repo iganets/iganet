@@ -244,11 +244,11 @@ int main() {
           // Convert B-spline objects to G+Smo
           auto G_gismo = net.G().space().to_gismo();
           auto u_gismo = net.u().space().to_gismo();
-          gsFunctionExpr<real_t> f_gismo("sin(pi*x)*sin(pi*y)", 2);
+          gismo::gsFunctionExpr<real_t> f_gismo("sin(pi*x)*sin(pi*y)", 2);
 
           // Set up expression assembler
-          gsExprAssembler<real_t> A(1, 1);
-          gsMultiBasis<real_t> basis(u_gismo, true);
+          gismo::gsExprAssembler<real_t> A(1, 1);
+          gismo::gsMultiBasis<real_t> basis(u_gismo, true);
 
           A.setIntegrationElements(basis);
 
@@ -257,7 +257,7 @@ int main() {
           auto f = A.getCoeff(f_gismo, G);
 
           // Compute L2- and H2-error
-          gsExprEvaluator<real_t> ev(A);
+          gismo::gsExprEvaluator<real_t> ev(A);
 
 #ifdef IGANET_WITH_MPI
           if (pg->getRank() == 0)

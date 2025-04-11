@@ -2644,7 +2644,7 @@ public:
           utils::to_tensorAccessor<real_t, 1>(coeffs_[g], torch::kCPU);
       auto coeffs_cpu_ptr = coeffs_cpu.template data_ptr<real_t>();
       coefs.col(g) =
-          gsAsConstVector<real_t>(coeffs_cpu_ptr, coeffs_cpu.size(0));
+        gismo::gsAsConstVector<real_t>(coeffs_cpu_ptr, coeffs_cpu.size(0));
     }
 
     std::array<gismo::gsKnotVector<real_t>, parDim_> kv;
@@ -2721,7 +2721,7 @@ public:
             utils::to_tensorAccessor<real_t, 1>(coeffs_[g], torch::kCPU);
         auto coeffs_cpu_ptr = coeffs_cpu.template data_ptr<real_t>();
         bspline.coefs().col(g) =
-            gsAsConstVector<real_t>(coeffs_cpu_ptr, coeffs_cpu.size(0));
+          gismo::gsAsConstVector<real_t>(coeffs_cpu_ptr, coeffs_cpu.size(0));
       }
     }
 
@@ -2757,7 +2757,7 @@ public:
             utils::to_tensorAccessor<real_t, 1>(coeffs_[g], torch::kCPU);
         auto coeffs_cpu_ptr = coeffs_cpu.template data_ptr<real_t>();
         bspline.coefs().col(g) =
-            gsAsConstVector<real_t>(coeffs_cpu_ptr, coeffs_cpu.size(0));
+          gismo::gsAsConstVector<real_t>(coeffs_cpu_ptr, coeffs_cpu.size(0));
       }
     }
 
