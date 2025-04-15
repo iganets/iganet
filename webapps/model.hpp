@@ -43,6 +43,30 @@ struct InvalidModelAttributeException : public std::exception {
   const char *what() const throw() { return "Invalid model attribute"; }
 };
 
+/// @brief Model add patch
+class ModelAddPatch {
+public:
+  /// @brief Adds a patch to a model
+  virtual void addPatch(const nlohmann::json &json) = 0;
+
+  // @brief Returns model capabilities
+  std::vector<std::string> getCapabilities() const {
+    return std::vector{std::string("addpatch")};
+  }
+};
+
+/// @brief Model remove patch
+class ModelRemovePatch {
+public:
+  /// @brief Adds a patch to a model
+  virtual void removePatch(const nlohmann::json &json) = 0;
+
+  // @brief Returns model capabilities
+  std::vector<std::string> getCapabilities() const {
+    return std::vector{std::string("removepatch")};
+  }
+};  
+  
 /// @brief Model error computation
 class ModelComputeError {
 public:
@@ -217,6 +241,10 @@ public:
     json.push_back("create");
     json.push_back("remove");
 
+    if (auto m = dynamic_cast<const ModelAddPatch *>(this))
+      for (auto const &capability : m->getCapabilities())
+        json.push_back(capability);
+    
     if (auto m = dynamic_cast<const ModelComputeError *>(this))
       for (auto const &capability : m->getCapabilities())
         json.push_back(capability);
@@ -237,6 +265,10 @@ public:
       for (auto const &capability : m->getCapabilities())
         json.push_back(capability);
 
+    if (auto m = dynamic_cast<const ModelRemovePatch *>(this))
+      for (auto const &capability : m->getCapabilities())
+        json.push_back(capability);
+    
     if (auto m = dynamic_cast<const ModelReparameterize *>(this))
       for (auto const &capability : m->getCapabilities())
         json.push_back(capability);
