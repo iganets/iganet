@@ -45,7 +45,9 @@ enum class status : short_t {
   invalidSaveRequest = 14,           /*!<  invalid save request             */
   invalidImportRequest = 15,         /*!<  invalid import request           */
   invalidExportRequest = 16,         /*!<  invalid export request           */
-  invalidComputeErrorRequest = 17    /*!<  invalid compute error request    */
+  invalidComputeErrorRequest = 17,   /*!<  invalid compute error request    */
+  invalidAddPatchRequest = 18,       /*!<  invalid add patch request        */
+  invalidRemovePatchRequest = 19     /*!<  invalid remove patch request     */  
 };
 
 /// @brief InvalidSessionId exception
@@ -390,6 +392,7 @@ int main(int argc, char const *argv[]) {
                      .upgrade = nullptr,
                      .open =
                          [](auto *ws) {
+                           ws->subscribe("broadcast");
 #ifndef NDEBUG
                            std::stringstream msg;
                            msg << "[Thread " << std::this_thread::get_id()
@@ -734,7 +737,7 @@ int main(int argc, char const *argv[]) {
                                    broadcast["id"] = uuid;
                                    broadcast["request"] = "create/session";
                                    broadcast["data"]["id"] = uuid;
-                                   ws->publish(uuid, broadcast.dump(),
+                                   ws->publish("broadcast", broadcast.dump(),
                                                uWS::OpCode::TEXT);
                                  }
 
@@ -850,6 +853,49 @@ int main(int argc, char const *argv[]) {
                                                uWS::OpCode::TEXT);
                                  }
 
+                                 else if (tokens.size() == 4) {
+                                   //
+                                   // request:
+                                   // remove/<session-id>/<model-id>/<patch-id>
+                                   //
+
+                                   // Get session
+                                   auto session =
+                                       ws->getUserData()->getSession(tokens[1]);
+
+                                   // Get model
+                                   auto model =
+                                     session->getModel(stoi(tokens[2]));
+
+                                   // Remove an existing model
+                                   if (auto m = std::dynamic_pointer_cast<
+                                           iganet::ModelRemovePatch>(model))
+                                     m->removePatch(request);
+                                   else {
+                                     response["status"] = iganet::webapp::
+                                         status::invalidRemovePatchRequest;
+                                     response["reason"] =
+                                         "Invalid REMOVE request. Valid REMOVE "
+                                         "requests are "
+                                         "are "
+                                         "\"remove/<session-id>\", "
+                                         "\"remove/<session-id>/<model-id>\" and "
+                                         "\"remove/<session-id>/<model-id>/<patch-id>\"";
+                                   }
+                                   ws->send(response.dump(), uWS::OpCode::TEXT,
+                                            true);                                                                      
+
+                                   // Broadcast patch removal
+                                   nlohmann::json broadcast;
+                                   broadcast["id"] = session->getUUID();
+                                   broadcast["request"] = "remove/patch";
+                                   broadcast["data"]["id"] = stoi(tokens[2]);
+                                   broadcast["data"]["patch"] = tokens[3];
+                                   ws->publish(session->getUUID(),
+                                               broadcast.dump(),
+                                               uWS::OpCode::TEXT);
+                                 }
+
                                  else
                                    throw std::runtime_error(
                                        "Invalid REMOVE request");
@@ -861,8 +907,9 @@ int main(int argc, char const *argv[]) {
                                      "Invalid REMOVE request. Valid REMOVE "
                                      "requests "
                                      "are "
-                                     "\"remove/<session-id>\" and "
-                                     "\"remove/<session-id>/<model-id>\"";
+                                     "\"remove/<session-id>\", "
+                                     "\"remove/<session-id>/<model-id>\" and "
+                                     "\"remove/<session-id>/<model-id>/<patch-id>\"";
                                  ws->send(response.dump(), uWS::OpCode::TEXT,
                                           true);
                                }
@@ -1881,15 +1928,16 @@ int main(int argc, char const *argv[]) {
                          },
                      .ping =
                          [](auto *ws, std::string_view) {
-                           /* Not implemented yet */
+                           /* You don't need to handle this one, we automatically respond to pings as per standard */
                          },
                      .pong =
                          [](auto *ws, std::string_view) {
-                           /* Not implemented yet */
+                           /* You don't need to handle this one, we automatically respond to pings as per standard */
                          },
                      .close =
                          [](auto *ws, int code, std::string_view message) {
-        /* You may access ws->getUserData() here */
+                           /* You may access ws->getUserData() here */
+                           ws->unsubscribe("broadcast");
 #ifndef NDEBUG
                            std::stringstream msg;
                            msg << "[Thread " << std::this_thread::get_id()
