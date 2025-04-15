@@ -27,12 +27,14 @@ message("")
 ########################################################################
 # Option list
 ########################################################################
-option(IGANET_WITH_OPENSSL      "With OpenSSL support"      OFF)
 option(IGANET_WITH_LIBUV        "With LibUV support"        OFF)
+option(IGANET_WITH_OPENSSL      "With OpenSSL support"      OFF)
+option(IGANET_WITH_WOLFSSL      "With WolfSSL support"      OFF)
 
 message("WebApp features:")
 message("IGANET_WITH_LIBUV..................: ${IGANET_WITH_LIBUV}")
 message("IGANET_WITH_OPENSSL................: ${IGANET_WITH_OPENSSL}")
+message("IGANET_WITH_WOLFSSL................: ${IGANET_WITH_WOLFSSL}")
 message("")
 
 ########################################################################

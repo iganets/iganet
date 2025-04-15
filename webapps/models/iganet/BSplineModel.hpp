@@ -662,8 +662,10 @@ public:
   }
 
   /// @brief Imports the model from XML (as JSON object)
-  void importXML(const nlohmann::json &json, const std::string &component,
-                 int id) override {
+  void importXML(const std::string &patch,
+                 const std::string& component,
+                 const nlohmann::json &json,
+                 int id = 0) override {
 
     if (json.contains("data")) {
       if (json["data"].contains("xml")) {
@@ -675,7 +677,7 @@ public:
             doc.load_buffer(xml.c_str(), xml.size());
 
         if (pugi::xml_node root = doc.child("xml"))
-          importXML(root, component, id);
+          importXML(patch, component, root, id);
         else
           throw std::runtime_error("No \"xml\" node in XML object");
 
@@ -687,8 +689,10 @@ public:
   }
 
   /// @brief Imports the model from XML (as XML object)
-  void importXML(const pugi::xml_node &xml, const std::string &component,
-                 int id) override {
+  void importXML(const std::string &patch,
+                 const std::string& component,
+                 const pugi::xml_node &xml,
+                 int id = 0) override {
 
     if (component.empty()) {
       Spline::from_xml(xml, id, "geometry");
@@ -704,12 +708,14 @@ public:
   }
 
   /// @brief Exports the model to XML (as JSON object)
-  nlohmann::json exportXML(const std::string &component, int id) override {
+  nlohmann::json exportXML(const std::string &patch,
+                           const std::string& component,
+                           int id = 0) override {
 
     // serialize to XML
     pugi::xml_document doc;
     pugi::xml_node xml = doc.append_child("xml");
-    xml = exportXML(xml, component, id);
+    xml = exportXML(patch, component, xml, id);
 
     // serialize to JSON
     std::ostringstream oss;
@@ -719,8 +725,10 @@ public:
   }
 
   /// @brief Exports the model to XML (as XML object)
-  pugi::xml_node &exportXML(pugi::xml_node &xml, const std::string &component,
-                            int id) override {
+  pugi::xml_node &exportXML(const std::string &patch,
+                            const std::string& component,
+                            pugi::xml_node &xml,
+                            int id = 0) override {
 
     if (component.empty()) {
       Spline::to_xml(xml, id, "geometry");

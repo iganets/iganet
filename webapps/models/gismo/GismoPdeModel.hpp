@@ -20,6 +20,39 @@ namespace iganet {
 
 namespace webapp {
 
+/// @brief G+Smo boundary condition POD
+template<typename T>
+struct GismoBoundaryCondition {
+  /// @brief Boundary function expression
+  gismo::gsFunctionExpr<T> function;
+
+  /// @brief Boundary type
+  gismo::condition_type::type type;
+
+  /// @brief Flag that indicates whether the boundary conditions is
+  /// imposed on the parametric of physical domain
+  bool isParametric;
+};
+
+/// @brief G+Smo boundary condition look-up table
+template<typename T>
+using GismoBoundaryConditionMap = std::map<int, std::map<int, GismoBoundaryCondition<T>>>;
+  
+/// @brief G+Smo function POD
+template<typename T>
+struct GismoFunction {
+  /// @brief Function expression
+  gismo::gsFunctionExpr<T> function;
+
+  /// @brief Flag that indicates whether the function expression is
+  /// imposed on the parametric of physical domain
+  bool isParametric;
+};
+  
+/// @brief G+Smo function look-up table
+template<typename T>
+using GismoFunctionMap = std::map<int, std::map<int, GismoFunction<T>>>;
+  
 /// @brief G+Smo PDE model
 template <short_t d, class T>
 class GismoPdeModel : public GismoGeometryModel<d, T> {
@@ -82,10 +115,10 @@ public:
             json["ncoeffs"] = nlohmann::json::array();
 
             if (auto bspline =
-                dynamic_cast<const gsBSpline<T> *>(&solution_.patch(patchIndex)))
+                dynamic_cast<const gismo::gsBSpline<T> *>(&solution_.patch(patchIndex)))
               for (std::size_t i = 0; i < bspline->parDim(); ++i)
                 json["ncoeffs"].push_back(bspline->basis().size(i));
-            else if (auto bspline = dynamic_cast<const gsTensorBSpline<d, T> *>(
+            else if (auto bspline = dynamic_cast<const gismo::gsTensorBSpline<d, T> *>(
                                                                                 &solution_.patch(patchIndex)))
               for (std::size_t i = 0; i < bspline->parDim(); ++i)
                 json["ncoeffs"].push_back(bspline->basis().size(i));
@@ -97,10 +130,10 @@ public:
             json["nknots"] = nlohmann::json::array();
 
             if (auto bspline =
-                dynamic_cast<const gsBSpline<T> *>(&solution_.patch(patchIndex)))
+                dynamic_cast<const gismo::gsBSpline<T> *>(&solution_.patch(patchIndex)))
               for (std::size_t i = 0; i < bspline->parDim(); ++i)
                 json["nknots"].push_back(bspline->knots(i).size());
-            else if (auto bspline = dynamic_cast<const gsTensorBSpline<d, T> *>(
+            else if (auto bspline = dynamic_cast<const gismo::gsTensorBSpline<d, T> *>(
                                                                                 &solution_.patch(patchIndex)))
               for (std::size_t i = 0; i < bspline->parDim(); ++i)
                 json["nknots"].push_back(bspline->knots(i).size());
@@ -111,9 +144,9 @@ public:
           else if (attribute == "coeffs") {
 
             if (auto bspline =
-                dynamic_cast<const gsBSpline<T> *>(&solution_.patch(patchIndex)))
+                dynamic_cast<const gismo::gsBSpline<T> *>(&solution_.patch(patchIndex)))
               json["coeffs"] = utils::to_json(bspline->coefs());
-            else if (auto bspline = dynamic_cast<const gsTensorBSpline<d, T> *>(
+            else if (auto bspline = dynamic_cast<const gismo::gsTensorBSpline<d, T> *>(
                                                                                 &solution_.patch(patchIndex)))
               json["coeffs"] = utils::to_json(bspline->coefs());
             else
@@ -125,10 +158,10 @@ public:
             json["knots"] = nlohmann::json::array();
 
             if (auto bspline =
-                dynamic_cast<const gsBSpline<T> *>(&solution_.patch(patchIndex)))
+                dynamic_cast<const gismo::gsBSpline<T> *>(&solution_.patch(patchIndex)))
               for (std::size_t i = 0; i < bspline->parDim(); ++i)
                 json["knots"].push_back(bspline->knots(i));
-            else if (auto bspline = dynamic_cast<const gsTensorBSpline<d, T> *>(
+            else if (auto bspline = dynamic_cast<const gismo::gsTensorBSpline<d, T> *>(
                                                                                 &solution_.patch(patchIndex)))
               for (std::size_t i = 0; i < bspline->parDim(); ++i)
                 json["knots"].push_back(bspline->knots(i));
@@ -154,7 +187,7 @@ public:
 
 protected:
   /// @brief Solution
-  gsMultiPatch<T> solution_;
+  gismo::gsMultiPatch<T> solution_;
 };
 
 } // namespace webapp

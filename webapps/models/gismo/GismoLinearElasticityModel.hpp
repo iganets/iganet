@@ -33,17 +33,17 @@ private:
   using Base = GismoPdeModel<d, T>;
 
   /// @brief Multi-patch basis
-  gsMultiBasis<T> basis_;
+  gismo::gsMultiBasis<T> basis_;
 
   /// @brief Boundary conditions
-  gsBoundaryConditions<T> bc_;
+  gismo::gsBoundaryConditions<T> bc_;
 
   /// @brief Right-hand side function
-  gsFunctionExpr<T> rhsFunc_;
-  gsFunctionExpr<T> loadFunc_;
+  gismo::gsFunctionExpr<T> rhsFunc_;
+  gismo::gsFunctionExpr<T> loadFunc_;
 
   /// @brief Boundary condition values
-  std::array<gsFunctionExpr<T>, 2 * d> bcFunc_;
+  std::array<gismo::gsFunctionExpr<T>, 2 * d> bcFunc_;
 
   /// @brief Boundary condition type
   std::array<gismo::condition_type::type, 2 * d> bcType_;
@@ -58,18 +58,18 @@ private:
   void solve() {
 
     // Setup assembler
-    gsElasticityAssembler<T> assembler(Base::geo_, basis_, bc_, rhsFunc_);
+    gismo::gsElasticityAssembler<T> assembler(Base::geo_, basis_, bc_, rhsFunc_);
     assembler.options().setReal("YoungsModulus", YoungsModulus_);
     assembler.options().setReal("PoissonsRatio", PoissonsRatio_);
-    assembler.options().setInt("MaterialLaw", material_law::hooke);
-    assembler.options().setInt("DirichletStrategy", dirichlet::elimination);
+    assembler.options().setInt("MaterialLaw", gismo::material_law::hooke);
+    assembler.options().setInt("DirichletStrategy", gismo::dirichlet::elimination);
 
     // Initialize assembler
     assembler.assemble();
 
     // Solve system
     typename gismo::gsSparseSolver<T>::CGDiagonal solver(assembler.matrix());
-    gsMatrix<T> solution(solver.solve(assembler.rhs()));
+    gismo::gsMatrix<T> solution(solver.solve(assembler.rhs()));
 
     // Extract solution
     assembler.constructSolution(solution, assembler.allFixedDofs(),
@@ -92,7 +92,7 @@ public:
     // Set boundary conditions type and expression
     for (const auto &side : GismoBoundarySides<d>) {
       bcType_[side - 1] = gismo::condition_type::unknownType;
-      bcFunc_[side - 1] = gismo::give(gsFunctionExpr<T>("0", "0", "0", 3));
+      bcFunc_[side - 1] = gismo::give(gismo::gsFunctionExpr<T>("0", "0", "0", 3));
       // bc_.addCondition(0, side, bcType_[side - 1], &bcFunc_[side - 1]);
     }
 
@@ -109,7 +109,7 @@ public:
     // Set geometry
     bc_.setGeoMap(Base::geo_);
 
-    // Generate solution
+    // Regenerate solution
     solve();
   }
 
@@ -263,11 +263,11 @@ public:
     }
     
     // Create uniform grid
-    gsMatrix<T> ab = Base::geo_.patch(patchIndex).support();
-    gsVector<T> a = ab.col(0);
-    gsVector<T> b = ab.col(1);
+    gismo::gsMatrix<T> ab = Base::geo_.patch(patchIndex).support();
+    gismo::gsVector<T> a = ab.col(0);
+    gismo::gsVector<T> b = ab.col(1);
 
-    gsVector<unsigned> np(Base::geo_.parDim());
+    gismo::gsVector<unsigned> np(Base::geo_.parDim());
     np.setConstant(25);
 
     if (json.contains("data"))
@@ -279,20 +279,20 @@ public:
       }
 
     // Uniform parameters for evaluation
-    gsMatrix<T> pts = gsPointGrid(a, b, np);
-    gsMatrix<T> eval = Base::solution_.patch(patchIndex).eval(pts);
+    gismo::gsMatrix<T> pts = gismo::gsPointGrid(a, b, np);
+    gismo::gsMatrix<T> eval = Base::solution_.patch(patchIndex).eval(pts);
 
     if (component == "Displacement") {
-      gsMatrix<T> result = eval.colwise().norm();
+      gismo::gsMatrix<T> result = eval.colwise().norm();
       return utils::to_json(result, true, false);
     } else if (component == "Displacement_x") {
-      gsMatrix<T> result = eval.row(0);
+      gismo::gsMatrix<T> result = eval.row(0);
       return utils::to_json(result, true, false);
     } else if (component == "Displacement_y") {
-      gsMatrix<T> result = eval.row(1);
+      gismo::gsMatrix<T> result = eval.row(1);
       return utils::to_json(result, true, false);
     } else if (component == "Displacement_z") {
-      gsMatrix<T> result = eval.row(2);
+      gismo::gsMatrix<T> result = eval.row(2);
       return utils::to_json(result, true, false);
     }
 
@@ -336,7 +336,7 @@ public:
     else
       basis_.basis(patchIndex).degreeElevate(num, dim);
 
-    // Generate solution
+    // Regenerate solution
     solve();
   }
 
@@ -376,7 +376,7 @@ public:
     else
       basis_.basis(patchIndex).degreeIncrease(num, dim);
 
-    // Generate solution
+    // Regenerate solution
     solve();
   }
 
@@ -416,7 +416,47 @@ public:
     else
       basis_.basis(patchIndex).uniformRefine(num, 1, dim);
 
-    // Generate solution
+    // Regenerate solution
+    solve();
+  }
+
+  /// @brief Add new patch to the model
+  void addPatch(const nlohmann::json &json = NULL) override {
+
+    // Add patch from geometry
+    Base::addPatch(json);
+
+    // Set geometry
+    bc_.setGeoMap(Base::geo_);
+    
+    throw std::runtime_error("Adding patches is not yet implemented in G+Smo");
+
+    // Regenerate solution
+    solve();
+  }
+  
+  /// @brief Remove existing patch from the model
+  void removePatch(const nlohmann::json &json = NULL) override {
+
+    // Remove patch from geometry
+    Base::removePatch(json);
+
+    // Set geometry
+    bc_.setGeoMap(Base::geo_);
+    
+    int patchIndex(-1);
+
+    if (json.contains("data")) {      
+      if (json["data"].contains("patch"))
+        patchIndex = json["data"]["patch"].get<int>();
+    }
+
+    // if (patchIndex == -1)
+    //   throw std::runtime_error("Invalid patch index");
+
+    // throw std::runtime_error("Patch removal is not yet implemented in G+Smo");
+
+    // Regenerate solution
     solve();
   }
 };
