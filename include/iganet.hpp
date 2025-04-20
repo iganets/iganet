@@ -1220,6 +1220,13 @@ public:
     }
   }
 
+  /// @brief Evaluate IgANet
+  void eval() {
+    torch::Tensor inputs = this->inputs(0);
+    torch::Tensor outputs = net_->forward(inputs);
+    Base::u_.from_tensor(outputs);
+  } 
+
   /// @brief Returns the IgANet object as JSON object
   inline virtual nlohmann::json to_json() const override {
     return "Not implemented yet";
