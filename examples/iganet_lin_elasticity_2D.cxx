@@ -42,34 +42,32 @@ private:
   double lambda_;
   double mu_;
 
-  // simulation parameter
-  double MAX_EPOCH_;
+  // simulation parameters
+  int MAX_EPOCH_;
   double MIN_LOSS_;
+  int64_t NR_CTRL_PTS_;
   std::vector<int> TFBC_SIDES_;
+  std::string JSON_PATH_;
   std::vector<std::tuple<int, double, double>> FORCE_SIDES_;
   std::vector<std::tuple<int, double, double>> DIRI_SIDES_;
-
-  // supervised learning (true) or unsupervised learning (false)
-  bool SUPERVISED_LEARNING_ = false;
-
-  // json path
-  static constexpr const char* JSON_PATH = "/home/obergue/Documents/pytest/splinepy/results_2D.json";
+  bool SUPERVISED_LEARNING_;
 
 public:
   /// @brief Constructor
   template <typename... Args>
-  linear_elasticity(double lambda, double mu, bool SUPERVISED_LEARNING, double MAX_EPOCH, 
+  linear_elasticity(double lambda, double mu, bool SUPERVISED_LEARNING, int MAX_EPOCH, 
                     double MIN_LOSS, std::vector<int> TFBC_SIDES,
                     std::vector<std::tuple<int, double, double>> FORCE_SIDES,
                     std::vector<std::tuple<int, double, double>> DIRI_SIDES, 
-                    std::vector<int64_t> &&layers,
+                    int64_t NR_CTRL_PTS, std::string JSON_PATH, std::vector<int64_t> &&layers, 
                     std::vector<std::vector<std::any>> &&activations, Args &&...args)
       : Base(std::forward<std::vector<int64_t>>(layers),
              std::forward<std::vector<std::vector<std::any>>>(activations),
              std::forward<Args>(args)...),
         lambda_(lambda), mu_(mu), SUPERVISED_LEARNING_(SUPERVISED_LEARNING), MAX_EPOCH_(MAX_EPOCH), 
-        MIN_LOSS_(MIN_LOSS), TFBC_SIDES_(TFBC_SIDES), FORCE_SIDES_(FORCE_SIDES), DIRI_SIDES_(DIRI_SIDES),
-        ref_(iganet::utils::to_array(8_i64, 8_i64)) {}
+        MIN_LOSS_(MIN_LOSS), TFBC_SIDES_(TFBC_SIDES), FORCE_SIDES_(FORCE_SIDES), 
+        DIRI_SIDES_(DIRI_SIDES), NR_CTRL_PTS_(NR_CTRL_PTS), JSON_PATH_(std::move(JSON_PATH)), 
+        ref_(iganet::utils::to_array(NR_CTRL_PTS, NR_CTRL_PTS)) {}
 
   /// @brief Returns a constant reference to the collocation points
   auto const &collPts() const { return collPts_; }
@@ -84,22 +82,24 @@ public:
   auto &ref() { return ref_; }
   
   /// @brief Writes data to a JSON file
-  static void appendToJsonFile(const std::string& key, const nlohmann::json& data) {
+  void appendToJsonFile(const std::string& key, const nlohmann::json& data) {
     
     // create json object
     nlohmann::json jsonData;
 
     // try to read the JSON data from the file
     try {
-        std::ifstream json_file_in(JSON_PATH);
+        std::ifstream json_file_in(JSON_PATH_);
         if (json_file_in.is_open()) {
             json_file_in >> jsonData;
             json_file_in.close();
         } else {
-            std::cerr << "Warning: Could not open file for reading: " << JSON_PATH << "\n";
+            std::cerr << "Warning: Could not open file for reading: " 
+                      << JSON_PATH_ << "\n";
         }
     } catch (const std::exception& e) {
-        std::cerr << "Error reading JSON file: " << JSON_PATH << ". Exception: " << e.what() << "\n";
+        std::cerr << "Error reading JSON file: " << JSON_PATH_ 
+                  << ". Exception: " << e.what() << "\n";
     }
 
     // add new data to the JSON object
@@ -112,27 +112,29 @@ public:
 
     // write the JSON data to the file
     try {
-        std::ofstream json_file_out(JSON_PATH);
+        std::ofstream json_file_out(JSON_PATH_);
         if (json_file_out.is_open()) {
             json_file_out << jsonData.dump(1);
             json_file_out.close();
         } else {
-            std::cerr << "Error: Could not open file for writing: " << JSON_PATH << "\n";
+            std::cerr << "Error: Could not open file for writing: " 
+                      << JSON_PATH_ << "\n";
         }
     } catch (const std::exception& e) {
-        std::cerr << "Error writing JSON file: " << JSON_PATH << ". Exception: " << e.what() << "\n";
+        std::cerr << "Error writing JSON file: " << JSON_PATH_ 
+                  << ". Exception: " << e.what() << "\n";
     }
   }
 
   /// @brief helper function to load the displacements from a JSON file
-  static torch::Tensor loadDisplacements() {
+  torch::Tensor loadDisplacements() {
       // create options for the tensor
       auto options = torch::TensorOptions().dtype(torch::kDouble).device(torch::kCPU);
   
       // open the JSON file
-      std::ifstream file(JSON_PATH);
+      std::ifstream file(JSON_PATH_);
       if (!file.is_open()) {
-          throw std::runtime_error("Could not open file: " + *JSON_PATH);
+          throw std::runtime_error("Could not open file: " + JSON_PATH_);
       }
   
       // parse the JSON file
@@ -157,7 +159,8 @@ public:
   }
 
   /// @brief helper function to calculate the Greville abscissae
-  static std::vector<double> computeGrevilleAbscissae(const gsKnotVector<double>& knotVector, int degree, int numCtrlPts) {
+  static std::vector<double> computeGrevilleAbscissae
+    (const gsKnotVector<double>& knotVector, int degree, int numCtrlPts) {
       std::vector<double> greville(numCtrlPts, 0.0);
       
       for (int i = 0; i < numCtrlPts; ++i) {
@@ -171,8 +174,11 @@ public:
   }
 
   /// @brief GISMO workflow
-  static std::tuple<gsMatrix<double>, gsMatrix<double>, gsMatrix<double>> 
-    RunGismoSimulation(int64_t NR_CTRL_PTS, int DEGREE, double YOUNG_MODULUS, double POISSON_RATIO) {
+  static std::tuple<gsMatrix<double>, gsMatrix<double>, gsMatrix<double>> RunGismoSimulation(
+        int64_t NR_CTRL_PTS, int DEGREE, double YOUNG_MODULUS, double POISSON_RATIO,
+        const std::vector<std::tuple<int, double, double>>& DIRI_SIDES,
+        const std::vector<std::tuple<int, double, double>>& FORCE_SIDES,
+        const std::pair<double, double>& BODY_FORCE) {
     
     // initialize the reference control points and the calculated displacements & stresses
     gsMatrix<double> gsCtrlPts(NR_CTRL_PTS * NR_CTRL_PTS, 2);
@@ -205,31 +211,47 @@ public:
     multiPatch.addPatch(geometry);
     gsMultiBasis<> basis(multiPatch);
 
-    // boundary conditions
+    // helper to map 1-4 to gs boundary enums
+    auto getGsBoundarySide = [](int side) -> boundary::side {
+        switch (side) {
+            case 1: return boundary::west;
+            case 2: return boundary::east;
+            case 3: return boundary::south;
+            case 4: return boundary::north;
+            default:
+                throw std::invalid_argument("Invalid side number (must be 1 to 4)");
+        }
+    };
+
+    // define boundary conditions
     gsBoundaryConditions<double> bcInfo;
-    // dirichlet BCs
-    bcInfo.addCondition(0, boundary::west, condition_type::dirichlet, 
-            gsConstantFunction<double>(0.0, 2), 0);
-    bcInfo.addCondition(0, boundary::west, condition_type::dirichlet, 
-            gsConstantFunction<double>(0.0, 2), 1);
-    bcInfo.addCondition(0, boundary::east, condition_type::dirichlet,
-            gsConstantFunction<double>(1.0, 2), 0);
-    bcInfo.addCondition(0, boundary::east, condition_type::dirichlet,
-            gsConstantFunction<double>(0.0, 2), 1);
 
-    // traction BCs
-    // gsFunctionExpr<> tractionWest("0.0", "0.0", 2);
-    // gsFunctionExpr<> tractionEast("100.0", "0.0", 2);
-    // gsFunctionExpr<> tractionSouth("0.0", "-50.0", 2);
-    // gsFunctionExpr<> tractionNorth("0.0", "50.0", 2);
+    // Dirichlet BCs
+    for (const auto& d : DIRI_SIDES) {
+        int side = std::get<0>(d);
+        double xVal = std::get<1>(d);
+        double yVal = std::get<2>(d);
+        auto gsSide = getGsBoundarySide(side);
 
-    // bcInfo.addCondition(0, boundary::west, condition_type::neumann, tractionWest);
-    // bcInfo.addCondition(0, boundary::east, condition_type::neumann, tractionEast);
-    // bcInfo.addCondition(0, boundary::south, condition_type::neumann, tractionSouth);
-    // bcInfo.addCondition(0, boundary::north, condition_type::neumann, tractionNorth);
+        bcInfo.addCondition(0, gsSide, condition_type::dirichlet, 
+                            gsConstantFunction<double>(xVal, 2), 0);
+        bcInfo.addCondition(0, gsSide, condition_type::dirichlet, 
+                            gsConstantFunction<double>(yVal, 2), 1);
+    }
 
-    // body force (currently set to zero)
-    gsConstantFunction<double> bodyForce(0., 0., 2);
+    // Neumann (Traction) BCs
+    for (const auto& f : FORCE_SIDES) {
+        int side = std::get<0>(f);
+        double tx = std::get<1>(f);
+        double ty = std::get<2>(f);
+        auto gsSide = getGsBoundarySide(side);
+
+        gsFunctionExpr<> traction(std::to_string(tx), std::to_string(ty), 2);
+        bcInfo.addCondition(0, gsSide, condition_type::neumann, traction);
+    }
+    
+    // body force
+    gsConstantFunction<double> bodyForce(BODY_FORCE.first, BODY_FORCE.second, 2);
 
     // initialize the elasticity assembler
     gsElasticityAssembler<double> assembler(geometry, basis, bcInfo, bodyForce);
@@ -251,7 +273,8 @@ public:
     gsPiecewiseFunction<double> stressFunction;
 
     // calculate von Mises stresses (cauchy form)
-    assembler.constructCauchyStresses(solutionPatch, stressFunction, stress_components::von_mises);
+    assembler.constructCauchyStresses(solutionPatch, stressFunction, 
+                                      stress_components::von_mises);
 
     // loop all control points
     for (int i = 0; i < gsCtrlPts.rows(); ++i) {
@@ -356,7 +379,7 @@ public:
     if (!TFBC_SIDES_.empty() || !FORCE_SIDES_.empty())
     {   
         
-        // intersecCtr is used to determine the intersection of dirichlet or force and traction-free sides
+        // intersecCtr is used to determine an intersection of dirichlet/force and trac.free sides
         static std::vector<int> intersecCtr(0);
         // allocate tensors for the traction-free boundary conditions
         static std::array<torch::Tensor, 2ul> tractionCollPts;
@@ -391,8 +414,10 @@ public:
             for (int side : neumannSides) {
                 if (side == 1) {
                     // check if diriOrForceSides has only side 3 as side
-                    if (std::find(diriOrForceSides.begin(), diriOrForceSides.end(), 3) != diriOrForceSides.end() &&
-                        std::find(diriOrForceSides.begin(), diriOrForceSides.end(), 4) == diriOrForceSides.end()) {     
+                    if (std::find(diriOrForceSides.begin(), diriOrForceSides.end(), 3) 
+                        != diriOrForceSides.end() &&
+                        std::find(diriOrForceSides.begin(), diriOrForceSides.end(), 4) 
+                        == diriOrForceSides.end()) {     
 
                         at::Tensor collPtsY_tensor = std::get<0>(collPts_.second)[0];
                         tractionCollPtsX.push_back(torch::zeros({nrCollPts_ - 1}));
@@ -401,8 +426,10 @@ public:
                         intersecCtr.push_back(1);
                     }
                     // check if diriOrForceSides has only side 4 as side
-                    else if (std::find(diriOrForceSides.begin(), diriOrForceSides.end(), 3) == diriOrForceSides.end() &&
-                            std::find(diriOrForceSides.begin(), diriOrForceSides.end(), 4) != diriOrForceSides.end()) {
+                    else if (std::find(diriOrForceSides.begin(), diriOrForceSides.end(), 3) 
+                            == diriOrForceSides.end() &&
+                            std::find(diriOrForceSides.begin(), diriOrForceSides.end(), 4) 
+                            != diriOrForceSides.end()) {
         
                         at::Tensor collPtsY_tensor = std::get<0>(collPts_.second)[0];
                         tractionCollPtsX.push_back(torch::zeros({nrCollPts_ - 1}));
@@ -411,8 +438,10 @@ public:
                         intersecCtr.push_back(1);
                     }
                     // check if diriOrForceSides has side 3 and side 4
-                    else if (std::find(diriOrForceSides.begin(), diriOrForceSides.end(), 3) != diriOrForceSides.end() &&
-                            std::find(diriOrForceSides.begin(), diriOrForceSides.end(), 4) != diriOrForceSides.end()) {
+                    else if (std::find(diriOrForceSides.begin(), diriOrForceSides.end(), 3) 
+                            != diriOrForceSides.end() &&
+                            std::find(diriOrForceSides.begin(), diriOrForceSides.end(), 4) 
+                            != diriOrForceSides.end()) {
                         
                         at::Tensor collPtsY_tensor = std::get<0>(collPts_.second)[0];
                         tractionCollPtsX.push_back(torch::zeros({nrCollPts_ - 2}));  
@@ -429,8 +458,10 @@ public:
                 }
                 else if (side == 2) {
                     // check if diriOrForceSides has only side 3 as side
-                    if (std::find(diriOrForceSides.begin(), diriOrForceSides.end(), 3) != diriOrForceSides.end() &&
-                        std::find(diriOrForceSides.begin(), diriOrForceSides.end(), 4) == diriOrForceSides.end()) {    
+                    if (std::find(diriOrForceSides.begin(), diriOrForceSides.end(), 3) 
+                        != diriOrForceSides.end() &&
+                        std::find(diriOrForceSides.begin(), diriOrForceSides.end(), 4) 
+                        == diriOrForceSides.end()) {    
 
                         at::Tensor collPtsY_tensor = std::get<0>(collPts_.second)[0];
                         tractionCollPtsX.push_back(torch::ones({nrCollPts_ - 1}));
@@ -439,8 +470,10 @@ public:
                         intersecCtr.push_back(1);
                     }
                     // check if diriOrForceSides has only side 4 as side
-                    else if (std::find(diriOrForceSides.begin(), diriOrForceSides.end(), 3) == diriOrForceSides.end() &&
-                            std::find(diriOrForceSides.begin(), diriOrForceSides.end(), 4) != diriOrForceSides.end()) {
+                    else if (std::find(diriOrForceSides.begin(), diriOrForceSides.end(), 3) 
+                            == diriOrForceSides.end() &&
+                            std::find(diriOrForceSides.begin(), diriOrForceSides.end(), 4) 
+                            != diriOrForceSides.end()) {
 
                         at::Tensor collPtsY_tensor = std::get<0>(collPts_.second)[0];
                         tractionCollPtsX.push_back(torch::ones({nrCollPts_ - 1}));
@@ -449,8 +482,10 @@ public:
                         intersecCtr.push_back(1);
                     }
                     // check if diriOrForceSides has side 3 and side 4
-                    else if (std::find(diriOrForceSides.begin(), diriOrForceSides.end(), 3) != diriOrForceSides.end() &&
-                            std::find(diriOrForceSides.begin(), diriOrForceSides.end(), 4) != diriOrForceSides.end()) {
+                    else if (std::find(diriOrForceSides.begin(), diriOrForceSides.end(), 3) 
+                            != diriOrForceSides.end() &&
+                            std::find(diriOrForceSides.begin(), diriOrForceSides.end(), 4) 
+                            != diriOrForceSides.end()) {
 
                         at::Tensor collPtsY_tensor = std::get<0>(collPts_.second)[0];
                         tractionCollPtsX.push_back(torch::ones({nrCollPts_ - 2}));
@@ -468,8 +503,10 @@ public:
                 }
                 else if (side == 3) {
                     // check if diriOrForceSides has only side 1 as side
-                    if (std::find(diriOrForceSides.begin(), diriOrForceSides.end(), 1) != diriOrForceSides.end() &&
-                        std::find(diriOrForceSides.begin(), diriOrForceSides.end(), 2) == diriOrForceSides.end()) {   
+                    if (std::find(diriOrForceSides.begin(), diriOrForceSides.end(), 1) 
+                        != diriOrForceSides.end() &&
+                        std::find(diriOrForceSides.begin(), diriOrForceSides.end(), 2) 
+                        == diriOrForceSides.end()) {   
 
                         at::Tensor collPtsX_tensor = std::get<0>(collPts_.second)[0];
                         tractionCollPtsX.push_back(collPtsX_tensor.slice(0, 1));
@@ -478,8 +515,10 @@ public:
                         intersecCtr.push_back(1);
                     }
                     // check if diriOrForceSides has only side 2 as side
-                    else if (std::find(diriOrForceSides.begin(), diriOrForceSides.end(), 1) == diriOrForceSides.end() &&
-                            std::find(diriOrForceSides.begin(), diriOrForceSides.end(), 2) != diriOrForceSides.end()) {   
+                    else if (std::find(diriOrForceSides.begin(), diriOrForceSides.end(), 1) 
+                            == diriOrForceSides.end() &&
+                            std::find(diriOrForceSides.begin(), diriOrForceSides.end(), 2) 
+                            != diriOrForceSides.end()) {   
 
                         at::Tensor collPtsX_tensor = std::get<0>(collPts_.second)[0];
                         tractionCollPtsX.push_back(collPtsX_tensor.slice(0, 0, -1));
@@ -488,8 +527,10 @@ public:
                         intersecCtr.push_back(1);
                     }
                     // check if diriOrForceSides has side 1 and side 2
-                    else if (std::find(diriOrForceSides.begin(), diriOrForceSides.end(), 1) != diriOrForceSides.end() &&
-                            std::find(diriOrForceSides.begin(), diriOrForceSides.end(), 2) != diriOrForceSides.end()) {   
+                    else if (std::find(diriOrForceSides.begin(), diriOrForceSides.end(), 1) 
+                            != diriOrForceSides.end() &&
+                            std::find(diriOrForceSides.begin(), diriOrForceSides.end(), 2) 
+                            != diriOrForceSides.end()) {   
 
                         at::Tensor collPtsX_tensor = std::get<0>(collPts_.second)[0];
                         tractionCollPtsX.push_back(collPtsX_tensor.slice(0, 1, -1));
@@ -506,8 +547,10 @@ public:
                 }
                 else if (side == 4) {
                     // check if diriOrForceSides has only side 1 as side
-                    if (std::find(diriOrForceSides.begin(), diriOrForceSides.end(), 1) != diriOrForceSides.end() &&
-                        std::find(diriOrForceSides.begin(), diriOrForceSides.end(), 2) == diriOrForceSides.end()) {   
+                    if (std::find(diriOrForceSides.begin(), diriOrForceSides.end(), 1) 
+                        != diriOrForceSides.end() &&
+                        std::find(diriOrForceSides.begin(), diriOrForceSides.end(), 2) 
+                        == diriOrForceSides.end()) {   
 
                         at::Tensor collPtsX_tensor = std::get<0>(collPts_.second)[0];
                         tractionCollPtsX.push_back(collPtsX_tensor.slice(0, 1));
@@ -516,8 +559,10 @@ public:
                         intersecCtr.push_back(1);
                     }
                     // check if diriOrForceSides has only side 2 as side
-                    else if (std::find(diriOrForceSides.begin(), diriOrForceSides.end(), 1) == diriOrForceSides.end() &&
-                            std::find(diriOrForceSides.begin(), diriOrForceSides.end(), 2) != diriOrForceSides.end()) {   
+                    else if (std::find(diriOrForceSides.begin(), diriOrForceSides.end(), 1) 
+                            == diriOrForceSides.end() &&
+                            std::find(diriOrForceSides.begin(), diriOrForceSides.end(), 2) 
+                            != diriOrForceSides.end()) {   
 
                         at::Tensor collPtsX_tensor = std::get<0>(collPts_.second)[0];
                         tractionCollPtsX.push_back(collPtsX_tensor.slice(0, 0, -1));
@@ -526,8 +571,10 @@ public:
                         intersecCtr.push_back(1);
                     }
                     // check if diriOrForceSides has side 1 and side 2
-                    else if (std::find(diriOrForceSides.begin(), diriOrForceSides.end(), 1) != diriOrForceSides.end() &&
-                            std::find(diriOrForceSides.begin(), diriOrForceSides.end(), 2) != diriOrForceSides.end()) {   
+                    else if (std::find(diriOrForceSides.begin(), diriOrForceSides.end(), 1) 
+                            != diriOrForceSides.end() &&
+                            std::find(diriOrForceSides.begin(), diriOrForceSides.end(), 2) 
+                            != diriOrForceSides.end()) {   
 
                         at::Tensor collPtsX_tensor = std::get<0>(collPts_.second)[0];
                         tractionCollPtsX.push_back(collPtsX_tensor.slice(0, 1, -1));
@@ -592,20 +639,24 @@ public:
                 int idx = pointCtr + i;
 
                 if (side == 1) {
-                    tractionValuesX[idx] =  - lambda_ * (ux_x[idx] + uy_y[idx]) - 2 * mu_ * ux_x[idx];
+                    tractionValuesX[idx] =  - lambda_ * (ux_x[idx] + uy_y[idx]) 
+                                            - 2 * mu_ * ux_x[idx];
                     tractionValuesY[idx] =  - mu_ * (uy_x[idx] + ux_y[idx]);
                 }
                 else if (side == 2) {
-                    tractionValuesX[idx] = lambda_ * (ux_x[idx] + uy_y[idx]) + 2 * mu_ * ux_x[idx];
+                    tractionValuesX[idx] = lambda_ * (ux_x[idx] + uy_y[idx]) 
+                                           + 2 * mu_ * ux_x[idx];
                     tractionValuesY[idx] = mu_ * (uy_x[idx] + ux_y[idx]);
                 }
                 else if (side == 3) {
                     tractionValuesX[idx] =  - mu_ * (uy_x[idx] + ux_y[idx]);
-                    tractionValuesY[idx] =  - lambda_ * (ux_x[idx] + uy_y[idx]) - 2 * mu_ * uy_y[idx];
+                    tractionValuesY[idx] =  - lambda_ * (ux_x[idx] + uy_y[idx]) 
+                                            - 2 * mu_ * uy_y[idx];
                 }
                 else if (side == 4) {
                     tractionValuesX[idx] = mu_ * (uy_x[idx] + ux_y[idx]);
-                    tractionValuesY[idx] = lambda_ * (ux_x[idx] + uy_y[idx]) + 2 * mu_ * uy_y[idx];
+                    tractionValuesY[idx] = lambda_ * (ux_x[idx] + uy_y[idx]) 
+                                           + 2 * mu_ * uy_y[idx];
                 }
             }
 
@@ -620,13 +671,16 @@ public:
             // calculate total cutlength from last forceSize entries of intersecCtr
             int cutlength = 0;
             int forceSize = FORCE_SIDES_.size();
-            for (int i = static_cast<int>(intersecCtr.size()) - forceSize; i < static_cast<int>(intersecCtr.size()); ++i) {
+            for (int i = static_cast<int>(intersecCtr.size()) - forceSize; 
+                     i < static_cast<int>(intersecCtr.size()); ++i) {
                 cutlength += nrCollPts_ - intersecCtr[i];
             }
             // separate traction-free and force parts
-            tractionFreeValues.emplace(tractionValues.slice(0, 0, tractionValues.size(0) - cutlength));
+            tractionFreeValues.emplace
+                (tractionValues.slice(0, 0, tractionValues.size(0) - cutlength));
             tractionZeros.emplace(torch::zeros_like(*tractionFreeValues));
-            forceValues.emplace(tractionValues.slice(0, tractionValues.size(0) - cutlength, tractionValues.size(0)));
+            forceValues.emplace(tractionValues.slice(0, tractionValues.size(0) -
+                                cutlength, tractionValues.size(0)));
             targetForce.emplace(torch::zeros_like(*forceValues));
             // fill in the known force values
             int offset = 0;
@@ -674,10 +728,12 @@ public:
     for (int i = 0; i < hessianColl[0][0]->size(0); ++i) {
 
         // x-direction
-        divStressX[i] = (lambda_ + 2 * mu_) * ux_xx[i] + mu_ * ux_yy[i] + (lambda_ + mu_) * uy_xy[i];
+        divStressX[i] = (lambda_ + 2 * mu_) * ux_xx[i] + 
+                        mu_ * ux_yy[i] + (lambda_ + mu_) * uy_xy[i];
 
         // y-direction
-        divStressY[i] = mu_ * uy_xx[i] + (lambda_ + 2 * mu_) * uy_yy[i] + (lambda_ + mu_) * ux_xy[i];
+        divStressY[i] = mu_ * uy_xx[i] + (lambda_ + 2 * mu_) * uy_yy[i] + 
+                        (lambda_ + mu_) * ux_xy[i];
         
     }
     
@@ -739,20 +795,24 @@ public:
                 
                 switch (sideNr) {
                     case 1: 
-                        *bcLoss += bcWeight * (torch::mse_loss(*std::get<0>(u_bdr)[0], *std::get<0>(bdr)[0]) + 
-                                              torch::mse_loss(*std::get<0>(u_bdr)[1], *std::get<0>(bdr)[1]));
+                        *bcLoss += bcWeight * 
+                            (torch::mse_loss(*std::get<0>(u_bdr)[0], *std::get<0>(bdr)[0]) + 
+                             torch::mse_loss(*std::get<0>(u_bdr)[1], *std::get<0>(bdr)[1]));
                         break;
                     case 2:
-                        *bcLoss += bcWeight * (torch::mse_loss(*std::get<1>(u_bdr)[0], *std::get<1>(bdr)[0]) + 
-                                              torch::mse_loss(*std::get<1>(u_bdr)[1], *std::get<1>(bdr)[1]));
+                        *bcLoss += bcWeight * 
+                            (torch::mse_loss(*std::get<1>(u_bdr)[0], *std::get<1>(bdr)[0]) + 
+                             torch::mse_loss(*std::get<1>(u_bdr)[1], *std::get<1>(bdr)[1]));
                         break;
                     case 3:
-                        *bcLoss += bcWeight * (torch::mse_loss(*std::get<2>(u_bdr)[0], *std::get<2>(bdr)[0]) + 
-                                              torch::mse_loss(*std::get<2>(u_bdr)[1], *std::get<2>(bdr)[1]));
+                        *bcLoss += bcWeight * 
+                            (torch::mse_loss(*std::get<2>(u_bdr)[0], *std::get<2>(bdr)[0]) + 
+                             torch::mse_loss(*std::get<2>(u_bdr)[1], *std::get<2>(bdr)[1]));
                         break;
                     case 4:
-                        *bcLoss += bcWeight * (torch::mse_loss(*std::get<3>(u_bdr)[0], *std::get<3>(bdr)[0]) + 
-                                              torch::mse_loss(*std::get<3>(u_bdr)[1], *std::get<3>(bdr)[1]));
+                        *bcLoss += bcWeight * 
+                            (torch::mse_loss(*std::get<3>(u_bdr)[0], *std::get<3>(bdr)[0]) + 
+                             torch::mse_loss(*std::get<3>(u_bdr)[1], *std::get<3>(bdr)[1]));
                         break;
                     default:
                         std::cerr << "Error: Invalid side number for Dirichlet BC!" << std::endl;
@@ -764,7 +824,8 @@ public:
         }
 
         // print the loss values
-        std::cout << std::setw(11) << totalLoss.item<double>() << " = " << singleLossOutput.str() << std::endl;
+        std::cout << std::setw(11) << 
+            totalLoss.item<double>() << " = " << singleLossOutput.str() << std::endl;
     }
     
     // SUPERVISED LEARNING
@@ -831,20 +892,24 @@ public:
 
                 switch (sideNr) {
                     case 1:
-                        *bcLoss += bcWeight * (torch::mse_loss(*std::get<0>(u_bdr)[0], *std::get<0>(bdr)[0]) + 
-                                            torch::mse_loss(*std::get<0>(u_bdr)[1], *std::get<0>(bdr)[1]));
+                        *bcLoss += bcWeight * 
+                            (torch::mse_loss(*std::get<0>(u_bdr)[0], *std::get<0>(bdr)[0]) + 
+                             torch::mse_loss(*std::get<0>(u_bdr)[1], *std::get<0>(bdr)[1]));
                         break;
                     case 2:
-                        *bcLoss += bcWeight * (torch::mse_loss(*std::get<1>(u_bdr)[0], *std::get<1>(bdr)[0]) + 
-                                            torch::mse_loss(*std::get<1>(u_bdr)[1], *std::get<1>(bdr)[1]));
+                        *bcLoss += bcWeight * 
+                            (torch::mse_loss(*std::get<1>(u_bdr)[0], *std::get<1>(bdr)[0]) + 
+                             torch::mse_loss(*std::get<1>(u_bdr)[1], *std::get<1>(bdr)[1]));
                         break;
                     case 3:
-                        *bcLoss += bcWeight * (torch::mse_loss(*std::get<2>(u_bdr)[0], *std::get<2>(bdr)[0]) + 
-                                            torch::mse_loss(*std::get<2>(u_bdr)[1], *std::get<2>(bdr)[1]));
+                        *bcLoss += bcWeight * 
+                            (torch::mse_loss(*std::get<2>(u_bdr)[0], *std::get<2>(bdr)[0]) + 
+                             torch::mse_loss(*std::get<2>(u_bdr)[1], *std::get<2>(bdr)[1]));
                         break;
                     case 4:
-                        *bcLoss += bcWeight * (torch::mse_loss(*std::get<3>(u_bdr)[0], *std::get<3>(bdr)[0]) + 
-                                            torch::mse_loss(*std::get<3>(u_bdr)[1], *std::get<3>(bdr)[1]));
+                        *bcLoss += bcWeight * 
+                            (torch::mse_loss(*std::get<3>(u_bdr)[0], *std::get<3>(bdr)[0]) + 
+                             torch::mse_loss(*std::get<3>(u_bdr)[1], *std::get<3>(bdr)[1]));
                         break;
                     default:
                         std::cerr << "Error: Invalid side number for Dirichlet BC!" << std::endl;
@@ -856,7 +921,8 @@ public:
         }
 
         // print the loss values
-        std::cout << std::setw(11) << totalLoss.item<double>() << " = " << singleLossOutput.str() << std::endl;
+        std::cout << std::setw(11) << 
+            totalLoss.item<double>() << " = " << singleLossOutput.str() << std::endl;
     }
 
     else {
@@ -940,9 +1006,11 @@ public:
         // CALCULATE THE NEW POSITION OF THE COLLPTS
 
         // create a tensor of the collocation points
-        torch::Tensor collPtsFirstAsTensor = torch::stack({std::get<0>(collPts_.first), std::get<1>(collPts_.first)}, 1);
+        torch::Tensor collPtsFirstAsTensor = torch::stack(
+            {std::get<0>(collPts_.first), std::get<1>(collPts_.first)}, 1);
         auto displacementOfCollPts = Base::u_.eval(collPts_.first);
-        torch::Tensor displacementAsTensor = torch::stack({*(displacementOfCollPts[0]), *(displacementOfCollPts[1]) }, 1);
+        torch::Tensor displacementAsTensor = torch::stack(
+            {*(displacementOfCollPts[0]), *(displacementOfCollPts[1]) }, 1);
 
         // create json objects for the collocation points' reference and displaced position
         nlohmann::json collPtsFirst_j = nlohmann::json::array();
@@ -994,7 +1062,12 @@ int main() {
   int MAX_EPOCH = 100;
   double MIN_LOSS = 1e-8;
   bool SUPERVISED_LEARNING = false;
+  std::string JSON_PATH = "/home/obergue/Documents/pytest/splinepy/results_2D.json";
+  
+  // reference simulation parameters
   bool RUN_REF_SIM = false;
+  int NR_CTRL_PTS_REF = 100;
+  int DEGREE_REF = 3;
 
   // spline parameters
   int64_t NR_CTRL_PTS = 8;  // in each direction 
@@ -1009,12 +1082,16 @@ int main() {
       {2, 1.0,  0.0},
     };
   std::vector<int> TFBC_SIDES = {3,4}; // {sides}
-    
+
+  // body force (constant over the whole domain)
+  std::pair<double, double> BODY_FORCE = {0.0, 0.0}; // {fx, fy}
+
   // --------------------------- //
 
 
   // calculation of lame parameters
-  double lambda = (YOUNG_MODULUS * POISSON_RATIO) / ((1 + POISSON_RATIO) * (1 - 2 * POISSON_RATIO));
+  double lambda = (YOUNG_MODULUS * POISSON_RATIO) / 
+                  ((1 + POISSON_RATIO) * (1 - 2 * POISSON_RATIO));
   double mu = YOUNG_MODULUS / (2 * (1 + POISSON_RATIO));
 
   using real_t = double;
@@ -1028,61 +1105,62 @@ int main() {
   gsMatrix<double> gsDisplacements;
   gsMatrix<double> gsStresses;
   std::tie(gsCtrlPts, gsDisplacements, gsStresses) = 
-    linear_elasticity_t::RunGismoSimulation(NR_CTRL_PTS, DEGREE, YOUNG_MODULUS, POISSON_RATIO);
-  
-  if (RUN_REF_SIM) {
-      int NR_CTRL_PTS_REF = 100;
-      int DEGREE_REF = 3;
-      gsMatrix<double> gsRefCtrlPts;
-      gsMatrix<double> gsRefDisplacements;
-      gsMatrix<double> gsRefStresses;
-
-      std::tie(gsRefCtrlPts, gsRefDisplacements, gsRefStresses) = 
-      linear_elasticity_t::RunGismoSimulation(NR_CTRL_PTS_REF, DEGREE, YOUNG_MODULUS, POISSON_RATIO);
-
-      gsMatrix<double> displacedGsRefCtrlPts = gsRefCtrlPts + gsRefDisplacements;
-      nlohmann::json displacedGsRefCtrlPts_j = nlohmann::json::array();
-      nlohmann::json gsRefStresses_j = nlohmann::json::array();
-      nlohmann::json gsRefDisplacements_j = nlohmann::json::array();
-      nlohmann::json gsRefOriginalCtrlPts_j = nlohmann::json::array();
-
-      // write G+Smo reference data from the matrices to the json objects
-      for (int i = 0; i < displacedGsRefCtrlPts.rows(); ++i) {
-          // new control points G+Smo
-          displacedGsRefCtrlPts_j.push_back({displacedGsRefCtrlPts(i, 0), displacedGsRefCtrlPts(i, 1)});
-          // write the von Mises stresses to the json object (calculated at the beginning of the main function)
-          gsRefStresses_j.push_back({gsRefStresses(i, 0)});
-          // write the displacements to the json object (calculated at the beginning of the main function)
-          gsRefDisplacements_j.push_back({gsRefDisplacements(i, 0), gsRefDisplacements(i, 1)});
-          // original control points G+Smo
-          gsRefOriginalCtrlPts_j.push_back({gsRefCtrlPts(i, 0), gsRefCtrlPts(i, 1)});
-      }
-      linear_elasticity_t::appendToJsonFile("gsRefCtrlPts", displacedGsRefCtrlPts_j);
-      linear_elasticity_t::appendToJsonFile("gsRefDegree", DEGREE_REF);
-      linear_elasticity_t::appendToJsonFile("gsRefStresses", gsRefStresses_j);
-      linear_elasticity_t::appendToJsonFile("gsRefDisplacements", gsRefDisplacements_j);
-      linear_elasticity_t::appendToJsonFile("gsRefOriginalCtrlPts", gsRefOriginalCtrlPts_j);
-  }
-
+    linear_elasticity_t::RunGismoSimulation(NR_CTRL_PTS, DEGREE, 
+        YOUNG_MODULUS, POISSON_RATIO, DIRI_SIDES, FORCE_SIDES, BODY_FORCE);
+    
   linear_elasticity_t
-      net(// simulation parameters
-          lambda, mu, SUPERVISED_LEARNING, MAX_EPOCH, MIN_LOSS, 
-          TFBC_SIDES, FORCE_SIDES, DIRI_SIDES,
-          // Number of neurons per layer
-          {25, 25},
-          // Activation functions
-          {{iganet::activation::sigmoid},
-           {iganet::activation::sigmoid},
-           {iganet::activation::none}},
-          // Number of B-spline coefficients of the geometry
-          std::tuple(iganet::utils::to_array(NR_CTRL_PTS, NR_CTRL_PTS)),
-          // Number of B-spline coefficients of the variable
-          std::tuple(iganet::utils::to_array(NR_CTRL_PTS, NR_CTRL_PTS)));
+    net(// simulation parameters
+        lambda, mu, SUPERVISED_LEARNING, MAX_EPOCH, MIN_LOSS, 
+        TFBC_SIDES, FORCE_SIDES, DIRI_SIDES, NR_CTRL_PTS, JSON_PATH,
+        // Number of neurons per layer
+        {25, 25},
+        // Activation functions
+        {{iganet::activation::sigmoid},
+            {iganet::activation::sigmoid},
+            {iganet::activation::none}},
+        // Number of B-spline coefficients of the geometry
+        std::tuple(iganet::utils::to_array(NR_CTRL_PTS, NR_CTRL_PTS)),
+        // Number of B-spline coefficients of the variable
+        std::tuple(iganet::utils::to_array(NR_CTRL_PTS, NR_CTRL_PTS)));
+
+  if (RUN_REF_SIM) {
+    gsMatrix<double> gsRefCtrlPts;
+    gsMatrix<double> gsRefDisplacements;
+    gsMatrix<double> gsRefStresses;
+
+    std::tie(gsRefCtrlPts, gsRefDisplacements, gsRefStresses) = 
+    linear_elasticity_t::RunGismoSimulation(NR_CTRL_PTS_REF, DEGREE, 
+        YOUNG_MODULUS, POISSON_RATIO, DIRI_SIDES, FORCE_SIDES, BODY_FORCE);
+
+    gsMatrix<double> displacedGsRefCtrlPts = gsRefCtrlPts + gsRefDisplacements;
+    nlohmann::json displacedGsRefCtrlPts_j = nlohmann::json::array();
+    nlohmann::json gsRefStresses_j = nlohmann::json::array();
+    nlohmann::json gsRefDisplacements_j = nlohmann::json::array();
+    nlohmann::json gsRefOriginalCtrlPts_j = nlohmann::json::array();
+
+    // write G+Smo reference data from the matrices to the json objects
+    for (int i = 0; i < displacedGsRefCtrlPts.rows(); ++i) {
+        // new control points G+Smo
+        displacedGsRefCtrlPts_j.push_back(
+            {displacedGsRefCtrlPts(i, 0), displacedGsRefCtrlPts(i, 1)});
+        // write the von Mises stresses to the json object
+        gsRefStresses_j.push_back({gsRefStresses(i, 0)});
+        // write the displacements to the json object
+        gsRefDisplacements_j.push_back(
+            {gsRefDisplacements(i, 0), gsRefDisplacements(i, 1)});
+        // original control points G+Smo
+        gsRefOriginalCtrlPts_j.push_back({gsRefCtrlPts(i, 0), gsRefCtrlPts(i, 1)});
+    }
+    net.appendToJsonFile("gsRefCtrlPts", displacedGsRefCtrlPts_j);
+    net.appendToJsonFile("gsRefDegree", DEGREE_REF);
+    net.appendToJsonFile("gsRefStresses", gsRefStresses_j);
+    net.appendToJsonFile("gsRefDisplacements", gsRefDisplacements_j);
+    net.appendToJsonFile("gsRefOriginalCtrlPts", gsRefOriginalCtrlPts_j);
+  }
 
   // imposing body force
   net.f().transform([=](const std::array<real_t, 2> xi) {
-    // body force {f_x, f_y}
-    return std::array<real_t, 2>{0, 0};
+    return std::array<real_t, 2>{BODY_FORCE.first, BODY_FORCE.second};
   });
 
   // get the coefficients of the control points
@@ -1091,7 +1169,7 @@ int main() {
   for (int i = 0; i < NR_CTRL_PTS; ++i) {
       ctrlPtsCoeffs_j.push_back({ctrlPtsCoeffs[i].item<double>()});
   }
-  linear_elasticity_t::appendToJsonFile("ctrlPtsCoeffs", ctrlPtsCoeffs_j);
+  net.appendToJsonFile("ctrlPtsCoeffs", ctrlPtsCoeffs_j);
 
   // run through all DIRI_SIDES
   for (const auto& side : DIRI_SIDES) {
@@ -1235,7 +1313,7 @@ int main() {
   for (int i = 0; i < displacedGsCtrlPts.rows(); ++i) {
         // new control points G+Smo
         displacedGsCtrlPts_j.push_back({displacedGsCtrlPts(i, 0), displacedGsCtrlPts(i, 1)});
-        // write the von Mises stresses to the json object (calculated at the beginning of the main function)
+        // write the vM stresses to the json object (calc. in beginning of the main function)
         gsStresses_j.push_back({gsStresses(i, 0)});
         // write the displacements to the json object
         gsDisplacements_j.push_back({gsDisplacements(i, 0), gsDisplacements(i, 1)});
@@ -1250,12 +1328,12 @@ int main() {
   }
 
   // write data to the json file
-  linear_elasticity_t::appendToJsonFile("gsCtrlPts", displacedGsCtrlPts_j);
-  linear_elasticity_t::appendToJsonFile("netCtrlPts", displacedNetCtrlPts_j);
-  linear_elasticity_t::appendToJsonFile("gsStresses", gsStresses_j);
-  linear_elasticity_t::appendToJsonFile("gsDisplacements", gsDisplacements_j);
-  linear_elasticity_t::appendToJsonFile("degree", DEGREE);
-  linear_elasticity_t::appendToJsonFile("gsOriginalCtrlPts", gsOriginalCtrlPts_j);
+  net.appendToJsonFile("gsCtrlPts", displacedGsCtrlPts_j);
+  net.appendToJsonFile("netCtrlPts", displacedNetCtrlPts_j);
+  net.appendToJsonFile("gsStresses", gsStresses_j);
+  net.appendToJsonFile("gsDisplacements", gsDisplacements_j);
+  net.appendToJsonFile("degree", DEGREE);
+  net.appendToJsonFile("gsOriginalCtrlPts", gsOriginalCtrlPts_j);
   
   iganet::finalize();
   return 0;
