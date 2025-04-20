@@ -978,14 +978,6 @@ public:
             epsilon_yy[i] = (lambda_ + mu_) / (mu_ * (3 * lambda_ + 2 * mu_)) * 
                 (sigma_yy[i] - lambda_ / (2 * (lambda_ + mu_)) * sigma_xx[i]);
 
-            // calculate the actual poisson ratio at the collocation points
-            // poisson_re[i] = ( - ( ux_x[i] * (mu_ * (3 * lambda_ + 2 * mu_)) / 
-            //                      (lambda_ + mu_) - sigma_xx[i] ) / sigma_yy[i] );
-            //                   - ( uy_y[i] * (mu_ * (3 * lambda_ + 2 * mu_)) / 
-            //                      (lambda_ + mu_) - sigma_yy[i] ) / sigma_xx[i] ) / 2;
-            // poisson_re[i] = - ( uy_y[i] * (mu_ * (3 * lambda_ + 2 * mu_)) / 
-            //                      (lambda_ + mu_) - sigma_yy[i] ) / sigma_xx[i];
-
             // only valid for load in x-direction
             poisson_re[i] = - epsilon_yy[i] / epsilon_xx[i];
             
@@ -1258,6 +1250,19 @@ int main() {
       << std::chrono::duration_cast<std::chrono::duration<double>>(t2 - t1)
              .count()
       << " seconds\n";
+
+  // PARAMETRIZATION OF THE NETWORK
+
+  // change original geometry
+  auto& Gspace = net.G().space();
+  auto& coeffs = Gspace.coeffs(0);
+  std::cout << coeffs.size(0) << std::endl;
+  // add a oscillation to the coefficients
+  for (int64_t i = 0; i < coeffs.size(0); ++i) {
+      coeffs.index_put_({i}, coeffs.index({i}) + 0.05 * std::sin(0.1 * i));
+  }
+  // evaluate the new solution
+  net.eval();
 
 #ifdef IGANET_WITH_MATPLOT
   // Plot the solution
