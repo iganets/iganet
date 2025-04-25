@@ -67,8 +67,8 @@ RUN rm -f /opt/iganet/webapps/models/iganet/BSplineSurface.cxx
 RUN rm -f /opt/iganet/webapps/models/iganet/BSplineVolume.cxx
 RUN rm -f /opt/iganet/webapps/models/iganet/Poisson2d.cxx
 
-#RUN rm -f /opt/iganet/webapps/models/gismo/GismoLinearElasticity2d.cxx
-#RUN rm -f /opt/iganet/webapps/models/gismo/GismoLinearElasticity3d.cxx
+RUN rm -f /opt/iganet/webapps/models/gismo/GismoLinearElasticity2d.cxx
+RUN rm -f /opt/iganet/webapps/models/gismo/GismoLinearElasticity3d.cxx
 
 WORKDIR /opt/iganet/build
 RUN rm -rf * \
