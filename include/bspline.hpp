@@ -4958,14 +4958,14 @@ public:
       return utils::BlockTensor<torch::Tensor, 1, 1>{
           torch::zeros_like(BSplineCore::coeffs_[0])};
     else {
-      std::array<utils::BlockTensor<torch::Tensor, BSplineCore::geoDim_, BSplineCore::geoDim_>, BSplineCore::geoDim_> hessu_array;
+      utils::BlockTensor<torch::Tensor, BSplineCore::parDim_, BSplineCore::parDim_, BSplineCore::geoDim_> hessu;
 
       auto hessG = G.template hess<memory_optimized>(xi, knot_indices_G,
-                                                       coeff_indices_G);
+                                                     coeff_indices_G);
       auto ijacG = ijac<memory_optimized>(G, xi, knot_indices, coeff_indices,
-                                            knot_indices_G, coeff_indices_G);
+                                          knot_indices_G, coeff_indices_G);
 
-      for (int component = 0; component < BSplineCore::geoDim_; ++component) {
+      for (short_t component = 0; component < BSplineCore::geoDim_; ++component) {
           auto hess_component = hess<memory_optimized>(xi, knot_indices, coeff_indices).slice(component);
 
           for (short_t k = 0; k < hessG.slices(); ++k) {
@@ -4973,10 +4973,14 @@ public:
           }
 
           auto jacInv = G.template jac<memory_optimized>(xi, knot_indices_G, coeff_indices_G).ginv();
-          hessu_array[component] = jacInv.tr() * hess_component * jacInv;
+          auto hessu_component = jacInv.tr() * hess_component * jacInv;
+          
+          for (short_t i = 0; i < BSplineCore::parDim_; ++i)
+            for (short_t j = 0; j < BSplineCore::parDim_; ++j)
+              hessu.set(i, j, component, hessu_component(i, j));
       }
 
-      return hessu_array;
+      return hessu;
 
     }
   }
