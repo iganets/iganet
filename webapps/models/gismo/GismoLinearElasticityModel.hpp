@@ -33,17 +33,17 @@ private:
   using Base = GismoPdeModel<d, T>;
 
   /// @brief Multi-patch basis
-  gsMultiBasis<T> basis_;
+  gismo::gsMultiBasis<T> basis_;
 
   /// @brief Boundary conditions
-  gsBoundaryConditions<T> bc_;
+  gismo::gsBoundaryConditions<T> bc_;
 
   /// @brief Right-hand side function
-  gsFunctionExpr<T> rhsFunc_;
-  gsFunctionExpr<T> loadFunc_;
+  gismo::gsFunctionExpr<T> rhsFunc_;
+  gismo::gsFunctionExpr<T> loadFunc_;
 
   /// @brief Boundary condition values
-  std::array<gsFunctionExpr<T>, 2 * d> bcFunc_;
+  std::array<gismo::gsFunctionExpr<T>, 2 * d> bcFunc_;
 
   /// @brief Boundary condition type
   std::array<gismo::condition_type::type, 2 * d> bcType_;
@@ -54,28 +54,26 @@ private:
   /// @brief Poisson's ratio
   T PoissonsRatio_;
 
-  /// @brief Solution
-  gsMultiPatch<T> solution_;
-
   /// @brief Solve the Linear elasticity problem
   void solve() {
 
     // Setup assembler
-    gsElasticityAssembler<T> assembler(Base::geo_, basis_, bc_, rhsFunc_);
+    gismo::gsElasticityAssembler<T> assembler(Base::geo_, basis_, bc_, rhsFunc_);
     assembler.options().setReal("YoungsModulus", YoungsModulus_);
     assembler.options().setReal("PoissonsRatio", PoissonsRatio_);
-    assembler.options().setInt("MaterialLaw", material_law::hooke);
-    assembler.options().setInt("DirichletStrategy", dirichlet::elimination);
+    assembler.options().setInt("MaterialLaw", gismo::material_law::hooke);
+    assembler.options().setInt("DirichletStrategy", gismo::dirichlet::elimination);
 
     // Initialize assembler
     assembler.assemble();
 
     // Solve system
     typename gismo::gsSparseSolver<T>::CGDiagonal solver(assembler.matrix());
-    gsMatrix<T> solution(solver.solve(assembler.rhs()));
+    gismo::gsMatrix<T> solution(solver.solve(assembler.rhs()));
 
     // Extract solution
-    assembler.constructSolution(solution, assembler.allFixedDofs(), solution_);
+    assembler.constructSolution(solution, assembler.allFixedDofs(),
+                                Base::solution_);
   }
 
 public:
@@ -94,7 +92,7 @@ public:
     // Set boundary conditions type and expression
     for (const auto &side : GismoBoundarySides<d>) {
       bcType_[side - 1] = gismo::condition_type::unknownType;
-      bcFunc_[side - 1] = gismo::give(gsFunctionExpr<T>("0", "0", "0", 3));
+      bcFunc_[side - 1] = gismo::give(gismo::gsFunctionExpr<T>("0", "0", "0", 3));
       // bc_.addCondition(0, side, bcType_[side - 1], &bcFunc_[side - 1]);
     }
 
@@ -111,7 +109,7 @@ public:
     // Set geometry
     bc_.setGeoMap(Base::geo_);
 
-    // Generate solution
+    // Regenerate solution
     solve();
   }
 
@@ -217,7 +215,8 @@ public:
   }
 
   /// @brief Updates the attributes of the model
-  nlohmann::json updateAttribute(const std::string &component,
+  nlohmann::json updateAttribute(const std::string &patch,
+                                 const std::string &component,
                                  const std::string &attribute,
                                  const nlohmann::json &json) override {
 
@@ -242,7 +241,7 @@ public:
     }
 
     else
-      result = Base::updateAttribute(component, attribute, json);
+      result = Base::updateAttribute(patch, component, attribute, json);
 
     // Solve updated problem
     solve();
@@ -251,15 +250,24 @@ public:
   }
 
   /// @brief Evaluates the model
-  nlohmann::json eval(const std::string &component,
+  nlohmann::json eval(const std::string &patch, const std::string &component,
                       const nlohmann::json &json) const override {
 
-    // Create uniform grid
-    gsMatrix<T> ab = Base::geo_.patch(0).support();
-    gsVector<T> a = ab.col(0);
-    gsVector<T> b = ab.col(1);
+    int patchIndex(-1);
 
-    gsVector<unsigned> np(Base::geo_.parDim());
+    try {
+      patchIndex = stoi(patch);
+    } catch (...) {
+      // Invalid patchIndex
+      return R"({ INVALID REQUEST })"_json;
+    }
+    
+    // Create uniform grid
+    gismo::gsMatrix<T> ab = Base::geo_.patch(patchIndex).support();
+    gismo::gsVector<T> a = ab.col(0);
+    gismo::gsVector<T> b = ab.col(1);
+
+    gismo::gsVector<unsigned> np(Base::geo_.parDim());
     np.setConstant(25);
 
     if (json.contains("data"))
@@ -271,25 +279,25 @@ public:
       }
 
     // Uniform parameters for evaluation
-    gsMatrix<T> pts = gsPointGrid(a, b, np);
-    gsMatrix<T> eval = solution_.patch(0).eval(pts);
+    gismo::gsMatrix<T> pts = gismo::gsPointGrid(a, b, np);
+    gismo::gsMatrix<T> eval = Base::solution_.patch(patchIndex).eval(pts);
 
     if (component == "Displacement") {
-      gsMatrix<T> result = eval.colwise().norm();
+      gismo::gsMatrix<T> result = eval.colwise().norm();
       return utils::to_json(result, true, false);
     } else if (component == "Displacement_x") {
-      gsMatrix<T> result = eval.row(0);
+      gismo::gsMatrix<T> result = eval.row(0);
       return utils::to_json(result, true, false);
     } else if (component == "Displacement_y") {
-      gsMatrix<T> result = eval.row(1);
+      gismo::gsMatrix<T> result = eval.row(1);
       return utils::to_json(result, true, false);
     } else if (component == "Displacement_z") {
-      gsMatrix<T> result = eval.row(2);
+      gismo::gsMatrix<T> result = eval.row(2);
       return utils::to_json(result, true, false);
     }
 
     else
-      return Base::eval(component, json);
+      return Base::eval(patch, component, json);
   }
 
   /// @brief Elevates the model's degrees, preserves smoothness
@@ -309,7 +317,7 @@ public:
       bc_.setGeoMap(Base::geo_);
     }
 
-    int num = 1, dim = -1;
+    int num(1), dim(-1), patchIndex(-1);
 
     if (json.contains("data")) {
       if (json["data"].contains("num"))
@@ -317,12 +325,18 @@ public:
 
       if (json["data"].contains("dim"))
         dim = json["data"]["dim"].get<int>();
+
+      if (json["data"].contains("patch"))
+        patchIndex = json["data"]["patch"].get<int>();
     }
 
     // Degree elevate basis of solution space
-    basis_.basis(0).degreeElevate(num, dim);
+    if (patchIndex == -1)
+      basis_.degreeElevate(num, dim);
+    else
+      basis_.basis(patchIndex).degreeElevate(num, dim);
 
-    // Generate solution
+    // Regenerate solution
     solve();
   }
 
@@ -343,7 +357,7 @@ public:
       bc_.setGeoMap(Base::geo_);
     }
 
-    int num = 1, dim = -1;
+    int num(1), dim(-1), patchIndex(-1);
 
     if (json.contains("data")) {
       if (json["data"].contains("num"))
@@ -351,12 +365,18 @@ public:
 
       if (json["data"].contains("dim"))
         dim = json["data"]["dim"].get<int>();
+
+      if (json["data"].contains("patch"))
+        patchIndex = json["data"]["patch"].get<int>();
     }
 
     // Degree increase basis of solution space
-    basis_.basis(0).degreeIncrease(num, dim);
+    if (patchIndex == -1)
+      basis_.degreeIncrease(num, dim);
+    else
+      basis_.basis(patchIndex).degreeIncrease(num, dim);
 
-    // Generate solution
+    // Regenerate solution
     solve();
   }
 
@@ -377,7 +397,7 @@ public:
       bc_.setGeoMap(Base::geo_);
     }
 
-    int num = 1, dim = -1;
+    int num(1), dim(-1), patchIndex(-1);
 
     if (json.contains("data")) {
       if (json["data"].contains("num"))
@@ -385,12 +405,58 @@ public:
 
       if (json["data"].contains("dim"))
         dim = json["data"]["dim"].get<int>();
+
+      if (json["data"].contains("patch"))
+        patchIndex = json["data"]["patch"].get<int>();
     }
 
     // Refine basis of solution space
-    basis_.basis(0).uniformRefine(num, 1, dim);
+    if (patchIndex == -1)
+      basis_.uniformRefine(num, 1, dim);
+    else
+      basis_.basis(patchIndex).uniformRefine(num, 1, dim);
 
-    // Generate solution
+    // Regenerate solution
+    solve();
+  }
+
+  /// @brief Add new patch to the model
+  void addPatch(const nlohmann::json &json = NULL) override {
+
+    // Add patch from geometry
+    Base::addPatch(json);
+
+    // Set geometry
+    bc_.setGeoMap(Base::geo_);
+    
+    throw std::runtime_error("Adding patches is not yet implemented in G+Smo");
+
+    // Regenerate solution
+    solve();
+  }
+  
+  /// @brief Remove existing patch from the model
+  void removePatch(const nlohmann::json &json = NULL) override {
+
+    // Remove patch from geometry
+    Base::removePatch(json);
+
+    // Set geometry
+    bc_.setGeoMap(Base::geo_);
+    
+    int patchIndex(-1);
+
+    if (json.contains("data")) {      
+      if (json["data"].contains("patch"))
+        patchIndex = json["data"]["patch"].get<int>();
+    }
+
+    // if (patchIndex == -1)
+    //   throw std::runtime_error("Invalid patch index");
+
+    // throw std::runtime_error("Patch removal is not yet implemented in G+Smo");
+
+    // Regenerate solution
     solve();
   }
 };

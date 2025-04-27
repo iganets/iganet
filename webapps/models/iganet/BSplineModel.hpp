@@ -45,27 +45,17 @@ private:
   /// @brief Base model
   using Base = Model<typename Spline::value_type>;
 
-  /// @brief Global offset vector
-  torch::Tensor offset_;
-
-  /// @brief Global rotation vector
-  torch::Tensor rotation_;
-
   /// @brief "fake" solution vector
   Spline solution_;
 
 public:
   /// @brief Default constructor
-  BSplineModel()
-      : offset_(torch::zeros({3}, Options<typename Spline::value_type>{})),
-        rotation_(torch::zeros({3}, Options<typename Spline::value_type>{})) {}
+  BSplineModel() {}
 
   /// @brief Constructor for equidistant knot vectors
   BSplineModel(const std::array<int64_t, Spline::parDim()> ncoeffs,
                enum iganet::init init = iganet::init::zeros)
-      : Spline(ncoeffs, init), solution_(ncoeffs, init),
-        offset_(torch::zeros({3}, Options<typename Spline::value_type>{})),
-        rotation_(torch::zeros({3}, Options<typename Spline::value_type>{})) {
+      : Spline(ncoeffs, init), solution_(ncoeffs, init) {
     if constexpr (Spline::parDim() == 1)
       solution_.transform(
           [](const std::array<typename Spline::value_type, 1> xi) {
@@ -283,11 +273,12 @@ public:
   nlohmann::json getParameters() const override { return R"([])"_json; }
 
   /// @brief Serializes the model to JSON
-  nlohmann::json to_json(const std::string &component,
+  nlohmann::json to_json(const std::string &patch, const std::string &component,
                          const std::string &attribute) const override {
 
-    if (component == "geometry" ||
-        component == "" /* might be removed in the future */) {
+    // At the moment the "patch" flag is ignored
+
+    if (component == "geometry") {
       if (attribute != "") {
         nlohmann::json json;
         if (attribute == "degrees")
@@ -308,10 +299,8 @@ public:
         return json;
 
       } else {
-        auto json = Spline::to_json();
-        json.update(Base::to_json("transform", ""), true);
 
-        return json;
+        return Spline::to_json();
       }
     }
 
@@ -340,13 +329,17 @@ public:
     }
 
     else
-      return Base::to_json(component, attribute);
+      return Base::to_json(patch, component, attribute);
   }
 
   /// @brief Updates the attributes of the model
-  nlohmann::json updateAttribute(const std::string &component,
+  nlohmann::json updateAttribute(const std::string &patch,
+                                 const std::string &component,
                                  const std::string &attribute,
                                  const nlohmann::json &json) override {
+
+    // At the moment the "patch" and "component" flags are ignored
+
     if (attribute == "coeffs") {
       if (!json.contains("data"))
         throw InvalidModelAttributeException();
@@ -437,12 +430,14 @@ public:
       }
       return "{}";
     } else
-      return Base::updateAttribute(component, attribute, json);
+      return Base::updateAttribute(patch, component, attribute, json);
   }
 
   /// @brief Evaluates the model
-  nlohmann::json eval(const std::string &component,
+  nlohmann::json eval(const std::string &patch, const std::string &component,
                       const nlohmann::json &json) const override {
+
+    // At the moment the "patch" flags is ignored
 
     if constexpr (Spline::parDim() == 1) {
 
@@ -624,7 +619,6 @@ public:
         archive.load_from(reinterpret_cast<const char *>(binary.data()),
                           binary.size());
 
-        archive.read("transform", Base::transform_);
         Spline::read(archive, "geometry");
         solution_.read(archive, "solution");
 
@@ -643,7 +637,6 @@ public:
     archive.write("model",
                   static_cast<int64_t>(std::hash<std::string>{}(getName())));
     archive.write("nonuniform", static_cast<bool>(Spline::is_nonuniform()));
-    archive.write("transform", Base::transform_);
 
     Spline::write(archive, "geometry");
     solution_.write(archive, "solution");
@@ -669,8 +662,10 @@ public:
   }
 
   /// @brief Imports the model from XML (as JSON object)
-  void importXML(const nlohmann::json &json, const std::string &component,
-                 int id) override {
+  void importXML(const std::string &patch,
+                 const std::string& component,
+                 const nlohmann::json &json,
+                 int id = 0) override {
 
     if (json.contains("data")) {
       if (json["data"].contains("xml")) {
@@ -682,7 +677,7 @@ public:
             doc.load_buffer(xml.c_str(), xml.size());
 
         if (pugi::xml_node root = doc.child("xml"))
-          importXML(root, component, id);
+          importXML(patch, component, root, id);
         else
           throw std::runtime_error("No \"xml\" node in XML object");
 
@@ -694,19 +689,17 @@ public:
   }
 
   /// @brief Imports the model from XML (as XML object)
-  void importXML(const pugi::xml_node &xml, const std::string &component,
-                 int id) override {
+  void importXML(const std::string &patch,
+                 const std::string& component,
+                 const pugi::xml_node &xml,
+                 int id = 0) override {
 
     if (component.empty()) {
       Spline::from_xml(xml, id, "geometry");
       solution_.from_xml(xml, id, "solution");
-      iganet::utils::from_xml<iganet::real_t, 2>(
-          xml, Base::transform_, "Matrix", id, "transform", false);
     } else {
       if (component == "geometry") {
         Spline::from_xml(xml, id, "geometry");
-        iganet::utils::from_xml<iganet::real_t, 2>(
-            xml, Base::transform_, "Matrix", id, "transform", false);
       } else if (component == "solution")
         solution_.from_xml(xml, id, "solution");
       else
@@ -715,12 +708,14 @@ public:
   }
 
   /// @brief Exports the model to XML (as JSON object)
-  nlohmann::json exportXML(const std::string &component, int id) override {
+  nlohmann::json exportXML(const std::string &patch,
+                           const std::string& component,
+                           int id = 0) override {
 
     // serialize to XML
     pugi::xml_document doc;
     pugi::xml_node xml = doc.append_child("xml");
-    xml = exportXML(xml, component, id);
+    xml = exportXML(patch, component, xml, id);
 
     // serialize to JSON
     std::ostringstream oss;
@@ -730,19 +725,17 @@ public:
   }
 
   /// @brief Exports the model to XML (as XML object)
-  pugi::xml_node &exportXML(pugi::xml_node &xml, const std::string &component,
-                            int id) override {
+  pugi::xml_node &exportXML(const std::string &patch,
+                            const std::string& component,
+                            pugi::xml_node &xml,
+                            int id = 0) override {
 
     if (component.empty()) {
       Spline::to_xml(xml, id, "geometry");
       solution_.to_xml(xml, id, "solution");
-      iganet::utils::to_xml<iganet::real_t, 2>(Base::transform_, xml, "Matrix",
-                                               id, "transform");
     } else {
       if (component == "geometry") {
         Spline::to_xml(xml, id, "geometry");
-        iganet::utils::to_xml<iganet::real_t, 2>(Base::transform_, xml,
-                                                 "Matrix", id, "transform");
       } else if (component == "solution")
         solution_.to_xml(xml, id, "solution");
       else

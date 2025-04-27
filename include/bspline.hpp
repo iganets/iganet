@@ -2644,7 +2644,7 @@ public:
           utils::to_tensorAccessor<real_t, 1>(coeffs_[g], torch::kCPU);
       auto coeffs_cpu_ptr = coeffs_cpu.template data_ptr<real_t>();
       coefs.col(g) =
-          gsAsConstVector<real_t>(coeffs_cpu_ptr, coeffs_cpu.size(0));
+        gismo::gsAsConstVector<real_t>(coeffs_cpu_ptr, coeffs_cpu.size(0));
     }
 
     std::array<gismo::gsKnotVector<real_t>, parDim_> kv;
@@ -2721,7 +2721,7 @@ public:
             utils::to_tensorAccessor<real_t, 1>(coeffs_[g], torch::kCPU);
         auto coeffs_cpu_ptr = coeffs_cpu.template data_ptr<real_t>();
         bspline.coefs().col(g) =
-            gsAsConstVector<real_t>(coeffs_cpu_ptr, coeffs_cpu.size(0));
+          gismo::gsAsConstVector<real_t>(coeffs_cpu_ptr, coeffs_cpu.size(0));
       }
     }
 
@@ -2757,7 +2757,7 @@ public:
             utils::to_tensorAccessor<real_t, 1>(coeffs_[g], torch::kCPU);
         auto coeffs_cpu_ptr = coeffs_cpu.template data_ptr<real_t>();
         bspline.coefs().col(g) =
-            gsAsConstVector<real_t>(coeffs_cpu_ptr, coeffs_cpu.size(0));
+          gismo::gsAsConstVector<real_t>(coeffs_cpu_ptr, coeffs_cpu.size(0));
       }
     }
 
@@ -4958,25 +4958,30 @@ public:
       return utils::BlockTensor<torch::Tensor, 1, 1>{
           torch::zeros_like(BSplineCore::coeffs_[0])};
     else {
-      auto hessu =
-          hess<memory_optimized>(xi, knot_indices, coeff_indices).slice(0);
+      utils::BlockTensor<torch::Tensor, BSplineCore::parDim_, BSplineCore::parDim_, BSplineCore::geoDim_> hessu;
 
-      {
-        auto igradG =
-            igrad<memory_optimized>(G, xi, knot_indices, coeff_indices,
-                                    knot_indices_G, coeff_indices_G);
-        auto hessG = G.template hess<memory_optimized>(xi, knot_indices_G,
-                                                       coeff_indices_G);
-        assert(igradG.cols() == hessG.slices());
-        for (short_t k = 0; k < hessG.slices(); ++k)
-          hessu -= igradG(0, k) * hessG.slice(k);
+      auto hessG = G.template hess<memory_optimized>(xi, knot_indices_G,
+                                                     coeff_indices_G);
+      auto ijacG = ijac<memory_optimized>(G, xi, knot_indices, coeff_indices,
+                                          knot_indices_G, coeff_indices_G);
+
+      for (short_t component = 0; component < BSplineCore::geoDim_; ++component) {
+          auto hess_component = hess<memory_optimized>(xi, knot_indices, coeff_indices).slice(component);
+
+          for (short_t k = 0; k < hessG.slices(); ++k) {
+              hess_component -= ijacG(component, k) * hessG.slice(k);
+          }
+
+          auto jacInv = G.template jac<memory_optimized>(xi, knot_indices_G, coeff_indices_G).ginv();
+          auto hessu_component = jacInv.tr() * hess_component * jacInv;
+          
+          for (short_t i = 0; i < BSplineCore::parDim_; ++i)
+            for (short_t j = 0; j < BSplineCore::parDim_; ++j)
+              hessu.set(i, j, component, hessu_component(i, j));
       }
 
-      auto jacInv =
-          G.template jac<memory_optimized>(xi, knot_indices_G, coeff_indices_G)
-              .ginv();
+      return hessu;
 
-      return jacInv.tr() * hessu * jacInv;
     }
   }
 

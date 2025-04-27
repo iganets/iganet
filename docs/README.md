@@ -51,4 +51,4 @@ IgANets adopts the following mathematical symbols and notation conventions.
 
 ## Copyright
 
-Copyright (c) 2021-2024 Matthias Möller (m.moller@tudelft.nl).
+Copyright (c) 2021-2025 Matthias Möller (m.moller@tudelft.nl).

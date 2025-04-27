@@ -15,7 +15,6 @@
 #pragma once
 
 #include <GismoModel.hpp>
-#include <GismoSurfaceReparameterization.hpp>
 
 namespace iganet {
 
@@ -24,17 +23,20 @@ namespace webapp {
 /// @brief G+Smo geometry model
 template <short_t d, class T>
 class GismoGeometryModel : public GismoModel<T>,
+                           public ModelAddPatch,
                            public ModelElevate,
                            public ModelEval,
                            public ModelIncrease,
                            public ModelRefine,
-                           public ModelReparameterize {
+                           public ModelReparameterize,
+                           public ModelRemovePatch,
+                           public ModelXML {
 
   static_assert(d >= 1 && d <= 4, "Spatial dimension must be between 1 and 4");
 
 protected:
   /// @brief Multi-patch geometry
-  gsMultiPatch<T> geo_;
+  gismo::gsMultiPatch<T> geo_;
 
 public:
   /// @brief Default constructor
@@ -46,26 +48,34 @@ public:
                      const std::array<int64_t, d> npatches,
                      const std::array<T, d> dimensions)
       : GismoModel<T>() {
-    if constexpr (d == 1) {
-      gsKnotVector<T> KV0(0, 1, ncoeffs[0] - degrees[0] - 1, degrees[0] + 1);
 
-      gsMatrix<T> C(ncoeffs[0], 3);
+    if constexpr (d == 1) {
+      gismo::gsKnotVector<T> KV0(0, 1, ncoeffs[0] - degrees[0] - 1, degrees[0] + 1);
+
+      gismo::gsMatrix<T> C(ncoeffs[0], 3), P;
+
       for (int64_t i = 0; i < ncoeffs[0]; ++i) {
         C(i, 0) = ((T)i) / (T)(ncoeffs[0] - 1);
         C(i, 1) = (T)0;
         C(i, 2) = (T)0;
       }
 
-      C.col(0) *= dimensions[0];
+      for (int64_t i = 0; i < npatches[0]; ++i) {
+        P = C;
 
-      geo_.addPatch(gsBSpline<T>(give(KV0), give(C)));
+        P.col(0) *= dimensions[0] / npatches[0];
+
+        P.col(0).array() += (T)(i) / (T)npatches[0];
+
+        geo_.addPatch(gismo::gsBSpline<T>(KV0, give(P)));
+      }
       geo_.computeTopology();
 
     } else if constexpr (d == 2) {
-      gsKnotVector<T> KV0(0, 1, ncoeffs[0] - degrees[0] - 1, degrees[0] + 1);
-      gsKnotVector<T> KV1(0, 1, ncoeffs[1] - degrees[1] - 1, degrees[1] + 1);
+      gismo::gsKnotVector<T> KV0(0, 1, ncoeffs[0] - degrees[0] - 1, degrees[0] + 1);
+      gismo::gsKnotVector<T> KV1(0, 1, ncoeffs[1] - degrees[1] - 1, degrees[1] + 1);
 
-      gsMatrix<T> C(ncoeffs[0] * ncoeffs[1], 3);
+      gismo::gsMatrix<T> C(ncoeffs[0] * ncoeffs[1], 3), P;
 
       int64_t r = 0;
       for (int64_t j = 0; j < ncoeffs[1]; ++j)
@@ -76,18 +86,26 @@ public:
           ++r;
         }
 
-      C.col(0) *= dimensions[0];
-      C.col(1) *= dimensions[1];
+      for (int64_t j = 0; j < npatches[1]; ++j)
+        for (int64_t i = 0; i < npatches[0]; ++i) {
+          P = C;
 
-      geo_.addPatch(gsTensorBSpline<2, T>(give(KV0), give(KV1), give(C)));
+          P.col(0) *= dimensions[0] / (T)npatches[0];
+          P.col(1) *= dimensions[1] / (T)npatches[1];
+
+          P.col(0).array() += (T)(i) / (T)npatches[0];
+          P.col(1).array() += (T)(j) / (T)npatches[1];
+
+          geo_.addPatch(gismo::gsTensorBSpline<2, T>(KV0, KV1, give(P)));
+        }
       geo_.computeTopology();
 
     } else if constexpr (d == 3) {
-      gsKnotVector<T> KV0(0, 1, ncoeffs[0] - degrees[0] - 1, degrees[0] + 1);
-      gsKnotVector<T> KV1(0, 1, ncoeffs[1] - degrees[1] - 1, degrees[1] + 1);
-      gsKnotVector<T> KV2(0, 1, ncoeffs[2] - degrees[2] - 1, degrees[2] + 1);
+      gismo::gsKnotVector<T> KV0(0, 1, ncoeffs[0] - degrees[0] - 1, degrees[0] + 1);
+      gismo::gsKnotVector<T> KV1(0, 1, ncoeffs[1] - degrees[1] - 1, degrees[1] + 1);
+      gismo::gsKnotVector<T> KV2(0, 1, ncoeffs[2] - degrees[2] - 1, degrees[2] + 1);
 
-      gsMatrix<T> C(ncoeffs[0] * ncoeffs[1] * ncoeffs[2], 3);
+      gismo::gsMatrix<T> C(ncoeffs[0] * ncoeffs[1] * ncoeffs[2], 3), P;
 
       int64_t r = 0;
       for (int64_t k = 0; k < ncoeffs[2]; ++k)
@@ -99,21 +117,30 @@ public:
             ++r;
           }
 
-      C.col(0) *= dimensions[0];
-      C.col(1) *= dimensions[1];
-      C.col(2) *= dimensions[2];
+      for (int64_t k = 0; k < npatches[2]; ++k)
+        for (int64_t j = 0; j < npatches[1]; ++j)
+          for (int64_t i = 0; i < npatches[0]; ++i) {
+            P = C;
 
-      geo_.addPatch(
-          gsTensorBSpline<3, T>(give(KV0), give(KV1), give(KV2), give(C)));
+            P.col(0) *= dimensions[0] / npatches[0];
+            P.col(1) *= dimensions[1] / npatches[1];
+            P.col(2) *= dimensions[2] / npatches[2];
+
+            P.col(0).array() += (T)(i) / (T)npatches[0];
+            P.col(1).array() += (T)(j) / (T)npatches[1];
+            P.col(2).array() += (T)(k) / (T)npatches[2];
+
+            geo_.addPatch(gismo::gsTensorBSpline<3, T>(KV0, KV1, KV2, give(P)));
+          }
       geo_.computeTopology();
 
     } else if constexpr (d == 4) {
-      gsKnotVector<T> KV0(0, 1, ncoeffs[0] - degrees[0] - 1, degrees[0] + 1);
-      gsKnotVector<T> KV1(0, 1, ncoeffs[1] - degrees[1] - 1, degrees[1] + 1);
-      gsKnotVector<T> KV2(0, 1, ncoeffs[2] - degrees[2] - 1, degrees[2] + 1);
-      gsKnotVector<T> KV3(0, 1, ncoeffs[3] - degrees[3] - 1, degrees[3] + 1);
+      gismo::gsKnotVector<T> KV0(0, 1, ncoeffs[0] - degrees[0] - 1, degrees[0] + 1);
+      gismo::gsKnotVector<T> KV1(0, 1, ncoeffs[1] - degrees[1] - 1, degrees[1] + 1);
+      gismo::gsKnotVector<T> KV2(0, 1, ncoeffs[2] - degrees[2] - 1, degrees[2] + 1);
+      gismo::gsKnotVector<T> KV3(0, 1, ncoeffs[3] - degrees[3] - 1, degrees[3] + 1);
 
-      gsMatrix<T> C(ncoeffs[0] * ncoeffs[1] * ncoeffs[2] * ncoeffs[3], 4);
+      gismo::gsMatrix<T> C(ncoeffs[0] * ncoeffs[1] * ncoeffs[2] * ncoeffs[3], 4), P;
 
       int64_t r = 0;
       for (int64_t l = 0; l < ncoeffs[3]; ++l)
@@ -127,16 +154,32 @@ public:
               ++r;
             }
 
-      C.col(0) *= dimensions[0];
-      C.col(1) *= dimensions[1];
-      C.col(2) *= dimensions[2];
-      C.col(3) *= dimensions[3];
+      for (int64_t l = 0; l < npatches[3]; ++l)
+        for (int64_t k = 0; k < npatches[2]; ++k)
+          for (int64_t j = 0; j < npatches[1]; ++j)
+            for (int64_t i = 0; i < npatches[0]; ++i) {
+              P = C;
 
-      geo_.addPatch(gsTensorBSpline<4, T>(give(KV0), give(KV1), give(KV2),
-                                          give(KV3), give(C)));
+              P.col(0) *= dimensions[0] / npatches[0];
+              P.col(1) *= dimensions[1] / npatches[1];
+              P.col(2) *= dimensions[2] / npatches[2];
+              P.col(3) *= dimensions[3] / npatches[3];
+
+              P.col(0).array() += (T)(i) / (T)npatches[0];
+              P.col(1).array() += (T)(j) / (T)npatches[1];
+              P.col(2).array() += (T)(k) / (T)npatches[2];
+              P.col(3).array() += (T)(l) / (T)npatches[3];
+
+              geo_.addPatch(gismo::gsTensorBSpline<4, T>(KV0, KV1, KV2, KV3, give(P)));
+            }
       geo_.computeTopology();
     }
   }
+
+  /// @brief Constructor from XML
+  GismoGeometryModel(const pugi::xml_node root)
+    : GismoModel<T>() {
+  }  
 
   /// @brief Returns the model's options
   nlohmann::json getOptions() const override {
@@ -288,96 +331,143 @@ public:
   }
 
   /// @brief Serializes the model to JSON
-  nlohmann::json to_json(const std::string &component,
+  nlohmann::json to_json(const std::string &patch, const std::string &component,
                          const std::string &attribute) const override {
+    
+    if (component == "geometry" || component == "") {
 
-    if (attribute != "") {
-      nlohmann::json json;
+      if (patch == "" && attribute == "") {
 
-      if (attribute == "degrees") {
-        json["degrees"] = nlohmann::json::array();
-
-        for (std::size_t i = 0; i < geo_.patch(0).parDim(); ++i)
-          json["degrees"].push_back(geo_.patch(0).degree(i));
+        // Return solution as multipatch structure
+        return utils::to_json(geo_);
       }
 
-      else if (attribute == "geoDim")
-        json["geoDim"] = geo_.patch(0).geoDim();
+      else if (patch != "") {
 
-      else if (attribute == "parDim")
-        json["parDim"] = geo_.patch(0).parDim();
+        // Return individual patch of the solution
+        int patchIndex(-1);
 
-      else if (attribute == "ncoeffs") {
-        json["ncoeffs"] = nlohmann::json::array();
+        try {
+          patchIndex = stoi(patch);
+        } catch (...) {
+          // Invalid patchIndex
+          return R"({ INVALID REQUEST })"_json;
+        }
 
-        if (auto bspline = dynamic_cast<const gsBSpline<T> *>(&geo_.patch(0)))
-          for (std::size_t i = 0; i < bspline->parDim(); ++i)
-            json["ncoeffs"].push_back(bspline->basis().size(i));
-        else if (auto bspline = dynamic_cast<const gsTensorBSpline<d, T> *>(
-                     &geo_.patch(0)))
-          for (std::size_t i = 0; i < bspline->parDim(); ++i)
-            json["ncoeffs"].push_back(bspline->basis().size(i));
-        else
+        if (patchIndex >= geo_.nPatches())
           return R"({ INVALID REQUEST })"_json;
 
+        if (attribute == "") {
+
+          // Return all attributes                  
+          return utils::to_json(geo_.patch(patchIndex));
+
+        } else {
+
+          nlohmann::json json;
+
+          // Return an individual attribute
+          if (attribute == "degrees") {
+            json["degrees"] = nlohmann::json::array();
+
+            for (std::size_t i = 0; i < geo_.patch(patchIndex).parDim(); ++i)
+              json["degrees"].push_back(geo_.patch(patchIndex).degree(i));
+          }
+
+          else if (attribute == "geoDim")
+            json["geoDim"] = geo_.patch(patchIndex).geoDim();
+
+          else if (attribute == "parDim")
+            json["parDim"] = geo_.patch(patchIndex).parDim();
+
+          else if (attribute == "ncoeffs") {
+            json["ncoeffs"] = nlohmann::json::array();
+
+            if (auto bspline =
+                dynamic_cast<const gismo::gsBSpline<T> *>(&geo_.patch(patchIndex)))
+              for (std::size_t i = 0; i < bspline->parDim(); ++i)
+                json["ncoeffs"].push_back(bspline->basis().size(i));
+            else if (auto bspline = dynamic_cast<const gismo::gsTensorBSpline<d, T> *>(
+                                                                                &geo_.patch(patchIndex)))
+              for (std::size_t i = 0; i < bspline->parDim(); ++i)
+                json["ncoeffs"].push_back(bspline->basis().size(i));
+            else
+              return R"({ INVALID REQUEST })"_json;
+
+          }
+
+          else if (attribute == "nknots") {
+            json["nknots"] = nlohmann::json::array();
+
+            if (auto bspline =
+                dynamic_cast<const gismo::gsBSpline<T> *>(&geo_.patch(patchIndex)))
+              for (std::size_t i = 0; i < bspline->parDim(); ++i)
+                json["nknots"].push_back(bspline->knots(i).size());
+            else if (auto bspline = dynamic_cast<const gismo::gsTensorBSpline<d, T> *>(
+                                                                                &geo_.patch(patchIndex)))
+              for (std::size_t i = 0; i < bspline->parDim(); ++i)
+                json["nknots"].push_back(bspline->knots(i).size());
+            else
+              return R"({ INVALID REQUEST })"_json;
+          }
+
+          else if (attribute == "coeffs") {
+
+            if (auto bspline =
+                dynamic_cast<const gismo::gsBSpline<T> *>(&geo_.patch(patchIndex)))
+              json["coeffs"] = utils::to_json(bspline->coefs());
+            else if (auto bspline = dynamic_cast<const gismo::gsTensorBSpline<d, T> *>(
+                                                                                &geo_.patch(patchIndex)))
+              json["coeffs"] = utils::to_json(bspline->coefs());
+            else
+              return R"({ INVALID REQUEST })"_json;
+
+          }
+
+          else if (attribute == "knots") {
+            json["knots"] = nlohmann::json::array();
+
+            if (auto bspline =
+                dynamic_cast<const gismo::gsBSpline<T> *>(&geo_.patch(patchIndex)))
+              for (std::size_t i = 0; i < bspline->parDim(); ++i)
+                json["knots"].push_back(bspline->knots(i));
+            else if (auto bspline = dynamic_cast<const gismo::gsTensorBSpline<d, T> *>(
+                                                                                &geo_.patch(patchIndex)))
+              for (std::size_t i = 0; i < bspline->parDim(); ++i)
+                json["knots"].push_back(bspline->knots(i));
+            else
+              return R"({ INVALID REQUEST })"_json;
+          }
+
+          else
+            // Invalid attribute
+            return R"({ INVALID REQUEST })"_json;
+
+          return json;
+        }
       }
 
-      else if (attribute == "nknots") {
-        json["nknots"] = nlohmann::json::array();
-
-        if (auto bspline = dynamic_cast<const gsBSpline<T> *>(&geo_.patch(0)))
-          for (std::size_t i = 0; i < bspline->parDim(); ++i)
-            json["nknots"].push_back(bspline->knots(i).size());
-        else if (auto bspline = dynamic_cast<const gsTensorBSpline<d, T> *>(
-                     &geo_.patch(0)))
-          for (std::size_t i = 0; i < bspline->parDim(); ++i)
-            json["nknots"].push_back(bspline->knots(i).size());
-        else
-          return R"({ INVALID REQUEST })"_json;
-      }
-
-      else if (attribute == "coeffs") {
-
-        if (auto bspline = dynamic_cast<const gsBSpline<T> *>(&geo_.patch(0)))
-          json["coeffs"] = utils::to_json(bspline->coefs());
-        else if (auto bspline = dynamic_cast<const gsTensorBSpline<d, T> *>(
-                     &geo_.patch(0)))
-          json["coeffs"] = utils::to_json(bspline->coefs());
-        else
-          return R"({ INVALID REQUEST })"_json;
-
-      }
-
-      else if (attribute == "knots") {
-        json["knots"] = nlohmann::json::array();
-
-        if (auto bspline = dynamic_cast<const gsBSpline<T> *>(&geo_.patch(0)))
-          for (std::size_t i = 0; i < bspline->parDim(); ++i)
-            json["knots"].push_back(bspline->knots(i));
-        else if (auto bspline = dynamic_cast<const gsTensorBSpline<d, T> *>(
-                     &geo_.patch(0)))
-          for (std::size_t i = 0; i < bspline->parDim(); ++i)
-            json["knots"].push_back(bspline->knots(i));
-        else
-          return R"({ INVALID REQUEST })"_json;
-      }
-
-      return json;
-
-    } else {
-      auto json = utils::to_json(geo_);
-      json.update(GismoModel<T>::to_json("transform", ""), true);
-
-      return json;
+      else
+        return R"({ INVALID REQUEST })"_json;
     }
 
-    return R"({ INVALID REQUEST })"_json;
+    // Handle component != "geometry"
+    return GismoModel<T>::to_json(patch, component, attribute);
   }
 
   /// @brief Updates the attributes of the model
-  nlohmann::json updateAttribute(const std::string &component,
+  nlohmann::json updateAttribute(const std::string &patch,
+                                 const std::string &component,
                                  const std::string &attribute,
                                  const nlohmann::json &json) override {
+
+    int patchIndex(-1);
+
+    try {
+      patchIndex = stoi(patch);
+    } catch (...) {
+      return R"({ INVALID REQUEST })"_json;
+    }
 
     if (attribute == "coeffs") {
       if (!json.contains("data"))
@@ -386,7 +476,7 @@ public:
         throw InvalidModelAttributeException();
 
       auto indices = json["data"]["indices"].get<std::vector<int64_t>>();
-      auto ncoeffs = geo_.patch(0).coefs().rows();
+      auto ncoeffs = geo_.patch(patchIndex).coefs().rows();
 
       switch (geo_.geoDim()) {
       case (1): {
@@ -396,7 +486,7 @@ public:
           if (index < 0 || index >= ncoeffs)
             throw IndexOutOfBoundsException();
 
-          geo_.patch(0).coef(index, 0) = std::get<0>(coord);
+          geo_.patch(patchIndex).coef(index, 0) = std::get<0>(coord);
         }
         break;
       }
@@ -408,8 +498,8 @@ public:
           if (index < 0 || index >= ncoeffs)
             throw IndexOutOfBoundsException();
 
-          geo_.patch(0).coef(index, 0) = std::get<0>(coord);
-          geo_.patch(0).coef(index, 1) = std::get<1>(coord);
+          geo_.patch(patchIndex).coef(index, 0) = std::get<0>(coord);
+          geo_.patch(patchIndex).coef(index, 1) = std::get<1>(coord);
         }
         break;
       }
@@ -421,9 +511,9 @@ public:
           if (index < 0 || index >= ncoeffs)
             throw IndexOutOfBoundsException();
 
-          geo_.patch(0).coef(index, 0) = std::get<0>(coord);
-          geo_.patch(0).coef(index, 1) = std::get<1>(coord);
-          geo_.patch(0).coef(index, 2) = std::get<2>(coord);
+          geo_.patch(patchIndex).coef(index, 0) = std::get<0>(coord);
+          geo_.patch(patchIndex).coef(index, 1) = std::get<1>(coord);
+          geo_.patch(patchIndex).coef(index, 2) = std::get<2>(coord);
         }
         break;
       }
@@ -435,10 +525,10 @@ public:
           if (index < 0 || index >= ncoeffs)
             throw IndexOutOfBoundsException();
 
-          geo_.patch(0).coef(index, 0) = std::get<0>(coord);
-          geo_.patch(0).coef(index, 1) = std::get<1>(coord);
-          geo_.patch(0).coef(index, 2) = std::get<2>(coord);
-          geo_.patch(0).coef(index, 3) = std::get<3>(coord);
+          geo_.patch(patchIndex).coef(index, 0) = std::get<0>(coord);
+          geo_.patch(patchIndex).coef(index, 1) = std::get<1>(coord);
+          geo_.patch(patchIndex).coef(index, 2) = std::get<2>(coord);
+          geo_.patch(patchIndex).coef(index, 3) = std::get<3>(coord);
         }
         break;
       }
@@ -448,17 +538,25 @@ public:
 
       return R"({})"_json;
     } else
-      return GismoModel<T>::updateAttribute(component, attribute, json);
+      return GismoModel<T>::updateAttribute(patch, component, attribute, json);
   }
 
   /// @brief Evaluates the model
-  nlohmann::json eval(const std::string &component,
+  nlohmann::json eval(const std::string &patch, const std::string &component,
                       const nlohmann::json &json) const override {
+
+    int patchIndex(-1);
+
+    try {
+      patchIndex = stoi(patch);
+    } catch (...) {
+      return R"({ INVALID REQUEST })"_json;
+    }
 
     if (component == "ScaledJacobian" || component == "UniformityMetric") {
 
       // Get grid resolution
-      gsVector<unsigned> np(geo_.parDim());
+      gismo::gsVector<unsigned> np(geo_.parDim());
       np.setConstant(25);
 
       if (json.contains("data"))
@@ -470,16 +568,16 @@ public:
         }
 
       // Create uniform grid in physical space
-      gsMatrix<T> ab = geo_.patch(0).support();
-      gsVector<T> a = ab.col(0);
-      gsVector<T> b = ab.col(1);
-      gsMatrix<T> pts = gsPointGrid(a, b, np);
-      gsMatrix<T> eval(1, pts.cols());
+      gismo::gsMatrix<T> ab = geo_.patch(patchIndex).support();
+      gismo::gsVector<T> a = ab.col(0);
+      gismo::gsVector<T> b = ab.col(1);
+      gismo::gsMatrix<T> pts = gismo::gsPointGrid(a, b, np);
+      gismo::gsMatrix<T> eval(1, pts.cols());
 
-      gsExprEvaluator<T> ev;
-      gsMultiBasis<T> basis(geo_);
+      gismo::gsExprEvaluator<T> ev;
+      gismo::gsMultiBasis<T> basis(geo_);
       ev.setIntegrationElements(basis);
-      typename gsExprAssembler<T>::geometryMap G = ev.getMap(geo_);
+      typename gismo::gsExprAssembler<T>::geometryMap G = ev.getMap(geo_);
 
       if (component == "ScaledJacobian") {
 
@@ -487,14 +585,14 @@ public:
 
         if (parDim == 2 && geo_.geoDim() == 3) {
           for (std::size_t i = 0; i < pts.cols(); i++) {
-            auto jac = ev.eval(expr::jac(G), pts.col(i));
+            auto jac = ev.eval(gismo::expr::jac(G), pts.col(i));
             eval(0, i) = jac.col(0).dot(jac.col(1));
             for (std::size_t j = 0; j < parDim; j++)
               eval(0, i) /= (jac.col(j).norm());
           }
         } else {
           for (std::size_t i = 0; i < pts.cols(); i++) {
-            auto jac = ev.eval(expr::jac(G), pts.col(i));
+            auto jac = ev.eval(gismo::expr::jac(G), pts.col(i));
             eval(0, i) = jac.determinant();
             for (std::size_t j = 0; j < parDim; j++)
               eval(0, i) /= (jac.col(j).norm());
@@ -506,10 +604,10 @@ public:
 
       else if (component == "UniformityMetric") {
 
-        T areaTotal = ev.integral(expr::meas(G));
-        gsConstantFunction<T> areaConstFunc(areaTotal, geo_.parDim());
+        T areaTotal = ev.integral(gismo::expr::meas(G));
+        gismo::gsConstantFunction<T> areaConstFunc(areaTotal, geo_.parDim());
         auto area = ev.getVariable(areaConstFunc);
-        auto expr = expr::pow((expr::meas(G) - area.val()) / area.val(), 2);
+        auto expr = gismo::expr::pow((gismo::expr::meas(G) - area.val()) / area.val(), 2);
 
         for (std::size_t i = 0; i < pts.cols(); i++)
           eval(0, i) = ev.eval(expr, pts.col(i))(0);
@@ -523,7 +621,7 @@ public:
 
   /// @brief Elevates the model's degrees, preserves smoothness
   void elevate(const nlohmann::json &json = NULL) override {
-    int num = 1, dim = -1;
+    int num(1), dim(-1), patchIndex(-1);
 
     if (json.contains("data")) {
       if (json["data"].contains("num"))
@@ -531,14 +629,20 @@ public:
 
       if (json["data"].contains("dim"))
         dim = json["data"]["dim"].get<int>();
+
+      if (json["data"].contains("patch"))
+        patchIndex = json["data"]["patch"].get<int>();
     }
 
-    geo_.patch(0).degreeElevate(num, dim);
+    if (patchIndex == -1)
+      geo_.degreeElevate(num, dim);
+    else
+      geo_.patch(patchIndex).degreeElevate(num, dim);
   }
 
   /// @brief Increases the model's degrees, preserves multiplicity
   void increase(const nlohmann::json &json = NULL) override {
-    int num = 1, dim = -1;
+    int num(1), dim(-1), patchIndex(-1);
 
     if (json.contains("data")) {
       if (json["data"].contains("num"))
@@ -546,14 +650,20 @@ public:
 
       if (json["data"].contains("dim"))
         dim = json["data"]["dim"].get<int>();
+
+      if (json["data"].contains("patch"))
+        patchIndex = json["data"]["patch"].get<int>();
     }
 
-    geo_.patch(0).degreeIncrease(num, dim);
+    if (patchIndex == -1)
+      geo_.degreeIncrease(num, dim);
+    else
+      geo_.patch(patchIndex).degreeIncrease(num, dim);
   }
 
   /// @brief Refines the model
   void refine(const nlohmann::json &json = NULL) override {
-    int num = 1, dim = -1;
+    int num(1), dim(-1), patchIndex(-1);
 
     if (json.contains("data")) {
       if (json["data"].contains("num"))
@@ -561,9 +671,15 @@ public:
 
       if (json["data"].contains("dim"))
         dim = json["data"]["dim"].get<int>();
-    }
 
-    geo_.patch(0).uniformRefine(num, 1, dim);
+      if (json["data"].contains("patch"))
+        patchIndex = json["data"]["patch"].get<int>();
+    }
+    
+    if (patchIndex == -1)
+      geo_.uniformRefine(num, 1, dim);
+    else
+      geo_.patch(patchIndex).uniformRefine(num, 1, dim);
   }
 
   /// @brief Reparameterize the model
@@ -585,68 +701,43 @@ public:
 
     if (type == "surface") {
 
+      // bivariate surface
       if (geo_.parDim() == 2) {
-        // bivariate surface
-        SurfaceReparameterization<T> reparam(geo_);
-        geo_ = reparam.solve();
+        gismo::gsHLBFGS<real_t> optimizer;
+        optimizer.options().setReal("MinGradLen", 1e-6);
+        optimizer.options().setReal("MinStepLen", 1e-6);
+        optimizer.options().setInt("MaxIterations", 200);
+        optimizer.options().setInt("Verbose", 0);
 
-        // gismo::gsMatrix<T, 2, 2> alpha;
-        // alpha.setConstant(0.5);
-        // gismo::gsMobiusDomain<2, T> mobiusDomain(alpha);
-        // gismo::gsVector<real_t> initialGuessVector(4);
-        // initialGuessVector.setConstant(0.5);
-
-        // gsObjFuncSurface<T> objFuncSurface(geo_, mobiusDomain);
-        // gismo::gsHLBFGS<real_t> optimizer(&objFuncSurface);
-
-        // optimizer.options().addReal("MinGradientLength",
-        //                             "Minimum gradient length", 1e-5);
-        // optimizer.options().addReal("MinStepLength", "Minimum step length",
-        //                             1e-5);
-        // optimizer.options().addInt("MaxIterations",
-        //                            "Maximum number of iterations", 200);
-        // optimizer.options().addInt("Verbose", "Verbose output", 1);
-
-        // optimizer.solve(initialGuessVector);
-        // geo_ = convertIntoBSpline(geo_, optimizer.currentDesign());
+        for (auto& p : geo_) {
+          gismo::gsMultiPatch<T> mp; mp.addPatch(*p);
+          gismo::SurfaceReparameterization<T> reparam(mp, optimizer);
+          *p = reparam.solve().patch(0);
+        }        
+        // gismo::gsMultiPatch<T> tempGeo_;
+        // for (int i=0; i< geo_.nPatches(); ++i) {
+        //   auto mp = gismo::gsMultiPatch(geo_.patch(i));
+        //   gismo::SurfaceReparameterization<T> reparam(mp, optimizer);
+        //   //geo_.setPatch(i, std::make_unique<gismo::gsPatch<T>>(reparam.solve().patch(0)));
+        //   tempGeo_.addPatch(reparam.solve().patch(0));
+        // }
+        // geo_ = tempGeo_;
       }
 
       else if (geo_.parDim() == 3) {
+
+        gismo::gsHLBFGS<real_t> optimizer;
+        optimizer.options().setReal("MinGradLen", 1e-6);
+        optimizer.options().setReal("MinStepLen", 1e-6);
+        optimizer.options().setInt("MaxIterations", 200);
+        optimizer.options().setInt("Verbose", 0);
+
         // trivariate surface
-        SurfaceReparameterization<T> reparam(geo_);
-        geo_ = reparam.solve();
+        //for (int i=1; i<=6; ++i) {
+        //  gismo::SurfaceReparameterization<T> reparam(*geo_.boundary(i), optimizer);
+        //  *geo_.boundary(i) = reparam.solve();
+        // }
 
-        // gismo::gsMatrix<T, 2, 2> alpha;
-        // alpha.setConstant(0.5);
-        // gismo::gsMobiusDomain<2, T> mobiusDomain(alpha);
-        // gismo::gsVector<real_t> initialGuessVector(4);
-        // initialGuessVector.setConstant(0.5);
-
-        // for (std::size_t i = 1; i <= 6; ++i) {
-
-        //   gsMultiPatch<T> mp;
-        //   mp.addPatch(*(geo_.patch(0).boundary(i)));
-
-        //   gsObjFuncSurface<T> objFuncSurface(mp, mobiusDomain);
-        //   gismo::gsHLBFGS<real_t> optimizer(&objFuncSurface);
-
-        //   optimizer.options().addReal("MinGradientLength",
-        //                               "Minimum gradient length", 1e-5);
-        //   optimizer.options().addReal("MinStepLength", "Minimum step length",
-        //                               1e-5);
-        //   optimizer.options().addInt("MaxIterations",
-        //                              "Maximum number of iterations", 200);
-        //   optimizer.options().addInt("Verbose", "Verbose output", 1);
-
-        //   optimizer.solve(initialGuessVector);
-        //   mp = convertIntoBSpline(mp, optimizer.currentDesign());
-
-        //   auto ind = geo_.patch(0).basis().boundary(i);
-
-        //   for (std::size_t j = 0; j != ind.size(); ++j)
-        //     geo_.patch(0).coefs().row(ind(j, 0)) =
-        //     mp.patch(0).coefs().row(j);
-        //}
       }
 
     } else if (type == "volume") {
@@ -654,7 +745,7 @@ public:
       if (geo_.parDim() == 2 && geo_.geoDim() == 3) {
         // bivariate surface
         geo_.embed(2);
-        gsBarrierPatch<2, T> opt(geo_, false);
+        gismo::gsBarrierPatch<2, T> opt(geo_, false);
         opt.options().setInt("ParamMethod", 1); // penalty
         opt.options().setInt("Verbose", 0);
         opt.compute();
@@ -664,7 +755,7 @@ public:
 
       else if (geo_.parDim() == 3 && geo_.geoDim() == 3) {
         // trivariate volume
-        gsBarrierPatch<d, T> opt(geo_, true);
+        gismo::gsBarrierPatch<d, T> opt(geo_, true);
         opt.options().setInt("ParamMethod", 2); // penalty
         opt.options().setInt("Verbose", 0);
         opt.compute();
@@ -672,6 +763,183 @@ public:
       }
     }
   }
+
+  /// @brief Add new patch to the model
+  void addPatch(const nlohmann::json &json = NULL) override {
+    
+    throw std::runtime_error("Adding patches is not yet implemented in G+Smo");
+  }
+  
+  /// @brief Remove existing patch from the model
+  void removePatch(const nlohmann::json &json = NULL) override {
+    int patchIndex(-1);
+
+    if (json.contains("data")) {      
+      if (json["data"].contains("patch"))
+        patchIndex = json["data"]["patch"].get<int>();
+    }
+
+    // if (patchIndex == -1)
+    //   throw std::runtime_error("Invalid patch index");
+
+    // throw std::runtime_error("Removing patches is not yet implemented in G+Smo");
+  }
+  
+  /// @brief Imports the model from XML (as JSON object)
+  void importXML(const std::string &patch,
+                 const std::string &component,
+                 const nlohmann::json &json, 
+                 int id) override {
+
+    if (json.contains("data")) {
+      if (json["data"].contains("xml")) {
+
+        std::string xml_str = json["data"]["xml"].get<std::string>();
+        
+        gismo::internal::gsXmlTree xml;
+        xml.parse<0>(const_cast<char*>(xml_str.c_str()));
+
+        importXML(patch, component, xml, id);
+
+        return;
+      }
+    }
+
+    throw std::runtime_error("No XML node in JSON object");
+  }
+
+  /// @brief Imports the model from XML (as XML object)
+  void importXML(const std::string &patch,
+                 const std::string &component,
+                 const pugi::xml_node &xml,
+                 int id) override {
+
+    gsWarn << "Using generic importXML implementation\n";
+    
+    if (component == "geometry" || component == "") {
+
+      if (patch == "") {
+        
+      } else {
+        
+      }
+    }
+    else
+      throw std::runtime_error("Unsupported component");
+  }
+
+  /// @brief Imports the model from XML (as XML object) optimized for G+Smo
+  void importXML(const std::string &patch,
+                 const std::string &component,
+                 const gismo::internal::gsXmlTree &xml,
+                 int id) {
+
+    if (component == "geometry" || component == "") {
+
+      if (patch == "") {
+        
+        auto * geo = gismo::internal::gsXml<gismo::gsMultiPatch<T>>::getFirst(xml.getRoot());
+        geo_ = give(*geo);
+        delete geo;
+
+      } else {
+
+        auto * p = gismo::internal::gsXml<gismo::gsGeometry<T>>::getFirst(xml.getRoot());
+        geo_.patch(stoi(patch)) = give(*p);
+        delete p;
+      }
+
+      geo_.topology();
+    }
+    else
+      throw std::runtime_error("Unsupported component");
+  }
+
+  /// @brief Exports the model to XML (as JSON object)
+  nlohmann::json exportXML(const std::string &patch, const std::string &component, int id) override {
+    gismo::internal::gsXmlTree xml;
+    xml.makeRoot();
+
+    exportXML(patch, component, xml, id);
+
+    std::string xml_str;
+    rapidxml::print(std::back_inserter(xml_str), xml, 0);
+
+    return xml_str;
+
+    // pugi::xml_document doc;
+    // pugi::xml_node xml = doc.append_child("xml");
+    // xml = exportXML(patch, component, xml, id);
+
+    // // serialize to JSON
+    // std::ostringstream oss;
+    // doc.save(oss);
+
+    // return oss.str();
+  }
+
+  /// @brief Exports the model to XML (as XML object)
+  pugi::xml_node &exportXML(const std::string &patch,
+                            const std::string &component,
+                            pugi::xml_node &xml, 
+                            int id) override {
+
+    gsWarn << "Using generic exportXML implementation\n";
+    
+    if (component == "geometry" || component == "") {
+
+      gismo::internal::gsXmlTree data;     
+      data.makeRoot();
+
+      gismo::internal::gsXmlNode *node = (patch == ""
+                                   ?
+                                          gismo::internal::gsXml<gismo::gsMultiPatch<T>>::put(geo_, data)
+                                   :
+                                          gismo::internal::gsXml<gismo::gsGeometry<T>>::put(geo_.patch(stoi(patch)), data));
+      
+      if (node)
+          data.appendToRoot(node, -1);
+
+      std::string xml_str;
+      rapidxml::print(std::back_inserter(xml_str), data, 1);
+      
+      pugi::xml_document doc;
+      pugi::xml_parse_result result = doc.load_string(xml_str.c_str());
+      
+      if (result)
+        for (auto node : doc.first_child())
+          xml.append_copy(node);      
+    }
+    else
+      throw std::runtime_error("Unsupported component");
+
+    return xml;
+  }
+
+  /// @brief Exports the model to XML (as XML object) optimized for G+Smo
+  gismo::internal::gsXmlTree &exportXML(const std::string &patch,
+                                 const std::string &component,
+                                        gismo::internal::gsXmlTree &xml, 
+                                 int id) {
+    
+    if (component == "geometry" || component == "") {
+
+      gismo::internal::gsXmlNode *node = (patch == ""
+                                   ?
+                                          gismo::internal::gsXml<gismo::gsMultiPatch<T>>::put(geo_, xml)
+                                   :
+                                          gismo::internal::gsXml<gismo::gsGeometry<T>>::put(geo_.patch(stoi(patch)), xml));
+      
+      if (node)
+        xml.appendToRoot(node, -1);
+    }
+    else
+      throw std::runtime_error("Unsupported component");
+
+    return xml;
+  }
+
+  
 };
 
 } // namespace webapp

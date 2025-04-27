@@ -151,6 +151,7 @@ int main() {
   nlohmann::json json;
   json["res0"] = 50;
   json["res1"] = 50;
+  json["cnet"] = true;
 
   using namespace iganet::literals;
   using optimizer_t = torch::optim::LBFGS;

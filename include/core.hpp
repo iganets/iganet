@@ -38,8 +38,6 @@
 #include <torch/csrc/api/include/torch/types.h>
 #include <torch/torch.h>
 
-// #include <c10/core/CachingDeviceAllocator.h>
-
 #ifdef __CUDACC__
 #include <c10/cuda/CUDACachingAllocator.h>
 #include <c10/cuda/CUDAFunctions.h>
@@ -53,12 +51,11 @@
 #ifdef IGANET_WITH_GISMO
 #include <gismo.h>
 #include <gsModeling/gsSurfaceReparameterization.h>
-#include <gsNurbs/gsMobiusDomain.h>
 
 #ifdef gsElasticity_ENABLED
-#include <gsElasticity/gsElasticityAssembler.h>
-#include <gsElasticity/gsGeoUtils.h>
-#include <gsElasticity/gsMassAssembler.h>
+#include <gsElasticity/src/gsElasticityAssembler.h>
+#include <gsElasticity/src/gsGeoUtils.h>
+#include <gsElasticity/src/gsMassAssembler.h>
 #endif
 #endif
 
