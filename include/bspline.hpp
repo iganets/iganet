@@ -34,6 +34,9 @@
 #include <utils/tensorarray.hpp>
 #include <utils/vslice.hpp>
 
+#include <sycl/sycl.hpp>
+#include <ATen/xpu/XPUContext.h>
+
 #if defined(__CUDACC__)
 #include <ATen/cuda/CUDAContext.h>
 #endif
@@ -78,6 +81,75 @@ __global__ void knots_kernel(torch::PackedTensorAccessor64<real_t, 1> knots,
 } // namespace cuda
 } // namespace iganet
 #endif
+
+namespace iganet {
+namespace xpu {
+/**
+   @brief Compute Greville abscissae
+ */
+template<typename real_t>
+struct GrevilleKernel
+{
+  GrevilleKernel(real_t* greville,
+                 const real_t* knots,
+                 int64_t ncoeffs, short_t degree, bool interior)
+    : greville_(greville), knots_(knots), ncoeffs_(ncoeffs), degree_(degree), interior_(interior) {}
+
+  void operator()(sycl::nd_item<1> item) const {
+    // This function will be compiled into a gpu device kernel.
+
+    // item.get_group(0) is blockIdx.x
+    // item.get_local_range(0) is blockDim.x
+    // item.get_local_id(0) is threadIdx.x
+    // item.get_group_range(0) is gridDim.x
+    int64_t k = item.get_group(0) * item.get_local_range(0) + item.get_local_id(0);
+    for (; k < ncoeffs_ - (interior_ ? 2 : 0); k += item.get_local_range(0) * item.get_group_range(0)) {
+      for (short_t l = 1; l <= degree_; ++l)
+        greville_[k] += knots_[k + (interior_ ? 1 : 0) + l];
+      greville_[k] /= static_cast<real_t>(degree_);
+    }
+  }
+
+private:
+  real_t* greville_;
+  const real_t* knots_;
+  int64_t ncoeffs_;
+  short_t degree_;
+  bool interior_;
+};
+
+/**
+ * @brief Compute knot vector
+ */
+template<typename real_t>
+struct KnotsKernel
+{
+  KnotsKernel(real_t* knots, int64_t ncoeffs, short_t degree)
+    : knots_(knots), ncoeffs_(ncoeffs), degree_(degree) {}
+
+  void operator()(sycl::nd_item<1> item) const {
+    // This function will be comipled into a gpu device kernel.
+
+    // item.get_group(0) is blockIdx.x
+    // item.get_local_range(0) is blockDim.x
+    // item.get_local_id(0) is threadIdx.x
+    // item.get_group_range(0) is gridDim.x
+    int64_t k = item.get_group(0) * item.get_local_range(0) + item.get_local_id(0);
+    for (; k < ncoeffs_ + degree_ + 1; k += item.get_local_range(0) * item.get_group_range(0)) {
+      knots_[k] = (k < degree_ ? static_cast<real_t>(0)
+                               : k < ncoeffs_ + 1 ? static_cast<real_t>(k - degree_) /
+                                                    static_cast<real_t>(ncoeffs_ - degree_)
+                                                  : static_cast<real_t>(1));
+    }
+  }
+
+private:
+  real_t* knots_;
+  const int64_t ncoeffs_;
+  const short_t degree_;
+};
+} // namespace xpu
+} // namespace iganet
 
 /// @brief Sequence of expression (parametric coordinates)
 ///
@@ -778,6 +850,34 @@ public:
               throw std::runtime_error(
                   "Code must be compiled with CUDA or HIP enabled");
 #endif
+	    } else if (greville_.is_xpu() && knots_[j].is_xpu()) {
+
+              auto greville = greville_.template data_ptr<real_t>();
+              auto const knots = knots_[j].template data_ptr<real_t>();
+
+              constexpr int dim = 1;
+              constexpr int blockSize = 256;
+
+              // All the work items in total to be launched. For SYCL programming, it does not provide the gridSize counter part directly.
+              // However, we can calculate the grid_size by dividing the global_range by local_range.
+              auto gridSize = (ncoeffs_[i] + blockSize - 1) / blockSize;
+              sycl::range<dim> global_range(gridSize * blockSize);
+
+              // local_range is sort of like blockSize.
+              sycl::range<dim> local_range(blockSize);
+
+              // Create sycl kernel functor.
+              using greville_kernel_t = xpu::GrevilleKernel<real_t>;
+              auto greville_kernel = greville_kernel_t(greville, knots, ncoeffs_[i], degrees_[i], false);
+
+              // The kernel functor is passed to the sycl_kernel_submit function.
+              auto cgf = [&](::sycl::handler& cgh) {
+                cgh.parallel_for<greville_kernel_t>(sycl::nd_range<dim>(global_range, local_range), greville_kernel);
+              };
+
+              sycl::queue& q = at::xpu::getCurrentXPUStream().queue();
+              q.submit(cgf);
+
             } else {
               auto greville_accessor = greville_.template accessor<real_t, 1>();
               auto knots_accessor = knots_[j].template accessor<real_t, 1>();
@@ -2161,6 +2261,33 @@ public:
         throw std::runtime_error(
             "Code must be compiled with CUDA or HIP enabled");
 #endif
+      } else if (knots_[i].is_xpu()) {
+
+	auto knots = knots_[i].template data_ptr<real_t>();
+
+	constexpr int dim = 1;
+	constexpr int blockSize = 256;
+	
+	// All the work items in total to be launched. For SYCL programming, it does not provide the gridSize counter part directly.
+	// However, we can calculate the grid_size by dividing the global_range by local_range.
+	auto gridSize = (ncoeffs_[i] + blockSize - 1) / blockSize;
+	sycl::range<dim> global_range(gridSize * blockSize);
+	
+	// local_range is sort of like blockSize.
+	sycl::range<dim> local_range(blockSize);
+
+	// Create sycl kernel functor.
+	using knots_kernel_t = xpu::KnotsKernel<real_t>;
+	auto knots_kernel = knots_kernel_t(knots, ncoeffs_[i], degrees_[i]);
+	
+	// The kernel functor is passed to the sycl_kernel_submit function.
+	auto cgf = [&](::sycl::handler& cgh) {
+  	  cgh.parallel_for<knots_kernel_t>(sycl::nd_range<dim>(global_range, local_range), knots_kernel);
+	};
+
+	sycl::queue& q = at::xpu::getCurrentXPUStream().queue();
+	q.submit(cgf);
+
       } else {
 
         int64_t index(0);
@@ -2268,7 +2395,7 @@ public:
         for (short_t j = 0; j < parDim_; ++j) {
           if (i == j) {
             auto greville_ = torch::zeros(ncoeffs_[j], options_);
-            if (greville_.is_cuda()) {
+            if (greville_.is_cuda() && knots_[j].is_cuda()) {
 
               auto greville = greville_.template packed_accessor64<real_t, 1>();
               auto knots = knots_[j].template packed_accessor64<real_t, 1>();
@@ -2293,6 +2420,34 @@ public:
               throw std::runtime_error(
                   "Code must be compiled with CUDA or HIP enabled");
 #endif
+
+	    } else if (greville_.is_xpu() && knots_[j].is_xpu()) {
+ 
+	      auto greville = greville_.template data_ptr<real_t>();
+	      auto const knots = knots_[j].template data_ptr<real_t>();
+
+	      constexpr int dim = 1;
+              constexpr int blockSize = 256;
+        
+              // All the work items in total to be launched. For SYCL programming, it does not provide the gridSize counter part directly.
+              // However, we can calculate the grid_size by dividing the global_range by local_range.
+              auto gridSize = (ncoeffs_[i] + blockSize - 1) / blockSize;
+              sycl::range<dim> global_range(gridSize * blockSize);
+        
+              // local_range is sort of like blockSize.
+              sycl::range<dim> local_range(blockSize);
+
+              // Create sycl kernel functor.
+              using greville_kernel_t = xpu::GrevilleKernel<real_t>;
+              auto greville_kernel = greville_kernel_t(greville, knots, ncoeffs_[i], degrees_[i], false);
+        
+              // The kernel functor is passed to the sycl_kernel_submit function.
+              auto cgf = [&](::sycl::handler& cgh) {
+                cgh.parallel_for<greville_kernel_t>(sycl::nd_range<dim>(global_range, local_range), greville_kernel);
+              };
+
+              sycl::queue& q = at::xpu::getCurrentXPUStream().queue();
+              q.submit(cgf);
 
             } else {
               auto greville = greville_.template accessor<real_t, 1>();
