@@ -34,127 +34,6 @@
 #include <utils/tensorarray.hpp>
 #include <utils/vslice.hpp>
 
-#if defined(SYCL_LANGUAGE_VERSION)
-#include <sycl/sycl.hpp>
-#include <ATen/xpu/XPUContext.h>
-#endif
-
-#if defined(__CUDACC__)
-#include <ATen/cuda/CUDAContext.h>
-#endif
-
-#if defined(__HIPCC__)
-#include <ATen/hip/HIPContext.h>
-#endif
-
-#if defined(__CUDACC__) || defined(__HIPCC__)
-namespace iganet {
-namespace cuda {
-/**
-   @brief Compute Greville abscissae
-*/
-template <typename real_t>
-__global__ void
-greville_kernel(torch::PackedTensorAccessor64<real_t, 1> greville,
-                const torch::PackedTensorAccessor64<real_t, 1> knots,
-                int64_t ncoeffs, short_t degree, bool interior) {
-  for (int64_t k = blockIdx.x * blockDim.x + threadIdx.x;
-       k < ncoeffs - (interior ? 2 : 0); k += blockDim.x * gridDim.x) {
-    for (short_t l = 1; l <= degree; ++l)
-      greville[k] += knots[k + (interior ? 1 : 0) + l];
-    greville[k] /= real_t(degree);
-  }
-}
-
-/**
-   @brief Compute knot vector
-*/
-template <typename real_t>
-__global__ void knots_kernel(torch::PackedTensorAccessor64<real_t, 1> knots,
-                             int64_t ncoeffs, short_t degree) {
-  for (int64_t k = blockIdx.x * blockDim.x + threadIdx.x;
-       k < ncoeffs + degree + 1; k += blockDim.x * gridDim.x) {
-    knots[k] = (k < degree        ? static_cast<real_t>(0)
-                : k < ncoeffs + 1 ? static_cast<real_t>(k - degree) /
-                                        static_cast<real_t>(ncoeffs - degree)
-                                  : static_cast<real_t>(1));
-  }
-}
-} // namespace cuda
-} // namespace iganet
-#endif
-
-#if defined(SYCL_LANGUAGE_VERSION)
-namespace iganet {
-namespace xpu {
-/**
-   @brief Compute Greville abscissae
- */
-template<typename real_t>
-struct GrevilleKernel
-{
-  GrevilleKernel(real_t* greville,
-                 const real_t* knots,
-                 int64_t ncoeffs, short_t degree, bool interior)
-    : greville_(greville), knots_(knots), ncoeffs_(ncoeffs), degree_(degree), interior_(interior) {}
-
-  void operator()(sycl::nd_item<1> item) const {
-    // This function will be compiled into a gpu device kernel.
-
-    // item.get_group(0) is blockIdx.x
-    // item.get_local_range(0) is blockDim.x
-    // item.get_local_id(0) is threadIdx.x
-    // item.get_group_range(0) is gridDim.x
-    int64_t k = item.get_group(0) * item.get_local_range(0) + item.get_local_id(0);
-    for (; k < ncoeffs_ - (interior_ ? 2 : 0); k += item.get_local_range(0) * item.get_group_range(0)) {
-      for (short_t l = 1; l <= degree_; ++l)
-        greville_[k] += knots_[k + (interior_ ? 1 : 0) + l];
-      greville_[k] /= static_cast<real_t>(degree_);
-    }
-  }
-
-private:
-  real_t* greville_;
-  const real_t* knots_;
-  int64_t ncoeffs_;
-  short_t degree_;
-  bool interior_;
-};
-
-/**
- * @brief Compute knot vector
- */
-template<typename real_t>
-struct KnotsKernel
-{
-  KnotsKernel(real_t* knots, int64_t ncoeffs, short_t degree)
-    : knots_(knots), ncoeffs_(ncoeffs), degree_(degree) {}
-
-  void operator()(sycl::nd_item<1> item) const {
-    // This function will be comipled into a gpu device kernel.
-
-    // item.get_group(0) is blockIdx.x
-    // item.get_local_range(0) is blockDim.x
-    // item.get_local_id(0) is threadIdx.x
-    // item.get_group_range(0) is gridDim.x
-    int64_t k = item.get_group(0) * item.get_local_range(0) + item.get_local_id(0);
-    for (; k < ncoeffs_ + degree_ + 1; k += item.get_local_range(0) * item.get_group_range(0)) {
-      knots_[k] = (k < degree_ ? static_cast<real_t>(0)
-                               : k < ncoeffs_ + 1 ? static_cast<real_t>(k - degree_) /
-                                                    static_cast<real_t>(ncoeffs_ - degree_)
-                                                  : static_cast<real_t>(1));
-    }
-  }
-
-private:
-  real_t* knots_;
-  const int64_t ncoeffs_;
-  const short_t degree_;
-};
-} // namespace xpu
-} // namespace iganet
-#endif
-
 /// @brief Sequence of expression (parametric coordinates)
 ///
 /// For each item in this sequence corresponding expressions will be
@@ -825,88 +704,35 @@ public:
       for (short_t i = 0; i < parDim_; ++i) {
         coeffs[i] = torch::ones(1, options_);
 
+#ifdef __CUDACC__
+#pragma nv_diag_suppress 186
+#endif
+
         for (short_t j = 0; j < parDim_; ++j) {
           if (i == j) {
-            auto greville_ =
-                torch::zeros(ncoeffs_[j] - (interior ? 2 : 0), options_);
-            if (greville_.is_cuda()) {
+            auto greville_ = torch::zeros(ncoeffs_[j], options_);
 
-              auto greville = greville_.template packed_accessor64<real_t, 1>();
-              auto knots = knots_[j].template packed_accessor64<real_t, 1>();
-
-#if defined(__CUDACC__)
-              int blockSize, minGridSize, gridSize;
-              cudaOccupancyMaxPotentialBlockSize(
-                  &minGridSize, &blockSize,
-                  (const void *)cuda::greville_kernel<real_t>, 0, 0);
-              gridSize = (ncoeffs_[j] + blockSize - 1) / blockSize;
-              cuda::greville_kernel<<<gridSize, blockSize>>>(
-                  greville, knots, ncoeffs_[j], degrees_[j], interior);
-#elif defined(__HIPCC__)
-              int blockSize, minGridSize, gridSize;
-              static_cast<void>(hipOccupancyMaxPotentialBlockSize(
-                  &minGridSize, &blockSize,
-                  (const void *)cuda::greville_kernel<real_t>, 0, 0));
-              gridSize = (ncoeffs_[j] + blockSize - 1) / blockSize;
-              cuda::greville_kernel<<<gridSize, blockSize>>>(
-                  greville, knots, ncoeffs_[j], degrees_[j], interior);
-#else
-              throw std::runtime_error(
-                  "Code must be compiled with CUDA or HIP enabled");
-#endif
-      } else if (greville_.is_xpu() && knots_[j].is_xpu()) {
-
-#if defined(SYCL_LANGUAGE_VERSION)
-              auto greville = greville_.template data_ptr<real_t>();
-              auto const knots = knots_[j].template data_ptr<real_t>();
-
-              constexpr int dim = 1;
-              constexpr int blockSize = 256;
-
-              // All the work items in total to be launched. For SYCL programming, it does not provide the gridSize counter part directly.
-              // However, we can calculate the grid_size by dividing the global_range by local_range.
-              auto gridSize = (ncoeffs_[i] + blockSize - 1) / blockSize;
-              sycl::range<dim> global_range(gridSize * blockSize);
-
-              // local_range is sort of like blockSize.
-              sycl::range<dim> local_range(blockSize);
-
-              // Create sycl kernel functor.
-              using greville_kernel_t = xpu::GrevilleKernel<real_t>;
-              auto greville_kernel = greville_kernel_t(greville, knots, ncoeffs_[i], degrees_[i], false);
-
-              // The kernel functor is passed to the sycl_kernel_submit function.
-              auto cgf = [&](::sycl::handler& cgh) {
-                cgh.parallel_for<greville_kernel_t>(sycl::nd_range<dim>(global_range, local_range), greville_kernel);
-              };
-
-              sycl::queue& q = at::xpu::getCurrentXPUStream().queue();
-              q.submit(cgf);
-#else
-              throw std::runtime_error(
-                                       "Code must be compiled with SYCL enabled");
-#endif
-
-            } else {
-              auto greville_accessor = greville_.template accessor<real_t, 1>();
-              auto knots_accessor = knots_[j].template accessor<real_t, 1>();
-              for (int64_t k = 0; k < ncoeffs_[j] - (interior ? 2 : 0); ++k) {
-                for (short_t l = 1; l <= degrees_[j]; ++l)
-                  greville_accessor[k] +=
-                      knots_accessor[k + (interior ? 1 : 0) + l];
-                greville_accessor[k] /= degrees_[j];
-              }
+            auto greville = greville_.template accessor<real_t, 1>();
+            auto knots = knots_[j].template accessor<real_t, 1>();
+            for (int64_t k = 0; k < ncoeffs_[j]; ++k) {
+              for (short_t l = 1; l <= degrees_[j]; ++l)
+                greville[k] += knots[k + l];
+              greville[k] /= degrees_[j];
             }
+
             coeffs[i] = torch::kron(greville_, coeffs[i]);
           } else
-            coeffs[i] = torch::kron(
-                torch::ones(ncoeffs_[j] - (interior ? 2 : 0), options_),
-                coeffs[i]);
+            coeffs[i] =
+                torch::kron(torch::ones(ncoeffs_[j], options_), coeffs[i]);
         }
 
+#ifdef __CUDACC__
+#pragma nv_diag_default 186
+#endif
+        
         // Enable gradient calculation for non-leaf tensor
         if (options_.requires_grad())
-          coeffs_[i].retain_grad();
+          coeffs[i].retain_grad();
       }
 
       return coeffs;
@@ -2242,80 +2068,19 @@ public:
         throw std::runtime_error(
             "Not enough coefficients to create open knot vector");
 
-      // Create empty vector
       nknots_[i] = ncoeffs_[i] + degrees_[i] + 1;
-      knots_[i] = torch::empty({nknots_[i]}, options_);
+      int64_t num_inner = ncoeffs_[i] - degrees_[i];
 
-      if (knots_[i].is_cuda()) {
+      auto start = torch::zeros({degrees_[i]}, options_);
+      auto end = torch::ones({degrees_[i]}, options_);
+      auto inner = torch::empty({0}, options_);
 
-        auto knots = knots_[i].template packed_accessor64<real_t, 1>();
-
-#if defined(__CUDACC__)
-        int blockSize, minGridSize, gridSize;
-        cudaOccupancyMaxPotentialBlockSize(
-            &minGridSize, &blockSize, (const void *)cuda::knots_kernel<real_t>,
-            0, 0);
-        gridSize = (ncoeffs_[i] + blockSize - 1) / blockSize;
-        cuda::knots_kernel<<<gridSize, blockSize>>>(knots, ncoeffs_[i],
-                                                    degrees_[i]);
-#elif defined(__HIPCC__)
-        int blockSize, minGridSize, gridSize;
-        static_cast<void>(hipOccupancyMaxPotentialBlockSize(
-            &minGridSize, &blockSize, (const void *)cuda::knots_kernel<real_t>,
-            0, 0));
-        gridSize = (ncoeffs_[i] + blockSize - 1) / blockSize;
-        cuda::knots_kernel<<<gridSize, blockSize>>>(knots, ncoeffs_[i],
-                                                    degrees_[i]);
-#else
-        throw std::runtime_error(
-            "Code must be compiled with CUDA or HIP enabled");
-#endif
-      } else if (knots_[i].is_xpu()) {
-
-#if defined(SYCL_LANGUAGE_VERSION)
-        auto knots = knots_[i].template data_ptr<real_t>();
-
-        constexpr int dim = 1;
-        constexpr int blockSize = 256;
-  
-        // All the work items in total to be launched. For SYCL programming, it does not provide the gridSize counter part directly.
-        // However, we can calculate the grid_size by dividing the global_range by local_range.
-        auto gridSize = (ncoeffs_[i] + blockSize - 1) / blockSize;
-        sycl::range<dim> global_range(gridSize * blockSize);
-  
-        // local_range is sort of like blockSize.
-        sycl::range<dim> local_range(blockSize);
-
-        // Create sycl kernel functor.
-        using knots_kernel_t = xpu::KnotsKernel<real_t>;
-        auto knots_kernel = knots_kernel_t(knots, ncoeffs_[i], degrees_[i]);
-  
-        // The kernel functor is passed to the sycl_kernel_submit function.
-        auto cgf = [&](::sycl::handler& cgh) {
-          cgh.parallel_for<knots_kernel_t>(sycl::nd_range<dim>(global_range, local_range), knots_kernel);
-        };
-
-        sycl::queue& q = at::xpu::getCurrentXPUStream().queue();
-        q.submit(cgf);
-#else
-        throw std::runtime_error(
-                                 "Code must be compiled with SYCL enabled");
-#endif
-      } else {
-
-        int64_t index(0);
-        auto knots = knots_[i].template accessor<real_t, 1>();
-
-        for (int64_t j = 0; j < degrees_[i]; ++j)
-          knots[index++] = static_cast<real_t>(0);
-
-        for (int64_t j = 0; j < ncoeffs_[i] - degrees_[i] + 1; ++j)
-          knots[index++] = static_cast<real_t>(j) /
-                           static_cast<real_t>(ncoeffs_[i] - degrees_[i]);
-
-        for (int64_t j = 0; j < degrees_[i]; ++j)
-          knots[index++] = static_cast<real_t>(1);
+      if (num_inner > 0) {
+        inner = torch::arange(0, num_inner + 1, options_);
+        inner = inner / static_cast<real_t>(num_inner);
       }
+      
+      knots_[i] = torch::cat({start, inner, end});           
     }
 
 #ifdef __CUDACC__
@@ -2408,73 +2173,15 @@ public:
         for (short_t j = 0; j < parDim_; ++j) {
           if (i == j) {
             auto greville_ = torch::zeros(ncoeffs_[j], options_);
-            if (greville_.is_cuda() && knots_[j].is_cuda()) {
 
-              auto greville = greville_.template packed_accessor64<real_t, 1>();
-              auto knots = knots_[j].template packed_accessor64<real_t, 1>();
-
-#if defined(__CUDACC__)
-              int blockSize, minGridSize, gridSize;
-              cudaOccupancyMaxPotentialBlockSize(
-                  &minGridSize, &blockSize,
-                  (const void *)cuda::greville_kernel<real_t>, 0, 0);
-              gridSize = (ncoeffs_[j] + blockSize - 1) / blockSize;
-              cuda::greville_kernel<<<gridSize, blockSize>>>(
-                  greville, knots, ncoeffs_[j], degrees_[j], false);
-#elif defined(__HIPCC__)
-              int blockSize, minGridSize, gridSize;
-              static_cast<void>(hipOccupancyMaxPotentialBlockSize(
-                  &minGridSize, &blockSize,
-                  (const void *)cuda::greville_kernel<real_t>, 0, 0));
-              gridSize = (ncoeffs_[j] + blockSize - 1) / blockSize;
-              cuda::greville_kernel<<<gridSize, blockSize>>>(
-                  greville, knots, ncoeffs_[j], degrees_[j], false);
-#else
-              throw std::runtime_error(
-                  "Code must be compiled with CUDA or HIP enabled");
-#endif
-
-      } else if (greville_.is_xpu() && knots_[j].is_xpu()) {
-
-#if defined(SYCL_LANGUAGE_VERSION)
-        auto greville = greville_.template data_ptr<real_t>();
-        auto const knots = knots_[j].template data_ptr<real_t>();
-
-        constexpr int dim = 1;
-              constexpr int blockSize = 256;
-        
-              // All the work items in total to be launched. For SYCL programming, it does not provide the gridSize counter part directly.
-              // However, we can calculate the grid_size by dividing the global_range by local_range.
-              auto gridSize = (ncoeffs_[i] + blockSize - 1) / blockSize;
-              sycl::range<dim> global_range(gridSize * blockSize);
-        
-              // local_range is sort of like blockSize.
-              sycl::range<dim> local_range(blockSize);
-
-              // Create sycl kernel functor.
-              using greville_kernel_t = xpu::GrevilleKernel<real_t>;
-              auto greville_kernel = greville_kernel_t(greville, knots, ncoeffs_[i], degrees_[i], false);
-        
-              // The kernel functor is passed to the sycl_kernel_submit function.
-              auto cgf = [&](::sycl::handler& cgh) {
-                cgh.parallel_for<greville_kernel_t>(sycl::nd_range<dim>(global_range, local_range), greville_kernel);
-              };
-
-              sycl::queue& q = at::xpu::getCurrentXPUStream().queue();
-              q.submit(cgf);
-#else
-        throw std::runtime_error(
-                                 "Code must be compiled with SYCL enabled");
-#endif
-            } else {
-              auto greville = greville_.template accessor<real_t, 1>();
-              auto knots = knots_[j].template accessor<real_t, 1>();
-              for (int64_t k = 0; k < ncoeffs_[j]; ++k) {
-                for (short_t l = 1; l <= degrees_[j]; ++l)
-                  greville[k] += knots[k + l];
-                greville[k] /= degrees_[j];
-              }
+            auto greville = greville_.template accessor<real_t, 1>();
+            auto knots = knots_[j].template accessor<real_t, 1>();
+            for (int64_t k = 0; k < ncoeffs_[j]; ++k) {
+              for (short_t l = 1; l <= degrees_[j]; ++l)
+                greville[k] += knots[k + l];
+              greville[k] /= degrees_[j];
             }
+
             coeffs_[i] = torch::kron(greville_, coeffs_[i]);
           } else
             coeffs_[i] =
