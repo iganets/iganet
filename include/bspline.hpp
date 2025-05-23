@@ -715,10 +715,10 @@ public:
 	    int64_t count = ncoeffs_[j] - (interior ? 2 : 0);
 
 	    // idx_base: (count, 1)
-	    auto idx_base = torch::arange(count, options_.template dtype<int64_t>()).unsqueeze(1);
+	    auto idx_base = torch::arange(count, options_.requires_grad(false).template dtype<int64_t>()).unsqueeze(1);
 
 	    // offsets: (1, degree)
-	    auto offsets = torch::arange(1, degrees_[j] + 1, options_.template dtype<int64_t>()).unsqueeze(0);
+	    auto offsets = torch::arange(1, degrees_[j] + 1, options_.requires_grad(false).template dtype<int64_t>()).unsqueeze(0);
 
 	    // indices: (count, degree)
 	    auto indices = idx_base + offset + offsets;
@@ -2187,10 +2187,10 @@ public:
 	    int64_t count = ncoeffs_[j];
 
 	    // idx_base: (count, 1)
-	    auto idx_base = torch::arange(count, options_.template dtype<int64_t>()).unsqueeze(1);
+	    auto idx_base = torch::arange(count, options_.requires_grad(false).template dtype<int64_t>()).unsqueeze(1);
 
 	    // offsets: (1, degree)
-	    auto offsets = torch::arange(1, degrees_[j] + 1, options_.template dtype<int64_t>()).unsqueeze(0);
+	    auto offsets = torch::arange(1, degrees_[j] + 1, options_.requires_grad(false).template dtype<int64_t>()).unsqueeze(0);
 
 	    // indices: (count, degree)
 	    auto indices = idx_base + offsets;
