@@ -596,16 +596,9 @@ public:
   inline int64_t ncumcoeffs() const noexcept {
     int64_t s = 1;
 
-#ifdef __CUDACC__
-#pragma nv_diag_suppress 186
-#endif
-
     for (short_t i = 0; i < parDim_; ++i)
       s *= ncoeffs(i);
 
-#ifdef __CUDACC__
-#pragma nv_diag_default 186
-#endif
     return s;
   }
 
@@ -704,10 +697,6 @@ public:
       for (short_t i = 0; i < parDim_; ++i) {
         coeffs[i] = torch::ones(1, options_);
 
-#ifdef __CUDACC__
-#pragma nv_diag_suppress 186
-#endif
-
         for (short_t j = 0; j < parDim_; ++j) {
           if (i == j) {
 
@@ -725,8 +714,6 @@ public:
 
 	    // Gather relevant knot values: shape (count, degree)
 	    auto gathered = knots_[j].index_select(0, indices.flatten()).view({count, degrees_[j]});
-
-	    std::cout << gathered << std::endl;
 	    
 	    // Compute mean along degree dimension (dim=1)
 	    auto greville_ = gathered.mean(1);
@@ -737,10 +724,6 @@ public:
                 torch::kron(torch::ones(ncoeffs_[j], options_), coeffs[i]);
         }
 
-#ifdef __CUDACC__
-#pragma nv_diag_default 186
-#endif
-        
         // Enable gradient calculation for non-leaf tensor
         if (options_.requires_grad())
           coeffs[i].retain_grad();
@@ -1453,16 +1436,8 @@ public:
 
     auto kv = json["knots"].get<std::array<std::vector<real_t>, parDim_>>();
 
-#ifdef __CUDACC__
-#pragma nv_diag_suppress 186
-#endif
-
     for (short_t i = 0; i < parDim_; ++i)
       knots_[i] = utils::to_tensor(kv[i], options_);
-
-#ifdef __CUDACC__
-#pragma nv_diag_default 186
-#endif
 
     auto c = json["coeffs"].get<std::array<std::vector<real_t>, geoDim_>>();
 
@@ -1580,9 +1555,6 @@ public:
         utils::to_tensorAccessor<real_t, 1>(coeffs_, torch::kCPU);
     std::stringstream ss;
 
-#ifdef __CUDACC__
-#pragma nv_diag_suppress 186
-#endif
     if constexpr (parDim_ == 0) {
       for (short_t g = 0; g < geoDim_; ++g)
         ss << std::to_string(coeffs_accessors[g][0]) << " ";
@@ -1592,9 +1564,6 @@ public:
         for (short_t g = 0; g < geoDim_; ++g)
           ss << std::to_string(coeffs_accessors[g][i]) << " ";
     }
-#ifdef __CUDACC__
-#pragma nv_diag_default 186
-#endif
 
     coefs.append_child(pugi::node_pcdata).set_value(ss.str().c_str());
 
@@ -1909,10 +1878,6 @@ public:
     result *= (parDim_ == other.parDim());
     result *= (geoDim_ == other.geoDim());
 
-#ifdef __CUDACC__
-#pragma nv_diag_suppress 186
-#endif
-
     for (short_t i = 0; i < parDim_; ++i)
       result *= (degree(i) == other.degree(i));
 
@@ -1930,10 +1895,6 @@ public:
 
     for (short_t i = 0; i < geoDim_; ++i)
       result *= torch::allclose(coeffs(i), other.coeffs(i), rtol, atol);
-
-#ifdef __CUDACC__
-#pragma nv_diag_default 186
-#endif
 
     return result;
   }
@@ -2068,10 +2029,6 @@ public:
   /// @brief Initializes the B-spline knots
   inline void init_knots() {
 
-#ifdef __CUDACC__
-#pragma nv_diag_suppress 186
-#endif
-
     for (short_t i = 0; i < parDim_; ++i) {
 
       // Check that open knot vector can be created
@@ -2094,9 +2051,6 @@ public:
       knots_[i] = torch::cat({start, inner, end});           
     }
 
-#ifdef __CUDACC__
-#pragma nv_diag_default 186
-#endif
   }
 
   /// @brief Initializes the B-spline coefficients
@@ -2144,10 +2098,6 @@ public:
       for (short_t i = 0; i < geoDim_; ++i) {
         coeffs_[i] = torch::ones(1, options_);
 
-#ifdef __CUDACC__
-#pragma nv_diag_suppress 186
-#endif
-
         for (short_t j = 0; j < parDim_; ++j) {
           if (i == j)
             coeffs_[i] = torch::kron(torch::linspace(static_cast<real_t>(0),
@@ -2158,10 +2108,6 @@ public:
             coeffs_[i] =
                 torch::kron(torch::ones(ncoeffs_[j], options_), coeffs_[i]);
         }
-
-#ifdef __CUDACC__
-#pragma nv_diag_default 186
-#endif
 
         // Enable gradient calculation for non-leaf tensor
         if (options_.requires_grad())
@@ -2176,10 +2122,6 @@ public:
       // abscissae values per univariate dimension
       for (short_t i = 0; i < geoDim_; ++i) {
         coeffs_[i] = torch::ones(1, options_);
-
-#ifdef __CUDACC__
-#pragma nv_diag_suppress 186
-#endif
 
         for (short_t j = 0; j < parDim_; ++j) {
           if (i == j) {
@@ -2198,8 +2140,6 @@ public:
 	    // Gather relevant knot values: shape (count, degree)
 	    auto gathered = knots_[j].index_select(0, indices.flatten()).view({count, degrees_[j]});
 
-	    std::cout << gathered << std::endl;
-	    
 	    // Compute mean along degree dimension (dim=1)
 	    auto greville_ = gathered.mean(1);
 
@@ -2208,10 +2148,6 @@ public:
             coeffs_[i] =
                 torch::kron(torch::ones(ncoeffs_[j], options_), coeffs_[i]);
         }
-
-#ifdef __CUDACC__
-#pragma nv_diag_default 186
-#endif
 
         // Enable gradient calculation for non-leaf tensor
         if (options_.requires_grad())
@@ -6518,12 +6454,6 @@ public:
     os << name() << "(\nparDim = " << BSplineCore::parDim()
        << ", geoDim = " << BSplineCore::geoDim() << ", degrees = ";
 
-#ifdef __CUDACC__
-#pragma nv_diag_suppress 68
-#pragma nv_diag_suppress 186
-#pragma nv_diag_suppress 514
-#endif
-
     for (short_t i = 0; i < BSplineCore::parDim() - 1; ++i)
       os << BSplineCore::degree(i) << "x";
     if (BSplineCore::parDim() > 0)
@@ -6549,12 +6479,6 @@ public:
 
     os << ", options = "
        << static_cast<torch::TensorOptions>(BSplineCore::options_);
-
-#ifdef __CUDACC__
-#pragma nv_diag_default 86
-#pragma nv_diag_default 186
-#pragma nv_diag_default 514
-#endif
 
     if (is_verbose(os)) {
       os << "\nknots [ ";
