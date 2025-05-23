@@ -710,16 +710,27 @@ public:
 
         for (short_t j = 0; j < parDim_; ++j) {
           if (i == j) {
-            auto greville_ = torch::zeros(ncoeffs_[j], options_);
 
-            auto greville = greville_.template accessor<real_t, 1>();
-            auto knots = knots_[j].template accessor<real_t, 1>();
-            for (int64_t k = 0; k < ncoeffs_[j]; ++k) {
-              for (short_t l = 1; l <= degrees_[j]; ++l)
-                greville[k] += knots[k + l];
-              greville[k] /= degrees_[j];
-            }
+	    int64_t offset = interior ? 1 : 0;
+	    int64_t count = ncoeffs_[j] - (interior ? 2 : 0);
 
+	    // idx_base: (count, 1)
+	    auto idx_base = torch::arange(count, options_.template dtype<int64_t>()).unsqueeze(1);
+
+	    // offsets: (1, degree)
+	    auto offsets = torch::arange(1, degrees_[j] + 1, options_.template dtype<int64_t>()).unsqueeze(0);
+
+	    // indices: (count, degree)
+	    auto indices = idx_base + offset + offsets;
+
+	    // Gather relevant knot values: shape (count, degree)
+	    auto gathered = knots_[j].index_select(0, indices.flatten()).view({count, degrees_[j]});
+
+	    std::cout << gathered << std::endl;
+	    
+	    // Compute mean along degree dimension (dim=1)
+	    auto greville_ = gathered.mean(1);
+	    
             coeffs[i] = torch::kron(greville_, coeffs[i]);
           } else
             coeffs[i] =
@@ -2172,15 +2183,25 @@ public:
 
         for (short_t j = 0; j < parDim_; ++j) {
           if (i == j) {
-            auto greville_ = torch::zeros(ncoeffs_[j], options_);
 
-            auto greville = greville_.template accessor<real_t, 1>();
-            auto knots = knots_[j].template accessor<real_t, 1>();
-            for (int64_t k = 0; k < ncoeffs_[j]; ++k) {
-              for (short_t l = 1; l <= degrees_[j]; ++l)
-                greville[k] += knots[k + l];
-              greville[k] /= degrees_[j];
-            }
+	    int64_t count = ncoeffs_[j];
+
+	    // idx_base: (count, 1)
+	    auto idx_base = torch::arange(count, options_.template dtype<int64_t>()).unsqueeze(1);
+
+	    // offsets: (1, degree)
+	    auto offsets = torch::arange(1, degrees_[j] + 1, options_.template dtype<int64_t>()).unsqueeze(0);
+
+	    // indices: (count, degree)
+	    auto indices = idx_base + offsets;
+
+	    // Gather relevant knot values: shape (count, degree)
+	    auto gathered = knots_[j].index_select(0, indices.flatten()).view({count, degrees_[j]});
+
+	    std::cout << gathered << std::endl;
+	    
+	    // Compute mean along degree dimension (dim=1)
+	    auto greville_ = gathered.mean(1);
 
             coeffs_[i] = torch::kron(greville_, coeffs_[i]);
           } else
