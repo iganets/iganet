@@ -82,10 +82,6 @@ template <typename T, std::size_t N, std::size_t M>
 inline auto to_json(const utils::TensorArray<M> &tensors) {
   auto json = nlohmann::json::array();
 
-#ifdef __CUDACC__
-#pragma nv_diag_suppress 186
-#endif
-
   for (std::size_t i = 0; i < M; ++i) {
     if (tensors[i].is_cuda()) {
       auto [tensor_cpu, accessor] =
@@ -96,10 +92,6 @@ inline auto to_json(const utils::TensorArray<M> &tensors) {
       json.push_back(to_json<T, N>(accessor));
     }
   }
-
-#ifdef __CUDACC__
-#pragma nv_diag_default 186
-#endif
 
   return json;
 }
