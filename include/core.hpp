@@ -38,15 +38,11 @@
 #include <torch/csrc/api/include/torch/types.h>
 #include <torch/torch.h>
 
-#ifdef __CUDACC__
 #include <c10/cuda/CUDACachingAllocator.h>
 #include <c10/cuda/CUDAFunctions.h>
-#endif
 
-#ifdef __HIPCC__
-#include <c10/hip/HIPCachingAllocator.h>
-#include <c10/hip/HIPFunctions.h>
-#endif
+//#include <c10/hip/HIPCachingAllocator.h>
+//#include <c10/hip/HIPFunctions.h>
 
 #ifdef IGANET_WITH_GISMO
 #include <gismo.h>
@@ -64,13 +60,7 @@
 #undef short_t
 
 #ifdef IGANET_WITH_MATPLOT
-#ifdef __CUDACC__
-#pragma nv_diag_suppress 611
-#endif
 #include <matplot/matplot.h>
-#ifdef __CUDACC__
-#pragma nv_diag_default 611
-#endif
 #endif
 
 #include <sysinfo.hpp>
@@ -175,18 +165,11 @@ public:
 /// @brief Return a human-readable printout of the current memory allocator
 /// statistics for a given device
 inline std::string memory_summary(c10::DeviceIndex device =
-#ifdef __CUDACC__
-                                      c10::cuda::current_device()
-#elif __HIPCC__
-                                      c10::hip::current_device()
-#else
-                                      0
-#endif
-) {
+				  c10::cuda::current_device()) {
 
   std::ostringstream os;
 
-#if defined(__CUDACC__) || defined(__HIPCC__)
+  if (torch::cuda::is_available()) {
 
   auto _format_size = [](int64_t bytes) -> std::string {
     if (bytes == 0)
@@ -206,35 +189,20 @@ inline std::string memory_summary(c10::DeviceIndex device =
   using namespace c10::CachingDeviceAllocator;
 #endif
 
-#ifdef __CUDACC__
   using namespace c10::cuda::CUDACachingAllocator;
-#elif __HIPCC__
-  using namespace c10::hip::HIPCachingAllocator;
-#endif
+  //  using namespace c10::hip::HIPCachingAllocator;
 
   DeviceStats deviceStats = getDeviceStats(device);
 
   os << "|====================================================================="
         "======|\n"
-#ifdef __CUDACC__
-     << "|                 LibTorch CUDA memory summary, device ID "
-#elif __HIPCC__
-     << "|                 LibTorch ROCm memory summary, device ID "
-#endif
-     << std::setw(18) << std::left << static_cast<int>(device) << "|\n"
+     << "|                    LibTorch memory summary, device ID "
+     << std::setw(20) << std::left << static_cast<int>(device) << "|\n"
      << "|---------------------------------------------------------------------"
         "------|\n"
-#ifdef __CUDACC__
      << "|            CUDA OOMs: "
-#elif __HIPCC__
-     << "|            ROCm OOMs: "
-#endif
      << std::setw(13) << std::left << deviceStats.num_ooms
-#ifdef __CUDACC__
      << "|        cudaMalloc retries: "
-#elif __HIPCC__
-     << "|         hipMalloc retries: "
-#endif
      << std::setw(10) << std::left << deviceStats.num_alloc_retries << "|\n"
      << "|====================================================================="
         "======|\n"
@@ -765,9 +733,8 @@ inline std::string memory_summary(c10::DeviceIndex device =
      << deviceStats.oversize_segments.freed << " |\n"
      << "|====================================================================="
         "======|";
-#else
+  } else
   os << "Memory summary is only available for CUDA/HIP devices";
-#endif
 
   return os.str();
 }
@@ -806,9 +773,8 @@ inline void init(std::ostream &os = Log(log::info)) {
 /// @brief Finalizes the library
 inline void finalize(std::ostream &os = Log(log::info)) {
 
-#if defined(__CUDACC__) || defined(__HIPCC__)
-  std::cout << "\n" << memory_summary() << std::endl;
-#endif
+  if (torch::cuda::is_available())
+    std::cout << "\n" << memory_summary() << std::endl;
 
 #ifdef IGANET_WITH_MPI
   if (MPI_Finalize() != MPI_SUCCESS)
