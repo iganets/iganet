@@ -49,7 +49,7 @@ private:
   std::vector<std::tuple<int, double, double>> DIRI_SIDES_;
 
   // json path
-  static constexpr const char* JSON_PATH = "/home/chg/Programming/Thesis/Experiment_2/iganet/results.json";
+  static constexpr const char* JSON_PATH = "/home/chg/Programming/Thesis/Experiment_2/python/results.json";
 
 public:
   /// @brief Constructor
@@ -64,7 +64,75 @@ public:
              std::forward<Args>(args)...),
         lambda_(lambda), mu_(mu), MAX_EPOCH_(MAX_EPOCH), 
         MIN_LOSS_(MIN_LOSS), DIRI_SIDES_(DIRI_SIDES), 
-        ref_(iganet::utils::to_array(8_i64, 8_i64)) {}
+        ref_(iganet::utils::to_array(8_i64, 8_i64)) {
+            // run through all DIRI_SIDES and registr respective lambdas
+            for (const auto& side : DIRI_SIDES) {
+                int sideNr = std::get<0>(side);
+                double xDispl = std::get<1>(side);
+                double yDispl = std::get<2>(side);
+
+                switch (sideNr) {
+                    case 1:
+                        this->ref_.boundary().template side<1>().template transform<1>(
+                            [this, xDispl](auto const& xi) {
+                                return std::array<double, 1>{xDispl};
+                            },
+                            std::array<iganet::short_t, 1>{0} 
+                        );
+                        this->ref_.boundary().template side<1>().template transform<1>(
+                            [this, yDispl](auto const& xi) {
+                                return std::array<double, 1>{yDispl};
+                            },
+                            std::array<iganet::short_t, 1>{1}
+                        );
+                        break;
+                    case 2:
+                        this->ref_.boundary().template side<2>().template transform<1>(
+                            [this, xDispl](auto const& xi) {
+                                return std::array<double, 1>{xDispl};
+                            },
+                            std::array<iganet::short_t, 1>{0} 
+                        );
+                            this->ref_.boundary().template side<2>().template transform<1>(
+                            [this, yDispl](auto const& xi) {
+                                return std::array<double, 1>{yDispl};
+                            },
+                            std::array<iganet::short_t, 1>{1}
+                        );
+                        break;
+                    case 3:
+                        this->ref_.boundary().template side<3>().template transform<1>(
+                            [this, xDispl](auto const& xi) {
+                                return std::array<double, 1>{xDispl};
+                            },
+                            std::array<iganet::short_t, 1>{0} 
+                        );
+                            this->ref_.boundary().template side<3>().template transform<1>(
+                            [this, yDispl](auto const& xi) {
+                                return std::array<double, 1>{yDispl};
+                            },
+                            std::array<iganet::short_t, 1>{1}
+                        );
+                        break;
+                    case 4:
+                        this->ref_.boundary().template side<4>().template transform<1>(
+                            [this, xDispl](auto const& xi) {
+                                return std::array<double, 1>{xDispl};
+                            },
+                            std::array<iganet::short_t, 1>{0} 
+                        );
+                            this->ref_.boundary().template side<4>().template transform<1>(
+                            [this, yDispl](auto const& xi) {
+                                return std::array<double, 1>{yDispl};
+                            },
+                            std::array<iganet::short_t, 1>{1}
+                        );
+                        break;
+                    default:
+                        std::cerr << "Error: Invalid side number " << sideNr << std::endl;
+                }
+            }
+        }
 
   /// @brief Returns a constant reference to the collocation points
   auto const &collPts() const { return collPts_; }
@@ -133,6 +201,12 @@ public:
       return greville;
   }
 
+  void write_result() {
+    // write geometry and solution spline data to file
+    appendToJsonFile("G", Base::G_.template to_json());
+    appendToJsonFile("u", Base::u_.template to_json());
+  }
+
 
   /// @brief Initializes the epoch
   bool epoch(int64_t epoch) override {
@@ -151,9 +225,6 @@ public:
       for (int i = 0; i < collPtsCoeffs.size(0); ++i) {
           collPtsCoeffs_j.push_back({collPtsCoeffs[i].item<double>()});
       }
-      appendToJsonFile("collPtsCoeffsRef1", collPtsCoeffs_j);
-      appendToJsonFile("nrCollPtsRef1", {nrCollPts_});
-      
 
       var_knot_indices_ =
           Base::f_.template find_knot_indices<iganet::functionspace::interior>(
@@ -184,7 +255,11 @@ public:
               G_knot_indices_interior_);
 
       return true;
-    } else
+    } else if (epoch == MAX_EPOCH_-1) {
+        // write geometry and solution spline data to file
+        appendToJsonFile("G", Base::G_.template to_json());
+        appendToJsonFile("u", Base::u_.template to_json());
+    }
       return false;
   }
 
@@ -204,9 +279,9 @@ public:
     // LINEAR ELASTICITY EQUATION
 
     // calculate the jacobian of the displacements (u) at the collocation points
-    auto jacobian = Base::u_.ijac(Base::G_, interiorCollPts_.first, 
-        var_knot_indices_interior_, var_coeff_indices_interior_,
-        G_knot_indices_interior_, G_coeff_indices_interior_);
+    auto jacobian = Base::u_.ijac(Base::G_, collPts_.first, 
+        var_knot_indices_, var_coeff_indices_,
+        G_knot_indices_, G_coeff_indices_);
     
     auto& u1_x = jacobian(0);
     auto& u1_y = jacobian(1);
@@ -214,9 +289,9 @@ public:
     auto& u2_y = jacobian(3);
 
     // calculation of the second derivatives of the displacements (u)
-    auto hessianColl = Base::u_.ihess(Base::G_, interiorCollPts_.first, 
-        var_knot_indices_interior_, var_coeff_indices_interior_,
-        G_knot_indices_interior_, G_coeff_indices_interior_);
+    auto hessianColl = Base::u_.ihess(Base::G_, collPts_.first, 
+        var_knot_indices_, var_coeff_indices_,
+        G_knot_indices_, G_coeff_indices_);
 
     // partial derivatives of the displacements (u)
     auto& u1_xx = hessianColl(0,0,0);
@@ -229,22 +304,27 @@ public:
     auto& u2_yx = hessianColl(1,0,1);
     auto& u2_yy = hessianColl(1,1,1);
 
+    double beta = 2.0;
     // Divergence of first Kirchhoff stress tensor
-    auto J = 1 + u1_x + u2_y + u1_x*u2_y - u1_y*u2_x;
-    J = torch::nn::functional::softplus(J, torch::nn::functional::SoftplusFuncOptions()
-        .beta(1.0)
+    auto J = 1.0 + u1_x + u2_y + u1_x*u2_y - u1_y*u2_x;
+    auto J_sp = torch::nn::functional::softplus(J, torch::nn::functional::SoftplusFuncOptions()
+        .beta(beta)
         .threshold(20.0));
     auto J_x = u1_xx + u2_yx + u1_xx*u2_y +u1_x*u2_yx - u1_yx*u2_x - u1_y*u2_xx;
     auto J_y = u1_xy + u2_yy + u1_xy*u2_y +u1_x*u2_yy - u1_yy*u2_x - u1_y*u2_xy;
-    auto A = (lambda_ * torch::log1p(J - 1) - mu_) / J;
-    auto A_x = (lambda_ + mu_ - lambda_*torch::log1p(J - 1)) * J_x / (J*J);
-    auto A_y = (lambda_ + mu_ - lambda_*torch::log1p(J - 1)) * J_y / (J*J);
+    auto J_sp_x = J_x * torch::sigmoid(beta * J);
+    auto J_sp_y = J_y * torch::sigmoid(beta * J);
+    auto A = (lambda_ * torch::log1p(J_sp - 1) - mu_) / J_sp;
+    auto A_x = (lambda_ + mu_ - lambda_*torch::log1p(J_sp - 1)) * J_sp_x / (J_sp*J_sp);
+    auto A_y = (lambda_ + mu_ - lambda_*torch::log1p(J_sp - 1)) * J_sp_y / (J_sp*J_sp);
 
+    // First derivatives of first Piola Kirchhoff stress tensor
     auto P11_x = mu_*u1_xx + A_x + A_x*u2_y + A*u2_yx;
     auto P12_y = mu_*u1_yy - A_y*u2_x - A*u2_xy;
     auto P21_x = mu_*u2_xx - A_x*u1_y - A*u1_yx;
     auto P22_y = mu_*u2_yy + A_y + A_y*u1_x + A*u1_xy;
 
+    // Divergence of first PK tensor
     auto divPX = P11_x + P12_y;
     auto divPY = P21_x + P22_y;
     auto divP  = torch::stack({divPX, divPY}, 1);
@@ -252,7 +332,7 @@ public:
     // BODY FORCE
 
     // evaluate the reference body force f at all interior collocation points
-    auto f = Base::f_.eval(interiorCollPts_.first);
+    auto f = Base::f_.eval(collPts_.first);
 
     auto bodyForce = torch::stack({*f[0], *f[1]}, 1).to(divP.dtype());
 
@@ -272,7 +352,7 @@ public:
     // only consider BC loss if dirichlet BCs are applied
     if (!DIRI_SIDES_.empty()) {
         // add a BC weight for penalization of the training
-        int bcWeight = 1e5;
+        int bcWeight = 1e7;
         // initialize bcLoss variable
         bcLoss = torch::tensor(0.0);
 
@@ -325,18 +405,18 @@ int main() {
   // ------- USER INPUTS ------- //
 
   // material parameters
-  double YOUNG_MODULUS = 1.5e6;
+  double YOUNG_MODULUS = 10;
   double POISSON_RATIO = 0.3;
 
   // simulation parameters
-  int MAX_EPOCH = 1500;
+  int MAX_EPOCH = 100;
   double MIN_LOSS = 1e-8;
   bool SUPERVISED_LEARNING = false;
   bool RUN_REF_SIM = false;
 
   // spline parameters
-  int64_t NR_CTRL_PTS = 4;  // in each direction 
-  constexpr int DEGREE = 2;
+  int64_t NR_CTRL_PTS = 5;  // in each direction 
+  constexpr int DEGREE = 3;
 
   // boundary conditions
 
@@ -380,81 +460,6 @@ int main() {
     return std::array<real_t, 2>{0, 0};
   });
 
-  // get the coefficients of the control points
-  torch::Tensor ctrlPtsCoeffs = net.G().as_tensor().slice(0, 0, NR_CTRL_PTS);
-  nlohmann::json ctrlPtsCoeffs_j = nlohmann::json::array();
-  for (int i = 0; i < NR_CTRL_PTS; ++i) {
-      ctrlPtsCoeffs_j.push_back({ctrlPtsCoeffs[i].item<double>()});
-  }
-  neo_Hook_t::appendToJsonFile("ctrlPtsCoeffs", ctrlPtsCoeffs_j);
-
-  // run through all DIRI_SIDES
-  for (const auto& side : DIRI_SIDES) {
-    int sideNr = std::get<0>(side);
-    double xDispl = std::get<1>(side);
-    double yDispl = std::get<2>(side);
-
-    switch (sideNr) {
-        case 1:
-            net.ref().boundary().side<1>().transform<1>(
-                [=](const std::array<real_t, 1> &xi) {
-                    return std::array<real_t, 1>{xDispl};
-                },
-                std::array<iganet::short_t, 1>{0} 
-            );
-            net.ref().boundary().side<1>().transform<1>(
-                [=](const std::array<real_t, 1> &xi) {
-                    return std::array<real_t, 1>{yDispl};
-                },
-                std::array<iganet::short_t, 1>{1}
-            );
-            break;
-        case 2:
-            net.ref().boundary().side<2>().transform<1>(
-                [=](const std::array<real_t, 1> &xi) {
-                    return std::array<real_t, 1>{xDispl};
-                },
-                std::array<iganet::short_t, 1>{0} 
-            );
-            net.ref().boundary().side<2>().transform<1>(
-                [=](const std::array<real_t, 1> &xi) {
-                    return std::array<real_t, 1>{yDispl};
-                },
-                std::array<iganet::short_t, 1>{1}
-            );
-            break;
-        case 3:
-            net.ref().boundary().side<3>().transform<1>(
-                [=](const std::array<real_t, 1> &xi) {
-                    return std::array<real_t, 1>{xDispl};
-                },
-                std::array<iganet::short_t, 1>{0} 
-            );
-            net.ref().boundary().side<3>().transform<1>(
-                [=](const std::array<real_t, 1> &xi) {
-                    return std::array<real_t, 1>{yDispl};
-                },
-                std::array<iganet::short_t, 1>{1}
-            );
-            break;
-        case 4:
-            net.ref().boundary().side<4>().transform<1>(
-                [=](const std::array<real_t, 1> &xi) {
-                    return std::array<real_t, 1>{xDispl};
-                },
-                std::array<iganet::short_t, 1>{0} 
-            );
-            net.ref().boundary().side<4>().transform<1>(
-                [=](const std::array<real_t, 1> &xi) {
-                    return std::array<real_t, 1>{yDispl};
-                },
-                std::array<iganet::short_t, 1>{1}
-            );
-            break;
-        default:
-            std::cerr << "Error: Invalid side number " << sideNr << std::endl;
-    }
-}
 
   // Set maximum number of epochs
   net.options().max_epoch(MAX_EPOCH);
@@ -475,6 +480,8 @@ int main() {
       << std::chrono::duration_cast<std::chrono::duration<double>>(t2 - t1)
              .count()
       << " seconds\n";
+
+  net.write_result();
 
   iganet::finalize();
   return 0;
