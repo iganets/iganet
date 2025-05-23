@@ -18,10 +18,6 @@ file(GLOB EXAMPLES *.cxx)
 
 foreach(example ${EXAMPLES})
 
-  if (NOT IGANET_BUILD_CPUONLY AND CMAKE_CUDA_COMPILER)
-    set_source_files_properties(${example} PROPERTIES LANGUAGE CUDA)
-  endif()
-
   get_filename_component(name ${example} NAME_WE)
   add_executable(${name} ${example})
   add_dependencies(iganet_examples ${name})
