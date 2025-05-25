@@ -48,6 +48,11 @@ private:
   double MIN_LOSS_;
   std::vector<std::tuple<int, double, double>> DIRI_SIDES_;
 
+  // another set of scaling parameters
+  double DIRICHLET_SCALING = 0.0;
+  at::Tensor previous_loss = torch::tensor(-100.0);
+  at::Tensor scaling_threshold = torch::tensor(MIN_LOSS_ * 10.0);
+
   // json path
   static constexpr const char* JSON_PATH = "/home/chg/Programming/Thesis/Experiment_2/python/results.json";
 
@@ -65,73 +70,7 @@ public:
         lambda_(lambda), mu_(mu), MAX_EPOCH_(MAX_EPOCH), 
         MIN_LOSS_(MIN_LOSS), DIRI_SIDES_(DIRI_SIDES), 
         ref_(iganet::utils::to_array(8_i64, 8_i64)) {
-            // run through all DIRI_SIDES and registr respective lambdas
-            for (const auto& side : DIRI_SIDES) {
-                int sideNr = std::get<0>(side);
-                double xDispl = std::get<1>(side);
-                double yDispl = std::get<2>(side);
-
-                switch (sideNr) {
-                    case 1:
-                        this->ref_.boundary().template side<1>().template transform<1>(
-                            [this, xDispl](auto const& xi) {
-                                return std::array<double, 1>{xDispl};
-                            },
-                            std::array<iganet::short_t, 1>{0} 
-                        );
-                        this->ref_.boundary().template side<1>().template transform<1>(
-                            [this, yDispl](auto const& xi) {
-                                return std::array<double, 1>{yDispl};
-                            },
-                            std::array<iganet::short_t, 1>{1}
-                        );
-                        break;
-                    case 2:
-                        this->ref_.boundary().template side<2>().template transform<1>(
-                            [this, xDispl](auto const& xi) {
-                                return std::array<double, 1>{xDispl};
-                            },
-                            std::array<iganet::short_t, 1>{0} 
-                        );
-                            this->ref_.boundary().template side<2>().template transform<1>(
-                            [this, yDispl](auto const& xi) {
-                                return std::array<double, 1>{yDispl};
-                            },
-                            std::array<iganet::short_t, 1>{1}
-                        );
-                        break;
-                    case 3:
-                        this->ref_.boundary().template side<3>().template transform<1>(
-                            [this, xDispl](auto const& xi) {
-                                return std::array<double, 1>{xDispl};
-                            },
-                            std::array<iganet::short_t, 1>{0} 
-                        );
-                            this->ref_.boundary().template side<3>().template transform<1>(
-                            [this, yDispl](auto const& xi) {
-                                return std::array<double, 1>{yDispl};
-                            },
-                            std::array<iganet::short_t, 1>{1}
-                        );
-                        break;
-                    case 4:
-                        this->ref_.boundary().template side<4>().template transform<1>(
-                            [this, xDispl](auto const& xi) {
-                                return std::array<double, 1>{xDispl};
-                            },
-                            std::array<iganet::short_t, 1>{0} 
-                        );
-                            this->ref_.boundary().template side<4>().template transform<1>(
-                            [this, yDispl](auto const& xi) {
-                                return std::array<double, 1>{yDispl};
-                            },
-                            std::array<iganet::short_t, 1>{1}
-                        );
-                        break;
-                    default:
-                        std::cerr << "Error: Invalid side number " << sideNr << std::endl;
-                }
-            }
+            this->initialize_dirichlet_boundaries();
         }
 
   /// @brief Returns a constant reference to the collocation points
@@ -145,6 +84,76 @@ public:
 
   /// @brief Returns a non-constant reference to the reference solution
   auto &ref() { return ref_; }
+
+  void initialize_dirichlet_boundaries() {
+    // run through all DIRI_SIDES and registr respective lambdas
+    for (const auto& side : this->DIRI_SIDES_) {
+        int sideNr = std::get<0>(side);
+        double xDispl = std::get<1>(side);
+        double yDispl = std::get<2>(side);
+
+        switch (sideNr) {
+            case 1:
+                this->ref_.boundary().template side<1>().template transform<1>(
+                    [this, xDispl](auto const& xi) {
+                        return std::array<double, 1>{DIRICHLET_SCALING * xDispl};
+                    },
+                    std::array<iganet::short_t, 1>{0} 
+                );
+                this->ref_.boundary().template side<1>().template transform<1>(
+                    [this, yDispl](auto const& xi) {
+                        return std::array<double, 1>{DIRICHLET_SCALING * yDispl};
+                    },
+                    std::array<iganet::short_t, 1>{1}
+                );
+                break;
+            case 2:
+                this->ref_.boundary().template side<2>().template transform<1>(
+                    [this, xDispl](auto const& xi) {
+                        return std::array<double, 1>{DIRICHLET_SCALING * xDispl};
+                    },
+                    std::array<iganet::short_t, 1>{0} 
+                );
+                    this->ref_.boundary().template side<2>().template transform<1>(
+                    [this, yDispl](auto const& xi) {
+                        return std::array<double, 1>{DIRICHLET_SCALING * yDispl};
+                    },
+                    std::array<iganet::short_t, 1>{1}
+                );
+                break;
+            case 3:
+                this->ref_.boundary().template side<3>().template transform<1>(
+                    [this, xDispl](auto const& xi) {
+                        return std::array<double, 1>{DIRICHLET_SCALING * xDispl};
+                    },
+                    std::array<iganet::short_t, 1>{0} 
+                );
+                    this->ref_.boundary().template side<3>().template transform<1>(
+                    [this, yDispl](auto const& xi) {
+                        return std::array<double, 1>{DIRICHLET_SCALING * yDispl};
+                    },
+                    std::array<iganet::short_t, 1>{1}
+                );
+                break;
+            case 4:
+                this->ref_.boundary().template side<4>().template transform<1>(
+                    [this, xDispl](auto const& xi) {
+                        return std::array<double, 1>{DIRICHLET_SCALING * xDispl};
+                    },
+                    std::array<iganet::short_t, 1>{0} 
+                );
+                    this->ref_.boundary().template side<4>().template transform<1>(
+                    [this, yDispl](auto const& xi) {
+                        return std::array<double, 1>{DIRICHLET_SCALING * yDispl};
+                    },
+                    std::array<iganet::short_t, 1>{1}
+                );
+                break;
+            default:
+                std::cerr << "Error: Invalid side number " << sideNr << std::endl;
+        }
+    }
+  }
   
   static void appendToJsonFile(const std::string& key, const nlohmann::json& data) {
     
@@ -394,6 +403,13 @@ public:
     // print the loss values
     std::cout << std::setw(11) << totalLoss.item<double>() << " = " << singleLossOutput.str() << std::endl;
 
+    if ((torch::abs(this->previous_loss - totalLoss) < this->scaling_threshold).item<bool>() && (this->DIRICHLET_SCALING < 1.0)) {
+        this->DIRICHLET_SCALING += 0.01;
+        this->initialize_dirichlet_boundaries();
+        this->reset_optimizer();
+        std::cout << "\n\nIncreased Dirichlet scaling factor\n\n" << std::endl;
+    }
+    this->previous_loss = totalLoss;
     return totalLoss;
   }
 };
@@ -422,7 +438,7 @@ int main() {
 
   std::vector<std::tuple<int, double, double>> DIRI_SIDES = {
       {1, 0.0,  0.0},       // {side, x-displ, y-displ}
-      {2, 0.1,  0.0},
+      {2, 0.5,  0.0},
     };
     
   // --------------------------- //
