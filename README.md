@@ -8,8 +8,8 @@ learning with the mathematical framework of isogeometric analysis.
 IgANets require a C++17 compiler, CMake and LibTorch (the C++ API of
 PyTorch).
 
-Depending on the LibTorch version installed on your system,
-IgANets will be compiled with support for CUDA, ROCm or the Intel
+Depending on the LibTorch version installed on your system, IgANets
+will be compiled with support for CUDA, ROCm Intel GPUs or the Intel
 Extension for PyTorch. You can disable this feature by providing the
 `-DIGANET_BUILD_CPUONLY=ON` flag to CMake.
 
@@ -56,13 +56,13 @@ In addition to the optional components, IgANets can be compiled with several opt
     Pre-compiled versions of LibTorch are available at [PyTorch.org](https://pytorch.org/get-started/locally/). Depending on your compiler toolchain you need to choose between the pre-cxx11 and the cxx11 ABI, i.e.
 
     ```shell
-    wget https://download.pytorch.org/libtorch/cpu/libtorch-shared-with-deps-2.4.1%2Bcpu.zip -O libtorch.zip
+    wget https://download.pytorch.org/libtorch/cpu/libtorch-shared-with-deps-2.7.0%2Bcpu.zip -O libtorch.zip
     unzip libtorch.zip -d $HOME/
     rm -f libtorch
     ```
     or
     ```shell
-    wget https://download.pytorch.org/libtorch/cpu/libtorch-cxx11-abi-shared-with-deps-2.4.1%2Bcpu.zip -O libtorch.zip
+    wget https://download.pytorch.org/libtorch/cpu/libtorch-cxx11-abi-shared-with-deps-2.7.0%2Bcpu.zip -O libtorch.zip
     unzip libtorch.zip -d $HOME/
     rm -f libtorch
     ```
@@ -88,21 +88,21 @@ In addition to the optional components, IgANets can be compiled with several opt
 
     Note that since version 2.2.0, official builds of the LibTorch library for ARM64 and X86_64 can be downloaded from PyTorch.org:
 
-    - https://download.pytorch.org/libtorch/cpu/libtorch-macos-x86_64-2.4.1.zip
-    - https://download.pytorch.org/libtorch/cpu/libtorch-macos-arm64-2.4.1.zip
+    - https://download.pytorch.org/libtorch/cpu/libtorch-macos-x86_64-2.7.0.zip
+    - https://download.pytorch.org/libtorch/cpu/libtorch-macos-arm64-2.7.0.zip
 
     If you decide to use these version download and unzip them as shown for the Linux installation. It is, however, recommended to install LibTorch through `brew` as described above since this method is tested regularly by the IgANets authors.
 
 2.  Configure
     ```shell
-    CMAKE_PREFIX_PATH=/opt/homebrew/Cellar/protobuf/28.2/share/protobuf cmake .. -DTorch_DIR=/opt/homebrew/Cellar/pytorch/2.4.1/share/cmake/Torch
+    cmake .. -DTorch_DIR=/opt/homebrew/Cellar/pytorch/2.7.0/share/cmake/Torch
     ```
 
     Note that the specific version of PyTorch and/or protobuf might be different on your system.
 
 3.  Compile
     ```shell
-    make
+    make -j 8
     ```
 
     Depending on the number of cores of your CPU you may want to change 8 to a different number.
@@ -111,8 +111,8 @@ In addition to the optional components, IgANets can be compiled with several opt
 
 1.  Install the CUDA-enabled version of LibTorch
 
-    - https://download.pytorch.org/libtorch/cu121/libtorch-shared-with-deps-2.4.1%2Bcu121.zip
-    - https://download.pytorch.org/libtorch/cu121/libtorch-cxx11-abi-shared-with-deps-2.4.1%2Bcu121.zip
+    - https://download.pytorch.org/libtorch/cu121/libtorch-shared-with-deps-2.7.0%2Bcu121.zip
+    - https://download.pytorch.org/libtorch/cu121/libtorch-cxx11-abi-shared-with-deps-2.7.0%2Bcu121.zip
 
     Note that the version must be compatible with the CUDA version installed on your system.
 
@@ -124,41 +124,49 @@ In addition to the optional components, IgANets can be compiled with several opt
 
 1.  Install the ROCm-enabled version of LibTorch
 
-    - https://download.pytorch.org/libtorch/rocm6.1/libtorch-shared-with-deps-2.4.1%2Brocm6.1.zip
-    - https://download.pytorch.org/libtorch/rocm6.1/libtorch-cxx11-abi-shared-with-deps-2.4.1%2Brocm6.1.zip
+    - https://download.pytorch.org/libtorch/rocm6.3/libtorch-shared-with-deps-2.7.0%2Brocm6.3.zip
+    - https://download.pytorch.org/libtorch/rocm6.3/libtorch-cxx11-abi-shared-with-deps-2.7.0%2Brocm6.3.zip
 
     Note that the version must be compatible with the ROCm version installed on your system.
 
-2.  Configure
-    ```shell
-    CC=hipcc CXX=hipcc cmake .. -DTorch_DIR=$HOME/sfw/libtorch/2.4.1-latest-rocm61/share/cmake/Torch/ -DHIP_ROOT_DIR=/opt/rocm/hip -DIGANET_BUILD_PCH=OFF
-    ```
+2.  Configure and compiled
 
-    Note that the `HIP_ROOT_DIR` might be different on your system. Also note that building with precompiled headers does not work with the `hipcc` compiler so it must be disabled.
+    All further steps are the same as described above (Linux)
 
-3. Compile
+## Compilation with Intel GPU support (only Linux)
+
+1. Install the Intel GPU drivers and PyTorch version as decribed
+   [here](https://docs.pytorch.org/docs/stable/notes/get_start_xpu.html). If
+   you do not own an Intel GPU, you can create a free account at the
+   [Intel Tiber AI Cloud](https://console.cloud.intel.com), which
+   provides a free access to Intel datacenter GPU for testing
+   purposes.
+
+2. Install the XPU-enabled version of PyTorch in a virtual python environment
 
    ```shell
-   make
+   python3 -m venv $HOME/.venv/torch-xpu
+   source $HOME/.venv/torch-xpu/bin/activate
+   pip install torch --index-url https://download.pytorch.org/whl/xpu
    ```
 
-   Depending on the number of cores of your CPU you may want to change 8 to a different number.
+3. Configure
+    ```shell
+    cmake .. -DTorch_DIR=$HOME/.venv/torch-xpu/lib/python3.11/site-packages/torch/share/cmake/Torch/
+    ```
 
+    Note that on the latest Intel Tiber AI Cloud installation, ZLib is
+    not found by default. This can be corrected by calling CMake with
+    the additional parameters
+    ```shell
+    -DZLIB_LIBRARY=/usr/lib/x86_64-linux-gnu/libz.so.1 -DZLIB_INCLUDE_DIR=/usr/include
+    ```
 
-## Compilation with Intel Extensions for PyTorch support (Linux only)
+## Compilation with Intel Extensions for PyTorch support (only Linux)
 
 1.  Install the Intel Extensions for PyTorch as described [here](https://github.com/intel/intel-extension-for-pytorch?tab=readme-ov-file).
 
 2.  Add the CMake option `-DIPEX_DIR=<path/to/IPEX/installation>`
-
-    Code Snippet for `liza.surf.nl`:
-    ```shell
-    module load intel/oneapi/tbb
-    module load intel/oneapi/compiler-rt
-    module load intel/oneapi/mkl
-
-    cmake .. -DTorch_DIR=$HOME/sfw/libtorch/2.1.0-intel/share/cmake/Torch/ -DIPEX_DIR=$HOME/sfw/libtorch/2.1.0-intel/share/cmake/IPEX
-    ```
 
 ## Python module
 
