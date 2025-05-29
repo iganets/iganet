@@ -42,7 +42,9 @@ template <> inline constexpr torch::Dtype dtype<short>() {
 
 template <> inline constexpr torch::Dtype dtype<int>() { return torch::kInt; }
 
-template <> inline constexpr torch::Dtype dtype<long>() { return torch::kLong; }
+  template <> inline constexpr torch::Dtype dtype<long>() { return torch::kLong; }
+
+  template <> inline constexpr torch::Dtype dtype<long long>() { return torch::kLong; }
 
 template <> inline constexpr torch::Dtype dtype<half>() { return torch::kHalf; }
 
