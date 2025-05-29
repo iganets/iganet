@@ -38,11 +38,15 @@
 #include <torch/csrc/api/include/torch/types.h>
 #include <torch/torch.h>
 
+#ifdef CUDA_VERSION
 #include <c10/cuda/CUDACachingAllocator.h>
 #include <c10/cuda/CUDAFunctions.h>
+#endif
 
-//#include <c10/hip/HIPCachingAllocator.h>
-//#include <c10/hip/HIPFunctions.h>
+#ifdef HIP_VERSION
+#include <c10/hip/HIPCachingAllocator.h>
+#include <c10/hip/HIPFunctions.h>
+#endif
 
 #ifdef IGANET_WITH_GISMO
 #include <gismo.h>
@@ -165,11 +169,18 @@ public:
 /// @brief Return a human-readable printout of the current memory allocator
 /// statistics for a given device
 inline std::string memory_summary(c10::DeviceIndex device =
-				  c10::cuda::current_device()) {
+#ifdef CUDA_VERSION
+                                      c10::cuda::current_device()
+#elif HIP_VERSION
+                                      c10::hip::current_device()
+#else
+                                      0
+#endif
+) {
 
   std::ostringstream os;
 
-  if (torch::cuda::is_available()) {
+#if defined(CUDA_VERSION) || defined(HIP_VERSION)
 
   auto _format_size = [](int64_t bytes) -> std::string {
     if (bytes == 0)
@@ -189,20 +200,35 @@ inline std::string memory_summary(c10::DeviceIndex device =
   using namespace c10::CachingDeviceAllocator;
 #endif
 
+#ifdef CUDA_VERSION
   using namespace c10::cuda::CUDACachingAllocator;
-  //  using namespace c10::hip::HIPCachingAllocator;
+#elif HIP_VERSION
+  using namespace c10::hip::HIPCachingAllocator;
+#endif
 
   DeviceStats deviceStats = getDeviceStats(device);
 
   os << "|====================================================================="
         "======|\n"
-     << "|                    LibTorch memory summary, device ID "
-     << std::setw(20) << std::left << static_cast<int>(device) << "|\n"
+#ifdef CUDA_VERSION
+     << "|                 LibTorch CUDA memory summary, device ID "
+#elif HIP_VERSION
+     << "|                 LibTorch ROCm memory summary, device ID "
+#endif
+     << std::setw(18) << std::left << static_cast<int>(device) << "|\n"
      << "|---------------------------------------------------------------------"
         "------|\n"
+#ifdef CUDA_VERSION
      << "|            CUDA OOMs: "
+#elif HIP_VERSION
+     << "|            ROCm OOMs: "
+#endif
      << std::setw(13) << std::left << deviceStats.num_ooms
+#ifdef CUDA_VERSION
      << "|        cudaMalloc retries: "
+#elif HIP_VERSION
+     << "|         hipMalloc retries: "
+#endif
      << std::setw(10) << std::left << deviceStats.num_alloc_retries << "|\n"
      << "|====================================================================="
         "======|\n"
@@ -733,8 +759,9 @@ inline std::string memory_summary(c10::DeviceIndex device =
      << deviceStats.oversize_segments.freed << " |\n"
      << "|====================================================================="
         "======|";
-  } else
+#else
   os << "Memory summary is only available for CUDA/HIP devices";
+#endif
 
   return os.str();
 }
@@ -773,8 +800,9 @@ inline void init(std::ostream &os = Log(log::info)) {
 /// @brief Finalizes the library
 inline void finalize(std::ostream &os = Log(log::info)) {
 
-  if (torch::cuda::is_available())
-    std::cout << "\n" << memory_summary() << std::endl;
+#if defined(CUDA_VERSION) || defined(HIP_VERSION)
+  std::cout << "\n" << memory_summary() << std::endl;
+#endif
 
 #ifdef IGANET_WITH_MPI
   if (MPI_Finalize() != MPI_SUCCESS)
