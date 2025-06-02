@@ -15,6 +15,7 @@ private:
 
   typename Base::variable_collPts_type collPts_;
   typename Base::variable_collPts_type interiorCollPts_;
+  std::array<torch::Tensor, 2ul> tractionCollPts_;
 
   int nrCollPts_;
   Variable ref_;
@@ -24,6 +25,9 @@ private:
   typename Customizable::variable_interior_knot_indices_type var_knot_indices_;
   typename Customizable::variable_interior_coeff_indices_type var_coeff_indices_;
 
+  typename Customizable::variable_interior_knot_indices_type var_knot_indices_tf_;
+  typename Customizable::variable_interior_coeff_indices_type var_coeff_indices_tf_;
+
   typename Customizable::variable_interior_knot_indices_type var_knot_indices_interior_;
   typename Customizable::variable_interior_coeff_indices_type var_coeff_indices_interior_;
 
@@ -32,6 +36,9 @@ private:
 
   typename Customizable::geometryMap_interior_knot_indices_type G_knot_indices_;
   typename Customizable::geometryMap_interior_coeff_indices_type G_coeff_indices_;
+
+  typename Customizable::geometryMap_interior_knot_indices_type G_knot_indices_tf_;
+  typename Customizable::geometryMap_interior_coeff_indices_type G_coeff_indices_tf_;
 
   typename Customizable::geometryMap_interior_knot_indices_type G_knot_indices_interior_;
   typename Customizable::geometryMap_interior_coeff_indices_type G_coeff_indices_interior_;
@@ -49,12 +56,12 @@ private:
   std::vector<std::tuple<int, double, double>> DIRI_SIDES_;
 
   // another set of scaling parameters
-  double DIRICHLET_SCALING = 0.0;
+  double DIRICHLET_SCALING = 1.0;
   at::Tensor previous_loss = torch::tensor(-100.0);
   at::Tensor scaling_threshold = torch::tensor(MIN_LOSS_ * 10.0);
 
   // json path
-  static constexpr const char* JSON_PATH = "/home/chg/Programming/Thesis/Experiment_2/python/results.json";
+  static constexpr const char* JSON_PATH = "/home/chg/Programming/PythonNet_IGA/Network_V1/NeuralNet/results.json";
 
 public:
   /// @brief Constructor
@@ -224,11 +231,25 @@ public:
 
     if (epoch == 0) {
       Base::inputs(epoch);
+
       collPts_ = Base::variable_collPts(iganet::collPts::greville);
       interiorCollPts_ = Base::variable_collPts(iganet::collPts::greville_interior);
-      
       // WARNING, only works for equal number of control points in x and y direction
       nrCollPts_ = static_cast<int>(std::sqrt(std::get<0>(collPts_)[0].size(0)));
+
+    // WARNING! Neumann Loss is hardcoded right now for top and bottom boundary
+      std::vector<torch::Tensor> tractionCollPtsX;
+      std::vector<torch::Tensor> tractionCollPtsY;
+      at::Tensor collPts_temp = std::get<0>(collPts_.second)[0];
+      tractionCollPtsX.push_back(collPts_temp.slice(0, 1, -1));
+      tractionCollPtsY.push_back(torch::zeros({nrCollPts_ - 2}));
+      tractionCollPtsX.push_back(collPts_temp.slice(0, 1, -1));
+      tractionCollPtsY.push_back(torch::ones({nrCollPts_ - 2}));
+      tractionCollPts_ = {
+        torch::cat(tractionCollPtsX, 0), 
+        torch::cat(tractionCollPtsY, 0)};
+
+
       torch::Tensor collPtsCoeffs = std::get<0>(collPts_)[0].slice(0, 0, nrCollPts_);
       nlohmann::json collPtsCoeffs_j = nlohmann::json::array();
       for (int i = 0; i < collPtsCoeffs.size(0); ++i) {
@@ -263,6 +284,19 @@ public:
           Base::G_.template find_coeff_indices<iganet::functionspace::interior>(
               G_knot_indices_interior_);
 
+    var_knot_indices_tf_ =
+        Base::f_.template find_knot_indices<iganet::functionspace::interior>(
+        tractionCollPts_);
+    var_coeff_indices_tf_ =
+        Base::f_.template find_coeff_indices<iganet::functionspace::interior>(
+        var_knot_indices_tf_);
+    G_knot_indices_tf_ =
+        Base::G_.template find_knot_indices<iganet::functionspace::interior>(
+            tractionCollPts_);
+    G_coeff_indices_tf_ =
+    Base::G_.template find_coeff_indices<iganet::functionspace::interior>(
+        G_knot_indices_tf_);
+
       return true;
     } else if (epoch == MAX_EPOCH_-1) {
         // write geometry and solution spline data to file
@@ -282,15 +316,14 @@ public:
     torch::Tensor totalLoss; 
     torch::Tensor elastLoss;
     std::optional<torch::Tensor> bcLoss;
-    std::optional<torch::Tensor> gsLoss;
   
 
-    // LINEAR ELASTICITY EQUATION
+    // Elasticity Loss
 
     // calculate the jacobian of the displacements (u) at the collocation points
-    auto jacobian = Base::u_.ijac(Base::G_, collPts_.first, 
-        var_knot_indices_, var_coeff_indices_,
-        G_knot_indices_, G_coeff_indices_);
+    auto jacobian = Base::u_.ijac(Base::G_, interiorCollPts_.first, 
+        var_knot_indices_interior_, var_coeff_indices_interior_,
+        G_knot_indices_interior_, G_coeff_indices_interior_);
     
     auto& u1_x = jacobian(0);
     auto& u1_y = jacobian(1);
@@ -298,9 +331,9 @@ public:
     auto& u2_y = jacobian(3);
 
     // calculation of the second derivatives of the displacements (u)
-    auto hessianColl = Base::u_.ihess(Base::G_, collPts_.first, 
-        var_knot_indices_, var_coeff_indices_,
-        G_knot_indices_, G_coeff_indices_);
+    auto hessianColl = Base::u_.ihess(Base::G_, interiorCollPts_.first, 
+        var_knot_indices_interior_, var_coeff_indices_interior_,
+        G_knot_indices_interior_, G_coeff_indices_interior_);
 
     // partial derivatives of the displacements (u)
     auto& u1_xx = hessianColl(0,0,0);
@@ -341,7 +374,7 @@ public:
     // BODY FORCE
 
     // evaluate the reference body force f at all interior collocation points
-    auto f = Base::f_.eval(collPts_.first);
+    auto f = Base::f_.eval(interiorCollPts_.first);
 
     auto bodyForce = torch::stack({*f[0], *f[1]}, 1).to(divP.dtype());
 
@@ -357,6 +390,61 @@ public:
 
     // add the elasticity loss to the cmd-output variable
     singleLossOutput << "EL " << std::setw(11) << elastLoss.item<double>();
+
+
+    // ------------------------------ Neumann Loss ------------------------------------
+    // WARNING! Neumann Loss is hardcoded right now for top and bottom boundary
+
+    // calculate the jacobian of the displacements (u) at the collocation points
+    auto jacobian_tf = Base::u_.ijac(Base::G_, tractionCollPts_, 
+        var_knot_indices_tf_, var_coeff_indices_tf_,
+        G_knot_indices_tf_, G_coeff_indices_tf_);
+    
+    auto& u1_x_tf = jacobian_tf(0);
+    auto& u1_y_tf = jacobian_tf(1);
+    auto& u2_x_tf = jacobian_tf(2);
+    auto& u2_y_tf = jacobian_tf(3);
+
+    // calculation of the second derivatives of the displacements (u)
+    auto hessianColl_tf = Base::u_.ihess(Base::G_, tractionCollPts_, 
+        var_knot_indices_tf_, var_coeff_indices_tf_,
+        G_knot_indices_tf_, G_coeff_indices_tf_);
+
+    // partial derivatives of the displacements (u)
+    auto& u1_xx_tf = hessianColl_tf(0,0,0);
+    auto& u1_xy_tf = hessianColl_tf(0,1,0);
+    auto& u1_yx_tf = hessianColl_tf(1,0,0);
+    auto& u1_yy_tf = hessianColl_tf(1,1,0);
+
+    auto& u2_xx_tf = hessianColl_tf(0,0,1);
+    auto& u2_xy_tf = hessianColl_tf(0,1,1);
+    auto& u2_yx_tf = hessianColl_tf(1,0,1);
+    auto& u2_yy_tf = hessianColl_tf(1,1,1);
+
+    // Divergence of first Kirchhoff stress tensor
+    auto J_tf = 1.0 + u1_x_tf + u2_y_tf + u1_x_tf*u2_y_tf - u1_y_tf*u2_x_tf;
+    auto J_sp_tf = torch::nn::functional::softplus(J_tf, torch::nn::functional::SoftplusFuncOptions()
+        .beta(beta)
+        .threshold(20.0));
+    auto J_x_tf = u1_xx_tf + u2_yx_tf + u1_xx_tf*u2_y_tf +u1_x_tf*u2_yx_tf - u1_yx_tf*u2_x_tf - u1_y_tf*u2_xx_tf;
+    auto J_y_tf = u1_xy_tf + u2_yy_tf + u1_xy_tf*u2_y_tf +u1_x_tf*u2_yy_tf - u1_yy_tf*u2_x_tf - u1_y_tf*u2_xy_tf;
+    auto J_sp_x_tf = J_x_tf * torch::sigmoid(beta * J_tf);
+    auto J_sp_y_tf = J_y_tf * torch::sigmoid(beta * J_tf);
+    auto A_tf = (lambda_ * torch::log1p(J_sp_tf - 1) - mu_) / J_sp_tf;
+    auto A_x_tf = (lambda_ + mu_ - lambda_*torch::log1p(J_sp_tf - 1)) * J_sp_x_tf / (J_sp_tf*J_sp_tf);
+    auto A_y_tf = (lambda_ + mu_ - lambda_*torch::log1p(J_sp_tf - 1)) * J_sp_y_tf / (J_sp_tf*J_sp_tf);
+
+    // Components of first Piola Kirchhoff stress tensor
+    auto P11 = mu_ * (1 + u1_x_tf) + A_tf * (1 + u2_y_tf);
+    auto P12 = mu_ * u1_y_tf - A_tf * u2_x_tf; 
+    auto P21 = mu_ * u2_x_tf - A_tf * u1_y_tf;
+    auto P22 = mu_ * (1 + u2_y_tf) + A_tf * (1 + u1_x_tf);
+
+    totalLoss += torch::mse_loss(P12, torch::zeros_like(P12));
+    totalLoss += torch::mse_loss(P22, torch::zeros_like(P22));
+
+
+
 
     // only consider BC loss if dirichlet BCs are applied
     if (!DIRI_SIDES_.empty()) {
@@ -404,9 +492,9 @@ public:
     std::cout << std::setw(11) << totalLoss.item<double>() << " = " << singleLossOutput.str() << std::endl;
 
     if ((torch::abs(this->previous_loss - totalLoss) < this->scaling_threshold).item<bool>() && (this->DIRICHLET_SCALING < 1.0)) {
-        this->DIRICHLET_SCALING += 0.01;
+        this->DIRICHLET_SCALING += 0.02;
         this->initialize_dirichlet_boundaries();
-        this->reset_optimizer();
+        //this->reset_solver();
         std::cout << "\n\nIncreased Dirichlet scaling factor\n\n" << std::endl;
     }
     this->previous_loss = totalLoss;
@@ -425,20 +513,20 @@ int main() {
   double POISSON_RATIO = 0.3;
 
   // simulation parameters
-  int MAX_EPOCH = 100;
-  double MIN_LOSS = 1e-8;
+  int MAX_EPOCH = 10000;
+  double MIN_LOSS = 5e-4;
   bool SUPERVISED_LEARNING = false;
   bool RUN_REF_SIM = false;
 
   // spline parameters
-  int64_t NR_CTRL_PTS = 5;  // in each direction 
-  constexpr int DEGREE = 3;
+  int64_t NR_CTRL_PTS = 6;  // in each direction 
+  constexpr int DEGREE = 5;
 
   // boundary conditions
 
   std::vector<std::tuple<int, double, double>> DIRI_SIDES = {
       {1, 0.0,  0.0},       // {side, x-displ, y-displ}
-      {2, 0.5,  0.0},
+      {2, 2.0,  0.0},
     };
     
   // --------------------------- //
@@ -460,10 +548,10 @@ int main() {
       net(// simulation parameters
           lambda, mu, MAX_EPOCH, MIN_LOSS, DIRI_SIDES,
           // Number of neurons per layer
-          {25, 25},
+          {72, 72},
           // Activation functions
-          {{iganet::activation::sigmoid},
-           {iganet::activation::sigmoid},
+          {{iganet::activation::tanh},
+           {iganet::activation::tanh},
            {iganet::activation::none}},
           // Number of B-spline coefficients of the geometry
           std::tuple(iganet::utils::to_array(NR_CTRL_PTS, NR_CTRL_PTS)),
