@@ -553,70 +553,78 @@ public:
       return R"({ INVALID REQUEST })"_json;
     }
 
-    if (component == "ScaledJacobian" || component == "UniformityMetric") {
+    std::cout << "Geometry coeffs\n"
+              << geo_.patch(patchIndex).coefs() << std::endl;
+    std::cout << "Geometry coeffs as JSON\n"
+              << utils::to_json(geo_.patch(patchIndex).coefs(), true, false)
+              << std::endl;
+      
+    return utils::to_json(geo_.patch(patchIndex).coefs(), true, false);      
+    
+    // if (component == "ScaledJacobian" || component == "UniformityMetric") {
 
-      // Get grid resolution
-      gismo::gsVector<unsigned> np(geo_.parDim());
-      np.setConstant(25);
+    //   // Get grid resolution
+    //   gismo::gsVector<unsigned> np(geo_.parDim());
+    //   np.setConstant(25);
 
-      if (json.contains("data"))
-        if (json["data"].contains("resolution")) {
-          auto res = json["data"]["resolution"].get<std::array<int64_t, d>>();
+    //   if (json.contains("data"))
+    //     if (json["data"].contains("resolution")) {
+    //       auto res = json["data"]["resolution"].get<std::array<int64_t, d>>();
 
-          for (std::size_t i = 0; i < d; ++i)
-            np(i) = res[i];
-        }
+    //       for (std::size_t i = 0; i < d; ++i)
+    //         np(i) = res[i];
+    //     }
 
-      // Create uniform grid in physical space
-      gismo::gsMatrix<T> ab = geo_.patch(patchIndex).support();
-      gismo::gsVector<T> a = ab.col(0);
-      gismo::gsVector<T> b = ab.col(1);
-      gismo::gsMatrix<T> pts = gismo::gsPointGrid(a, b, np);
-      gismo::gsMatrix<T> eval(1, pts.cols());
+    //   // Create uniform grid in physical space
+    //   gismo::gsMatrix<T> ab = geo_.patch(patchIndex).support();
+    //   gismo::gsVector<T> a = ab.col(0);
+    //   gismo::gsVector<T> b = ab.col(1);
+    //   gismo::gsMatrix<T> pts = gismo::gsPointGrid(a, b, np);
+    //   gismo::gsMatrix<T> eval(1, pts.cols());
 
-      gismo::gsExprEvaluator<T> ev;
-      gismo::gsMultiBasis<T> basis(geo_);
-      ev.setIntegrationElements(basis);
-      typename gismo::gsExprAssembler<T>::geometryMap G = ev.getMap(geo_);
+    //   gismo::gsExprEvaluator<T> ev;
+    //   gismo::gsMultiBasis<T> basis(geo_);
+    //   ev.setIntegrationElements(basis);
+    //   typename gismo::gsExprAssembler<T>::geometryMap G = ev.getMap(geo_);
 
-      if (component == "ScaledJacobian") {
+    //   if (component == "ScaledJacobian") {
 
-        int parDim = geo_.parDim();
+    //     int parDim = geo_.parDim();
 
-        if (parDim == 2 && geo_.geoDim() == 3) {
-          for (std::size_t i = 0; i < pts.cols(); i++) {
-            auto jac = ev.eval(gismo::expr::jac(G), pts.col(i));
-            eval(0, i) = jac.col(0).dot(jac.col(1));
-            for (std::size_t j = 0; j < parDim; j++)
-              eval(0, i) /= (jac.col(j).norm());
-          }
-        } else {
-          for (std::size_t i = 0; i < pts.cols(); i++) {
-            auto jac = ev.eval(gismo::expr::jac(G), pts.col(i));
-            eval(0, i) = jac.determinant();
-            for (std::size_t j = 0; j < parDim; j++)
-              eval(0, i) /= (jac.col(j).norm());
-          }
-        }
+    //     if (parDim == 2 && geo_.geoDim() == 3) {
+    //       for (std::size_t i = 0; i < pts.cols(); i++) {
+    //         auto jac = ev.eval(gismo::expr::jac(G), pts.col(i));
+    //         eval(0, i) = jac.col(0).dot(jac.col(1));
+    //         for (std::size_t j = 0; j < parDim; j++)
+    //           eval(0, i) /= (jac.col(j).norm());
+    //       }
+    //     } else {
+    //       for (std::size_t i = 0; i < pts.cols(); i++) {
+    //         auto jac = ev.eval(gismo::expr::jac(G), pts.col(i));
+    //         eval(0, i) = jac.determinant();
+    //         for (std::size_t j = 0; j < parDim; j++)
+    //           eval(0, i) /= (jac.col(j).norm());
+    //       }
+    //     }
 
-        return utils::to_json(eval, true, true);
-      }
+    //     return utils::to_json(eval, true, true);
+    //   }
 
-      else if (component == "UniformityMetric") {
+    //   else if (component == "UniformityMetric") {
 
-        T areaTotal = ev.integral(gismo::expr::meas(G));
-        gismo::gsConstantFunction<T> areaConstFunc(areaTotal, geo_.parDim());
-        auto area = ev.getVariable(areaConstFunc);
-        auto expr = gismo::expr::pow((gismo::expr::meas(G) - area.val()) / area.val(), 2);
+    //     T areaTotal = ev.integral(gismo::expr::meas(G));
+    //     gismo::gsConstantFunction<T> areaConstFunc(areaTotal, geo_.parDim());
+    //     auto area = ev.getVariable(areaConstFunc);
+    //     auto expr = gismo::expr::pow((gismo::expr::meas(G) - area.val()) / area.val(), 2);
 
-        for (std::size_t i = 0; i < pts.cols(); i++)
-          eval(0, i) = ev.eval(expr, pts.col(i))(0);
+    //     for (std::size_t i = 0; i < pts.cols(); i++)
+    //       eval(0, i) = ev.eval(expr, pts.col(i))(0);
 
-        return utils::to_json(eval, true, true);
-      } else
-        return R"({ INVALID REQUEST })"_json;
-    } else
-      return R"({ INVALID REQUEST })"_json;
+    //     return utils::to_json(eval, true, true);
+    //   } else
+    //     return R"({ INVALID REQUEST })"_json;
+    // } else
+    //   return R"({ INVALID REQUEST })"_json;
   }
 
   /// @brief Elevates the model's degrees, preserves smoothness
