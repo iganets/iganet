@@ -553,13 +553,60 @@ public:
       return R"({ INVALID REQUEST })"_json;
     }
 
-    std::cout << "Geometry coeffs\n"
-              << geo_.patch(patchIndex).coefs() << std::endl;
-    std::cout << "Geometry coeffs as JSON\n"
-              << utils::to_json(geo_.patch(patchIndex).coefs(), true, false)
-              << std::endl;
+    nlohmann::json result;
+
+    // degrees
+    result["degrees"] = nlohmann::json::array();
       
-    return utils::to_json(geo_.patch(patchIndex).coefs(), true, false);      
+    for (std::size_t i = 0; i < geo_.patch(patchIndex).parDim(); ++i)
+      result["degrees"].push_back(geo_.patch(patchIndex).degree(i));
+
+    // ncoeffs
+    result["ncoeffs"] = nlohmann::json::array();
+      
+    if (auto bspline =
+        dynamic_cast<const gismo::gsBSpline<T> *>(&geo_.patch(patchIndex)))
+      for (std::size_t i = 0; i < bspline->parDim(); ++i)
+        result["ncoeffs"].push_back(bspline->basis().size(i));
+    else if (auto bspline = dynamic_cast<const gismo::gsTensorBSpline<d, T> *>(
+                                                                               &geo_.patch(patchIndex)))
+      for (std::size_t i = 0; i < bspline->parDim(); ++i)
+        result["ncoeffs"].push_back(bspline->basis().size(i));
+    else
+      return R"({ INVALID REQUEST })"_json;
+      
+    // nknots
+    result["nknots"] = nlohmann::json::array();
+
+    if (auto bspline =
+        dynamic_cast<const gismo::gsBSpline<T> *>(&geo_.patch(patchIndex)))
+      for (std::size_t i = 0; i < bspline->parDim(); ++i)
+        result["nknots"].push_back(bspline->knots(i).size());
+    else if (auto bspline = dynamic_cast<const gismo::gsTensorBSpline<d, T> *>(
+                                                                               &geo_.patch(patchIndex)))
+      for (std::size_t i = 0; i < bspline->parDim(); ++i)
+        result["nknots"].push_back(bspline->knots(i).size());
+    else
+      return R"({ INVALID REQUEST })"_json;
+
+    // knots
+    result["knots"] = nlohmann::json::array();
+
+    if (auto bspline =
+        dynamic_cast<const gismo::gsBSpline<T> *>(&geo_.patch(patchIndex)))
+      for (std::size_t i = 0; i < bspline->parDim(); ++i)
+        result["knots"].push_back(bspline->knots(i));
+    else if (auto bspline = dynamic_cast<const gismo::gsTensorBSpline<d, T> *>(
+                                                                               &geo_.patch(patchIndex)))
+      for (std::size_t i = 0; i < bspline->parDim(); ++i)
+        result["knots"].push_back(bspline->knots(i));
+    else
+      return R"({ INVALID REQUEST })"_json;
+      
+    // coeffs
+    result["coeffs"] = utils::to_json(geo_.patch(patchIndex).coefs(), true, false);
+      
+    return result;
     
     // if (component == "ScaledJacobian" || component == "UniformityMetric") {
 

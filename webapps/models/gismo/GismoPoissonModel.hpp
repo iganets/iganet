@@ -405,14 +405,61 @@ public:
     }
     
     if (component == "Solution" || component == "Rhs") {
-
-      std::cout << "Solution coeffs\n"
-                << Base::solution_.patch(patchIndex).coefs() << std::endl;
-      std::cout << "Solution coeffs as JSON\n"
-                << utils::to_json(Base::solution_.patch(patchIndex).coefs(), true, false)
-                << std::endl;
       
-      return utils::to_json(Base::solution_.patch(patchIndex).coefs(), true, false);      
+      nlohmann::json result;
+
+      // degrees
+      result["degrees"] = nlohmann::json::array();
+      
+      for (std::size_t i = 0; i < Base::solution_.patch(patchIndex).parDim(); ++i)
+        result["degrees"].push_back(Base::solution_.patch(patchIndex).degree(i));
+
+      // ncoeffs
+      result["ncoeffs"] = nlohmann::json::array();
+      
+      if (auto bspline =
+          dynamic_cast<const gismo::gsBSpline<T> *>(&Base::solution_.patch(patchIndex)))
+        for (std::size_t i = 0; i < bspline->parDim(); ++i)
+          result["ncoeffs"].push_back(bspline->basis().size(i));
+      else if (auto bspline = dynamic_cast<const gismo::gsTensorBSpline<d, T> *>(
+                                                                                 &Base::solution_.patch(patchIndex)))
+        for (std::size_t i = 0; i < bspline->parDim(); ++i)
+          result["ncoeffs"].push_back(bspline->basis().size(i));
+      else
+        return R"({ INVALID REQUEST })"_json;
+      
+      // nknots
+      result["nknots"] = nlohmann::json::array();
+
+      if (auto bspline =
+          dynamic_cast<const gismo::gsBSpline<T> *>(&Base::solution_.patch(patchIndex)))
+        for (std::size_t i = 0; i < bspline->parDim(); ++i)
+          result["nknots"].push_back(bspline->knots(i).size());
+      else if (auto bspline = dynamic_cast<const gismo::gsTensorBSpline<d, T> *>(
+                                                                                 &Base::solution_.patch(patchIndex)))
+        for (std::size_t i = 0; i < bspline->parDim(); ++i)
+          result["nknots"].push_back(bspline->knots(i).size());
+      else
+        return R"({ INVALID REQUEST })"_json;
+
+      // knots
+      result["knots"] = nlohmann::json::array();
+
+      if (auto bspline =
+          dynamic_cast<const gismo::gsBSpline<T> *>(&Base::solution_.patch(patchIndex)))
+        for (std::size_t i = 0; i < bspline->parDim(); ++i)
+          result["knots"].push_back(bspline->knots(i));
+      else if (auto bspline = dynamic_cast<const gismo::gsTensorBSpline<d, T> *>(
+                                                                                 &Base::solution_.patch(patchIndex)))
+        for (std::size_t i = 0; i < bspline->parDim(); ++i)
+          result["knots"].push_back(bspline->knots(i));
+      else
+        return R"({ INVALID REQUEST })"_json;
+      
+      // coeffs
+      result["coeffs"] = utils::to_json(Base::solution_.patch(patchIndex).coefs(), true, false);
+      
+      return result;
       
       // // Get grid resolution
       // gismo::gsVector<unsigned> npts(Base::geo_.parDim());
