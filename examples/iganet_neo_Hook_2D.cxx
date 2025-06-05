@@ -5,6 +5,9 @@
 using namespace iganet::literals;
 using namespace gismo;
 
+// Defining displacement function
+using DispFunc = std::function<std::array<double,1>(const std::array<double,1>&)>;
+
 /// @brief Specialization of the IgANet class for non linear neo-Hookean material
 template <typename Optimizer, typename GeometryMap, typename Variable>
 class neo_Hook : public iganet::IgANet<Optimizer, GeometryMap, Variable>,
@@ -53,14 +56,9 @@ private:
   // simulation parameter
   double MAX_EPOCH_;
   double MIN_LOSS_;
-  std::vector<std::tuple<int, double, double>> DIRI_SIDES_;
+  std::vector<std::tuple<int,DispFunc,DispFunc>> DIRI_SIDES_;
 
-  // another set of scaling parameters
-  double DIRICHLET_SCALING = 1.0;
-  at::Tensor previous_loss = torch::tensor(-100.0);
-  at::Tensor scaling_threshold = torch::tensor(MIN_LOSS_ * 10.0);
-
-  // json path
+  // json output path
   static constexpr const char* JSON_PATH = "/home/chg/Programming/PythonNet_IGA/Network_V1/NeuralNet/results.json";
 
 public:
@@ -68,14 +66,14 @@ public:
   template <typename... Args>
   neo_Hook(double lambda, double mu, double MAX_EPOCH, 
                     double MIN_LOSS,
-                    std::vector<std::tuple<int, double, double>> DIRI_SIDES, 
+                    std::vector<std::tuple<int,DispFunc,DispFunc>> DIRI_SIDES, 
                     std::vector<int64_t> &&layers,
                     std::vector<std::vector<std::any>> &&activations, Args &&...args)
       : Base(std::forward<std::vector<int64_t>>(layers),
              std::forward<std::vector<std::vector<std::any>>>(activations),
              std::forward<Args>(args)...),
         lambda_(lambda), mu_(mu), MAX_EPOCH_(MAX_EPOCH), 
-        MIN_LOSS_(MIN_LOSS), DIRI_SIDES_(DIRI_SIDES), 
+        MIN_LOSS_(MIN_LOSS), DIRI_SIDES_(std::move(DIRI_SIDES)), 
         ref_(iganet::utils::to_array(8_i64, 8_i64)) {
             this->initialize_dirichlet_boundaries();
         }
@@ -96,65 +94,33 @@ public:
     // run through all DIRI_SIDES and registr respective lambdas
     for (const auto& side : this->DIRI_SIDES_) {
         int sideNr = std::get<0>(side);
-        double xDispl = std::get<1>(side);
-        double yDispl = std::get<2>(side);
+        DispFunc xDispFun = std::get<1>(side);
+        DispFunc yDispFun = std::get<2>(side);
 
         switch (sideNr) {
             case 1:
                 this->ref_.boundary().template side<1>().template transform<1>(
-                    [this, xDispl](auto const& xi) {
-                        return std::array<double, 1>{DIRICHLET_SCALING * xDispl};
-                    },
-                    std::array<iganet::short_t, 1>{0} 
-                );
+                    xDispFun, std::array<iganet::short_t,1>{0});
                 this->ref_.boundary().template side<1>().template transform<1>(
-                    [this, yDispl](auto const& xi) {
-                        return std::array<double, 1>{DIRICHLET_SCALING * yDispl};
-                    },
-                    std::array<iganet::short_t, 1>{1}
-                );
+                    yDispFun, std::array<iganet::short_t,1>{0});
                 break;
             case 2:
                 this->ref_.boundary().template side<2>().template transform<1>(
-                    [this, xDispl](auto const& xi) {
-                        return std::array<double, 1>{DIRICHLET_SCALING * xDispl};
-                    },
-                    std::array<iganet::short_t, 1>{0} 
-                );
-                    this->ref_.boundary().template side<2>().template transform<1>(
-                    [this, yDispl](auto const& xi) {
-                        return std::array<double, 1>{DIRICHLET_SCALING * yDispl};
-                    },
-                    std::array<iganet::short_t, 1>{1}
-                );
+                    xDispFun, std::array<iganet::short_t,1>{0});
+                this->ref_.boundary().template side<2>().template transform<1>(
+                    yDispFun, std::array<iganet::short_t,1>{0});
                 break;
             case 3:
                 this->ref_.boundary().template side<3>().template transform<1>(
-                    [this, xDispl](auto const& xi) {
-                        return std::array<double, 1>{DIRICHLET_SCALING * xDispl};
-                    },
-                    std::array<iganet::short_t, 1>{0} 
-                );
-                    this->ref_.boundary().template side<3>().template transform<1>(
-                    [this, yDispl](auto const& xi) {
-                        return std::array<double, 1>{DIRICHLET_SCALING * yDispl};
-                    },
-                    std::array<iganet::short_t, 1>{1}
-                );
+                    xDispFun, std::array<iganet::short_t,1>{0});
+                this->ref_.boundary().template side<3>().template transform<1>(
+                    yDispFun, std::array<iganet::short_t,1>{0});
                 break;
             case 4:
                 this->ref_.boundary().template side<4>().template transform<1>(
-                    [this, xDispl](auto const& xi) {
-                        return std::array<double, 1>{DIRICHLET_SCALING * xDispl};
-                    },
-                    std::array<iganet::short_t, 1>{0} 
-                );
-                    this->ref_.boundary().template side<4>().template transform<1>(
-                    [this, yDispl](auto const& xi) {
-                        return std::array<double, 1>{DIRICHLET_SCALING * yDispl};
-                    },
-                    std::array<iganet::short_t, 1>{1}
-                );
+                    xDispFun, std::array<iganet::short_t,1>{0});
+                this->ref_.boundary().template side<4>().template transform<1>(
+                    yDispFun, std::array<iganet::short_t,1>{0});
                 break;
             default:
                 std::cerr << "Error: Invalid side number " << sideNr << std::endl;
@@ -491,13 +457,6 @@ public:
     // print the loss values
     std::cout << std::setw(11) << totalLoss.item<double>() << " = " << singleLossOutput.str() << std::endl;
 
-    if ((torch::abs(this->previous_loss - totalLoss) < this->scaling_threshold).item<bool>() && (this->DIRICHLET_SCALING < 1.0)) {
-        this->DIRICHLET_SCALING += 0.02;
-        this->initialize_dirichlet_boundaries();
-        //this->reset_solver();
-        std::cout << "\n\nIncreased Dirichlet scaling factor\n\n" << std::endl;
-    }
-    this->previous_loss = totalLoss;
     return totalLoss;
   }
 };
@@ -513,7 +472,7 @@ int main() {
   double POISSON_RATIO = 0.3;
 
   // simulation parameters
-  int MAX_EPOCH = 10000;
+  int MAX_EPOCH = 300;
   double MIN_LOSS = 5e-4;
   bool SUPERVISED_LEARNING = false;
   bool RUN_REF_SIM = false;
@@ -522,12 +481,18 @@ int main() {
   int64_t NR_CTRL_PTS = 6;  // in each direction 
   constexpr int DEGREE = 5;
 
-  // boundary conditions
 
-  std::vector<std::tuple<int, double, double>> DIRI_SIDES = {
-      {1, 0.0,  0.0},       // {side, x-displ, y-displ}
-      {2, 2.0,  0.0},
-    };
+
+  // Dirichlet boundary conditions
+  DispFunc zeroDisp = [](auto const& xi) {return std::array<double,1>{ 0.0 };};
+  DispFunc sinDisp = [](auto const& xi) {
+    double s = xi[0];
+    return std::array<double,1>{2.0 + 0.5*std::sin(M_PI*s)};};
+
+
+  std::vector<std::tuple<int,DispFunc,DispFunc>> DIRI_SIDES = {
+      {1, zeroDisp, zeroDisp},
+      {2, sinDisp, zeroDisp}};
     
   // --------------------------- //
 
@@ -546,9 +511,9 @@ int main() {
 
     neo_Hook_t
       net(// simulation parameters
-          lambda, mu, MAX_EPOCH, MIN_LOSS, DIRI_SIDES,
+          lambda, mu, MAX_EPOCH, MIN_LOSS, std::move(DIRI_SIDES),
           // Number of neurons per layer
-          {72, 72},
+          {50, 50},
           // Activation functions
           {{iganet::activation::tanh},
            {iganet::activation::tanh},
@@ -588,7 +553,7 @@ int main() {
   net.write_result();
 
   iganet::finalize();
-  return 0;
+  return 0; 
 }
 
 // penalties for low J
