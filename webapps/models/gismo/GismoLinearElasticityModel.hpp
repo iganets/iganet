@@ -261,40 +261,95 @@ public:
       // Invalid patchIndex
       return R"({ INVALID REQUEST })"_json;
     }
-    
-    // Create uniform grid
-    gismo::gsMatrix<T> ab = Base::geo_.patch(patchIndex).support();
-    gismo::gsVector<T> a = ab.col(0);
-    gismo::gsVector<T> b = ab.col(1);
 
-    gismo::gsVector<unsigned> np(Base::geo_.parDim());
-    np.setConstant(25);
+    if (component == "Displacement" ||
+        component == "Displacement_x" ||
+        component == "Displacement_y" ||
+        component == "Displacement_z") {
+      
+      nlohmann::json result;
 
-    if (json.contains("data"))
-      if (json["data"].contains("resolution")) {
-        auto res = json["data"]["resolution"].get<std::array<int64_t, d>>();
+      // degrees
+      result["degrees"] = nlohmann::json::array();
+      
+      for (std::size_t i = 0; i < Base::solution_.patch(patchIndex).parDim(); ++i)
+        result["degrees"].push_back(Base::solution_.patch(patchIndex).degree(i));
 
-        for (std::size_t i = 0; i < d; ++i)
-          np(i) = res[i];
+      // ncoeffs
+      result["ncoeffs"] = nlohmann::json::array();
+      
+      if (auto bspline =
+          dynamic_cast<const gismo::gsBSpline<T> *>(&Base::solution_.patch(patchIndex)))
+        for (std::size_t i = 0; i < bspline->parDim(); ++i)
+          result["ncoeffs"].push_back(bspline->basis().size(i));
+      else if (auto bspline = dynamic_cast<const gismo::gsTensorBSpline<d, T> *>(
+                                                                                 &Base::solution_.patch(patchIndex)))
+        for (std::size_t i = 0; i < bspline->parDim(); ++i)
+          result["ncoeffs"].push_back(bspline->basis().size(i));
+      else
+        return R"({ INVALID REQUEST })"_json;
+      
+      // nknots
+      result["nknots"] = nlohmann::json::array();
+
+      if (auto bspline =
+          dynamic_cast<const gismo::gsBSpline<T> *>(&Base::solution_.patch(patchIndex)))
+        for (std::size_t i = 0; i < bspline->parDim(); ++i)
+          result["nknots"].push_back(bspline->knots(i).size());
+      else if (auto bspline = dynamic_cast<const gismo::gsTensorBSpline<d, T> *>(
+                                                                                 &Base::solution_.patch(patchIndex)))
+        for (std::size_t i = 0; i < bspline->parDim(); ++i)
+          result["nknots"].push_back(bspline->knots(i).size());
+      else
+        return R"({ INVALID REQUEST })"_json;
+
+      // knots
+      result["knots"] = nlohmann::json::array();
+
+      if (auto bspline =
+          dynamic_cast<const gismo::gsBSpline<T> *>(&Base::solution_.patch(patchIndex)))
+        for (std::size_t i = 0; i < bspline->parDim(); ++i)
+          result["knots"].push_back(bspline->knots(i));
+      else if (auto bspline = dynamic_cast<const gismo::gsTensorBSpline<d, T> *>(
+                                                                                 &Base::solution_.patch(patchIndex)))
+        for (std::size_t i = 0; i < bspline->parDim(); ++i)
+          result["knots"].push_back(bspline->knots(i));
+      else
+        return R"({ INVALID REQUEST })"_json;
+      
+      // coeffs
+      gismo::gsMatrix<real_t> coeffs;
+      if (component == "Displacement") {
+        coeffs = Base::solution_.patch(patchIndex).coefs().rowwise().norm();        
+      } else if (component == "Displacement_x") {
+        coeffs = Base::solution_.patch(patchIndex).coefs().col(0);
+      } else if (component == "Displacement_y") {
+        coeffs = Base::solution_.patch(patchIndex).coefs().col(1);
+      } else if (component == "Displacement_z") {
+        coeffs = Base::solution_.patch(patchIndex).coefs().col(2);
       }
-
-    // Uniform parameters for evaluation
-    gismo::gsMatrix<T> pts = gismo::gsPointGrid(a, b, np);
-    gismo::gsMatrix<T> eval = Base::solution_.patch(patchIndex).eval(pts);
-
-    if (component == "Displacement") {
-      gismo::gsMatrix<T> result = eval.colwise().norm();
-      return utils::to_json(result, true, false);
-    } else if (component == "Displacement_x") {
-      gismo::gsMatrix<T> result = eval.row(0);
-      return utils::to_json(result, true, false);
-    } else if (component == "Displacement_y") {
-      gismo::gsMatrix<T> result = eval.row(1);
-      return utils::to_json(result, true, false);
-    } else if (component == "Displacement_z") {
-      gismo::gsMatrix<T> result = eval.row(2);
-      return utils::to_json(result, true, false);
+      result["coeffs"] = utils::to_json(coeffs, true, false);
+      
+      return result;      
     }
+    
+    // // Uniform parameters for evaluation
+    // gismo::gsMatrix<T> pts = gismo::gsPointGrid(a, b, np);
+    // gismo::gsMatrix<T> eval = Base::solution_.patch(patchIndex).eval(pts);
+
+    // if (component == "Displacement") {
+    //   gismo::gsMatrix<T> result = eval.colwise().norm();
+    //   return utils::to_json(result, true, false);
+    // } else if (component == "Displacement_x") {
+    //   gismo::gsMatrix<T> result = eval.row(0);
+    //   return utils::to_json(result, true, false);
+    // } else if (component == "Displacement_y") {
+    //   gismo::gsMatrix<T> result = eval.row(1);
+    //   return utils::to_json(result, true, false);
+    // } else if (component == "Displacement_z") {
+    //   gismo::gsMatrix<T> result = eval.row(2);
+    //   return utils::to_json(result, true, false);
+    // }
 
     else
       return Base::eval(patch, component, json);
