@@ -457,50 +457,24 @@ public:
         return R"({ INVALID REQUEST })"_json;
       
       // coeffs
-      result["coeffs"] = utils::to_json(Base::solution_.patch(patchIndex).coefs(), true, false);
+      if (component == "Solution") {
+        result["coeffs"] = utils::to_json(Base::solution_.patch(patchIndex).coefs(), true, false);
+      } else {        
+        if (rhsFuncParametric_) {
+          auto & basis = Base::solution_.patch(patchIndex).basis();
+          auto pts = rhsFunc_.eval(basis.anchors());
+          auto rhs = basis.interpolateAtAnchors(pts);
+          result["coeffs"] = utils::to_json(rhs->coefs(), true, false);
+        } else {
+          // This needs to be fixed
+          auto & basis = Base::solution_.patch(patchIndex).basis();
+          auto pts = rhsFunc_.eval(basis.anchors());
+          auto rhs = basis.interpolateAtAnchors(pts);
+          result["coeffs"] = utils::to_json(rhs->coefs(), true, false);
+        }
+      }
       
-      return result;
-      
-      // // Get grid resolution
-      // gismo::gsVector<unsigned> npts(Base::geo_.parDim());
-      // npts.setConstant(25);
-
-      // if (json.contains("data"))
-      //   if (json["data"].contains("resolution")) {
-      //     auto res = json["data"]["resolution"].get<std::array<int64_t, d>>();
-
-      //     for (std::size_t i = 0; i < d; ++i)
-      //       npts(i) = res[i];
-      //   }
-
-      // if (component == "Solution" ||
-      //     component == "Rhs" && !rhsFuncParametric_) {
-
-      //   // Create uniform grid in physical domain
-      //   gismo::gsMatrix<T> ab = Base::geo_.patch(patchIndex).support();
-      //   gismo::gsVector<T> a = ab.col(0);
-      //   gismo::gsVector<T> b = ab.col(1);
-      //   gismo::gsMatrix<T> pts = gismo::gsPointGrid(a, b, npts);
-
-      //   if (component == "Solution") {
-      //     gismo::gsMatrix<T> eval = Base::solution_.patch(patchIndex).eval(pts);
-      //     return utils::to_json(eval, true, false);
-      //   } else {
-      //     gismo::gsMatrix<T> eval = rhsFunc_.eval(Base::geo_.patch(patchIndex).eval(pts));
-      //     return utils::to_json(eval, true, false);
-      //   }
-
-      // } else {
-
-      //   // Create uniform grid in parametric domain
-      //   gismo::gsMatrix<T> ab = Base::geo_.patch(patchIndex).parameterRange();
-      //   gismo::gsVector<T> a = ab.col(0);
-      //   gismo::gsVector<T> b = ab.col(1);
-      //   gismo::gsMatrix<T> pts = gismo::gsPointGrid(a, b, npts);
-
-      //   gismo::gsMatrix<T> eval = rhsFunc_.eval(pts);
-      //   return utils::to_json(eval, true, false);
-      // }
+      return result;      
     }
 
     else
