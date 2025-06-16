@@ -287,7 +287,7 @@ public:
     std::ostringstream singleLossOutput;
 
     if (epoch == 20) {
-        reset_optimizer();
+        this->reset_optimizer();
     }
         
     if (epoch >= 20) {

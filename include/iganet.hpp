@@ -23,7 +23,6 @@
 #include <utils/container.hpp>
 #include <utils/fqn.hpp>
 #include <utils/zip.hpp>
-#include <optional>
 
 namespace iganet {
 
@@ -944,7 +943,7 @@ protected:
   IgANetGenerator<typename Base::value_type> net_;
 
   /// @brief Optimizer
-  std::optional<Optimizer> opt_;
+  std::unique_ptr<Optimizer> opt_;
 
   /// @brief Options
   IgANetOptions options_;
@@ -955,7 +954,7 @@ public:
                   iganet::Options<typename Base::value_type> options =
                       iganet::Options<typename Base::value_type>{})
       : Base(), options_(defaults) {
-        opt_.emplace(net_->parameters());
+        opt_ = std::make_unique<Optimizer>(net_->parameters());
       }
 
   /// @brief Constructor: number of layers, activation functions, and
@@ -1014,30 +1013,28 @@ public:
                            std::vector<int64_t>{Base::u_.as_tensor_size()}),
              activations, options),
 
-        // Construct the optimizer
-        opt_(net_->parameters()),
-
         // Set options
-        options_(defaults) {}
+        options_(defaults) {
+          opt_ = std::make_unique<Optimizer>(net_->parameters());
+        }
+
+  void reset_optimizer() {
+    opt_ = std::make_unique<Optimizer>(net_->parameters());
+  }
 
   /// @brief Returns a constant reference to the IgANet generator
   inline const IgANetGenerator<typename Base::value_type> &net() const {
     return net_;
   }
 
-  /// @brief Resets the optimizer
-  inline void reset_optimizer(){
-    opt_.emplace(net_->parameters());
-  }
-
   /// @brief Returns a non-constant reference to the IgANet generator
   inline IgANetGenerator<typename Base::value_type> &net() { return net_; }
 
   /// @brief Returns a constant reference to the optimizer
-  inline const Optimizer &opt() const { return *opt_; }
+  inline const Optimizer &opt() const { return opt_; }
 
   /// @brief Returns a non-constant reference to the optimizer
-  inline Optimizer &opt() { return *opt_; }
+  inline Optimizer &opt() { return opt_; }
 
   /// @brief Returns a constant reference to the options structure
   inline const auto &options() const { return options_; }
@@ -1121,7 +1118,7 @@ public:
 #endif
 
       // Update the parameters based on the calculated gradients
-      opt().step(closure);
+      opt_->step(closure);
 
       Log(log::verbose) << "Epoch " << std::to_string(epoch) << ": "
                         << loss.template item<typename Base::value_type>()
@@ -1208,7 +1205,7 @@ public:
         };
 
         // Update the parameters based on the calculated gradients
-        opt().step(closure);
+        opt_->step(closure);
 
         Loss += loss.template item<typename Base::value_type>();
       }
@@ -1306,7 +1303,7 @@ public:
     archive.write(key + ".net.data", archive_net);
 
     torch::serialize::OutputArchive archive_opt;
-    opt().save(archive_opt);
+    opt_->save(archive_opt);
     archive.write(key + ".opt", archive_opt);
 
     return archive;
@@ -1328,10 +1325,10 @@ public:
     archive.read(key + ".net.data", archive_net);
     net_->load(archive_net);
 
-    opt().add_parameters(net_->parameters());
+    opt_->add_parameters(net_->parameters());
     torch::serialize::InputArchive archive_opt;
     archive.read(key + ".opt", archive_opt);
-    opt().load(archive_opt);
+    opt_->load(archive_opt);
 
     return archive;
   }
