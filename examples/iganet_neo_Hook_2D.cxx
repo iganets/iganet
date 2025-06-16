@@ -102,25 +102,25 @@ public:
                 this->ref_.boundary().template side<1>().template transform<1>(
                     xDispFun, std::array<iganet::short_t,1>{0});
                 this->ref_.boundary().template side<1>().template transform<1>(
-                    yDispFun, std::array<iganet::short_t,1>{0});
+                    yDispFun, std::array<iganet::short_t,1>{1});
                 break;
             case 2:
                 this->ref_.boundary().template side<2>().template transform<1>(
                     xDispFun, std::array<iganet::short_t,1>{0});
                 this->ref_.boundary().template side<2>().template transform<1>(
-                    yDispFun, std::array<iganet::short_t,1>{0});
+                    yDispFun, std::array<iganet::short_t,1>{1});
                 break;
             case 3:
                 this->ref_.boundary().template side<3>().template transform<1>(
                     xDispFun, std::array<iganet::short_t,1>{0});
                 this->ref_.boundary().template side<3>().template transform<1>(
-                    yDispFun, std::array<iganet::short_t,1>{0});
+                    yDispFun, std::array<iganet::short_t,1>{1});
                 break;
             case 4:
                 this->ref_.boundary().template side<4>().template transform<1>(
                     xDispFun, std::array<iganet::short_t,1>{0});
                 this->ref_.boundary().template side<4>().template transform<1>(
-                    yDispFun, std::array<iganet::short_t,1>{0});
+                    yDispFun, std::array<iganet::short_t,1>{1});
                 break;
             default:
                 std::cerr << "Error: Invalid side number " << sideNr << std::endl;
@@ -283,131 +283,162 @@ public:
     torch::Tensor elastLoss;
     std::optional<torch::Tensor> bcLoss;
   
-
-    // Elasticity Loss
-
-    // calculate the jacobian of the displacements (u) at the collocation points
-    auto jacobian = Base::u_.ijac(Base::G_, interiorCollPts_.first, 
-        var_knot_indices_interior_, var_coeff_indices_interior_,
-        G_knot_indices_interior_, G_coeff_indices_interior_);
-    
-    auto& u1_x = jacobian(0);
-    auto& u1_y = jacobian(1);
-    auto& u2_x = jacobian(2);
-    auto& u2_y = jacobian(3);
-
-    // calculation of the second derivatives of the displacements (u)
-    auto hessianColl = Base::u_.ihess(Base::G_, interiorCollPts_.first, 
-        var_knot_indices_interior_, var_coeff_indices_interior_,
-        G_knot_indices_interior_, G_coeff_indices_interior_);
-
-    // partial derivatives of the displacements (u)
-    auto& u1_xx = hessianColl(0,0,0);
-    auto& u1_xy = hessianColl(0,1,0);
-    auto& u1_yx = hessianColl(1,0,0);
-    auto& u1_yy = hessianColl(1,1,0);
-
-    auto& u2_xx = hessianColl(0,0,1);
-    auto& u2_xy = hessianColl(0,1,1);
-    auto& u2_yx = hessianColl(1,0,1);
-    auto& u2_yy = hessianColl(1,1,1);
-
-    double beta = 2.0;
-    // Divergence of first Kirchhoff stress tensor
-    auto J = 1.0 + u1_x + u2_y + u1_x*u2_y - u1_y*u2_x;
-    auto J_sp = torch::nn::functional::softplus(J, torch::nn::functional::SoftplusFuncOptions()
-        .beta(beta)
-        .threshold(20.0));
-    auto J_x = u1_xx + u2_yx + u1_xx*u2_y +u1_x*u2_yx - u1_yx*u2_x - u1_y*u2_xx;
-    auto J_y = u1_xy + u2_yy + u1_xy*u2_y +u1_x*u2_yy - u1_yy*u2_x - u1_y*u2_xy;
-    auto J_sp_x = J_x * torch::sigmoid(beta * J);
-    auto J_sp_y = J_y * torch::sigmoid(beta * J);
-    auto A = (lambda_ * torch::log1p(J_sp - 1) - mu_) / J_sp;
-    auto A_x = (lambda_ + mu_ - lambda_*torch::log1p(J_sp - 1)) * J_sp_x / (J_sp*J_sp);
-    auto A_y = (lambda_ + mu_ - lambda_*torch::log1p(J_sp - 1)) * J_sp_y / (J_sp*J_sp);
-
-    // First derivatives of first Piola Kirchhoff stress tensor
-    auto P11_x = mu_*u1_xx + A_x + A_x*u2_y + A*u2_yx;
-    auto P12_y = mu_*u1_yy - A_y*u2_x - A*u2_xy;
-    auto P21_x = mu_*u2_xx - A_x*u1_y - A*u1_yx;
-    auto P22_y = mu_*u2_yy + A_y + A_y*u1_x + A*u1_xy;
-
-    // Divergence of first PK tensor
-    auto divPX = P11_x + P12_y;
-    auto divPY = P21_x + P22_y;
-    auto divP  = torch::stack({divPX, divPY}, 1);
-
-    // BODY FORCE
-
-    // evaluate the reference body force f at all interior collocation points
-    auto f = Base::f_.eval(interiorCollPts_.first);
-
-    auto bodyForce = torch::stack({*f[0], *f[1]}, 1).to(divP.dtype());
-
     // create command line output variable for all the different losses
     std::ostringstream singleLossOutput;
 
-    // calculation of the loss function for double-sided constraint solid
-    // div(sigma) + f = 0 --> div(sigma) = -f
-    elastLoss = torch::mse_loss(divP, bodyForce);
-    
-    // add the elasticity loss to the total loss
-    totalLoss = elastLoss;
+    if (epoch == 20) {
+        reset_optimizer();
+    }
+        
+    if (epoch >= 20) {
 
-    // add the elasticity loss to the cmd-output variable
-    singleLossOutput << "EL " << std::setw(11) << elastLoss.item<double>();
+        // Elasticity Loss
+
+        // calculate the jacobian of the displacements (u) at the collocation points
+        auto jacobian = Base::u_.ijac(Base::G_, interiorCollPts_.first, 
+            var_knot_indices_interior_, var_coeff_indices_interior_,
+            G_knot_indices_interior_, G_coeff_indices_interior_);
+        
+        auto& u1_x = jacobian(0);
+        auto& u1_y = jacobian(1);
+        auto& u2_x = jacobian(2);
+        auto& u2_y = jacobian(3);
+
+        // calculation of the second derivatives of the displacements (u)
+        auto hessianColl = Base::u_.ihess(Base::G_, interiorCollPts_.first, 
+            var_knot_indices_interior_, var_coeff_indices_interior_,
+            G_knot_indices_interior_, G_coeff_indices_interior_);
+
+        // partial derivatives of the displacements (u)
+        auto& u1_xx = hessianColl(0,0,0);
+        auto& u1_xy = hessianColl(0,1,0);
+        auto& u1_yx = hessianColl(1,0,0);
+        auto& u1_yy = hessianColl(1,1,0);
+
+        auto& u2_xx = hessianColl(0,0,1);
+        auto& u2_xy = hessianColl(0,1,1);
+        auto& u2_yx = hessianColl(1,0,1);
+        auto& u2_yy = hessianColl(1,1,1);
+
+        double beta = 2.0;
+        // Divergence of first Kirchhoff stress tensor
+        auto J = 1.0 + u1_x + u2_y + u1_x*u2_y - u1_y*u2_x;
+        auto J_sp = torch::nn::functional::softplus(J, torch::nn::functional::SoftplusFuncOptions()
+            .beta(beta)
+            .threshold(20.0));
+        auto J_x = u1_xx + u2_yx + u1_xx*u2_y +u1_x*u2_yx - u1_yx*u2_x - u1_y*u2_xx;
+        auto J_y = u1_xy + u2_yy + u1_xy*u2_y +u1_x*u2_yy - u1_yy*u2_x - u1_y*u2_xy;
+        //auto J_sp_x = J_x * torch::sigmoid(beta * J);
+        //auto J_sp_y = J_y * torch::sigmoid(beta * J);
+        auto A = (lambda_ * torch::log1p(J_sp - 1) - mu_) / J_sp;
+        auto A_x = (lambda_ + mu_ - lambda_*torch::log1p(J_sp - 1)) * J_x / (J_sp*J_sp);
+        auto A_y = (lambda_ + mu_ - lambda_*torch::log1p(J_sp - 1)) * J_y / (J_sp*J_sp);
+
+        // First derivatives of first Piola Kirchhoff stress tensor
+        auto P11_x = mu_*u1_xx + A_x + A_x*u2_y + A*u2_yx;
+        auto P12_y = mu_*u1_yy - A_y*u2_x - A*u2_xy;
+        auto P21_x = mu_*u2_xx - A_x*u1_y - A*u1_yx;
+        auto P22_y = mu_*u2_yy + A_y + A_y*u1_x + A*u1_xy;
+
+        // Divergence of first PK tensor
+        auto divPX = P11_x + P12_y;
+        auto divPY = P21_x + P22_y;
+        auto divP  = torch::stack({divPX, divPY}, 1);
+
+        // BODY FORCE
+
+        // evaluate the reference body force f at all interior collocation points
+        auto f = Base::f_.eval(interiorCollPts_.first);
+
+        auto bodyForce = torch::stack({*f[0], *f[1]}, 1).to(divP.dtype());
+
+        // calculation of the loss function for double-sided constraint solid
+        // div(sigma) + f = 0 --> div(sigma) = -f
+        elastLoss = torch::mse_loss(divP, bodyForce);
+        
+        // add the elasticity loss to the total loss
+        totalLoss = elastLoss;
+
+        // add the elasticity loss to the cmd-output variable
+        singleLossOutput << "EL " << std::setw(11) << elastLoss.item<double>();
 
 
-    // ------------------------------ Neumann Loss ------------------------------------
-    // WARNING! Neumann Loss is hardcoded right now for top and bottom boundary
+        // ------------------------------ Neumann Loss ------------------------------------
+        // WARNING! Neumann Loss is hardcoded right now for top and bottom boundary
 
-    // calculate the jacobian of the displacements (u) at the collocation points
-    auto jacobian_tf = Base::u_.ijac(Base::G_, tractionCollPts_, 
-        var_knot_indices_tf_, var_coeff_indices_tf_,
-        G_knot_indices_tf_, G_coeff_indices_tf_);
-    
-    auto& u1_x_tf = jacobian_tf(0);
-    auto& u1_y_tf = jacobian_tf(1);
-    auto& u2_x_tf = jacobian_tf(2);
-    auto& u2_y_tf = jacobian_tf(3);
+        // calculate the jacobian of the displacements (u) at the collocation points
+        auto jacobian_tf = Base::u_.ijac(Base::G_, tractionCollPts_, 
+            var_knot_indices_tf_, var_coeff_indices_tf_,
+            G_knot_indices_tf_, G_coeff_indices_tf_);
+        
+        auto& u1_x_tf = jacobian_tf(0);
+        auto& u1_y_tf = jacobian_tf(1);
+        auto& u2_x_tf = jacobian_tf(2);
+        auto& u2_y_tf = jacobian_tf(3);
 
-    // calculation of the second derivatives of the displacements (u)
-    auto hessianColl_tf = Base::u_.ihess(Base::G_, tractionCollPts_, 
-        var_knot_indices_tf_, var_coeff_indices_tf_,
-        G_knot_indices_tf_, G_coeff_indices_tf_);
+        // calculation of the second derivatives of the displacements (u)
+        auto hessianColl_tf = Base::u_.ihess(Base::G_, tractionCollPts_, 
+            var_knot_indices_tf_, var_coeff_indices_tf_,
+            G_knot_indices_tf_, G_coeff_indices_tf_);
 
-    // partial derivatives of the displacements (u)
-    auto& u1_xx_tf = hessianColl_tf(0,0,0);
-    auto& u1_xy_tf = hessianColl_tf(0,1,0);
-    auto& u1_yx_tf = hessianColl_tf(1,0,0);
-    auto& u1_yy_tf = hessianColl_tf(1,1,0);
+        // partial derivatives of the displacements (u)
+        auto& u1_xx_tf = hessianColl_tf(0,0,0);
+        auto& u1_xy_tf = hessianColl_tf(0,1,0);
+        auto& u1_yx_tf = hessianColl_tf(1,0,0);
+        auto& u1_yy_tf = hessianColl_tf(1,1,0);
 
-    auto& u2_xx_tf = hessianColl_tf(0,0,1);
-    auto& u2_xy_tf = hessianColl_tf(0,1,1);
-    auto& u2_yx_tf = hessianColl_tf(1,0,1);
-    auto& u2_yy_tf = hessianColl_tf(1,1,1);
+        auto& u2_xx_tf = hessianColl_tf(0,0,1);
+        auto& u2_xy_tf = hessianColl_tf(0,1,1);
+        auto& u2_yx_tf = hessianColl_tf(1,0,1);
+        auto& u2_yy_tf = hessianColl_tf(1,1,1);
 
-    // Divergence of first Kirchhoff stress tensor
-    auto J_tf = 1.0 + u1_x_tf + u2_y_tf + u1_x_tf*u2_y_tf - u1_y_tf*u2_x_tf;
-    auto J_sp_tf = torch::nn::functional::softplus(J_tf, torch::nn::functional::SoftplusFuncOptions()
-        .beta(beta)
-        .threshold(20.0));
-    auto J_x_tf = u1_xx_tf + u2_yx_tf + u1_xx_tf*u2_y_tf +u1_x_tf*u2_yx_tf - u1_yx_tf*u2_x_tf - u1_y_tf*u2_xx_tf;
-    auto J_y_tf = u1_xy_tf + u2_yy_tf + u1_xy_tf*u2_y_tf +u1_x_tf*u2_yy_tf - u1_yy_tf*u2_x_tf - u1_y_tf*u2_xy_tf;
-    auto J_sp_x_tf = J_x_tf * torch::sigmoid(beta * J_tf);
-    auto J_sp_y_tf = J_y_tf * torch::sigmoid(beta * J_tf);
-    auto A_tf = (lambda_ * torch::log1p(J_sp_tf - 1) - mu_) / J_sp_tf;
-    auto A_x_tf = (lambda_ + mu_ - lambda_*torch::log1p(J_sp_tf - 1)) * J_sp_x_tf / (J_sp_tf*J_sp_tf);
-    auto A_y_tf = (lambda_ + mu_ - lambda_*torch::log1p(J_sp_tf - 1)) * J_sp_y_tf / (J_sp_tf*J_sp_tf);
+        // Divergence of first Kirchhoff stress tensor
+        auto J_tf = 1.0 + u1_x_tf + u2_y_tf + u1_x_tf*u2_y_tf - u1_y_tf*u2_x_tf;
+        auto J_sp_tf = torch::nn::functional::softplus(J_tf, torch::nn::functional::SoftplusFuncOptions()
+            .beta(beta)
+            .threshold(20.0));
+        auto J_x_tf = u1_xx_tf + u2_yx_tf + u1_xx_tf*u2_y_tf +u1_x_tf*u2_yx_tf - u1_yx_tf*u2_x_tf - u1_y_tf*u2_xx_tf;
+        auto J_y_tf = u1_xy_tf + u2_yy_tf + u1_xy_tf*u2_y_tf +u1_x_tf*u2_yy_tf - u1_yy_tf*u2_x_tf - u1_y_tf*u2_xy_tf;
+        //auto J_sp_x_tf = J_x_tf * torch::sigmoid(beta * J_tf);
+        //auto J_sp_y_tf = J_y_tf * torch::sigmoid(beta * J_tf);
+        auto A_tf = (lambda_ * torch::log1p(J_sp_tf - 1) - mu_) / J_sp_tf;
+        auto A_x_tf = (lambda_ + mu_ - lambda_*torch::log1p(J_sp_tf - 1)) * J_x_tf / (J_sp_tf*J_sp_tf);
+        auto A_y_tf = (lambda_ + mu_ - lambda_*torch::log1p(J_sp_tf - 1)) * J_y_tf / (J_sp_tf*J_sp_tf);
 
-    // Components of first Piola Kirchhoff stress tensor
-    auto P11 = mu_ * (1 + u1_x_tf) + A_tf * (1 + u2_y_tf);
-    auto P12 = mu_ * u1_y_tf - A_tf * u2_x_tf; 
-    auto P21 = mu_ * u2_x_tf - A_tf * u1_y_tf;
-    auto P22 = mu_ * (1 + u2_y_tf) + A_tf * (1 + u1_x_tf);
+        // Components of first Piola Kirchhoff stress tensor
+        auto P11 = mu_ * (1 + u1_x_tf) + A_tf * (1 + u2_y_tf);
+        auto P12 = mu_ * u1_y_tf - A_tf * u2_x_tf; 
+        auto P21 = mu_ * u2_x_tf - A_tf * u1_y_tf;
+        auto P22 = mu_ * (1 + u2_y_tf) + A_tf * (1 + u1_x_tf);
 
-    totalLoss += torch::mse_loss(P12, torch::zeros_like(P12));
-    totalLoss += torch::mse_loss(P22, torch::zeros_like(P22));
+        totalLoss += torch::mse_loss(P12, torch::zeros_like(P12));
+        totalLoss += torch::mse_loss(P22, torch::zeros_like(P22));
+
+    } else {
+        // energy minimization first
+        // calculate the jacobian of the displacements (u) at the collocation points
+        auto jacobian = Base::u_.ijac(Base::G_, collPts_.first, 
+            var_knot_indices_, var_coeff_indices_,
+            G_knot_indices_, G_coeff_indices_);
+        
+        auto& u1_x = jacobian(0);
+        auto& u1_y = jacobian(1);
+        auto& u2_x = jacobian(2);
+        auto& u2_y = jacobian(3);
+
+        double beta = 2.0;
+        // Divergence of first Kirchhoff stress tensor
+        auto J = 1.0 + u1_x + u2_y + u1_x*u2_y - u1_y*u2_x;
+        auto J_sp = torch::nn::functional::softplus(J, torch::nn::functional::SoftplusFuncOptions()
+            .beta(beta)
+            .threshold(20.0));
+
+        auto W = lambda_/2 * torch::square(torch::log(J_sp)) + mu_/2 * (torch::square(1+u1_x)+torch::square(u1_y)+torch::square(u2_x)+torch::square(1+u2_y)-2-2*torch::log(J_sp));
+        totalLoss = torch::mse_loss(W, torch::zeros_like(W));
+
+        // add the elasticity loss to the cmd-output variable
+        singleLossOutput << "EL " << std::setw(11) << totalLoss.item<double>();
+    }
 
 
 
@@ -468,7 +499,7 @@ int main() {
   // ------- USER INPUTS ------- //
 
   // material parameters
-  double YOUNG_MODULUS = 10;
+  double YOUNG_MODULUS = 1;
   double POISSON_RATIO = 0.3;
 
   // simulation parameters
@@ -485,14 +516,14 @@ int main() {
 
   // Dirichlet boundary conditions
   DispFunc zeroDisp = [](auto const& xi) {return std::array<double,1>{ 0.0 };};
-  DispFunc sinDisp = [](auto const& xi) {
+  DispFunc Disp2 = [](auto const& xi) {
     double s = xi[0];
-    return std::array<double,1>{2.0 + 0.5*std::sin(M_PI*s)};};
+    return std::array<double,1>{2.0};};
 
 
   std::vector<std::tuple<int,DispFunc,DispFunc>> DIRI_SIDES = {
       {1, zeroDisp, zeroDisp},
-      {2, sinDisp, zeroDisp}};
+      {2, Disp2, zeroDisp}};
     
   // --------------------------- //
 
@@ -513,7 +544,7 @@ int main() {
       net(// simulation parameters
           lambda, mu, MAX_EPOCH, MIN_LOSS, std::move(DIRI_SIDES),
           // Number of neurons per layer
-          {50, 50},
+          {72, 72},
           // Activation functions
           {{iganet::activation::tanh},
            {iganet::activation::tanh},
