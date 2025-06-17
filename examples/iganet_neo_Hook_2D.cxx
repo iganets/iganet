@@ -264,7 +264,11 @@ public:
         G_knot_indices_tf_);
 
       return true;
-    } else if (epoch == MAX_EPOCH_-1) {
+    } 
+    else if (epoch == 20) {
+        this->reset_optimizer();
+    }
+    else if (epoch == MAX_EPOCH_-1) {
         // write geometry and solution spline data to file
         appendToJsonFile("G", Base::G_.template to_json());
         appendToJsonFile("u", Base::u_.template to_json());
@@ -285,10 +289,6 @@ public:
   
     // create command line output variable for all the different losses
     std::ostringstream singleLossOutput;
-
-    if (epoch == 20) {
-        this->reset_optimizer();
-    }
         
     if (epoch >= 20) {
 
@@ -320,7 +320,7 @@ public:
         auto& u2_yx = hessianColl(1,0,1);
         auto& u2_yy = hessianColl(1,1,1);
 
-        double beta = 2.0;
+        double beta = 10.0;
         // Divergence of first Kirchhoff stress tensor
         auto J = 1.0 + u1_x + u2_y + u1_x*u2_y - u1_y*u2_x;
         auto J_sp = torch::nn::functional::softplus(J, torch::nn::functional::SoftplusFuncOptions()
@@ -499,7 +499,7 @@ int main() {
   // ------- USER INPUTS ------- //
 
   // material parameters
-  double YOUNG_MODULUS = 1;
+  double YOUNG_MODULUS = 10;
   double POISSON_RATIO = 0.3;
 
   // simulation parameters
@@ -509,8 +509,8 @@ int main() {
   bool RUN_REF_SIM = false;
 
   // spline parameters
-  int64_t NR_CTRL_PTS = 6;  // in each direction 
-  constexpr int DEGREE = 5;
+  int64_t NR_CTRL_PTS = 7;  // in each direction 
+  constexpr int DEGREE = 3;
 
 
 
@@ -544,10 +544,9 @@ int main() {
       net(// simulation parameters
           lambda, mu, MAX_EPOCH, MIN_LOSS, std::move(DIRI_SIDES),
           // Number of neurons per layer
-          {72, 72},
+          {98},
           // Activation functions
           {{iganet::activation::tanh},
-           {iganet::activation::tanh},
            {iganet::activation::none}},
           // Number of B-spline coefficients of the geometry
           std::tuple(iganet::utils::to_array(NR_CTRL_PTS, NR_CTRL_PTS)),
