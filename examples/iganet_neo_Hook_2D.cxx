@@ -8,7 +8,13 @@ using namespace gismo;
 // Defining displacement function
 using DispFunc = std::function<std::array<double,1>(const std::array<double,1>&)>;
 
-/// @brief Specialization of the IgANet class for non linear neo-Hookean material
+/// @brief Specialization of the IgANet class for non linear neo-Hookean material. 
+// This class is defined to work with a square where Dirichlet conditions are applied to left and right boundary 
+// and top and bottom boundary are left traction free. 
+// If you want to have other sides traction free, adapt the loss function manually.
+// This method first minimizes strain energy and then divergence according to the pde.
+// Therefore this setup works well only for no specified tractions and no body forces.
+// If you want to integrate those, the loss function for energy minimization needs adaptation.
 template <typename Optimizer, typename GeometryMap, typename Variable>
 class neo_Hook : public iganet::IgANet<Optimizer, GeometryMap, Variable>,
                           public iganet::IgANetCustomizable<GeometryMap, Variable> {
@@ -59,13 +65,13 @@ private:
   std::vector<std::tuple<int,DispFunc,DispFunc>> DIRI_SIDES_;
 
   // json output path
-  static constexpr const char* JSON_PATH = "/home/chg/Programming/PythonNet_IGA/Network_V1/NeuralNet/results.json";
+  const char* JSON_PATH;
 
 public:
   /// @brief Constructor
   template <typename... Args>
   neo_Hook(double lambda, double mu, double MAX_EPOCH, 
-                    double MIN_LOSS,
+                    double MIN_LOSS, const char* json_path,
                     std::vector<std::tuple<int,DispFunc,DispFunc>> DIRI_SIDES, 
                     std::vector<int64_t> &&layers,
                     std::vector<std::vector<std::any>> &&activations, Args &&...args)
@@ -73,7 +79,7 @@ public:
              std::forward<std::vector<std::vector<std::any>>>(activations),
              std::forward<Args>(args)...),
         lambda_(lambda), mu_(mu), MAX_EPOCH_(MAX_EPOCH), 
-        MIN_LOSS_(MIN_LOSS), DIRI_SIDES_(std::move(DIRI_SIDES)), 
+        MIN_LOSS_(MIN_LOSS), JSON_PATH(json_path), DIRI_SIDES_(std::move(DIRI_SIDES)), 
         ref_(iganet::utils::to_array(8_i64, 8_i64)) {
             this->initialize_dirichlet_boundaries();
         }
@@ -91,7 +97,7 @@ public:
   auto &ref() { return ref_; }
 
   void initialize_dirichlet_boundaries() {
-    // run through all DIRI_SIDES and registr respective lambdas
+    // run through all DIRI_SIDES and register respective lambdas
     for (const auto& side : this->DIRI_SIDES_) {
         int sideNr = std::get<0>(side);
         DispFunc xDispFun = std::get<1>(side);
@@ -128,7 +134,7 @@ public:
     }
   }
   
-  static void appendToJsonFile(const std::string& key, const nlohmann::json& data) {
+  void appendToJsonFile(const std::string& key, const nlohmann::json& data) {
     
     // create json object
     nlohmann::json jsonData;
@@ -270,8 +276,7 @@ public:
     }
     else if (epoch == MAX_EPOCH_-1) {
         // write geometry and solution spline data to file
-        appendToJsonFile("G", Base::G_.template to_json());
-        appendToJsonFile("u", Base::u_.template to_json());
+        write_result();
     }
       return false;
   }
@@ -290,11 +295,12 @@ public:
     // create command line output variable for all the different losses
     std::ostringstream singleLossOutput;
         
+    // first we minimize strain energy, after 20 epochs we change to minimizing divergence according to pde
     if (epoch >= 20) {
 
         // Elasticity Loss
 
-        // calculate the jacobian of the displacements (u) at the collocation points
+        // calculate the jacobian of the displacements (u) at the interior collocation points
         auto jacobian = Base::u_.ijac(Base::G_, interiorCollPts_.first, 
             var_knot_indices_interior_, var_coeff_indices_interior_,
             G_knot_indices_interior_, G_coeff_indices_interior_);
@@ -304,7 +310,7 @@ public:
         auto& u2_x = jacobian(2);
         auto& u2_y = jacobian(3);
 
-        // calculation of the second derivatives of the displacements (u)
+        // calculation of the second derivatives of the interior displacements (u)
         auto hessianColl = Base::u_.ihess(Base::G_, interiorCollPts_.first, 
             var_knot_indices_interior_, var_coeff_indices_interior_,
             G_knot_indices_interior_, G_coeff_indices_interior_);
@@ -328,8 +334,6 @@ public:
             .threshold(20.0));
         auto J_x = u1_xx + u2_yx + u1_xx*u2_y +u1_x*u2_yx - u1_yx*u2_x - u1_y*u2_xx;
         auto J_y = u1_xy + u2_yy + u1_xy*u2_y +u1_x*u2_yy - u1_yy*u2_x - u1_y*u2_xy;
-        //auto J_sp_x = J_x * torch::sigmoid(beta * J);
-        //auto J_sp_y = J_y * torch::sigmoid(beta * J);
         auto A = (lambda_ * torch::log1p(J_sp - 1) - mu_) / J_sp;
         auto A_x = (lambda_ + mu_ - lambda_*torch::log1p(J_sp - 1)) * J_x / (J_sp*J_sp);
         auto A_y = (lambda_ + mu_ - lambda_*torch::log1p(J_sp - 1)) * J_y / (J_sp*J_sp);
@@ -399,8 +403,6 @@ public:
             .threshold(20.0));
         auto J_x_tf = u1_xx_tf + u2_yx_tf + u1_xx_tf*u2_y_tf +u1_x_tf*u2_yx_tf - u1_yx_tf*u2_x_tf - u1_y_tf*u2_xx_tf;
         auto J_y_tf = u1_xy_tf + u2_yy_tf + u1_xy_tf*u2_y_tf +u1_x_tf*u2_yy_tf - u1_yy_tf*u2_x_tf - u1_y_tf*u2_xy_tf;
-        //auto J_sp_x_tf = J_x_tf * torch::sigmoid(beta * J_tf);
-        //auto J_sp_y_tf = J_y_tf * torch::sigmoid(beta * J_tf);
         auto A_tf = (lambda_ * torch::log1p(J_sp_tf - 1) - mu_) / J_sp_tf;
         auto A_x_tf = (lambda_ + mu_ - lambda_*torch::log1p(J_sp_tf - 1)) * J_x_tf / (J_sp_tf*J_sp_tf);
         auto A_y_tf = (lambda_ + mu_ - lambda_*torch::log1p(J_sp_tf - 1)) * J_y_tf / (J_sp_tf*J_sp_tf);
@@ -513,14 +515,16 @@ int main(int argc, char* argv[]) {
   int NR_CTRL_PTS_temp = 7;
   constexpr int DEGREE = 3;
   double nodes_factor = 1.0;
+  std::string json_path_temp = "/home/chg/Programming/PythonNet_IGA/Network_V1/NeuralNet/results.json";
 
   gsCmdLine cmd("Square being stretched with nonlinear elasticity solver.");
   cmd.addInt("n","numbercontrolpoints","number control points",NR_CTRL_PTS_temp);
   cmd.addReal("f","nodes_factor","nodes factor",nodes_factor);
+  cmd.addString("p","pathname", "name of output path", json_path_temp);
   try { cmd.getValues(argc,argv); } catch (int rv) { return rv; }
 
   NR_CTRL_PTS = static_cast<int64_t>(NR_CTRL_PTS_temp);
-
+  const char* json_path = json_path_temp.c_str();
 
 
 
@@ -553,7 +557,7 @@ int main(int argc, char* argv[]) {
 
     neo_Hook_t
       net(// simulation parameters
-          lambda, mu, MAX_EPOCH, MIN_LOSS, std::move(DIRI_SIDES),
+          lambda, mu, MAX_EPOCH, MIN_LOSS, json_path, std::move(DIRI_SIDES),
           // Number of neurons per layer
           {number_nodes},
           // Activation functions
@@ -596,7 +600,3 @@ int main(int argc, char* argv[]) {
   iganet::finalize();
   return 0; 
 }
-
-// penalties for low J
-// taylor approximation of ln
-// loss function generell nicht für alle werte auswertbar, was macht man da?

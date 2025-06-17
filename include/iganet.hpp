@@ -1073,6 +1073,7 @@ public:
 #endif
   ) {
     torch::Tensor inputs, outputs, loss;
+    double previous_loss = -1.0;
 
     // Loop over epochs
     for (int64_t epoch = 0; epoch != options_.max_epoch(); ++epoch) {
@@ -1131,6 +1132,14 @@ public:
                        << std::endl;
         break;
       }
+
+      if (loss.template item<typename Base::value_type>() == previous_loss) {
+        Log(log::info) << "Total epochs: " << epoch << ", loss: "
+                       << loss.template item<typename Base::value_type>()
+                       << std::endl;
+        break;
+      }
+      previous_loss = loss.template item<typename Base::value_type>();
     }
   }
 
@@ -1144,6 +1153,7 @@ public:
 #endif
   ) {
     torch::Tensor inputs, outputs, loss;
+    torch::Tensor previous_loss = torch::tensor(-1.0);
 
     // Loop over epochs
     for (int64_t epoch = 0; epoch != options_.max_epoch(); ++epoch) {
@@ -1218,6 +1228,14 @@ public:
                        << std::endl;
         break;
       }
+
+      if (Loss == previous_loss) {
+        Log(log::info) << "Total epochs: " << epoch << ", loss: " << Loss
+                       << std::endl;
+        break;
+      }
+      previous_loss = Loss;
+      std::cout << previous_loss << std::endl;
 
       if (epoch == options_.max_epoch() - 1)
         Log(log::warning) << "Total epochs: " << epoch << ", loss: " << Loss
