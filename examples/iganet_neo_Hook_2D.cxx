@@ -492,7 +492,7 @@ public:
   }
 };
 
-int main() {
+int main(int argc, char* argv[]) {
   iganet::init();
   iganet::verbose(std::cout);
 
@@ -504,13 +504,23 @@ int main() {
 
   // simulation parameters
   int MAX_EPOCH = 300;
-  double MIN_LOSS = 5e-4;
+  double MIN_LOSS = 1e-9;
   bool SUPERVISED_LEARNING = false;
   bool RUN_REF_SIM = false;
 
   // spline parameters
-  int64_t NR_CTRL_PTS = 7;  // in each direction 
+  int64_t NR_CTRL_PTS;  // in each direction 
+  int NR_CTRL_PTS_temp = 7;
   constexpr int DEGREE = 3;
+  double nodes_factor = 1.0;
+
+  gsCmdLine cmd("Square being stretched with nonlinear elasticity solver.");
+  cmd.addInt("n","numbercontrolpoints","number control points",NR_CTRL_PTS_temp);
+  cmd.addReal("f","nodes_factor","nodes factor",nodes_factor);
+  try { cmd.getValues(argc,argv); } catch (int rv) { return rv; }
+
+  NR_CTRL_PTS = static_cast<int64_t>(NR_CTRL_PTS_temp);
+
 
 
 
@@ -539,12 +549,13 @@ int main() {
   using variable_t = iganet::S<iganet::UniformBSpline<real_t, 2, DEGREE, DEGREE>>;
   using neo_Hook_t = neo_Hook<optimizer_t, geometry_t, variable_t>;
   
+  auto number_nodes = std::max(1, static_cast<int>(std::round(NR_CTRL_PTS*NR_CTRL_PTS*2*nodes_factor)));
 
     neo_Hook_t
       net(// simulation parameters
           lambda, mu, MAX_EPOCH, MIN_LOSS, std::move(DIRI_SIDES),
           // Number of neurons per layer
-          {98},
+          {number_nodes},
           // Activation functions
           {{iganet::activation::tanh},
            {iganet::activation::none}},
