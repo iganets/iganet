@@ -512,10 +512,10 @@ int main(int argc, char* argv[]) {
 
   // spline parameters
   int64_t NR_CTRL_PTS;  // in each direction 
-  int NR_CTRL_PTS_temp = 7;
+  int NR_CTRL_PTS_temp = 5;
   constexpr int DEGREE = 3;
   double nodes_factor = 1.0;
-  std::string json_path_temp = "/home/chg/Programming/PythonNet_IGA/Network_V1/NeuralNet/results.json";
+  std::string json_path_temp = "/home/chg/Programming/PythonNet_IGA/Network_V1/NeuralNet/";
 
   gsCmdLine cmd("Square being stretched with nonlinear elasticity solver.");
   cmd.addInt("n","numbercontrolpoints","number control points",NR_CTRL_PTS_temp);
@@ -524,7 +524,9 @@ int main(int argc, char* argv[]) {
   try { cmd.getValues(argc,argv); } catch (int rv) { return rv; }
 
   NR_CTRL_PTS = static_cast<int64_t>(NR_CTRL_PTS_temp);
-  const char* json_path = json_path_temp.c_str();
+  std::string full_json_path_temp = json_path_temp + "results.json";
+  const char* json_path = full_json_path_temp.c_str();
+  std::string csv_path = json_path_temp + "runtimes.csv";
 
 
 
@@ -589,13 +591,17 @@ int main(int argc, char* argv[]) {
 
   // Stop time measurement
   auto t2 = std::chrono::high_resolution_clock::now();
+  auto runtime = std::chrono::duration_cast<std::chrono::duration<double>>(t2 - t1).count();
   iganet::Log(iganet::log::info)
       << "Training took "
-      << std::chrono::duration_cast<std::chrono::duration<double>>(t2 - t1)
-             .count()
+      << runtime
       << " seconds\n";
 
   net.write_result();
+
+  // write the runtimes
+  std::ofstream outFile(csv_path, std::ios_base::app);
+  outFile << NR_CTRL_PTS << ", " << DEGREE << ", " << nodes_factor << ", " << runtime << std::endl;
 
   iganet::finalize();
   return 0; 
