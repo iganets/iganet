@@ -318,7 +318,7 @@ public:
         return R"({ INVALID REQUEST })"_json;
       
       // coeffs
-      gismo::gsMatrix<real_t> coeffs;
+      gismo::gsMatrix<T> coeffs;
       if (component == "Displacement") {
         coeffs = Base::solution_.patch(patchIndex).coefs().rowwise().norm();        
       } else if (component == "Displacement_x") {
@@ -333,24 +333,6 @@ public:
       return result;      
     }
     
-    // // Uniform parameters for evaluation
-    // gismo::gsMatrix<T> pts = gismo::gsPointGrid(a, b, np);
-    // gismo::gsMatrix<T> eval = Base::solution_.patch(patchIndex).eval(pts);
-
-    // if (component == "Displacement") {
-    //   gismo::gsMatrix<T> result = eval.colwise().norm();
-    //   return utils::to_json(result, true, false);
-    // } else if (component == "Displacement_x") {
-    //   gismo::gsMatrix<T> result = eval.row(0);
-    //   return utils::to_json(result, true, false);
-    // } else if (component == "Displacement_y") {
-    //   gismo::gsMatrix<T> result = eval.row(1);
-    //   return utils::to_json(result, true, false);
-    // } else if (component == "Displacement_z") {
-    //   gismo::gsMatrix<T> result = eval.row(2);
-    //   return utils::to_json(result, true, false);
-    // }
-
     else
       return Base::eval(patch, component, json);
   }
@@ -491,7 +473,8 @@ public:
   }
   
   /// @brief Remove existing patch from the model
-  void removePatch(const nlohmann::json &json = NULL) override {
+  void removePatch(const std::string &patch,
+                   const nlohmann::json &json = NULL) override {
 
     // Remove patch from geometry
     Base::removePatch(json);

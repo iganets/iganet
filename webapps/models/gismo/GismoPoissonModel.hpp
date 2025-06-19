@@ -461,13 +461,13 @@ public:
         result["coeffs"] = utils::to_json(Base::solution_.patch(patchIndex).coefs(), true, false);
       } else {        
         if (rhsFuncParametric_) {
-          auto & basis = Base::solution_.patch(patchIndex).basis();
+          auto &basis = Base::solution_.patch(patchIndex).basis();
           auto pts = rhsFunc_.eval(basis.anchors());
           auto rhs = basis.interpolateAtAnchors(pts);
           result["coeffs"] = utils::to_json(rhs->coefs(), true, false);
         } else {
           // This needs to be fixed
-          auto & basis = Base::solution_.patch(patchIndex).basis();
+          auto &basis = Base::solution_.patch(patchIndex).basis();
           auto pts = rhsFunc_.eval(basis.anchors());
           auto rhs = basis.interpolateAtAnchors(pts);
           result["coeffs"] = utils::to_json(rhs->coefs(), true, false);
@@ -626,25 +626,52 @@ public:
   }
   
   /// @brief Remove existing patch from the model
-  void removePatch(const nlohmann::json &json = NULL) override {
+  void removePatch(const std::string &patch,
+                   const nlohmann::json &json = NULL) override {
 
     // Remove patch from geometry
-    Base::removePatch(json);
+    Base::removePatch(patch, json);
 
+    // Set basis
+    basis_ = gismo::gsMultiBasis<T>(Base::geo_, true);
+
+    // Set assembler basis
+    assembler_.setIntegrationElements(basis_);
+
+    // Clear boundary conditions map
+    bcMap_.clear();
+    
+    // Initialize boundary conditions
+    for (auto const &bdr : Base::geo_.boundaries()) {
+      auto patch = bdr.patch;
+      auto side = bdr.side();
+      auto bc = bcMap_[patch][side] = { gismo::gsFunctionExpr<T>("0", d),
+                                        gismo::condition_type::dirichlet,
+                                        true };
+    }
+
+    // Clear boundary conditions
+    bc_.clear();
+    
+    // Set boundary conditions
+    for (auto const & p : bcMap_) {
+      std::size_t patch = p.first;
+      
+      for (auto const & bc : p.second) {
+        auto side = static_cast<gismo::boundary::side>(bc.first);
+
+        bc_.addCondition(patch, side, bc.second.type, bc.second.function, 0, bc.second.isParametric);  
+      }
+    }
+    
     // Set geometry
     bc_.setGeoMap(Base::geo_);
     
     int patchIndex(-1);
 
-    if (json.contains("data")) {      
-      if (json["data"].contains("patch"))
-        patchIndex = json["data"]["patch"].get<int>();
-    }
-
-    // if (patchIndex == -1)
-    //   throw std::runtime_error("Invalid patch index");
-
-    // throw std::runtime_error("Removing patches is not yet implemented in G+Smo");
+    try {
+      patchIndex = stoi(patch);
+    } catch (...) {}
 
     // Regenerate solution
     solve();

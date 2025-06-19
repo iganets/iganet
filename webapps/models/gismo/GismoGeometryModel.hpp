@@ -604,74 +604,65 @@ public:
       return R"({ INVALID REQUEST })"_json;
       
     // coeffs
-    result["coeffs"] = utils::to_json(geo_.patch(patchIndex).coefs(), true, false);
+    if (component == "ScaledJacobian" || component == "UniformityMetric") {
+
+      gismo::gsMultiBasis<T> basis(geo_);
+      gismo::gsExprEvaluator<T> ev;
+      ev.setIntegrationElements(basis);
+      auto G = ev.getMap(geo_);
+
+      if (component == "ScaledJacobian") {
+
+        auto parDim = geo_.parDim();
+        auto &basis = geo_.patch(patchIndex).basis();
+        auto pts    = basis.anchors();
+        gismo::gsMatrix<T> eval(1, pts.cols());
+        
+        if (parDim == 2 && geo_.geoDim() == 3) {
+          for (std::size_t i = 0; i < pts.cols(); i++) {
+            auto jac = ev.eval(gismo::expr::jac(G), pts.col(i));
+            eval(0, i) = jac.col(0).dot(jac.col(1));
+            for (std::size_t j = 0; j < parDim; j++)
+              eval(0, i) /= (jac.col(j).norm());
+          }
+        } else {
+          for (std::size_t i = 0; i < pts.cols(); i++) {
+            auto jac = ev.eval(gismo::expr::jac(G), pts.col(i));
+            eval(0, i) = jac.determinant();
+            for (std::size_t j = 0; j < parDim; j++)
+              eval(0, i) /= (jac.col(j).norm());
+          }
+        }
+
+        auto jac = basis.interpolateAtAnchors(eval);
+        result["coeffs"] = utils::to_json(jac->coefs(), true, false);        
+      }
+
+      else if (component == "UniformityMetric") {
+
+        T areaTotal = ev.integral(gismo::expr::meas(G));
+        gismo::gsConstantFunction<T> areaConstFunc(areaTotal, geo_.parDim());
+        auto area = ev.getVariable(areaConstFunc);
+        auto expr = gismo::expr::pow((gismo::expr::meas(G) - area.val()) / area.val(), 2);
+
+        auto &basis = geo_.patch(patchIndex).basis();
+        auto pts    = basis.anchors();
+        gismo::gsMatrix<T> eval(1, pts.cols());
+        
+        for (std::size_t i = 0; i < pts.cols(); i++)
+          eval(0, i) = ev.eval(expr, pts.col(i))(0);
+
+        auto uniform = basis.interpolateAtAnchors(eval);
+        result["coeffs"] = utils::to_json(uniform->coefs(), true, false);
+      }
+      else
+        return R"({ INVALID REQUEST })"_json;      
       
-    return result;
-    
-    // if (component == "ScaledJacobian" || component == "UniformityMetric") {
-
-    //   // Get grid resolution
-    //   gismo::gsVector<unsigned> np(geo_.parDim());
-    //   np.setConstant(25);
-
-    //   if (json.contains("data"))
-    //     if (json["data"].contains("resolution")) {
-    //       auto res = json["data"]["resolution"].get<std::array<int64_t, d>>();
-
-    //       for (std::size_t i = 0; i < d; ++i)
-    //         np(i) = res[i];
-    //     }
-
-    //   // Create uniform grid in physical space
-    //   gismo::gsMatrix<T> ab = geo_.patch(patchIndex).support();
-    //   gismo::gsVector<T> a = ab.col(0);
-    //   gismo::gsVector<T> b = ab.col(1);
-    //   gismo::gsMatrix<T> pts = gismo::gsPointGrid(a, b, np);
-    //   gismo::gsMatrix<T> eval(1, pts.cols());
-
-    //   gismo::gsExprEvaluator<T> ev;
-    //   gismo::gsMultiBasis<T> basis(geo_);
-    //   ev.setIntegrationElements(basis);
-    //   typename gismo::gsExprAssembler<T>::geometryMap G = ev.getMap(geo_);
-
-    //   if (component == "ScaledJacobian") {
-
-    //     int parDim = geo_.parDim();
-
-    //     if (parDim == 2 && geo_.geoDim() == 3) {
-    //       for (std::size_t i = 0; i < pts.cols(); i++) {
-    //         auto jac = ev.eval(gismo::expr::jac(G), pts.col(i));
-    //         eval(0, i) = jac.col(0).dot(jac.col(1));
-    //         for (std::size_t j = 0; j < parDim; j++)
-    //           eval(0, i) /= (jac.col(j).norm());
-    //       }
-    //     } else {
-    //       for (std::size_t i = 0; i < pts.cols(); i++) {
-    //         auto jac = ev.eval(gismo::expr::jac(G), pts.col(i));
-    //         eval(0, i) = jac.determinant();
-    //         for (std::size_t j = 0; j < parDim; j++)
-    //           eval(0, i) /= (jac.col(j).norm());
-    //       }
-    //     }
-
-    //     return utils::to_json(eval, true, true);
-    //   }
-
-    //   else if (component == "UniformityMetric") {
-
-    //     T areaTotal = ev.integral(gismo::expr::meas(G));
-    //     gismo::gsConstantFunction<T> areaConstFunc(areaTotal, geo_.parDim());
-    //     auto area = ev.getVariable(areaConstFunc);
-    //     auto expr = gismo::expr::pow((gismo::expr::meas(G) - area.val()) / area.val(), 2);
-
-    //     for (std::size_t i = 0; i < pts.cols(); i++)
-    //       eval(0, i) = ev.eval(expr, pts.col(i))(0);
-
-    //     return utils::to_json(eval, true, true);
-    //   } else
-    //     return R"({ INVALID REQUEST })"_json;
-    // } else
-    //   return R"({ INVALID REQUEST })"_json;
+    } else {
+      result["coeffs"] = utils::to_json(geo_.patch(patchIndex).coefs(), true, false);
+    }
+      
+    return result;    
   }
 
   /// @brief Elevates the model's degrees, preserves smoothness
@@ -738,83 +729,117 @@ public:
   }
 
   /// @brief Reparameterize the model
-  void reparameterize(const nlohmann::json &json = NULL) override {
+  void reparameterize(const std::string &patch,
+                      const nlohmann::json &json = NULL) override {
     std::string type("volume");
-    int maxiter(200);
-    T tol(1e-3);
-
+    bool patchwise(false);
+    T lambda1(1), lambda2(1);
+    
     if (json.contains("data")) {
       if (json["data"].contains("type"))
         type = json["data"]["type"].get<std::string>();
 
-      if (json["data"].contains("maxiter"))
-        maxiter = json["data"]["maxiter"].get<int>();
+      if (json["data"].contains("patchwise"))
+        patchwise = json["data"]["patchwise"].get<bool>();
 
-      if (json["data"].contains("tol"))
-        tol = json["data"]["tol"].get<T>();
+      if (json["data"].contains("orthogonality"))
+        lambda1 = std::stod(json["data"]["orthogonality"].get<std::string>());
+
+      if (json["data"].contains("unitarity"))
+        lambda2 = std::stod(json["data"]["unitarity"].get<std::string>());
     }
-
+    
     if (type == "surface") {
 
-      // bivariate surface
       if (geo_.parDim() == 2) {
-        gismo::gsHLBFGS<real_t> optimizer;
-        optimizer.options().setReal("MinGradLen", 1e-6);
-        optimizer.options().setReal("MinStepLen", 1e-6);
-        optimizer.options().setInt("MaxIterations", 200);
-        optimizer.options().setInt("Verbose", 0);
+        // bivariate surface
+        gismo::gsHLBFGS<T> optimizer;
 
-        for (auto& p : geo_) {
-          gismo::gsMultiPatch<T> mp; mp.addPatch(*p);
-          gismo::SurfaceReparameterization<T> reparam(mp, optimizer);
-          *p = reparam.solve().patch(0);
+        if (patch == "") {
+          for (auto& p : geo_) {
+            gismo::gsMultiPatch<T> mp; mp.addPatch(*p);
+            gismo::SurfaceReparameterization<T> reparam(mp, optimizer);
+            *p = reparam.solve(lambda1, lambda2).patch(0);
+          }
+        } else {
+          int patchIndex(-1);
+          try {
+            patchIndex = stoi(patch);
+            gismo::gsMultiPatch<T> mp; mp.addPatch(geo_[patchIndex]);
+            gismo::SurfaceReparameterization<T> reparam(mp, optimizer);
+            geo_.patch(patchIndex) = reparam.solve(lambda1, lambda2).patch(0);
+          } catch (...) {}
         }        
-        // gismo::gsMultiPatch<T> tempGeo_;
-        // for (int i=0; i< geo_.nPatches(); ++i) {
-        //   auto mp = gismo::gsMultiPatch(geo_.patch(i));
-        //   gismo::SurfaceReparameterization<T> reparam(mp, optimizer);
-        //   //geo_.setPatch(i, std::make_unique<gismo::gsPatch<T>>(reparam.solve().patch(0)));
-        //   tempGeo_.addPatch(reparam.solve().patch(0));
-        // }
-        // geo_ = tempGeo_;
       }
-
+      
       else if (geo_.parDim() == 3) {
-
-        gismo::gsHLBFGS<real_t> optimizer;
-        optimizer.options().setReal("MinGradLen", 1e-6);
-        optimizer.options().setReal("MinStepLen", 1e-6);
-        optimizer.options().setInt("MaxIterations", 200);
-        optimizer.options().setInt("Verbose", 0);
-
         // trivariate surface
-        //for (int i=1; i<=6; ++i) {
-        //  gismo::SurfaceReparameterization<T> reparam(*geo_.boundary(i), optimizer);
-        //  *geo_.boundary(i) = reparam.solve();
-        // }
+        gismo::gsHLBFGS<T> optimizer;
 
+        geo_.computeTopology();
+
+        if (patch == "") {
+          for (auto& bdr : geo_.boundaries()) {
+            auto b = geo_.patch(bdr.patch).boundary(bdr.side());
+            gismo::gsMultiPatch<T> mp; mp.addPatch(*b);
+            gismo::SurfaceReparameterization<T> reparam(mp, optimizer);
+            *b = reparam.solve(lambda1, lambda2).patch(0);
+
+            gismo::gsMatrix<T> ind = geo_.patch(bdr.patch).basis().boundary(bdr.side());
+            for (int i = 0; i != ind.size(); i++ )
+              {
+                geo_.patch(bdr.patch).coef( ind(i,0) ) = b->coef(i);
+              }
+          }
+        }
       }
 
     } else if (type == "volume") {
 
       if (geo_.parDim() == 2 && geo_.geoDim() == 3) {
         // bivariate surface
-        geo_.embed(2);
-        gismo::gsBarrierPatch<2, T> opt(geo_, false);
-        opt.options().setInt("ParamMethod", 1); // penalty
-        opt.options().setInt("Verbose", 0);
-        opt.compute();
-        geo_ = opt.result();
-        geo_.embed(3);
+        if (patch == "") {
+          geo_.embed(2);
+          gismo::gsBarrierPatch<2, T> opt(geo_, patchwise);
+          opt.options().setInt("ParamMethod", 1); // penalty
+          opt.compute();
+          geo_ = opt.result();
+          geo_.embed(3);
+        } else {
+          int patchIndex(-1);
+          try {
+            patchIndex = stoi(patch);
+            gismo::gsMultiPatch<T> mp; mp.addPatch(geo_[patchIndex]);
+            mp.embed(2);
+            gismo::gsBarrierPatch<2, T> opt(mp, true);
+            opt.options().setInt("ParamMethod", 1); // penalty
+            opt.compute();
+            mp = opt.result();
+            mp.embed(3);
+            geo_.patch(patchIndex) = mp.patch(0);            
+          } catch (...) {}
+        }
       }
 
       else if (geo_.parDim() == 3 && geo_.geoDim() == 3) {
         // trivariate volume
-        gismo::gsBarrierPatch<d, T> opt(geo_, true);
-        opt.options().setInt("ParamMethod", 2); // penalty
-        opt.options().setInt("Verbose", 0);
-        opt.compute();
-        geo_ = opt.result();
+        if (patch == "") {
+          gismo::gsBarrierPatch<d, T> opt(geo_, patchwise);
+          opt.options().setInt("ParamMethod", 1); // penalty
+          opt.compute();
+          geo_ = opt.result();
+        } else {
+          int patchIndex(-1);
+          try {
+            patchIndex = stoi(patch);
+            gismo::gsMultiPatch<T> mp; mp.addPatch(geo_[patchIndex]);
+            gismo::gsBarrierPatch<d, T> opt(mp, true);
+            opt.options().setInt("ParamMethod", 1); // penalty
+            opt.compute();
+            mp = opt.result();
+            geo_.patch(patchIndex) = mp.patch(0);            
+          } catch (...) {}
+        }
       }
     }
   }
@@ -826,18 +851,22 @@ public:
   }
   
   /// @brief Remove existing patch from the model
-  void removePatch(const nlohmann::json &json = NULL) override {
+  void removePatch(const std::string &patch,
+                   const nlohmann::json &json = NULL) override {
     int patchIndex(-1);
 
-    if (json.contains("data")) {      
-      if (json["data"].contains("patch"))
-        patchIndex = json["data"]["patch"].get<int>();
+    try {
+      patchIndex = stoi(patch);
+    } catch (...) {}
+           
+    gismo::gsMultiPatch<T> geo;
+    for (int i=0; i<geo_.nPatches(); ++i) {
+      if (i != patchIndex)
+        geo.addPatch(geo_.patch(i));
     }
 
-    // if (patchIndex == -1)
-    //   throw std::runtime_error("Invalid patch index");
-
-    // throw std::runtime_error("Removing patches is not yet implemented in G+Smo");
+    geo.topology();
+    geo_.swap(geo);
   }
   
   /// @brief Imports the model from XML (as JSON object)
