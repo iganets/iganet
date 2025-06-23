@@ -1022,6 +1022,15 @@ public:
     opt_ = std::make_unique<Optimizer>(net_->parameters());
   }
 
+  void set_lbfgs_options(const torch::optim::LBFGSOptions& opts) {
+    // check if opt_ actually is a lbfgs instance, only if so, apply the options
+    if (auto* lbfgs = dynamic_cast<torch::optim::LBFGS*>(opt_.get())) {
+      auto& group = lbfgs->param_groups().front();
+      auto& group_opts = static_cast<torch::optim::LBFGSOptions&>(group.options());
+      group_opts = opts;
+    }
+  }
+
   /// @brief Returns a constant reference to the IgANet generator
   inline const IgANetGenerator<typename Base::value_type> &net() const {
     return net_;
@@ -1121,25 +1130,34 @@ public:
       // Update the parameters based on the calculated gradients
       opt_->step(closure);
 
+      auto current_loss = loss.template item<typename Base::value_type>();
+
       Log(log::verbose) << "Epoch " << std::to_string(epoch) << ": "
-                        << loss.template item<typename Base::value_type>()
+                        << current_loss
                         << std::endl;
 
-      if (loss.template item<typename Base::value_type>() <
+      if (current_loss <
           options_.min_loss()) {
         Log(log::info) << "Total epochs: " << epoch << ", loss: "
-                       << loss.template item<typename Base::value_type>()
+                       << current_loss
                        << std::endl;
         break;
       }
 
-      if (loss.template item<typename Base::value_type>() == previous_loss) {
+      if (current_loss == previous_loss || std::abs(current_loss-previous_loss) < previous_loss/10) {
         Log(log::info) << "Total epochs: " << epoch << ", loss: "
-                       << loss.template item<typename Base::value_type>()
+                       << current_loss
                        << std::endl;
         break;
       }
-      previous_loss = loss.template item<typename Base::value_type>();
+
+      if (loss.isnan().template item<bool>()) {
+        Log(log::info) << "Total epochs: " << epoch << ", loss: "
+        << current_loss
+        << std::endl;
+        break;
+      }
+      previous_loss = current_loss;
     }
   }
 

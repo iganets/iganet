@@ -64,6 +64,9 @@ private:
   double MIN_LOSS_;
   std::vector<std::tuple<int,DispFunc,DispFunc>> DIRI_SIDES_;
 
+  // solver options
+  const torch::optim::LBFGSOptions& SOLVER_OPTS;
+
   // json output path
   const char* JSON_PATH;
 
@@ -71,7 +74,7 @@ public:
   /// @brief Constructor
   template <typename... Args>
   neo_Hook(double lambda, double mu, double MAX_EPOCH, 
-                    double MIN_LOSS, const char* json_path,
+                    double MIN_LOSS, const char* json_path, const torch::optim::LBFGSOptions& solver_opts,
                     std::vector<std::tuple<int,DispFunc,DispFunc>> DIRI_SIDES, 
                     std::vector<int64_t> &&layers,
                     std::vector<std::vector<std::any>> &&activations, Args &&...args)
@@ -79,7 +82,7 @@ public:
              std::forward<std::vector<std::vector<std::any>>>(activations),
              std::forward<Args>(args)...),
         lambda_(lambda), mu_(mu), MAX_EPOCH_(MAX_EPOCH), 
-        MIN_LOSS_(MIN_LOSS), JSON_PATH(json_path), DIRI_SIDES_(std::move(DIRI_SIDES)), 
+        MIN_LOSS_(MIN_LOSS), JSON_PATH(json_path), SOLVER_OPTS(solver_opts), DIRI_SIDES_(std::move(DIRI_SIDES)), 
         ref_(iganet::utils::to_array(8_i64, 8_i64)) {
             this->initialize_dirichlet_boundaries();
         }
@@ -202,6 +205,9 @@ public:
     std::cout << "Epoch: " << epoch << std::endl;
 
     if (epoch == 0) {
+      // set the solver options
+      this->set_lbfgs_options(SOLVER_OPTS);
+
       Base::inputs(epoch);
 
       collPts_ = Base::variable_collPts(iganet::collPts::greville);
@@ -271,8 +277,9 @@ public:
 
       return true;
     } 
-    else if (epoch == 20) {
+    else if (epoch == 2) {
         this->reset_optimizer();
+        this->set_lbfgs_options(SOLVER_OPTS);
     }
     else if (epoch == MAX_EPOCH_-1) {
         // write geometry and solution spline data to file
@@ -296,7 +303,7 @@ public:
     std::ostringstream singleLossOutput;
         
     // first we minimize strain energy, after 20 epochs we change to minimizing divergence according to pde
-    if (epoch >= 20) {
+    if (epoch >= 2) {
 
         // Elasticity Loss
 
@@ -513,7 +520,7 @@ int main(int argc, char* argv[]) {
   // spline parameters
   int64_t NR_CTRL_PTS;  // in each direction 
   int NR_CTRL_PTS_temp = 5;
-  constexpr int DEGREE = 3;
+  constexpr int DEGREE = 4;
   double nodes_factor = 1.0;
   std::string json_path_temp = "/home/chg/Programming/PythonNet_IGA/Network_V1/NeuralNet/";
 
@@ -524,10 +531,19 @@ int main(int argc, char* argv[]) {
   try { cmd.getValues(argc,argv); } catch (int rv) { return rv; }
 
   NR_CTRL_PTS = static_cast<int64_t>(NR_CTRL_PTS_temp);
-  std::string full_json_path_temp = json_path_temp + "results.json";
+  std::string full_json_path_temp = json_path_temp + "iganet_result.json";
   const char* json_path = full_json_path_temp.c_str();
   std::string csv_path = json_path_temp + "runtimes.csv";
 
+
+  // solver options
+  auto solver_options = torch::optim::LBFGSOptions(1.0).
+                                        max_iter(150).
+                                        max_eval(100).
+                                        history_size(200).
+                                        tolerance_grad(1e-12).
+                                        tolerance_change(1e-12).
+                                        line_search_fn("strong_wolfe");
 
 
   // Dirichlet boundary conditions
@@ -559,11 +575,12 @@ int main(int argc, char* argv[]) {
 
     neo_Hook_t
       net(// simulation parameters
-          lambda, mu, MAX_EPOCH, MIN_LOSS, json_path, std::move(DIRI_SIDES),
+          lambda, mu, MAX_EPOCH, MIN_LOSS, json_path, solver_options, std::move(DIRI_SIDES),
           // Number of neurons per layer
-          {number_nodes},
+          {number_nodes, number_nodes},
           // Activation functions
           {{iganet::activation::tanh},
+           {iganet::activation::tanh},
            {iganet::activation::none}},
           // Number of B-spline coefficients of the geometry
           std::tuple(iganet::utils::to_array(NR_CTRL_PTS, NR_CTRL_PTS)),
@@ -601,7 +618,7 @@ int main(int argc, char* argv[]) {
 
   // write the runtimes
   std::ofstream outFile(csv_path, std::ios_base::app);
-  outFile << NR_CTRL_PTS << ", " << DEGREE << ", " << nodes_factor << ", " << runtime << std::endl;
+  outFile << std::log2(NR_CTRL_PTS-DEGREE) << ", " << DEGREE << ", " << std::fixed << std::setprecision(1) << nodes_factor << std::fixed << std::setprecision(5) << ", " << runtime << std::endl;
 
   iganet::finalize();
   return 0; 
