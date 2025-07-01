@@ -405,47 +405,76 @@ public:
     }
     
     if (component == "Solution" || component == "Rhs") {
+      
+      nlohmann::json result;
 
-      // Get grid resolution
-      gismo::gsVector<unsigned> npts(Base::geo_.parDim());
-      npts.setConstant(25);
+      // degrees
+      result["degrees"] = nlohmann::json::array();
+      
+      for (std::size_t i = 0; i < Base::solution_.patch(patchIndex).parDim(); ++i)
+        result["degrees"].push_back(Base::solution_.patch(patchIndex).degree(i));
 
-      if (json.contains("data"))
-        if (json["data"].contains("resolution")) {
-          auto res = json["data"]["resolution"].get<std::array<int64_t, d>>();
+      // ncoeffs
+      result["ncoeffs"] = nlohmann::json::array();
+      
+      if (auto bspline =
+          dynamic_cast<const gismo::gsBSpline<T> *>(&Base::solution_.patch(patchIndex)))
+        for (std::size_t i = 0; i < bspline->parDim(); ++i)
+          result["ncoeffs"].push_back(bspline->basis().size(i));
+      else if (auto bspline = dynamic_cast<const gismo::gsTensorBSpline<d, T> *>(
+                                                                                 &Base::solution_.patch(patchIndex)))
+        for (std::size_t i = 0; i < bspline->parDim(); ++i)
+          result["ncoeffs"].push_back(bspline->basis().size(i));
+      else
+        return R"({ INVALID REQUEST })"_json;
+      
+      // nknots
+      result["nknots"] = nlohmann::json::array();
 
-          for (std::size_t i = 0; i < d; ++i)
-            npts(i) = res[i];
-        }
+      if (auto bspline =
+          dynamic_cast<const gismo::gsBSpline<T> *>(&Base::solution_.patch(patchIndex)))
+        for (std::size_t i = 0; i < bspline->parDim(); ++i)
+          result["nknots"].push_back(bspline->knots(i).size());
+      else if (auto bspline = dynamic_cast<const gismo::gsTensorBSpline<d, T> *>(
+                                                                                 &Base::solution_.patch(patchIndex)))
+        for (std::size_t i = 0; i < bspline->parDim(); ++i)
+          result["nknots"].push_back(bspline->knots(i).size());
+      else
+        return R"({ INVALID REQUEST })"_json;
 
-      if (component == "Solution" ||
-          component == "Rhs" && !rhsFuncParametric_) {
+      // knots
+      result["knots"] = nlohmann::json::array();
 
-        // Create uniform grid in physical domain
-        gismo::gsMatrix<T> ab = Base::geo_.patch(patchIndex).support();
-        gismo::gsVector<T> a = ab.col(0);
-        gismo::gsVector<T> b = ab.col(1);
-        gismo::gsMatrix<T> pts = gismo::gsPointGrid(a, b, npts);
-
-        if (component == "Solution") {
-          gismo::gsMatrix<T> eval = Base::solution_.patch(patchIndex).eval(pts);
-          return utils::to_json(eval, true, false);
+      if (auto bspline =
+          dynamic_cast<const gismo::gsBSpline<T> *>(&Base::solution_.patch(patchIndex)))
+        for (std::size_t i = 0; i < bspline->parDim(); ++i)
+          result["knots"].push_back(bspline->knots(i));
+      else if (auto bspline = dynamic_cast<const gismo::gsTensorBSpline<d, T> *>(
+                                                                                 &Base::solution_.patch(patchIndex)))
+        for (std::size_t i = 0; i < bspline->parDim(); ++i)
+          result["knots"].push_back(bspline->knots(i));
+      else
+        return R"({ INVALID REQUEST })"_json;
+      
+      // coeffs
+      if (component == "Solution") {
+        result["coeffs"] = utils::to_json(Base::solution_.patch(patchIndex).coefs(), true, false);
+      } else {        
+        if (rhsFuncParametric_) {
+          auto &basis = Base::solution_.patch(patchIndex).basis();
+          auto pts = rhsFunc_.eval(basis.anchors());
+          auto rhs = basis.interpolateAtAnchors(pts);
+          result["coeffs"] = utils::to_json(rhs->coefs(), true, false);
         } else {
-          gismo::gsMatrix<T> eval = rhsFunc_.eval(Base::geo_.patch(patchIndex).eval(pts));
-          return utils::to_json(eval, true, false);
+          // This needs to be fixed
+          auto &basis = Base::solution_.patch(patchIndex).basis();
+          auto pts = rhsFunc_.eval(basis.anchors());
+          auto rhs = basis.interpolateAtAnchors(pts);
+          result["coeffs"] = utils::to_json(rhs->coefs(), true, false);
         }
-
-      } else {
-
-        // Create uniform grid in parametric domain
-        gismo::gsMatrix<T> ab = Base::geo_.patch(patchIndex).parameterRange();
-        gismo::gsVector<T> a = ab.col(0);
-        gismo::gsVector<T> b = ab.col(1);
-        gismo::gsMatrix<T> pts = gismo::gsPointGrid(a, b, npts);
-
-        gismo::gsMatrix<T> eval = rhsFunc_.eval(pts);
-        return utils::to_json(eval, true, false);
       }
+      
+      return result;      
     }
 
     else
@@ -597,25 +626,52 @@ public:
   }
   
   /// @brief Remove existing patch from the model
-  void removePatch(const nlohmann::json &json = NULL) override {
+  void removePatch(const std::string &patch,
+                   const nlohmann::json &json = NULL) override {
 
     // Remove patch from geometry
-    Base::removePatch(json);
+    Base::removePatch(patch, json);
 
+    // Set basis
+    basis_ = gismo::gsMultiBasis<T>(Base::geo_, true);
+
+    // Set assembler basis
+    assembler_.setIntegrationElements(basis_);
+
+    // Clear boundary conditions map
+    bcMap_.clear();
+    
+    // Initialize boundary conditions
+    for (auto const &bdr : Base::geo_.boundaries()) {
+      auto patch = bdr.patch;
+      auto side = bdr.side();
+      auto bc = bcMap_[patch][side] = { gismo::gsFunctionExpr<T>("0", d),
+                                        gismo::condition_type::dirichlet,
+                                        true };
+    }
+
+    // Clear boundary conditions
+    bc_.clear();
+    
+    // Set boundary conditions
+    for (auto const & p : bcMap_) {
+      std::size_t patch = p.first;
+      
+      for (auto const & bc : p.second) {
+        auto side = static_cast<gismo::boundary::side>(bc.first);
+
+        bc_.addCondition(patch, side, bc.second.type, bc.second.function, 0, bc.second.isParametric);  
+      }
+    }
+    
     // Set geometry
     bc_.setGeoMap(Base::geo_);
     
     int patchIndex(-1);
 
-    if (json.contains("data")) {      
-      if (json["data"].contains("patch"))
-        patchIndex = json["data"]["patch"].get<int>();
-    }
-
-    // if (patchIndex == -1)
-    //   throw std::runtime_error("Invalid patch index");
-
-    // throw std::runtime_error("Removing patches is not yet implemented in G+Smo");
+    try {
+      patchIndex = stoi(patch);
+    } catch (...) {}
 
     // Regenerate solution
     solve();

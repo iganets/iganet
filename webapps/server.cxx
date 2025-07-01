@@ -870,7 +870,7 @@ int main(int argc, char const *argv[]) {
                                    // Remove an existing model
                                    if (auto m = std::dynamic_pointer_cast<
                                            iganet::ModelRemovePatch>(model))
-                                     m->removePatch(request);
+                                     m->removePatch(tokens[3], request);
                                    else {
                                      response["status"] = iganet::webapp::
                                          status::invalidRemovePatchRequest;
@@ -1024,7 +1024,39 @@ int main(int argc, char const *argv[]) {
 
                                try {
 
-                                 if (tokens.size() == 5) {
+                                 if (tokens.size() == 4) {
+                                   //
+                                   // request: eval/<session-id>/<model-id>/<component>
+                                   //
+
+                                   // Get session
+                                   auto session =
+                                       ws->getUserData()->getSession(tokens[1]);
+
+                                   // Get model
+                                   auto model =
+                                       session->getModel(stoi(tokens[2]));
+
+                                   // Evaluate an existing model
+                                   if (auto m = std::dynamic_pointer_cast<
+                                           iganet::ModelEval>(model))
+                                     response["data"] =
+                                         m->eval("", tokens[3], request);
+                                   else {
+                                     response["status"] = iganet::webapp::
+                                         status::invalidEvalRequest;
+                                     response["reason"] =
+                                         "Invalid EVAL request. Valid EVAL "
+                                         "requests "
+                                         "are "
+                                         "\"eval/<session-id>/<model-id>/"
+                                         "<component>\"";
+                                   }
+                                   ws->send(response.dump(), uWS::OpCode::TEXT,
+                                            true);
+                                 }
+
+                                 else if (tokens.size() == 5) {
                                    //
                                    // request: eval/<session-id>/<model-id>/<patch-id>/<component>
                                    //
@@ -1064,10 +1096,12 @@ int main(int argc, char const *argv[]) {
                                  response["status"] =
                                      iganet::webapp::status::invalidEvalRequest;
                                  response["reason"] =
-                                     "Invalid EVAL request. Valid EVAL "
-                                     "requests are "
-                                     "\"eval/<session-id>/<model-id>/"
-                                     "<patch-id>/<component>\"";
+                                   "Invalid EVAL request. Valid EVAL "
+                                   "requests are "
+                                   "\"eval/<session-id>/<model-id>/"
+                                   "<component>\" and "
+                                   "\"eval/<session-id>/<model-id>/"
+                                   "<patch-id>/<component>\"";
                                  ws->send(response.dump(), uWS::OpCode::TEXT,
                                           true);
                                }
@@ -1850,7 +1884,7 @@ int main(int argc, char const *argv[]) {
                                    // Reparameterize an existing model
                                    if (auto m = std::dynamic_pointer_cast<
                                            iganet::ModelReparameterize>(model))
-                                     m->reparameterize(request);
+                                     m->reparameterize("", request);
                                    else {
                                      response["status"] = iganet::webapp::
                                          status::invalidReparameterizeRequest;
@@ -1859,7 +1893,52 @@ int main(int argc, char const *argv[]) {
                                          "Valid REPARAMETERIZE "
                                          "requests are "
                                          "\"reparameterize/<session-id>/"
-                                         "<model-id>\"";
+                                       "<model-id>\" and "
+                                       "\"reparameterize/<session-id>/"
+                                       "<model-id>/<patch-id>\"";
+                                   }
+                                   ws->send(response.dump(), uWS::OpCode::TEXT,
+                                            true);
+
+                                   // Broadcast model reparameterization
+                                   nlohmann::json broadcast;
+                                   broadcast["id"] = session->getUUID();
+                                   broadcast["request"] =
+                                       "reparameterize/model";
+                                   broadcast["data"]["id"] = stoi(tokens[2]);
+                                   ws->publish(session->getUUID(),
+                                               broadcast.dump(),
+                                               uWS::OpCode::TEXT);
+                                 }
+
+                                 else if (tokens.size() == 4) {
+                                   //
+                                   // request: reparameterize/<session-id>/<model-id>/<patch-id>
+                                   //
+
+                                   // Get session
+                                   auto session =
+                                       ws->getUserData()->getSession(tokens[1]);
+
+                                   // Get model
+                                   auto model =
+                                       session->getModel(stoi(tokens[2]));
+
+                                   // Reparameterize an existing model
+                                   if (auto m = std::dynamic_pointer_cast<
+                                           iganet::ModelReparameterize>(model))
+                                     m->reparameterize(tokens[3], request);
+                                   else {
+                                     response["status"] = iganet::webapp::
+                                         status::invalidReparameterizeRequest;
+                                     response["reason"] =
+                                       "Invalid REPARAMETERIZE request. "
+                                       "Valid REPARAMETERIZE "
+                                       "requests are "
+                                       "\"reparameterize/<session-id>/"
+                                       "<model-id>\" and "
+                                       "\"reparameterize/<session-id>/"
+                                       "<model-id>/<patch-id>\"";
                                    }
                                    ws->send(response.dump(), uWS::OpCode::TEXT,
                                             true);
@@ -1888,7 +1967,9 @@ int main(int argc, char const *argv[]) {
                                      "requests "
                                      "are "
                                      "\"reparameterize/<session-id>/"
-                                     "<model-id>\"";
+                                   "<model-id>\" and "
+                                   "\"reparameterize/<session-id>/"
+                                   "<model-id>/<patch-id>\"";
                                  ws->send(response.dump(), uWS::OpCode::TEXT,
                                           true);
                                }
