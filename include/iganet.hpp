@@ -1,4 +1,4 @@
-/**
+ /**
    @file include/iganet.hpp
 
    @brief Isogeometric analysis network
@@ -1247,11 +1247,12 @@ public:
         break;
       }
 
-      if (Loss == previous_loss) {
+      if (Loss == previous_loss.item<double>()) {
         Log(log::info) << "Total epochs: " << epoch << ", loss: " << Loss
                        << std::endl;
         break;
       }
+      double previous_loss = 0.0;
       previous_loss = Loss;
       std::cout << previous_loss << std::endl;
 
