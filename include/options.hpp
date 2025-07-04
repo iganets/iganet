@@ -74,9 +74,9 @@ inline int guess_device_index() {
   int rank;
   MPI_Comm_rank(MPI_COMM_WORLD, &rank);
   return rank %
-         utils::getenv("IGANET_DEVICE_COUNT", torch::cuda::is_available
+         utils::getenv("IGANET_DEVICE_COUNT", (torch::cuda::is_available()
                                                   ? torch::cuda::device_count()
-                                                  : 1);
+                                                  : (torch::xpu::is_available() ? torch::xpu::device_count() ? 1)));
 #else
   return 0;
 #endif
@@ -110,7 +110,7 @@ public:
                     : (utils::getenv("IGANET_DEVICE", std::string{}) == "XPU")
                         ? torch::kXPU
                         : (torch::cuda::is_available() ? torch::kCUDA
-                                                       : torch::kCPU))) {}
+                                                       : (torch::xpu::is_available() ? torch::kXPU : torch::kCPU)))) {}
 
   /// Constructor from torch::TensorOptions
   explicit Options(torch::TensorOptions &&options)

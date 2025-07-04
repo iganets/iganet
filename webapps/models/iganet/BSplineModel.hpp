@@ -596,7 +596,7 @@ public:
   }
 
   /// @brief Reparameterize the model
-  void reparameterize(const nlohmann::json &json = NULL) override {
+  void reparameterize(const std::string &patch, const nlohmann::json &json = NULL) override {
 
     // gismo::gsBarrierPatch<d, T> opt(geo_, false);
     // opt.options().setInt("ParamMethod", 1);

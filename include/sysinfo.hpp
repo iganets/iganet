@@ -495,18 +495,16 @@ inline std::string getExtraLibsVersion() {
 #if defined(CUDA_VERSION)
   if (!s.empty())
     s += ", ";
-  s += "CUDA " + std::to_string(CUDA_VERSION / 1000) + "." +
-       std::to_string((CUDA_VERSION % 100) / 10);
+  s += "CUDA " + std::to_string(CUDA_VERSION);
 #endif
 
+  // HIP
 #if defined(HIP_VERSION)
   if (!s.empty())
     s += ", ";
-  s += "HIP " + std::to_string(HIP_VERSION_MAJOR) + "." +
-       std::to_string(HIP_VERSION_MINOR) + "." +
-       std::to_string(HIP_VERSION_PATCH);
+  s += "HIP " + std::to_string(HIP_VERSION);
 #endif
-
+  
   // G+Smo
 #if defined(GISMO_VERSION)
   if (!s.empty())

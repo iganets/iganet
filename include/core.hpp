@@ -38,12 +38,12 @@
 #include <torch/csrc/api/include/torch/types.h>
 #include <torch/torch.h>
 
-#ifdef __CUDACC__
+#ifdef CUDA_VERSION
 #include <c10/cuda/CUDACachingAllocator.h>
 #include <c10/cuda/CUDAFunctions.h>
 #endif
 
-#ifdef __HIPCC__
+#ifdef HIP_VERSION
 #include <c10/hip/HIPCachingAllocator.h>
 #include <c10/hip/HIPFunctions.h>
 #endif
@@ -64,13 +64,7 @@
 #undef short_t
 
 #ifdef IGANET_WITH_MATPLOT
-#ifdef __CUDACC__
-#pragma nv_diag_suppress 611
-#endif
 #include <matplot/matplot.h>
-#ifdef __CUDACC__
-#pragma nv_diag_default 611
-#endif
 #endif
 
 #include <sysinfo.hpp>
@@ -175,9 +169,9 @@ public:
 /// @brief Return a human-readable printout of the current memory allocator
 /// statistics for a given device
 inline std::string memory_summary(c10::DeviceIndex device =
-#ifdef __CUDACC__
+#ifdef CUDA_VERSION
                                       c10::cuda::current_device()
-#elif __HIPCC__
+#elif HIP_VERSION
                                       c10::hip::current_device()
 #else
                                       0
@@ -186,7 +180,7 @@ inline std::string memory_summary(c10::DeviceIndex device =
 
   std::ostringstream os;
 
-#if defined(__CUDACC__) || defined(__HIPCC__)
+#if defined(CUDA_VERSION) || defined(HIP_VERSION)
 
   auto _format_size = [](int64_t bytes) -> std::string {
     if (bytes == 0)
@@ -206,9 +200,9 @@ inline std::string memory_summary(c10::DeviceIndex device =
   using namespace c10::CachingDeviceAllocator;
 #endif
 
-#ifdef __CUDACC__
+#ifdef CUDA_VERSION
   using namespace c10::cuda::CUDACachingAllocator;
-#elif __HIPCC__
+#elif HIP_VERSION
   using namespace c10::hip::HIPCachingAllocator;
 #endif
 
@@ -216,23 +210,23 @@ inline std::string memory_summary(c10::DeviceIndex device =
 
   os << "|====================================================================="
         "======|\n"
-#ifdef __CUDACC__
+#ifdef CUDA_VERSION
      << "|                 LibTorch CUDA memory summary, device ID "
-#elif __HIPCC__
+#elif HIP_VERSION
      << "|                 LibTorch ROCm memory summary, device ID "
 #endif
      << std::setw(18) << std::left << static_cast<int>(device) << "|\n"
      << "|---------------------------------------------------------------------"
         "------|\n"
-#ifdef __CUDACC__
+#ifdef CUDA_VERSION
      << "|            CUDA OOMs: "
-#elif __HIPCC__
+#elif HIP_VERSION
      << "|            ROCm OOMs: "
 #endif
      << std::setw(13) << std::left << deviceStats.num_ooms
-#ifdef __CUDACC__
+#ifdef CUDA_VERSION
      << "|        cudaMalloc retries: "
-#elif __HIPCC__
+#elif HIP_VERSION
      << "|         hipMalloc retries: "
 #endif
      << std::setw(10) << std::left << deviceStats.num_alloc_retries << "|\n"
@@ -806,7 +800,7 @@ inline void init(std::ostream &os = Log(log::info)) {
 /// @brief Finalizes the library
 inline void finalize(std::ostream &os = Log(log::info)) {
 
-#if defined(__CUDACC__) || defined(__HIPCC__)
+#if defined(CUDA_VERSION) || defined(HIP_VERSION)
   std::cout << "\n" << memory_summary() << std::endl;
 #endif
 

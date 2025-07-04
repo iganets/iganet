@@ -25,7 +25,19 @@ TEST(Options, Options_default) {
 
   EXPECT_EQ(options.dtype(), torch::kDouble);
   EXPECT_EQ(options.device(),
-            torch::cuda::is_available() ? torch::kCUDA : torch::kCPU);
+           (iganet::utils::getenv("IGANET_DEVICE", std::string{}) == "CPU")
+                        ? torch::kCPU
+                    : (iganet::utils::getenv("IGANET_DEVICE", std::string{}) == "CUDA")
+                        ? torch::kCUDA
+                    : (iganet::utils::getenv("IGANET_DEVICE", std::string{}) == "HIP")
+                        ? torch::kHIP
+                    : (iganet::utils::getenv("IGANET_DEVICE", std::string{}) == "MPS")
+                        ? torch::kMPS
+                    : (iganet::utils::getenv("IGANET_DEVICE", std::string{}) == "XLA")
+                        ? torch::kXLA
+                    : (iganet::utils::getenv("IGANET_DEVICE", std::string{}) == "XPU")
+                        ? torch::kXPU
+	            : (torch::cuda::is_available() ? torch::kCUDA : torch::xpu::is_available() ? torch::kXPU : torch::kCPU));
   EXPECT_EQ(options.layout(), torch::kStrided);
   EXPECT_FALSE(options.requires_grad());
   EXPECT_FALSE(options.pinned_memory());

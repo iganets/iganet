@@ -111,16 +111,24 @@ public:
     boundary_from_full_tensor(this->as_tensor());
   }
 
-  explicit FunctionSpace(const std::tuple<Splines...> &splines)
-      : spline_(splines) { //,
-    //        boundary_({splines.ncoeffs(), init::none, splines.options()}...) {
+  explicit FunctionSpace(const std::tuple<Splines...> &spline)
+      : spline_(spline) {
     boundary_from_full_tensor(this->as_tensor());
   }
 
-  explicit FunctionSpace(std::tuple<Splines...> &&splines)
-      : spline_(splines) { //,
-    //        boundary_({splines.ncoeffs(), init::none, splines.options()}...) {
+  explicit FunctionSpace(std::tuple<Splines...> &&spline)
+      : spline_(spline) {
     boundary_from_full_tensor(this->as_tensor());
+  }
+
+  explicit FunctionSpace(const std::tuple<Splines...> &spline,
+                         const std::tuple<Boundaries...> &boundary)
+    : spline_(spline), boundary_(boundary) {
+  }
+
+  explicit FunctionSpace(std::tuple<Splines...> &&spline,
+                         std::tuple<Boundaries...> &&boundary)
+    : spline_(spline), boundary_(boundary) {
   }
   /// @}
 
@@ -169,7 +177,7 @@ public:
 
     return FunctionSpace<std::tuple<std::tuple_element_t<s, spline_type>...>,
                          std::tuple<std::tuple_element_t<s, boundary_type>...>>(
-        std::get<s>(spline_)..., std::get<s>(boundary_)...);
+                                                                                std::make_tuple(std::get<s>(spline_)...), std::make_tuple(std::get<s>(boundary_)...));
   }
 
 private:
@@ -594,6 +602,18 @@ public:
 
 private:
   /// @brief Returns the knot indicies of knot spans containing `xi`
+  /// @{
+  template <functionspace comp = functionspace::interior, std::size_t... Is>
+  inline auto find_knot_indices_(std::index_sequence<Is...>,
+                                 const utils::TensorArray<nspaces()> &xi) const {
+    if constexpr (comp == functionspace::interior)
+      return std::tuple(
+          std::get<Is>(spline_).find_knot_indices(xi)...);
+    else if constexpr (comp == functionspace::boundary)
+      return std::tuple(
+          std::get<Is>(boundary_).find_knot_indices(xi)...);
+  }
+  
   template <functionspace comp = functionspace::interior, std::size_t... Is,
             typename... Xi>
   inline auto find_knot_indices_(std::index_sequence<Is...>,
@@ -605,14 +625,23 @@ private:
       return std::tuple(
           std::get<Is>(boundary_).find_knot_indices(std::get<Is>(xi))...);
   }
+  /// @}
 
 public:
   /// @brief Returns the knot indicies of knot spans containing `xi`
+  /// @{
+  template <functionspace comp = functionspace::interior>
+  inline auto find_knot_indices(const utils::TensorArray<nspaces()> &xi) const {
+    return find_knot_indices_<comp>(
+        std::make_index_sequence<FunctionSpace::nspaces()>{}, xi);
+    }
+  
   template <functionspace comp = functionspace::interior, typename... Xi>
   inline auto find_knot_indices(const std::tuple<Xi...> &xi) const {
     return find_knot_indices_<comp>(
         std::make_index_sequence<FunctionSpace::nspaces()>{}, xi);
   }
+  /// @}
 
 private:
   /// @brief Returns the values of the spline objects' basis functions in the
@@ -973,6 +1002,21 @@ public:
   /// @{
   template <functionspace comp = functionspace::interior,
             bool memory_optimized = false>
+  inline auto curl(const utils::TensorArray<nspaces()> &xi) const {
+    return curl<comp, memory_optimized>(xi, find_knot_indices<comp>(xi));
+  }
+
+  template <functionspace comp = functionspace::interior,
+            bool memory_optimized = false,
+            typename... TensorArrays>
+  inline auto curl(const utils::TensorArray<nspaces()> &xi,
+                   const std::tuple<TensorArrays...> &knot_indices) const {
+    return curl<comp, memory_optimized>(xi, knot_indices,
+                                        find_coeff_indices<comp>(knot_indices));
+  }
+  
+  template <functionspace comp = functionspace::interior,
+            bool memory_optimized = false>
   inline auto curl(const utils::TensorArray1 &xi,
                    const std::tuple<utils::TensorArray1> &knot_indices,
                    const std::tuple<torch::Tensor> &coeff_indices) const {
@@ -1084,6 +1128,21 @@ public:
   /// \f]
   ///
   /// @{
+  template <functionspace comp = functionspace::interior,
+            bool memory_optimized = false>
+  inline auto div(const utils::TensorArray<nspaces()> &xi) const {
+    return div<comp, memory_optimized>(xi, find_knot_indices<comp>(xi));
+  }
+
+  template <functionspace comp = functionspace::interior,
+            bool memory_optimized = false,
+            typename... TensorArrays>
+  inline auto div(const utils::TensorArray<nspaces()> &xi,
+                   const std::tuple<TensorArrays...> &knot_indices) const {
+    return div<comp, memory_optimized>(xi, knot_indices,
+                                       find_coeff_indices<comp>(knot_indices));
+  }
+  
   template <functionspace comp = functionspace::interior,
             bool memory_optimized = false>
   inline auto div(const utils::TensorArray1 &xi,
@@ -1210,6 +1269,21 @@ public:
   /// @{
   template <functionspace comp = functionspace::interior,
             bool memory_optimized = false>
+  inline auto grad(const utils::TensorArray<nspaces()> &xi) const {
+    return grad<comp, memory_optimized>(xi, find_knot_indices<comp>(xi));
+  }
+
+  template <functionspace comp = functionspace::interior,
+            bool memory_optimized = false,
+            typename... TensorArrays>
+  inline auto grad(const utils::TensorArray<nspaces()> &xi,
+                   const std::tuple<TensorArrays...> &knot_indices) const {
+    return grad<comp, memory_optimized>(xi, knot_indices,
+                                        find_coeff_indices<comp>(knot_indices));
+  }
+    
+  template <functionspace comp = functionspace::interior,
+            bool memory_optimized = false>
   inline auto grad(const utils::TensorArray1 &xi,
                    const std::tuple<utils::TensorArray1> &knot_indices,
                    const std::tuple<torch::Tensor> &coeff_indices) const {
@@ -1218,7 +1292,7 @@ public:
 
     if constexpr (comp == functionspace::interior) {
       static_assert(std::tuple_element_t<0, spline_type>::geoDim() == 1,
-                    "grid(.) for vector-valued spaces requires 1D variables");
+                    "grad(.) for vector-valued spaces requires 1D variables");
 
       return utils::BlockTensor<torch::Tensor, 1, 1>(
           std::get<0>(spline_).template eval<deriv::dx, memory_optimized>(
@@ -1351,6 +1425,21 @@ public:
   //  clang-format on
   ///
   /// @{
+  template <functionspace comp = functionspace::interior,
+            bool memory_optimized = false>
+  inline auto hess(const utils::TensorArray<nspaces()> &xi) const {
+    return hess<comp, memory_optimized>(xi, find_knot_indices<comp>(xi));
+  }
+
+  template <functionspace comp = functionspace::interior,
+            bool memory_optimized = false,
+            typename... TensorArrays>
+  inline auto hess(const utils::TensorArray<nspaces()> &xi,
+                   const std::tuple<TensorArrays...> &knot_indices) const {
+    return hess<comp, memory_optimized>(xi, knot_indices,
+                                        find_coeff_indices<comp>(knot_indices));
+  }
+  
   template <functionspace comp = functionspace::interior,
             bool memory_optimized = false>
   inline auto hess(const utils::TensorArray1 &xi,
@@ -1752,6 +1841,21 @@ public:
   /// @{
   template <functionspace comp = functionspace::interior,
             bool memory_optimized = false>
+  inline auto jac(const utils::TensorArray<nspaces()> &xi) const {
+    return jac<comp, memory_optimized>(xi, find_knot_indices<comp>(xi));
+  }
+
+  template <functionspace comp = functionspace::interior,
+            bool memory_optimized = false,
+            typename... TensorArrays>
+  inline auto jac(const utils::TensorArray<nspaces()> &xi,
+                   const std::tuple<TensorArrays...> &knot_indices) const {
+    return jac<comp, memory_optimized>(xi, knot_indices,
+                                        find_coeff_indices<comp>(knot_indices));
+  }
+  
+  template <functionspace comp = functionspace::interior,
+            bool memory_optimized = false>
   inline auto jac(const utils::TensorArray1 &xi,
                   const std::tuple<utils::TensorArray1> &knot_indices,
                   const std::tuple<torch::Tensor> &coeff_indices) const {
@@ -1922,6 +2026,21 @@ public:
   //  clang-format on
   ///
   /// @{
+  template <functionspace comp = functionspace::interior,
+            bool memory_optimized = false>
+  inline auto lapl(const utils::TensorArray<nspaces()> &xi) const {
+    return lapl<comp, memory_optimized>(xi, find_knot_indices<comp>(xi));
+  }
+
+  template <functionspace comp = functionspace::interior,
+            bool memory_optimized = false,
+            typename... TensorArrays>
+  inline auto lapl(const utils::TensorArray<nspaces()> &xi,
+                   const std::tuple<TensorArrays...> &knot_indices) const {
+    return lapl<comp, memory_optimized>(xi, knot_indices,
+                                        find_coeff_indices<comp>(knot_indices));
+  }
+  
   template <functionspace comp = functionspace::interior,
             bool memory_optimized = false>
   inline auto lapl(const utils::TensorArray1 &xi,
