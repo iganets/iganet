@@ -24,7 +24,7 @@ jobs:
           sudo apt-get install -y doxygen sphinx texlive-bibtex-extra
 
       - name: Set up Python
-        uses: actions/setup-python@v2
+        uses: actions/setup-python@v5
         with:
           python-version: '3.x'
 
@@ -51,7 +51,9 @@ jobs:
           -S ${{ github.workspace }}
 
       - name: Generate Documentation
-        run: cmake --build ./build
+        run: |
+          cmake --build ./build
+          cmake --build ./build -t docs
 
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3

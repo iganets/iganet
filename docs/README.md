@@ -2,7 +2,7 @@
 
 These pages were created on \showdate "%d/%m/%Y" at \showdate
 "%H:%M:%S". The latest revision of this manual is <a
-href="https://iganets.github.io" target="_parent">available
+href="https://iganets.github.io/iganet" target="_parent">available
 online</a>.
 
 **IgANets** (Isogeometric Analysis Networks) is a C++ library that
