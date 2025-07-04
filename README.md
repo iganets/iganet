@@ -1,23 +1,22 @@
 # IgANets: Physics-informed isogeometric analysis networks
 
-IgANets is a novel approach to combine the concept of deep operator
-learning with the mathematical framework of isogeometric analysis.
+IgANets is a novel approach to combine the concept of deep operator learning with the mathematical framework of isogeometric analysis.
 
 ## Installation instructions
 
-IgANets require a C++17 compiler, CMake and LibTorch (the C++ API of
-PyTorch).
+IgANets require a C++20 compiler, CMake and LibTorch (the C++ API of PyTorch).
 
-Depending on the LibTorch version installed on your system, IgANets
-will be compiled with support for CUDA, ROCm Intel GPUs or the Intel
-Extension for PyTorch. You can disable this feature by providing the
-`-DIGANET_BUILD_CPUONLY=ON` flag to CMake.
+Depending on the LibTorch version installed on your system, IgANets will be compiled with support for CUDA, ROCm Intel GPUs or the Intel Extension for PyTorch. You can disable this feature by providing the `-DIGANET_BUILD_CPUONLY=ON` flag to CMake.
 
 By providing additional CMake flags you can configure IgANet to build the following optional components:
+
+- `-DIGANET_BUILD_CPUONLY=ON` builds IgANets in CPU mode even if CUDA, ROCm, etc. is found (default `OFF`).
 
 - `-DIGANET_BUILD_DOCS=ON` builds the documentation (default `OFF`). To build the documentation you need [Doxygen](https://www.doxygen.nl) and [Sphinx](https://www.sphinx-doc.org/en/master/) installed on you system.
 
 - `-DIGANET_BUILD_EXAMPLES=ON` builds the examples (default `ON`).
+
+- `-DIGANET_BUILD_MEX=ON` builds the Matlab bindings (default `OFF`).
 
 - `-DIGANET_BUILD_PCH=ON` builds IgANets with precompiled headers (default `ON`).
 
@@ -34,6 +33,8 @@ In addition to the optional components, IgANets can be compiled with several opt
 - `-DIGANET_WITH_GISMO=ON` compiles IgANets with support for the open-source Geometry plus Simulation Modules library [G+Smo](https://github.com/gismo/gismo) enabled (default `OFF`).
 
 - `-DIGANET_WITH_MATPLOT=ON` compiles IgANets with support for the open-source library [Matplot-cpp](https://github.com/lava/matplotlib-cpp) enabled (default `OFF`). _Note that this option can cause compilation errors with GCC._
+
+- `-DIGANET_WITH_MPI=ON` compiles IgANets with MPI support enabled (default `OFF`).
 
 - `-DIGANET_WITH_OPENMP=ON` compiles IgANets with OpenMP support enabled (default `ON`). _Note that this option can cause compilation errors with Clang._
 
@@ -56,16 +57,18 @@ In addition to the optional components, IgANets can be compiled with several opt
     Pre-compiled versions of LibTorch are available at [PyTorch.org](https://pytorch.org/get-started/locally/). Depending on your compiler toolchain you need to choose between the pre-cxx11 and the cxx11 ABI, i.e.
 
     ```shell
-    wget https://download.pytorch.org/libtorch/cpu/libtorch-shared-with-deps-2.7.0%2Bcpu.zip -O libtorch.zip
+    wget https://download.pytorch.org/libtorch/cpu/libtorch-shared-with-deps-2.7.1%2Bcpu.zip -O libtorch.zip
     unzip libtorch.zip -d $HOME/
     rm -f libtorch
     ```
     or
     ```shell
-    wget https://download.pytorch.org/libtorch/cpu/libtorch-cxx11-abi-shared-with-deps-2.7.0%2Bcpu.zip -O libtorch.zip
+    wget https://download.pytorch.org/libtorch/cpu/libtorch-cxx11-abi-shared-with-deps-2.7.1%2Bcpu.zip -O libtorch.zip
     unzip libtorch.zip -d $HOME/
     rm -f libtorch
     ```
+
+    Note that there might be a newer LibTorch version available than indicated in the above code snippet.
 
 2.  Configure
     ```shell
@@ -88,19 +91,21 @@ In addition to the optional components, IgANets can be compiled with several opt
 
     Note that since version 2.2.0, official builds of the LibTorch library for ARM64 and X86_64 can be downloaded from PyTorch.org:
 
-    - https://download.pytorch.org/libtorch/cpu/libtorch-macos-x86_64-2.7.0.zip
-    - https://download.pytorch.org/libtorch/cpu/libtorch-macos-arm64-2.7.0.zip
+    - https://download.pytorch.org/libtorch/cpu/libtorch-macos-x86_64-2.7.1.zip
+    - https://download.pytorch.org/libtorch/cpu/libtorch-macos-arm64-2.7.1.zip
 
     If you decide to use these version download and unzip them as shown for the Linux installation. It is, however, recommended to install LibTorch through `brew` as described above since this method is tested regularly by the IgANets authors.
 
-2.  Configure
+    Note that there might be a newer LibTorch version available than indicated in the above code snippet.
+
+3.  Configure
     ```shell
-    cmake .. -DTorch_DIR=/opt/homebrew/Cellar/pytorch/2.7.0/share/cmake/Torch
+    cmake .. -DTorch_DIR=/opt/homebrew/Cellar/pytorch/2.7.1/share/cmake/Torch
     ```
 
     Note that the specific version of PyTorch and/or protobuf might be different on your system.
 
-3.  Compile
+4.  Compile
     ```shell
     make -j 8
     ```
@@ -111,8 +116,8 @@ In addition to the optional components, IgANets can be compiled with several opt
 
 1.  Install the CUDA-enabled version of LibTorch
 
-    - https://download.pytorch.org/libtorch/cu121/libtorch-shared-with-deps-2.7.0%2Bcu121.zip
-    - https://download.pytorch.org/libtorch/cu121/libtorch-cxx11-abi-shared-with-deps-2.7.0%2Bcu121.zip
+    - https://download.pytorch.org/libtorch/cu121/libtorch-shared-with-deps-2.7.1%2Bcu128.zip
+    - https://download.pytorch.org/libtorch/cu121/libtorch-cxx11-abi-shared-with-deps-2.7.1%2Bcu128.zip
 
     Note that the version must be compatible with the CUDA version installed on your system.
 
@@ -124,8 +129,8 @@ In addition to the optional components, IgANets can be compiled with several opt
 
 1.  Install the ROCm-enabled version of LibTorch
 
-    - https://download.pytorch.org/libtorch/rocm6.3/libtorch-shared-with-deps-2.7.0%2Brocm6.3.zip
-    - https://download.pytorch.org/libtorch/rocm6.3/libtorch-cxx11-abi-shared-with-deps-2.7.0%2Brocm6.3.zip
+    - https://download.pytorch.org/libtorch/rocm6.3/libtorch-shared-with-deps-2.7.1%2Brocm6.3.zip
+    - https://download.pytorch.org/libtorch/rocm6.3/libtorch-cxx11-abi-shared-with-deps-2.7.1%2Brocm6.3.zip
 
     Note that the version must be compatible with the ROCm version installed on your system.
 
