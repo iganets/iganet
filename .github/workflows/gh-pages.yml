@@ -1,9 +1,8 @@
-name: Build and Deploy Docs
+name: Deploy to GitHub Pages
 
 on:
   push:
-    branches:
-      - master
+    branches: [master]
   workflow_dispatch:  # Allows manual triggers of this workflow
 
 permissions:
@@ -12,7 +11,7 @@ permissions:
   id-token: write
   
 jobs:
-  build:
+  deploy:
     runs-on: ubuntu-latest
 
     steps:
@@ -54,9 +53,10 @@ jobs:
       - name: Generate Documentation
         run: cmake --build ./build
 
-      - name: Deploy to GitHub Pages
-        uses: peaceiris/actions-gh-pages@v4
+      - name: Upload artifact
+        uses: actions/upload-pages-artifact@v3
         with:
-          github_token: ${{ secrets.GITHUB_TOKEN }}
-          publish_dir: ./build/docs/doxygen/html
-          publish_branch: gh-pages
+          path: ./build/docs/doxygen/html
+
+      - name: Deploy to GitHub Pages
+        uses: actions/deploy-pages@v4
