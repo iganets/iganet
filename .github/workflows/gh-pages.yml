@@ -6,6 +6,11 @@ on:
       - master
   workflow_dispatch:  # Allows manual triggers of this workflow
 
+permissions:
+  contents: write
+  pages: write
+  id-token: write
+  
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -31,7 +36,7 @@ jobs:
 
       - name: Install PyTorch - Linux
         run: >
-          wget https://download.pytorch.org/libtorch/cpu/libtorch-cxx11-abi-shared-with-deps-2.5.1%2Bcpu.zip -O libtorch.zip &&
+          wget https://download.pytorch.org/libtorch/cpu/libtorch-cxx11-abi-shared-with-deps-2.7.1%2Bcpu.zip -O libtorch.zip &&
           unzip libtorch.zip -d $HOME &&
           rm -f libtorch.zip
 
@@ -50,7 +55,7 @@ jobs:
         run: cmake --build ./build
 
       - name: Deploy to GitHub Pages
-        uses: peaceiris/actions-gh-pages@v3
+        uses: peaceiris/actions-gh-pages@v4
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           publish_dir: ./build/docs/doxygen/html
