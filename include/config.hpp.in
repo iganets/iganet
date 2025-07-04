@@ -1,0 +1,39 @@
+/**
+   @file unittests/unittest_config.hpp
+
+   @brief Unit tests compile-time configuration
+
+   @author Matthias Moller
+
+   @copyright This file is part of the IgANet project
+
+   This Source Code Form is subject to the terms of the Mozilla Public
+   License, v. 2.0. If a copy of the MPL was not distributed with this
+   file, You can obtain one at http://mozilla.org/MPL/2.0/.
+*/
+
+#pragma once
+
+/// @brief IgANet version
+#define IGANET_VERSION    "@iganet_VERSION@"
+#define IGANET_MAJOR      @iganet_VERSION_MAJOR@
+#define IGANET_MINOR      @iganet_VERSION_MINOR@
+#define IGANET_PATCH      @iganet_VERSION_PATCH@
+
+/// @brief Compile with G+Smo enabled
+#cmakedefine IGANET_WITH_GISMO
+
+/// @brief Compile with Matplotlib enabled
+#cmakedefine IGANET_WITH_MATPLOT
+
+/// @brief Compile with OpenMP enabled
+#cmakedefine IGANET_WITH_OPENMP
+
+/// @brief Compile with MPI enabled
+#cmakedefine IGANET_WITH_MPI
+
+/// @brief Compile with CUDA enabled
+#cmakedefine CUDA_VERSION @CUDA_VERSION@
+
+/// @brief Compile with HIP enabled
+#cmakedefine HIP_VERSION @HIP_VERSION@

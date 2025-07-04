@@ -1,31 +1,206 @@
-# IgANet: Physics-machine learning embedded into Isogeometric Analysis
+# IgANets: Physics-informed isogeometric analysis networks
 
-## Compilation instructions
+IgANets is a novel approach to combine the concept of deep operator learning with the mathematical framework of isogeometric analysis.
 
-IgANet requires a C++17 compiler, CMake and LibTorch (the C++ API of PyTorch). If CUDA is installed on your system, IgANet will be compiled with CUDA support. Optionally, you can configure IgANet to compile the Python module pyiganet which requires a Python version to be installed.
+## Installation instructions
+
+IgANets require a C++20 compiler, CMake and LibTorch (the C++ API of PyTorch).
+
+Depending on the LibTorch version installed on your system, IgANets will be compiled with support for CUDA, ROCm Intel GPUs or the Intel Extension for PyTorch. You can disable this feature by providing the `-DIGANET_BUILD_CPUONLY=ON` flag to CMake.
+
+By providing additional CMake flags you can configure IgANet to build the following optional components:
+
+- `-DIGANET_BUILD_CPUONLY=ON` builds IgANets in CPU mode even if CUDA, ROCm, etc. is found (default `OFF`).
+
+- `-DIGANET_BUILD_DOCS=ON` builds the documentation (default `OFF`). To build the documentation you need [Doxygen](https://www.doxygen.nl) and [Sphinx](https://www.sphinx-doc.org/en/master/) installed on you system.
+
+- `-DIGANET_BUILD_EXAMPLES=ON` builds the examples (default `ON`).
+
+- `-DIGANET_BUILD_MEX=ON` builds the Matlab bindings (default `OFF`).
+
+- `-DIGANET_BUILD_PCH=ON` builds IgANets with precompiled headers (default `ON`).
+
+- `-DIGANET_BUILD_PERFTESTS=ON` builds the performance tests (default `OFF`).
+
+- `-DIGANET_BUILD_PYTHON=ON` builds the Python module `pyiganet` (default `OFF`). This option requires a Python interpreter to be installed on your system.
+
+- `-DIGANET_BUILD_UNITTESTS=ON` builds the unit tests (default `OFF`).
+
+- `-DIGANET_BUILD_WEBAPPS=ON` builds the websocket applications (default `OFF`).
+
+In addition to the optional components, IgANets can be compiled with several optional features enabled/disabled:
+
+- `-DIGANET_WITH_GISMO=ON` compiles IgANets with support for the open-source Geometry plus Simulation Modules library [G+Smo](https://github.com/gismo/gismo) enabled (default `OFF`).
+
+- `-DIGANET_WITH_MATPLOT=ON` compiles IgANets with support for the open-source library [Matplot-cpp](https://github.com/lava/matplotlib-cpp) enabled (default `OFF`). _Note that this option can cause compilation errors with GCC._
+
+- `-DIGANET_WITH_MPI=ON` compiles IgANets with MPI support enabled (default `OFF`).
+
+- `-DIGANET_WITH_OPENMP=ON` compiles IgANets with OpenMP support enabled (default `ON`). _Note that this option can cause compilation errors with Clang._
+
+### Linux
+
+1.  Install prerequisites (CMake and LibTorch)
+
+    #### Ubuntu
+      ```shell
+      apt-get install build-essential cmake unzip wget
+      ```
+
+    #### RedHat
+      ```shell
+      yum install make cmake gcc gcc-c++ unzip wget
+      ```
+
+    #### Install LibTorch
+
+    Pre-compiled versions of LibTorch are available at [PyTorch.org](https://pytorch.org/get-started/locally/). Depending on your compiler toolchain you need to choose between the pre-cxx11 and the cxx11 ABI, i.e.
+
+    ```shell
+    wget https://download.pytorch.org/libtorch/cpu/libtorch-shared-with-deps-2.7.1%2Bcpu.zip -O libtorch.zip
+    unzip libtorch.zip -d $HOME/
+    rm -f libtorch
+    ```
+    or
+    ```shell
+    wget https://download.pytorch.org/libtorch/cpu/libtorch-cxx11-abi-shared-with-deps-2.7.1%2Bcpu.zip -O libtorch.zip
+    unzip libtorch.zip -d $HOME/
+    rm -f libtorch
+    ```
+
+    Note that there might be a newer LibTorch version available than indicated in the above code snippet.
+
+2.  Configure
+    ```shell
+    cmake .. -DTorch_DIR=${HOME}/libtorch/share/cmake/Torch
+    ```
+
+3.  Compile
+    ```shell
+    make -j 8
+    ```
+
+    Depending on the number of cores of your CPU you may want to change 8 to a different number.
 
 ### macOS
 
-1. Install prerequisites (CMake and LibTorch)
-   ```
-   brew install cmake pytorch
-   ```
-
-2. Configure
+1.  Install prerequisites (CMake and LibTorch)
+    ```shell
+    brew install cmake pytorch
     ```
-    cmake .. -DTorch_DIR=/opt/homebrew/Cellar/pytorch/2.0.1/share/cmake/Torch -DCMAKE_PREFIX_PATH=/opt/homebrew/Cellar/protobuf@21/21.12/
+
+    Note that since version 2.2.0, official builds of the LibTorch library for ARM64 and X86_64 can be downloaded from PyTorch.org:
+
+    - https://download.pytorch.org/libtorch/cpu/libtorch-macos-x86_64-2.7.1.zip
+    - https://download.pytorch.org/libtorch/cpu/libtorch-macos-arm64-2.7.1.zip
+
+    If you decide to use these version download and unzip them as shown for the Linux installation. It is, however, recommended to install LibTorch through `brew` as described above since this method is tested regularly by the IgANets authors.
+
+    Note that there might be a newer LibTorch version available than indicated in the above code snippet.
+
+3.  Configure
+    ```shell
+    cmake .. -DTorch_DIR=/opt/homebrew/Cellar/pytorch/2.7.1/share/cmake/Torch
     ```
 
     Note that the specific version of PyTorch and/or protobuf might be different on your system.
 
-3. Compile
-    ```
-    make
+4.  Compile
+    ```shell
+    make -j 8
     ```
 
-4. _Optionally_: Compile pyiganet
-   ```
-   Torch_DIR=/opt/homebrew/Cellar/pytorch/2.0.1/share/cmake/Torch CMAKE_PREFIX_PATH=/opt/homebrew/Cellar/protobuf@21/21.12/ python setup.py develop python setup.py develop
+    Depending on the number of cores of your CPU you may want to change 8 to a different number.
+
+## Compilation with CUDA support (only Linux)
+
+1.  Install the CUDA-enabled version of LibTorch
+
+    - https://download.pytorch.org/libtorch/cu121/libtorch-shared-with-deps-2.7.1%2Bcu128.zip
+    - https://download.pytorch.org/libtorch/cu121/libtorch-cxx11-abi-shared-with-deps-2.7.1%2Bcu128.zip
+
+    Note that the version must be compatible with the CUDA version installed on your system.
+
+2. Configure and compile
+
+   All further steps are the same as described above (Linux)
+
+## Compilation with ROCm support (only Linux)
+
+1.  Install the ROCm-enabled version of LibTorch
+
+    - https://download.pytorch.org/libtorch/rocm6.3/libtorch-shared-with-deps-2.7.1%2Brocm6.3.zip
+    - https://download.pytorch.org/libtorch/rocm6.3/libtorch-cxx11-abi-shared-with-deps-2.7.1%2Brocm6.3.zip
+
+    Note that the version must be compatible with the ROCm version installed on your system.
+
+2.  Configure and compiled
+
+    All further steps are the same as described above (Linux)
+
+## Compilation with Intel GPU support (only Linux)
+
+1. Install the Intel GPU drivers and PyTorch version as decribed
+   [here](https://docs.pytorch.org/docs/stable/notes/get_start_xpu.html). If
+   you do not own an Intel GPU, you can create a free account at the
+   [Intel Tiber AI Cloud](https://console.cloud.intel.com), which
+   provides a free access to Intel datacenter GPU for testing
+   purposes.
+
+2. Install the XPU-enabled version of PyTorch in a virtual python environment
+
+   ```shell
+   python3 -m venv $HOME/.venv/torch-xpu
+   source $HOME/.venv/torch-xpu/bin/activate
+   pip install torch --index-url https://download.pytorch.org/whl/xpu
    ```
 
-   Again, the specific version of PyTorch and/or protobuf might be different on your system.
+3. Configure
+    ```shell
+    cmake .. -DTorch_DIR=$HOME/.venv/torch-xpu/lib/python3.11/site-packages/torch/share/cmake/Torch/
+    ```
+
+    Note that on the latest Intel Tiber AI Cloud installation, ZLib is
+    not found by default. This can be corrected by calling CMake with
+    the additional parameters
+    ```shell
+    -DZLIB_LIBRARY=/usr/lib/x86_64-linux-gnu/libz.so.1 -DZLIB_INCLUDE_DIR=/usr/include
+    ```
+
+## Compilation with Intel Extensions for PyTorch support (only Linux)
+
+1.  Install the Intel Extensions for PyTorch as described [here](https://github.com/intel/intel-extension-for-pytorch?tab=readme-ov-file).
+
+2.  Add the CMake option `-DIPEX_DIR=<path/to/IPEX/installation>`
+
+## Python module
+
+To compile the Python module `pyiganet` run
+```shell
+Torch_DIR=/opt/homebrew/Cellar/pytorch/2.1.2_1/share/cmake/Torch CMAKE_PREFIX_PATH=/opt/homebrew/Cellar/protobuf/25.2 python setup.py develop python setup.py develop
+```
+
+Again, the specific version of PyTorch and/or protobuf might be different on your system.
+
+## Unit tests
+
+To compile with unit tests enabled run CMake with the `-DIGANET_BUILD_UNITTESTS=ON` option and run
+```shell
+make test
+```
+
+## Performance tests
+
+To compile with performance tests enabled run CMake with the `-DIGANET_BUILD_PERFTESTS=ON` option. By default, all performance tests are disabled and need to be enabled explicitly.
+
+To obtain a list of available tests run (or another executable in the `perftests` folder)
+```shell
+./perftests/perftest_bspline_eval --gtest_filter="*" --gtest_list_tests
+```
+
+To execute one or more tests run
+```shell
+./perftests/perftest_bspline_eval --gtest_filter="*UniformBSpline_*parDim1*:-*Non*"
+```
+
+This specific command will run all `UniformBSpline` tests with 1 parametric dimension.

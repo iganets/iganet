@@ -1,10 +1,22 @@
+stages:
+  - build
+
+default:
+  image: ubuntu:22.04
+
+variables:
+  OMP_NUM_THREAD: 2
+
+#
+# Install dependencies
+#
 before_script:
    - apt-get update -y
    - apt-get install build-essential locales unzip wget zlib1g-dev libstdc++-11-dev -y
    - wget https://github.com/Kitware/CMake/releases/download/v3.24.4/cmake-3.24.4-linux-x86_64.tar.gz
    - tar xvzf cmake-3.24.4-linux-x86_64.tar.gz -C /opt
    - rm -f cmake-3.24.4-linux-x86_64.tar.gz
-   - wget https://download.pytorch.org/libtorch/cpu/libtorch-cxx11-abi-shared-with-deps-2.0.1%2Bcpu.zip -O libtorch.zip
+   - wget https://download.pytorch.org/libtorch/cpu/libtorch-cxx11-abi-shared-with-deps-2.5.1%2Bcpu.zip -O libtorch.zip
    - unzip libtorch.zip -d /opt
    - rm -f libtorch.zip
    - export PATH=$PATH:/opt/cmake-3.24.4-linux-x86_64/bin
@@ -13,12 +25,6 @@ before_script:
    - export LANG=en_US.UTF-8
    - export LC_ALL=en_US.UTF-8
 
-stages:
-  - build
-
-default:
-  image: ubuntu:22.04
-      
 #
 # Create Doxygen documentation
 #
@@ -32,7 +38,7 @@ pages:
     - CC=gcc CXX=g++ cmake .. -DIGANET_BUILD_DOCS=ON -DTorch_DIR=/opt/libtorch/share/cmake/Torch
     - make Doxygen
     - mv docs/doxygen/html ../public
-    - mv docs/doxygen/*.xml ../public 
+    - mv docs/doxygen/*.xml ../public
   only:
     refs:
       - master
@@ -59,7 +65,7 @@ unittests-gcc:
   script:
     - mkdir -p build
     - cd build
-    - CC=gcc CXX=g++ cmake .. -DIGANET_BUILD_UNITTESTS=ON -DTorch_DIR=/opt/libtorch/share/cmake/Torch
+    - CC=gcc CXX=g++ cmake .. -DIGANET_BUILD_UNITTESTS=ON -DIGANET_BUILD_PERFTESTS=ON -DTorch_DIR=/opt/libtorch/share/cmake/Torch
     - make
     - make test
   only:
@@ -97,10 +103,15 @@ pyiganet-gcc:
 webapps-gcc:
   stage: build
   script:
+    - apt-get update -y
+    - apt-get install python3-pip python3-setuptools -y
+    - pip3 install websocket-client
     - mkdir -p build
     - cd build
-    - CC=gcc CXX=g++ cmake .. -DIGANET_BUILD_WEBAPPS=ON -DIGANET_BUILD_EXAMPLES=OFF -DTorch_DIR=/opt/libtorch/share/cmake/Torch
+    - CC=gcc CXX=g++ cmake .. -DIGANET_BUILD_EXAMPLES=OFF -DIGANET_BUILD_WEBAPPS=ON -DTorch_DIR=/opt/libtorch/share/cmake/Torch
     - make
+    - ./webapps/server &
+    - HOSTNAME=172.17.0.2 python3 -m unittest discover ../webapps/unittests
   only:
     refs:
       - master
@@ -110,7 +121,7 @@ webapps-gcc:
       - cmake/*
       - include/*
       - webapps/*
-    
+
 #
 # Build and test UnitTests with Clang compiler
 #
@@ -121,7 +132,7 @@ unittests-clang:
     - apt-get install clang libomp-dev -y
     - mkdir -p build
     - cd build
-    - CC=clang CXX=clang++ cmake .. -DIGANET_BUILD_UNITTESTS=ON -DTorch_DIR=/opt/libtorch/share/cmake/Torch -DOpenMP_C_FLAGS="-Xpreprocessor -fopenmp -I/usr/lib/llvm-14/lib/clang/14.0.0/include" -DOpenMP_C_LIB_NAMES=libomp -DOpenMP_CXX_FLAGS="-Xpreprocessor -fopenmp -I/usr/lib/llvm-14/lib/clang/14.0.0/include" -DOpenMP_CXX_LIB_NAMES=libomp -DOpenMP_libomp_LIBRARY=/usr/lib/llvm-14/lib/libomp.so
+    - CC=clang CXX=clang++ cmake .. -DIGANET_BUILD_UNITTESTS=ON -DIGANET_BUILD_PERFTESTS=ON -DTorch_DIR=/opt/libtorch/share/cmake/Torch -DOpenMP_C_FLAGS="-Xpreprocessor -fopenmp -I/usr/lib/llvm-14/lib/clang/14.0.0/include" -DOpenMP_C_LIB_NAMES=libomp -DOpenMP_CXX_FLAGS="-Xpreprocessor -fopenmp -I/usr/lib/llvm-14/lib/clang/14.0.0/include" -DOpenMP_CXX_LIB_NAMES=libomp -DOpenMP_libomp_LIBRARY=/usr/lib/llvm-14/lib/libomp.so
     - make
     - make test
   only:

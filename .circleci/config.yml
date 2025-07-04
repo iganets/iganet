@@ -4,27 +4,11 @@ orbs:
   win: circleci/windows@5.0
 
 jobs:
-  unittests-macos:
-    macos:
-      xcode: 14.3.1
-    steps:
-      - checkout
-      - run:
-          name: Install dependencies
-          command: brew install cmake libomp pytorch
-      - run:
-          name: Compile and run unit tests
-          command: |
-            mkdir build
-            cd build
-            cmake .. -DIGANET_BUILD_UNITTESTS=ON -DTorch_DIR=/usr/local/Cellar/pytorch/2.0.1/share/cmake/Torch -DCMAKE_PREFIX_PATH=/usr/local/Cellar/protobuf@21/21.12/ 
-            make
-            make test
   unittests-windows:
     executor:
       name: win/default
     environment:
-      - LIBTORCH_URL: "https://download.pytorch.org/libtorch/cpu/libtorch-win-shared-with-deps-2.0.1%2Bcpu.zip"
+      - LIBTORCH_URL: "https://download.pytorch.org/libtorch/cpu/libtorch-win-shared-with-deps-2.7.1%2Bcpu.zip"
       - MSBUILD_DIR: 'C:\Program Files (x86)\Microsoft Visual Studio\2019\BuildTools\MSBuild\Current\Bin'
       - CMAKE_DIR: 'C:\Program Files\CMake\bin'
       - RELEASE_FLAGS: -DCMAKE_BUILD_TYPE=Release -DIGANET_BUILD_UNITTESTS=ON
@@ -53,7 +37,7 @@ jobs:
             if (-not $?) { throw "Failed to configure IgaNet" }
             cmake --build ./build --config Release
             if (-not $?) { throw "Failed to build IgaNet" }
-  
+
 workflows:
   unittests:
     jobs:

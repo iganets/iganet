@@ -15,20 +15,18 @@
 #pragma once
 
 namespace iganet {
-  namespace utils {  
+namespace utils {
 
-    /// @brief Computes the power of integer `E` to the `N` at compile time
-    /// @{
-    template<int E, int N>
-    struct integer_pow {
-      enum { value = E * integer_pow<E, N - 1>::value };
-    };
+/// @brief Computes the power of integer `E` to the `N` at compile time
+/// @{
+template <int E, int N> struct integer_pow {
+  enum { value = E * integer_pow<E, N - 1>::value };
+};
 
-    template <int E>
-    struct integer_pow<E, 0> {
-      enum { value = 1 };
-    };
-    /// @}
+template <int E> struct integer_pow<E, 0> {
+  enum { value = 1 };
+};
+/// @}
 
-  } // namespace utils
+} // namespace utils
 } // namespace iganet

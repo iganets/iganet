@@ -2,7 +2,7 @@
 # CMakeLists.txt
 #
 # Author: Matthias Moller
-# Copyright (C) 2021-2023 by the IgANet authors
+# Copyright (C) 2021-2025 by the IgANet authors
 #
 # This file is part of the IgANet project
 #
@@ -19,6 +19,10 @@ if(NOT IGANET_PERFTESTS_COEFF_TYPE)
 endif()
 set_property(CACHE IGANET_PERFTESTS_COEFF_TYPE PROPERTY STRINGS
   "float" "double")
+
+message("PerfTests options:")
+message("IGANET_PERFTESTS_COEFF_TYPE........: ${IGANET_PERFTESTS_COEFF_TYPE}")
+message("")
 
 ########################################################################
 # Config file
@@ -40,7 +44,7 @@ include(FetchContent)
 # GoogleTest
 ########################################################################
 FetchContent_Declare(
-  googletest  
+  googletest
   URL https://github.com/google/googletest/archive/refs/heads/main.zip
   )
 # For Windows: Prevent overriding the parent project's compiler/linker settings
@@ -51,9 +55,9 @@ set(gtest_force_shared_crt ON CACHE BOOL "" FORCE)
 ########################################################################
 FetchContent_Declare(
   bsplinelib
-  URL https://github.com/tataratat/BSplineLib/archive/refs/heads/tataratat.zip
-  FIND_PACKAGE_ARGS
+  URL https://github.com/tataratat/BSplineLib/archive/refs/heads/main.zip
   )
+set(BSPLINELIB_SHARED ON CACHE BOOL "" FORCE)
 set(BSPLINELIB_BUILD_PUGIXML OFF CACHE BOOL "" FORCE)
 set(pugixml_DIR ${pugixml_BINARY_DIR})
 FetchContent_MakeAvailable(googletest bsplinelib)
@@ -63,34 +67,54 @@ include_directories(${bsplinelib_SOURCE_DIR}/Sources)
 ########################################################################
 # Collect perftest sources
 ########################################################################
+
+add_custom_target(iganet_perftests)
+
 file(GLOB PERFTESTS *.cxx)
 
 foreach(perftest ${PERFTESTS})
-  file(RELATIVE_PATH filename ${CMAKE_CURRENT_SOURCE_DIR} ${perftest})
-  if (CMAKE_CUDA_COMPILER)
-    set_source_files_properties(${filename} PROPERTIES LANGUAGE CUDA)
-  endif()
-  
-  string(REPLACE ".cxx" "" name ${filename})
-  add_executable(${name} ${filename})
 
-  if(NOT ${CMAKE_VERSION} VERSION_LESS "3.16.0")
+  get_filename_component(name ${perftest} NAME_WE)
+  add_executable(${name} ${perftest})
+  add_dependencies(iganet_perftests ${name})
+
+  if(IGANET_BUILD_PCH AND NOT WIN32 AND NOT ${CMAKE_VERSION} VERSION_LESS "3.16.0")
     target_precompile_headers(${name} REUSE_FROM iganet_pch)
   endif()
 
+  target_compile_options(${name} PUBLIC "-DIGANET_DATA_DIR=\"${PROJECT_SOURCE_DIR}/filedata/\"")
+
   # LibTorch
   target_link_libraries(${name} PUBLIC "${TORCH_LIBRARIES}")
+  target_link_libraries(${name} PUBLIC pugixml)
+
+  # Intel Extension for PyTorch
+  if (NOT IGANET_BUILD_CPUONLY AND IPEX_FOUND)
+    target_link_libraries(${name} PUBLIC ${TORCH_IPEX_LIBRARIES})
+  endif()
 
   # BSplineLib
-  target_link_libraries(${name} PUBLIC pugixml)
   target_link_libraries(${name} PUBLIC splines)
 
   # Google test
   target_link_libraries(${name} PUBLIC gtest_main)
-  
+
+  if (IGANET_WITH_GISMO)
+    target_link_libraries(${name} PUBLIC gismo_static)
+  endif()
+
   if (IGANET_WITH_MATPLOT)
     target_link_libraries(${name} PUBLIC Matplot++::matplot)
   endif()
-  target_compile_definitions(${name} PUBLIC PERFTEST_DISABLE_SHORT_MACROS)
+
+  if (IGANET_WITH_MPI)
+    target_link_libraries(${name} PUBLIC MPI::MPI_CXX)
+  endif()
+
+  if (IGANET_WITH_OPENMP)
+    target_link_libraries(${name} PUBLIC OpenMP::OpenMP_CXX)
+  endif()
+
+  target_compile_definitions(${name} PUBLIC UNITTEST_DISABLE_SHORT_MACROS)
   add_test(${name} ${name})
 endforeach()

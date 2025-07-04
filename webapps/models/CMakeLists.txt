@@ -2,7 +2,7 @@
 # CMakeLists.txt
 #
 # Author: Matthias Moller
-# Copyright (C) 2021-2023 by the IgANet authors
+# Copyright (C) 2021-2025 by the IgANet authors
 #
 # This file is part of the IgANet project
 #
@@ -13,13 +13,11 @@
 ########################################################################
 
 ########################################################################
-# Modles
+# Models
 ########################################################################
-file(GLOB MODELS *.cxx)
-foreach(model ${MODELS})
-  file(RELATIVE_PATH filename ${CMAKE_CURRENT_SOURCE_DIR} ${model})
-  string(REPLACE ".cxx" "" name ${filename})
-  add_library(${name} SHARED ${filename})
-  target_link_libraries(${name} PUBLIC ${TORCH_LIBRARIES})
-  target_link_libraries(${name} PUBLIC pugixml)
-endforeach()
+
+if (IGANET_WITH_GISMO)
+  add_subdirectory(gismo)
+endif()
+
+add_subdirectory(iganet)

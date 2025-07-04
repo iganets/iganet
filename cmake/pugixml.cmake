@@ -2,14 +2,14 @@
 # pugixml.cmake
 #
 # Author: Matthias Moller
-# Copyright (C) 2021-2023 by the IgaNet authors
+# Copyright (C) 2021-2025 by the IgaNet authors
 #
 # This file is part of the IgaNet project
 #
 # This Source Code Form is subject to the terms of the Mozilla Public
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
-# 
+#
 ########################################################################
 
 ########################################################################
@@ -18,8 +18,7 @@
 
 include(FetchContent)
 FetchContent_Declare(pugixml
-  URL https://github.com/zeux/pugixml/releases/download/v1.13/pugixml-1.13.zip
-  FIND_PACKAGE_ARGS
+  URL https://github.com/zeux/pugixml/releases/download/v1.15/pugixml-1.15.zip
   )
 
 FetchContent_MakeAvailable(pugixml)

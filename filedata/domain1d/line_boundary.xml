@@ -1,0 +1,11 @@
+<?xml version="1.0"?>
+<xml>
+	<Boundary id="0">
+		<Geometry type="Point" index="0">
+			<coefs geoDim="4">-1.000000 -2.000000 -3.000000 -4.000000</coefs>
+		</Geometry>
+		<Geometry type="Point" index="1">
+			<coefs geoDim="4">1.000000 2.000000 3.000000 4.000000</coefs>
+		</Geometry>
+	</Boundary>
+</xml>

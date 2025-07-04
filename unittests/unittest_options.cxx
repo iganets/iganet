@@ -12,82 +12,108 @@
    file, You can obtain one at http://mozilla.org/MPL/2.0/.
 */
 
+#include <complex>
 #include <iganet.h>
 #include <iostream>
-#include <complex>
 
 #include <gtest/gtest.h>
 
-TEST(Options, Options_default)
-{
+#pragma nv_diag_suppress 20208
+
+TEST(Options, Options_default) {
   iganet::Options<double> options;
 
-  EXPECT_EQ(options.dtype(),         c10::ScalarType::Double);
-  EXPECT_EQ(options.device(),        torch::cuda::is_available() ? torch::kCUDA : torch::kCPU);
-  EXPECT_EQ(options.layout(),        torch::kStrided);
-  EXPECT_EQ(options.requires_grad(), false);
-  EXPECT_EQ(options.pinned_memory(), false);
-  EXPECT_EQ(options.is_sparse(),     false);  
+  EXPECT_EQ(options.dtype(), torch::kDouble);
+  EXPECT_EQ(options.device(),
+           (iganet::utils::getenv("IGANET_DEVICE", std::string{}) == "CPU")
+                        ? torch::kCPU
+                    : (iganet::utils::getenv("IGANET_DEVICE", std::string{}) == "CUDA")
+                        ? torch::kCUDA
+                    : (iganet::utils::getenv("IGANET_DEVICE", std::string{}) == "HIP")
+                        ? torch::kHIP
+                    : (iganet::utils::getenv("IGANET_DEVICE", std::string{}) == "MPS")
+                        ? torch::kMPS
+                    : (iganet::utils::getenv("IGANET_DEVICE", std::string{}) == "XLA")
+                        ? torch::kXLA
+                    : (iganet::utils::getenv("IGANET_DEVICE", std::string{}) == "XPU")
+                        ? torch::kXPU
+             : (torch::cuda::is_available() ? torch::kCUDA : torch::xpu::is_available() ? torch::kXPU : torch::kCPU));
+  EXPECT_EQ(options.layout(), torch::kStrided);
+  EXPECT_FALSE(options.requires_grad());
+  EXPECT_FALSE(options.pinned_memory());
+  EXPECT_FALSE(options.is_sparse());
 }
 
-TEST(Options, Options_nondefault)
-{
-  auto options = iganet::Options<float>{}.device(torch::kCPU).layout(torch::kSparse).requires_grad(true);
+TEST(Options, Options_nondefault) {
+  auto options = iganet::Options<float>{}
+                     .device(torch::kCPU)
+                     .layout(torch::kSparse)
+                     .requires_grad(true);
 
-  EXPECT_EQ(options.dtype(),         c10::ScalarType::Float);
-  EXPECT_EQ(options.device(),        torch::kCPU);
-  EXPECT_EQ(options.layout(),        torch::kSparse);
-  EXPECT_EQ(options.requires_grad(), true);
-  EXPECT_EQ(options.pinned_memory(), false);
-  EXPECT_EQ(options.is_sparse(),     true);  
+  EXPECT_EQ(options.dtype(), torch::kFloat);
+  EXPECT_EQ(options.device(), torch::kCPU);
+  EXPECT_EQ(options.layout(), torch::kSparse);
+  EXPECT_TRUE(options.requires_grad());
+  EXPECT_FALSE(options.pinned_memory());
+  EXPECT_TRUE(options.is_sparse());
 }
 
-TEST(Options, Options_dtype)
-{
-  EXPECT_EQ(iganet::Options<double>{}.dtype(),       c10::ScalarType::Double);
-  EXPECT_EQ(iganet::Options<float>{}.dtype(),        c10::ScalarType::Float);
-  EXPECT_EQ(iganet::Options<iganet::half>{}.dtype(), c10::ScalarType::Half);
-  EXPECT_EQ(iganet::Options<long>{}.dtype(),         c10::ScalarType::Long);
-  EXPECT_EQ(iganet::Options<int>{}.dtype(),          c10::ScalarType::Int);
-  EXPECT_EQ(iganet::Options<short>{}.dtype(),        c10::ScalarType::Short);
-  EXPECT_EQ(iganet::Options<char>{}.dtype(),         c10::ScalarType::Char);
-  EXPECT_EQ(iganet::Options<bool>{}.dtype(),         c10::ScalarType::Bool);
+TEST(Options, Options_dtype) {
+  EXPECT_EQ(iganet::Options<double>{}.dtype(), torch::kDouble);
+  EXPECT_EQ(iganet::Options<float>{}.dtype(), torch::kFloat);
+  EXPECT_EQ(iganet::Options<iganet::half>{}.dtype(), torch::kHalf);
+  EXPECT_EQ(iganet::Options<long>{}.dtype(), torch::kLong);
+  EXPECT_EQ(iganet::Options<int>{}.dtype(), torch::kInt);
+  EXPECT_EQ(iganet::Options<short>{}.dtype(), torch::kShort);
+  EXPECT_EQ(iganet::Options<char>{}.dtype(), torch::kChar);
+  EXPECT_EQ(iganet::Options<bool>{}.dtype(), torch::kBool);
 
-  EXPECT_EQ(iganet::Options<std::complex<double>>{}.dtype(),       c10::ScalarType::ComplexDouble);
-  EXPECT_EQ(iganet::Options<std::complex<float>>{}.dtype(),        c10::ScalarType::ComplexFloat);
-  EXPECT_EQ(iganet::Options<std::complex<iganet::half>>{}.dtype(), c10::ScalarType::ComplexHalf);
+  EXPECT_EQ(iganet::Options<std::complex<double>>{}.dtype(),
+            torch::kComplexDouble);
+  EXPECT_EQ(iganet::Options<std::complex<float>>{}.dtype(),
+            torch::kComplexFloat);
+  EXPECT_EQ(iganet::Options<std::complex<iganet::half>>{}.dtype(),
+            torch::kComplexHalf);
 }
 
-TEST(Options, Options_clone)
-{
-  auto options = iganet::Options<float>{}.device(torch::kCPU).layout(torch::kSparse).requires_grad(false);
+TEST(Options, Options_clone) {
+  auto options = iganet::Options<float>{}
+                     .device(torch::kCPU)
+                     .layout(torch::kSparse)
+                     .requires_grad(false);
 
   auto options_clone(options);
-  
-  EXPECT_EQ(options_clone.dtype(),         c10::ScalarType::Float);
-  EXPECT_EQ(options_clone.device(),        torch::kCPU);
-  EXPECT_EQ(options_clone.layout(),        torch::kSparse);
-  EXPECT_EQ(options_clone.requires_grad(), false);
-  EXPECT_EQ(options_clone.pinned_memory(), false);
-  EXPECT_EQ(options_clone.is_sparse(),     true);
+
+  EXPECT_EQ(options_clone.dtype(), torch::kFloat);
+  EXPECT_EQ(options_clone.device(), torch::kCPU);
+  EXPECT_EQ(options_clone.layout(), torch::kSparse);
+  EXPECT_FALSE(options_clone.requires_grad());
+  EXPECT_FALSE(options_clone.pinned_memory());
+  EXPECT_TRUE(options_clone.is_sparse());
 }
 
-TEST(Options, Options_conversion)
-{
-  auto options = iganet::Options<float>{}.device(torch::kCPU).layout(torch::kSparse).requires_grad(true);
+TEST(Options, Options_conversion) {
+  auto options = iganet::Options<float>{}
+                     .device(torch::kCPU)
+                     .layout(torch::kSparse)
+                     .requires_grad(true);
 
   torch::TensorOptions tensorOptions(options);
-  
-  EXPECT_EQ(tensorOptions.dtype(),         c10::ScalarType::Float);
-  EXPECT_EQ(tensorOptions.device(),        torch::kCPU);
-  EXPECT_EQ(tensorOptions.layout(),        torch::kSparse);
-  EXPECT_EQ(tensorOptions.requires_grad(), true);
-  EXPECT_EQ(tensorOptions.pinned_memory(), false);
-  EXPECT_EQ(tensorOptions.is_sparse(),     true);
+
+  EXPECT_EQ(tensorOptions.dtype(), torch::kFloat);
+  EXPECT_EQ(tensorOptions.device(), torch::kCPU);
+  EXPECT_EQ(tensorOptions.layout(), torch::kSparse);
+  EXPECT_TRUE(tensorOptions.requires_grad());
+  EXPECT_FALSE(tensorOptions.pinned_memory());
+  EXPECT_TRUE(tensorOptions.is_sparse());
 }
 
 int main(int argc, char **argv) {
   ::testing::InitGoogleTest(&argc, argv);
   iganet::init();
-  return RUN_ALL_TESTS();
+  int result = RUN_ALL_TESTS();
+  iganet::finalize();
+  return result;
 }
+
+#pragma nv_diag_default 20208
