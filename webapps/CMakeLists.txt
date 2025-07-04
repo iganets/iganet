@@ -71,10 +71,6 @@ file(GLOB WEBAPPS *.cxx)
 foreach(webapp ${WEBAPPS})
   file(RELATIVE_PATH filename ${CMAKE_CURRENT_SOURCE_DIR} ${webapp})
 
-  if (NOT IGANET_BUILD_CPUONLY AND CMAKE_CUDA_COMPILER)
-    set_source_files_properties(${webapp} PROPERTIES LANGUAGE CUDA)
-  endif()
-
   get_filename_component(name ${webapp} NAME_WE)
   add_executable(${name} ${webapp})
 

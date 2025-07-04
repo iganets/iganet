@@ -74,10 +74,6 @@ file(GLOB PERFTESTS *.cxx)
 
 foreach(perftest ${PERFTESTS})
 
-  if (NOT IGANET_BUILD_CPUONLY AND CMAKE_CUDA_COMPILER)
-    set_source_files_properties(${perftest} PROPERTIES LANGUAGE CUDA)
-  endif()
-
   get_filename_component(name ${perftest} NAME_WE)
   add_executable(${name} ${perftest})
   add_dependencies(iganet_perftests ${name})

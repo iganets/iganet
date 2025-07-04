@@ -74,10 +74,6 @@ file(GLOB UNITTESTS *.cxx)
 
 foreach(unittest ${UNITTESTS})
 
-  if (NOT IGANET_BUILD_CPUONLY AND CMAKE_CUDA_COMPILER)
-    set_source_files_properties(${unittest} PROPERTIES LANGUAGE CUDA)
-  endif()
-
   get_filename_component(name ${unittest} NAME_WE)
   add_executable(${name} ${unittest})
   add_dependencies(iganet_unittests ${name})
