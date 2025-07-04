@@ -6,10 +6,10 @@ orbs:
 jobs:
   unittests-windows:
     executor:
-      name: win/default
+      name: win/server-2022
     environment:
       - LIBTORCH_URL: "https://download.pytorch.org/libtorch/cpu/libtorch-win-shared-with-deps-2.7.1%2Bcpu.zip"
-      - MSBUILD_DIR: 'C:\Program Files (x86)\Microsoft Visual Studio\2019\BuildTools\MSBuild\Current\Bin'
+      - MSBUILD_DIR: 'C:\Program Files (x86)\Microsoft Visual Studio\2022\BuildTools\MSBuild\Current\Bin'
       - CMAKE_DIR: 'C:\Program Files\CMake\bin'
       - RELEASE_FLAGS: -DCMAKE_BUILD_TYPE=Release -DIGANET_BUILD_UNITTESTS=ON
     working_directory: C:\Users\circleci\project
@@ -24,8 +24,8 @@ jobs:
           command: |
             choco install --no-progress cmake --version 3.24.4 --installargs 'ADD_CMAKE_TO_PATH=System' -y
             if (-not $?) { throw "Failed to install CMake" }
-            choco install --no-progress python3 -y
-            if (-not $?) { throw "Failed to install Python" }
+            #choco install --no-progress python3 -y
+            #if (-not $?) { throw "Failed to install Python" }
             Invoke-WebRequest -Uri $Env:LIBTORCH_URL -OutFile "libtorch.zip"
             Expand-Archive -Path "libtorch.zip" -DestinationPath "C:\Users\circleci"
             Remove-Item -Path "libtorch.zip"
