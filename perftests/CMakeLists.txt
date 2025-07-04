@@ -55,8 +55,9 @@ set(gtest_force_shared_crt ON CACHE BOOL "" FORCE)
 ########################################################################
 FetchContent_Declare(
   bsplinelib
-  URL https://github.com/tataratat/BSplineLib/archive/refs/heads/tataratat.zip
+  URL https://github.com/tataratat/BSplineLib/archive/refs/heads/main.zip
   )
+set(BSPLINELIB_SHARED ON CACHE BOOL "" FORCE)
 set(BSPLINELIB_BUILD_PUGIXML OFF CACHE BOOL "" FORCE)
 set(pugixml_DIR ${pugixml_BINARY_DIR})
 FetchContent_MakeAvailable(googletest bsplinelib)

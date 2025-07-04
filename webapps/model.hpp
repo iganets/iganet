@@ -59,7 +59,8 @@ public:
 class ModelRemovePatch {
 public:
   /// @brief Adds a patch to a model
-  virtual void removePatch(const nlohmann::json &json) = 0;
+  virtual void removePatch(const std::string &patch,
+                           const nlohmann::json &json) = 0;
 
   // @brief Returns model capabilities
   std::vector<std::string> getCapabilities() const {
@@ -135,7 +136,7 @@ public:
 class ModelReparameterize {
 public:
   /// @brief Reparameterizes the model
-  virtual void reparameterize(const nlohmann::json &json) = 0;
+  virtual void reparameterize(const std::string &patch, const nlohmann::json &json) = 0;
 
   // @brief Returns model capabilities
   std::vector<std::string> getCapabilities() const {

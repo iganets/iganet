@@ -37,7 +37,7 @@ TEST(Options, Options_default) {
                         ? torch::kXLA
                     : (iganet::utils::getenv("IGANET_DEVICE", std::string{}) == "XPU")
                         ? torch::kXPU
-	            : (torch::cuda::is_available() ? torch::kCUDA : torch::kCPU));
+	            : (torch::cuda::is_available() ? torch::kCUDA : torch::xpu::is_available() ? torch::kXPU : torch::kCPU));
   EXPECT_EQ(options.layout(), torch::kStrided);
   EXPECT_FALSE(options.requires_grad());
   EXPECT_FALSE(options.pinned_memory());
