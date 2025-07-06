@@ -84,10 +84,13 @@ endif()
 
 ########################################################################
 #
-# Project: IgANet
+# Project: IgANet (core)
 #
 ########################################################################
 project(IgANet)
+
+add_library(iganet_core INTERFACE)
+add_library(iganet::core ALIAS iganet_core)
 
 if(${CMAKE_VERSION} VERSION_GREATER_EQUAL 3.24)
   cmake_policy(SET CMP0135 NEW)
@@ -120,28 +123,28 @@ option(IGANET_WITH_OPENMP       "With OpenMP support"       ON )
 ########################################################################
 find_package(Torch REQUIRED)
 list(APPEND CMAKE_CXX_FLAGS ${TORCH_CXX_FLAGS})
-
-if(DEFINED HIP_COMPILER AND IGANET_BUILD_PCH)
-  message(WARNING "HIP compiler does not (yet) support precompiled headers")
-  set(IGANET_BUILD_PCH OFF CACHE BOOL "Build precompiled headers" FORCE)
-endif()
+target_link_libraries(iganet_core INTERFACE ${TORCH_LIBRARIES})
 
 find_package(IPEX)
+target_link_libraries(iganet_core INTERFACE ${TORCH_IPEX_LIBRARIES})
 
 if(NOT WIN32)
-find_package(ZLIB REQUIRED)
+  find_package(ZLIB REQUIRED)
 endif()
 
 include(boost_preprocessor)
 include(nlohmann_json)
 include(pugixml)
+target_link_libraries(iganet_core INTERFACE pugixml)
 
 if (IGANET_WITH_GISMO)
   include(gismo)
+  target_link_libraries(iganet_core INTERFACE gismo_static)
 endif()
 
 if (IGANET_WITH_MATPLOT)
   include(Matplot++)
+  target_link_libraries(iganet_core INTERFACE Matplot++::matplot)
 endif()
 
 ########################################################################
@@ -149,6 +152,7 @@ endif()
 ########################################################################
 if (IGANET_WITH_MPI)
   find_package(MPI REQUIRED)
+  target_link_libraries(iganet_core INTERFACE MPI::MPI_CXX)
 endif()
 
 ########################################################################
@@ -176,6 +180,7 @@ if (IGANET_WITH_OPENMP)
       PATH_SUFFIXES lib)
   endif()
   find_package(OpenMP REQUIRED)
+  target_link_libraries(iganet_core INTERFACE OpenMP::OpenMP_CXX)
 endif()
 
 ########################################################################
@@ -356,8 +361,11 @@ endif()
 ########################################################################
 if (IGANET_BUILD_UNITTESTS)
   enable_testing()
-  add_subdirectory(${PROJECT_SOURCE_DIR}/unittests)
+  include(get_module)
+  get_module(unittests GIT_REPOSITORY https://github.com/iganets/iganet-unittests.git)
 endif()
+
+
 
 ########################################################################
 # Add WebApps (if enabled)

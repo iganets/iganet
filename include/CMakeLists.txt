@@ -25,26 +25,8 @@ if(IGANET_BUILD_PCH AND NOT WIN32 AND NOT ${CMAKE_VERSION} VERSION_LESS "3.16.0"
   file(GLOB HEADERS *.hpp ${CMAKE_CURRENT_BINARY_DIR}/*.hpp)
 
   add_executable(iganet_pch .iganet_pch.cxx iganet.h ${HEADERS})
-  target_link_libraries(iganet_pch PUBLIC ${TORCH_LIBRARIES})
-  target_link_libraries(iganet_pch PUBLIC pugixml)
-
-  if (IGANET_WITH_GISMO)
-    target_link_libraries(iganet_pch PUBLIC gismo_static)
-  endif()
-
-  if (IGANET_WITH_MATPLOT)
-    target_link_libraries(iganet_pch PUBLIC Matplot++::matplot)
-  endif()
-
-  if (IGANET_WITH_MPI)
-    target_link_libraries(iganet_pch PUBLIC MPI::MPI_CXX)
-  endif()
-
-  if (IGANET_WITH_OPENMP)
-    target_link_libraries(iganet_pch PUBLIC OpenMP::OpenMP_CXX)
-  endif()
-
-  target_precompile_headers(iganet_pch PUBLIC iganet.h PRIVATE ${HEADERS})
+  target_link_libraries(iganet_pch PRIVATE iganet::core)
+  target_precompile_headers(iganet_pch PRIVATE iganet.h PRIVATE ${HEADERS})
 endif()
 
 ########################################################################
