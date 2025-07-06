@@ -28,6 +28,12 @@
 #
 ########################################################################
 
+cmake_minimum_required (VERSION 3.24)
+
+set(CMAKE_CXX_STANDARD 20)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+set(CMAKE_CXX_EXTENSIONS OFF)
+
 ########################################################################
 # IgANet version number
 ########################################################################
@@ -37,15 +43,6 @@ set(iganet_VERSION_PATCH 0 ) #patch
 set(iganet_VERSION
   "${iganet_VERSION_MAJOR}.${iganet_VERSION_MINOR}.${iganet_VERSION_PATCH}" CACHE INTERNAL "iganet version number")
 set(IGANET_VERSION "${iganet_VERSION}" CACHE INTERNAL "IgANet version number")
-
-########################################################################
-# Force CMake version 3.24 or above
-########################################################################
-cmake_minimum_required (VERSION 3.24)
-
-set(CMAKE_CXX_STANDARD 20)
-set(CMAKE_CXX_STANDARD_REQUIRED ON)
-set(CMAKE_CXX_EXTENSIONS OFF)
 
 ########################################################################
 # Set RPATH on MacOSX
@@ -125,7 +122,7 @@ find_package(Torch REQUIRED)
 list(APPEND CMAKE_CXX_FLAGS ${TORCH_CXX_FLAGS})
 target_link_libraries(iganet_core INTERFACE ${TORCH_LIBRARIES})
 
-find_package(IPEX)
+find_package(IPEX QUIET)
 target_link_libraries(iganet_core INTERFACE ${TORCH_IPEX_LIBRARIES})
 
 if(NOT WIN32)
@@ -187,7 +184,7 @@ endif()
 # Doxygen
 ########################################################################
 if(IGANET_BUILD_DOCS)
-  find_package(Doxygen)
+  find_package(Doxygen QUIET)
   if(DOXYGEN_FOUND)
     set(DOXYGEN_OUTPUT_DIR ${PROJECT_BINARY_DIR}/docs/doxygen)
     set(DOXYGEN_TAGFILE ${PROJECT_BINARY_DIR}/docs/doxygen/iganet-doxygen.tag.xml)
@@ -210,7 +207,7 @@ endif()
 # Sphinx
 ########################################################################
 if(IGANET_BUILD_DOCS)
-  find_package(Sphinx)
+  find_package(Sphinx QUIET)
   if(Sphinx_FOUND)
     set(SPHINX_SOURCE ${PROJECT_SOURCE_DIR}/docs)
     set(SPHINX_BUILD ${PROJECT_BINARY_DIR}/docs/sphinx)
