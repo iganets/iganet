@@ -1,0 +1,31 @@
+{
+  "material": {
+    "young_modulus": 210.0,
+    "poisson_ratio": 0.25
+  },
+  "simulation": {
+    "max_epoch": 100,
+    "min_loss": 1e-8,
+    "supervised_learning": false,
+    "json_path": "/home/isabellaunix/DevelDA/singerDA/results/results.json",
+    "USERINPUT": false
+  },
+  "reference_simulation": {
+    "run": false,
+    "nr_ctrl_pts_ref": 50,
+    "degree_ref": 4
+  },
+  "spline": {
+    "nr_ctrl_pts": 8,
+    "degree": 4
+  },
+  "boundary_conditions": {
+    "force_sides": [],
+    "diri_sides": [
+      [1, 0.0, 0.0],
+      [2, 0.05, 0.0]
+    ],
+    "tfbc_sides": [3, 4]
+  },
+  "body_force": [0.0, 0.0]
+}
