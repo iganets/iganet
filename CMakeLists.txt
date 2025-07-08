@@ -130,17 +130,25 @@ if(NOT WIN32)
 endif()
 
 include(boost_preprocessor)
+target_include_directories(iganet_core INTERFACE ${boost_preprocessor_SOURCE_DIR}/include)
+
 include(nlohmann_json)
+target_include_directories(iganet_core INTERFACE ${nlohmann_json_SOURCE_DIR}/single_include)
+
 include(pugixml)
+target_include_directories(iganet_core INTERFACE ${pugixml_SOURCE_DIR}/src)
 target_link_libraries(iganet_core INTERFACE pugixml)
 
 if (IGANET_WITH_GISMO)
   include(gismo)
+  target_include_directories(iganet_core INTERFACE ${GISMO_INCLUDE_DIRS})  
   target_link_libraries(iganet_core INTERFACE gismo_static)
 endif()
 
 if (IGANET_WITH_MATPLOT)
   include(Matplot++)
+  #include_directories(${matplotplusplus_SOURCE_DIR}/source)
+  #include_directories(${matplotplusplus_BINARY_DIR}/source/matplot)
   target_link_libraries(iganet_core INTERFACE Matplot++::matplot)
 endif()
 
@@ -313,8 +321,6 @@ message("")
 ########################################################################
 # Add kernel directory
 ########################################################################
-include_directories(${PROJECT_BINARY_DIR}/include)
-include_directories(${PROJECT_SOURCE_DIR}/include)
 add_subdirectory(${PROJECT_SOURCE_DIR}/include)
 
 ########################################################################

@@ -23,4 +23,3 @@ FetchContent_Declare(pugixml
 
 FetchContent_MakeAvailable(pugixml)
 FetchContent_GetProperties(pugixml)
-include_directories(${pugixml_SOURCE_DIR}/src)
