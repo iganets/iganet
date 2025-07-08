@@ -134,6 +134,7 @@ target_include_directories(iganet_core INTERFACE ${boost_preprocessor_SOURCE_DIR
 
 include(nlohmann_json)
 target_include_directories(iganet_core INTERFACE ${nlohmann_json_SOURCE_DIR}/single_include)
+target_compile_definitions(iganet_core INTERFACE JSON_HAS_RANGES=0)
 
 include(pugixml)
 target_include_directories(iganet_core INTERFACE ${pugixml_SOURCE_DIR}/src)
