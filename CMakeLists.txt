@@ -343,14 +343,16 @@ endif()
 ########################################################################
 if (IGANET_BUILD_PERFTESTS)
   enable_testing()
-  add_subdirectory(${PROJECT_SOURCE_DIR}/perftests)
+  include(get_module)
+  get_module(perftests GIT_REPOSITORY https://github.com/iganets/iganet-perftests.git)
 endif()
 
 ########################################################################
 # Add Python bindings (if enabled)
 ########################################################################
 if (IGANET_BUILD_PYTHON)
-  add_subdirectory(${PROJECT_SOURCE_DIR}/python/src)
+  include(get_module)
+  get_module(python GIT_REPOSITORY https://github.com/iganets/iganet-python.git)  
 endif()
 
 ########################################################################
@@ -361,8 +363,6 @@ if (IGANET_BUILD_UNITTESTS)
   include(get_module)
   get_module(unittests GIT_REPOSITORY https://github.com/iganets/iganet-unittests.git)
 endif()
-
-
 
 ########################################################################
 # Add WebApps (if enabled)
