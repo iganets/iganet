@@ -24,13 +24,29 @@ namespace iganet {
 
 struct half {};
 
+  /// @brief Concept to identify template parameters that are acceptable as DTypes
+  template<typename T>
+  concept DType =
+    std::is_same_v<T, bool> ||
+    std::is_same_v<T, char> ||
+    std::is_same_v<T, short> ||
+    std::is_same_v<T, int> ||
+    std::is_same_v<T, long> ||
+    std::is_same_v<T, long long> ||
+    std::is_same_v<T, half> ||
+    std::is_same_v<T, float> ||
+    std::is_same_v<T, double> ||
+    std::is_same_v<T, std::complex<half>> ||
+    std::is_same_v<T, std::complex<float>> ||
+    std::is_same_v<T, std::complex<double>>;
+    
 /// Determines the LibTorch dtype from template parameter
 ///
 /// @tparam T C++ type
 ///
 /// @result Torch type corresponding to the C++ type
 /// @{
-template <typename T> inline constexpr torch::Dtype dtype();
+  template <typename T> requires DType<T> inline constexpr torch::Dtype dtype();
 
 template <> inline constexpr torch::Dtype dtype<bool>() { return torch::kBool; }
 
@@ -86,7 +102,8 @@ inline int guess_device_index() {
 /// dtype from the template argument and the selection of the device
 ///
 /// @tparam real_t Type of real-valued data
-template <typename real_t>
+  template <typename real_t>
+  requires DType<real_t>
 class Options : private iganet::utils::FullQualifiedName {
 public:
   /// Default constructor
