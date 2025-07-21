@@ -27,29 +27,6 @@ foreach(example ${EXAMPLES})
   endif()
 
   target_compile_options(${name} PUBLIC "-DIGANET_DATA_DIR=\"${PROJECT_SOURCE_DIR}/filedata/\"")
-
-  # LibTorch
-  target_link_libraries(${name} PUBLIC ${TORCH_LIBRARIES})
-  target_link_libraries(${name} PUBLIC pugixml)
-
-  # Intel Extension for PyTorch
-  if (NOT IGANET_BUILD_CPUONLY AND IPEX_FOUND)
-    target_link_libraries(${name} PUBLIC ${TORCH_IPEX_LIBRARIES})
-  endif()
-
-  if (IGANET_WITH_GISMO)
-    target_link_libraries(${name} PUBLIC gismo_static)
-  endif()
-
-  if (IGANET_WITH_MATPLOT)
-    target_link_libraries(${name} PUBLIC Matplot++::matplot)
-  endif()
-
-  if (IGANET_WITH_MPI)
-    target_link_libraries(${name} PUBLIC MPI::MPI_CXX)
-  endif()
-
-  if (IGANET_WITH_OPENMP)
-    target_link_libraries(${name} PUBLIC OpenMP::OpenMP_CXX)
-  endif()
+  target_link_libraries(${name} PRIVATE iganet::core)
+  
 endforeach()

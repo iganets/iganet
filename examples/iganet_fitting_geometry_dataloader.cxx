@@ -138,7 +138,7 @@ int main() {
   using optimizer_t = torch::optim::Adam;
   using real_t = double;
 
-  // Geometry: Bi-linear B-spline function space S (geoDim = 2, p = q = 1)
+  // Geometry: Bi-linear B-spline function space S (geoDim = 2, p = q = 2)
   using geometry_t = iganet::S<iganet::UniformBSpline<real_t, 2, 2, 2>>;
 
   // Variable: Bi-quadratic B-spline function space S (geoDim = 1, p = q = 2)

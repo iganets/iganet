@@ -12,49 +12,34 @@
 #
 ########################################################################
 
+target_include_directories(iganet_core INTERFACE ${PROJECT_BINARY_DIR}/include)
+target_include_directories(iganet_core INTERFACE ${PROJECT_SOURCE_DIR}/include)
+
 ########################################################################
 # Config file
 ########################################################################
-configure_file(${CMAKE_CURRENT_SOURCE_DIR}/config.hpp.in
-  "${CMAKE_CURRENT_BINARY_DIR}/config.hpp" @ONLY)
+configure_file(${PROJECT_SOURCE_DIR}/include/config.hpp.in
+  "${PROJECT_BINARY_DIR}/include/config.hpp" @ONLY)
 
 ########################################################################
 # Precompiled headers
 ########################################################################
 if(IGANET_BUILD_PCH AND NOT WIN32 AND NOT ${CMAKE_VERSION} VERSION_LESS "3.16.0")
-  file(GLOB HEADERS *.hpp ${CMAKE_CURRENT_BINARY_DIR}/*.hpp)
+  file(GLOB HEADERS *.hpp ${PROJECT_BINARY_DIR}/include/*.hpp)
 
   add_executable(iganet_pch .iganet_pch.cxx iganet.h ${HEADERS})
-  target_link_libraries(iganet_pch PUBLIC ${TORCH_LIBRARIES})
-  target_link_libraries(iganet_pch PUBLIC pugixml)
-
-  if (IGANET_WITH_GISMO)
-    target_link_libraries(iganet_pch PUBLIC gismo_static)
-  endif()
-
-  if (IGANET_WITH_MATPLOT)
-    target_link_libraries(iganet_pch PUBLIC Matplot++::matplot)
-  endif()
-
-  if (IGANET_WITH_MPI)
-    target_link_libraries(iganet_pch PUBLIC MPI::MPI_CXX)
-  endif()
-
-  if (IGANET_WITH_OPENMP)
-    target_link_libraries(iganet_pch PUBLIC OpenMP::OpenMP_CXX)
-  endif()
-
-  target_precompile_headers(iganet_pch PUBLIC iganet.h PRIVATE ${HEADERS})
+  target_link_libraries(iganet_pch PRIVATE iganet::core)
+  target_precompile_headers(iganet_pch PRIVATE iganet.h PRIVATE ${HEADERS})
 endif()
 
 ########################################################################
 # Install header files
 ########################################################################
-file(GLOB SOURCES ${CMAKE_CURRENT_BINARY_DIR}/*.hpp ${CMAKE_CURRENT_BINARY_DIR}/*.h)
+file(GLOB SOURCES ${PROJECT_BINARY_DIR}/include/*.hpp ${PROJECT_BINARY_DIR}/include/*.h)
 install(FILES ${SOURCES} DESTINATION include/iganet)
 
-file(GLOB SOURCES *.hpp *.h "${CMAKE_CURRENT_BINARY_DIR}/*.hpp")
+file(GLOB SOURCES ${PROJECT_BINARY_DIR}/include/*.hpp ${PROJECT_BINARY_DIR}/include/*.h)
 install(FILES ${SOURCES} DESTINATION include/iganet)
 
-file(GLOB SOURCES utils/*.hpp utils/*.h)
+file(GLOB SOURCES ${PROJECT_BINARY_DIR}/include/utils/*.hpp ${PROJECT_BINARY_DIR}/include/utils/*.h)
 install(FILES ${SOURCES} DESTINATION include/iganet/utils)

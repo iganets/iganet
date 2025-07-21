@@ -28,6 +28,12 @@
 #
 ########################################################################
 
+cmake_minimum_required (VERSION 3.24)
+
+set(CMAKE_CXX_STANDARD 20)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+set(CMAKE_CXX_EXTENSIONS OFF)
+
 ########################################################################
 # IgANet version number
 ########################################################################
@@ -37,15 +43,6 @@ set(iganet_VERSION_PATCH 0 ) #patch
 set(iganet_VERSION
   "${iganet_VERSION_MAJOR}.${iganet_VERSION_MINOR}.${iganet_VERSION_PATCH}" CACHE INTERNAL "iganet version number")
 set(IGANET_VERSION "${iganet_VERSION}" CACHE INTERNAL "IgANet version number")
-
-########################################################################
-# Force CMake version 3.24 or above
-########################################################################
-cmake_minimum_required (VERSION 3.24)
-
-set(CMAKE_CXX_STANDARD 20)
-set(CMAKE_CXX_STANDARD_REQUIRED ON)
-set(CMAKE_CXX_EXTENSIONS OFF)
 
 ########################################################################
 # Set RPATH on MacOSX
@@ -84,10 +81,13 @@ endif()
 
 ########################################################################
 #
-# Project: IgANet
+# Project: IgANet (core)
 #
 ########################################################################
 project(IgANet)
+
+add_library(iganet_core INTERFACE)
+add_library(iganet::core ALIAS iganet_core)
 
 if(${CMAKE_VERSION} VERSION_GREATER_EQUAL 3.24)
   cmake_policy(SET CMP0135 NEW)
@@ -120,28 +120,37 @@ option(IGANET_WITH_OPENMP       "With OpenMP support"       ON )
 ########################################################################
 find_package(Torch REQUIRED)
 list(APPEND CMAKE_CXX_FLAGS ${TORCH_CXX_FLAGS})
+target_link_libraries(iganet_core INTERFACE ${TORCH_LIBRARIES})
 
-if(DEFINED HIP_COMPILER AND IGANET_BUILD_PCH)
-  message(WARNING "HIP compiler does not (yet) support precompiled headers")
-  set(IGANET_BUILD_PCH OFF CACHE BOOL "Build precompiled headers" FORCE)
-endif()
-
-find_package(IPEX)
+find_package(IPEX QUIET)
+target_link_libraries(iganet_core INTERFACE ${TORCH_IPEX_LIBRARIES})
 
 if(NOT WIN32)
-find_package(ZLIB REQUIRED)
+  find_package(ZLIB REQUIRED)
 endif()
 
 include(boost_preprocessor)
+target_include_directories(iganet_core INTERFACE ${boost_preprocessor_SOURCE_DIR}/include)
+
 include(nlohmann_json)
+target_include_directories(iganet_core INTERFACE ${nlohmann_json_SOURCE_DIR}/single_include)
+target_compile_definitions(iganet_core INTERFACE JSON_HAS_RANGES=0)
+
 include(pugixml)
+target_include_directories(iganet_core INTERFACE ${pugixml_SOURCE_DIR}/src)
+target_link_libraries(iganet_core INTERFACE pugixml)
 
 if (IGANET_WITH_GISMO)
   include(gismo)
+  target_include_directories(iganet_core INTERFACE ${GISMO_INCLUDE_DIRS})  
+  target_link_libraries(iganet_core INTERFACE gismo_static)
 endif()
 
 if (IGANET_WITH_MATPLOT)
   include(Matplot++)
+  #include_directories(${matplotplusplus_SOURCE_DIR}/source)
+  #include_directories(${matplotplusplus_BINARY_DIR}/source/matplot)
+  target_link_libraries(iganet_core INTERFACE Matplot++::matplot)
 endif()
 
 ########################################################################
@@ -149,6 +158,7 @@ endif()
 ########################################################################
 if (IGANET_WITH_MPI)
   find_package(MPI REQUIRED)
+  target_link_libraries(iganet_core INTERFACE MPI::MPI_CXX)
 endif()
 
 ########################################################################
@@ -176,13 +186,14 @@ if (IGANET_WITH_OPENMP)
       PATH_SUFFIXES lib)
   endif()
   find_package(OpenMP REQUIRED)
+  target_link_libraries(iganet_core INTERFACE OpenMP::OpenMP_CXX)
 endif()
 
 ########################################################################
 # Doxygen
 ########################################################################
 if(IGANET_BUILD_DOCS)
-  find_package(Doxygen)
+  find_package(Doxygen QUIET)
   if(DOXYGEN_FOUND)
     set(DOXYGEN_OUTPUT_DIR ${PROJECT_BINARY_DIR}/docs/doxygen)
     set(DOXYGEN_TAGFILE ${PROJECT_BINARY_DIR}/docs/doxygen/iganet-doxygen.tag.xml)
@@ -205,7 +216,7 @@ endif()
 # Sphinx
 ########################################################################
 if(IGANET_BUILD_DOCS)
-  find_package(Sphinx)
+  find_package(Sphinx QUIET)
   if(Sphinx_FOUND)
     set(SPHINX_SOURCE ${PROJECT_SOURCE_DIR}/docs)
     set(SPHINX_BUILD ${PROJECT_BINARY_DIR}/docs/sphinx)
@@ -311,8 +322,6 @@ message("")
 ########################################################################
 # Add kernel directory
 ########################################################################
-include_directories(${PROJECT_BINARY_DIR}/include)
-include_directories(${PROJECT_SOURCE_DIR}/include)
 add_subdirectory(${PROJECT_SOURCE_DIR}/include)
 
 ########################################################################
@@ -341,14 +350,16 @@ endif()
 ########################################################################
 if (IGANET_BUILD_PERFTESTS)
   enable_testing()
-  add_subdirectory(${PROJECT_SOURCE_DIR}/perftests)
+  include(get_module)
+  get_module(perftests GIT_REPOSITORY https://github.com/iganets/iganet-perftests.git)
 endif()
 
 ########################################################################
 # Add Python bindings (if enabled)
 ########################################################################
 if (IGANET_BUILD_PYTHON)
-  add_subdirectory(${PROJECT_SOURCE_DIR}/python/src)
+  include(get_module)
+  get_module(python GIT_REPOSITORY https://github.com/iganets/iganet-python.git)  
 endif()
 
 ########################################################################
@@ -356,7 +367,8 @@ endif()
 ########################################################################
 if (IGANET_BUILD_UNITTESTS)
   enable_testing()
-  add_subdirectory(${PROJECT_SOURCE_DIR}/unittests)
+  include(get_module)
+  get_module(unittests GIT_REPOSITORY https://github.com/iganets/iganet-unittests.git)
 endif()
 
 ########################################################################

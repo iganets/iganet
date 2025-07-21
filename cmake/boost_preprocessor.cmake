@@ -23,4 +23,3 @@ FetchContent_Declare(boost_preprocessor
 
 FetchContent_MakeAvailable(boost_preprocessor)
 FetchContent_GetProperties(boost_preprocessor)
-include_directories(${boost_preprocessor_SOURCE_DIR}/include)
