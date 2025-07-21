@@ -25,5 +25,6 @@
 #include <multipatch.hpp>
 #include <nurbs.hpp>
 #include <options.hpp>
+#include <optimizer.hpp>
 #include <patch.hpp>
 #include <utils.hpp>
