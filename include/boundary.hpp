@@ -39,19 +39,17 @@ enum side {
 };
 
 /// @brief BoundaryCore
-template <typename Spline, short_t> class BoundaryCore;
+  template <typename Spline, short_t> requires SplineType<Spline> class BoundaryCore;
 
 /// @brief BoundaryCore (1d specialization)
 ///
 /// This specialization has 2 sides
 /// - west (u=0)
 /// - east (u=1)
-template <typename Spline>
+  template <typename Spline>
+  requires SplineType<Spline>
 class BoundaryCore<Spline, /* parDim */ 1> : public utils::Serializable,
                                              private utils::FullQualifiedName {
-
-  // Safeguard that template parameter is a valid SplineType
-  static_assert(is_SplineType_v<Spline>, "Spline must be a valid SplineType");
 
   /// @brief Enable access to private members
   template <typename BoundaryCore> friend class BoundaryCommon;
@@ -212,12 +210,10 @@ public:
 /// - east  (u=1, v  )
 /// - south (u,   v=0)
 /// - north (u,   v=1)
-template <typename Spline>
+  template <typename Spline>
+  requires SplineType<Spline>
 class BoundaryCore<Spline, /* parDim */ 2> : public utils::Serializable,
                                              private utils::FullQualifiedName {
-
-  // Safeguard that template parameter is a valid SplineType
-  static_assert(is_SplineType_v<Spline>, "Spline must be a valid SplineType");
 
   /// @brief Enable access to private members
   template <typename BoundaryCore> friend class BoundaryCommon;
@@ -451,12 +447,10 @@ public:
 /// - north (u,   v=1, w)
 /// - front (u,   v,   w=0)
 /// - back  (u,   v,   w=1)
-template <typename Spline>
+  template <typename Spline>
+  requires SplineType<Spline>
 class BoundaryCore<Spline, /* parDim */ 3> : public utils::Serializable,
                                              private utils::FullQualifiedName {
-
-  // Safeguard that template parameter is a valid SplineType
-  static_assert(is_SplineType_v<Spline>, "Spline must be a valid SplineType");
 
   /// @brief Enable access to private members
   template <typename BoundaryCore> friend class BoundaryCommon;
@@ -762,12 +756,10 @@ public:
 /// - back  (u,   v,   w=1, t)
 /// - stime (u,   v,   w,   t=0)
 /// - etime (u,   v,   w,   t=1)
-template <typename Spline>
+  template <typename Spline>
+  requires SplineType<Spline>
 class BoundaryCore<Spline, /* parDim */ 4> : public utils::Serializable,
                                              private utils::FullQualifiedName {
-
-  // Safeguard that template parameter is a valid SplineType
-  static_assert(is_SplineType_v<Spline>, "Spline must be a valid SplineType");
 
   /// @brief Enable access to private members
   template <typename BoundaryCore> friend class BoundaryCommon;
@@ -1120,25 +1112,16 @@ public:
   }
 };
 
-/// @brief
+  /// @brief Boundary base class  
+  class Boundary_ {};
 
-namespace detail {
-/// @brief Boundary type
-class BoundaryType {};
-} // namespace detail
-
-/// @brief Type trait to check if T is a valid Boundary type
-template <typename... T>
-using is_BoundaryType =
-    std::conjunction<std::is_base_of<detail::BoundaryType, T>...>;
-
-/// @brief Alias to the value of is_BoundaryType
-template <typename... T>
-inline constexpr bool is_BoundaryType_v = is_BoundaryType<T...>::value;
-
+  /// @brief Concept to identify template parameters that are derived from iganet::Boundary_
+  template<typename T>
+  concept BoundaryType = std::is_base_of_v<Boundary_, T>;
+  
 /// @brief Boundary (common high-level functionality)
 template <typename BoundaryCore>
-class BoundaryCommon : private detail::BoundaryType, public BoundaryCore {
+class BoundaryCommon : public Boundary_, public BoundaryCore {
 public:
   /// @brief Constructors from the base class
   using BoundaryCore::BoundaryCore;
@@ -1970,11 +1953,13 @@ public:                                                                        \
 };
 
 /// @brief Boundary
-template <typename Spline>
+  template <typename Spline>
+  requires SplineType<Spline>
 using Boundary = BoundaryCommon<BoundaryCore<Spline, Spline::parDim()>>;
 
 /// @brief Print (as string) a Boundary object
-template <typename Spline>
+  template <typename Spline>
+  requires SplineType<Spline>
 inline std::ostream &operator<<(std::ostream &os, const Boundary<Spline> &obj) {
   obj.pretty_print(os);
   return os;
