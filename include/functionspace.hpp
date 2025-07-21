@@ -40,21 +40,22 @@ enum class functionspace : short_t {
 
 namespace detail {
 
+  /// @brief FunctionSpace base class
+  class FunctionSpaceType {};
+  
 // Forward declaration
-template <typename, typename> class FunctionSpace;
+  template <typename Spline, typename Boundary>
+  //requires SplineType<Spline> && BoundaryType<Boundary>
+  class FunctionSpace;
 
 /// @brief Tensor-product function space
 ///
 /// @note This class is not meant for direct use in
 /// applications. Instead use S, TH, NE, or RT.
-template <typename... Splines, typename... Boundaries>
+  template <typename... Splines, typename... Boundaries>
+  //requires (SplineType<Splines> && ...) && (BoundaryType<Boundaries> && ...)
 class FunctionSpace<std::tuple<Splines...>, std::tuple<Boundaries...>>
-    : public utils::Serializable, private utils::FullQualifiedName {
-
-  static_assert(is_SplineType_v<Splines...>,
-                "Splines must be valid SplineTypes");
-  static_assert(is_BoundaryType_v<Boundaries...>,
-                "Boundaries must be valid BoundaryTypes");
+  : public FunctionSpaceType, public utils::Serializable, private utils::FullQualifiedName {
 
 public:
   /// @brief Value type
@@ -2401,13 +2402,11 @@ inline std::ostream &operator<<(std::ostream &os,
 ///
 /// @note This class is not meant for direct use in
 /// applications. Instead use S, TH, NE, or RT.
-template <typename Spline, typename Boundary>
-class FunctionSpace : public utils::Serializable,
+  template <typename Spline, typename Boundary>
+  //requires SplineType<Spline> && BoundaryType<Boundary>
+class FunctionSpace : public FunctionSpaceType,
+                      public utils::Serializable,
                       private utils::FullQualifiedName {
-
-  static_assert(is_SplineType_v<Spline>, "Spline must be a valid SplineType");
-  static_assert(is_BoundaryType_v<Boundary>,
-                "Boundary must be a valid BoundaryType");
 
 public:
   /// @brief Value type
@@ -3113,6 +3112,10 @@ struct FunctionSpace_trait<std::tuple<FunctionSpace<Splines, Boundaries>...>> {
 
 } // namespace detail
 
+  /// @brief Concept to identify template parameters that are derived from iganet::details::FunctionSpaceType
+  template<typename T>
+  concept FunctionSpaceType = std::is_base_of_v<detail::FunctionSpaceType, T>;
+  
 /// @brief Function space alias
 template <typename... Args>
 using FunctionSpace = typename detail::FunctionSpace_trait<Args...>::type;

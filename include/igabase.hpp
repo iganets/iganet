@@ -34,7 +34,9 @@ enum class collPts : short_t {
 ///
 /// This class implements the base functionality of IgA solvers and nets for the
 /// case that no reference solution is required
-template <typename GeometryMap, typename Variable> class IgABaseNoRefData {
+  template <typename GeometryMap, typename Variable>
+  requires FunctionSpaceType<GeometryMap> && FunctionSpaceType<Variable>
+  class IgABaseNoRefData {
 public:
   /// @brief Value type
   using value_type =
@@ -452,7 +454,8 @@ public:
 /// @brief IgA base class
 ///
 /// This class implements the base functionality of IgA solvers and nets
-template <typename GeometryMap, typename Variable>
+  template <typename GeometryMap, typename Variable>
+    requires FunctionSpaceType<GeometryMap> && FunctionSpaceType<Variable>
 class IgABase : public IgABaseNoRefData<GeometryMap, Variable> {
 public:
   /// @brief Base type
