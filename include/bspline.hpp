@@ -104,6 +104,27 @@ inline constexpr auto operator^(deriv lhs, short_t rhs) {
   return deriv(static_cast<short_t>(lhs) * static_cast<short_t>(rhs));
 }
 
+  /// @brief SplineCore base class
+  class SplineCore_ {};
+
+  /// @brief UniformSplineCore base class
+  class UniformSplineCore_ : public SplineCore_ {};
+
+  /// @brief NonUniformSplineCore base class
+  class NonUniformSplineCore_ : public SplineCore_ {};
+
+  /// @brief Concept to identify template parameters that are derived from iganet::SplineCore_
+  template<typename T>
+  concept SplineCoreType = std::is_base_of_v<SplineCore_, T>;
+
+  /// @brief Concept to identify template parameters that are derived from iganet::UniformSplineCore_
+  template<typename T>
+  concept UniformSplineCoreType = std::is_base_of_v<UniformSplineCore_, T>;
+
+  /// @brief Concept to identify template parameters that are derived from iganet::NonUniformSplineCore_
+  template<typename T>
+  concept NonUniformSplineCoreType = std::is_base_of_v<NonUniformSplineCore_, T>;
+  
 /// @brief Tensor-product uniform B-spline (core functionality)
 ///
 /// This class implements the core functionality of all B-spline
@@ -178,10 +199,11 @@ inline constexpr auto operator^(deriv lhs, short_t rhs) {
 /// functionality to extract sub-tensors.
 template <typename real_t, short_t GeoDim, short_t... Degrees>
 class UniformBSplineCore
-    : public utils::Serializable,
+    : public UniformSplineCore_,
+      public utils::Serializable,
       public BSplinePatch<real_t, GeoDim, sizeof...(Degrees)> {
   /// @brief Enable access to private members
-  template <typename BSplineCore> friend class BSplineCommon;
+  template <typename BSplineCore> requires SplineCoreType<BSplineCore> friend class BSplineCommon;
 
 protected:
   /// @brief Dimension of the parametric space
@@ -700,28 +722,28 @@ public:
         for (short_t j = 0; j < parDim_; ++j) {
           if (i == j) {
 
-	    int64_t offset = interior ? 1 : 0;
-	    int64_t count = ncoeffs_[j] - (interior ? 2 : 0);
+            int64_t offset = interior ? 1 : 0;
+            int64_t count = ncoeffs_[j] - (interior ? 2 : 0);
 
-	    // idx_base: (count, 1)
-	    auto idx_base = torch::arange(count, options_.requires_grad(false).template dtype<int64_t>()).unsqueeze(1);
+            // idx_base: (count, 1)
+            auto idx_base = torch::arange(count, options_.requires_grad(false).template dtype<int64_t>()).unsqueeze(1);
 
-	    // offsets: (1, degree)
-	    auto offsets = torch::arange(1, degrees_[j] + 1, options_.requires_grad(false).template dtype<int64_t>()).unsqueeze(0);
+            // offsets: (1, degree)
+            auto offsets = torch::arange(1, degrees_[j] + 1, options_.requires_grad(false).template dtype<int64_t>()).unsqueeze(0);
 
-	    // indices: (count, degree)
-	    auto indices = idx_base + offset + offsets;
+            // indices: (count, degree)
+            auto indices = idx_base + offset + offsets;
 
-	    // Gather relevant knot values: shape (count, degree)
-	    auto gathered = knots_[j].index_select(0, indices.flatten()).view({count, degrees_[j]});
-	    
-	    // Compute mean along degree dimension (dim=1)
-	    auto greville_ = gathered.mean(1);
-	    
+            // Gather relevant knot values: shape (count, degree)
+            auto gathered = knots_[j].index_select(0, indices.flatten()).view({count, degrees_[j]});
+            
+            // Compute mean along degree dimension (dim=1)
+            auto greville_ = gathered.mean(1);
+            
             coeffs[i] = torch::kron(greville_, coeffs[i]);
           } else
             coeffs[i] =
-                torch::kron(torch::ones(ncoeffs_[j], options_), coeffs[i]);
+              torch::kron(torch::ones(ncoeffs_[j], options_), coeffs[i]);
         }
 
         // Enable gradient calculation for non-leaf tensor
@@ -2709,7 +2731,7 @@ operator>>(torch::serialize::InputArchive &archive,
            UniformBSplineCore<real_t, GeoDim, Degrees...> &obj) {
   return obj.read(archive);
 }
-
+  
 /// @brief Tensor-product non-uniform B-spline (core functionality)
 ///
 /// This class extends the base class UniformBSplineCore to
@@ -2717,7 +2739,8 @@ operator>>(torch::serialize::InputArchive &archive,
 /// the core functionality of non-uniform B-splines
 template <typename real_t, short_t GeoDim, short_t... Degrees>
 class NonUniformBSplineCore
-    : public UniformBSplineCore<real_t, GeoDim, Degrees...> {
+    : public NonUniformSplineCore_,
+      public UniformBSplineCore<real_t, GeoDim, Degrees...> {
 private:
   /// @brief Base type
   using Base = UniformBSplineCore<real_t, GeoDim, Degrees...>;
@@ -3228,20 +3251,23 @@ public:
 #endif // IGANET_WITH_GISMO
 };
 
-namespace detail {
-/// @brief Spline type
-class SplineType {};
-} // namespace detail
+  /// @brief Spline base class
+  class Spline_ {};
 
-/// @brief Type trait to check if T is a valid Spline type
-template <typename... T>
-using is_SplineType =
-    std::conjunction<std::is_base_of<detail::SplineType, T>...>;
+  /// @brief Concept to identify template parameters that are derived from iganet::Spline_
+  template<typename T>
+  concept SplineType = std::is_base_of_v<Spline_, T>;
 
-/// @brief Alias to the value of is_SplineType
-template <typename... T>
-inline constexpr bool is_SplineType_v = is_SplineType<T...>::value;
+  /// @brief Concept to identify template parameters that are derived from iganet::Spline_ and iganet::UniformSplineCore_
+  template<typename T>
+  concept UniformSplineType = std::is_base_of_v<Spline_, T> &&
+    std::is_base_of_v<UniformSplineCore_, T> && !std::is_base_of_v<NonUniformSplineCore_, T>;
 
+    /// @brief Concept to identify template parameters that are derived from iganet::Spline_ and iganet::NonUniformSplineCore_
+  template<typename T>
+  concept NonUniformSplineType = std::is_base_of_v<Spline_, T> &&
+    std::is_base_of_v<NonUniformSplineCore_, T>;
+  
 /// @brief B-spline (common high-level functionality)
 ///
 /// This class implements some high-level common functionality of
@@ -3255,8 +3281,9 @@ inline constexpr bool is_SplineType_v = is_SplineType<T...>::value;
 /// templated functions, which is why we implement high-level common
 /// functionality here and 'inject' the core functionality by
 /// deriving from a particular base class.
-template <typename BSplineCore>
-class BSplineCommon : private detail::SplineType,
+  template <typename BSplineCore>
+  requires SplineCoreType<BSplineCore>
+  class BSplineCommon : public Spline_,
                       public BSplineCore,
                       protected utils::FullQualifiedName {
 public:
