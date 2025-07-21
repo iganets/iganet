@@ -20,6 +20,7 @@
 #include <functionspace.hpp>
 #include <igabase.hpp>
 #include <layer.hpp>
+#include <optimizer.hpp>
 #include <utils/container.hpp>
 #include <utils/fqn.hpp>
 #include <utils/zip.hpp>
@@ -897,7 +898,7 @@ public:
 
     int i = 0;
     for (const auto &activation : activations_)
-      os << "activation[" << i++ << "]: " << *activation << "\n";
+      os << "activation[" << i++ << "] = " << *activation << "\n";
     os << ")\n";
   }
 
@@ -928,6 +929,7 @@ public:
 /// This class implements the core functionality of IgANets
 template <typename Optimizer, typename GeometryMap, typename Variable,
           template <typename, typename> typename IgABase = ::iganet::IgABase>
+requires OptimizerType<Optimizer> && FunctionSpaceType<GeometryMap> && FunctionSpaceType<Variable>
 class IgANet : public IgABase<GeometryMap, Variable>,
                utils::Serializable,
                private utils::FullQualifiedName {
@@ -938,12 +940,15 @@ public:
   /// @brief Type of the optimizer
   using optimizer_type = Optimizer;
 
+  /// @brief Type of the optimizer options
+  using optimizer_options_type = typename optimizer_options_type<Optimizer>::type;
+  
 protected:
   /// @brief IgANet generator
   IgANetGenerator<typename Base::value_type> net_;
 
   /// @brief Optimizer
-  Optimizer opt_;
+  std::unique_ptr<optimizer_type> opt_;
 
   /// @brief Options
   IgANetOptions options_;
@@ -953,7 +958,12 @@ public:
   explicit IgANet(IgANetOptions defaults = {},
                   iganet::Options<typename Base::value_type> options =
                       iganet::Options<typename Base::value_type>{})
-      : Base(), opt_(net_->parameters()), options_(defaults) {}
+    : // Construct the base class
+      Base(),
+      // Construct the optimizer
+      opt_(std::make_unique<optimizer_type>(net_->parameters())),
+      // Set options
+      options_(defaults) {}
 
   /// @brief Constructor: number of layers, activation functions, and
   /// number of spline coefficients (same for geometry map and
@@ -1004,7 +1014,8 @@ public:
       IgANetOptions defaults = {},
       iganet::Options<typename Base::value_type> options =
           iganet::Options<typename Base::value_type>{})
-      : Base(geometryMapNumCoeffs, variableNumCoeffs, options),
+      : // Construct the base class
+        Base(geometryMapNumCoeffs, variableNumCoeffs, options),
         // Construct the deep neural network
         net_(utils::concat(std::vector<int64_t>{inputs(/* epoch */ 0).size(0)},
                            layers,
@@ -1012,7 +1023,7 @@ public:
              activations, options),
 
         // Construct the optimizer
-        opt_(net_->parameters()),
+        opt_(std::make_unique<optimizer_type>(net_->parameters())),
 
         // Set options
         options_(defaults) {}
@@ -1026,11 +1037,76 @@ public:
   inline IgANetGenerator<typename Base::value_type> &net() { return net_; }
 
   /// @brief Returns a constant reference to the optimizer
-  inline const Optimizer &opt() const { return opt_; }
+  inline const optimizer_type &optimizer() const { return *opt_; }
 
   /// @brief Returns a non-constant reference to the optimizer
-  inline Optimizer &opt() { return opt_; }
+  inline optimizer_type &optimizer() { return *opt_; }
+  
+  /// @brief Resets the optimizer
+  ///
+  /// @param[in] resetOptions Flag to indicate whether the optimizer options should be resetted
+  inline void optimizerReset(bool resetOptions = true) {
+    if (resetOptions)
+      opt_ = std::make_unique<optimizer_type>(net_->parameters());
+    else {
+      std::vector<optimizer_options_type> options;
+      for (auto & group : opt_->param_groups())
+        options.push_back(static_cast<optimizer_options_type&>(group.options()));
+      opt_ = std::make_unique<optimizer_type>(net_->parameters());
+      for (auto [group, options] : utils::zip(opt_->param_groups(), options))
+        static_cast<optimizer_options_type&>(group.options()) = options;
+    }
+  }
 
+  /// @brief Resets the optimizer
+  inline void optimizerReset(const optimizer_options_type& optimizerOptions) {
+    opt_ = std::make_unique<optimizer_type>(net_->parameters(), optimizerOptions);
+  }
+
+  /// @brief Returns a non-constant reference to the optimizer options
+  inline optimizer_options_type &optimizerOptions(std::size_t param_group = 0) {
+    if (param_group < opt_->param_groups().size())
+      return static_cast<optimizer_options_type&>(opt_->param_groups()[param_group].options());
+    else
+      throw std::runtime_error("Index exceeds number of parameter groups");      
+  }
+
+  /// @brief Returns a constant reference to the optimizer options
+  inline const optimizer_options_type &optimizerOptions(std::size_t param_group = 0) const {
+    if (param_group < opt_->param_groups().size())
+      return static_cast<optimizer_options_type&>(opt_->param_groups()[param_group].options());
+    else
+      throw std::runtime_error("Index exceeds number of parameter groups");      
+  }
+
+  /// @brief Resets the optimizer options
+  inline void optimizerOptionsReset(const optimizer_options_type& options) {
+    for (auto &group : opt_->param_groups())
+      static_cast<optimizer_options_type&>(group.options()) = options;
+  }
+
+  /// @brief Resets the optimizer options
+  inline void optimizerOptionsReset(optimizer_options_type&& options) {
+    for (auto &group : opt_->param_groups())
+      static_cast<optimizer_options_type&>(group.options()) = options;
+  }
+
+  /// @brief Resets the optimizer options
+  inline void optimizerOptionsReset(const optimizer_options_type& options, std::size_t param_group) {
+    if (param_group < opt_->param_groups().size())
+      static_cast<optimizer_options_type&>(opt_->param_group().options()) = options;
+    else
+      throw std::runtime_error("Index exceeds number of parameter groups");      
+  }
+
+  /// @brief Resets the optimizer options
+  inline void optimizerOptionsReset(optimizer_options_type&& options, std::size_t param_group) {
+    if (param_group < opt_->param_groups().size())
+      static_cast<optimizer_options_type&>(opt_->param_group().options()) = options;
+    else
+      throw std::runtime_error("Index exceeds number of parameter groups");      
+  }
+  
   /// @brief Returns a constant reference to the options structure
   inline const auto &options() const { return options_; }
 
@@ -1113,7 +1189,7 @@ public:
 #endif
 
       // Update the parameters based on the calculated gradients
-      opt_.step(closure);
+      opt_->step(closure);
 
       Log(log::verbose) << "Epoch " << std::to_string(epoch) << ": "
                         << loss.template item<typename Base::value_type>()
@@ -1200,7 +1276,7 @@ public:
         };
 
         // Update the parameters based on the calculated gradients
-        opt_.step(closure);
+        opt_->step(closure);
 
         Loss += loss.template item<typename Base::value_type>();
       }
@@ -1298,7 +1374,7 @@ public:
     archive.write(key + ".net.data", archive_net);
 
     torch::serialize::OutputArchive archive_opt;
-    opt_.save(archive_opt);
+    opt_->save(archive_opt);
     archive.write(key + ".opt", archive_opt);
 
     return archive;
@@ -1320,10 +1396,10 @@ public:
     archive.read(key + ".net.data", archive_net);
     net_->load(archive_net);
 
-    opt_.add_parameters(net_->parameters());
+    opt_->add_parameters(net_->parameters());
     torch::serialize::InputArchive archive_opt;
     archive.read(key + ".opt", archive_opt);
-    opt_.load(archive_opt);
+    opt_->load(archive_opt);
 
     return archive;
   }
@@ -1364,7 +1440,8 @@ private:
 };
 
 /// @brief Print (as string) a IgANet object
-template <typename Optimizer, typename GeometryMap, typename Variable>
+  template <typename Optimizer, typename GeometryMap, typename Variable>
+  requires OptimizerType<Optimizer> && FunctionSpaceType<GeometryMap> && FunctionSpaceType<Variable>
 inline std::ostream &
 operator<<(std::ostream &os,
            const IgANet<Optimizer, GeometryMap, Variable> &obj) {
@@ -1377,7 +1454,9 @@ operator<<(std::ostream &os,
 /// This class implements a customizable variant of IgANets that
 /// provides types and attributes for precomputing indices and basis
 /// functions
-template <typename GeometryMap, typename Variable> class IgANetCustomizable {
+  template <typename GeometryMap, typename Variable>
+  requires FunctionSpaceType<GeometryMap> && FunctionSpaceType<Variable>
+  class IgANetCustomizable {
 public:
   /// @brief Type of the knot indices of the geometry map in the interior
   using geometryMap_interior_knot_indices_type =
