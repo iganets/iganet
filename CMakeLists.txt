@@ -13,13 +13,7 @@
 # CMakeLists.txt accepts the following command line parameters
 #
 # IGANET_BUILD_DOCS
-# IGANET_BUILD_EXAMPLES
-# IGANET_BUILD_MEX
 # IGANET_BUILD_PCH
-# IGANET_BUILD_PERFTESTS
-# IGANET_BUILD_PYTHON
-# IGANET_BUILD_UNITTESTS
-# IGANET_BUILD_WEBAPPS
 #
 # IGANET_WITH_GISMO
 # IGANET_WITH_MATPLOT
@@ -47,16 +41,16 @@ set(IGANET_VERSION "${iganet_VERSION}" CACHE INTERNAL "IgANet version number")
 ########################################################################
 # Set RPATH on MacOSX
 ########################################################################
-if (APPLE)
+if(APPLE)
   set(CMAKE_MACOSX_RPATH ON)
-  SET(CMAKE_SKIP_BUILD_RPATH FALSE)
-  SET(CMAKE_BUILD_WITH_INSTALL_RPATH FALSE)
-  SET(CMAKE_INSTALL_RPATH "${CMAKE_INSTALL_PREFIX}/lib")
-  SET(CMAKE_INSTALL_RPATH_USE_LINK_PATH TRUE)
-  LIST(FIND CMAKE_PLATFORM_IMPLICIT_LINK_DIRECTORIES "${CMAKE_INSTALL_PREFIX}/lib" isSystemDir)
-  IF ("${isSystemDir}" STREQUAL "-1")
-    SET(CMAKE_INSTALL_RPATH "${CMAKE_INSTALL_PREFIX}/lib")
-  ENDIF ()
+  set(CMAKE_SKIP_BUILD_RPATH FALSE)
+  set(CMAKE_BUILD_WITH_INSTALL_RPATH FALSE)
+  set(CMAKE_INSTALL_RPATH "${CMAKE_INSTALL_PREFIX}/lib")
+  set(CMAKE_INSTALL_RPATH_USE_LINK_PATH TRUE)
+  list(FIND CMAKE_PLATFORM_IMPLICIT_LINK_DIRECTORIES "${CMAKE_INSTALL_PREFIX}/lib" isSystemDir)
+  if("${isSystemDir}" STREQUAL "-1")
+    set(CMAKE_INSTALL_RPATH "${CMAKE_INSTALL_PREFIX}/lib")
+  endif()
 endif()
 
 ########################################################################
@@ -99,21 +93,19 @@ endif()
 list(APPEND CMAKE_MODULE_PATH "${PROJECT_SOURCE_DIR}/cmake")
 
 ########################################################################
-# Option list
+# Option and feature lists
 ########################################################################
 option(IGANET_BUILD_CPUONLY     "Build CPU-only code"       OFF)
 option(IGANET_BUILD_DOCS        "Build documentation"       OFF)
-option(IGANET_BUILD_EXAMPLES    "Build examples"            ON )
-option(IGANET_BUILD_MEX         "Build Matlab bindings"     OFF)
 option(IGANET_BUILD_PCH         "Build precompiled headers" ON )
-option(IGANET_BUILD_PERFTESTS   "Build perftests"           OFF)
-option(IGANET_BUILD_PYTHON      "Build Python bindings"     OFF)
-option(IGANET_BUILD_UNITTESTS   "Build unittests"           OFF)
-option(IGANET_BUILD_WEBAPPS     "Build WebApps"             OFF)
 option(IGANET_WITH_GISMO        "With G+Smo support"        OFF)
 option(IGANET_WITH_MATPLOT      "With Matplot support"      OFF)
 option(IGANET_WITH_MPI          "With MPI support"          OFF)
 option(IGANET_WITH_OPENMP       "With OpenMP support"       ON )
+
+if(NOT DEFINED IGANET_OPTIONAL)
+  set(IGANET_OPTIONAL "")
+endif()
 
 ########################################################################
 # Prerequisites
@@ -140,13 +132,13 @@ include(pugixml)
 target_include_directories(iganet_core INTERFACE ${pugixml_SOURCE_DIR}/src)
 target_link_libraries(iganet_core INTERFACE pugixml)
 
-if (IGANET_WITH_GISMO)
+if(IGANET_WITH_GISMO)
   include(gismo)
   target_include_directories(iganet_core INTERFACE ${GISMO_INCLUDE_DIRS})  
   target_link_libraries(iganet_core INTERFACE gismo_static)
 endif()
 
-if (IGANET_WITH_MATPLOT)
+if(IGANET_WITH_MATPLOT)
   include(Matplot++)
   #include_directories(${matplotplusplus_SOURCE_DIR}/source)
   #include_directories(${matplotplusplus_BINARY_DIR}/source/matplot)
@@ -156,7 +148,7 @@ endif()
 ########################################################################
 # Enable MPI support
 ########################################################################
-if (IGANET_WITH_MPI)
+if(IGANET_WITH_MPI)
   find_package(MPI REQUIRED)
   target_link_libraries(iganet_core INTERFACE MPI::MPI_CXX)
 endif()
@@ -164,11 +156,11 @@ endif()
 ########################################################################
 # Enable OpenMP support
 ########################################################################
-if (IGANET_WITH_OPENMP)
+if(IGANET_WITH_OPENMP)
   # Apple explicitly disabled OpenMP support in their compilers that
   # are shipped with XCode but there is an easy workaround as
   # described at https://mac.r-project.org/openmp/
-  if (CMAKE_C_COMPILER_ID STREQUAL "AppleClang" OR
+  if(CMAKE_C_COMPILER_ID STREQUAL "AppleClang" OR
       CMAKE_C_COMPILER_ID STREQUAL "Clang" AND ${CMAKE_SYSTEM_NAME} MATCHES "Darwin" OR
       CMAKE_CXX_COMPILER_ID STREQUAL "AppleClang" OR
       CMAKE_CXX_COMPILER_ID STREQUAL "Clang" AND ${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
@@ -303,14 +295,10 @@ message("")
 message("Options:")
 message("IGANET_BUILD_CPUONLY...............: ${IGANET_BUILD_CPUONLY}")
 message("IGANET_BUILD_DOCS..................: ${IGANET_BUILD_DOCS}")
-message("IGANET_BUILD_EXAMPLES..............: ${IGANET_BUILD_EXAMPLES}")
-message("IGANET_BUILD_MEX...................: ${IGANET_BUILD_MEX}")
 message("IGANET_BUILD_PCH...................: ${IGANET_BUILD_PCH}")
-message("IGANET_BUILD_PERFTESTS.............: ${IGANET_BUILD_PERFTESTS}")
-message("IGANET_BUILD_PYTHON................: ${IGANET_BUILD_PYTHON}")
-message("IGANET_BUILD_UNITTESTS.............: ${IGANET_BUILD_UNITTESTS}")
-message("IGANET_BUILD_WEBAPPS...............: ${IGANET_BUILD_WEBAPPS}")
-
+message("")
+message("Optional modules:")
+message("IGANET_OPTIONAL....................: ${IGANET_OPTIONAL}")
 message("")
 message("Features:")
 message("IGANET_WITH_GISMO..................: ${IGANET_WITH_GISMO}")
@@ -327,53 +315,16 @@ add_subdirectory(${PROJECT_SOURCE_DIR}/include)
 ########################################################################
 # Add documentation (if enabled)
 ########################################################################
-if (IGANET_BUILD_DOCS)
+if(IGANET_BUILD_DOCS)
   add_subdirectory(${PROJECT_SOURCE_DIR}/docs)
 endif()
 
 ########################################################################
-# Add examples (if enabled)
+# Add optional modules
 ########################################################################
-if (IGANET_BUILD_EXAMPLES)
-  add_subdirectory(${PROJECT_SOURCE_DIR}/examples)
-endif()
+enable_testing()
 
-########################################################################
-# Add Matlab bindings (if enabled)
-########################################################################
-if (IGANET_BUILD_MEX)
-  add_subdirectory(${PROJECT_SOURCE_DIR}/mex/src)
-endif()
-
-########################################################################
-# Add perftests (if enabled)
-########################################################################
-if (IGANET_BUILD_PERFTESTS)
-  enable_testing()
+foreach(module ${IGANET_OPTIONAL})
   include(get_module)
-  get_module(perftests GIT_REPOSITORY https://github.com/iganets/iganet-perftests.git)
-endif()
-
-########################################################################
-# Add Python bindings (if enabled)
-########################################################################
-if (IGANET_BUILD_PYTHON)
-  include(get_module)
-  get_module(python GIT_REPOSITORY https://github.com/iganets/iganet-python.git)  
-endif()
-
-########################################################################
-# Add unittests (if enabled)
-########################################################################
-if (IGANET_BUILD_UNITTESTS)
-  enable_testing()
-  include(get_module)
-  get_module(unittests GIT_REPOSITORY https://github.com/iganets/iganet-unittests.git)
-endif()
-
-########################################################################
-# Add WebApps (if enabled)
-########################################################################
-if (IGANET_BUILD_WEBAPPS)
-  add_subdirectory(${PROJECT_SOURCE_DIR}/webapps)
-endif()
+  get_module(${module} GIT_REPOSITORY https://github.com/iganets/iganet-${module}.git)
+endforeach()
