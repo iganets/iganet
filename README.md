@@ -1,42 +1,28 @@
-# IgANets: Physics-informed isogeometric analysis networks
+# IGAnets: Isogeometric analysis networks
 
-IgANets is a novel approach to combine the concept of deep operator learning with the mathematical framework of isogeometric analysis.
+IGAnets is a novel approach to combine the concept of deep operator learning with the mathematical framework of isogeometric analysis.
 
 ## Installation instructions
 
-IgANets require a C++20 compiler, CMake and LibTorch (the C++ API of PyTorch).
+IGAnets require a C++20 compiler, CMake and LibTorch (the C++ API of PyTorch).
 
-Depending on the LibTorch version installed on your system, IgANets will be compiled with support for CUDA, ROCm Intel GPUs or the Intel Extension for PyTorch. You can disable this feature by providing the `-DIGANET_BUILD_CPUONLY=ON` flag to CMake.
+**Supported CMake flags**:
 
-By providing additional CMake flags you can configure IgANet to build the following optional components:
-
-- `-DIGANET_BUILD_CPUONLY=ON` builds IgANets in CPU mode even if CUDA, ROCm, etc. is found (default `OFF`).
+- `-DIGANET_BUILD_CPUONLY=ON` builds IGAnets in CPU mode even if CUDA, ROCm, etc. is found (default `OFF`).
 
 - `-DIGANET_BUILD_DOCS=ON` builds the documentation (default `OFF`). To build the documentation you need [Doxygen](https://www.doxygen.nl) and [Sphinx](https://www.sphinx-doc.org/en/master/) installed on you system.
 
-- `-DIGANET_BUILD_EXAMPLES=ON` builds the examples (default `ON`).
+- `-DIGANET_BUILD_PCH=ON` builds IGAnets with precompiled headers (default `ON`).
 
-- `-DIGANET_BUILD_MEX=ON` builds the Matlab bindings (default `OFF`).
+- `-DIGANET_OPTIONAL="..."` builds optional modules (default `NONE`).
 
-- `-DIGANET_BUILD_PCH=ON` builds IgANets with precompiled headers (default `ON`).
+- `-DIGANET_WITH_GISMO=ON` compiles IGAnets with support for the open-source Geometry plus Simulation Modules library [G+Smo](https://github.com/gismo/gismo) enabled (default `OFF`).
 
-- `-DIGANET_BUILD_PERFTESTS=ON` builds the performance tests (default `OFF`).
+- `-DIGANET_WITH_MATPLOT=ON` compiles IGAnets with support for the open-source library [Matplot-cpp](https://github.com/lava/matplotlib-cpp) enabled (default `OFF`). _Note that this option can cause compilation errors with GCC._
 
-- `-DIGANET_BUILD_PYTHON=ON` builds the Python module `pyiganet` (default `OFF`). This option requires a Python interpreter to be installed on your system.
+- `-DIGANET_WITH_MPI=ON` compiles IGAnets with MPI support enabled (default `OFF`).
 
-- `-DIGANET_BUILD_UNITTESTS=ON` builds the unit tests (default `OFF`).
-
-- `-DIGANET_BUILD_WEBAPPS=ON` builds the websocket applications (default `OFF`).
-
-In addition to the optional components, IgANets can be compiled with several optional features enabled/disabled:
-
-- `-DIGANET_WITH_GISMO=ON` compiles IgANets with support for the open-source Geometry plus Simulation Modules library [G+Smo](https://github.com/gismo/gismo) enabled (default `OFF`).
-
-- `-DIGANET_WITH_MATPLOT=ON` compiles IgANets with support for the open-source library [Matplot-cpp](https://github.com/lava/matplotlib-cpp) enabled (default `OFF`). _Note that this option can cause compilation errors with GCC._
-
-- `-DIGANET_WITH_MPI=ON` compiles IgANets with MPI support enabled (default `OFF`).
-
-- `-DIGANET_WITH_OPENMP=ON` compiles IgANets with OpenMP support enabled (default `ON`). _Note that this option can cause compilation errors with Clang._
+- `-DIGANET_WITH_OPENMP=ON` compiles IGAnets with OpenMP support enabled (default `ON`). _Note that this option can cause compilation errors with Clang._
 
 ### Linux
 
@@ -94,7 +80,7 @@ In addition to the optional components, IgANets can be compiled with several opt
     - https://download.pytorch.org/libtorch/cpu/libtorch-macos-x86_64-2.7.1.zip
     - https://download.pytorch.org/libtorch/cpu/libtorch-macos-arm64-2.7.1.zip
 
-    If you decide to use these version download and unzip them as shown for the Linux installation. It is, however, recommended to install LibTorch through `brew` as described above since this method is tested regularly by the IgANets authors.
+    If you decide to use these version download and unzip them as shown for the Linux installation. It is, however, recommended to install LibTorch through `brew` as described above since this method is tested regularly by the IGAnets authors.
 
     Note that there might be a newer LibTorch version available than indicated in the above code snippet.
 
@@ -172,35 +158,3 @@ In addition to the optional components, IgANets can be compiled with several opt
 1.  Install the Intel Extensions for PyTorch as described [here](https://github.com/intel/intel-extension-for-pytorch?tab=readme-ov-file).
 
 2.  Add the CMake option `-DIPEX_DIR=<path/to/IPEX/installation>`
-
-## Python module
-
-To compile the Python module `pyiganet` run
-```shell
-Torch_DIR=/opt/homebrew/Cellar/pytorch/2.1.2_1/share/cmake/Torch CMAKE_PREFIX_PATH=/opt/homebrew/Cellar/protobuf/25.2 python setup.py develop python setup.py develop
-```
-
-Again, the specific version of PyTorch and/or protobuf might be different on your system.
-
-## Unit tests
-
-To compile with unit tests enabled run CMake with the `-DIGANET_BUILD_UNITTESTS=ON` option and run
-```shell
-make test
-```
-
-## Performance tests
-
-To compile with performance tests enabled run CMake with the `-DIGANET_BUILD_PERFTESTS=ON` option. By default, all performance tests are disabled and need to be enabled explicitly.
-
-To obtain a list of available tests run (or another executable in the `perftests` folder)
-```shell
-./perftests/perftest_bspline_eval --gtest_filter="*" --gtest_list_tests
-```
-
-To execute one or more tests run
-```shell
-./perftests/perftest_bspline_eval --gtest_filter="*UniformBSpline_*parDim1*:-*Non*"
-```
-
-This specific command will run all `UniformBSpline` tests with 1 parametric dimension.
