@@ -137,62 +137,62 @@ public:
   operator torch::TensorOptions() const { return options_; }
 
   /// @brief Returns the `device` property
-  torch::Device device() const noexcept { return options_.device(); }
+  inline torch::Device device() const noexcept { return options_.device(); }
 
   /// @brief Returns the `device_index` property
-  int32_t device_index() const noexcept { return options_.device_index(); }
+  inline int32_t device_index() const noexcept { return options_.device_index(); }
 
   /// @brief Returns the `dtype` property
-  torch::Dtype dtype() const noexcept { return ::iganet::dtype<real_t>(); }
+  inline torch::Dtype dtype() const noexcept { return ::iganet::dtype<real_t>(); }
 
   /// @brief Returns the `layout` property
-  torch::Layout layout() const noexcept { return options_.layout(); }
+  inline torch::Layout layout() const noexcept { return options_.layout(); }
 
   /// @brief Returns the `requires_grad` property
-  bool requires_grad() const noexcept { return options_.requires_grad(); }
+  inline bool requires_grad() const noexcept { return options_.requires_grad(); }
 
   /// @brief Returns the `pinned_memory` property
-  bool pinned_memory() const noexcept { return options_.pinned_memory(); }
+  inline bool pinned_memory() const noexcept { return options_.pinned_memory(); }
 
   /// @brief Returns if the layout is sparse
-  bool is_sparse() const noexcept { return options_.is_sparse(); }
+  inline bool is_sparse() const noexcept { return options_.is_sparse(); }
 
   /// @brief Returns a new Options object with the `device` property as given
-  Options<real_t> device(torch::Device device) const noexcept {
+  inline Options<real_t> device(torch::Device device) const noexcept {
     return Options(options_.device(device));
   }
 
   /// @brief Returns a new Options object with the `device_index` property as
   /// given
-  Options<real_t> device_index(int16_t device_index) const noexcept {
+  inline Options<real_t> device_index(int16_t device_index) const noexcept {
     return Options(options_.device_index(device_index));
   }
 
   /// @brief Returns a new Options object with the `dtype` property as given
-  template <typename other_t> Options<other_t> dtype() const noexcept {
+  template <typename other_t> inline Options<other_t> dtype() const noexcept {
     return Options<other_t>(options_.dtype(::iganet::dtype<other_t>()));
   }
 
   /// @brief Returns a new Options object with the `layout` property as given
-  Options<real_t> layout(torch::Layout layout) const noexcept {
+  inline Options<real_t> layout(torch::Layout layout) const noexcept {
     return Options(options_.layout(layout));
   }
 
   /// @brief Returns a new Options object with the `requires_grad` property as
   /// given
-  Options<real_t> requires_grad(bool requires_grad) const noexcept {
+  inline Options<real_t> requires_grad(bool requires_grad) const noexcept {
     return Options(options_.requires_grad(requires_grad));
   }
 
   /// @brief Returns a new Options object with the `pinned_memory` property as
   /// given
-  Options<real_t> pinned_memory(bool pinned_memory) const noexcept {
+  inline Options<real_t> pinned_memory(bool pinned_memory) const noexcept {
     return Options(options_.pinned_memory(pinned_memory));
   }
 
   /// @brief Returns a new Options object with the `memory_format` property as
   /// given
-  Options<real_t>
+  inline Options<real_t>
   memory_format(torch::MemoryFormat memory_format) const noexcept {
     return Options(options_.memory_format(memory_format));
   }

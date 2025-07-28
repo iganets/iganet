@@ -2778,10 +2778,10 @@ public:
       NonUniformBSplineCore<other_t, GeoDim, Degrees...>;
 
   /// @brief Returns true if the B-spline is uniform
-  static constexpr bool is_uniform() { return false; }
+  inline static constexpr bool is_uniform() { return false; }
 
   /// @brief Returns true if the B-spline is non-uniform
-  static constexpr bool is_nonuniform() { return true; }
+  inline static constexpr bool is_nonuniform() { return true; }
 
   /// @brief Constructor for equidistant knot vectors
   using UniformBSplineCore<real_t, GeoDim, Degrees...>::UniformBSplineCore;
