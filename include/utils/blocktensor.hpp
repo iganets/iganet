@@ -144,7 +144,7 @@ public:
     return *data_[idx];
   }
 
-  /// Returns a string representation of the BlockTensorCore object
+  /// @brief Returns a string representation of the BlockTensorCore object
   inline virtual void
   pretty_print(std::ostream &os = Log(log::info)) const noexcept = 0;
 };
@@ -169,7 +169,7 @@ public:
   /// @brief Returns the number of rows
   inline static constexpr std::size_t rows() { return Rows; }
 
-  /// Returns a string representation of the BlockTensor object
+  /// @brief Returns a string representation of the BlockTensor object
   inline virtual void
   pretty_print(std::ostream &os = Log(log::info)) const noexcept override {
     os << Base::name() << "\n";
@@ -812,7 +812,7 @@ public:
       return (*this) * (this->tr() * (*this)).invtr();
   }
 
-  /// Returns the trace of the block tensor
+  /// @brief Returns the trace of the block tensor
   inline auto trace() const {
     static_assert(Rows == Cols, "trace(.) requires square block tensor");
 
@@ -834,7 +834,51 @@ public:
       throw std::runtime_error("Unsupported block tensor dimension");
   }
 
-  /// Returns a string representation of the BSplineCommon object
+private:
+  /// @brief Returns the norm of the BlockTensor object
+  template <std::size_t... Is>
+  inline auto norm_(std::index_sequence<Is...>) const {
+    return torch::sqrt(std::apply([](const auto&... tensors) {
+      return (tensors + ...);
+    }, std::make_tuple(std::get<Is>(Base::data_)->square()...)));
+  }
+  
+public:
+  /// @brief Returns the norm of the BlockTensor object
+  inline auto norm() const {
+    return BlockTensor<T, 1, 1>(std::make_shared<T>(norm_(std::make_index_sequence<Rows*Cols>{})));
+  }
+  
+private:
+  /// @brief Returns the normalized BlockTensor object
+  template <std::size_t... Is>
+  inline auto normalize_(std::index_sequence<Is...> is) const {
+    auto n_ = norm_(is);
+    return BlockTensor<T, Rows, Cols>(std::make_shared<T>(*std::get<Is>(Base::data_)/n_)...);
+  }
+  
+public:
+  /// @brief Returns the normalized BlockTensor object
+  inline auto normalize() const {
+    return normalize_(std::make_index_sequence<Rows*Cols>{});
+  }
+
+private:
+  /// @brief Returns the dot product of two BlockTensor objects
+  template <std::size_t... Is>
+  inline auto dot_(std::index_sequence<Is...>, const BlockTensor<T, Rows, Cols> &other) const {
+    return std::apply([](const auto&... tensors) {
+      return (tensors + ...);
+    }, std::make_tuple(torch::mul(*std::get<Is>(Base::data_), *std::get<Is>(other.data_))...));    
+  }
+  
+public:
+  /// @brief Returns the dot product of two BlockTensor objects
+  inline auto dot(const BlockTensor<T, Rows, Cols> & other) const {
+    return BlockTensor<T, 1, 1>(std::make_shared<T>(dot_(std::make_index_sequence<Rows*Cols>{}, other)));
+  }
+
+  /// @brief Returns a string representation of the BlockTensor object
   inline virtual void
   pretty_print(std::ostream &os = Log(log::info)) const noexcept override {
     os << Base::name() << "\n";
@@ -844,7 +888,7 @@ public:
            << *Base::data_[Cols * row + col] << "\n";
   }
 };
-
+  
 /// @brief Multiplies one compile-time rank-2 block tensor with
 /// another compile-time rank-2 block tensor
 template <typename T, typename U, std::size_t Rows, std::size_t Common,
@@ -936,7 +980,7 @@ public:
     return result;
   }
 
-  /// @brief Returns a new block vector with rows, columns, and
+  /// @brief Returns a new block tensor with rows, columns, and
   ///  slices permuted according to (i,j,k) -> (i,k,j)
   inline auto reorder_ikj() const {
     BlockTensor<T, Rows, Slices, Cols> result;
@@ -948,7 +992,7 @@ public:
     return result;
   }
 
-  /// @brief Returns a new block vector with rows and columns
+  /// @brief Returns a new block tensor with rows and columns
   /// transposed and slices remaining fixed. This is equivalent to
   /// looping through all slices and transposing each rank-2 tensor.
   inline auto reorder_jik() const {
@@ -961,7 +1005,7 @@ public:
     return result;
   }
 
-  /// @brief Returns a new block vector with rows, columns, and
+  /// @brief Returns a new block tensor with rows, columns, and
   ///  slices permuted according to (i,j,k) -> (k,j,i)
   inline auto reorder_kji() const {
     BlockTensor<T, Slices, Cols, Rows> result;
@@ -973,7 +1017,7 @@ public:
     return result;
   }
 
-  /// @brief Returns a new block vector with rows, columns, and
+  /// @brief Returns a new block tensor with rows, columns, and
   ///  slices permuted according to (i,j,k) -> (k,i,j)
   inline auto reorder_kij() const {
     BlockTensor<T, Slices, Rows, Cols> result;
@@ -985,7 +1029,7 @@ public:
     return result;
   }
 
-  /// Returns a string representation of the BSplineCommon object
+  /// @brief Returns a string representation of the BSplineCommon object
   inline virtual void
   pretty_print(std::ostream &os = Log(log::info)) const noexcept override {
     os << Base::name() << "\n";
@@ -1325,6 +1369,13 @@ blocktensor_binary_op(divide);
 /// derivative of the gamma function of the elements of `input`
 blocktensor_unary_op(digamma);
 
+/// @brief Returns a new block tensor with the dot product of the two
+/// input block tensors
+template <typename T, std::size_t Rows, std::size_t Cols>
+inline auto dot(const BlockTensor<T, Rows, Cols> &input, const BlockTensor<T, Rows, Cols> &tensor) {
+  return input.dot(tensor);
+}
+  
 /// @brief Returns a new block tensor with the error function of the
 /// elements of `input`
 blocktensor_unary_op(erf);
