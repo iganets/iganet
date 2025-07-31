@@ -14,7 +14,16 @@ IGAnets require a C++20 compiler, CMake and LibTorch (the C++ API of PyTorch).
 
 - `-DIGANET_BUILD_PCH=ON` builds IGAnets with precompiled headers (default `ON`).
 
-- `-DIGANET_OPTIONAL="..."` builds optional modules (default `NONE`).
+- `-DIGANET_OPTIONAL="..."` builds optional modules (default `NONE`)
+
+  Optional modules are as follows:
+  - [Examples](https://github.com/iganets/iganet-examples) `examples`
+  - [Unit tests](https://github.com/iganets/iganet-unittests) `unittests`
+  - [Performance tests](https://github.com/iganets/iganet-perftests) `perftests`
+  - [Python bindings](https://github.com/iganets/iganet-python) `python`
+  - [MATLAB bindings](https://github.com/iganets/iganet-matlab) `matlab`
+
+  There exists further optional modules that are not visible publicly
 
 - `-DIGANET_WITH_GISMO=ON` compiles IGAnets with support for the open-source Geometry plus Simulation Modules library [G+Smo](https://github.com/gismo/gismo) enabled (default `OFF`).
 
