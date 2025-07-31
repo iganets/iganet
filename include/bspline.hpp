@@ -3687,6 +3687,87 @@ public:
     return bbox;
   }
 
+  /// @brief Returns a block-tensor with the outward pointing normal
+  /// vector of the B-spline object
+  ///
+  /// @param[in] xi Point(s) where to evaluate the normal vector
+  ///
+  /// @result Block-tensor with the outward pointing normal vector
+  /// @{
+  template <bool memory_optimized = false>
+  inline auto nv(const torch::Tensor &xi) const {
+    return nv<memory_optimized>(utils::TensorArray1({xi}));
+  }
+
+  template <bool memory_optimized = false>
+  inline auto nv(const utils::TensorArray<BSplineCore::parDim_> &xi) const {
+    return nv<memory_optimized>(xi, BSplineCore::find_knot_indices(xi));
+  }
+  /// @}
+
+  /// @brief Returns a block-tensor with the outward pointing normal
+  /// vector of the B-spline object
+  ///
+  /// @param[in] xi Point(s) where to evaluate the normal vector
+  ///
+  /// @param[in] knot_indices Knot indices where to evaluate the normal vector
+  ///
+  /// @result Block-tensor with the outward pointing normal vector
+  template <bool memory_optimized = false>
+  inline auto
+  nv(const utils::TensorArray<BSplineCore::parDim_> &xi,
+     const utils::TensorArray<BSplineCore::parDim_> &knot_indices) const {
+    return nv<memory_optimized>(
+        xi, knot_indices,
+        BSplineCore::template find_coeff_indices<memory_optimized>(
+            knot_indices));
+  }
+
+  /// @brief Returns a block-tensor with the outward pointing normal
+  /// vector of the B-spline object
+  ///
+  /// @param[in] xi Point(s) where to evaluate the normal vector
+  ///
+  /// @param[in] knot_indices Knot indices where to evaluate the normal vector
+  ///
+  /// @param[in] coeff_indices Coefficient indices where to evaluate
+  /// the normal vector
+  ///
+  /// @result Block-tensor with the outward pointing normal vector
+  template <bool memory_optimized = false>
+  inline auto nv(const utils::TensorArray<BSplineCore::parDim_> &xi,
+                 const utils::TensorArray<BSplineCore::parDim_> &knot_indices,
+                 const torch::Tensor &coeff_indices) const {
+
+    if constexpr (BSplineCore::parDim_ == 1 &&
+                  BSplineCore::geoDim_ == 2) {
+      // Compute the perpendicular vector
+      auto eval_ = BSplineCore::template eval<deriv::dx, memory_optimized>(xi, knot_indices, coeff_indices);
+      return utils::BlockTensor<torch::Tensor, 1, 2>(*eval_[1], - *eval_[0]);
+    }
+    else if constexpr (BSplineCore::parDim_ == 1 &&
+                       BSplineCore::geoDim_ == 3) {
+      // Compute the Frenet normal vector
+      auto t_ = BSplineCore::template eval<deriv::dx, memory_optimized>(xi, knot_indices, coeff_indices).normalize();
+      auto a_ = BSplineCore::template eval<deriv::dx^2, memory_optimized>(xi, knot_indices, coeff_indices);
+      auto n_ = a_ - a_.dot(t_) * t_;
+      return utils::BlockTensor<torch::Tensor, 2, 3>(n_(0,0), n_(0,1), n_(0,2),
+                                                     t_(0,0), t_(0,1), t_(0,2));
+    }
+    else if constexpr (BSplineCore::parDim_ == 2 &&
+                       BSplineCore::geoDim_ == 3) {
+      // Compute the cross product of tangent vectors
+      auto jac_ = jac<memory_optimized>(xi, knot_indices, coeff_indices);
+      return utils::BlockTensor<torch::Tensor, 1, 3>(jac_(1,0) * jac_(2,1) - jac_(2,0) * jac_(1,1),
+                                                     jac_(2,0) * jac_(0,1) - jac_(0,0) * jac_(2,1),
+                                                     jac_(0,0) * jac_(1,1) - jac_(1,0) * jac_(0,1));
+    }
+    else {
+      throw std::runtime_error("Unsupported parametric/geometric dimension");
+      return utils::BlockTensor<torch::Tensor, 1, 1>{};
+    }
+  }
+    
   //  clang-format off
   /// @brief Returns a block-tensor with the curl of the
   /// B-spline object with respect to the parametric variables
@@ -3711,7 +3792,7 @@ public:
   //  clang-format off
   /// @{
   template <bool memory_optimized = false>
-  auto curl(const torch::Tensor &xi) const {
+  inline auto curl(const torch::Tensor &xi) const {
     return curl<memory_optimized>(utils::TensorArray1({xi}));
   }
 
@@ -3856,7 +3937,7 @@ public:
   ///
   /// @{
   template <bool memory_optimized = false, typename Geometry>
-  auto icurl(const Geometry &G, const torch::Tensor &xi) const {
+  inline auto icurl(const Geometry &G, const torch::Tensor &xi) const {
     if constexpr (BSplineCore::parDim_ == 0)
       return utils::BlockTensor<torch::Tensor, 1, 1>{
           torch::zeros_like(BSplineCore::coeffs_[0])};
@@ -3991,7 +4072,7 @@ public:
   /// equal parametric and geometric dimensionality.
   /// @{
   template <bool memory_optimized = false>
-  auto div(const torch::Tensor &xi) const {
+  inline auto div(const torch::Tensor &xi) const {
     if constexpr (BSplineCore::parDim_ == 0)
       return utils::BlockTensor<torch::Tensor, 1, 1>{
           torch::zeros_like(BSplineCore::coeffs_[0])};
@@ -4123,7 +4204,7 @@ public:
   ///
   /// @{
   template <bool memory_optimized = false, typename Geometry>
-  auto idiv(const Geometry &G, const torch::Tensor &xi) {
+  inline auto idiv(const Geometry &G, const torch::Tensor &xi) {
     if constexpr (BSplineCore::parDim_ == 0)
       return utils::BlockTensor<torch::Tensor, 1, 1>{
           torch::zeros_like(BSplineCore::coeffs_[0])};
@@ -4396,7 +4477,7 @@ public:
   ///
   /// @{
   template <bool memory_optimized = false, typename Geometry>
-  auto igrad(const Geometry &G, const torch::Tensor &xi) const {
+  inline auto igrad(const Geometry &G, const torch::Tensor &xi) const {
     if constexpr (BSplineCore::parDim_ == 0)
       return utils::BlockTensor<torch::Tensor, 1, 1>{
           torch::zeros_like(BSplineCore::coeffs_[0])};
@@ -4708,7 +4789,7 @@ public:
   ///
   /// @{
   template <bool memory_optimized = false, typename Geometry>
-  auto ihess(const Geometry &G, const torch::Tensor &xi) const {
+  inline auto ihess(const Geometry &G, const torch::Tensor &xi) const {
     if constexpr (BSplineCore::parDim_ == 0)
       return utils::BlockTensor<torch::Tensor, 1, 1>{
           torch::zeros_like(BSplineCore::coeffs_[0])};
@@ -5034,7 +5115,7 @@ public:
   ///
   /// @{
   template <bool memory_optimized = false, typename Geometry>
-  auto ijac(const Geometry &G, const torch::Tensor &xi) const {
+  inline auto ijac(const Geometry &G, const torch::Tensor &xi) const {
     if constexpr (BSplineCore::parDim_ == 0)
       return utils::BlockTensor<torch::Tensor, 1, 1>{
           torch::zeros_like(BSplineCore::coeffs_[0])};
