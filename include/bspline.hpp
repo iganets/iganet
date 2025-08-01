@@ -743,7 +743,7 @@ public:
             coeffs[i] = torch::kron(greville_, coeffs[i]);
           } else
             coeffs[i] =
-              torch::kron(torch::ones(ncoeffs_[j], options_), coeffs[i]);
+              torch::kron(torch::ones(ncoeffs_[j] - (interior ? 2 : 0), options_), coeffs[i]);
         }
 
         // Enable gradient calculation for non-leaf tensor
