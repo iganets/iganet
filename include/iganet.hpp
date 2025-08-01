@@ -1144,6 +1144,7 @@ public:
 #endif
   ) {
     torch::Tensor inputs, outputs, loss;
+    typename Base::value_type previous_loss(-1.0);
 
     // Loop over epochs
     for (int64_t epoch = 0; epoch != options_.max_epoch(); ++epoch) {
@@ -1191,17 +1192,33 @@ public:
       // Update the parameters based on the calculated gradients
       opt_->step(closure);
 
+      typename Base::value_type current_loss = loss.template item<typename Base::value_type>();
       Log(log::verbose) << "Epoch " << std::to_string(epoch) << ": "
-                        << loss.template item<typename Base::value_type>()
+                        << current_loss
                         << std::endl;
 
-      if (loss.template item<typename Base::value_type>() <
+      if (current_loss <
           options_.min_loss()) {
         Log(log::info) << "Total epochs: " << epoch << ", loss: "
-                       << loss.template item<typename Base::value_type>()
+                       << current_loss
                        << std::endl;
         break;
       }
+
+      if (current_loss == previous_loss || std::abs(current_loss-previous_loss) < previous_loss/10) {
+        Log(log::info) << "Total epochs: " << epoch << ", loss: "
+                       << current_loss
+                       << std::endl;
+        break;
+      }
+
+      if (loss.isnan().template item<bool>()) {
+        Log(log::info) << "Total epochs: " << epoch << ", loss: "
+        << current_loss
+        << std::endl;
+        break;
+      }
+      previous_loss = current_loss;
     }
   }
 
@@ -1215,6 +1232,7 @@ public:
 #endif
   ) {
     torch::Tensor inputs, outputs, loss;
+    typename Base::value_type previous_loss(-1.0);
 
     // Loop over epochs
     for (int64_t epoch = 0; epoch != options_.max_epoch(); ++epoch) {
@@ -1289,6 +1307,13 @@ public:
                        << std::endl;
         break;
       }
+
+      if (Loss == previous_loss) {
+        Log(log::info) << "Total epochs: " << epoch << ", loss: " << Loss
+                       << std::endl;
+        break;
+      }
+      previous_loss = Loss;
 
       if (epoch == options_.max_epoch() - 1)
         Log(log::warning) << "Total epochs: " << epoch << ", loss: " << Loss
