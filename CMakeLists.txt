@@ -323,8 +323,29 @@ endif()
 # Add optional modules
 ########################################################################
 enable_testing()
+include(get_module)
 
-foreach(module ${IGANET_OPTIONAL})
-  include(get_module)
-  get_module(${module} GIT_REPOSITORY https://github.com/iganets/iganet-${module}.git)
+
+foreach(entry IN LISTS IGANET_OPTIONAL)
+  
+  # Extract entries of the form "module[branch]"
+  string(REGEX MATCH "^([^\[]+)\\[([^\]]+)\\]" _ "${entry}")  
+  if(_)
+    set(module "${CMAKE_MATCH_1}")
+    set(branch "${CMAKE_MATCH_2}")
+  else()
+    set(module "${entry}")
+    set(branch "main")
+  endif()
+  
+  if(EXISTS "${CMAKE_SOURCE_DIR}/.git")
+    get_module(
+      ${module}
+      GIT_REPOSITORY https://github.com/iganets/iganet-${module}.git
+      GIT_TAG ${branch})
+  else()  
+    get_module(
+      ${module}
+      URL https://github.com/iganets/iganet-${module}/archive/refs/heads/${branch}.zip)
+  endif()
 endforeach()
