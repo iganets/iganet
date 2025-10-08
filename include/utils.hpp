@@ -23,6 +23,7 @@
 #include <utils/linalg.hpp>
 #include <utils/serialize.hpp>
 #include <utils/tensorarray.hpp>
+#include <utils/tuple.hpp>
 #include <utils/type_traits.hpp>
 #include <utils/uuid.hpp>
 #include <utils/vslice.hpp>
