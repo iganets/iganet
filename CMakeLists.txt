@@ -104,7 +104,7 @@ option(IGANET_WITH_MPI          "With MPI support"          OFF)
 option(IGANET_WITH_OPENMP       "With OpenMP support"       ON )
 
 if(NOT DEFINED IGANET_OPTIONAL)
-  set(IGANET_OPTIONAL "")
+  set(IGANET_OPTIONAL "" CACHE STRING "Build optional modules")
 endif()
 
 ########################################################################
