@@ -44,16 +44,15 @@ namespace detail {
   class FunctionSpaceType {};
   
 // Forward declaration
-  template <typename Spline, typename Boundary>
-  //requires SplineType<Spline> && BoundaryType<Boundary>
-  class FunctionSpace;
+template <typename, typename>
+class FunctionSpace;
 
 /// @brief Tensor-product function space
 ///
 /// @note This class is not meant for direct use in
 /// applications. Instead use S, TH, NE, or RT.
-  template <typename... Splines, typename... Boundaries>
-  //requires (SplineType<Splines> && ...) && (BoundaryType<Boundaries> && ...)
+template <typename... Splines, typename... Boundaries>
+// requires (SplineType<Splines> && ...) && (BoundaryType<Boundaries> && ...)
 class FunctionSpace<std::tuple<Splines...>, std::tuple<Boundaries...>>
   : public FunctionSpaceType, public utils::Serializable, private utils::FullQualifiedName {
 
@@ -124,61 +123,59 @@ public:
 
   explicit FunctionSpace(const std::tuple<Splines...> &spline,
                          const std::tuple<Boundaries...> &boundary)
-    : spline_(spline), boundary_(boundary) {
-  }
+    : spline_(spline), boundary_(boundary) {}
 
   explicit FunctionSpace(std::tuple<Splines...> &&spline,
                          std::tuple<Boundaries...> &&boundary)
-    : spline_(spline), boundary_(boundary) {
-  }
+    : spline_(spline), boundary_(boundary) {}
   /// @}
 
   /// @brief Returns the number of function spaces
-  inline static constexpr short_t nspaces() noexcept {
+    inline static constexpr std::size_t nspaces() noexcept {
     return sizeof...(Splines);
   }
 
   /// @brief Returns the number of boundaries
-  inline static constexpr short_t nboundaries() noexcept {
+    inline static constexpr std::size_t nboundaries() noexcept {
     return sizeof...(Boundaries);
   }
 
-  /// @brief Returns a constant reference to the \f$s\f$-th function space
-  template <short_t s> inline const auto &space() const noexcept {
-    static_assert(s >= 0 && s < nspaces());
-    return std::get<s>(spline_);
+  /// @brief Returns a constant reference to the index-th function space
+    template <std::size_t index> inline const auto &space() const noexcept {
+    static_assert(index >= 0 && index < nspaces());
+    return std::get<index>(spline_);
   }
 
-  /// @brief Returns a non-constant reference to the \f$s\f$-th space
-  template <short_t s> inline auto &space() noexcept {
-    static_assert(s >= 0 && s < nspaces());
-    return std::get<s>(spline_);
+  /// @brief Returns a non-constant reference to the index-th space
+    template <std::size_t index> inline auto &space() noexcept {
+    static_assert(index >= 0 && index < nspaces());
+    return std::get<index>(spline_);
   }
 
-  /// @brief Returns a constant reference to the \f$s\f$-th boundary object
-  template <short_t s> inline const auto &boundary() const noexcept {
-    static_assert(s >= 0 && s < nboundaries());
-    return std::get<s>(boundary_);
+  /// @brief Returns a constant reference to the index-th boundary object
+    template <std::size_t index> inline const auto &boundary() const noexcept {
+    static_assert(index >= 0 && index < nboundaries());
+    return std::get<index>(boundary_);
   }
 
-  /// @brief Returns a non-constant reference to the \f$s\f$-th
+  /// @brief Returns a non-constant reference to the index-th
   /// boundary object
-  template <short_t s> inline auto &boundary() noexcept {
-    static_assert(s >= 0 && s < nboundaries());
-    return std::get<s>(boundary_);
+    template <std::size_t index> inline auto &boundary() noexcept {
+    static_assert(index >= 0 && index < nboundaries());
+    return std::get<index>(boundary_);
   }
 
   /// @brief Returns a clone of the function space
   inline FunctionSpace clone() const noexcept { return FunctionSpace(*this); }
 
   /// @brief Returns a clone of a subset of the function space
-  template <short_t... s> inline auto clone() const noexcept {
+    template <std::size_t... index> inline auto clone() const noexcept {
 
-    static_assert(((s >= 0 && s < nspaces()) && ... && true));
+    static_assert(((index >= 0 && index < nspaces()) && ... && true));
 
-    return FunctionSpace<std::tuple<std::tuple_element_t<s, spline_type>...>,
-                         std::tuple<std::tuple_element_t<s, boundary_type>...>>(
-                                                                                std::make_tuple(std::get<s>(spline_)...), std::make_tuple(std::get<s>(boundary_)...));
+    return FunctionSpace<std::tuple<std::tuple_element_t<index, spline_type>...>,
+                         std::tuple<std::tuple_element_t<index, boundary_type>...>>(
+                                                                                std::make_tuple(std::get<index>(spline_)...), std::make_tuple(std::get<index>(boundary_)...));
   }
 
 private:
@@ -844,7 +841,7 @@ private:
 
 public:
   /// @brief Scales the function space object by a vector
-  template <size_t N> inline auto scale(std::array<value_type, N> v) {
+  template <std::size_t N> inline auto scale(std::array<value_type, N> v) {
     return scale_(std::make_index_sequence<FunctionSpace::nspaces()>{}, v);
   }
 
@@ -862,7 +859,7 @@ private:
 
 public:
   /// @brief Translates the function space object by a vector
-  template <size_t N> inline auto translate(std::array<value_type, N> v) {
+  template <std::size_t N> inline auto translate(std::array<value_type, N> v) {
     return translate_(std::make_index_sequence<FunctionSpace::nspaces()>{}, v);
   }
 
@@ -2402,8 +2399,8 @@ inline std::ostream &operator<<(std::ostream &os,
 ///
 /// @note This class is not meant for direct use in
 /// applications. Instead use S, TH, NE, or RT.
-  template <typename Spline, typename Boundary>
-  //requires SplineType<Spline> && BoundaryType<Boundary>
+template <typename Spline, typename Boundary>
+// requires SplineType<Spline> && BoundaryType<Boundary>
 class FunctionSpace : public FunctionSpaceType,
                       public utils::Serializable,
                       private utils::FullQualifiedName {
@@ -2474,35 +2471,35 @@ public:
   /// @}
 
   /// @brief Returns the number of function spaces
-  inline static constexpr short_t nspaces() noexcept { return 1; }
+    inline static constexpr std::size_t nspaces() noexcept { return 1; }
 
   /// @brief Returns the number of boundaries
-  inline static constexpr short_t nboundaries() noexcept { return 1; }
+    inline static constexpr std::size_t nboundaries() noexcept { return 1; }
 
-  /// @brief Returns a constant reference to the \f$s\f$-th function space
-  template <short_t s = 0>
+  /// @brief Returns a constant reference to the index-th function space
+    template <std::size_t index = 0>
   inline constexpr const spline_type &space() const noexcept {
-    static_assert(s >= 0 && s < nspaces());
+    static_assert(index >= 0 && index < nspaces());
     return spline_;
   }
 
-  /// @brief Returns a non-constant reference to the \f$s\f$-th function space
-  template <short_t s = 0> inline constexpr spline_type &space() noexcept {
-    static_assert(s >= 0 && s < nspaces());
+  /// @brief Returns a non-constant reference to the index-th function space
+    template <std::size_t index = 0> inline constexpr spline_type &space() noexcept {
+    static_assert(index >= 0 && index < nspaces());
     return spline_;
   }
 
-  /// @brief Returns a constant reference to the \f$s\f$-th boundary object
-  template <short_t s = 0>
+  /// @brief Returns a constant reference to the index-th boundary object
+    template <std::size_t index = 0>
   inline constexpr const boundary_type &boundary() const noexcept {
-    static_assert(s >= 0 && s < nboundaries());
+    static_assert(index >= 0 && index < nboundaries());
     return boundary_;
   }
 
-  /// @brief Returns a non-constant reference to the \f$s\f$-th boundary object
+  /// @brief Returns a non-constant reference to the index-th boundary object
   /// object
-  template <short_t s = 0> inline constexpr boundary_type &boundary() noexcept {
-    static_assert(s >= 0 && s < nboundaries());
+    template <std::size_t index = 0> inline constexpr boundary_type &boundary() noexcept {
+    static_assert(index >= 0 && index < nboundaries());
     return boundary_;
   }
 
@@ -2512,18 +2509,18 @@ public:
   }
 
   /// @brief Returns a subset of the tuple of function spaces
-  template <short_t... s> inline constexpr auto clone() const noexcept {
+    template <std::size_t... index> inline constexpr auto clone() const noexcept {
 
-    static_assert(((s >= 0 && s < nspaces()) && ... && true));
+    static_assert(((index >= 0 && index < nspaces()) && ... && true));
 
-    if constexpr (sizeof...(s) == 1)
+    if constexpr (sizeof...(index) == 1)
       return FunctionSpace(*this);
     else
       return FunctionSpace<
-          std::tuple<std::tuple_element_t<s, std::tuple<spline_type>>...>,
-          std::tuple<std::tuple_element_t<s, std::tuple<boundary_type>>...>>(
-          std::get<s>(std::make_tuple(spline_))...,
-          std::get<s>(std::make_tuple(boundary_))...);
+          std::tuple<std::tuple_element_t<index, std::tuple<spline_type>>...>,
+          std::tuple<std::tuple_element_t<index, std::tuple<boundary_type>>...>>(
+          std::get<index>(std::make_tuple(spline_))...,
+          std::get<index>(std::make_tuple(boundary_))...);
   }
 
   /// @brief Returns a single-tensor representation of the space
@@ -2842,14 +2839,14 @@ public:
   }
 
   /// @brief Scales the function space object by a vector
-  template <size_t N> inline auto scale(std::array<value_type, N> v) {
+  template <std::size_t N> inline auto scale(std::array<value_type, N> v) {
     spline_.scale(v);
     boundary_.from_full_tensor(spline_.as_tensor());
     return *this;
   }
 
   /// @brief Translates the function space object by a vector
-  template <size_t N> inline auto translate(std::array<value_type, N> v) {
+  template <std::size_t N> inline auto translate(std::array<value_type, N> v) {
     spline_.translate(v);
     boundary_.from_full_tensor(spline_.as_tensor());
     return *this;
@@ -3097,12 +3094,16 @@ struct FunctionSpace_trait<std::tuple<Splines...>, std::tuple<Boundaries...>> {
 };
 
 /// Function space
+///
+/// This type trait strips away a doubly wrapped function space
 template <typename Spline, typename Boundary>
 struct FunctionSpace_trait<FunctionSpace<Spline, Boundary>> {
   using type = typename FunctionSpace_trait<Spline, Boundary>::type;
 };
 
-/// Tensor-product function space with default boundary
+/// Tensor-product function
+///
+/// This type trait strips away doubly wrapped function spaces
 template <typename... Splines, typename... Boundaries>
 struct FunctionSpace_trait<std::tuple<FunctionSpace<Splines, Boundaries>...>> {
   using type =
