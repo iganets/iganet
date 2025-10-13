@@ -1729,7 +1729,6 @@ public:
 
       // Update epoch and inputs
       if (this->epoch(epoch))
-                std::cout << "Here\n"; exit(0);
         inputs = this->inputs(epoch);
 
       auto closure = [&]() {
@@ -2052,5 +2051,110 @@ operator<<(std::ostream &os,
   //  obj.pretty_print(os);
   return os;
 }
+
+/// @brief IgANetCustomizable2
+///
+/// This class implements a customizable variant of IgANets2 that
+/// provides types and attributes for precomputing indices and basis
+/// functions
+///
+/// @{
+template <typename, typename, typename = void>
+class IgANetCustomizable2;
+
+template <detail::HasAsTensor... Inputs,
+          detail::HasAsTensor... Outputs>
+class IgANetCustomizable2<std::tuple<Inputs...>,
+                    std::tuple<Outputs...>, void> {
+public:
+  /// @brief Type of the knot indices of the inputs in the interior
+  using inputs_interior_knot_indices_type =
+    std::tuple<decltype(std::declval<Inputs>()
+                   .template find_knot_indices<functionspace::interior>(
+                                                                        std::declval<typename Inputs::eval_type>()))...>;
+
+  /// @brief Type of the knot indices of the inputs at the boundary
+  using inputs_boundary_knot_indices_type =
+    std::tuple<decltype(std::declval<Inputs>()
+                        .template find_knot_indices<functionspace::boundary>(
+                                                                             std::declval<
+                                                                             typename Inputs::boundary_eval_type>()))...>;
+
+  /// @brief Type of the knot indices of the outputs in the interior
+  using outputs_interior_knot_indices_type =
+    std::tuple<decltype(std::declval<Outputs>()
+                   .template find_knot_indices<functionspace::interior>(
+                                                                        std::declval<typename Outputs::eval_type>()))...>;
+
+  /// @brief Type of the knot indices of the outputs at the boundary
+  using outputs_boundary_knot_indices_type =
+    std::tuple<decltype(std::declval<Outputs>()
+                        .template find_knot_indices<functionspace::boundary>(
+                                                                             std::declval<
+                                                                             typename Outputs::boundary_eval_type>()))...>;
+
+  /// @brief Type of the coefficient indices of the inputs in the interior
+  using inputs_interior_coeff_indices_type =
+    std::tuple<decltype(std::declval<Inputs>()
+                        .template find_coeff_indices<functionspace::interior>(
+                                                                              std::declval<typename Inputs::eval_type>()))...>;
+
+  /// @brief Type of the coefficient indices of the inputs at the boundary
+  using inputs_boundary_coeff_indices_type =
+    std::tuple<decltype(std::declval<Inputs>()
+                        .template find_coeff_indices<functionspace::boundary>(
+                                                                              std::declval<
+                                                                              typename Inputs::boundary_eval_type>()))...>;
+
+  /// @brief Type of the coefficient indices of the outputs in the interior
+  using outputs_interior_coeff_indices_type =
+    std::tuple<decltype(std::declval<Outputs>()
+                        .template find_coeff_indices<functionspace::interior>(
+                                                                              std::declval<typename Outputs::eval_type>()))...>;
+
+  /// @brief Type of the coefficient indices of the outputs at the boundary
+  using outputs_boundary_coeff_indices_type =
+    std::tuple<decltype(std::declval<Outputs>()
+                        .template find_coeff_indices<functionspace::boundary>(
+                                                                              std::declval<
+                                                                              typename Outputs::boundary_eval_type>()))...>;
+};
+
+template <detail::HasAsTensor... Inputs,
+          detail::HasAsTensor... Outputs,
+          detail::HasAsTensor... CollPts>
+class IgANetCustomizable2<std::tuple<Inputs...>,
+                    std::tuple<Outputs...>,
+                          std::tuple<CollPts...>> : public IgANetCustomizable2<std::tuple<Inputs...>,
+                                                                               std::tuple<Outputs...>, void> {
+public:
+  /// @brief Type of the knot indices of the collocation points objects in the interior
+  using collPts_interior_knot_indices_type =
+    std::tuple<decltype(std::declval<CollPts>()
+                   .template find_knot_indices<functionspace::interior>(
+                                                                        std::declval<typename CollPts::eval_type>()))...>;
+
+  /// @brief Type of the knot indices of the collocation points objects at the boundary
+  using collPts_boundary_knot_indices_type =
+    std::tuple<decltype(std::declval<CollPts>()
+                        .template find_knot_indices<functionspace::boundary>(
+                                                                             std::declval<
+                                                                             typename CollPts::boundary_eval_type>()))...>;
+
+  /// @brief Type of the coefficient indices of the collocation points objects in the interior
+  using collPts_interior_coeff_indices_type =
+    std::tuple<decltype(std::declval<CollPts>()
+                        .template find_coeff_indices<functionspace::interior>(
+                                                                              std::declval<typename CollPts::eval_type>()))...>;
+
+  /// @brief Type of the coefficient indices of the collocation points objects at the boundary
+  using collPts_boundary_coeff_indices_type =
+    std::tuple<decltype(std::declval<CollPts>()
+                        .template find_coeff_indices<functionspace::boundary>(
+                                                                              std::declval<
+                                                                              typename CollPts::boundary_eval_type>()))...>; 
+};  
+
+/// @}
   
 } // namespace iganet
