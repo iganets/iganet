@@ -1700,15 +1700,29 @@ public:
 
   /// @brief Returns the network inputs as tensor
   virtual torch::Tensor inputs(int64_t epoch) const {
-    return utils::cat_tuple(Base::inputs_, [](const auto& obj){ return obj.as_tensor(); });
+    return utils::cat_tuple_into_tensor(Base::inputs_, [](const auto& obj){ return obj.as_tensor(); });
   }
 
   /// @brief Returns the network outputs as tensor
   virtual torch::Tensor outputs(int64_t epoch) const {
-    return utils::cat_tuple(Base::outputs_, [](const auto& obj){ return obj.as_tensor(); });
+    return utils::cat_tuple_into_tensor(Base::outputs_, [](const auto& obj){ return obj.as_tensor(); });
   }
 
-    /// @brief Initializes epoch
+  /// @brief Attaches the given tensor to the inputs
+  virtual void inputs(const torch::Tensor& tensor) {
+    utils::slice_tensor_into_tuple(Base::inputs_, tensor,
+                                   [](const auto& obj){ return obj.as_tensor_size(); },
+                                   [](auto& obj, const auto& tensor){ return obj.from_tensor(tensor); });
+  }
+
+  /// @brief Attaches the given tensor to the outputs
+  virtual void outputs(const torch::Tensor& tensor) {
+    utils::slice_tensor_into_tuple(Base::outputs_, tensor,
+                                   [](const auto& obj){ return obj.as_tensor_size(); },
+                                   [](auto& obj, const auto& tensor){ return obj.from_tensor(tensor); });
+  }
+  
+  /// @brief Initializes epoch
   virtual bool epoch(int64_t) = 0;
 
   /// @brief Computes the loss function
@@ -2073,6 +2087,10 @@ public:
                    .template find_knot_indices<functionspace::interior>(
                                                                         std::declval<typename Inputs::eval_type>()))...>;
 
+  /// @brief Type alias for the type of the index-th knot indices of the inputs in the interior
+  template<std::size_t index>
+  using input_interior_knot_indices_t = typename std::tuple_element_t<index, inputs_interior_knot_indices_type>;
+  
   /// @brief Type of the knot indices of the inputs at the boundary
   using inputs_boundary_knot_indices_type =
     std::tuple<decltype(std::declval<Inputs>()
@@ -2080,12 +2098,20 @@ public:
                                                                              std::declval<
                                                                              typename Inputs::boundary_eval_type>()))...>;
 
+  /// @brief Type alias for the type of the index-th knot indices of the inputs at the boundary
+  template<std::size_t index>
+  using input_boundary_knot_indices_t = typename std::tuple_element_t<index, inputs_boundary_knot_indices_type>;
+  
   /// @brief Type of the knot indices of the outputs in the interior
   using outputs_interior_knot_indices_type =
     std::tuple<decltype(std::declval<Outputs>()
                    .template find_knot_indices<functionspace::interior>(
                                                                         std::declval<typename Outputs::eval_type>()))...>;
 
+  /// @brief Type alias for the type of the index-th knot indices of the outputs in the interior
+  template<std::size_t index>
+  using output_interior_knot_indices_t = typename std::tuple_element_t<index, outputs_interior_knot_indices_type>;
+  
   /// @brief Type of the knot indices of the outputs at the boundary
   using outputs_boundary_knot_indices_type =
     std::tuple<decltype(std::declval<Outputs>()
@@ -2093,12 +2119,20 @@ public:
                                                                              std::declval<
                                                                              typename Outputs::boundary_eval_type>()))...>;
 
+  /// @brief Type alias for the type of the index-th knot indices of the outputs at the boundary
+  template<std::size_t index>
+  using output_boundary_knot_indices_t = typename std::tuple_element_t<index, outputs_boundary_knot_indices_type>;
+  
   /// @brief Type of the coefficient indices of the inputs in the interior
   using inputs_interior_coeff_indices_type =
     std::tuple<decltype(std::declval<Inputs>()
                         .template find_coeff_indices<functionspace::interior>(
                                                                               std::declval<typename Inputs::eval_type>()))...>;
 
+  /// @brief Type alias for the type of the index-th coefficient indices of the inputs in the interior
+  template<std::size_t index>
+  using input_interior_coeff_indices_t = typename std::tuple_element_t<index, inputs_interior_coeff_indices_type>;
+  
   /// @brief Type of the coefficient indices of the inputs at the boundary
   using inputs_boundary_coeff_indices_type =
     std::tuple<decltype(std::declval<Inputs>()
@@ -2106,18 +2140,30 @@ public:
                                                                               std::declval<
                                                                               typename Inputs::boundary_eval_type>()))...>;
 
+  /// @brief Type alias for the type of the index-th coefficient indices of the inputs at the boundary
+  template<std::size_t index>
+  using input_boundary_coeff_indices_t = typename std::tuple_element_t<index, inputs_boundary_coeff_indices_type>;
+  
   /// @brief Type of the coefficient indices of the outputs in the interior
   using outputs_interior_coeff_indices_type =
     std::tuple<decltype(std::declval<Outputs>()
                         .template find_coeff_indices<functionspace::interior>(
                                                                               std::declval<typename Outputs::eval_type>()))...>;
 
+  /// @brief Type alias for the type of the index-th coefficient indices of the outputs in the interior
+  template<std::size_t index>
+  using output_interior_coeff_indices_t = typename std::tuple_element_t<index, outputs_interior_coeff_indices_type>;
+  
   /// @brief Type of the coefficient indices of the outputs at the boundary
   using outputs_boundary_coeff_indices_type =
     std::tuple<decltype(std::declval<Outputs>()
                         .template find_coeff_indices<functionspace::boundary>(
                                                                               std::declval<
                                                                               typename Outputs::boundary_eval_type>()))...>;
+
+  /// @brief Type alias for the type of the index-th coefficient indices of the outputs at the boundary
+  template<std::size_t index>
+  using output_boundary_coeff_indices_t = typename std::tuple_element_t<index, outputs_boundary_coeff_indices_type>;
 };
 
 template <detail::HasAsTensor... Inputs,
