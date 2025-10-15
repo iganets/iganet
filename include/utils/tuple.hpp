@@ -23,7 +23,7 @@ namespace utils {
 /// @brief Concatenates the entries of an std::tuple object into a
 /// single Torch tensor along the given dimension
 template <typename... Tensors>
-torch::Tensor cat_tuple(const std::tuple<Tensors...>& tensors, int64_t dim = 0) {
+torch::Tensor cat_tuple_into_tensor(const std::tuple<Tensors...>& tensors, int64_t dim = 0) {
     std::vector<torch::Tensor> vec;
     vec.reserve(sizeof...(Tensors));
     std::apply([&](const auto&... tensor) {
@@ -37,7 +37,7 @@ torch::Tensor cat_tuple(const std::tuple<Tensors...>& tensors, int64_t dim = 0) 
 /// single Torch tensor along the given dimension after applying the
 /// callback function
   template <typename... Tensors, typename Func>
-  torch::Tensor cat_tuple(const std::tuple<Tensors...>& tensors, Func&& func, int64_t dim = 0) {
+  torch::Tensor cat_tuple_into_tensor(const std::tuple<Tensors...>& tensors, Func&& func, int64_t dim = 0) {
     std::vector<torch::Tensor> vec;
     vec.reserve(sizeof...(Tensors));
     std::apply([&](const auto&... tensor) {
@@ -55,5 +55,33 @@ constexpr auto repeat_tuple(const T& value) {
   }(std::make_index_sequence<N>{});
 }
 
+/// @brief Slices the given tensor into the objects of the std::tuple
+/// @{
+template <std::size_t I = 0, typename... Tensors, typename FuncSize, typename FuncAssign>
+void slice_tensor_into_tuple(std::tuple<Tensors...>& tuple,
+                             const torch::Tensor& tensor,
+                             FuncSize&& funcSize,
+                             FuncAssign&& funcAssign,
+                             int64_t& offset, int64_t dim = 0) {
+  if constexpr (I < sizeof...(Tensors)) {
+    auto& t = std::get<I>(tuple);
+    auto size = std::forward<FuncSize>(funcSize)(t);
+    std::forward<FuncAssign>(funcAssign)(t, tensor.slice(dim, offset, offset + size));
+    offset += size;
+    slice_tensor_into_tuple<I + 1>(tuple, tensor, funcSize, funcAssign, offset, dim);
+  }
+}
+
+template <typename... Tensors, typename FuncSize, typename FuncAssign>
+void slice_tensor_into_tuple(std::tuple<Tensors...>& tuple,
+                             const torch::Tensor& tensor,
+                             FuncSize&& funcSize,
+                             FuncAssign&& funcAssign,
+                             int64_t dim = 0) {
+    int64_t offset = 0;
+    slice_tensor_into_tuple(tuple, tensor, funcSize, funcAssign, offset, dim);
+}
+/// @}
+  
 } // namespace utils
 } // namespace iganet
