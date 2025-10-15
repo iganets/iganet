@@ -75,7 +75,7 @@ protected:
   /// @brief Outputs
   outputs_type outputs_;
 
-    /// @brief Outputs
+  /// @brief Outputs
   collPts_type collPts_;
 
 private:
@@ -414,14 +414,26 @@ public:
   /// @brief Type of the inputs
   using inputs_type = std::tuple<Inputs...>;
 
+  /// @brief Type alias for the type of the index-th inputs object
+  template<std::size_t index>
+  using input_t = typename std::tuple_element_t<index, inputs_type>;
+
   /// @brief Type of the outputs
   using outputs_type = std::tuple<Outputs...>;
 
+  /// @brief Type alias for the type of the index-th outputs object
+  template<std::size_t index>
+  using output_t = typename std::tuple_element_t<index, outputs_type>;
+  
   /// @brief Type of the collocation points
   using collPts_type =
     std::tuple<std::pair<typename Outputs::eval_type,
                          typename Outputs::boundary_eval_type>...>;
 
+  /// @brief Type alias for the type of the index-th collocation points object
+  template<std::size_t index>
+  using collPts_t = typename std::tuple_element_t<index, collPts_type>;
+  
 protected:
   /// @brief Inputs
   inputs_type inputs_;
