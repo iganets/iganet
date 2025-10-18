@@ -1917,7 +1917,7 @@ public:
   void eval() {
     torch::Tensor inputs = this->inputs(0);
     torch::Tensor outputs = net_->forward(inputs);
-    Base::outputs_.from_tensor(outputs);
+    this->outputs(outputs);
   }
 
   /// @brief Returns the IgANet object as JSON object
