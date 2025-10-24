@@ -3156,7 +3156,7 @@ template <typename Spline, short_t = Spline::parDim()> class TH;
 /// This class implements the Taylor-Hood like function space
 ///
 /// \f[
-/// S^{p+1}_{p-1} \otimes S^{p}_{p-1}
+/// S^{p_1+1}_{p_1-1} \otimes S^{p_1}_{p_1-1}
 /// \f]
 ///
 /// in one spatial dimension \cite Buffa:2011.
@@ -3275,10 +3275,10 @@ public:
 /// This class implements the Taylor-Hood like function space
 ///
 /// \f[
-/// S^{p+1,p+1,p+1}_{p-1,p-1,p-1} \otimes
-/// S^{p+1,p+1,p+1}_{p-1,p-1,p-1} \otimes
-/// S^{p+1,p+1,p+1}_{p-1,p-1,p-1} \otimes
-/// S^{p,p,p}_{p-1,p-1,p-1}
+/// S^{p_1+1,p_2+1,p_3+1}_{p_1-1,p_2-1,p_3-1} \otimes
+/// S^{p_1+1,p_2+1,p_3+1}_{p_1-1,p_2-1,p_3-1} \otimes
+/// S^{p_1+1,p_2+1,p_3+1}_{p_1-1,p_2-1,p_3-1} \otimes
+/// S^{p_1,p_2,p_3}_{p_1-1,p_2-1,p_3-1}
 /// \f]
 ///
 /// in three spatial dimensions \cite Buffa:2011.
@@ -3362,11 +3362,11 @@ public:
 /// This class implements the Taylor-Hood like function space
 ///
 /// \f[
-/// S^{p+1,p+1,p+1,p+1}_{p-1,p-1,p-1,p-1} \otimes
-/// S^{p+1,p+1,p+1,p+1}_{p-1,p-1,p-1,p-1} \otimes
-/// S^{p+1,p+1,p+1,p+1}_{p-1,p-1,p-1,p-1} \otimes
-/// S^{p+1,p+1,p+1,p+1}_{p-1,p-1,p-1,p-1} \otimes
-/// S^{p,p,p,p}_{p-1,p-1,p-1,p-1}
+/// S^{p_1+1,p_2+1,p_3+1,p_4+1}_{p_1-1,p_2-1,p_3-1,p_4-1} \otimes
+/// S^{p_1+1,p_2+1,p_3+1,p_4+1}_{p_1-1,p_2-1,p_3-1,p_4-1} \otimes
+/// S^{p_1+1,p_2+1,p_3+1,p_4+1}_{p_1-1,p_2-1,p_3-1,p_4-1} \otimes
+/// S^{p_1+1,p_2+1,p_3+1,p_4+1}_{p_1-1,p_2-1,p_3-1,p_4-1} \otimes
+/// S^{p_1,p_2,p_3,p_4}_{p_1-1,p_2-1,p_3-1,p_4-1}
 /// \f]
 ///
 /// in four spatial dimensions \cite Buffa:2011.
@@ -3462,8 +3462,6 @@ public:
   IGANET_FUNCTIONSPACE_DEFAULT_OPS(TH);
 };
 
-/// IGANET_FUNCTIONSPACE_TUPLE_WRAPPER(TH);
-
 /// @brief Nedelec like function space
 template <typename Spline, short_t = Spline::parDim()> class NE;
 
@@ -3472,7 +3470,7 @@ template <typename Spline, short_t = Spline::parDim()> class NE;
 /// This class implements the Nedelec like function space
 ///
 /// \f[
-/// S^{p+1}_{p} \otimes S^{p}_{p-1}
+/// S^{p_1+1}_{p_1} \otimes S^{p_1}_{p_1-1}
 /// \f]
 ///
 /// in one spatial dimension \cite Buffa:2011.
@@ -3517,9 +3515,9 @@ public:
 ///
 /// This class implements the Nedelec like function space
 /// \f[
-/// S^{p+1,p+1}_{p,p-1} \otimes
-/// S^{p+1,p+1}_{p-1,p} \otimes
-/// S^{p,p}_{p-1,p-1}
+/// S^{p_1+1,p_2+1}_{p_1,p_2-1} \otimes
+/// S^{p_1+1,p_2+1}_{p_1-1,p_2} \otimes
+/// S^{p_1,p_2}_{p_1-1,p_2-1}
 /// \f]
 ///
 /// in two spatial dimensions \cite Buffa:2011.
@@ -3581,10 +3579,10 @@ public:
 /// This class implements the Nedelec like function space
 ///
 /// \f[
-/// S^{p+1,p+1,p+1}_{p,p-1,p-1} \otimes
-/// S^{p+1,p+1,p+1}_{p-1,p,p-1} \otimes
-/// S^{p+1,p+1,p+1}_{p-1,p-1,p} \otimes
-/// S^{p,p,p}_{p-1,p-1,p-1}
+/// S^{p_1+1,p_2+1,p_3+1}_{p_1,p_2-1,p_3-1} \otimes
+/// S^{p_1+1,p_2+1,p_3+1}_{p_1-1,p_2,p_3-1} \otimes
+/// S^{p_1+1,p_2+1,p_3+1}_{p_1-1,p_2-1,p_3} \otimes
+/// S^{p_1,p_2,p_3}_{p_1-1,p_2-1,p_3-1}
 /// \f]
 ///
 /// in three spatial dimensions \cite Buffa:2011.
@@ -3659,11 +3657,11 @@ public:
 /// This class implements the Nedelec like function space
 ///
 /// \f[
-/// S^{p+1,p+1,p+1,p+1}_{p,p-1,p-1,p-1} \otimes
-/// S^{p+1,p+1,p+1,p+1}_{p-1,p,p-1,p-1} \otimes
-/// S^{p+1,p+1,p+1,p+1}_{p-1,p-1,p,p-1} \otimes
-/// S^{p+1,p+1,p+1,p+1}_{p-1,p-1,p-1,p} \otimes
-/// S^{p,p,p,p}_{p-1,p-1,p-1,p-1}
+/// S^{p_1+1,p_2+1,p_3+1,p_4+1}_{p_1,p_2-1,p_3-1,p_4-1} \otimes
+/// S^{p_1+1,p_2+1,p_3+1,p_4+1}_{p_1-1,p_2,p_3-1,p_4-1} \otimes
+/// S^{p_1+1,p_2+1,p_3+1,p_4+1}_{p_1-1,p_2-1,p_3,p_4-1} \otimes
+/// S^{p_1+1,p_2+1,p_3+1,p_4+1}_{p_1-1,p_2-1,p_3-1,p_4} \otimes
+/// S^{p_1,p_2,p_3,p_4}_{p_1-1,p_2-1,p_3-1,p_4-1}
 /// \f]
 ///
 /// in four spatial dimensions \cite Buffa:2011.
@@ -3768,8 +3766,6 @@ public:
   IGANET_FUNCTIONSPACE_DEFAULT_OPS(NE);
 };
 
-/// IGANET_FUNCTIONSPACE_TUPLE_WRAPPER(NE);
-
 /// @brief Raviart-Thomas like function space
 template <typename Spline, short_t = Spline::parDim()> class RT;
 
@@ -3778,7 +3774,7 @@ template <typename Spline, short_t = Spline::parDim()> class RT;
 /// This class implements the Raviart-Thomas like function space
 ///
 /// \f[
-/// S^{p+1}_{p} \otimes S^{p}_{p-1}
+/// S^{p_1+1}_{p_1} \otimes S^{p_1}_{p_1-1}
 /// \f]
 ///
 /// in one spatial dimension \cite Buffa:2011.
@@ -3825,9 +3821,9 @@ public:
 /// This class implements the Raviart-Thomas like function space
 ///
 /// \f[
-/// S^{p+1,p}_{p,p-1} \otimes
-/// S^{p,p+1}_{p-1,p} \otimes
-/// S^{p,p}_{p-1,p-1} \f$
+/// S^{p_1+1,p_2}_{p_1,p_2-1} \otimes
+/// S^{p_1,p_2+1}_{p_1-1,p_2} \otimes
+/// S^{p_1,p_2}_{p_1-1,p_2-1} \f$
 /// \f]
 ///
 /// in two spatial dimensions \cite Buffa:2011.
@@ -3883,10 +3879,10 @@ public:
 /// This class implements the Raviart-Thomas like function space
 ///
 /// \f[
-/// S^{p+1,p,p}_{p,p-1,p-1} \otimes
-/// S^{p,p+1,p}_{p-1,p,p-1} \otimes
-/// S^{p,p,p+1}_{p-1,p-1,p} \otimes
-/// S^{p,p,p}_{p-1,p-1,p-1}
+/// S^{p_1+1,p_2,p_3}_{p_1,p_2-1,p_3-1} \otimes
+/// S^{p_1,p_2+1,p_3}_{p_1-1,p_2,p_3-1} \otimes
+/// S^{p_1,p_2,p_3+1}_{p_1-1,p_2-1,p_3} \otimes
+/// S^{p_1,p_2,p_3}_{p_1-1,p_2-1,p_3-1}
 /// \f]
 /// in three spatial dimensions \cite Buffa:2011.
 template <typename Spline>
@@ -3951,11 +3947,11 @@ public:
 /// This class implements the Raviart-Thomas like function space
 ///
 /// \f[
-/// S^{p+1,p,p,p}_{p,p-1,p-1,p-1} \otimes
-/// S^{p,p+1,p,p}_{p-1,p,p-1,p-1} \otimes
-/// S^{p,p,p+1,p}_{p-1,p-1,p,p-1} \otimes
-/// S^{p,p,p,p+1}_{p-1,p-1,p-1,p} \otimes
-/// S^{p,p,p,p}_{p-1,p-1,p-1,p-1}
+/// S^{p_1+1,p_2,p_3,p_4}_{p_1,p_2-1,p_3-1,p_4-1} \otimes
+/// S^{p_1,p_2+1,p_3,p_4}_{p_1-1,p_2,p_3-1,p_4-1} \otimes
+/// S^{p_1,p_2,p_3+1,p_4}_{p_1-1,p_2-1,p_3,p_4-1} \otimes
+/// S^{p_1,p_2,p_3,p_4+1}_{p_1-1,p_2-1,p_3-1,p_4} \otimes
+/// S^{p_1,p_2,p_3,p_4}_{p_1-1,p_2-1,p_3-1,p_4-1}
 /// \f]
 ///
 /// in four spatial dimensions \cite Buffa:2011.
@@ -4025,8 +4021,6 @@ public:
   IGANET_FUNCTIONSPACE_DEFAULT_OPS(RT);
 };
 
-/// IGANET_FUNCTIONSPACE_TUPLE_WRAPPER(RT);
-
 /// @brief H(curl) function space
 template <typename Spline, short_t = Spline::parDim()> class Hcurl;
 
@@ -4092,9 +4086,163 @@ public:
   IGANET_FUNCTIONSPACE_DEFAULT_OPS(Hcurl);
 };
 
-/// IGANET_FUNCTIONSPACE_TUPLE_WRAPPER(Hcurl);
+/// @brief Nedelec-Raviart-Thomas-$P$ triple function space
+template <typename Spline, short_t = Spline::parDim()> class NE_RT_DG;
 
-/// #undef IGANET_FUNCTIONSPACE_TUPLE_WRAPPER
+/// @brief Nedelec-Raviart-Thomas-$P$ triple function space
+///
+/// This class implements the Nedelec-Raviart-Thomas-$P$ triple
+/// function space, which is a de Rham-compatible function space for
+/// the vorticity-velocity-pressure formulation of the Navier-Stokes
+/// equations
+///
+/// \f[
+/// S^{p_1+1,p_2+1}_{p_1,p_2} \otimes
+/// S^{p_1+1,p_2}_{p_1,p_2-1} \otimes
+/// S^{p_1,p_2+1}_{p_1-1,p_2} \otimes  
+/// S^{p_1,p_2}_{p_1-1,p_2-1}
+/// \f]
+///
+/// in three spatial dimensions
+template <typename Spline>
+class NE_RT_DG<Spline, 2>
+  : public FunctionSpace<std::tuple<
+    // Vector potential field \f$ H^1(\Omega) \f$
+    typename Spline::template derived_self_type<
+      typename Spline::value_type, Spline::geoDim(), Spline::degree(0)+1, Spline::degree(1)+1>,
+    // Velocity field \f$ \mathbf{H}(\mathbf{curl}, \Omega) \f$
+    typename Spline::template derived_self_type<
+      typename Spline::value_type, Spline::geoDim(), Spline::degree(0)+1, Spline::degree(1)>,
+    typename Spline::template derived_self_type<
+      typename Spline::value_type, Spline::geoDim(), Spline::degree(0), Spline::degree(1)+1>,
+    // Pressure field \f$ L^2(\Omega) \f$
+    typename Spline::template derived_self_type<
+      typename Spline::value_type, Spline::geoDim(), Spline::degree(0), Spline::degree(1)>
+    >> {
+
+public:
+  /// @brief Base type
+  using Base = FunctionSpace<std::tuple<
+    // Vector potential field \f$ H^1(\Omega) \f$
+    typename Spline::template derived_self_type<
+      typename Spline::value_type, Spline::geoDim(), Spline::degree(0)+1, Spline::degree(1)+1>,
+    // Velocity field \f$ \mathbf{H}(\mathbf{curl}, \Omega) \f$
+    typename Spline::template derived_self_type<
+      typename Spline::value_type, Spline::geoDim(), Spline::degree(0)+1, Spline::degree(1)>,
+    typename Spline::template derived_self_type<
+      typename Spline::value_type, Spline::geoDim(), Spline::degree(0), Spline::degree(1)+1>,
+    // Pressure field \f$ L^2(\Omega) \f$
+    typename Spline::template derived_self_type<
+      typename Spline::value_type, Spline::geoDim(), Spline::degree(0), Spline::degree(1)>>>;
+
+  /// @brief Constructor
+  /// @{
+  NE_RT_DG(const std::array<int64_t, 2> &ncoeffs, enum init init = init::greville,
+           Options<typename Spline::value_type> options =
+           iganet::Options<typename Spline::value_type>{})
+    : Base(ncoeffs + utils::to_array(1_i64, 1_i64),
+           ncoeffs + utils::to_array(1_i64, 0_i64),
+           ncoeffs + utils::to_array(0_i64, 1_i64),
+           ncoeffs, init, options) {}
+
+  NE_RT_DG(const std::array<std::vector<typename Spline::value_type>, 2> &kv,
+        enum init init = init::greville,
+        Options<typename Spline::value_type> options =
+            iganet::Options<typename Spline::value_type>{})
+    : Base({{kv[0].front() + kv[0] + kv[0].back(),
+             kv[1].front() + kv[1] + kv[1].back()}},
+           {{kv[0].front() + kv[0] + kv[0].back(), kv[1]}},
+           {{kv[0], kv[1].front() + kv[1] + kv[1].back()}},
+           {{kv[0], kv[1]}}, init,
+             options) {
+    static_assert(Spline::is_nonuniform(),
+                  "Constructor only available for non-uniform splines");
+  }
+  /// @}
+  IGANET_FUNCTIONSPACE_DEFAULT_OPS(NE_RT_DG);
+};
+
+/// @brief Nedelec-Raviart-Thomas-$P$ triple function space
+///
+/// This class implements the Nedelec-Raviart-Thomas-$P$ triple
+/// function space, which is a de Rham-compatible function space for
+/// the vorticity-velocity-pressure formulation of the Navier-Stokes
+/// equations
+///
+/// \f[
+/// S^{p_1+1,p_2+1,p_3+1}_{p_1,p_2,p_2} \otimes
+/// S^{p_1+1,p_2,p_3}_{p_1,p_2-1,p_3-1} \otimes
+/// S^{p_1,p_2+1,p_3}_{p_1-1,p_2,p_3-1} \otimes
+/// S^{p_1,p_2,p_3+1}_{p_1-1,p_2-1,p_3} \otimes    
+/// S^{p_1,p_2,p_3}_{p_1-1,p_2-1,p_3-1}
+/// \f]
+///
+/// in three spatial dimensions
+template <typename Spline>
+class NE_RT_DG<Spline, 3>
+  : public FunctionSpace<std::tuple<
+    // Vector potential field \f$ H^1(\Omega) \f$
+    typename Spline::template derived_self_type<
+      typename Spline::value_type, Spline::geoDim(), Spline::degree(0)+1, Spline::degree(1)+1, Spline::degree(2)+1>,
+    // Velocity field \f$ \mathbf{H}(\mathbf{curl}, \Omega) \f$
+    typename Spline::template derived_self_type<
+      typename Spline::value_type, Spline::geoDim(), Spline::degree(0)+1, Spline::degree(1), Spline::degree(2)>,
+    typename Spline::template derived_self_type<
+      typename Spline::value_type, Spline::geoDim(), Spline::degree(0), Spline::degree(1)+1, Spline::degree(2)>,
+    typename Spline::template derived_self_type<
+      typename Spline::value_type, Spline::geoDim(), Spline::degree(0), Spline::degree(1), Spline::degree(2)+1>,
+    // Pressure field \f$ L^2(\Omega) \f$
+    typename Spline::template derived_self_type<
+      typename Spline::value_type, Spline::geoDim(), Spline::degree(0), Spline::degree(1), Spline::degree(2)>
+    >> {
+
+public:
+  /// @brief Base type
+  using Base = FunctionSpace<std::tuple<
+    // Vector potential field \f$ H^1(\Omega) \f$
+    typename Spline::template derived_self_type<
+      typename Spline::value_type, Spline::geoDim(), Spline::degree(0)+1, Spline::degree(1)+1, Spline::degree(2)+1>,
+    // Velocity field \f$ \mathbf{H}(\mathbf{curl}, \Omega) \f$
+    typename Spline::template derived_self_type<
+      typename Spline::value_type, Spline::geoDim(), Spline::degree(0)+1, Spline::degree(1), Spline::degree(2)>,
+    typename Spline::template derived_self_type<
+      typename Spline::value_type, Spline::geoDim(), Spline::degree(0), Spline::degree(1)+1, Spline::degree(2)>,
+    typename Spline::template derived_self_type<
+      typename Spline::value_type, Spline::geoDim(), Spline::degree(0), Spline::degree(1), Spline::degree(2)+1>,
+    // Pressure field \f$ L^2(\Omega) \f$
+    typename Spline::template derived_self_type<
+      typename Spline::value_type, Spline::geoDim(), Spline::degree(0), Spline::degree(1), Spline::degree(2)>>>;
+
+  /// @brief Constructor
+  /// @{
+  NE_RT_DG(const std::array<int64_t, 3> &ncoeffs, enum init init = init::greville,
+           Options<typename Spline::value_type> options =
+           iganet::Options<typename Spline::value_type>{})
+    : Base(ncoeffs + utils::to_array(1_i64, 1_i64, 1_i64),
+           ncoeffs + utils::to_array(1_i64, 0_i64, 0_i64),
+           ncoeffs + utils::to_array(0_i64, 1_i64, 0_i64),
+           ncoeffs + utils::to_array(0_i64, 0_i64, 1_i64),
+           ncoeffs, init, options) {}
+
+  NE_RT_DG(const std::array<std::vector<typename Spline::value_type>, 3> &kv,
+        enum init init = init::greville,
+        Options<typename Spline::value_type> options =
+            iganet::Options<typename Spline::value_type>{})
+    : Base({{kv[0].front() + kv[0] + kv[0].back(),
+             kv[1].front() + kv[1] + kv[1].back(),
+             kv[2].front() + kv[2] + kv[2].back()}},
+           {{kv[0].front() + kv[0] + kv[0].back(), kv[1], kv[2]}},
+           {{kv[0], kv[1].front() + kv[1] + kv[1].back(), kv[2]}},
+           {{kv[0], kv[1], kv[2].front() + kv[2] + kv[2].back()}},
+           {{kv[0], kv[1], kv[2]}}, init,
+             options) {
+    static_assert(Spline::is_nonuniform(),
+                  "Constructor only available for non-uniform splines");
+  }
+  /// @}
+  IGANET_FUNCTIONSPACE_DEFAULT_OPS(NE_RT_DG);
+};    
+
 #undef IGANET_FUNCTIONSPACE_DEFAULT_OPS
 
 } // namespace iganet
