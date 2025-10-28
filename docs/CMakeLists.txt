@@ -31,5 +31,5 @@ foreach(tutorial ${TUTORIALS})
   endif()
 
   target_compile_options(${name} PUBLIC "-DIGANET_DATA_DIR=\"${PROJECT_SOURCE_DIR}/filedata/\"")
-  target_link_libraries(${name} PRIVATE iganet::core)   
+  target_link_libraries(${name} PRIVATE iganet::core)
 endforeach()

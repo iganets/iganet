@@ -932,7 +932,8 @@ public:
 /// This class implements the core functionality of IgANets
 template <typename Optimizer, typename GeometryMap, typename Variable,
           template <typename, typename> typename IgABase = ::iganet::IgABase>
-requires OptimizerType<Optimizer> && FunctionSpaceType<GeometryMap> && FunctionSpaceType<Variable>
+  requires OptimizerType<Optimizer> && FunctionSpaceType<GeometryMap> &&
+               FunctionSpaceType<Variable>
 class IgANet : public IgABase<GeometryMap, Variable>,
                utils::Serializable,
                private utils::FullQualifiedName {
@@ -944,8 +945,9 @@ public:
   using optimizer_type = Optimizer;
 
   /// @brief Type of the optimizer options
-  using optimizer_options_type = typename optimizer_options_type<Optimizer>::type;
-  
+  using optimizer_options_type =
+      typename optimizer_options_type<Optimizer>::type;
+
 protected:
   /// @brief IgANet generator
   IgANetGenerator<typename Base::value_type> net_;
@@ -961,12 +963,12 @@ public:
   explicit IgANet(IgANetOptions defaults = {},
                   iganet::Options<typename Base::value_type> options =
                       iganet::Options<typename Base::value_type>{})
-    : // Construct the base class
-      Base(),
-      // Construct the optimizer
-      opt_(std::make_unique<optimizer_type>(net_->parameters())),
-      // Set options
-      options_(defaults) {}
+      : // Construct the base class
+        Base(),
+        // Construct the optimizer
+        opt_(std::make_unique<optimizer_type>(net_->parameters())),
+        // Set options
+        options_(defaults) {}
 
   /// @brief Constructor: number of layers, activation functions, and
   /// number of spline coefficients (same for geometry map and
@@ -978,8 +980,8 @@ public:
          std::array<int64_t, NumCoeffs> numCoeffs, IgANetOptions defaults = {},
          iganet::Options<typename Base::value_type> options =
              iganet::Options<typename Base::value_type>{})
-      : IgANet(layers, activations, std::tuple{numCoeffs}, std::tuple{numCoeffs},
-               defaults, options) {}
+      : IgANet(layers, activations, std::tuple{numCoeffs},
+               std::tuple{numCoeffs}, defaults, options) {}
 
   template <std::size_t... NumCoeffs>
   IgANet(const std::vector<int64_t> &layers,
@@ -1044,72 +1046,82 @@ public:
 
   /// @brief Returns a non-constant reference to the optimizer
   inline optimizer_type &optimizer() { return *opt_; }
-  
+
   /// @brief Resets the optimizer
   ///
-  /// @param[in] resetOptions Flag to indicate whether the optimizer options should be resetted
+  /// @param[in] resetOptions Flag to indicate whether the optimizer options
+  /// should be resetted
   inline void optimizerReset(bool resetOptions = true) {
     if (resetOptions)
       opt_ = std::make_unique<optimizer_type>(net_->parameters());
     else {
       std::vector<optimizer_options_type> options;
-      for (auto & group : opt_->param_groups())
-        options.push_back(static_cast<optimizer_options_type&>(group.options()));
+      for (auto &group : opt_->param_groups())
+        options.push_back(
+            static_cast<optimizer_options_type &>(group.options()));
       opt_ = std::make_unique<optimizer_type>(net_->parameters());
       for (auto [group, options] : utils::zip(opt_->param_groups(), options))
-        static_cast<optimizer_options_type&>(group.options()) = options;
+        static_cast<optimizer_options_type &>(group.options()) = options;
     }
   }
 
   /// @brief Resets the optimizer
-  inline void optimizerReset(const optimizer_options_type& optimizerOptions) {
-    opt_ = std::make_unique<optimizer_type>(net_->parameters(), optimizerOptions);
+  inline void optimizerReset(const optimizer_options_type &optimizerOptions) {
+    opt_ =
+        std::make_unique<optimizer_type>(net_->parameters(), optimizerOptions);
   }
 
   /// @brief Returns a non-constant reference to the optimizer options
   inline optimizer_options_type &optimizerOptions(std::size_t param_group = 0) {
     if (param_group < opt_->param_groups().size())
-      return static_cast<optimizer_options_type&>(opt_->param_groups()[param_group].options());
+      return static_cast<optimizer_options_type &>(
+          opt_->param_groups()[param_group].options());
     else
-      throw std::runtime_error("Index exceeds number of parameter groups");      
+      throw std::runtime_error("Index exceeds number of parameter groups");
   }
 
   /// @brief Returns a constant reference to the optimizer options
-  inline const optimizer_options_type &optimizerOptions(std::size_t param_group = 0) const {
+  inline const optimizer_options_type &
+  optimizerOptions(std::size_t param_group = 0) const {
     if (param_group < opt_->param_groups().size())
-      return static_cast<optimizer_options_type&>(opt_->param_groups()[param_group].options());
+      return static_cast<optimizer_options_type &>(
+          opt_->param_groups()[param_group].options());
     else
-      throw std::runtime_error("Index exceeds number of parameter groups");      
+      throw std::runtime_error("Index exceeds number of parameter groups");
   }
 
   /// @brief Resets the optimizer options
-  inline void optimizerOptionsReset(const optimizer_options_type& options) {
+  inline void optimizerOptionsReset(const optimizer_options_type &options) {
     for (auto &group : opt_->param_groups())
-      static_cast<optimizer_options_type&>(group.options()) = options;
+      static_cast<optimizer_options_type &>(group.options()) = options;
   }
 
   /// @brief Resets the optimizer options
-  inline void optimizerOptionsReset(optimizer_options_type&& options) {
+  inline void optimizerOptionsReset(optimizer_options_type &&options) {
     for (auto &group : opt_->param_groups())
-      static_cast<optimizer_options_type&>(group.options()) = options;
+      static_cast<optimizer_options_type &>(group.options()) = options;
   }
 
   /// @brief Resets the optimizer options
-  inline void optimizerOptionsReset(const optimizer_options_type& options, std::size_t param_group) {
+  inline void optimizerOptionsReset(const optimizer_options_type &options,
+                                    std::size_t param_group) {
     if (param_group < opt_->param_groups().size())
-      static_cast<optimizer_options_type&>(opt_->param_group().options()) = options;
+      static_cast<optimizer_options_type &>(opt_->param_group().options()) =
+          options;
     else
-      throw std::runtime_error("Index exceeds number of parameter groups");      
+      throw std::runtime_error("Index exceeds number of parameter groups");
   }
 
   /// @brief Resets the optimizer options
-  inline void optimizerOptionsReset(optimizer_options_type&& options, std::size_t param_group) {
+  inline void optimizerOptionsReset(optimizer_options_type &&options,
+                                    std::size_t param_group) {
     if (param_group < opt_->param_groups().size())
-      static_cast<optimizer_options_type&>(opt_->param_group().options()) = options;
+      static_cast<optimizer_options_type &>(opt_->param_group().options()) =
+          options;
     else
-      throw std::runtime_error("Index exceeds number of parameter groups");      
+      throw std::runtime_error("Index exceeds number of parameter groups");
   }
-  
+
   /// @brief Returns a constant reference to the options structure
   inline const auto &options() const { return options_; }
 
@@ -1195,21 +1207,18 @@ public:
       // Update the parameters based on the calculated gradients
       opt_->step(closure);
 
-      typename Base::value_type current_loss = loss.template item<typename Base::value_type>();
+      typename Base::value_type current_loss =
+          loss.template item<typename Base::value_type>();
       Log(log::verbose) << "Epoch " << std::to_string(epoch) << ": "
-                        << current_loss
-                        << std::endl;
+                        << current_loss << std::endl;
 
-      if (current_loss <
-          options_.min_loss() ||
-          std::abs(current_loss-previous_loss) <
-          options_.min_loss_change() ||
-          std::abs(current_loss-previous_loss)/current_loss <
-          options_.min_loss_rel_change() ||
+      if (current_loss < options_.min_loss() ||
+          std::abs(current_loss - previous_loss) < options_.min_loss_change() ||
+          std::abs(current_loss - previous_loss) / current_loss <
+              options_.min_loss_rel_change() ||
           loss.isnan().template item<bool>()) {
-        Log(log::info) << "Total epochs: " << epoch << ", loss: "
-                       << current_loss
-                       << std::endl;
+        Log(log::info) << "Total epochs: " << epoch
+                       << ", loss: " << current_loss << std::endl;
         break;
       }
       previous_loss = current_loss;
@@ -1459,8 +1468,9 @@ private:
 };
 
 /// @brief Print (as string) a IgANet object
-  template <typename Optimizer, typename GeometryMap, typename Variable>
-  requires OptimizerType<Optimizer> && FunctionSpaceType<GeometryMap> && FunctionSpaceType<Variable>
+template <typename Optimizer, typename GeometryMap, typename Variable>
+  requires OptimizerType<Optimizer> && FunctionSpaceType<GeometryMap> &&
+           FunctionSpaceType<Variable>
 inline std::ostream &
 operator<<(std::ostream &os,
            const IgANet<Optimizer, GeometryMap, Variable> &obj) {
@@ -1473,9 +1483,9 @@ operator<<(std::ostream &os,
 /// This class implements a customizable variant of IgANets that
 /// provides types and attributes for precomputing indices and basis
 /// functions
-  template <typename GeometryMap, typename Variable>
+template <typename GeometryMap, typename Variable>
   requires FunctionSpaceType<GeometryMap> && FunctionSpaceType<Variable>
-  class IgANetCustomizable {
+class IgANetCustomizable {
 public:
   /// @brief Type of the knot indices of the geometry map in the interior
   using geometryMap_interior_knot_indices_type =
@@ -1531,8 +1541,9 @@ public:
 /// @brief IgANet2
 ///
 /// This class implements the core functionality of IgANets
-template <typename Optimizer, typename Inputs, typename Outputs, typename CollPts = void>
-requires OptimizerType<Optimizer>
+template <typename Optimizer, typename Inputs, typename Outputs,
+          typename CollPts = void>
+  requires OptimizerType<Optimizer>
 class IgANet2 : public IgABase2<Inputs, Outputs, CollPts>,
                 utils::Serializable,
                 private utils::FullQualifiedName {
@@ -1542,13 +1553,14 @@ public:
 
   /// @brief Value type
   using value_type = Base::value_type;
-  
+
   /// @brief Type of the optimizer
   using optimizer_type = Optimizer;
 
   /// @brief Type of the optimizer options
-  using optimizer_options_type = typename optimizer_options_type<Optimizer>::type;
-  
+  using optimizer_options_type =
+      typename optimizer_options_type<Optimizer>::type;
+
 protected:
   /// @brief IgANet generator
   IgANetGenerator<typename Base::value_type> net_;
@@ -1562,27 +1574,26 @@ protected:
 public:
   /// @brief Default constructor
   explicit IgANet2(IgANetOptions defaults = {},
-                  iganet::Options<typename Base::value_type> options =
-                      iganet::Options<typename Base::value_type>{})
-    : // Construct the base class
-      Base(),
-      // Construct the optimizer
-      opt_(std::make_unique<optimizer_type>(net_->parameters())),
-      // Set options
-      options_(defaults) {}
+                   iganet::Options<typename Base::value_type> options =
+                       iganet::Options<typename Base::value_type>{})
+      : // Construct the base class
+        Base(),
+        // Construct the optimizer
+        opt_(std::make_unique<optimizer_type>(net_->parameters())),
+        // Set options
+        options_(defaults) {}
 
   /// @brief Constructor: number of layers, activation functions, and
   /// number of spline coefficients (same for all inputs and outputs)
   template <typename NumCoeffs>
   IgANet2(const std::vector<int64_t> &layers,
           const std::vector<std::vector<std::any>> &activations,
-          const NumCoeffs &numCoeffs,
-          enum init init = init::greville,
+          const NumCoeffs &numCoeffs, enum init init = init::greville,
           IgANetOptions defaults = {},
           iganet::Options<typename Base::value_type> options =
-          iganet::Options<typename Base::value_type>{})
-    : IgANet2(layers, activations, numCoeffs, numCoeffs, init, defaults, options)
-  {}
+              iganet::Options<typename Base::value_type>{})
+      : IgANet2(layers, activations, numCoeffs, numCoeffs, init, defaults,
+                options) {}
 
   /// @brief Constructor: number of layers, activation functions, and
   /// number of spline coefficients (same for all inputs and outputs)
@@ -1591,25 +1602,23 @@ public:
           const std::vector<std::vector<std::any>> &activations,
           const NumCoeffsInputs &numCoeffsInputs,
           const NumCoeffsOutputs &numCoeffsOutputs,
-          enum init init = init::greville,
-          IgANetOptions defaults = {},
+          enum init init = init::greville, IgANetOptions defaults = {},
           iganet::Options<typename Base::value_type> options =
-          iganet::Options<typename Base::value_type>{})
-    : // Construct the base class
-    Base(numCoeffsInputs, numCoeffsOutputs, init, options),
-    // Construct the deep neural network
-    net_(utils::concat(std::vector<int64_t>{inputs(/* epoch */ 0).size(0)},
-                       layers,
-                       std::vector<int64_t>{outputs(/* epoch */ 0).size(0)}),
-         activations, options),
-    
-    // Construct the optimizer
-    opt_(std::make_unique<optimizer_type>(net_->parameters())),
-    
-    // Set options
-    options_(defaults)
-  {} 
-  
+              iganet::Options<typename Base::value_type>{})
+      : // Construct the base class
+        Base(numCoeffsInputs, numCoeffsOutputs, init, options),
+        // Construct the deep neural network
+        net_(utils::concat(
+                 std::vector<int64_t>{inputs(/* epoch */ 0).size(0)}, layers,
+                 std::vector<int64_t>{outputs(/* epoch */ 0).size(0)}),
+             activations, options),
+
+        // Construct the optimizer
+        opt_(std::make_unique<optimizer_type>(net_->parameters())),
+
+        // Set options
+        options_(defaults) {}
+
   /// @brief Returns a constant reference to the IgANet generator
   inline const IgANetGenerator<typename Base::value_type> &net() const {
     return net_;
@@ -1623,72 +1632,82 @@ public:
 
   /// @brief Returns a non-constant reference to the optimizer
   inline optimizer_type &optimizer() { return *opt_; }
-  
+
   /// @brief Resets the optimizer
   ///
-  /// @param[in] resetOptions Flag to indicate whether the optimizer options should be resetted
+  /// @param[in] resetOptions Flag to indicate whether the optimizer options
+  /// should be resetted
   inline void optimizerReset(bool resetOptions = true) {
     if (resetOptions)
       opt_ = std::make_unique<optimizer_type>(net_->parameters());
     else {
       std::vector<optimizer_options_type> options;
-      for (auto & group : opt_->param_groups())
-        options.push_back(static_cast<optimizer_options_type&>(group.options()));
+      for (auto &group : opt_->param_groups())
+        options.push_back(
+            static_cast<optimizer_options_type &>(group.options()));
       opt_ = std::make_unique<optimizer_type>(net_->parameters());
       for (auto [group, options] : utils::zip(opt_->param_groups(), options))
-        static_cast<optimizer_options_type&>(group.options()) = options;
+        static_cast<optimizer_options_type &>(group.options()) = options;
     }
   }
 
   /// @brief Resets the optimizer
-  inline void optimizerReset(const optimizer_options_type& optimizerOptions) {
-    opt_ = std::make_unique<optimizer_type>(net_->parameters(), optimizerOptions);
+  inline void optimizerReset(const optimizer_options_type &optimizerOptions) {
+    opt_ =
+        std::make_unique<optimizer_type>(net_->parameters(), optimizerOptions);
   }
 
   /// @brief Returns a non-constant reference to the optimizer options
   inline optimizer_options_type &optimizerOptions(std::size_t param_group = 0) {
     if (param_group < opt_->param_groups().size())
-      return static_cast<optimizer_options_type&>(opt_->param_groups()[param_group].options());
+      return static_cast<optimizer_options_type &>(
+          opt_->param_groups()[param_group].options());
     else
-      throw std::runtime_error("Index exceeds number of parameter groups");      
+      throw std::runtime_error("Index exceeds number of parameter groups");
   }
 
   /// @brief Returns a constant reference to the optimizer options
-  inline const optimizer_options_type &optimizerOptions(std::size_t param_group = 0) const {
+  inline const optimizer_options_type &
+  optimizerOptions(std::size_t param_group = 0) const {
     if (param_group < opt_->param_groups().size())
-      return static_cast<optimizer_options_type&>(opt_->param_groups()[param_group].options());
+      return static_cast<optimizer_options_type &>(
+          opt_->param_groups()[param_group].options());
     else
-      throw std::runtime_error("Index exceeds number of parameter groups");      
+      throw std::runtime_error("Index exceeds number of parameter groups");
   }
 
   /// @brief Resets the optimizer options
-  inline void optimizerOptionsReset(const optimizer_options_type& options) {
+  inline void optimizerOptionsReset(const optimizer_options_type &options) {
     for (auto &group : opt_->param_groups())
-      static_cast<optimizer_options_type&>(group.options()) = options;
+      static_cast<optimizer_options_type &>(group.options()) = options;
   }
 
   /// @brief Resets the optimizer options
-  inline void optimizerOptionsReset(optimizer_options_type&& options) {
+  inline void optimizerOptionsReset(optimizer_options_type &&options) {
     for (auto &group : opt_->param_groups())
-      static_cast<optimizer_options_type&>(group.options()) = options;
+      static_cast<optimizer_options_type &>(group.options()) = options;
   }
 
   /// @brief Resets the optimizer options
-  inline void optimizerOptionsReset(const optimizer_options_type& options, std::size_t param_group) {
+  inline void optimizerOptionsReset(const optimizer_options_type &options,
+                                    std::size_t param_group) {
     if (param_group < opt_->param_groups().size())
-      static_cast<optimizer_options_type&>(opt_->param_group().options()) = options;
+      static_cast<optimizer_options_type &>(opt_->param_group().options()) =
+          options;
     else
-      throw std::runtime_error("Index exceeds number of parameter groups");      
+      throw std::runtime_error("Index exceeds number of parameter groups");
   }
 
   /// @brief Resets the optimizer options
-  inline void optimizerOptionsReset(optimizer_options_type&& options, std::size_t param_group) {
+  inline void optimizerOptionsReset(optimizer_options_type &&options,
+                                    std::size_t param_group) {
     if (param_group < opt_->param_groups().size())
-      static_cast<optimizer_options_type&>(opt_->param_group().options()) = options;
+      static_cast<optimizer_options_type &>(opt_->param_group().options()) =
+          options;
     else
-      throw std::runtime_error("Index exceeds number of parameter groups");      
+      throw std::runtime_error("Index exceeds number of parameter groups");
   }
-  
+
   /// @brief Returns a constant reference to the options structure
   inline const auto &options() const { return options_; }
 
@@ -1696,49 +1715,45 @@ public:
   inline auto &options() { return options_; }
 
   /// @brief Returns a constant reference to the tuple of input objects
-  inline constexpr const auto &inputs() const {
-    return Base::inputs();
-  }
+  inline constexpr const auto &inputs() const { return Base::inputs(); }
 
   /// @brief Returns a non-constant reference to the tuple of input objects
-  inline constexpr auto &inputs() { 
-    return Base::inputs();
-  }
+  inline constexpr auto &inputs() { return Base::inputs(); }
 
   /// @brief Returns a constant reference to the tuple of output objects
-  inline constexpr const auto &outputs() const {
-    return Base::outputs();
-  }
+  inline constexpr const auto &outputs() const { return Base::outputs(); }
 
   /// @brief Returns a non-constant reference to the tuple of output objects
-  inline constexpr auto &outputs() { 
-    return Base::outputs();
-  }
-  
+  inline constexpr auto &outputs() { return Base::outputs(); }
+
   /// @brief Returns the network inputs as tensor
   virtual torch::Tensor inputs(int64_t epoch) const {
-    return utils::cat_tuple_into_tensor(Base::inputs_, [](const auto& obj){ return obj.as_tensor(); });
+    return utils::cat_tuple_into_tensor(
+        Base::inputs_, [](const auto &obj) { return obj.as_tensor(); });
   }
 
   /// @brief Returns the network outputs as tensor
   virtual torch::Tensor outputs(int64_t epoch) const {
-    return utils::cat_tuple_into_tensor(Base::outputs_, [](const auto& obj){ return obj.as_tensor(); });
+    return utils::cat_tuple_into_tensor(
+        Base::outputs_, [](const auto &obj) { return obj.as_tensor(); });
   }
 
   /// @brief Attaches the given tensor to the inputs
-  virtual void inputs(const torch::Tensor& tensor) {
-    utils::slice_tensor_into_tuple(Base::inputs_, tensor,
-                                   [](const auto& obj){ return obj.as_tensor_size(); },
-                                   [](auto& obj, const auto& tensor){ return obj.from_tensor(tensor); });
+  virtual void inputs(const torch::Tensor &tensor) {
+    utils::slice_tensor_into_tuple(
+        Base::inputs_, tensor,
+        [](const auto &obj) { return obj.as_tensor_size(); },
+        [](auto &obj, const auto &tensor) { return obj.from_tensor(tensor); });
   }
 
   /// @brief Attaches the given tensor to the outputs
-  virtual void outputs(const torch::Tensor& tensor) {
-    utils::slice_tensor_into_tuple(Base::outputs_, tensor,
-                                   [](const auto& obj){ return obj.as_tensor_size(); },
-                                   [](auto& obj, const auto& tensor){ return obj.from_tensor(tensor); });
+  virtual void outputs(const torch::Tensor &tensor) {
+    utils::slice_tensor_into_tuple(
+        Base::outputs_, tensor,
+        [](const auto &obj) { return obj.as_tensor_size(); },
+        [](auto &obj, const auto &tensor) { return obj.from_tensor(tensor); });
   }
-  
+
   /// @brief Initializes epoch
   virtual bool epoch(int64_t) = 0;
 
@@ -1801,28 +1816,25 @@ public:
       // Update the parameters based on the calculated gradients
       opt_->step(closure);
 
-      typename Base::value_type current_loss = loss.template item<typename Base::value_type>();
+      typename Base::value_type current_loss =
+          loss.template item<typename Base::value_type>();
       Log(log::verbose) << "Epoch " << std::to_string(epoch) << ": "
-                        << current_loss
-                        << std::endl;
+                        << current_loss << std::endl;
 
-      if (current_loss <
-          options_.min_loss() ||
-          std::abs(current_loss-previous_loss) <
-          options_.min_loss_change() ||
-          std::abs(current_loss-previous_loss)/current_loss <
-          options_.min_loss_rel_change() ||
+      if (current_loss < options_.min_loss() ||
+          std::abs(current_loss - previous_loss) < options_.min_loss_change() ||
+          std::abs(current_loss - previous_loss) / current_loss <
+              options_.min_loss_rel_change() ||
           loss.isnan().template item<bool>()) {
-        Log(log::info) << "Total epochs: " << epoch << ", loss: "
-                       << current_loss
-                       << std::endl;
+        Log(log::info) << "Total epochs: " << epoch
+                       << ", loss: " << current_loss << std::endl;
         break;
       }
       previous_loss = current_loss;
     }
   }
 
-    /// @brief Trains the IgANet
+  /// @brief Trains the IgANet
   template <typename DataLoader>
   void train(DataLoader &loader
 #ifdef IGANET_WITH_MPI
@@ -1959,24 +1971,21 @@ public:
   pretty_print(std::ostream &os = Log(log::info)) const noexcept override {
     os << name() << "(\n"
        << "net = " << net_ << "\n";
-    
+
     os << "inputs[" << Base::ninputs() << "] = (";
-    std::apply([&os](const auto&... elems) {
-      ((os << elems << "\n"), ...);
-    }, Base::inputs());
+    std::apply([&os](const auto &...elems) { ((os << elems << "\n"), ...); },
+               Base::inputs());
     os << ")";
 
     os << "outputs [" << Base::noutputs() << "]= (";
-    std::apply([&os](const auto&... elems) {
-      ((os << elems << "\n"), ...);
-    }, Base::inputs());
+    std::apply([&os](const auto &...elems) { ((os << elems << "\n"), ...); },
+               Base::inputs());
     os << ")";
 
     os << "collPts [" << Base::ncollPts() << "]= (";
-    std::apply([&os](const auto&... elems) {
-      ((os << elems << "\n"), ...);
-    }, Base::collPts());
-    os << ")";    
+    std::apply([&os](const auto &...elems) { ((os << elems << "\n"), ...); },
+               Base::collPts());
+    os << ")";
   }
 
   /// @brief Saves the IgANet to file
@@ -1999,26 +2008,35 @@ public:
   write(torch::serialize::OutputArchive &archive,
         const std::string &key = "iganet") const {
 
-    std::apply([&](auto&&... elems) {
-      std::size_t counter = 0;
-      (elems.write(archive, key + ".input[" + std::to_string(counter++) + "]"), ...); },
-      Base::inputs()
-      );
+    std::apply(
+        [&](auto &&...elems) {
+          std::size_t counter = 0;
+          (elems.write(archive,
+                       key + ".input[" + std::to_string(counter++) + "]"),
+           ...);
+        },
+        Base::inputs());
 
-    std::apply([&](auto&&... elems) {
-      std::size_t counter = 0;
-      (elems.write(archive, key + ".output[" + std::to_string(counter++) + "]"), ...); },
-      Base::outputs()
-      );
+    std::apply(
+        [&](auto &&...elems) {
+          std::size_t counter = 0;
+          (elems.write(archive,
+                       key + ".output[" + std::to_string(counter++) + "]"),
+           ...);
+        },
+        Base::outputs());
 
     if constexpr (!std::is_void_v<CollPts>) {
-      std::apply([&](auto&&... elems) {
-        std::size_t counter = 0;
-        (elems.write(archive, key + ".output[" + std::to_string(counter++) + "]"), ...); },
-        Base::collPts()
-      );
+      std::apply(
+          [&](auto &&...elems) {
+            std::size_t counter = 0;
+            (elems.write(archive,
+                         key + ".output[" + std::to_string(counter++) + "]"),
+             ...);
+          },
+          Base::collPts());
     }
-    
+
     net_->write(archive, key + ".net");
     torch::serialize::OutputArchive archive_net;
     net_->save(archive_net);
@@ -2036,26 +2054,35 @@ public:
   read(torch::serialize::InputArchive &archive,
        const std::string &key = "iganet") {
 
-    std::apply([&](auto&&... elems) {
-      std::size_t counter = 0;
-      (elems.read(archive, key + ".input[" + std::to_string(counter++) + "]"), ...); },
-      Base::inputs()
-      );
+    std::apply(
+        [&](auto &&...elems) {
+          std::size_t counter = 0;
+          (elems.read(archive,
+                      key + ".input[" + std::to_string(counter++) + "]"),
+           ...);
+        },
+        Base::inputs());
 
-    std::apply([&](auto&&... elems) {
-      std::size_t counter = 0;
-      (elems.read(archive, key + ".output[" + std::to_string(counter++) + "]"), ...); },
-      Base::outputs()
-      );
+    std::apply(
+        [&](auto &&...elems) {
+          std::size_t counter = 0;
+          (elems.read(archive,
+                      key + ".output[" + std::to_string(counter++) + "]"),
+           ...);
+        },
+        Base::outputs());
 
     if constexpr (!std::is_void_v<CollPts>) {
-      std::apply([&](auto&&... elems) {
-        std::size_t counter = 0;
-        (elems.read(archive, key + ".output[" + std::to_string(counter++) + "]"), ...); },
-        Base::collPts()
-      );
+      std::apply(
+          [&](auto &&...elems) {
+            std::size_t counter = 0;
+            (elems.read(archive,
+                        key + ".output[" + std::to_string(counter++) + "]"),
+             ...);
+          },
+          Base::collPts());
     }
-    
+
     net_->read(archive, key + ".net");
     torch::serialize::InputArchive archive_net;
     archive.read(key + ".net.data", archive_net);
@@ -2073,12 +2100,16 @@ public:
   bool operator==(const IgANet2 &other) const {
     bool result(true);
 
-    result *= std::apply([&](auto&&... elemsThis) {
-        return std::apply([&](auto&&... elemsOther) {
-            return ((elemsThis == elemsOther) && ...);
-        }, other.inputs());
-    }, Base::inputs());
-    
+    result *= std::apply(
+        [&](auto &&...elemsThis) {
+          return std::apply(
+              [&](auto &&...elemsOther) {
+                return ((elemsThis == elemsOther) && ...);
+              },
+              other.inputs());
+        },
+        Base::inputs());
+
     return result;
   }
 
@@ -2104,8 +2135,9 @@ private:
 };
 
 /// @brief Print (as string) a IgANet2 object
-template <typename Optimizer, typename Inputs, typename Outputs, typename CollPts>
-requires OptimizerType<Optimizer>
+template <typename Optimizer, typename Inputs, typename Outputs,
+          typename CollPts>
+  requires OptimizerType<Optimizer>
 inline std::ostream &
 operator<<(std::ostream &os,
            const IgANet2<Optimizer, Inputs, Outputs, CollPts> &obj) {
@@ -2120,134 +2152,150 @@ operator<<(std::ostream &os,
 /// functions
 ///
 /// @{
-template <typename, typename, typename = void>
-class IgANetCustomizable2;
+template <typename, typename, typename = void> class IgANetCustomizable2;
 
-template <detail::HasAsTensor... Inputs,
-          detail::HasAsTensor... Outputs>
-class IgANetCustomizable2<std::tuple<Inputs...>,
-                    std::tuple<Outputs...>, void> {
+template <detail::HasAsTensor... Inputs, detail::HasAsTensor... Outputs>
+class IgANetCustomizable2<std::tuple<Inputs...>, std::tuple<Outputs...>, void> {
 public:
   /// @brief Type of the knot indices of the inputs in the interior
-  using inputs_interior_knot_indices_type =
-    std::tuple<decltype(std::declval<Inputs>()
+  using inputs_interior_knot_indices_type = std::tuple<
+      decltype(std::declval<Inputs>()
                    .template find_knot_indices<functionspace::interior>(
-                                                                        std::declval<typename Inputs::eval_type>()))...>;
+                       std::declval<typename Inputs::eval_type>()))...>;
 
-  /// @brief Type alias for the type of the index-th knot indices of the inputs in the interior
-  template<std::size_t index>
-  using input_interior_knot_indices_t = typename std::tuple_element_t<index, inputs_interior_knot_indices_type>;
-  
+  /// @brief Type alias for the type of the index-th knot indices of the inputs
+  /// in the interior
+  template <std::size_t index>
+  using input_interior_knot_indices_t =
+      typename std::tuple_element_t<index, inputs_interior_knot_indices_type>;
+
   /// @brief Type of the knot indices of the inputs at the boundary
-  using inputs_boundary_knot_indices_type =
-    std::tuple<decltype(std::declval<Inputs>()
-                        .template find_knot_indices<functionspace::boundary>(
-                                                                             std::declval<
-                                                                             typename Inputs::boundary_eval_type>()))...>;
+  using inputs_boundary_knot_indices_type = std::tuple<
+      decltype(std::declval<Inputs>()
+                   .template find_knot_indices<functionspace::boundary>(
+                       std::declval<
+                           typename Inputs::boundary_eval_type>()))...>;
 
-  /// @brief Type alias for the type of the index-th knot indices of the inputs at the boundary
-  template<std::size_t index>
-  using input_boundary_knot_indices_t = typename std::tuple_element_t<index, inputs_boundary_knot_indices_type>;
-  
+  /// @brief Type alias for the type of the index-th knot indices of the inputs
+  /// at the boundary
+  template <std::size_t index>
+  using input_boundary_knot_indices_t =
+      typename std::tuple_element_t<index, inputs_boundary_knot_indices_type>;
+
   /// @brief Type of the knot indices of the outputs in the interior
-  using outputs_interior_knot_indices_type =
-    std::tuple<decltype(std::declval<Outputs>()
+  using outputs_interior_knot_indices_type = std::tuple<
+      decltype(std::declval<Outputs>()
                    .template find_knot_indices<functionspace::interior>(
-                                                                        std::declval<typename Outputs::eval_type>()))...>;
+                       std::declval<typename Outputs::eval_type>()))...>;
 
-  /// @brief Type alias for the type of the index-th knot indices of the outputs in the interior
-  template<std::size_t index>
-  using output_interior_knot_indices_t = typename std::tuple_element_t<index, outputs_interior_knot_indices_type>;
-  
+  /// @brief Type alias for the type of the index-th knot indices of the outputs
+  /// in the interior
+  template <std::size_t index>
+  using output_interior_knot_indices_t =
+      typename std::tuple_element_t<index, outputs_interior_knot_indices_type>;
+
   /// @brief Type of the knot indices of the outputs at the boundary
-  using outputs_boundary_knot_indices_type =
-    std::tuple<decltype(std::declval<Outputs>()
-                        .template find_knot_indices<functionspace::boundary>(
-                                                                             std::declval<
-                                                                             typename Outputs::boundary_eval_type>()))...>;
+  using outputs_boundary_knot_indices_type = std::tuple<
+      decltype(std::declval<Outputs>()
+                   .template find_knot_indices<functionspace::boundary>(
+                       std::declval<
+                           typename Outputs::boundary_eval_type>()))...>;
 
-  /// @brief Type alias for the type of the index-th knot indices of the outputs at the boundary
-  template<std::size_t index>
-  using output_boundary_knot_indices_t = typename std::tuple_element_t<index, outputs_boundary_knot_indices_type>;
-  
+  /// @brief Type alias for the type of the index-th knot indices of the outputs
+  /// at the boundary
+  template <std::size_t index>
+  using output_boundary_knot_indices_t =
+      typename std::tuple_element_t<index, outputs_boundary_knot_indices_type>;
+
   /// @brief Type of the coefficient indices of the inputs in the interior
-  using inputs_interior_coeff_indices_type =
-    std::tuple<decltype(std::declval<Inputs>()
-                        .template find_coeff_indices<functionspace::interior>(
-                                                                              std::declval<typename Inputs::eval_type>()))...>;
+  using inputs_interior_coeff_indices_type = std::tuple<
+      decltype(std::declval<Inputs>()
+                   .template find_coeff_indices<functionspace::interior>(
+                       std::declval<typename Inputs::eval_type>()))...>;
 
-  /// @brief Type alias for the type of the index-th coefficient indices of the inputs in the interior
-  template<std::size_t index>
-  using input_interior_coeff_indices_t = typename std::tuple_element_t<index, inputs_interior_coeff_indices_type>;
-  
+  /// @brief Type alias for the type of the index-th coefficient indices of the
+  /// inputs in the interior
+  template <std::size_t index>
+  using input_interior_coeff_indices_t =
+      typename std::tuple_element_t<index, inputs_interior_coeff_indices_type>;
+
   /// @brief Type of the coefficient indices of the inputs at the boundary
-  using inputs_boundary_coeff_indices_type =
-    std::tuple<decltype(std::declval<Inputs>()
-                        .template find_coeff_indices<functionspace::boundary>(
-                                                                              std::declval<
-                                                                              typename Inputs::boundary_eval_type>()))...>;
+  using inputs_boundary_coeff_indices_type = std::tuple<
+      decltype(std::declval<Inputs>()
+                   .template find_coeff_indices<functionspace::boundary>(
+                       std::declval<
+                           typename Inputs::boundary_eval_type>()))...>;
 
-  /// @brief Type alias for the type of the index-th coefficient indices of the inputs at the boundary
-  template<std::size_t index>
-  using input_boundary_coeff_indices_t = typename std::tuple_element_t<index, inputs_boundary_coeff_indices_type>;
-  
+  /// @brief Type alias for the type of the index-th coefficient indices of the
+  /// inputs at the boundary
+  template <std::size_t index>
+  using input_boundary_coeff_indices_t =
+      typename std::tuple_element_t<index, inputs_boundary_coeff_indices_type>;
+
   /// @brief Type of the coefficient indices of the outputs in the interior
-  using outputs_interior_coeff_indices_type =
-    std::tuple<decltype(std::declval<Outputs>()
-                        .template find_coeff_indices<functionspace::interior>(
-                                                                              std::declval<typename Outputs::eval_type>()))...>;
+  using outputs_interior_coeff_indices_type = std::tuple<
+      decltype(std::declval<Outputs>()
+                   .template find_coeff_indices<functionspace::interior>(
+                       std::declval<typename Outputs::eval_type>()))...>;
 
-  /// @brief Type alias for the type of the index-th coefficient indices of the outputs in the interior
-  template<std::size_t index>
-  using output_interior_coeff_indices_t = typename std::tuple_element_t<index, outputs_interior_coeff_indices_type>;
-  
+  /// @brief Type alias for the type of the index-th coefficient indices of the
+  /// outputs in the interior
+  template <std::size_t index>
+  using output_interior_coeff_indices_t =
+      typename std::tuple_element_t<index, outputs_interior_coeff_indices_type>;
+
   /// @brief Type of the coefficient indices of the outputs at the boundary
-  using outputs_boundary_coeff_indices_type =
-    std::tuple<decltype(std::declval<Outputs>()
-                        .template find_coeff_indices<functionspace::boundary>(
-                                                                              std::declval<
-                                                                              typename Outputs::boundary_eval_type>()))...>;
+  using outputs_boundary_coeff_indices_type = std::tuple<
+      decltype(std::declval<Outputs>()
+                   .template find_coeff_indices<functionspace::boundary>(
+                       std::declval<
+                           typename Outputs::boundary_eval_type>()))...>;
 
-  /// @brief Type alias for the type of the index-th coefficient indices of the outputs at the boundary
-  template<std::size_t index>
-  using output_boundary_coeff_indices_t = typename std::tuple_element_t<index, outputs_boundary_coeff_indices_type>;
+  /// @brief Type alias for the type of the index-th coefficient indices of the
+  /// outputs at the boundary
+  template <std::size_t index>
+  using output_boundary_coeff_indices_t =
+      typename std::tuple_element_t<index, outputs_boundary_coeff_indices_type>;
 };
 
-template <detail::HasAsTensor... Inputs,
-          detail::HasAsTensor... Outputs,
+template <detail::HasAsTensor... Inputs, detail::HasAsTensor... Outputs,
           detail::HasAsTensor... CollPts>
-class IgANetCustomizable2<std::tuple<Inputs...>,
-                    std::tuple<Outputs...>,
-                          std::tuple<CollPts...>> : public IgANetCustomizable2<std::tuple<Inputs...>,
-                                                                               std::tuple<Outputs...>, void> {
+class IgANetCustomizable2<std::tuple<Inputs...>, std::tuple<Outputs...>,
+                          std::tuple<CollPts...>>
+    : public IgANetCustomizable2<std::tuple<Inputs...>, std::tuple<Outputs...>,
+                                 void> {
 public:
-  /// @brief Type of the knot indices of the collocation points objects in the interior
-  using collPts_interior_knot_indices_type =
-    std::tuple<decltype(std::declval<CollPts>()
+  /// @brief Type of the knot indices of the collocation points objects in the
+  /// interior
+  using collPts_interior_knot_indices_type = std::tuple<
+      decltype(std::declval<CollPts>()
                    .template find_knot_indices<functionspace::interior>(
-                                                                        std::declval<typename CollPts::eval_type>()))...>;
+                       std::declval<typename CollPts::eval_type>()))...>;
 
-  /// @brief Type of the knot indices of the collocation points objects at the boundary
-  using collPts_boundary_knot_indices_type =
-    std::tuple<decltype(std::declval<CollPts>()
-                        .template find_knot_indices<functionspace::boundary>(
-                                                                             std::declval<
-                                                                             typename CollPts::boundary_eval_type>()))...>;
+  /// @brief Type of the knot indices of the collocation points objects at the
+  /// boundary
+  using collPts_boundary_knot_indices_type = std::tuple<
+      decltype(std::declval<CollPts>()
+                   .template find_knot_indices<functionspace::boundary>(
+                       std::declval<
+                           typename CollPts::boundary_eval_type>()))...>;
 
-  /// @brief Type of the coefficient indices of the collocation points objects in the interior
-  using collPts_interior_coeff_indices_type =
-    std::tuple<decltype(std::declval<CollPts>()
-                        .template find_coeff_indices<functionspace::interior>(
-                                                                              std::declval<typename CollPts::eval_type>()))...>;
+  /// @brief Type of the coefficient indices of the collocation points objects
+  /// in the interior
+  using collPts_interior_coeff_indices_type = std::tuple<
+      decltype(std::declval<CollPts>()
+                   .template find_coeff_indices<functionspace::interior>(
+                       std::declval<typename CollPts::eval_type>()))...>;
 
-  /// @brief Type of the coefficient indices of the collocation points objects at the boundary
-  using collPts_boundary_coeff_indices_type =
-    std::tuple<decltype(std::declval<CollPts>()
-                        .template find_coeff_indices<functionspace::boundary>(
-                                                                              std::declval<
-                                                                              typename CollPts::boundary_eval_type>()))...>; 
-};  
+  /// @brief Type of the coefficient indices of the collocation points objects
+  /// at the boundary
+  using collPts_boundary_coeff_indices_type = std::tuple<
+      decltype(std::declval<CollPts>()
+                   .template find_coeff_indices<functionspace::boundary>(
+                       std::declval<
+                           typename CollPts::boundary_eval_type>()))...>;
+};
 
 /// @}
-  
+
 } // namespace iganet

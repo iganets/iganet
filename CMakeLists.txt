@@ -134,7 +134,7 @@ target_link_libraries(iganet_core INTERFACE pugixml)
 
 if(IGANET_WITH_GISMO)
   include(gismo)
-  target_include_directories(iganet_core INTERFACE ${GISMO_INCLUDE_DIRS})  
+  target_include_directories(iganet_core INTERFACE ${GISMO_INCLUDE_DIRS})
   target_link_libraries(iganet_core INTERFACE gismo_static)
 endif()
 
@@ -327,9 +327,9 @@ include(get_module)
 
 
 foreach(entry IN LISTS IGANET_OPTIONAL)
-  
+
   # Extract entries of the form "module[branch]"
-  string(REGEX MATCH "^([^\[]+)\\[([^\]]+)\\]" _ "${entry}")  
+  string(REGEX MATCH "^([^\[]+)\\[([^\]]+)\\]" _ "${entry}")
   if(_)
     set(module "${CMAKE_MATCH_1}")
     set(branch "${CMAKE_MATCH_2}")
@@ -337,13 +337,13 @@ foreach(entry IN LISTS IGANET_OPTIONAL)
     set(module "${entry}")
     set(branch "main")
   endif()
-  
+
   if(EXISTS "${CMAKE_SOURCE_DIR}/.git")
     get_module(
       ${module}
       GIT_REPOSITORY https://github.com/iganets/iganet-${module}.git
       GIT_TAG ${branch})
-  else()  
+  else()
     get_module(
       ${module}
       URL https://github.com/iganets/iganet-${module}/archive/refs/heads/${branch}.zip)

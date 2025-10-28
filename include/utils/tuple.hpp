@@ -14,8 +14,8 @@
 
 #pragma once
 
-#include <vector>
 #include <tuple>
+#include <vector>
 
 namespace iganet {
 namespace utils {
@@ -23,33 +23,36 @@ namespace utils {
 /// @brief Concatenates the entries of an std::tuple object into a
 /// single Torch tensor along the given dimension
 template <typename... Tensors>
-torch::Tensor cat_tuple_into_tensor(const std::tuple<Tensors...>& tensors, int64_t dim = 0) {
-    std::vector<torch::Tensor> vec;
-    vec.reserve(sizeof...(Tensors));
-    std::apply([&](const auto&... tensor) {
-      (vec.emplace_back(tensor), ...);
-    }, tensors);
+torch::Tensor cat_tuple_into_tensor(const std::tuple<Tensors...> &tensors,
+                                    int64_t dim = 0) {
+  std::vector<torch::Tensor> vec;
+  vec.reserve(sizeof...(Tensors));
+  std::apply([&](const auto &...tensor) { (vec.emplace_back(tensor), ...); },
+             tensors);
 
-    return torch::cat(vec, dim);
+  return torch::cat(vec, dim);
 }
 
 /// @brief Concatenates the entries of an std::tuple object into a
 /// single Torch tensor along the given dimension after applying the
 /// callback function
-  template <typename... Tensors, typename Func>
-  torch::Tensor cat_tuple_into_tensor(const std::tuple<Tensors...>& tensors, Func&& func, int64_t dim = 0) {
-    std::vector<torch::Tensor> vec;
-    vec.reserve(sizeof...(Tensors));
-    std::apply([&](const auto&... tensor) {
-      (vec.emplace_back(std::invoke(func, tensor)), ...);
-    }, tensors);
+template <typename... Tensors, typename Func>
+torch::Tensor cat_tuple_into_tensor(const std::tuple<Tensors...> &tensors,
+                                    Func &&func, int64_t dim = 0) {
+  std::vector<torch::Tensor> vec;
+  vec.reserve(sizeof...(Tensors));
+  std::apply(
+      [&](const auto &...tensor) {
+        (vec.emplace_back(std::invoke(func, tensor)), ...);
+      },
+      tensors);
 
-    return torch::cat(vec, dim);
-}  
-  
+  return torch::cat(vec, dim);
+}
+
 /// @brief Returns an std::tuple object with N replications of the given value
 template <std::size_t N, typename T>
-constexpr auto repeat_tuple(const T& value) {
+constexpr auto repeat_tuple(const T &value) {
   return [&]<std::size_t... Is>(std::index_sequence<Is...>) {
     return std::tuple{((void)Is, value)...};
   }(std::make_index_sequence<N>{});
@@ -57,31 +60,31 @@ constexpr auto repeat_tuple(const T& value) {
 
 /// @brief Slices the given tensor into the objects of the std::tuple
 /// @{
-template <std::size_t I = 0, typename... Tensors, typename FuncSize, typename FuncAssign>
-void slice_tensor_into_tuple(std::tuple<Tensors...>& tuple,
-                             const torch::Tensor& tensor,
-                             FuncSize&& funcSize,
-                             FuncAssign&& funcAssign,
-                             int64_t& offset, int64_t dim = 0) {
+template <std::size_t I = 0, typename... Tensors, typename FuncSize,
+          typename FuncAssign>
+void slice_tensor_into_tuple(std::tuple<Tensors...> &tuple,
+                             const torch::Tensor &tensor, FuncSize &&funcSize,
+                             FuncAssign &&funcAssign, int64_t &offset,
+                             int64_t dim = 0) {
   if constexpr (I < sizeof...(Tensors)) {
-    auto& t = std::get<I>(tuple);
+    auto &t = std::get<I>(tuple);
     auto size = std::forward<FuncSize>(funcSize)(t);
-    std::forward<FuncAssign>(funcAssign)(t, tensor.slice(dim, offset, offset + size));
+    std::forward<FuncAssign>(funcAssign)(
+        t, tensor.slice(dim, offset, offset + size));
     offset += size;
-    slice_tensor_into_tuple<I + 1>(tuple, tensor, funcSize, funcAssign, offset, dim);
+    slice_tensor_into_tuple<I + 1>(tuple, tensor, funcSize, funcAssign, offset,
+                                   dim);
   }
 }
 
 template <typename... Tensors, typename FuncSize, typename FuncAssign>
-void slice_tensor_into_tuple(std::tuple<Tensors...>& tuple,
-                             const torch::Tensor& tensor,
-                             FuncSize&& funcSize,
-                             FuncAssign&& funcAssign,
-                             int64_t dim = 0) {
-    int64_t offset = 0;
-    slice_tensor_into_tuple(tuple, tensor, funcSize, funcAssign, offset, dim);
+void slice_tensor_into_tuple(std::tuple<Tensors...> &tuple,
+                             const torch::Tensor &tensor, FuncSize &&funcSize,
+                             FuncAssign &&funcAssign, int64_t dim = 0) {
+  int64_t offset = 0;
+  slice_tensor_into_tuple(tuple, tensor, funcSize, funcAssign, offset, dim);
 }
 /// @}
-  
+
 } // namespace utils
 } // namespace iganet

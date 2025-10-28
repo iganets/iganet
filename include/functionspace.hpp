@@ -40,12 +40,11 @@ enum class functionspace : short_t {
 
 namespace detail {
 
-  /// @brief FunctionSpace base class
-  class FunctionSpaceType {};
-  
+/// @brief FunctionSpace base class
+class FunctionSpaceType {};
+
 // Forward declaration
-template <typename, typename>
-class FunctionSpace;
+template <typename, typename> class FunctionSpace;
 
 /// @brief Tensor-product function space
 ///
@@ -54,7 +53,9 @@ class FunctionSpace;
 template <typename... Splines, typename... Boundaries>
 // requires (SplineType<Splines> && ...) && (BoundaryType<Boundaries> && ...)
 class FunctionSpace<std::tuple<Splines...>, std::tuple<Boundaries...>>
-  : public FunctionSpaceType, public utils::Serializable, private utils::FullQualifiedName {
+    : public FunctionSpaceType,
+      public utils::Serializable,
+      private utils::FullQualifiedName {
 
 public:
   /// @brief Value type
@@ -116,71 +117,62 @@ public:
     boundary_from_full_tensor(this->as_tensor());
   }
 
-  explicit FunctionSpace(std::tuple<Splines...> &&spline)
-      : spline_(spline) {
+  explicit FunctionSpace(std::tuple<Splines...> &&spline) : spline_(spline) {
     boundary_from_full_tensor(this->as_tensor());
   }
 
   explicit FunctionSpace(const std::tuple<Splines...> &spline,
                          const std::tuple<Boundaries...> &boundary)
-    : spline_(spline), boundary_(boundary) {}
+      : spline_(spline), boundary_(boundary) {}
 
   explicit FunctionSpace(std::tuple<Splines...> &&spline,
                          std::tuple<Boundaries...> &&boundary)
-    : spline_(spline), boundary_(boundary) {}
+      : spline_(spline), boundary_(boundary) {}
   /// @}
 
   /// @brief Returns the number of function spaces
-    inline static constexpr std::size_t nspaces() noexcept {
+  inline static constexpr std::size_t nspaces() noexcept {
     return sizeof...(Splines);
   }
 
   /// @brief Returns the number of boundaries
-    inline static constexpr std::size_t nboundaries() noexcept {
+  inline static constexpr std::size_t nboundaries() noexcept {
     return sizeof...(Boundaries);
   }
 
   /// @brief Returns a constant reference to the tuple of function spaces
-  inline constexpr const auto &spaces() const noexcept {
-    return spline_;
-  }
+  inline constexpr const auto &spaces() const noexcept { return spline_; }
 
-    /// @brief Returns a non-constant reference to the tuple of function spaces
-  inline constexpr auto &spaces() noexcept {
-    return spline_;
-  }
+  /// @brief Returns a non-constant reference to the tuple of function spaces
+  inline constexpr auto &spaces() noexcept { return spline_; }
 
   /// @brief Returns a constant reference to the tuple of boundary object
-  inline constexpr const auto &boundaries() const noexcept {
-    return boundary_;
-  }
+  inline constexpr const auto &boundaries() const noexcept { return boundary_; }
 
   /// @brief Returns a non-constant reference to the tuple of boundary object
-  inline constexpr auto &boundaries() noexcept {
-    return boundary_;
-  }
-  
+  inline constexpr auto &boundaries() noexcept { return boundary_; }
+
   /// @brief Returns a constant reference to the index-th function space
-    template <std::size_t index> inline const auto &space() const noexcept {
+  template <std::size_t index> inline const auto &space() const noexcept {
     static_assert(index >= 0 && index < nspaces());
     return std::get<index>(spline_);
   }
 
   /// @brief Returns a non-constant reference to the index-th space
-    template <std::size_t index> inline auto &space() noexcept {
+  template <std::size_t index> inline auto &space() noexcept {
     static_assert(index >= 0 && index < nspaces());
     return std::get<index>(spline_);
   }
 
   /// @brief Returns a constant reference to the index-th boundary object
-    template <std::size_t index> inline const auto &boundary() const noexcept {
+  template <std::size_t index> inline const auto &boundary() const noexcept {
     static_assert(index >= 0 && index < nboundaries());
     return std::get<index>(boundary_);
   }
 
   /// @brief Returns a non-constant reference to the index-th
   /// boundary object
-    template <std::size_t index> inline auto &boundary() noexcept {
+  template <std::size_t index> inline auto &boundary() noexcept {
     static_assert(index >= 0 && index < nboundaries());
     return std::get<index>(boundary_);
   }
@@ -189,13 +181,15 @@ public:
   inline FunctionSpace clone() const noexcept { return FunctionSpace(*this); }
 
   /// @brief Returns a clone of a subset of the function space
-    template <std::size_t... index> inline auto clone() const noexcept {
+  template <std::size_t... index> inline auto clone() const noexcept {
 
     static_assert(((index >= 0 && index < nspaces()) && ... && true));
 
-    return FunctionSpace<std::tuple<std::tuple_element_t<index, spline_type>...>,
-                         std::tuple<std::tuple_element_t<index, boundary_type>...>>(
-                                                                                std::make_tuple(std::get<index>(spline_)...), std::make_tuple(std::get<index>(boundary_)...));
+    return FunctionSpace<
+        std::tuple<std::tuple_element_t<index, spline_type>...>,
+        std::tuple<std::tuple_element_t<index, boundary_type>...>>(
+        std::make_tuple(std::get<index>(spline_)...),
+        std::make_tuple(std::get<index>(boundary_)...));
   }
 
 private:
@@ -455,19 +449,22 @@ public:
 
   /// @brief Returns true if both function space objects are the same
   template <typename SplinesOther, typename BoundariesOther>
-  bool operator==(const FunctionSpace<SplinesOther, BoundariesOther> &other) const {
+  bool
+  operator==(const FunctionSpace<SplinesOther, BoundariesOther> &other) const {
     bool result(true);
 
-    if (!std::is_same_v<spline_type, typename std::remove_cvref_t<decltype(other)>::spline_type> ||
-        !std::is_same_v<boundary_type, typename std::remove_cvref_t<decltype(other)>::boundary_type>)
-      return false;  
+    if (!std::is_same_v<spline_type, typename std::remove_cvref_t<
+                                         decltype(other)>::spline_type> ||
+        !std::is_same_v<boundary_type, typename std::remove_cvref_t<
+                                           decltype(other)>::boundary_type>)
+      return false;
 
     result *= (spaces() == other.spaces());
     result *= (boundaries() == other.boundaries());
-    
+
     return result;
   }
-  
+
 private:
   /// @brief Returns the values of the spline objects in the points `xi`
   /// @{
@@ -637,16 +634,15 @@ private:
   /// @brief Returns the knot indicies of knot spans containing `xi`
   /// @{
   template <functionspace comp = functionspace::interior, std::size_t... Is>
-  inline auto find_knot_indices_(std::index_sequence<Is...>,
-                                 const utils::TensorArray<nspaces()> &xi) const {
+  inline auto
+  find_knot_indices_(std::index_sequence<Is...>,
+                     const utils::TensorArray<nspaces()> &xi) const {
     if constexpr (comp == functionspace::interior)
-      return std::tuple(
-          std::get<Is>(spline_).find_knot_indices(xi)...);
+      return std::tuple(std::get<Is>(spline_).find_knot_indices(xi)...);
     else if constexpr (comp == functionspace::boundary)
-      return std::tuple(
-          std::get<Is>(boundary_).find_knot_indices(xi)...);
+      return std::tuple(std::get<Is>(boundary_).find_knot_indices(xi)...);
   }
-  
+
   template <functionspace comp = functionspace::interior, std::size_t... Is,
             typename... Xi>
   inline auto find_knot_indices_(std::index_sequence<Is...>,
@@ -667,8 +663,8 @@ public:
   inline auto find_knot_indices(const utils::TensorArray<nspaces()> &xi) const {
     return find_knot_indices_<comp>(
         std::make_index_sequence<FunctionSpace::nspaces()>{}, xi);
-    }
-  
+  }
+
   template <functionspace comp = functionspace::interior, typename... Xi>
   inline auto find_knot_indices(const std::tuple<Xi...> &xi) const {
     return find_knot_indices_<comp>(
@@ -1040,14 +1036,13 @@ public:
   }
 
   template <functionspace comp = functionspace::interior,
-            bool memory_optimized = false,
-            typename... TensorArrays>
+            bool memory_optimized = false, typename... TensorArrays>
   inline auto curl(const utils::TensorArray<nspaces()> &xi,
                    const std::tuple<TensorArrays...> &knot_indices) const {
     return curl<comp, memory_optimized>(xi, knot_indices,
                                         find_coeff_indices<comp>(knot_indices));
   }
-  
+
   template <functionspace comp = functionspace::interior,
             bool memory_optimized = false>
   inline auto curl(const utils::TensorArray1 &xi,
@@ -1168,14 +1163,13 @@ public:
   }
 
   template <functionspace comp = functionspace::interior,
-            bool memory_optimized = false,
-            typename... TensorArrays>
+            bool memory_optimized = false, typename... TensorArrays>
   inline auto div(const utils::TensorArray<nspaces()> &xi,
-                   const std::tuple<TensorArrays...> &knot_indices) const {
+                  const std::tuple<TensorArrays...> &knot_indices) const {
     return div<comp, memory_optimized>(xi, knot_indices,
                                        find_coeff_indices<comp>(knot_indices));
   }
-  
+
   template <functionspace comp = functionspace::interior,
             bool memory_optimized = false>
   inline auto div(const utils::TensorArray1 &xi,
@@ -1307,14 +1301,13 @@ public:
   }
 
   template <functionspace comp = functionspace::interior,
-            bool memory_optimized = false,
-            typename... TensorArrays>
+            bool memory_optimized = false, typename... TensorArrays>
   inline auto grad(const utils::TensorArray<nspaces()> &xi,
                    const std::tuple<TensorArrays...> &knot_indices) const {
     return grad<comp, memory_optimized>(xi, knot_indices,
                                         find_coeff_indices<comp>(knot_indices));
   }
-    
+
   template <functionspace comp = functionspace::interior,
             bool memory_optimized = false>
   inline auto grad(const utils::TensorArray1 &xi,
@@ -1465,14 +1458,13 @@ public:
   }
 
   template <functionspace comp = functionspace::interior,
-            bool memory_optimized = false,
-            typename... TensorArrays>
+            bool memory_optimized = false, typename... TensorArrays>
   inline auto hess(const utils::TensorArray<nspaces()> &xi,
                    const std::tuple<TensorArrays...> &knot_indices) const {
     return hess<comp, memory_optimized>(xi, knot_indices,
                                         find_coeff_indices<comp>(knot_indices));
   }
-  
+
   template <functionspace comp = functionspace::interior,
             bool memory_optimized = false>
   inline auto hess(const utils::TensorArray1 &xi,
@@ -1879,14 +1871,13 @@ public:
   }
 
   template <functionspace comp = functionspace::interior,
-            bool memory_optimized = false,
-            typename... TensorArrays>
+            bool memory_optimized = false, typename... TensorArrays>
   inline auto jac(const utils::TensorArray<nspaces()> &xi,
-                   const std::tuple<TensorArrays...> &knot_indices) const {
+                  const std::tuple<TensorArrays...> &knot_indices) const {
     return jac<comp, memory_optimized>(xi, knot_indices,
-                                        find_coeff_indices<comp>(knot_indices));
+                                       find_coeff_indices<comp>(knot_indices));
   }
-  
+
   template <functionspace comp = functionspace::interior,
             bool memory_optimized = false>
   inline auto jac(const utils::TensorArray1 &xi,
@@ -2066,14 +2057,13 @@ public:
   }
 
   template <functionspace comp = functionspace::interior,
-            bool memory_optimized = false,
-            typename... TensorArrays>
+            bool memory_optimized = false, typename... TensorArrays>
   inline auto lapl(const utils::TensorArray<nspaces()> &xi,
                    const std::tuple<TensorArrays...> &knot_indices) const {
     return lapl<comp, memory_optimized>(xi, knot_indices,
                                         find_coeff_indices<comp>(knot_indices));
   }
-  
+
   template <functionspace comp = functionspace::interior,
             bool memory_optimized = false>
   inline auto lapl(const utils::TensorArray1 &xi,
@@ -2506,31 +2496,23 @@ public:
   /// @}
 
   /// @brief Returns the number of function spaces
-    inline static constexpr std::size_t nspaces() noexcept { return 1; }
+  inline static constexpr std::size_t nspaces() noexcept { return 1; }
 
   /// @brief Returns the number of boundaries
-    inline static constexpr std::size_t nboundaries() noexcept { return 1; }
+  inline static constexpr std::size_t nboundaries() noexcept { return 1; }
 
   /// @brief Returns a constant reference to the tuple of function spaces
-  inline constexpr const auto &spaces() const noexcept {
-    return spline_;
-  }
+  inline constexpr const auto &spaces() const noexcept { return spline_; }
 
-    /// @brief Returns a non-constant reference to the tuple of function spaces
-  inline constexpr auto &spaces() noexcept {
-    return spline_;
-  }
+  /// @brief Returns a non-constant reference to the tuple of function spaces
+  inline constexpr auto &spaces() noexcept { return spline_; }
 
   /// @brief Returns a constant reference to the tuple of boundary object
-  inline constexpr const auto &boundaries() const noexcept {
-    return boundary_;
-  }
+  inline constexpr const auto &boundaries() const noexcept { return boundary_; }
 
   /// @brief Returns a non-constant reference to the tuple of boundary object
-  inline constexpr auto &boundaries() noexcept {
-    return boundary_;
-  }
-  
+  inline constexpr auto &boundaries() noexcept { return boundary_; }
+
   /// @brief Returns a constant reference to the index-th function space
   template <std::size_t index = 0>
   inline constexpr const spline_type &space() const noexcept {
@@ -2539,7 +2521,8 @@ public:
   }
 
   /// @brief Returns a non-constant reference to the index-th function space
-  template <std::size_t index = 0> inline constexpr spline_type &space() noexcept {
+  template <std::size_t index = 0>
+  inline constexpr spline_type &space() noexcept {
     static_assert(index >= 0 && index < nspaces());
     return spline_;
   }
@@ -2553,7 +2536,8 @@ public:
 
   /// @brief Returns a non-constant reference to the index-th boundary object
   /// object
-    template <std::size_t index = 0> inline constexpr boundary_type &boundary() noexcept {
+  template <std::size_t index = 0>
+  inline constexpr boundary_type &boundary() noexcept {
     static_assert(index >= 0 && index < nboundaries());
     return boundary_;
   }
@@ -2564,7 +2548,7 @@ public:
   }
 
   /// @brief Returns a subset of the tuple of function spaces
-    template <std::size_t... index> inline constexpr auto clone() const noexcept {
+  template <std::size_t... index> inline constexpr auto clone() const noexcept {
 
     static_assert(((index >= 0 && index < nspaces()) && ... && true));
 
@@ -2573,7 +2557,8 @@ public:
     else
       return FunctionSpace<
           std::tuple<std::tuple_element_t<index, std::tuple<spline_type>>...>,
-          std::tuple<std::tuple_element_t<index, std::tuple<boundary_type>>...>>(
+          std::tuple<
+              std::tuple_element_t<index, std::tuple<boundary_type>>...>>(
           std::get<index>(std::make_tuple(spline_))...,
           std::get<index>(std::make_tuple(boundary_))...);
   }
@@ -2685,19 +2670,22 @@ public:
 
   /// @brief Returns true if both function space objects are the same
   template <typename SplinesOther, typename BoundariesOther>
-  bool operator==(const FunctionSpace<SplinesOther, BoundariesOther> &other) const {
+  bool
+  operator==(const FunctionSpace<SplinesOther, BoundariesOther> &other) const {
     bool result(true);
 
-    if (!std::is_same_v<spline_type, typename std::remove_cvref_t<decltype(other)>::spline_type> ||
-        !std::is_same_v<boundary_type, typename std::remove_cvref_t<decltype(other)>::boundary_type>)
+    if (!std::is_same_v<spline_type, typename std::remove_cvref_t<
+                                         decltype(other)>::spline_type> ||
+        !std::is_same_v<boundary_type, typename std::remove_cvref_t<
+                                           decltype(other)>::boundary_type>)
       return false;
-    
+
     result *= (spaces() == other.spaces());
     result *= (boundaries() == other.boundaries());
-    
+
     return result;
   }
-  
+
   /// @brief Transforms the coefficients based on the given mapping
   inline FunctionSpace &transform(
       const std::function<std::array<typename Spline::value_type,
@@ -3183,10 +3171,11 @@ struct FunctionSpace_trait<std::tuple<FunctionSpace<Splines, Boundaries>...>> {
 
 } // namespace detail
 
-  /// @brief Concept to identify template parameters that are derived from iganet::details::FunctionSpaceType
-  template<typename T>
-  concept FunctionSpaceType = std::is_base_of_v<detail::FunctionSpaceType, T>;
-  
+/// @brief Concept to identify template parameters that are derived from
+/// iganet::details::FunctionSpaceType
+template <typename T>
+concept FunctionSpaceType = std::is_base_of_v<detail::FunctionSpaceType, T>;
+
 /// @brief Function space alias
 template <typename... Args>
 using FunctionSpace = typename detail::FunctionSpace_trait<Args...>::type;
@@ -3198,7 +3187,7 @@ inline std::ostream &operator<<(std::ostream &os,
   obj.pretty_print(os);
   return os;
 }
-  
+
 /// @brief Spline function space \f$ S^{\mathbf{p}}_{\mathbf{p}-1}
 /// \f$
 ///
@@ -4169,62 +4158,68 @@ template <typename Spline, short_t = Spline::parDim()> class NE_RT_DG;
 /// \f[
 /// S^{p_1+1,p_2+1}_{p_1,p_2} \otimes
 /// S^{p_1+1,p_2}_{p_1,p_2-1} \otimes
-/// S^{p_1,p_2+1}_{p_1-1,p_2} \otimes  
+/// S^{p_1,p_2+1}_{p_1-1,p_2} \otimes
 /// S^{p_1,p_2}_{p_1-1,p_2-1}
 /// \f]
 ///
 /// in three spatial dimensions
 template <typename Spline>
 class NE_RT_DG<Spline, 2>
-  : public FunctionSpace<std::tuple<
-    // Vector potential field \f$ H^1(\Omega) \f$
-    typename Spline::template derived_self_type<
-      typename Spline::value_type, Spline::geoDim(), Spline::degree(0)+1, Spline::degree(1)+1>,
-    // Velocity field \f$ \mathbf{H}(\mathbf{curl}, \Omega) \f$
-    typename Spline::template derived_self_type<
-      typename Spline::value_type, Spline::geoDim(), Spline::degree(0)+1, Spline::degree(1)>,
-    typename Spline::template derived_self_type<
-      typename Spline::value_type, Spline::geoDim(), Spline::degree(0), Spline::degree(1)+1>,
-    // Pressure field \f$ L^2(\Omega) \f$
-    typename Spline::template derived_self_type<
-      typename Spline::value_type, Spline::geoDim(), Spline::degree(0), Spline::degree(1)>
-    >> {
+    : public FunctionSpace<std::tuple<
+          // Vector potential field \f$ H^1(\Omega) \f$
+          typename Spline::template derived_self_type<
+              typename Spline::value_type, Spline::geoDim(),
+              Spline::degree(0) + 1, Spline::degree(1) + 1>,
+          // Velocity field \f$ \mathbf{H}(\mathbf{curl}, \Omega) \f$
+          typename Spline::template derived_self_type<
+              typename Spline::value_type, Spline::geoDim(),
+              Spline::degree(0) + 1, Spline::degree(1)>,
+          typename Spline::template derived_self_type<
+              typename Spline::value_type, Spline::geoDim(), Spline::degree(0),
+              Spline::degree(1) + 1>,
+          // Pressure field \f$ L^2(\Omega) \f$
+          typename Spline::template derived_self_type<
+              typename Spline::value_type, Spline::geoDim(), Spline::degree(0),
+              Spline::degree(1)>>> {
 
 public:
   /// @brief Base type
   using Base = FunctionSpace<std::tuple<
-    // Vector potential field \f$ H^1(\Omega) \f$
-    typename Spline::template derived_self_type<
-      typename Spline::value_type, Spline::geoDim(), Spline::degree(0)+1, Spline::degree(1)+1>,
-    // Velocity field \f$ \mathbf{H}(\mathbf{curl}, \Omega) \f$
-    typename Spline::template derived_self_type<
-      typename Spline::value_type, Spline::geoDim(), Spline::degree(0)+1, Spline::degree(1)>,
-    typename Spline::template derived_self_type<
-      typename Spline::value_type, Spline::geoDim(), Spline::degree(0), Spline::degree(1)+1>,
-    // Pressure field \f$ L^2(\Omega) \f$
-    typename Spline::template derived_self_type<
-      typename Spline::value_type, Spline::geoDim(), Spline::degree(0), Spline::degree(1)>>>;
+      // Vector potential field \f$ H^1(\Omega) \f$
+      typename Spline::template derived_self_type<
+          typename Spline::value_type, Spline::geoDim(), Spline::degree(0) + 1,
+          Spline::degree(1) + 1>,
+      // Velocity field \f$ \mathbf{H}(\mathbf{curl}, \Omega) \f$
+      typename Spline::template derived_self_type<
+          typename Spline::value_type, Spline::geoDim(), Spline::degree(0) + 1,
+          Spline::degree(1)>,
+      typename Spline::template derived_self_type<
+          typename Spline::value_type, Spline::geoDim(), Spline::degree(0),
+          Spline::degree(1) + 1>,
+      // Pressure field \f$ L^2(\Omega) \f$
+      typename Spline::template derived_self_type<
+          typename Spline::value_type, Spline::geoDim(), Spline::degree(0),
+          Spline::degree(1)>>>;
 
   /// @brief Constructor
   /// @{
-  NE_RT_DG(const std::array<int64_t, 2> &ncoeffs, enum init init = init::greville,
+  NE_RT_DG(const std::array<int64_t, 2> &ncoeffs,
+           enum init init = init::greville,
            Options<typename Spline::value_type> options =
-           iganet::Options<typename Spline::value_type>{})
-    : Base(ncoeffs + utils::to_array(1_i64, 1_i64),
-           ncoeffs + utils::to_array(1_i64, 0_i64),
-           ncoeffs + utils::to_array(0_i64, 1_i64),
-           ncoeffs, init, options) {}
+               iganet::Options<typename Spline::value_type>{})
+      : Base(ncoeffs + utils::to_array(1_i64, 1_i64),
+             ncoeffs + utils::to_array(1_i64, 0_i64),
+             ncoeffs + utils::to_array(0_i64, 1_i64), ncoeffs, init, options) {}
 
   NE_RT_DG(const std::array<std::vector<typename Spline::value_type>, 2> &kv,
-        enum init init = init::greville,
-        Options<typename Spline::value_type> options =
-            iganet::Options<typename Spline::value_type>{})
-    : Base({{kv[0].front() + kv[0] + kv[0].back(),
-             kv[1].front() + kv[1] + kv[1].back()}},
-           {{kv[0].front() + kv[0] + kv[0].back(), kv[1]}},
-           {{kv[0], kv[1].front() + kv[1] + kv[1].back()}},
-           {{kv[0], kv[1]}}, init,
-             options) {
+           enum init init = init::greville,
+           Options<typename Spline::value_type> options =
+               iganet::Options<typename Spline::value_type>{})
+      : Base({{kv[0].front() + kv[0] + kv[0].back(),
+               kv[1].front() + kv[1] + kv[1].back()}},
+             {{kv[0].front() + kv[0] + kv[0].back(), kv[1]}},
+             {{kv[0], kv[1].front() + kv[1] + kv[1].back()}}, {{kv[0], kv[1]}},
+             init, options) {
     static_assert(Spline::is_nonuniform(),
                   "Constructor only available for non-uniform splines");
   }
@@ -4243,75 +4238,85 @@ public:
 /// S^{p_1+1,p_2+1,p_3+1}_{p_1,p_2,p_2} \otimes
 /// S^{p_1+1,p_2,p_3}_{p_1,p_2-1,p_3-1} \otimes
 /// S^{p_1,p_2+1,p_3}_{p_1-1,p_2,p_3-1} \otimes
-/// S^{p_1,p_2,p_3+1}_{p_1-1,p_2-1,p_3} \otimes    
+/// S^{p_1,p_2,p_3+1}_{p_1-1,p_2-1,p_3} \otimes
 /// S^{p_1,p_2,p_3}_{p_1-1,p_2-1,p_3-1}
 /// \f]
 ///
 /// in three spatial dimensions
 template <typename Spline>
 class NE_RT_DG<Spline, 3>
-  : public FunctionSpace<std::tuple<
-    // Vector potential field \f$ H^1(\Omega) \f$
-    typename Spline::template derived_self_type<
-      typename Spline::value_type, Spline::geoDim(), Spline::degree(0)+1, Spline::degree(1)+1, Spline::degree(2)+1>,
-    // Velocity field \f$ \mathbf{H}(\mathbf{curl}, \Omega) \f$
-    typename Spline::template derived_self_type<
-      typename Spline::value_type, Spline::geoDim(), Spline::degree(0)+1, Spline::degree(1), Spline::degree(2)>,
-    typename Spline::template derived_self_type<
-      typename Spline::value_type, Spline::geoDim(), Spline::degree(0), Spline::degree(1)+1, Spline::degree(2)>,
-    typename Spline::template derived_self_type<
-      typename Spline::value_type, Spline::geoDim(), Spline::degree(0), Spline::degree(1), Spline::degree(2)+1>,
-    // Pressure field \f$ L^2(\Omega) \f$
-    typename Spline::template derived_self_type<
-      typename Spline::value_type, Spline::geoDim(), Spline::degree(0), Spline::degree(1), Spline::degree(2)>
-    >> {
+    : public FunctionSpace<std::tuple<
+          // Vector potential field \f$ H^1(\Omega) \f$
+          typename Spline::template derived_self_type<
+              typename Spline::value_type, Spline::geoDim(),
+              Spline::degree(0) + 1, Spline::degree(1) + 1,
+              Spline::degree(2) + 1>,
+          // Velocity field \f$ \mathbf{H}(\mathbf{curl}, \Omega) \f$
+          typename Spline::template derived_self_type<
+              typename Spline::value_type, Spline::geoDim(),
+              Spline::degree(0) + 1, Spline::degree(1), Spline::degree(2)>,
+          typename Spline::template derived_self_type<
+              typename Spline::value_type, Spline::geoDim(), Spline::degree(0),
+              Spline::degree(1) + 1, Spline::degree(2)>,
+          typename Spline::template derived_self_type<
+              typename Spline::value_type, Spline::geoDim(), Spline::degree(0),
+              Spline::degree(1), Spline::degree(2) + 1>,
+          // Pressure field \f$ L^2(\Omega) \f$
+          typename Spline::template derived_self_type<
+              typename Spline::value_type, Spline::geoDim(), Spline::degree(0),
+              Spline::degree(1), Spline::degree(2)>>> {
 
 public:
   /// @brief Base type
   using Base = FunctionSpace<std::tuple<
-    // Vector potential field \f$ H^1(\Omega) \f$
-    typename Spline::template derived_self_type<
-      typename Spline::value_type, Spline::geoDim(), Spline::degree(0)+1, Spline::degree(1)+1, Spline::degree(2)+1>,
-    // Velocity field \f$ \mathbf{H}(\mathbf{curl}, \Omega) \f$
-    typename Spline::template derived_self_type<
-      typename Spline::value_type, Spline::geoDim(), Spline::degree(0)+1, Spline::degree(1), Spline::degree(2)>,
-    typename Spline::template derived_self_type<
-      typename Spline::value_type, Spline::geoDim(), Spline::degree(0), Spline::degree(1)+1, Spline::degree(2)>,
-    typename Spline::template derived_self_type<
-      typename Spline::value_type, Spline::geoDim(), Spline::degree(0), Spline::degree(1), Spline::degree(2)+1>,
-    // Pressure field \f$ L^2(\Omega) \f$
-    typename Spline::template derived_self_type<
-      typename Spline::value_type, Spline::geoDim(), Spline::degree(0), Spline::degree(1), Spline::degree(2)>>>;
+      // Vector potential field \f$ H^1(\Omega) \f$
+      typename Spline::template derived_self_type<
+          typename Spline::value_type, Spline::geoDim(), Spline::degree(0) + 1,
+          Spline::degree(1) + 1, Spline::degree(2) + 1>,
+      // Velocity field \f$ \mathbf{H}(\mathbf{curl}, \Omega) \f$
+      typename Spline::template derived_self_type<
+          typename Spline::value_type, Spline::geoDim(), Spline::degree(0) + 1,
+          Spline::degree(1), Spline::degree(2)>,
+      typename Spline::template derived_self_type<
+          typename Spline::value_type, Spline::geoDim(), Spline::degree(0),
+          Spline::degree(1) + 1, Spline::degree(2)>,
+      typename Spline::template derived_self_type<
+          typename Spline::value_type, Spline::geoDim(), Spline::degree(0),
+          Spline::degree(1), Spline::degree(2) + 1>,
+      // Pressure field \f$ L^2(\Omega) \f$
+      typename Spline::template derived_self_type<
+          typename Spline::value_type, Spline::geoDim(), Spline::degree(0),
+          Spline::degree(1), Spline::degree(2)>>>;
 
   /// @brief Constructor
   /// @{
-  NE_RT_DG(const std::array<int64_t, 3> &ncoeffs, enum init init = init::greville,
+  NE_RT_DG(const std::array<int64_t, 3> &ncoeffs,
+           enum init init = init::greville,
            Options<typename Spline::value_type> options =
-           iganet::Options<typename Spline::value_type>{})
-    : Base(ncoeffs + utils::to_array(1_i64, 1_i64, 1_i64),
-           ncoeffs + utils::to_array(1_i64, 0_i64, 0_i64),
-           ncoeffs + utils::to_array(0_i64, 1_i64, 0_i64),
-           ncoeffs + utils::to_array(0_i64, 0_i64, 1_i64),
-           ncoeffs, init, options) {}
+               iganet::Options<typename Spline::value_type>{})
+      : Base(ncoeffs + utils::to_array(1_i64, 1_i64, 1_i64),
+             ncoeffs + utils::to_array(1_i64, 0_i64, 0_i64),
+             ncoeffs + utils::to_array(0_i64, 1_i64, 0_i64),
+             ncoeffs + utils::to_array(0_i64, 0_i64, 1_i64), ncoeffs, init,
+             options) {}
 
   NE_RT_DG(const std::array<std::vector<typename Spline::value_type>, 3> &kv,
-        enum init init = init::greville,
-        Options<typename Spline::value_type> options =
-            iganet::Options<typename Spline::value_type>{})
-    : Base({{kv[0].front() + kv[0] + kv[0].back(),
-             kv[1].front() + kv[1] + kv[1].back(),
-             kv[2].front() + kv[2] + kv[2].back()}},
-           {{kv[0].front() + kv[0] + kv[0].back(), kv[1], kv[2]}},
-           {{kv[0], kv[1].front() + kv[1] + kv[1].back(), kv[2]}},
-           {{kv[0], kv[1], kv[2].front() + kv[2] + kv[2].back()}},
-           {{kv[0], kv[1], kv[2]}}, init,
-             options) {
+           enum init init = init::greville,
+           Options<typename Spline::value_type> options =
+               iganet::Options<typename Spline::value_type>{})
+      : Base({{kv[0].front() + kv[0] + kv[0].back(),
+               kv[1].front() + kv[1] + kv[1].back(),
+               kv[2].front() + kv[2] + kv[2].back()}},
+             {{kv[0].front() + kv[0] + kv[0].back(), kv[1], kv[2]}},
+             {{kv[0], kv[1].front() + kv[1] + kv[1].back(), kv[2]}},
+             {{kv[0], kv[1], kv[2].front() + kv[2] + kv[2].back()}},
+             {{kv[0], kv[1], kv[2]}}, init, options) {
     static_assert(Spline::is_nonuniform(),
                   "Constructor only available for non-uniform splines");
   }
   /// @}
   IGANET_FUNCTIONSPACE_DEFAULT_OPS(NE_RT_DG);
-};    
+};
 
 #undef IGANET_FUNCTIONSPACE_DEFAULT_OPS
 

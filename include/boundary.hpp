@@ -39,14 +39,16 @@ enum side {
 };
 
 /// @brief BoundaryCore
-  template <typename Spline, short_t> requires SplineType<Spline> class BoundaryCore;
+template <typename Spline, short_t>
+  requires SplineType<Spline>
+class BoundaryCore;
 
 /// @brief BoundaryCore (1d specialization)
 ///
 /// This specialization has 2 sides
 /// - west (u=0)
 /// - east (u=1)
-  template <typename Spline>
+template <typename Spline>
   requires SplineType<Spline>
 class BoundaryCore<Spline, /* parDim */ 1> : public utils::Serializable,
                                              private utils::FullQualifiedName {
@@ -210,7 +212,7 @@ public:
 /// - east  (u=1, v  )
 /// - south (u,   v=0)
 /// - north (u,   v=1)
-  template <typename Spline>
+template <typename Spline>
   requires SplineType<Spline>
 class BoundaryCore<Spline, /* parDim */ 2> : public utils::Serializable,
                                              private utils::FullQualifiedName {
@@ -447,7 +449,7 @@ public:
 /// - north (u,   v=1, w)
 /// - front (u,   v,   w=0)
 /// - back  (u,   v,   w=1)
-  template <typename Spline>
+template <typename Spline>
   requires SplineType<Spline>
 class BoundaryCore<Spline, /* parDim */ 3> : public utils::Serializable,
                                              private utils::FullQualifiedName {
@@ -756,7 +758,7 @@ public:
 /// - back  (u,   v,   w=1, t)
 /// - stime (u,   v,   w,   t=0)
 /// - etime (u,   v,   w,   t=1)
-  template <typename Spline>
+template <typename Spline>
   requires SplineType<Spline>
 class BoundaryCore<Spline, /* parDim */ 4> : public utils::Serializable,
                                              private utils::FullQualifiedName {
@@ -1112,13 +1114,14 @@ public:
   }
 };
 
-  /// @brief Boundary base class  
-  class Boundary_ {};
+/// @brief Boundary base class
+class Boundary_ {};
 
-  /// @brief Concept to identify template parameters that are derived from iganet::Boundary_
-  template<typename T>
-  concept BoundaryType = std::is_base_of_v<Boundary_, T>;
-  
+/// @brief Concept to identify template parameters that are derived from
+/// iganet::Boundary_
+template <typename T>
+concept BoundaryType = std::is_base_of_v<Boundary_, T>;
+
 /// @brief Boundary (common high-level functionality)
 template <typename BoundaryCore>
 class BoundaryCommon : public Boundary_, public BoundaryCore {
@@ -1953,12 +1956,12 @@ public:                                                                        \
 };
 
 /// @brief Boundary
-  template <typename Spline>
+template <typename Spline>
   requires SplineType<Spline>
 using Boundary = BoundaryCommon<BoundaryCore<Spline, Spline::parDim()>>;
 
 /// @brief Print (as string) a Boundary object
-  template <typename Spline>
+template <typename Spline>
   requires SplineType<Spline>
 inline std::ostream &operator<<(std::ostream &os, const Boundary<Spline> &obj) {
   obj.pretty_print(os);

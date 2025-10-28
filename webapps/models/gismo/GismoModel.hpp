@@ -85,7 +85,7 @@ public:
   virtual nlohmann::json to_json(const std::string &patch,
                                  const std::string &component,
                                  const std::string &attribute) const override {
-    
+
     return R"({ INVALID REQUEST })"_json;
   }
 

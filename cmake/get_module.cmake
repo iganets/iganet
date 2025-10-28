@@ -28,16 +28,16 @@ function(get_module name)
       URL ${arg_URL}
       SOURCE_DIR ${PROJECT_SOURCE_DIR}/optional/${name}
     )
-    
+
   elseif(arg_GIT_REPOSITORY)
-    
+
     if(arg_GIT_TAG)
       FetchContent_Declare(${name}
         GIT_REPOSITORY ${arg_GIT_REPOSITORY}
         GIT_TAG ${arg_GIT_TAG}
         SOURCE_DIR ${PROJECT_SOURCE_DIR}/optional/${name}
       )
-      
+
     else()
       FetchContent_Declare(${name}
         GIT_REPOSITORY ${arg_GIT_REPOSITORY}
@@ -45,12 +45,12 @@ function(get_module name)
       )
 
     endif()
-    
+
   else()
     message(FATAL_ERROR "Either GIT_REPOSITORY or URL argument mustbe specified")
   endif()
 
   FetchContent_MakeAvailable(${name})
-  
+
 endfunction()
-    
+

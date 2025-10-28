@@ -25,7 +25,7 @@ IGAnets require a C++20 compiler, CMake and LibTorch (the C++ API of PyTorch).
   - [Python bindings](https://github.com/iganets/iganet-python) `python[main]`
   - [MATLAB bindings](https://github.com/iganets/iganet-matlab) `matlab[main]`
 
-  If `[branch]` is not given then `[main]` is assumed by default. There might exist further optional modules that are not visible publicly. 
+  If `[branch]` is not given then `[main]` is assumed by default. There might exist further optional modules that are not visible publicly.
 
 - `-DIGANET_WITH_GISMO=ON` compiles IGAnets with support for the open-source Geometry plus Simulation Modules library [G+Smo](https://github.com/gismo/gismo) enabled (default `OFF`).
 

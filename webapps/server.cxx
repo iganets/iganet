@@ -47,7 +47,7 @@ enum class status : short_t {
   invalidExportRequest = 16,         /*!<  invalid export request           */
   invalidComputeErrorRequest = 17,   /*!<  invalid compute error request    */
   invalidAddPatchRequest = 18,       /*!<  invalid add patch request        */
-  invalidRemovePatchRequest = 19     /*!<  invalid remove patch request     */  
+  invalidRemovePatchRequest = 19     /*!<  invalid remove patch request     */
 };
 
 /// @brief InvalidSessionId exception
@@ -439,58 +439,61 @@ int main(int argc, char const *argv[]) {
                                    //
 
                                    if (tokens[1] == "sessions") {
-                                     
+
                                      std::vector<std::string> ids;
                                      auto sessions = nlohmann::json::array();
-                                     
+
                                      for (const auto &session :
-                                            ws->getUserData()->getSessions()) {
+                                          ws->getUserData()->getSessions()) {
                                        ids.push_back(session.first);
 
                                        auto json = nlohmann::json();
                                        auto creation_time =
-                                         std::chrono::system_clock::to_time_t(
-                                                                              session.second->getCreationTime());
+                                           std::chrono::system_clock::to_time_t(
+                                               session.second
+                                                   ->getCreationTime());
                                        auto access_time =
-                                         std::chrono::system_clock::to_time_t(
-                                                                              session.second->getAccessTime());
+                                           std::chrono::system_clock::to_time_t(
+                                               session.second->getAccessTime());
                                        json["id"] = session.first;
                                        json["creationTime"] =
-                                         std::ctime(&creation_time);
+                                           std::ctime(&creation_time);
                                        json["accessTime"] =
-                                         std::ctime(&access_time);
+                                           std::ctime(&access_time);
                                        json["hasHash"] =
-                                         session.second->hasHash();
+                                           session.second->hasHash();
 
                                        json["nmodels"] =
-                                         session.second->getModels().size();
+                                           session.second->getModels().size();
 
                                        sessions.push_back(json);
                                      }
-                                     
+
                                      response["data"]["ids"] = ids;
                                      response["data"]["sessions"] = sessions;
-                                     ws->send(response.dump(), uWS::OpCode::TEXT,
-                                              true);
+                                     ws->send(response.dump(),
+                                              uWS::OpCode::TEXT, true);
                                    }
-                                   
+
                                    else {
                                      // Get session
                                      auto session =
-                                       ws->getUserData()->getSession(tokens[1]);
+                                         ws->getUserData()->getSession(
+                                             tokens[1]);
 
                                      // Get list of all active models in session
                                      std::vector<int64_t> ids;
                                      auto models = nlohmann::json::array();
                                      for (const auto &model :
-                                            session->getModels()) {
+                                          session->getModels()) {
                                        ids.push_back(model.first);
-                                       models.push_back(model.second->getModel());
+                                       models.push_back(
+                                           model.second->getModel());
                                      }
                                      response["data"]["ids"] = ids;
                                      response["data"]["models"] = models;
-                                     ws->send(response.dump(), uWS::OpCode::TEXT,
-                                              true);
+                                     ws->send(response.dump(),
+                                              uWS::OpCode::TEXT, true);
                                    }
                                  }
 
@@ -518,7 +521,8 @@ int main(int argc, char const *argv[]) {
 
                                  else if (tokens.size() == 4) {
                                    //
-                                   // request: get/<session-id>/<model-id>/<patch-id>
+                                   // request:
+                                   // get/<session-id>/<model-id>/<patch-id>
                                    //
 
                                    // Get session
@@ -540,7 +544,8 @@ int main(int argc, char const *argv[]) {
 
                                  else if (tokens.size() == 5) {
                                    //
-                                   // request: get/<session-id>/<model-id>/<patch-id>/<component>
+                                   // request:
+                                   // get/<session-id>/<model-id>/<patch-id>/<component>
                                    //
 
                                    // Get session
@@ -561,7 +566,8 @@ int main(int argc, char const *argv[]) {
 
                                  else if (tokens.size() == 6) {
                                    //
-                                   // request: get/<session-id>/<model-id>/<patch-id>/<component>/<attribute>
+                                   // request:
+                                   // get/<session-id>/<model-id>/<patch-id>/<component>/<attribute>
                                    //
 
                                    // Get session
@@ -613,7 +619,8 @@ int main(int argc, char const *argv[]) {
 
                                  if (tokens.size() == 5) {
                                    //
-                                   // request: put/<session-id>/<model-id>/<patch-id>/<attribute>
+                                   // request:
+                                   // put/<session-id>/<model-id>/<patch-id>/<attribute>
                                    //
 
                                    // Get session
@@ -645,7 +652,8 @@ int main(int argc, char const *argv[]) {
 
                                  else if (tokens.size() == 6) {
                                    //
-                                   // request: put/<session-id>/<model-id>/<patch-id>/<component>/<attribute>
+                                   // request:
+                                   // put/<session-id>/<model-id>/<patch-id>/<component>/<attribute>
                                    //
 
                                    // Get session
@@ -865,7 +873,7 @@ int main(int argc, char const *argv[]) {
 
                                    // Get model
                                    auto model =
-                                     session->getModel(stoi(tokens[2]));
+                                       session->getModel(stoi(tokens[2]));
 
                                    // Remove an existing model
                                    if (auto m = std::dynamic_pointer_cast<
@@ -879,11 +887,13 @@ int main(int argc, char const *argv[]) {
                                          "requests are "
                                          "are "
                                          "\"remove/<session-id>\", "
-                                         "\"remove/<session-id>/<model-id>\" and "
-                                         "\"remove/<session-id>/<model-id>/<patch-id>\"";
+                                         "\"remove/<session-id>/<model-id>\" "
+                                         "and "
+                                         "\"remove/<session-id>/<model-id>/"
+                                         "<patch-id>\"";
                                    }
                                    ws->send(response.dump(), uWS::OpCode::TEXT,
-                                            true);                                                                      
+                                            true);
 
                                    // Broadcast patch removal
                                    nlohmann::json broadcast;
@@ -909,7 +919,8 @@ int main(int argc, char const *argv[]) {
                                      "are "
                                      "\"remove/<session-id>\", "
                                      "\"remove/<session-id>/<model-id>\" and "
-                                     "\"remove/<session-id>/<model-id>/<patch-id>\"";
+                                     "\"remove/<session-id>/<model-id>/"
+                                     "<patch-id>\"";
                                  ws->send(response.dump(), uWS::OpCode::TEXT,
                                           true);
                                }
@@ -1026,7 +1037,8 @@ int main(int argc, char const *argv[]) {
 
                                  if (tokens.size() == 4) {
                                    //
-                                   // request: eval/<session-id>/<model-id>/<component>
+                                   // request:
+                                   // eval/<session-id>/<model-id>/<component>
                                    //
 
                                    // Get session
@@ -1058,7 +1070,8 @@ int main(int argc, char const *argv[]) {
 
                                  else if (tokens.size() == 5) {
                                    //
-                                   // request: eval/<session-id>/<model-id>/<patch-id>/<component>
+                                   // request:
+                                   // eval/<session-id>/<model-id>/<patch-id>/<component>
                                    //
 
                                    // Get session
@@ -1096,12 +1109,12 @@ int main(int argc, char const *argv[]) {
                                  response["status"] =
                                      iganet::webapp::status::invalidEvalRequest;
                                  response["reason"] =
-                                   "Invalid EVAL request. Valid EVAL "
-                                   "requests are "
-                                   "\"eval/<session-id>/<model-id>/"
-                                   "<component>\" and "
-                                   "\"eval/<session-id>/<model-id>/"
-                                   "<patch-id>/<component>\"";
+                                     "Invalid EVAL request. Valid EVAL "
+                                     "requests are "
+                                     "\"eval/<session-id>/<model-id>/"
+                                     "<component>\" and "
+                                     "\"eval/<session-id>/<model-id>/"
+                                     "<patch-id>/<component>\"";
                                  ws->send(response.dump(), uWS::OpCode::TEXT,
                                           true);
                                }
@@ -1293,7 +1306,8 @@ int main(int argc, char const *argv[]) {
                                         session->getModels()) {
                                      if (auto m = std::dynamic_pointer_cast<
                                              iganet::ModelXML>(model.second)) {
-                                       m->importXML("", "", request, model.first);
+                                       m->importXML("", "", request,
+                                                    model.first);
                                      } else {
                                        response["status"] = iganet::webapp::
                                            status::invalidImportRequest;
@@ -1356,23 +1370,23 @@ int main(int argc, char const *argv[]) {
                                      m->importXML("", "", request, -1);
                                    else {
                                      response["status"] = iganet::webapp::
-                                       status::invalidImportRequest;
+                                         status::invalidImportRequest;
                                      response["reason"] =
-                                           "Invalid IMPORTXML request. Valid "
-                                           "IMPORTXML "
-                                           "requests are "
-                                           "\"importxml/<session-id>\", "
-                                           "\"importxml/<session-id>/"
-                                           "<model-id>\", "
-                                           "\"importxml/<session-id>/"
-                                           "<model-id>/"
-                                           "<component>\", "
-                                           "\"importxml/<session-id>/"
-                                           "<model-id>/"
-                                           "<patch-id>\", and "
-                                           "\"importxml/<session-id>/"
-                                           "<model-id>/"
-                                           "<patch-id>/<component>\"";
+                                         "Invalid IMPORTXML request. Valid "
+                                         "IMPORTXML "
+                                         "requests are "
+                                         "\"importxml/<session-id>\", "
+                                         "\"importxml/<session-id>/"
+                                         "<model-id>\", "
+                                         "\"importxml/<session-id>/"
+                                         "<model-id>/"
+                                         "<component>\", "
+                                         "\"importxml/<session-id>/"
+                                         "<model-id>/"
+                                         "<patch-id>\", and "
+                                         "\"importxml/<session-id>/"
+                                         "<model-id>/"
+                                         "<patch-id>/<component>\"";
                                    }
                                    ws->send(response.dump(), uWS::OpCode::TEXT,
                                             true);
@@ -1389,7 +1403,9 @@ int main(int argc, char const *argv[]) {
 
                                  else if (tokens.size() == 4) {
                                    //
-                                   // request: importxml/<session-id>/<model-id>/<component> OR
+                                   // request:
+                                   // importxml/<session-id>/<model-id>/<component>
+                                   // OR
                                    //          importxml/<session-id>/<model-id>/<patch-id>
                                    //
 
@@ -1404,34 +1420,34 @@ int main(int argc, char const *argv[]) {
                                    // Import an existing model component from
                                    // XML
                                    if (auto m = std::dynamic_pointer_cast<
-                                       iganet::ModelXML>(model)) {
+                                           iganet::ModelXML>(model)) {
                                      try {
                                        (void)stoi(tokens[3]);
-                                       m->importXML(tokens[3], "", request, -1);  
+                                       m->importXML(tokens[3], "", request, -1);
                                      } catch (...) {
-                                       m->importXML("", tokens[3], request, -1);  
+                                       m->importXML("", tokens[3], request, -1);
                                      }
                                    }
-                                     
+
                                    else {
                                      response["status"] = iganet::webapp::
-                                       status::invalidImportRequest;
+                                         status::invalidImportRequest;
                                      response["reason"] =
-                                           "Invalid IMPORTXML request. Valid "
-                                           "IMPORTXML "
-                                           "requests are "
-                                           "\"importxml/<session-id>\", "
-                                           "\"importxml/<session-id>/"
-                                           "<model-id>\", "
-                                           "\"importxml/<session-id>/"
-                                           "<model-id>/"
-                                           "<component>\", "
-                                           "\"importxml/<session-id>/"
-                                           "<model-id>/"
-                                           "<patch-id>\", and "
-                                           "\"importxml/<session-id>/"
-                                           "<model-id>/"
-                                           "<patch-id>/<component>\"";
+                                         "Invalid IMPORTXML request. Valid "
+                                         "IMPORTXML "
+                                         "requests are "
+                                         "\"importxml/<session-id>\", "
+                                         "\"importxml/<session-id>/"
+                                         "<model-id>\", "
+                                         "\"importxml/<session-id>/"
+                                         "<model-id>/"
+                                         "<component>\", "
+                                         "\"importxml/<session-id>/"
+                                         "<model-id>/"
+                                         "<patch-id>\", and "
+                                         "\"importxml/<session-id>/"
+                                         "<model-id>/"
+                                         "<patch-id>/<component>\"";
                                    }
                                    ws->send(response.dump(), uWS::OpCode::TEXT,
                                             true);
@@ -1448,7 +1464,8 @@ int main(int argc, char const *argv[]) {
 
                                  else if (tokens.size() == 5) {
                                    //
-                                   // request: importxml/<session-id>/<model-id>/<patch-id>/<component>
+                                   // request:
+                                   // importxml/<session-id>/<model-id>/<patch-id>/<component>
                                    //
 
                                    // Get session
@@ -1462,28 +1479,29 @@ int main(int argc, char const *argv[]) {
                                    // Import an existing model component from
                                    // XML
                                    if (auto m = std::dynamic_pointer_cast<
-                                       iganet::ModelXML>(model))
-                                     m->importXML(tokens[3], tokens[4], request, -1);  
-                                     
+                                           iganet::ModelXML>(model))
+                                     m->importXML(tokens[3], tokens[4], request,
+                                                  -1);
+
                                    else {
                                      response["status"] = iganet::webapp::
-                                       status::invalidImportRequest;
+                                         status::invalidImportRequest;
                                      response["reason"] =
-                                           "Invalid IMPORTXML request. Valid "
-                                           "IMPORTXML "
-                                           "requests are "
-                                           "\"importxml/<session-id>\", "
-                                           "\"importxml/<session-id>/"
-                                           "<model-id>\", "
-                                           "\"importxml/<session-id>/"
-                                           "<model-id>/"
-                                           "<component>\", "
-                                           "\"importxml/<session-id>/"
-                                           "<model-id>/"
-                                           "<patch-id>\", and "
-                                           "\"importxml/<session-id>/"
-                                           "<model-id>/"
-                                           "<patch-id>/<component>\"";
+                                         "Invalid IMPORTXML request. Valid "
+                                         "IMPORTXML "
+                                         "requests are "
+                                         "\"importxml/<session-id>\", "
+                                         "\"importxml/<session-id>/"
+                                         "<model-id>\", "
+                                         "\"importxml/<session-id>/"
+                                         "<model-id>/"
+                                         "<component>\", "
+                                         "\"importxml/<session-id>/"
+                                         "<model-id>/"
+                                         "<patch-id>\", and "
+                                         "\"importxml/<session-id>/"
+                                         "<model-id>/"
+                                         "<patch-id>/<component>\"";
                                    }
                                    ws->send(response.dump(), uWS::OpCode::TEXT,
                                             true);
@@ -1545,7 +1563,8 @@ int main(int argc, char const *argv[]) {
                                         session->getModels()) {
                                      if (auto m = std::dynamic_pointer_cast<
                                              iganet::ModelXML>(model.second))
-                                       xml = m->exportXML("", "", xml, model.first);
+                                       xml = m->exportXML("", "", xml,
+                                                          model.first);
                                      else
                                        throw std::runtime_error(
                                            "Invalid EXPORTXML request");
@@ -1575,7 +1594,7 @@ int main(int argc, char const *argv[]) {
                                    if (auto m = std::dynamic_pointer_cast<
                                            iganet::ModelXML>(model))
                                      response["data"]["xml"] =
-                                       m->exportXML("", "", stoi(tokens[2]));
+                                         m->exportXML("", "", stoi(tokens[2]));
                                    else
                                      throw std::runtime_error(
                                          "Invalid EXPORTXML request");
@@ -1586,7 +1605,9 @@ int main(int argc, char const *argv[]) {
 
                                  else if (tokens.size() == 4) {
                                    //
-                                   // request: exportxml/<session-id>/<model-id>/<component> OR
+                                   // request:
+                                   // exportxml/<session-id>/<model-id>/<component>
+                                   // OR
                                    //          exportxml/<session-id>/<model-id>/<patch-id>
                                    //
 
@@ -1600,12 +1621,14 @@ int main(int argc, char const *argv[]) {
 
                                    // Export an existing model to XML
                                    if (auto m = std::dynamic_pointer_cast<
-                                       iganet::ModelXML>(model))
+                                           iganet::ModelXML>(model))
                                      try {
                                        (void)stoi(tokens[3]);
-                                       response["data"]["xml"] = m->exportXML(tokens[3], "", stoi(tokens[2]));
+                                       response["data"]["xml"] = m->exportXML(
+                                           tokens[3], "", stoi(tokens[2]));
                                      } catch (...) {
-                                       response["data"]["xml"] = m->exportXML("", tokens[3], stoi(tokens[2]));
+                                       response["data"]["xml"] = m->exportXML(
+                                           "", tokens[3], stoi(tokens[2]));
                                      }
                                    else
                                      throw std::runtime_error(
@@ -1617,7 +1640,8 @@ int main(int argc, char const *argv[]) {
 
                                  else if (tokens.size() == 5) {
                                    //
-                                   // request: exportxml/<session-id>/<model-id>/<patch-id>/<component>
+                                   // request:
+                                   // exportxml/<session-id>/<model-id>/<patch-id>/<component>
                                    //
 
                                    // Get session
@@ -1632,7 +1656,7 @@ int main(int argc, char const *argv[]) {
                                    if (auto m = std::dynamic_pointer_cast<
                                            iganet::ModelXML>(model))
                                      response["data"]["xml"] = m->exportXML(
-                                                                            tokens[3], tokens[4], stoi(tokens[2]));
+                                         tokens[3], tokens[4], stoi(tokens[2]));
                                    else
                                      throw std::runtime_error(
                                          "Invalid EXPORTXML request");
@@ -1870,7 +1894,8 @@ int main(int argc, char const *argv[]) {
 
                                  if (tokens.size() == 3) {
                                    //
-                                   // request: reparameterize/<session-id>/<model-id>
+                                   // request:
+                                   // reparameterize/<session-id>/<model-id>
                                    //
 
                                    // Get session
@@ -1893,9 +1918,9 @@ int main(int argc, char const *argv[]) {
                                          "Valid REPARAMETERIZE "
                                          "requests are "
                                          "\"reparameterize/<session-id>/"
-                                       "<model-id>\" and "
-                                       "\"reparameterize/<session-id>/"
-                                       "<model-id>/<patch-id>\"";
+                                         "<model-id>\" and "
+                                         "\"reparameterize/<session-id>/"
+                                         "<model-id>/<patch-id>\"";
                                    }
                                    ws->send(response.dump(), uWS::OpCode::TEXT,
                                             true);
@@ -1913,7 +1938,8 @@ int main(int argc, char const *argv[]) {
 
                                  else if (tokens.size() == 4) {
                                    //
-                                   // request: reparameterize/<session-id>/<model-id>/<patch-id>
+                                   // request:
+                                   // reparameterize/<session-id>/<model-id>/<patch-id>
                                    //
 
                                    // Get session
@@ -1932,13 +1958,13 @@ int main(int argc, char const *argv[]) {
                                      response["status"] = iganet::webapp::
                                          status::invalidReparameterizeRequest;
                                      response["reason"] =
-                                       "Invalid REPARAMETERIZE request. "
-                                       "Valid REPARAMETERIZE "
-                                       "requests are "
-                                       "\"reparameterize/<session-id>/"
-                                       "<model-id>\" and "
-                                       "\"reparameterize/<session-id>/"
-                                       "<model-id>/<patch-id>\"";
+                                         "Invalid REPARAMETERIZE request. "
+                                         "Valid REPARAMETERIZE "
+                                         "requests are "
+                                         "\"reparameterize/<session-id>/"
+                                         "<model-id>\" and "
+                                         "\"reparameterize/<session-id>/"
+                                         "<model-id>/<patch-id>\"";
                                    }
                                    ws->send(response.dump(), uWS::OpCode::TEXT,
                                             true);
@@ -1967,14 +1993,14 @@ int main(int argc, char const *argv[]) {
                                      "requests "
                                      "are "
                                      "\"reparameterize/<session-id>/"
-                                   "<model-id>\" and "
-                                   "\"reparameterize/<session-id>/"
-                                   "<model-id>/<patch-id>\"";
+                                     "<model-id>\" and "
+                                     "\"reparameterize/<session-id>/"
+                                     "<model-id>/<patch-id>\"";
                                  ws->send(response.dump(), uWS::OpCode::TEXT,
                                           true);
                                }
 
-                             } // REPARAMETERIZE                             
+                             } // REPARAMETERIZE
 
                              else {
                                response["status"] =
@@ -2009,11 +2035,13 @@ int main(int argc, char const *argv[]) {
                          },
                      .ping =
                          [](auto *ws, std::string_view) {
-                           /* You don't need to handle this one, we automatically respond to pings as per standard */
+                           /* You don't need to handle this one, we
+                            * automatically respond to pings as per standard */
                          },
                      .pong =
                          [](auto *ws, std::string_view) {
-                           /* You don't need to handle this one, we automatically respond to pings as per standard */
+                           /* You don't need to handle this one, we
+                            * automatically respond to pings as per standard */
                          },
                      .close =
                          [](auto *ws, int code, std::string_view message) {
