@@ -79,24 +79,40 @@ protected:
   collPts_type collPts_;
 
 private:
-  /// @brief Constructs a tuple from arrays
+    /// @brief Constructs a tuple from arrays
+  ///
+  /// @{
+  template <typename... Objs, std::size_t... NumCoeffs, std::size_t... Is>
+  auto construct_tuple_from_arrays_impl(const std::tuple<std::array<int64_t, NumCoeffs>...>& numCoeffs,
+                                        enum init init,
+                                        iganet::Options<value_type> options,
+                                        std::index_sequence<Is...>) {
+    static_assert(sizeof...(Objs) == sizeof...(NumCoeffs));
+    return std::make_tuple(
+                           std::apply(
+                                      [&](auto&&... args) { return Objs(std::forward<decltype(args)>(args)..., init, options); },
+                                      std::get<Is>(numCoeffs)
+                                      )...
+                           );
+  }
+  
+
   template <typename... Objs, std::size_t... NumCoeffs>
   auto construct_tuple_from_arrays(const std::tuple<std::array<int64_t, NumCoeffs>...>& numCoeffs,
                                    enum init init,
                                    iganet::Options<value_type> options) {
-    return std::make_tuple(
-                           std::apply(
-                                      [&](auto&&... args) { return Objs(std::forward<decltype(args)>(args)..., init, options); },
-                                      numCoeffs
-                                      )...
-                           );
+    return construct_tuple_from_arrays_impl<Objs...>(numCoeffs,
+                                                     init,
+                                                     options,
+                                                     std::index_sequence_for<Objs...>{});
   }
+  /// @}
 
   /// @brief Constructs a tuple from tuples
   ///
   /// @{
   template <typename... Objs, typename... NumCoeffsTuples, std::size_t... Is>
-  auto construct_tuple_from_arrays_impl(const std::tuple<NumCoeffsTuples...>& numCoeffs,
+  auto construct_tuple_from_tuples_impl(const std::tuple<NumCoeffsTuples...>& numCoeffs,
                                         enum init init,
                                         iganet::Options<value_type> options,
                                         std::index_sequence<Is...>) {
@@ -192,6 +208,9 @@ public:
       collPts_(construct_tuple_from_tuples<CollPts...>(coeffsCollPts, init, options))
   {}
 
+  /// @brief Returns the number of elements in the tuple of input objects
+  inline static constexpr std::size_t ninputs() noexcept { return sizeof...(Inputs); }
+  
   /// @brief Returns a constant reference to the tuple of input objects
   inline constexpr const auto &inputs() const {
     return inputs_;
@@ -216,6 +235,9 @@ public:
     return std::get<index>(inputs_);
   }
 
+  /// @brief Returns the number of elements in the tuple of output objects
+  inline static constexpr std::size_t noutputs() noexcept { return sizeof...(Outputs); }
+  
   /// @brief Returns a constant reference to the tuple of output objects
   inline constexpr const auto &outputs() const {
     return outputs_;
@@ -239,6 +261,9 @@ public:
     static_assert(index >= 0 && index < sizeof...(Outputs));
     return std::get<index>(outputs_);
   }
+
+  /// @brief Returns the number of elements in the tuple of collocation points objects
+  inline static constexpr std::size_t ncollPts() noexcept { return sizeof...(CollPts); }
 
   /// @brief Returns a constant reference to the tuple of collocation points objects
   inline constexpr const auto &collPts() const {
@@ -443,27 +468,38 @@ protected:
 
 private:
   /// @brief Constructs a tuple from arrays
+  ///
+  /// @{
+  template <typename... Objs, std::size_t... NumCoeffs, std::size_t... Is>
+  auto construct_tuple_from_arrays_impl(const std::tuple<std::array<int64_t, NumCoeffs>...>& numCoeffs,
+                                        enum init init,
+                                        iganet::Options<value_type> options,
+                                        std::index_sequence<Is...>) {
+    static_assert(sizeof...(Objs) == sizeof...(NumCoeffs));
+    return std::make_tuple(Objs(std::get<Is>(numCoeffs), init, options)...);
+  }
+  
+
   template <typename... Objs, std::size_t... NumCoeffs>
   auto construct_tuple_from_arrays(const std::tuple<std::array<int64_t, NumCoeffs>...>& numCoeffs,
                                    enum init init,
                                    iganet::Options<value_type> options) {
-    return std::make_tuple(
-                           std::apply(
-                                      [&](auto&&... args) { return Objs(std::forward<decltype(args)>(args)..., init, options); },
-                                      numCoeffs
-                                      )...
-                           );
+    return construct_tuple_from_arrays_impl<Objs...>(numCoeffs,
+                                                     init,
+                                                     options,
+                                                     std::index_sequence_for<Objs...>{});
   }
+  /// @}
 
   /// @brief Constructs a tuple from tuples
   ///
   /// @{
-  template <typename... Objs, typename... NumCoeffsTuples, std::size_t... Is>
-  auto construct_tuple_from_arrays_impl(const std::tuple<NumCoeffsTuples...>& numCoeffs,
+  template <typename... Objs, typename... NumCoeffs, std::size_t... Is>
+  auto construct_tuple_from_tuples_impl(const std::tuple<NumCoeffs...>& numCoeffs,
                                         enum init init,
                                         iganet::Options<value_type> options,
                                         std::index_sequence<Is...>) {
-    static_assert(sizeof...(Objs) == sizeof...(NumCoeffsTuples));
+    static_assert(sizeof...(Objs) == sizeof...(NumCoeffs));
     return std::make_tuple(
                            std::apply(
                                       [&](auto&&... args) { return Objs(std::forward<decltype(args)>(args)..., init, options); },
@@ -549,6 +585,9 @@ public:
       outputs_(construct_tuple_from_tuples<Outputs...>(coeffsOutputs, init, options))
   {}
 
+  /// @brief Returns the number of elements in the tuple of input objects
+  inline static constexpr std::size_t ninputs() noexcept { return sizeof...(Inputs); }
+  
   /// @brief Returns a constant reference to the tuple of input objects
   inline constexpr const auto &inputs() const {
     return inputs_;
@@ -573,6 +612,9 @@ public:
     return std::get<index>(inputs_);
   }
 
+  /// @brief Returns the number of elements in the tuple of output objects
+  inline static constexpr std::size_t noutputs() noexcept { return sizeof...(Outputs); }
+  
   /// @brief Returns a constant reference to the tuple of output objects
   inline constexpr const auto &outputs() const {
     return outputs_;
@@ -597,6 +639,9 @@ public:
     return std::get<index>(outputs_);
   }
 
+  /// @brief Returns the number of elements in the tuple of collocation points objects
+  inline static constexpr std::size_t ncollPts() noexcept { return sizeof...(Outputs); }
+  
   /// @brief Returns a constant reference to the tuple of collocation points objects
   inline constexpr const auto &collPts() const {
     return outputs_;
@@ -1245,7 +1290,7 @@ public:
   /// @brief Default constructor
   explicit IgABase(
       iganet::Options<value_type> options = iganet::Options<value_type>{})
-      : Base::G_(), f_(), Base::u_() {}
+    : Base(), f_() {}
 
   /// @brief Constructor: number of spline coefficients (same for geometry map
   /// and variables)

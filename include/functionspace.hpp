@@ -140,6 +140,26 @@ public:
     return sizeof...(Boundaries);
   }
 
+  /// @brief Returns a constant reference to the tuple of function spaces
+  inline constexpr const auto &spaces() const noexcept {
+    return spline_;
+  }
+
+    /// @brief Returns a non-constant reference to the tuple of function spaces
+  inline constexpr auto &spaces() noexcept {
+    return spline_;
+  }
+
+  /// @brief Returns a constant reference to the tuple of boundary object
+  inline constexpr const auto &boundaries() const noexcept {
+    return boundary_;
+  }
+
+  /// @brief Returns a non-constant reference to the tuple of boundary object
+  inline constexpr auto &boundaries() noexcept {
+    return boundary_;
+  }
+  
   /// @brief Returns a constant reference to the index-th function space
     template <std::size_t index> inline const auto &space() const noexcept {
     static_assert(index >= 0 && index < nspaces());
@@ -433,6 +453,21 @@ public:
     return to_json_(std::make_index_sequence<FunctionSpace::nspaces()>{});
   }
 
+  /// @brief Returns true if both function space objects are the same
+  template <typename SplinesOther, typename BoundariesOther>
+  bool operator==(const FunctionSpace<SplinesOther, BoundariesOther> &other) const {
+    bool result(true);
+
+    if (!std::is_same_v<spline_type, typename std::remove_cvref_t<decltype(other)>::spline_type> ||
+        !std::is_same_v<boundary_type, typename std::remove_cvref_t<decltype(other)>::boundary_type>)
+      return false;  
+
+    result *= (spaces() == other.spaces());
+    result *= (boundaries() == other.boundaries());
+    
+    return result;
+  }
+  
 private:
   /// @brief Returns the values of the spline objects in the points `xi`
   /// @{
@@ -2476,21 +2511,41 @@ public:
   /// @brief Returns the number of boundaries
     inline static constexpr std::size_t nboundaries() noexcept { return 1; }
 
+  /// @brief Returns a constant reference to the tuple of function spaces
+  inline constexpr const auto &spaces() const noexcept {
+    return spline_;
+  }
+
+    /// @brief Returns a non-constant reference to the tuple of function spaces
+  inline constexpr auto &spaces() noexcept {
+    return spline_;
+  }
+
+  /// @brief Returns a constant reference to the tuple of boundary object
+  inline constexpr const auto &boundaries() const noexcept {
+    return boundary_;
+  }
+
+  /// @brief Returns a non-constant reference to the tuple of boundary object
+  inline constexpr auto &boundaries() noexcept {
+    return boundary_;
+  }
+  
   /// @brief Returns a constant reference to the index-th function space
-    template <std::size_t index = 0>
+  template <std::size_t index = 0>
   inline constexpr const spline_type &space() const noexcept {
     static_assert(index >= 0 && index < nspaces());
     return spline_;
   }
 
   /// @brief Returns a non-constant reference to the index-th function space
-    template <std::size_t index = 0> inline constexpr spline_type &space() noexcept {
+  template <std::size_t index = 0> inline constexpr spline_type &space() noexcept {
     static_assert(index >= 0 && index < nspaces());
     return spline_;
   }
 
   /// @brief Returns a constant reference to the index-th boundary object
-    template <std::size_t index = 0>
+  template <std::size_t index = 0>
   inline constexpr const boundary_type &boundary() const noexcept {
     static_assert(index >= 0 && index < nboundaries());
     return boundary_;
@@ -2628,6 +2683,21 @@ public:
     return json;
   }
 
+  /// @brief Returns true if both function space objects are the same
+  template <typename SplinesOther, typename BoundariesOther>
+  bool operator==(const FunctionSpace<SplinesOther, BoundariesOther> &other) const {
+    bool result(true);
+
+    if (!std::is_same_v<spline_type, typename std::remove_cvref_t<decltype(other)>::spline_type> ||
+        !std::is_same_v<boundary_type, typename std::remove_cvref_t<decltype(other)>::boundary_type>)
+      return false;
+    
+    result *= (spaces() == other.spaces());
+    result *= (boundaries() == other.boundaries());
+    
+    return result;
+  }
+  
   /// @brief Transforms the coefficients based on the given mapping
   inline FunctionSpace &transform(
       const std::function<std::array<typename Spline::value_type,
@@ -3128,7 +3198,7 @@ inline std::ostream &operator<<(std::ostream &os,
   obj.pretty_print(os);
   return os;
 }
-
+  
 /// @brief Spline function space \f$ S^{\mathbf{p}}_{\mathbf{p}-1}
 /// \f$
 ///

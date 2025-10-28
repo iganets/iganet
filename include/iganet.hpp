@@ -33,6 +33,8 @@ struct IgANetOptions {
   TORCH_ARG(int64_t, max_epoch) = 100;
   TORCH_ARG(int64_t, batch_size) = 1000;
   TORCH_ARG(double, min_loss) = 1e-4;
+  TORCH_ARG(double, min_loss_change) = 0;
+  TORCH_ARG(double, min_loss_rel_change) = 1e-3;
 };
 
 /// @brief IgANetGeneratorImpl
@@ -1199,24 +1201,15 @@ public:
                         << std::endl;
 
       if (current_loss <
-          options_.min_loss()) {
+          options_.min_loss() ||
+          std::abs(current_loss-previous_loss) <
+          options_.min_loss_change() ||
+          std::abs(current_loss-previous_loss)/current_loss <
+          options_.min_loss_rel_change() ||
+          loss.isnan().template item<bool>()) {
         Log(log::info) << "Total epochs: " << epoch << ", loss: "
                        << current_loss
                        << std::endl;
-        break;
-      }
-
-      if (current_loss == previous_loss || std::abs(current_loss-previous_loss) < previous_loss/10) {
-        Log(log::info) << "Total epochs: " << epoch << ", loss: "
-                       << current_loss
-                       << std::endl;
-        break;
-      }
-
-      if (loss.isnan().template item<bool>()) {
-        Log(log::info) << "Total epochs: " << epoch << ", loss: "
-        << current_loss
-        << std::endl;
         break;
       }
       previous_loss = current_loss;
@@ -1545,8 +1538,11 @@ class IgANet2 : public IgABase2<Inputs, Outputs, CollPts>,
                 private utils::FullQualifiedName {
 public:
   /// @brief Base type
-    using Base = IgABase2<Inputs, Outputs, CollPts>;
+  using Base = IgABase2<Inputs, Outputs, CollPts>;
 
+  /// @brief Value type
+  using value_type = Base::value_type;
+  
   /// @brief Type of the optimizer
   using optimizer_type = Optimizer;
 
@@ -1611,7 +1607,8 @@ public:
     opt_(std::make_unique<optimizer_type>(net_->parameters())),
     
     // Set options
-    options_(defaults) {} 
+    options_(defaults)
+  {} 
   
   /// @brief Returns a constant reference to the IgANet generator
   inline const IgANetGenerator<typename Base::value_type> &net() const {
@@ -1698,6 +1695,26 @@ public:
   /// @brief Returns a non-constant reference to the options structure
   inline auto &options() { return options_; }
 
+  /// @brief Returns a constant reference to the tuple of input objects
+  inline constexpr const auto &inputs() const {
+    return Base::inputs();
+  }
+
+  /// @brief Returns a non-constant reference to the tuple of input objects
+  inline constexpr auto &inputs() { 
+    return Base::inputs();
+  }
+
+  /// @brief Returns a constant reference to the tuple of output objects
+  inline constexpr const auto &outputs() const {
+    return Base::outputs();
+  }
+
+  /// @brief Returns a non-constant reference to the tuple of output objects
+  inline constexpr auto &outputs() { 
+    return Base::outputs();
+  }
+  
   /// @brief Returns the network inputs as tensor
   virtual torch::Tensor inputs(int64_t epoch) const {
     return utils::cat_tuple_into_tensor(Base::inputs_, [](const auto& obj){ return obj.as_tensor(); });
@@ -1790,24 +1807,15 @@ public:
                         << std::endl;
 
       if (current_loss <
-          options_.min_loss()) {
+          options_.min_loss() ||
+          std::abs(current_loss-previous_loss) <
+          options_.min_loss_change() ||
+          std::abs(current_loss-previous_loss)/current_loss <
+          options_.min_loss_rel_change() ||
+          loss.isnan().template item<bool>()) {
         Log(log::info) << "Total epochs: " << epoch << ", loss: "
                        << current_loss
                        << std::endl;
-        break;
-      }
-
-      if (current_loss == previous_loss || std::abs(current_loss-previous_loss) < previous_loss/10) {
-        Log(log::info) << "Total epochs: " << epoch << ", loss: "
-                       << current_loss
-                       << std::endl;
-        break;
-      }
-
-      if (loss.isnan().template item<bool>()) {
-        Log(log::info) << "Total epochs: " << epoch << ", loss: "
-        << current_loss
-        << std::endl;
         break;
       }
       previous_loss = current_loss;
@@ -1951,12 +1959,24 @@ public:
   pretty_print(std::ostream &os = Log(log::info)) const noexcept override {
     os << name() << "(\n"
        << "net = " << net_ << "\n";
-    // if constexpr (Base::has_GeometryMap)
-    //   os << "G = " << Base::G_ << "\n";
-    // if constexpr (Base::has_RefData)
-    //   os << "f = " << Base::f_ << "\n";
-    // if constexpr (Base::has_Solution)
-    //   os << "u = " << Base::u_ << "\n)";
+    
+    os << "inputs[" << Base::ninputs() << "] = (";
+    std::apply([&os](const auto&... elems) {
+      ((os << elems << "\n"), ...);
+    }, Base::inputs());
+    os << ")";
+
+    os << "outputs [" << Base::noutputs() << "]= (";
+    std::apply([&os](const auto&... elems) {
+      ((os << elems << "\n"), ...);
+    }, Base::inputs());
+    os << ")";
+
+    os << "collPts [" << Base::ncollPts() << "]= (";
+    std::apply([&os](const auto&... elems) {
+      ((os << elems << "\n"), ...);
+    }, Base::collPts());
+    os << ")";    
   }
 
   /// @brief Saves the IgANet to file
@@ -1978,13 +1998,27 @@ public:
   inline torch::serialize::OutputArchive &
   write(torch::serialize::OutputArchive &archive,
         const std::string &key = "iganet") const {
-    // if constexpr (Base::has_GeometryMap)
-    //   Base::G_.write(archive, key + ".geo");
-    // if constexpr (Base::has_RefData)
-    //   Base::f_.write(archive, key + ".ref");
-    // if constexpr (Base::has_Solution)
-    //   Base::u_.write(archive, key + ".out");
 
+    std::apply([&](auto&&... elems) {
+      std::size_t counter = 0;
+      (elems.write(archive, key + ".input[" + std::to_string(counter++) + "]"), ...); },
+      Base::inputs()
+      );
+
+    std::apply([&](auto&&... elems) {
+      std::size_t counter = 0;
+      (elems.write(archive, key + ".output[" + std::to_string(counter++) + "]"), ...); },
+      Base::outputs()
+      );
+
+    if constexpr (!std::is_void_v<CollPts>) {
+      std::apply([&](auto&&... elems) {
+        std::size_t counter = 0;
+        (elems.write(archive, key + ".output[" + std::to_string(counter++) + "]"), ...); },
+        Base::collPts()
+      );
+    }
+    
     net_->write(archive, key + ".net");
     torch::serialize::OutputArchive archive_net;
     net_->save(archive_net);
@@ -2001,13 +2035,27 @@ public:
   inline torch::serialize::InputArchive &
   read(torch::serialize::InputArchive &archive,
        const std::string &key = "iganet") {
-    // if constexpr (Base::has_GeometryMap)
-    //   Base::G_.read(archive, key + ".geo");
-    // if constexpr (Base::has_RefData)
-    //   Base::f_.read(archive, key + ".ref");
-    // if constexpr (Base::has_Solution)
-    //   Base::u_.read(archive, key + ".out");
 
+    std::apply([&](auto&&... elems) {
+      std::size_t counter = 0;
+      (elems.read(archive, key + ".input[" + std::to_string(counter++) + "]"), ...); },
+      Base::inputs()
+      );
+
+    std::apply([&](auto&&... elems) {
+      std::size_t counter = 0;
+      (elems.read(archive, key + ".output[" + std::to_string(counter++) + "]"), ...); },
+      Base::outputs()
+      );
+
+    if constexpr (!std::is_void_v<CollPts>) {
+      std::apply([&](auto&&... elems) {
+        std::size_t counter = 0;
+        (elems.read(archive, key + ".output[" + std::to_string(counter++) + "]"), ...); },
+        Base::collPts()
+      );
+    }
+    
     net_->read(archive, key + ".net");
     torch::serialize::InputArchive archive_net;
     archive.read(key + ".net.data", archive_net);
@@ -2025,13 +2073,12 @@ public:
   bool operator==(const IgANet2 &other) const {
     bool result(true);
 
-    // if constexpr (Base::has_GeometryMap)
-    //   result *= (Base::G_ == other.G());
-    // if constexpr (Base::has_RefData)
-    //   result *= (Base::f_ == other.f());
-    // if constexpr (Base::has_Solution)
-    //   result *= (Base::u_ == other.u());
-
+    result *= std::apply([&](auto&&... elemsThis) {
+        return std::apply([&](auto&&... elemsOther) {
+            return ((elemsThis == elemsOther) && ...);
+        }, other.inputs());
+    }, Base::inputs());
+    
     return result;
   }
 
@@ -2062,7 +2109,7 @@ requires OptimizerType<Optimizer>
 inline std::ostream &
 operator<<(std::ostream &os,
            const IgANet2<Optimizer, Inputs, Outputs, CollPts> &obj) {
-  //  obj.pretty_print(os);
+  obj.pretty_print(os);
   return os;
 }
 
