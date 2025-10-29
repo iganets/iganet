@@ -75,6 +75,9 @@ protected:
   std::tuple<boundary_spline_type, boundary_spline_type> bdr_;
 
 public:
+    /// @brief Value type
+    using value_type = typename Spline::value_type;
+
   /// @brief Boundary type
   using boundary_type = decltype(bdr_);
 
@@ -248,6 +251,9 @@ protected:
       bdr_;
 
 public:
+    /// @brief Value type
+using value_type = typename Spline::value_type;
+
   /// @brief Boundary type
   using boundary_type = decltype(bdr_);
 
@@ -494,6 +500,9 @@ protected:
       bdr_;
 
 public:
+/// @brief Value type
+using value_type = typename Spline::value_type;
+
   /// @brief Boundary type
   using boundary_type = decltype(bdr_);
 
@@ -814,6 +823,9 @@ protected:
       bdr_;
 
 public:
+    /// @brief Value type
+using value_type = typename Spline::value_type;
+
   /// @brief Boundary type
   using boundary_type = decltype(bdr_);
 
