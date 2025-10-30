@@ -136,7 +136,9 @@ public:
       : options_(options.dtype(::iganet::dtype<real_t>())) {}
 
   /// @brief Implicit conversion operator
-  explicit operator torch::TensorOptions() const { return options_; }
+  ///
+  /// @note Do not mark this operator 'explicit' as this will prevent that objects of type Options are implicitly converted into objects of type torch::TensorOptions
+  operator torch::TensorOptions() const { return options_; }
 
   /// @brief Returns the `device` property
   inline torch::Device device() const noexcept { return options_.device(); }
