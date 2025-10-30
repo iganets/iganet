@@ -14,8 +14,7 @@
 
 #pragma once
 
-namespace iganet {
-namespace utils {
+namespace iganet::utils {
 
 /// @brief Computes the power of integer `E` to the `N` at compile time
 /// @{
@@ -28,5 +27,4 @@ template <int E> struct integer_pow<E, 0> {
 };
 /// @}
 
-} // namespace utils
-} // namespace iganet
+} // namespace iganet::utils

@@ -17,12 +17,11 @@
 #include <random>
 #include <sstream>
 
-namespace iganet {
-namespace utils {
+namespace iganet::utils {
 
 class uuid {
 public:
-  /// @brief Generates a uuid string in the form
+  /// @brief Generates an uuid string in the form
   /// b9317db-02a2-4882-9b94-d1e1defe8c56
   ///
   /// @result std::string
@@ -63,5 +62,4 @@ private:
   }
 };
 
-} // namespace utils
-} // namespace iganet
+} // namespace iganet::utils

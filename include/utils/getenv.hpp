@@ -17,8 +17,8 @@
 #include <sstream>
 #include <stdlib.h>
 
-namespace iganet {
-namespace utils {
+
+namespace iganet::utils {
 
 /// @brief Returns the value from an environment variable
 template <typename T> T getenv(std::string variable, const T &default_value) {
@@ -60,5 +60,5 @@ std::vector<T> getenv(std::string variable,
     return std::vector<T>{default_value};
 }
 
-} // namespace utils
-} // namespace iganet
+} // namespace iganet::utils
+

@@ -32,7 +32,7 @@ template <typename T>
 struct is_shared_ptr<std::shared_ptr<T>> : std::true_type {};
 /// @}
 
-/// @brief Returns an std::shared_ptr<T> object from arg
+/// @brief Returns a std::shared_ptr<T> object from arg
 template <typename T> inline auto make_shared(T &&arg) {
   if constexpr (is_shared_ptr<std::decay_t<T>>::value)
     return std::forward<std::decay_t<T>>(arg);
@@ -55,25 +55,25 @@ public:
   /// @brief Default constructor
   BlockTensorCore() = default;
 
-  /// @brief Constructur from BlockTensorCore objects
+  /// @brief Constructor from BlockTensorCore objects
   template <typename... Ts, std::size_t... dims>
   explicit BlockTensorCore(BlockTensorCore<Ts, dims...> &&...other) {
     auto it = data_.begin();
     (std::transform(other.data().begin(), other.data().end(), it,
                     [&it]<typename D>(D &&d) {
-                      it++;
+                      ++it;
                       return std::forward<D>(d);
                     }),
      ...);
   }
 
-  /// @brief Constructur from BlockTensor objects
+  /// @brief Constructor from BlockTensor objects
   template <typename... Ts, std::size_t... dims>
   explicit BlockTensorCore(BlockTensor<Ts, dims...> &&...other) {
     auto it = data_.begin();
     (std::transform(other.data().begin(), other.data().end(), it,
                     [&it]<typename D>(D &&d) {
-                      it++;
+                      ++it;
                       return std::forward<D>(d);
                     }),
      ...);
@@ -800,7 +800,7 @@ public:
   /// inverse of the block tensor. For square matrices it computes
   /// the regular inverse matrix based on explicit iversion formulas
   /// assuming that the matrix is invertible and transposed it
-  /// afterwards. For rectangular matrices it computes the
+  /// afterward. For rectangular matrices it computes the
   /// generalized inverse i.e. \f$((A^T A)^{-1} A^T)^T = A (A^T A)^{-T}\f$.
   inline auto ginvtr() const {
     if constexpr (Rows == Cols)

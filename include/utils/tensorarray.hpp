@@ -22,8 +22,7 @@
 
 #include <torch/torch.h>
 
-namespace iganet {
-namespace utils {
+namespace iganet::utils {
 
 template <std::size_t N> using TensorArray = std::array<torch::Tensor, N>;
 
@@ -78,7 +77,7 @@ to_tensorArray(torch::IntArrayRef sizes, const iganet::Options<T> &options,
 /// @{
 template <typename T, std::size_t N>
 auto to_tensorAccessor(const torch::Tensor &tensor) {
-  return tensor.template accessor<T, N>();
+  return tensor.accessor<T, N>();
 }
 
 template <typename T, std::size_t N>
@@ -87,17 +86,17 @@ auto to_tensorAccessor(const torch::Tensor &tensor,
 
   if (deviceType != tensor.device().type()) {
     auto tensor_device = tensor.to(deviceType);
-    auto accessor = tensor_device.template accessor<T, N>();
+    auto accessor = tensor_device.accessor<T, N>();
     return std::tuple(tensor_device, accessor);
   } else {
-    auto accessor = tensor.template accessor<T, N>();
+    auto accessor = tensor.accessor<T, N>();
     return std::tuple(tensor, accessor);
   }
 }
 /// @}
 
 namespace detail {
-/// @brief Converts an std::array of torch::Tensor objects to an
+/// @brief Converts a std::array of torch::Tensor objects to an
 /// array of torch::TensorAccessor objects
 /// @{
 template <typename T, std::size_t N, std::size_t... Is>
@@ -129,7 +128,7 @@ auto to_tensorAccessor(const BlockTensor<torch::Tensor, Dims...> &blocktensor,
 /// @}
 } // namespace detail
 
-/// @brief Converts an std::array of torch::Tensor objects to an
+/// @brief Converts a std::array of torch::Tensor objects to an
 /// array of torch::TensorAccessor objects
 /// @{
 template <typename T, std::size_t N, std::size_t M>
@@ -153,8 +152,7 @@ auto to_tensorAccessor(const BlockTensor<torch::Tensor, Dims...> &blocktensor,
 }
 /// @}
 
-} // namespace utils
-} // namespace iganet
+} // namespace iganet::utils
 
 #define TENSORARRAY_FORALL(obj, func, ...)                                     \
   []<std::size_t N>(const ::iganet::utils::TensorArray<N> &tensorArray) {      \
