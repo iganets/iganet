@@ -21,7 +21,6 @@
 #include <core.hpp>
 #include <utils/fqn.hpp>
 
-
 namespace iganet::utils {
 
 /// @brief Type trait checks if template argument is of type std::shared_ptr<T>
@@ -143,8 +142,7 @@ public:
   }
 
   /// @brief Returns a string representation of the BlockTensorCore object
-  inline void
-  pretty_print(std::ostream &os) const noexcept override = 0;
+  inline void pretty_print(std::ostream &os) const noexcept override = 0;
 };
 
 /// Prints (as string) a compile-time block tensor object
@@ -168,8 +166,7 @@ public:
   inline static constexpr std::size_t rows() { return Rows; }
 
   /// @brief Returns a string representation of the BlockTensor object
-  inline void
-  pretty_print(std::ostream &os) const noexcept override {
+  inline void pretty_print(std::ostream &os) const noexcept override {
     os << Base::name() << "\n";
     for (std::size_t row = 0; row < Rows; ++row)
       os << "[" << row << "] = \n" << *Base::data_[row] << "\n";
@@ -882,8 +879,7 @@ public:
   }
 
   /// @brief Returns a string representation of the BlockTensor object
-  inline void
-  pretty_print(std::ostream &os) const noexcept override {
+  inline void pretty_print(std::ostream &os) const noexcept override {
     os << Base::name() << "\n";
     for (std::size_t row = 0; row < Rows; ++row)
       for (std::size_t col = 0; col < Cols; ++col)
@@ -950,15 +946,13 @@ public:
   /// @brief Returns a constant reference to entry (row, col, slice)
   inline const T &operator()(std::size_t row, std::size_t col,
                              std::size_t slice) const {
-    assert(row < Rows && col < Cols &&
-           slice < Slices);
+    assert(row < Rows && col < Cols && slice < Slices);
     return *Base::data_[Rows * Cols * slice + Cols * row + col];
   }
 
   /// @brief Returns a non-constant reference to entry (row, col, slice)
   inline T &operator()(std::size_t row, std::size_t col, std::size_t slice) {
-    assert(row < Rows && col < Cols &&
-           slice < Slices);
+    assert(row < Rows && col < Cols && slice < Slices);
     return *Base::data_[Rows * Cols * slice + Cols * row + col];
   }
 
@@ -1033,8 +1027,7 @@ public:
   }
 
   /// @brief Returns a string representation of the BSplineCommon object
-  inline void
-  pretty_print(std::ostream &os) const noexcept override {
+  inline void pretty_print(std::ostream &os) const noexcept override {
     os << Base::name() << "\n";
     for (std::size_t slice = 0; slice < Slices; ++slice)
       for (std::size_t row = 0; row < Rows; ++row)
@@ -1780,4 +1773,3 @@ inline bool operator!=(const BlockTensor<T, TDims...> &lhs,
 }
 
 } // namespace iganet::utils
-

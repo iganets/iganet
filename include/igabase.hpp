@@ -51,9 +51,8 @@ class IgABase2<std::tuple<Inputs...>, std::tuple<Outputs...>,
                std::tuple<CollPts...>> {
 public:
   /// @brief Value type
-  using value_type =
-       std::common_type_t<typename Inputs::value_type...,
-                                typename Outputs::value_type...>;
+  using value_type = std::common_type_t<typename Inputs::value_type...,
+                                        typename Outputs::value_type...>;
 
   /// @brief Type of the inputs
   using inputs_type = std::tuple<Inputs...>;
@@ -138,9 +137,10 @@ public:
   /// Number of spline coefficients is the same for all spaces in the
   /// input, output and collocation points objects
   template <std::size_t NumCoeffs>
-  explicit IgABase2(const std::array<int64_t, NumCoeffs> &ncoeffs,
-           enum init init = init::greville,
-           iganet::Options<value_type> options = iganet::Options<value_type>{})
+  explicit IgABase2(
+      const std::array<int64_t, NumCoeffs> &ncoeffs,
+      enum init init = init::greville,
+      iganet::Options<value_type> options = iganet::Options<value_type>{})
       : IgABase2(std::tuple{ncoeffs}, std::tuple{ncoeffs}, std::tuple{ncoeffs},
                  init, options) {}
 
@@ -164,9 +164,10 @@ public:
   /// spaces of the inputs, outputs, and collocation points,
   /// but the same for inputs, outputs and collocation points objects
   template <std::size_t... NumCoeffs>
-  explicit IgABase2(const std::tuple<std::array<int64_t, NumCoeffs>...> &ncoeffs,
-           enum init init = init::greville,
-           iganet::Options<value_type> options = iganet::Options<value_type>{})
+  explicit IgABase2(
+      const std::tuple<std::array<int64_t, NumCoeffs>...> &ncoeffs,
+      enum init init = init::greville,
+      iganet::Options<value_type> options = iganet::Options<value_type>{})
       : IgABase2(ncoeffs, ncoeffs, ncoeffs, init, options) {}
 
   /// @brief Constructor
@@ -476,23 +477,22 @@ template <detail::HasAsTensor... Inputs, detail::HasAsTensor... Outputs>
 class IgABase2<std::tuple<Inputs...>, std::tuple<Outputs...>, void> {
 public:
   /// @brief Value type
-  using value_type =
-       std::common_type_t<typename Inputs::value_type...,
-                                typename Outputs::value_type...>;
+  using value_type = std::common_type_t<typename Inputs::value_type...,
+                                        typename Outputs::value_type...>;
 
   /// @brief Type of the inputs
   using inputs_type = std::tuple<Inputs...>;
 
   /// @brief Type alias for the type of the index-th inputs object
   template <std::size_t index>
-  using input_t =  std::tuple_element_t<index, inputs_type>;
+  using input_t = std::tuple_element_t<index, inputs_type>;
 
   /// @brief Type of the outputs
   using outputs_type = std::tuple<Outputs...>;
 
   /// @brief Type alias for the type of the index-th outputs object
   template <std::size_t index>
-  using output_t =  std::tuple_element_t<index, outputs_type>;
+  using output_t = std::tuple_element_t<index, outputs_type>;
 
   /// @brief Type of the collocation points
   using collPts_type =
@@ -501,7 +501,7 @@ public:
 
   /// @brief Type alias for the type of the index-th collocation points object
   template <std::size_t index>
-  using collPts_t =  std::tuple_element_t<index, collPts_type>;
+  using collPts_t = std::tuple_element_t<index, collPts_type>;
 
 protected:
   /// @brief Inputs
@@ -568,9 +568,10 @@ public:
   /// Number of spline coefficients is the same for all spaces in the
   /// input and output objects
   template <std::size_t NumCoeffs>
-  explicit IgABase2(const std::array<int64_t, NumCoeffs> &ncoeffs,
-           enum init init = init::greville,
-           iganet::Options<value_type> options = iganet::Options<value_type>{})
+  explicit IgABase2(
+      const std::array<int64_t, NumCoeffs> &ncoeffs,
+      enum init init = init::greville,
+      iganet::Options<value_type> options = iganet::Options<value_type>{})
       : IgABase2(std::tuple{ncoeffs}, std::tuple{ncoeffs}, init, options) {}
 
   /// @brief Constructor
@@ -591,9 +592,10 @@ public:
   /// spaces of the inputs and outputs, but the same for input and
   /// output objects
   template <std::size_t... NumCoeffs>
-  explicit IgABase2(const std::tuple<std::array<int64_t, NumCoeffs>...> &ncoeffs,
-           enum init init = init::greville,
-           iganet::Options<value_type> options = iganet::Options<value_type>{})
+  explicit IgABase2(
+      const std::tuple<std::array<int64_t, NumCoeffs>...> &ncoeffs,
+      enum init init = init::greville,
+      iganet::Options<value_type> options = iganet::Options<value_type>{})
       : IgABase2(ncoeffs, ncoeffs, init, options) {}
 
   /// @brief Constructor
@@ -899,9 +901,8 @@ template <typename GeometryMap, typename Variable>
 class IgABaseNoRefData {
 public:
   /// @brief Value type
-  using value_type =
-       std::common_type_t<typename GeometryMap::value_type,
-                                typename Variable::value_type>;
+  using value_type = std::common_type_t<typename GeometryMap::value_type,
+                                        typename Variable::value_type>;
 
   /// @brief Type of the geometry map function space(s)
   using geometryMap_type = GeometryMap;
@@ -1327,7 +1328,7 @@ public:
   using Base = IgABaseNoRefData<GeometryMap, Variable>;
 
   /// @brief Value type
-  using value_type =  Base::value_type;
+  using value_type = Base::value_type;
 
   /// @brief Type of the geometry map function space(s)
   using geometryMap_type = GeometryMap;
@@ -1336,10 +1337,10 @@ public:
   using variable_type = Variable;
 
   /// @brief Type of the geometry map collocation points
-  using geometryMap_collPts_type =  Base::geometryMap_collPts_type;
+  using geometryMap_collPts_type = Base::geometryMap_collPts_type;
 
   /// @brief Type of the variable collocation points
-  using variable_collPts_type =  Base::variable_collPts_type;
+  using variable_collPts_type = Base::variable_collPts_type;
 
   /// @brief Indicates whether this class provides a geometry map
   bool static constexpr has_GeometryMap = true;
@@ -1380,13 +1381,15 @@ public:
   /// and variables)
   /// @{
   template <std::size_t NumCoeffs>
-  explicit IgABase(std::array<int64_t, NumCoeffs> numCoeffs,
-          iganet::Options<value_type> options = iganet::Options<value_type>{})
+  explicit IgABase(
+      std::array<int64_t, NumCoeffs> numCoeffs,
+      iganet::Options<value_type> options = iganet::Options<value_type>{})
       : IgABase(std::tuple{numCoeffs}, std::tuple{numCoeffs}, options) {}
 
   template <std::size_t... NumCoeffs>
-  explicit IgABase(std::tuple<std::array<int64_t, NumCoeffs>...> numCoeffs,
-          iganet::Options<value_type> options = iganet::Options<value_type>{})
+  explicit IgABase(
+      std::tuple<std::array<int64_t, NumCoeffs>...> numCoeffs,
+      iganet::Options<value_type> options = iganet::Options<value_type>{})
       : IgABase(numCoeffs, numCoeffs, options) {}
   /// @}
 
@@ -1431,7 +1434,7 @@ class IgADatasetBase {
 protected:
   /// @brief Reads a function space from file
   template <typename T>
-  inline void read_from_xml(const std::string& location, T &obj,
+  inline void read_from_xml(const std::string &location, T &obj,
                             std::vector<torch::Tensor> &v) {
 
     std::filesystem::path path(location);

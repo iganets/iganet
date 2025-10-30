@@ -55,10 +55,12 @@ private:
     else if (bytes < 1024ull * 1024ull * 1024ull)
       return std::to_string(bytes / static_cast<double>(1024 * 1024)) + "mb";
     else if (bytes < 1024ull * 1024ull * 1024ull * 1024ull)
-      return std::to_string(bytes / static_cast<double>(1024 * 1024 * 1024)) + "gb";
+      return std::to_string(bytes / static_cast<double>(1024 * 1024 * 1024)) +
+             "gb";
     else
-      return std::to_string(bytes / static_cast<double>(1024) / static_cast<double>(1024) / static_cast<double>(1024) /
-                            static_cast<double>(1024)) +
+      return std::to_string(
+                 bytes / static_cast<double>(1024) / static_cast<double>(1024) /
+                 static_cast<double>(1024) / static_cast<double>(1024)) +
              "tb";
   }
 
@@ -90,7 +92,8 @@ public:
   }
 
   /// @brief Registers generic type to memory debugger
-  template <typename T> void add(const std::string &name, [[maybe_unused]] const T &obj) {
+  template <typename T>
+  void add(const std::string &name, [[maybe_unused]] const T &obj) {
     counter_++;
     bytes_ += sizeof(obj);
     objects_.insert(

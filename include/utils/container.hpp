@@ -20,7 +20,6 @@
 
 #include <options.hpp>
 
-
 namespace iganet::utils {
 
 /// @brief Converts a std::vector object into std::array
@@ -47,8 +46,7 @@ template <typename... Args> inline auto to_array(Args &&...args) {
 
 /// @brief Converts a list of arguments into std::vector
 template <typename... Args> inline auto to_vector(Args &&...args) {
-  return std::vector<std::common_type_t<Args...>>{
-      std::move(args)...};
+  return std::vector<std::common_type_t<Args...>>{std::move(args)...};
 }
 
 /// @brief Converts a std::array to torch::Tensor
@@ -380,4 +378,3 @@ inline constexpr std::array<T, N - M> remove_from_back(std::array<T, N> array) {
 }
 
 } // namespace iganet::utils
-

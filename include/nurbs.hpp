@@ -103,8 +103,8 @@ public:
   ///
   /// @param[in] options Options configuration
   explicit UniformNurbsCore(const std::array<int64_t, Base::parDim_> &ncoeffs,
-                   enum init init = init::greville,
-                   Options<real_t> options = Options<real_t>{})
+                            enum init init = init::greville,
+                            Options<real_t> options = Options<real_t>{})
       : Base(ncoeffs, init, options) {
     if (Base::coeffs_[GeoDim].defined())
       Base::coeffs_[GeoDim] = torch::ones_like(Base::coeffs_[GeoDim]);

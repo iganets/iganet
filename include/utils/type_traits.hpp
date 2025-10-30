@@ -37,8 +37,7 @@ struct is_tuple_of_tuples<std::tuple<Ts...>>
 /// @}
 
 /// @brief Alias for is_tuple_of_tuples::type
-template <class T>
-using is_tuple_of_tuples_t = is_tuple_of_tuples<T>::type;
+template <class T> using is_tuple_of_tuples_t = is_tuple_of_tuples<T>::type;
 
 /// @brief Alias for is_tuple_of_tuples::value
 template <class T>
@@ -67,8 +66,7 @@ template <typename T, typename... Tuples> struct tuple_cat<T, Tuples...> {
 /// @}
 
 /// @brief Alias for tuple_cat::type
-template <typename... Tuples>
-using tuple_cat_t = tuple_cat<Tuples...>::type;
+template <typename... Tuples> using tuple_cat_t = tuple_cat<Tuples...>::type;
 
 /// @brief Alias for tuple_cat::value
 template <typename... Tuples>

@@ -16,7 +16,6 @@
 
 #include <torch/torch.h>
 
-
 namespace iganet::utils {
 
 /// @brief Computes the directional dot-product between two tensors
@@ -241,4 +240,3 @@ inline T sum(std::array<T, N> array, std::size_t start_index = 0,
 }
 
 } // namespace iganet::utils
-

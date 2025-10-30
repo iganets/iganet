@@ -34,8 +34,7 @@ public:
   using Base::IgABase;
 
   /// @brief Returns a string representation of the IgANet object
-  inline void
-  pretty_print(std::ostream &os) const noexcept override {
+  inline void pretty_print(std::ostream &os) const noexcept override {
     os << name() << "(\n"
        << "G = " << Base::G_ << "\n"
        << "f = " << Base::f_ << "\n"

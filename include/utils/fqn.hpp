@@ -18,7 +18,6 @@
 
 #include <torch/csrc/api/include/torch/types.h>
 
-
 namespace iganet::utils {
 
 /// @brief Full qualified name descriptor
@@ -63,4 +62,3 @@ protected:
 };
 
 } // namespace iganet::utils
-

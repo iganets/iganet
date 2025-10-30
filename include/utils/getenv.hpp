@@ -17,7 +17,6 @@
 #include <sstream>
 #include <stdlib.h>
 
-
 namespace iganet::utils {
 
 /// @brief Returns the value from an environment variable
@@ -61,4 +60,3 @@ std::vector<T> getenv(std::string variable,
 }
 
 } // namespace iganet::utils
-

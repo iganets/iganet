@@ -367,8 +367,8 @@ public:
   ///
   /// @param[in] options Options configuration
   explicit UniformBSplineCore(const std::array<int64_t, parDim_> &ncoeffs,
-                     enum init init = init::greville,
-                     Options<real_t> options = Options<real_t>{})
+                              enum init init = init::greville,
+                              Options<real_t> options = Options<real_t>{})
       : ncoeffs_(ncoeffs), ncoeffs_reverse_(ncoeffs), options_(options) {
     // Reverse ncoeffs
     std::reverse(ncoeffs_reverse_.begin(), ncoeffs_reverse_.end());
@@ -434,8 +434,8 @@ public:
   UniformBSplineCore(const std::array<int64_t, parDim_> &ncoeffs,
                      utils::TensorArray<geoDim_> &&coeffs,
                      Options<real_t> options = Options<real_t>{})
-      : ncoeffs_(ncoeffs), ncoeffs_reverse_(ncoeffs), coeffs_(std::move(coeffs)),
-        options_(options) {
+      : ncoeffs_(ncoeffs), ncoeffs_reverse_(ncoeffs),
+        coeffs_(std::move(coeffs)), options_(options) {
     // Reverse ncoeffs
     std::reverse(ncoeffs_reverse_.begin(), ncoeffs_reverse_.end());
 
@@ -1208,10 +1208,11 @@ public:
               (eval_prefactor<degrees_[Is],
                               static_cast<short_t>(deriv) /
                                   utils::integer_pow<10, Is>::value % 10>() *
-               eval_basfunc_univariate<
-                   degrees_[Is], Is,
-                   static_cast<short_t>(deriv) / utils::integer_pow<10, Is>::value % 10>(
-                   xi[Is].flatten(), knot_indices[Is].flatten())
+               eval_basfunc_univariate<degrees_[Is], Is,
+                                       static_cast<short_t>(deriv) /
+                                           utils::integer_pow<10, Is>::value %
+                                           10>(xi[Is].flatten(),
+                                               knot_indices[Is].flatten())
                    .transpose(0, 1))...};
         };
 
@@ -1222,8 +1223,10 @@ public:
       else /* not memory optimize */ {
 
         if constexpr (parDim_ == 1) {
-          return eval_prefactor<degrees_[0], static_cast<short_t>(deriv) % 10>() *
-                 eval_basfunc_univariate<degrees_[0], 0, static_cast<short_t>(deriv) % 10>(
+          return eval_prefactor<degrees_[0],
+                                static_cast<short_t>(deriv) % 10>() *
+                 eval_basfunc_univariate<degrees_[0], 0,
+                                         static_cast<short_t>(deriv) % 10>(
                      xi[0].flatten(), knot_indices[0].flatten());
 
         } else {
@@ -1239,9 +1242,9 @@ public:
                    utils::kronproduct(
                        eval_basfunc_univariate<
                            degrees_[Is], Is,
-                           static_cast<short_t>(deriv) / utils::integer_pow<10, Is>::value %
-                               10>(xi[Is].flatten(),
-                                   knot_indices[Is].flatten())...);
+                           static_cast<short_t>(deriv) /
+                               utils::integer_pow<10, Is>::value % 10>(
+                           xi[Is].flatten(), knot_indices[Is].flatten())...);
           };
 
           // Note that the kronecker product must be called in reverse order
@@ -1491,8 +1494,8 @@ public:
   }
 
   /// @brief Returns the B-spline object as XML object
-  [[nodiscard]] inline pugi::xml_document to_xml(int id = 0, const std::string &label = "",
-                                   int index = -1) const {
+  [[nodiscard]] inline pugi::xml_document
+  to_xml(int id = 0, const std::string &label = "", int index = -1) const {
     pugi::xml_document doc;
     pugi::xml_node root = doc.append_child("xml");
     to_xml(root, id, label, index);
@@ -1502,7 +1505,8 @@ public:
 
   /// @brief Returns the B-spline object as XML node
   inline pugi::xml_node &to_xml(pugi::xml_node &root, int id = 0,
-                                const std::string& label = "", int index = -1) const {
+                                const std::string &label = "",
+                                int index = -1) const {
     // add Geometry node
     pugi::xml_node geo = root.append_child("Geometry");
 
@@ -1615,13 +1619,15 @@ public:
 
   /// @brief Updates the B-spline object from XML object
   inline UniformBSplineCore &from_xml(const pugi::xml_document &doc, int id = 0,
-                                      const std::string &label = "", int index = -1) {
+                                      const std::string &label = "",
+                                      int index = -1) {
     return from_xml(doc.child("xml"), id, label, index);
   }
 
   /// @brief Updates the B-spline object from XML node
   inline UniformBSplineCore &from_xml(const pugi::xml_node &root, int id = 0,
-                                      const std::string& label = "", int index = -1) {
+                                      const std::string &label = "",
+                                      int index = -1) {
 
     std::array<bool, std::max(parDim_, short_t{1})> nknots_found{false},
         ncoeffs_found{false};
@@ -2791,8 +2797,8 @@ public:
   /// @brief Deduces the self-type possibly degrees (de-)elevated by
   /// the additive constant `degree_elevate`
   template <std::make_signed_t<short_t> degree_elevate = 0>
-  using self_type =  Base::template derived_type<NonUniformBSplineCore,
-                                                         degree_elevate>;
+  using self_type =
+      Base::template derived_type<NonUniformBSplineCore, degree_elevate>;
 
   /// @brief Deduces the derived self-type when exposed to different
   /// class template parameters `real_t` and `GeoDim`, and the
@@ -2823,10 +2829,11 @@ public:
   /// @param[in] init Type of initialization
   ///
   /// @param[in] options Options configuration
-  explicit NonUniformBSplineCore(const std::array<std::vector<typename Base::value_type>,
-                                         Base::parDim_> &kv,
-                        enum init init = init::greville,
-                        Options<real_t> options = Options<real_t>{})
+  explicit NonUniformBSplineCore(
+      const std::array<std::vector<typename Base::value_type>, Base::parDim_>
+          &kv,
+      enum init init = init::greville,
+      Options<real_t> options = Options<real_t>{})
       : Base(options) {
     init_knots(kv);
     Base::init_coeffs(init);
@@ -3008,11 +3015,11 @@ public:
 
         if ((dim == -1 || dim == i) && (kv_accessor[j - 1] < kv_accessor[j]))
           for (int refine = 1; refine < (2 << (numRefine - 1)); ++refine)
-            kv.push_back(kv_accessor[j - 1] +
-                         static_cast< Base::value_type>(refine) /
-                             static_cast< Base::value_type>(
-                                 2 << (numRefine - 1)) *
-                             (kv_accessor[j] - kv_accessor[j - 1]));
+            kv.push_back(
+                kv_accessor[j - 1] +
+                static_cast<Base::value_type>(refine) /
+                    static_cast<Base::value_type>(2 << (numRefine - 1)) *
+                    (kv_accessor[j] - kv_accessor[j - 1]));
 
         kv.push_back(kv_accessor[j]);
       }
@@ -3627,7 +3634,7 @@ public:
   }
 
   /// @brief Scales the B-spline object by a scalar
-  inline auto scale( BSplineCore::value_type s, int dim = -1) {
+  inline auto scale(BSplineCore::value_type s, int dim = -1) {
     if (dim == -1)
       for (int i = 0; i < BSplineCore::geoDim(); ++i)
         BSplineCore::coeffs(i) *= s;
@@ -3653,7 +3660,7 @@ public:
   }
 
   /// @brief Rotates the B-spline object by an angle in 2d
-  inline auto rotate( BSplineCore::value_type angle) {
+  inline auto rotate(BSplineCore::value_type angle) {
 
     static_assert(BSplineCore::geoDim() == 2,
                   "Rotation about one angle is only available in 2D");
@@ -4207,8 +4214,8 @@ public:
       auto div_ = [&, this]<std::size_t... Is>(std::index_sequence<Is...>) {
         return utils::BlockTensor<torch::Tensor, 1, 1>{
             (*BSplineCore::template eval<
-                 static_cast<deriv>(utils::integer_pow<10, Is>::value), memory_optimized>(
-                 xi, knot_indices, coeff_indices)[Is] +
+                 static_cast<deriv>(utils::integer_pow<10, Is>::value),
+                 memory_optimized>(xi, knot_indices, coeff_indices)[Is] +
              ...)};
       };
 
@@ -4483,8 +4490,7 @@ public:
         return utils::BlockTensor<torch::Tensor, 1, BSplineCore::parDim_>{
             BSplineCore::template eval<
                 static_cast<deriv>(utils::integer_pow<10, Is>::value),
-                                       memory_optimized>(xi, knot_indices,
-                                                         coeff_indices)...};
+                memory_optimized>(xi, knot_indices, coeff_indices)...};
       };
 
       return grad_(std::make_index_sequence<BSplineCore::parDim_>{});
@@ -5127,8 +5133,7 @@ public:
                                   BSplineCore::geoDim_>{
             BSplineCore::template eval<
                 static_cast<deriv>(utils::integer_pow<10, Is>::value),
-                                       memory_optimized>(xi, knot_indices,
-                                                         coeff_indices)...}
+                memory_optimized>(xi, knot_indices, coeff_indices)...}
             .tr();
       };
 
@@ -6600,8 +6605,7 @@ public:
   }
 
   /// @brief Returns a string representation of the BSplineCommon object
-  inline void
-  pretty_print(std::ostream &os) const noexcept override {
+  inline void pretty_print(std::ostream &os) const noexcept override {
     os << name() << "(\nparDim = " << BSplineCore::parDim()
        << ", geoDim = " << BSplineCore::geoDim() << ", degrees = ";
 
@@ -6693,7 +6697,7 @@ public:
 
   /// @brief Returns a new B-spline object whose coefficients are
   /// scaled by a scalar
-  BSplineCommon operator*( BSplineCore::value_type s) const {
+  BSplineCommon operator*(BSplineCore::value_type s) const {
 
     BSplineCommon result{*this};
 
@@ -6719,7 +6723,7 @@ public:
 
   /// @brief Returns a new B-spline object whose coefficients are
   /// scaled by a scalar
-  BSplineCommon operator/( BSplineCore::value_type s) const {
+  BSplineCommon operator/(BSplineCore::value_type s) const {
 
     BSplineCommon result{*this};
 
@@ -6772,7 +6776,7 @@ public:
   }
 
   /// @brief Scales the coefficients by a scalar
-  BSplineCommon &operator*=( BSplineCore::value_type s) {
+  BSplineCommon &operator*=(BSplineCore::value_type s) {
 
     for (short_t i = 0; i < BSplineCore::geoDim(); ++i)
       BSplineCore::coeffs(i) *= s;
@@ -6791,7 +6795,7 @@ public:
   }
 
   /// @brief Scales the coefficients by a scalar
-  BSplineCommon &operator/=( BSplineCore::value_type s) {
+  BSplineCommon &operator/=(BSplineCore::value_type s) {
 
     for (short_t i = 0; i < BSplineCore::geoDim(); ++i)
       BSplineCore::coeffs(i) /= s;

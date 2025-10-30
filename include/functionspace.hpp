@@ -92,18 +92,20 @@ public:
 
   /// @brief Constructor
   /// @{
-  explicit FunctionSpace(const std::array<int64_t, Splines::parDim()> &...ncoeffs,
-                enum init init = init::greville,
-                Options<value_type> options = iganet::Options<value_type>{})
+  explicit FunctionSpace(
+      const std::array<int64_t, Splines::parDim()> &...ncoeffs,
+      enum init init = init::greville,
+      Options<value_type> options = iganet::Options<value_type>{})
       : spline_({ncoeffs, init, options}...),
         boundary_({ncoeffs, init::none, options}...) {
     boundary_from_full_tensor(this->as_tensor());
   }
 
-  explicit FunctionSpace(const std::array<std::vector<typename Splines::value_type>,
-                                 Splines::parDim()> &...kv,
-                enum init init = init::greville,
-                Options<value_type> options = iganet::Options<value_type>{})
+  explicit FunctionSpace(
+      const std::array<std::vector<typename Splines::value_type>,
+                       Splines::parDim()> &...kv,
+      enum init init = init::greville,
+      Options<value_type> options = iganet::Options<value_type>{})
       : spline_({kv, init, options}...),
         boundary_({kv, init::none, options}...) {
 
@@ -411,7 +413,7 @@ private:
 public:
   /// @brief Updates the function space object from XML object
   inline FunctionSpace &from_xml(const pugi::xml_document &doc, int id = 0,
-                                 const std::string& label = "") {
+                                 const std::string &label = "") {
     return from_xml(doc.child("xml"), id, label);
   }
 
@@ -996,8 +998,7 @@ public:
   }
 
   /// @brief Returns a string representation of the function space object
-  inline void
-  pretty_print(std::ostream &os) const noexcept override {
+  inline void pretty_print(std::ostream &os) const noexcept override {
 
     auto pretty_print_ = [this,
                           &os]<std::size_t... Is>(std::index_sequence<Is...>) {
@@ -2466,17 +2467,19 @@ public:
 
   /// @brief Constructor
   /// @{
-  explicit FunctionSpace(const std::array<int64_t, Spline::parDim()> &ncoeffs,
-                enum init init = init::greville,
-                Options<value_type> options = iganet::Options<value_type>{})
+  explicit FunctionSpace(
+      const std::array<int64_t, Spline::parDim()> &ncoeffs,
+      enum init init = init::greville,
+      Options<value_type> options = iganet::Options<value_type>{})
       : spline_(ncoeffs, init, options),
         boundary_(ncoeffs, init::none, options) {
     boundary_.from_full_tensor(spline_.as_tensor());
   }
 
-  explicit FunctionSpace(std::array<std::vector<value_type>, Spline::parDim()> kv,
-                enum init init = init::greville,
-                Options<value_type> options = iganet::Options<value_type>{})
+  explicit FunctionSpace(
+      std::array<std::vector<value_type>, Spline::parDim()> kv,
+      enum init init = init::greville,
+      Options<value_type> options = iganet::Options<value_type>{})
       : spline_(kv, init, options), boundary_(kv, init::none, options) {
     static_assert(Spline::is_nonuniform(),
                   "Constructor is only available for non-uniform splines");
@@ -2947,8 +2950,7 @@ public:
   }
 
   /// @brief Returns a string representation of the function space object
-  inline void
-  pretty_print(std::ostream &os) const noexcept override {
+  inline void pretty_print(std::ostream &os) const noexcept override {
     os << name() << "(\nspline = ";
     spline_.pretty_print(os);
     os << "\nboundary = ";
@@ -3239,9 +3241,10 @@ public:
 
   /// @brief Constructor
   /// @{
-  explicit TH(const std::array<int64_t, 1> &ncoeffs, enum init init = init::greville,
-     Options<typename Spline::value_type> options =
-         iganet::Options<typename Spline::value_type>{})
+  explicit TH(const std::array<int64_t, 1> &ncoeffs,
+              enum init init = init::greville,
+              Options<typename Spline::value_type> options =
+                  iganet::Options<typename Spline::value_type>{})
       : Base(ncoeffs + utils::to_array(1_i64), ncoeffs, init, options) {
     static_assert(Spline::is_nonuniform(),
                   "TH function space requires non-uniform splines");
@@ -3249,9 +3252,9 @@ public:
   }
 
   explicit TH(const std::array<std::vector<typename Spline::value_type>, 1> &kv,
-     enum init init = init::greville,
-     Options<typename Spline::value_type> options =
-         iganet::Options<typename Spline::value_type>{})
+              enum init init = init::greville,
+              Options<typename Spline::value_type> options =
+                  iganet::Options<typename Spline::value_type>{})
       : Base({{kv[0].front + kv[0] + kv[0].back(), kv[1]}}, kv, init, options) {
     static_assert(Spline::is_nonuniform(),
                   "TH function space requires non-uniform splines");
@@ -3300,9 +3303,10 @@ public:
 
   /// @brief Constructor
   /// @{
-  explicit TH(const std::array<int64_t, 2> &ncoeffs, enum init init = init::greville,
-     Options<typename Spline::value_type> options =
-         iganet::Options<typename Spline::value_type>{})
+  explicit TH(const std::array<int64_t, 2> &ncoeffs,
+              enum init init = init::greville,
+              Options<typename Spline::value_type> options =
+                  iganet::Options<typename Spline::value_type>{})
       : Base(ncoeffs + utils::to_array(1_i64, 1_i64),
              ncoeffs + utils::to_array(1_i64, 1_i64), ncoeffs, init, options) {
     static_assert(Spline::is_nonuniform(),
@@ -3312,9 +3316,9 @@ public:
   }
 
   explicit TH(const std::array<std::vector<typename Spline::value_type>, 2> &kv,
-     enum init init = init::greville,
-     Options<typename Spline::value_type> options =
-         iganet::Options<typename Spline::value_type>{})
+              enum init init = init::greville,
+              Options<typename Spline::value_type> options =
+                  iganet::Options<typename Spline::value_type>{})
       : Base({{kv[0].front() + kv[0] + kv[0].back(),
                kv[1].front() + kv[1] + kv[1].back()}},
              {{kv[0].front() + kv[0] + kv[0].back(),
@@ -3378,9 +3382,10 @@ public:
 
   /// @brief Constructor
   /// @{
-  explicit TH(const std::array<int64_t, 3> &ncoeffs, enum init init = init::greville,
-     Options<typename Spline::value_type> options =
-         iganet::Options<typename Spline::value_type>{})
+  explicit TH(const std::array<int64_t, 3> &ncoeffs,
+              enum init init = init::greville,
+              Options<typename Spline::value_type> options =
+                  iganet::Options<typename Spline::value_type>{})
       : Base(ncoeffs + utils::to_array(1_i64, 1_i64, 1_i64),
              ncoeffs + utils::to_array(1_i64, 1_i64, 1_i64),
              ncoeffs + utils::to_array(1_i64, 1_i64, 1_i64), ncoeffs, init,
@@ -3393,9 +3398,9 @@ public:
   }
 
   explicit TH(const std::array<std::vector<typename Spline::value_type>, 3> &kv,
-     enum init init = init::greville,
-     Options<typename Spline::value_type> options =
-         iganet::Options<typename Spline::value_type>{})
+              enum init init = init::greville,
+              Options<typename Spline::value_type> options =
+                  iganet::Options<typename Spline::value_type>{})
       : Base({{kv[0].front() + kv[0] + kv[0].back(),
                kv[1].front() + kv[1] + kv[1].back(),
                kv[2].front() + kv[2] + kv[2].back()}},
@@ -3473,9 +3478,10 @@ public:
 
   /// @brief Constructor
   /// @{
-  explicit TH(const std::array<int64_t, 4> &ncoeffs, enum init init = init::greville,
-     Options<typename Spline::value_type> options =
-         iganet::Options<typename Spline::value_type>{})
+  explicit TH(const std::array<int64_t, 4> &ncoeffs,
+              enum init init = init::greville,
+              Options<typename Spline::value_type> options =
+                  iganet::Options<typename Spline::value_type>{})
       : Base(ncoeffs + utils::to_array(1_i64, 1_i64, 1_i64, 1_i64),
              ncoeffs + utils::to_array(1_i64, 1_i64, 1_i64, 1_i64),
              ncoeffs + utils::to_array(1_i64, 1_i64, 1_i64, 1_i64),
@@ -3490,9 +3496,9 @@ public:
   }
 
   explicit TH(const std::array<std::vector<typename Spline::value_type>, 4> &kv,
-     enum init init = init::greville,
-     Options<typename Spline::value_type> options =
-         iganet::Options<typename Spline::value_type>{})
+              enum init init = init::greville,
+              Options<typename Spline::value_type> options =
+                  iganet::Options<typename Spline::value_type>{})
       : Base({{kv[0].front() + kv[0] + kv[0].back(),
                kv[1].front() + kv[1] + kv[1].back(),
                kv[2].front() + kv[2] + kv[2].back(),
@@ -3553,15 +3559,16 @@ public:
 
   /// @brief Constructor
   /// @{
-  explicit NE(const std::array<int64_t, 1> &ncoeffs, enum init init = init::greville,
-     Options<typename Spline::value_type> options =
-         iganet::Options<typename Spline::value_type>{})
+  explicit NE(const std::array<int64_t, 1> &ncoeffs,
+              enum init init = init::greville,
+              Options<typename Spline::value_type> options =
+                  iganet::Options<typename Spline::value_type>{})
       : Base(ncoeffs + utils::to_array(1_i64), ncoeffs, init, options) {}
 
   explicit NE(const std::array<std::vector<typename Spline::value_type>, 1> &kv,
-     enum init init = init::greville,
-     Options<typename Spline::value_type> options =
-         iganet::Options<typename Spline::value_type>{})
+              enum init init = init::greville,
+              Options<typename Spline::value_type> options =
+                  iganet::Options<typename Spline::value_type>{})
       : Base(kv, kv, init, options) {
     static_assert(Spline::is_nonuniform(),
                   "Constructor only available for non-uniform splines");
@@ -3608,9 +3615,10 @@ public:
 
   /// @brief Constructor
   /// @{
-  explicit NE(const std::array<int64_t, 2> &ncoeffs, enum init init = init::greville,
-     Options<typename Spline::value_type> options =
-         iganet::Options<typename Spline::value_type>{})
+  explicit NE(const std::array<int64_t, 2> &ncoeffs,
+              enum init init = init::greville,
+              Options<typename Spline::value_type> options =
+                  iganet::Options<typename Spline::value_type>{})
       : Base(ncoeffs + utils::to_array(1_i64, 1_i64),
              ncoeffs + utils::to_array(1_i64, 1_i64), ncoeffs, init, options) {
     static_assert(Spline::is_nonuniform(),
@@ -3620,9 +3628,9 @@ public:
   }
 
   explicit NE(const std::array<std::vector<typename Spline::value_type>, 2> &kv,
-     enum init init = init::greville,
-     Options<typename Spline::value_type> options =
-         iganet::Options<typename Spline::value_type>{})
+              enum init init = init::greville,
+              Options<typename Spline::value_type> options =
+                  iganet::Options<typename Spline::value_type>{})
       : Base(kv, kv, kv, init, options) {
     static_assert(Spline::is_nonuniform(),
                   "NE function space requires non-uniform splines");
@@ -3682,9 +3690,10 @@ public:
 
   /// @brief Constructor
   /// @{
-  explicit NE(const std::array<int64_t, 3> &ncoeffs, enum init init = init::greville,
-     Options<typename Spline::value_type> options =
-         iganet::Options<typename Spline::value_type>{})
+  explicit NE(const std::array<int64_t, 3> &ncoeffs,
+              enum init init = init::greville,
+              Options<typename Spline::value_type> options =
+                  iganet::Options<typename Spline::value_type>{})
       : Base(ncoeffs + utils::to_array(1_i64, 1_i64, 1_i64),
              ncoeffs + utils::to_array(1_i64, 1_i64, 1_i64),
              ncoeffs + utils::to_array(1_i64, 1_i64, 1_i64), ncoeffs, init,
@@ -3697,9 +3706,9 @@ public:
   }
 
   explicit NE(const std::array<std::vector<typename Spline::value_type>, 3> &kv,
-     enum init init = init::greville,
-     Options<typename Spline::value_type> options =
-         iganet::Options<typename Spline::value_type>{})
+              enum init init = init::greville,
+              Options<typename Spline::value_type> options =
+                  iganet::Options<typename Spline::value_type>{})
       : Base(kv, kv, kv, kv, init, options) {
     static_assert(Spline::is_nonuniform(),
                   "NE function space requires non-uniform splines");
@@ -3768,9 +3777,10 @@ public:
 
   /// @brief Constructor
   /// @{
-  explicit NE(const std::array<int64_t, 4> &ncoeffs, enum init init = init::greville,
-     Options<typename Spline::value_type> options =
-         iganet::Options<typename Spline::value_type>{})
+  explicit NE(const std::array<int64_t, 4> &ncoeffs,
+              enum init init = init::greville,
+              Options<typename Spline::value_type> options =
+                  iganet::Options<typename Spline::value_type>{})
       : Base(ncoeffs + utils::to_array(1_i64, 1_i64, 1_i64, 1_i64),
              ncoeffs + utils::to_array(1_i64, 1_i64, 1_i64, 1_i64),
              ncoeffs + utils::to_array(1_i64, 1_i64, 1_i64, 1_i64),
@@ -3797,10 +3807,10 @@ public:
   }
 
   explicit NE(const std::array<std::vector<typename Spline::value_type>,
-                      Spline::parDim()> &kv,
-     enum init init = init::greville,
-     Options<typename Spline::value_type> options =
-         iganet::Options<typename Spline::value_type>{})
+                               Spline::parDim()> &kv,
+              enum init init = init::greville,
+              Options<typename Spline::value_type> options =
+                  iganet::Options<typename Spline::value_type>{})
       : Base(kv, kv, kv, kv, kv, init, options) {
     static_assert(Spline::is_nonuniform(),
                   "NE function space requires non-uniform splines");
@@ -3857,15 +3867,16 @@ public:
 
   /// @brief Constructor
   /// @{
-  explicit RT(const std::array<int64_t, 1> &ncoeffs, enum init init = init::greville,
-     Options<typename Spline::value_type> options =
-         iganet::Options<typename Spline::value_type>{})
+  explicit RT(const std::array<int64_t, 1> &ncoeffs,
+              enum init init = init::greville,
+              Options<typename Spline::value_type> options =
+                  iganet::Options<typename Spline::value_type>{})
       : Base(ncoeffs + utils::to_array(1_i64), ncoeffs, init, options) {}
 
   explicit RT(const std::array<std::vector<typename Spline::value_type>, 1> &kv,
-     enum init init = init::greville,
-     Options<typename Spline::value_type> options =
-         iganet::Options<typename Spline::value_type>{})
+              enum init init = init::greville,
+              Options<typename Spline::value_type> options =
+                  iganet::Options<typename Spline::value_type>{})
       : Base({{kv[0].front() + kv[0] + kv[0].back(), kv[1]}}, kv, init,
              options) {
     static_assert(Spline::is_nonuniform(),
@@ -3913,16 +3924,17 @@ public:
 
   /// @brief Constructor
   /// @{
-  explicit RT(const std::array<int64_t, 2> &ncoeffs, enum init init = init::greville,
-     Options<typename Spline::value_type> options =
-         iganet::Options<typename Spline::value_type>{})
+  explicit RT(const std::array<int64_t, 2> &ncoeffs,
+              enum init init = init::greville,
+              Options<typename Spline::value_type> options =
+                  iganet::Options<typename Spline::value_type>{})
       : Base(ncoeffs + utils::to_array(1_i64, 0_i64),
              ncoeffs + utils::to_array(0_i64, 1_i64), ncoeffs, init, options) {}
 
   explicit RT(const std::array<std::vector<typename Spline::value_type>, 2> &kv,
-     enum init init = init::greville,
-     Options<typename Spline::value_type> options =
-         iganet::Options<typename Spline::value_type>{})
+              enum init init = init::greville,
+              Options<typename Spline::value_type> options =
+                  iganet::Options<typename Spline::value_type>{})
       : Base({{kv[0].front() + kv[0] + kv[0].back(), kv[1]}},
              {{kv[0], kv[1].front() + kv[1] + kv[1].back()}}, kv, init,
              options) {
@@ -3978,18 +3990,19 @@ public:
 
   /// @brief Constructor
   /// @{
-  explicit RT(const std::array<int64_t, 3> &ncoeffs, enum init init = init::greville,
-     Options<typename Spline::value_type> options =
-         iganet::Options<typename Spline::value_type>{})
+  explicit RT(const std::array<int64_t, 3> &ncoeffs,
+              enum init init = init::greville,
+              Options<typename Spline::value_type> options =
+                  iganet::Options<typename Spline::value_type>{})
       : Base(ncoeffs + utils::to_array(1_i64, 0_i64, 0_i64),
              ncoeffs + utils::to_array(0_i64, 1_i64, 0_i64),
              ncoeffs + utils::to_array(0_i64, 0_i64, 1_i64), ncoeffs, init,
              options) {}
 
   explicit RT(const std::array<std::vector<typename Spline::value_type>, 3> &kv,
-     enum init init = init::greville,
-     Options<typename Spline::value_type> options =
-         iganet::Options<typename Spline::value_type>{})
+              enum init init = init::greville,
+              Options<typename Spline::value_type> options =
+                  iganet::Options<typename Spline::value_type>{})
       : Base({{kv[0].front() + kv[0] + kv[0].back(), kv[1], kv[2]}},
              {{kv[0], kv[1].front() + kv[1] + kv[1].back(), kv[2]}},
              {{kv[0], kv[1], kv[2].front() + kv[2] + kv[2].back()}}, kv, init,
@@ -4055,9 +4068,10 @@ public:
 
   /// @brief Constructor
   /// @{
-  explicit RT(const std::array<int64_t, 4> &ncoeffs, enum init init = init::greville,
-     Options<typename Spline::value_type> options =
-         iganet::Options<typename Spline::value_type>{})
+  explicit RT(const std::array<int64_t, 4> &ncoeffs,
+              enum init init = init::greville,
+              Options<typename Spline::value_type> options =
+                  iganet::Options<typename Spline::value_type>{})
       : Base(ncoeffs + utils::to_array(1_i64, 0_i64, 0_i64, 0_i64),
              ncoeffs + utils::to_array(0_i64, 1_i64, 0_i64, 0_i64),
              ncoeffs + utils::to_array(0_i64, 0_i64, 1_i64, 0_i64),
@@ -4065,9 +4079,9 @@ public:
              init, options) {}
 
   explicit RT(const std::array<std::vector<typename Spline::value_type>, 4> &kv,
-     enum init init = init::greville,
-     Options<typename Spline::value_type> options =
-         iganet::Options<typename Spline::value_type>{})
+              enum init init = init::greville,
+              Options<typename Spline::value_type> options =
+                  iganet::Options<typename Spline::value_type>{})
       : Base({{kv[0].front() + kv[0] + kv[0].back(), kv[1], kv[2], kv[3]}},
              {{kv[0], kv[1].front() + kv[1] + kv[1].back(), kv[2], kv[3]}},
              {{kv[0], kv[1], kv[2].front() + kv[2] + kv[2].back(), kv[3]}},
@@ -4124,17 +4138,19 @@ public:
 
   /// @brief Constructor
   /// @{
-  explicit Hcurl(const std::array<int64_t, 3> &ncoeffs, enum init init = init::greville,
-        Options<typename Spline::value_type> options =
-            iganet::Options<typename Spline::value_type>{})
+  explicit Hcurl(const std::array<int64_t, 3> &ncoeffs,
+                 enum init init = init::greville,
+                 Options<typename Spline::value_type> options =
+                     iganet::Options<typename Spline::value_type>{})
       : Base(ncoeffs + utils::to_array(1_i64, 0_i64, 0_i64),
              ncoeffs + utils::to_array(0_i64, 1_i64, 0_i64),
              ncoeffs + utils::to_array(0_i64, 0_i64, 1_i64), init, options) {}
 
-  explicit Hcurl(const std::array<std::vector<typename Spline::value_type>, 3> &kv,
-        enum init init = init::greville,
-        Options<typename Spline::value_type> options =
-            iganet::Options<typename Spline::value_type>{})
+  explicit Hcurl(
+      const std::array<std::vector<typename Spline::value_type>, 3> &kv,
+      enum init init = init::greville,
+      Options<typename Spline::value_type> options =
+          iganet::Options<typename Spline::value_type>{})
       : Base({{kv[0].front() + kv[0] + kv[0].back(), kv[1], kv[2]}},
              {{kv[0], kv[1].front() + kv[1] + kv[1].back(), kv[2]}},
              {{kv[0], kv[1], kv[2].front() + kv[2] + kv[2].back()}}, init,
@@ -4205,17 +4221,18 @@ public:
   /// @brief Constructor
   /// @{
   explicit NE_RT_DG(const std::array<int64_t, 2> &ncoeffs,
-           enum init init = init::greville,
-           Options<typename Spline::value_type> options =
-               iganet::Options<typename Spline::value_type>{})
+                    enum init init = init::greville,
+                    Options<typename Spline::value_type> options =
+                        iganet::Options<typename Spline::value_type>{})
       : Base(ncoeffs + utils::to_array(1_i64, 1_i64),
              ncoeffs + utils::to_array(1_i64, 0_i64),
              ncoeffs + utils::to_array(0_i64, 1_i64), ncoeffs, init, options) {}
 
-  explicit NE_RT_DG(const std::array<std::vector<typename Spline::value_type>, 2> &kv,
-           enum init init = init::greville,
-           Options<typename Spline::value_type> options =
-               iganet::Options<typename Spline::value_type>{})
+  explicit NE_RT_DG(
+      const std::array<std::vector<typename Spline::value_type>, 2> &kv,
+      enum init init = init::greville,
+      Options<typename Spline::value_type> options =
+          iganet::Options<typename Spline::value_type>{})
       : Base({{kv[0].front() + kv[0] + kv[0].back(),
                kv[1].front() + kv[1] + kv[1].back()}},
              {{kv[0].front() + kv[0] + kv[0].back(), kv[1]}},
@@ -4292,19 +4309,20 @@ public:
   /// @brief Constructor
   /// @{
   explicit NE_RT_DG(const std::array<int64_t, 3> &ncoeffs,
-           enum init init = init::greville,
-           Options<typename Spline::value_type> options =
-               iganet::Options<typename Spline::value_type>{})
+                    enum init init = init::greville,
+                    Options<typename Spline::value_type> options =
+                        iganet::Options<typename Spline::value_type>{})
       : Base(ncoeffs + utils::to_array(1_i64, 1_i64, 1_i64),
              ncoeffs + utils::to_array(1_i64, 0_i64, 0_i64),
              ncoeffs + utils::to_array(0_i64, 1_i64, 0_i64),
              ncoeffs + utils::to_array(0_i64, 0_i64, 1_i64), ncoeffs, init,
              options) {}
 
-  explicit NE_RT_DG(const std::array<std::vector<typename Spline::value_type>, 3> &kv,
-           enum init init = init::greville,
-           Options<typename Spline::value_type> options =
-               iganet::Options<typename Spline::value_type>{})
+  explicit NE_RT_DG(
+      const std::array<std::vector<typename Spline::value_type>, 3> &kv,
+      enum init init = init::greville,
+      Options<typename Spline::value_type> options =
+          iganet::Options<typename Spline::value_type>{})
       : Base({{kv[0].front() + kv[0] + kv[0].back(),
                kv[1].front() + kv[1] + kv[1].back(),
                kv[2].front() + kv[2] + kv[2].back()}},

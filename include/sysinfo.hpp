@@ -562,8 +562,7 @@ inline std::string getCpuInfo() {
   // Supply an oversized buffer, and avoid an extra call to sysctlbyname.
   CPUBrandString.resize(size);
   if (sysctlbyname("machdep.cpu.brand_string", &CPUBrandString[0], &size,
-                   nullptr,
-                   0) == 0 &&
+                   nullptr, 0) == 0 &&
       size > 0) {
     if (CPUBrandString[size - 1] == '\0')
       size--;

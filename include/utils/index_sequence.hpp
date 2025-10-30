@@ -16,7 +16,6 @@
 
 #include <utility>
 
-
 namespace iganet::utils {
 
 namespace detail {
@@ -37,4 +36,3 @@ struct make_reverse_index_sequence
           N - 1, decltype(std::make_index_sequence<N>{})> {};
 
 } // namespace iganet::utils
-
