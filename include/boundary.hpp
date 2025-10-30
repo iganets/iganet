@@ -62,21 +62,21 @@ protected:
 
   /// @brief Boundary spline type
   using boundary_spline_type =
-      typename Spline::template derived_self_type<typename Spline::value_type,
+      Spline::template derived_self_type<typename Spline::value_type,
                                                   Spline::geoDim()>;
 
   /// @brief Deduces the derived boundary spline type when exposed
   /// to a different class template parameter `real_t`
   template <typename real_t>
   using real_derived_boundary_spline_type =
-      typename Spline::template derived_self_type<real_t, Spline::geoDim()>;
+    Spline::template derived_self_type<real_t, Spline::geoDim()>;
 
   /// @brief Tuple of splines
   std::tuple<boundary_spline_type, boundary_spline_type> bdr_;
 
 public:
     /// @brief Value type
-    using value_type = typename Spline::value_type;
+    using value_type = Spline::value_type;
 
   /// @brief Boundary type
   using boundary_type = decltype(bdr_);
@@ -85,15 +85,15 @@ public:
   using eval_type = std::tuple<torch::Tensor, torch::Tensor>;
 
   /// @brief Default constructor
-  BoundaryCore(Options<typename Spline::value_type> options =
+  explicit BoundaryCore(Options<typename Spline::value_type> options =
                    Options<typename Spline::value_type>{})
       : bdr_({boundary_spline_type(options), boundary_spline_type(options)}) {}
 
   /// @brief Copy constructor
-  BoundaryCore(const boundary_type &bdr_) : bdr_(bdr_) {}
+  explicit BoundaryCore(const boundary_type &bdr_) : bdr_(bdr_) {}
 
   /// @brief Move constructor
-  BoundaryCore(boundary_type &&bdr_) : bdr_(bdr_) {}
+  explicit BoundaryCore(boundary_type &&bdr_) : bdr_(bdr_) {}
 
   /// @brief Copy/clone constructor
   BoundaryCore(const BoundaryCore &other, bool clone)
@@ -105,19 +105,22 @@ public:
                    : other.coeffs()) {}
 
   /// @brief Constructor
-  BoundaryCore(const std::array<int64_t, 1> &, enum init init = init::zeros,
+  explicit BoundaryCore(const std::array<int64_t, 1> &, enum init init = init::zeros,
                Options<typename Spline::value_type> options =
                    Options<typename Spline::value_type>{})
       : bdr_({boundary_spline_type(std::array<int64_t, 0>{}, init, options),
               boundary_spline_type(std::array<int64_t, 0>{}, init, options)}) {}
 
   /// @brief Constructor
-  BoundaryCore(const std::array<std::vector<typename Spline::value_type>, 1> &,
+  explicit BoundaryCore(const std::array<std::vector<typename Spline::value_type>, 1> &,
                enum init init = init::zeros,
                Options<typename Spline::value_type> options =
                    Options<typename Spline::value_type>{})
       : bdr_({boundary_spline_type(std::array<int64_t, 0>{}, init, options),
               boundary_spline_type(std::array<int64_t, 0>{}, init, options)}) {}
+
+  /// @brief Destructor
+  virtual ~BoundaryCore() = default;
 
   /// @brief Sets the coefficients of all spline objects from a
   /// single tensor that holds both boundary and inner coefficients
@@ -178,8 +181,8 @@ public:
   }
 
   /// @brief Returns a string representation of the Boundary object
-  inline virtual void
-  pretty_print(std::ostream &os = Log(log::info)) const noexcept override {
+  inline void
+  pretty_print(std::ostream &os) const noexcept override {
     os << name() << "(\n"
        << "west = " << side<west>() << "\n"
        << "east = " << side<east>() << "\n)";
@@ -244,15 +247,15 @@ protected:
                      real_t, Spline::geoDim(), Spline::degree(0)>>;
 
   /// @brief Tuple of splines
-  std::tuple<typename std::tuple_element_t<0, boundary_spline_type>,
-             typename std::tuple_element_t<0, boundary_spline_type>,
-             typename std::tuple_element_t<1, boundary_spline_type>,
-             typename std::tuple_element_t<1, boundary_spline_type>>
+  std::tuple< std::tuple_element_t<0, boundary_spline_type>,
+              std::tuple_element_t<0, boundary_spline_type>,
+              std::tuple_element_t<1, boundary_spline_type>,
+              std::tuple_element_t<1, boundary_spline_type>>
       bdr_;
 
 public:
     /// @brief Value type
-using value_type = typename Spline::value_type;
+using value_type = Spline::value_type;
 
   /// @brief Boundary type
   using boundary_type = decltype(bdr_);
@@ -262,7 +265,7 @@ using value_type = typename Spline::value_type;
                                utils::TensorArray<1>, utils::TensorArray<1>>;
 
   /// @brief Default constructor
-  BoundaryCore(Options<typename Spline::value_type> options =
+  explicit BoundaryCore(Options<typename Spline::value_type> options =
                    Options<typename Spline::value_type>{})
       : bdr_({std::tuple_element_t<0, boundary_spline_type>(options),
               std::tuple_element_t<0, boundary_spline_type>(options),
@@ -270,10 +273,10 @@ using value_type = typename Spline::value_type;
               std::tuple_element_t<1, boundary_spline_type>(options)}) {}
 
   /// @brief Copy constructor
-  BoundaryCore(const boundary_type &bdr_) : bdr_(bdr_) {}
+  explicit BoundaryCore(const boundary_type &bdr_) : bdr_(bdr_) {}
 
   /// @brief Move constructor
-  BoundaryCore(boundary_type &&bdr_) : bdr_(bdr_) {}
+  explicit BoundaryCore(boundary_type &&bdr_) : bdr_(bdr_) {}
 
   /// @brief Copy/clone constructor
   BoundaryCore(const BoundaryCore &other, bool clone)
@@ -285,7 +288,7 @@ using value_type = typename Spline::value_type;
                    : other.coeffs()) {}
 
   /// @brief Constructor
-  BoundaryCore(const std::array<int64_t, 2> &ncoeffs,
+  explicit BoundaryCore(const std::array<int64_t, 2> &ncoeffs,
                enum init init = init::zeros,
                Options<typename Spline::value_type> options =
                    Options<typename Spline::value_type>{})
@@ -299,7 +302,7 @@ using value_type = typename Spline::value_type;
                   std::array<int64_t, 1>({ncoeffs[0]}), init, options)}) {}
 
   /// @brief Constructor
-  BoundaryCore(
+  explicit BoundaryCore(
       const std::array<std::vector<typename Spline::value_type>, 2> &kv,
       enum init init = init::zeros,
       Options<typename Spline::value_type> options =
@@ -320,6 +323,9 @@ using value_type = typename Spline::value_type;
                   std::array<std::vector<typename Spline::value_type>, 1>(
                       {kv[0]}),
                   init, options)}) {}
+
+  /// @brief Destructor
+  virtual ~BoundaryCore() = default;
 
   /// @brief Sets the coefficients of all spline objects from a
   /// single tensor that holds both boundary and inner coefficients
@@ -409,8 +415,8 @@ using value_type = typename Spline::value_type;
   }
 
   /// @brief Returns a string representation of the Boundary object
-  inline virtual void
-  pretty_print(std::ostream &os = Log(log::info)) const noexcept override {
+  inline void
+  pretty_print(std::ostream &os) const noexcept override {
     os << name() << "(\n"
        << "west = " << side<west>() << "\n"
        << "east = " << side<east>() << "\n"
@@ -491,17 +497,17 @@ protected:
           real_t, Spline::geoDim(), Spline::degree(0), Spline::degree(1)>>;
 
   /// @brief Tuple of splines
-  std::tuple<typename std::tuple_element_t<0, boundary_spline_type>,
-             typename std::tuple_element_t<0, boundary_spline_type>,
-             typename std::tuple_element_t<1, boundary_spline_type>,
-             typename std::tuple_element_t<1, boundary_spline_type>,
-             typename std::tuple_element_t<2, boundary_spline_type>,
-             typename std::tuple_element_t<2, boundary_spline_type>>
+  std::tuple< std::tuple_element_t<0, boundary_spline_type>,
+              std::tuple_element_t<0, boundary_spline_type>,
+              std::tuple_element_t<1, boundary_spline_type>,
+              std::tuple_element_t<1, boundary_spline_type>,
+              std::tuple_element_t<2, boundary_spline_type>,
+              std::tuple_element_t<2, boundary_spline_type>>
       bdr_;
 
 public:
 /// @brief Value type
-using value_type = typename Spline::value_type;
+using value_type =  Spline::value_type;
 
   /// @brief Boundary type
   using boundary_type = decltype(bdr_);
@@ -512,7 +518,7 @@ using value_type = typename Spline::value_type;
                                utils::TensorArray<2>, utils::TensorArray<2>>;
 
   /// @brief Default constructor
-  BoundaryCore(Options<typename Spline::value_type> options =
+  explicit BoundaryCore(Options<typename Spline::value_type> options =
                    Options<typename Spline::value_type>{})
       : bdr_({std::tuple_element_t<0, boundary_spline_type>(options),
               std::tuple_element_t<0, boundary_spline_type>(options),
@@ -522,10 +528,10 @@ using value_type = typename Spline::value_type;
               std::tuple_element_t<2, boundary_spline_type>(options)}) {}
 
   /// @brief Copy constructor
-  BoundaryCore(const boundary_type &bdr_) : bdr_(bdr_) {}
+  explicit BoundaryCore(const boundary_type &bdr_) : bdr_(bdr_) {}
 
   /// @brief Move constructor
-  BoundaryCore(boundary_type &&bdr_) : bdr_(bdr_) {}
+  explicit BoundaryCore(boundary_type &&bdr_) : bdr_(bdr_) {}
 
   /// @brief Copy/clone constructor
   BoundaryCore(const BoundaryCore &other, bool clone)
@@ -537,7 +543,7 @@ using value_type = typename Spline::value_type;
                    : other.coeffs()) {}
 
   /// @brief Constructor
-  BoundaryCore(const std::array<int64_t, 3> &ncoeffs,
+  explicit BoundaryCore(const std::array<int64_t, 3> &ncoeffs,
                enum init init = init::zeros,
                Options<typename Spline::value_type> options =
                    Options<typename Spline::value_type>{})
@@ -561,7 +567,7 @@ using value_type = typename Spline::value_type;
                   options)}) {}
 
   /// @brief Constructor
-  BoundaryCore(
+  explicit BoundaryCore(
       const std::array<std::vector<typename Spline::value_type>, 3> &kv,
       enum init init = init::zeros,
       Options<typename Spline::value_type> options =
@@ -590,6 +596,9 @@ using value_type = typename Spline::value_type;
                   std::array<std::vector<typename Spline::value_type>, 2>(
                       {kv[0], kv[1]}),
                   init, options)}) {}
+
+  /// @brief Destructor
+  virtual ~BoundaryCore() = default;
 
   /// @brief Sets the coefficients of all spline objects from a
   /// single tensor that holds both boundary and inner coefficients
@@ -712,8 +721,8 @@ using value_type = typename Spline::value_type;
   }
 
   /// @brief Returns a string representation of the Boundary object
-  inline virtual void
-  pretty_print(std::ostream &os = Log(log::info)) const noexcept override {
+  inline void
+  pretty_print(std::ostream &os) const noexcept override {
     os << name() << "(\n"
        << "west = " << side<west>() << "\n"
        << "east = " << side<east>() << "\n"
@@ -812,19 +821,19 @@ protected:
                      Spline::degree(1), Spline::degree(2)>>;
 
   /// @brief Tuple of splines
-  std::tuple<typename std::tuple_element_t<0, boundary_spline_type>,
-             typename std::tuple_element_t<0, boundary_spline_type>,
-             typename std::tuple_element_t<1, boundary_spline_type>,
-             typename std::tuple_element_t<1, boundary_spline_type>,
-             typename std::tuple_element_t<2, boundary_spline_type>,
-             typename std::tuple_element_t<2, boundary_spline_type>,
-             typename std::tuple_element_t<3, boundary_spline_type>,
-             typename std::tuple_element_t<3, boundary_spline_type>>
+  std::tuple< std::tuple_element_t<0, boundary_spline_type>,
+              std::tuple_element_t<0, boundary_spline_type>,
+              std::tuple_element_t<1, boundary_spline_type>,
+              std::tuple_element_t<1, boundary_spline_type>,
+              std::tuple_element_t<2, boundary_spline_type>,
+              std::tuple_element_t<2, boundary_spline_type>,
+              std::tuple_element_t<3, boundary_spline_type>,
+              std::tuple_element_t<3, boundary_spline_type>>
       bdr_;
 
 public:
     /// @brief Value type
-using value_type = typename Spline::value_type;
+using value_type =  Spline::value_type;
 
   /// @brief Boundary type
   using boundary_type = decltype(bdr_);
@@ -836,7 +845,7 @@ using value_type = typename Spline::value_type;
                                utils::TensorArray<3>, utils::TensorArray<3>>;
 
   /// @brief Default constructor
-  BoundaryCore(Options<typename Spline::value_type> options =
+  explicit BoundaryCore(Options<typename Spline::value_type> options =
                    Options<typename Spline::value_type>{})
       : bdr_({std::tuple_element_t<0, boundary_spline_type>(options),
               std::tuple_element_t<0, boundary_spline_type>(options),
@@ -848,10 +857,10 @@ using value_type = typename Spline::value_type;
               std::tuple_element_t<3, boundary_spline_type>(options)}) {}
 
   /// @brief Copy constructor
-  BoundaryCore(const boundary_type &bdr_) : bdr_(bdr_) {}
+  explicit BoundaryCore(const boundary_type &bdr_) : bdr_(bdr_) {}
 
   /// @brief Move constructor
-  BoundaryCore(boundary_type &&bdr_) : bdr_(bdr_) {}
+  explicit BoundaryCore(boundary_type &&bdr_) : bdr_(bdr_) {}
 
   /// @brief Copy/clone constructor
   BoundaryCore(const BoundaryCore &other, bool clone)
@@ -863,7 +872,7 @@ using value_type = typename Spline::value_type;
                    : other.coeffs()) {}
 
   /// @brief Constructor
-  BoundaryCore(const std::array<int64_t, 4> &ncoeffs,
+  explicit BoundaryCore(const std::array<int64_t, 4> &ncoeffs,
                enum init init = init::zeros,
                Options<typename Spline::value_type> options =
                    Options<typename Spline::value_type>{})
@@ -893,7 +902,7 @@ using value_type = typename Spline::value_type;
                   init, options)}) {}
 
   /// @brief Constructor
-  BoundaryCore(
+  explicit BoundaryCore(
       const std::array<std::vector<typename Spline::value_type>, 4> &kv,
       enum init init = init::zeros,
       Options<typename Spline::value_type> options =
@@ -930,6 +939,9 @@ using value_type = typename Spline::value_type;
                   std::array<std::vector<typename Spline::value_type>, 3>(
                       {kv[0], kv[1], kv[2]}),
                   init, options)}) {}
+
+  /// @brief Destructor
+  virtual ~BoundaryCore() = default;
 
   /// @brief Sets the coefficients of all spline objects from a
   /// single tensor that holds both boundary and inner coefficients
@@ -1075,8 +1087,8 @@ using value_type = typename Spline::value_type;
   }
 
   /// @brief Returns a string representation of the Boundary object
-  inline virtual void
-  pretty_print(std::ostream &os = Log(log::info)) const noexcept override {
+  inline void
+  pretty_print(std::ostream &os) const noexcept override {
     os << name() << "(\n"
        << "west = " << side<west>() << "\n"
        << "east = " << side<east>() << "\n"
@@ -1159,7 +1171,7 @@ public:
   /// single tensor
   ///
   /// @result Tensor of coefficients
-  inline torch::Tensor as_tensor() const {
+  [[nodiscard]] inline torch::Tensor as_tensor() const {
     return as_tensor_(std::make_index_sequence<BoundaryCore::nsides()>{});
   }
 
@@ -1180,7 +1192,7 @@ public:
   /// all spline objects
   //
   /// @result Size of the tensor
-  inline int64_t as_tensor_size() const {
+  [[nodiscard]] inline int64_t as_tensor_size() const {
     return as_tensor_size_(std::make_index_sequence<BoundaryCore::nsides()>{});
   }
 
@@ -1368,7 +1380,7 @@ public:
   }
 
 private:
-  /// @brief Returns the values of the boundary spline spline
+  /// @brief Returns the values of the boundary spline
   /// object's basis functions in the points `xi`
   /// @{
   template <deriv deriv = deriv::func, bool memory_optimized = false,
@@ -1620,7 +1632,7 @@ public:
   }
 
   /// @brief Returns the boundary object as XML object
-  inline pugi::xml_document to_xml(int id = 0, std::string label = "",
+  [[nodiscard]] inline pugi::xml_document to_xml(int id = 0, const std::string& label = "",
                                    int index = -1) const {
     pugi::xml_document doc;
     pugi::xml_node root = doc.append_child("xml");
@@ -1631,7 +1643,7 @@ public:
 
   /// @brief Returns the boundary object as XML node
   inline pugi::xml_node &to_xml(pugi::xml_node &root, int id = 0,
-                                std::string label = "", int index = -1) const {
+                                const std::string& label = "", int index = -1) const {
     // add Boundary node
     pugi::xml_node bdr = root.append_child("Boundary");
 
@@ -1656,13 +1668,13 @@ public:
 
   /// @brief Updates the boundary object from XML object
   inline BoundaryCommon &from_xml(const pugi::xml_document &doc, int id = 0,
-                                  std::string label = "", int index = -1) {
+                                  const std::string& label = "", int index = -1) {
     return from_xml(doc.child("xml"), id, label, index);
   }
 
   /// @brief Updates the boundary object from XML node
   inline BoundaryCommon &from_xml(const pugi::xml_node &root, int id = 0,
-                                  std::string label = "", int index = -1) {
+                                  const std::string& label = "", int index = -1) {
 
     // Loop through all boundary nodes
     for (pugi::xml_node bdr : root.children("Boundary")) {
@@ -1722,8 +1734,8 @@ private:
   inline bool
   isclose_(std::index_sequence<Is...>,
            const BoundaryCommon<BoundaryCore_> &other,
-           typename BoundaryCore::spline_type::value_type rtol,
-           typename BoundaryCore::spline_type::value_type atol) const {
+            BoundaryCore::spline_type::value_type rtol,
+            BoundaryCore::spline_type::value_type atol) const {
     return ((std::get<Is>(BoundaryCore::bdr_)
                  .isclose(std::get<Is>(other.coeffs()))) &&
             ...);
@@ -1735,9 +1747,9 @@ public:
   template <typename BoundaryCore_>
   inline bool
   isclose(const BoundaryCommon<BoundaryCore_> &other,
-          typename BoundaryCore::spline_type::value_type rtol =
+           BoundaryCore::spline_type::value_type rtol =
               typename BoundaryCore::spline_type::value_type{1e-5},
-          typename BoundaryCore::spline_type::value_type atol =
+           BoundaryCore::spline_type::value_type atol =
               typename BoundaryCore::spline_type::value_type{1e-8}) const {
     return isclose_(std::make_index_sequence<BoundaryCore::nsides()>{}, other,
                     rtol, atol);

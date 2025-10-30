@@ -52,8 +52,8 @@ class IgABase2<std::tuple<Inputs...>, std::tuple<Outputs...>,
 public:
   /// @brief Value type
   using value_type =
-      typename std::common_type<typename Inputs::value_type...,
-                                typename Outputs::value_type...>::type;
+       std::common_type_t<typename Inputs::value_type...,
+                                typename Outputs::value_type...>;
 
   /// @brief Type of the inputs
   using inputs_type = std::tuple<Inputs...>;
@@ -138,7 +138,7 @@ public:
   /// Number of spline coefficients is the same for all spaces in the
   /// input, output and collocation points objects
   template <std::size_t NumCoeffs>
-  IgABase2(const std::array<int64_t, NumCoeffs> &ncoeffs,
+  explicit IgABase2(const std::array<int64_t, NumCoeffs> &ncoeffs,
            enum init init = init::greville,
            iganet::Options<value_type> options = iganet::Options<value_type>{})
       : IgABase2(std::tuple{ncoeffs}, std::tuple{ncoeffs}, std::tuple{ncoeffs},
@@ -164,7 +164,7 @@ public:
   /// spaces of the inputs, outputs, and collocation points,
   /// but the same for inputs, outputs and collocation points objects
   template <std::size_t... NumCoeffs>
-  IgABase2(const std::tuple<std::array<int64_t, NumCoeffs>...> &ncoeffs,
+  explicit IgABase2(const std::tuple<std::array<int64_t, NumCoeffs>...> &ncoeffs,
            enum init init = init::greville,
            iganet::Options<value_type> options = iganet::Options<value_type>{})
       : IgABase2(ncoeffs, ncoeffs, ncoeffs, init, options) {}
@@ -222,13 +222,13 @@ public:
 
   /// @brief Returns a constant reference to the index-th input object
   template <std::size_t index> inline constexpr const auto &input() const {
-    static_assert(index >= 0 && index < sizeof...(Inputs));
+    static_assert(index < sizeof...(Inputs));
     return std::get<index>(inputs_);
   }
 
   /// @brief Returns a non-constant reference to the index-th input object
   template <std::size_t index> inline constexpr auto &input() {
-    static_assert(index >= 0 && index < sizeof...(Inputs));
+    static_assert(index < sizeof...(Inputs));
     return std::get<index>(inputs_);
   }
 
@@ -245,13 +245,13 @@ public:
 
   /// @brief Returns a constant reference to the index-th output object
   template <std::size_t index> inline constexpr const auto &output() const {
-    static_assert(index >= 0 && index < sizeof...(Outputs));
+    static_assert(index < sizeof...(Outputs));
     return std::get<index>(outputs_);
   }
 
   /// @brief Returns a non-constant reference to the index-th output object
   template <std::size_t index> inline constexpr auto &output() {
-    static_assert(index >= 0 && index < sizeof...(Outputs));
+    static_assert(index < sizeof...(Outputs));
     return std::get<index>(outputs_);
   }
 
@@ -477,22 +477,22 @@ class IgABase2<std::tuple<Inputs...>, std::tuple<Outputs...>, void> {
 public:
   /// @brief Value type
   using value_type =
-      typename std::common_type<typename Inputs::value_type...,
-                                typename Outputs::value_type...>::type;
+       std::common_type_t<typename Inputs::value_type...,
+                                typename Outputs::value_type...>;
 
   /// @brief Type of the inputs
   using inputs_type = std::tuple<Inputs...>;
 
   /// @brief Type alias for the type of the index-th inputs object
   template <std::size_t index>
-  using input_t = typename std::tuple_element_t<index, inputs_type>;
+  using input_t =  std::tuple_element_t<index, inputs_type>;
 
   /// @brief Type of the outputs
   using outputs_type = std::tuple<Outputs...>;
 
   /// @brief Type alias for the type of the index-th outputs object
   template <std::size_t index>
-  using output_t = typename std::tuple_element_t<index, outputs_type>;
+  using output_t =  std::tuple_element_t<index, outputs_type>;
 
   /// @brief Type of the collocation points
   using collPts_type =
@@ -501,7 +501,7 @@ public:
 
   /// @brief Type alias for the type of the index-th collocation points object
   template <std::size_t index>
-  using collPts_t = typename std::tuple_element_t<index, collPts_type>;
+  using collPts_t =  std::tuple_element_t<index, collPts_type>;
 
 protected:
   /// @brief Inputs
@@ -568,7 +568,7 @@ public:
   /// Number of spline coefficients is the same for all spaces in the
   /// input and output objects
   template <std::size_t NumCoeffs>
-  IgABase2(const std::array<int64_t, NumCoeffs> &ncoeffs,
+  explicit IgABase2(const std::array<int64_t, NumCoeffs> &ncoeffs,
            enum init init = init::greville,
            iganet::Options<value_type> options = iganet::Options<value_type>{})
       : IgABase2(std::tuple{ncoeffs}, std::tuple{ncoeffs}, init, options) {}
@@ -591,7 +591,7 @@ public:
   /// spaces of the inputs and outputs, but the same for input and
   /// output objects
   template <std::size_t... NumCoeffs>
-  IgABase2(const std::tuple<std::array<int64_t, NumCoeffs>...> &ncoeffs,
+  explicit IgABase2(const std::tuple<std::array<int64_t, NumCoeffs>...> &ncoeffs,
            enum init init = init::greville,
            iganet::Options<value_type> options = iganet::Options<value_type>{})
       : IgABase2(ncoeffs, ncoeffs, init, options) {}
@@ -639,13 +639,13 @@ public:
 
   /// @brief Returns a constant reference to the index-th input object
   template <std::size_t index> inline constexpr const auto &input() const {
-    static_assert(index >= 0 && index < sizeof...(Inputs));
+    static_assert(index < sizeof...(Inputs));
     return std::get<index>(inputs_);
   }
 
   /// @brief Returns a non-constant reference to the index-th input object
   template <std::size_t index> inline constexpr auto &input() {
-    static_assert(index >= 0 && index < sizeof...(Inputs));
+    static_assert(index < sizeof...(Inputs));
     return std::get<index>(inputs_);
   }
 
@@ -662,13 +662,13 @@ public:
 
   /// @brief Returns a constant reference to the index-th output object
   template <std::size_t index> inline constexpr const auto &output() const {
-    static_assert(index >= 0 && index < sizeof...(Outputs));
+    static_assert(index < sizeof...(Outputs));
     return std::get<index>(outputs_);
   }
 
   /// @brief Returns a non-constant reference to the index-th output object
   template <std::size_t index> inline constexpr auto &output() {
-    static_assert(index >= 0 && index < sizeof...(Outputs));
+    static_assert(index < sizeof...(Outputs));
     return std::get<index>(outputs_);
   }
 
@@ -900,8 +900,8 @@ class IgABaseNoRefData {
 public:
   /// @brief Value type
   using value_type =
-      typename std::common_type<typename GeometryMap::value_type,
-                                typename Variable::value_type>::type;
+       std::common_type_t<typename GeometryMap::value_type,
+                                typename Variable::value_type>;
 
   /// @brief Type of the geometry map function space(s)
   using geometryMap_type = GeometryMap;
@@ -961,14 +961,14 @@ public:
   /// and variables)
   /// @{
   template <std::size_t NumCoeffs>
-  IgABaseNoRefData(
+  explicit IgABaseNoRefData(
       std::array<int64_t, NumCoeffs> numCoeffs,
       iganet::Options<value_type> options = iganet::Options<value_type>{})
       : IgABaseNoRefData(std::tuple{numCoeffs}, std::tuple{numCoeffs},
                          options) {}
 
   template <std::size_t... NumCoeffs>
-  IgABaseNoRefData(
+  explicit IgABaseNoRefData(
       std::tuple<std::array<int64_t, NumCoeffs>...> numCoeffs,
       iganet::Options<value_type> options = iganet::Options<value_type>{})
       : IgABaseNoRefData(numCoeffs, numCoeffs, options) {}
@@ -999,6 +999,9 @@ public:
             std::make_index_sequence<sizeof...(VariableNumCoeffs)>{}, options) {
   }
   /// @}
+
+  /// @brief Destructor
+  virtual ~IgABaseNoRefData() = default;
 
   /// @brief Returns a constant reference to the spline
   /// representation of the geometry map
@@ -1324,7 +1327,7 @@ public:
   using Base = IgABaseNoRefData<GeometryMap, Variable>;
 
   /// @brief Value type
-  using value_type = typename Base::value_type;
+  using value_type =  Base::value_type;
 
   /// @brief Type of the geometry map function space(s)
   using geometryMap_type = GeometryMap;
@@ -1333,10 +1336,10 @@ public:
   using variable_type = Variable;
 
   /// @brief Type of the geometry map collocation points
-  using geometryMap_collPts_type = typename Base::geometryMap_collPts_type;
+  using geometryMap_collPts_type =  Base::geometryMap_collPts_type;
 
   /// @brief Type of the variable collocation points
-  using variable_collPts_type = typename Base::variable_collPts_type;
+  using variable_collPts_type =  Base::variable_collPts_type;
 
   /// @brief Indicates whether this class provides a geometry map
   bool static constexpr has_GeometryMap = true;
@@ -1377,12 +1380,12 @@ public:
   /// and variables)
   /// @{
   template <std::size_t NumCoeffs>
-  IgABase(std::array<int64_t, NumCoeffs> numCoeffs,
+  explicit IgABase(std::array<int64_t, NumCoeffs> numCoeffs,
           iganet::Options<value_type> options = iganet::Options<value_type>{})
       : IgABase(std::tuple{numCoeffs}, std::tuple{numCoeffs}, options) {}
 
   template <std::size_t... NumCoeffs>
-  IgABase(std::tuple<std::array<int64_t, NumCoeffs>...> numCoeffs,
+  explicit IgABase(std::tuple<std::array<int64_t, NumCoeffs>...> numCoeffs,
           iganet::Options<value_type> options = iganet::Options<value_type>{})
       : IgABase(numCoeffs, numCoeffs, options) {}
   /// @}
@@ -1428,7 +1431,7 @@ class IgADatasetBase {
 protected:
   /// @brief Reads a function space from file
   template <typename T>
-  inline void read_from_xml(std::string location, T &obj,
+  inline void read_from_xml(const std::string& location, T &obj,
                             std::vector<torch::Tensor> &v) {
 
     std::filesystem::path path(location);
@@ -1600,7 +1603,7 @@ public:
   };
 
   // @brief Return the total size of the data set
-  inline torch::optional<std::size_t> size() const override {
+  [[nodiscard]] inline torch::optional<std::size_t> size() const override {
     return (G_.empty() ? 1 : G_.size()) * (f_.empty() ? 1 : f_.size());
   }
 };
@@ -1776,7 +1779,7 @@ public:
   };
 
   // @brief Return the total size of the data set
-  inline torch::optional<std::size_t> size() const override {
+  [[nodiscard]] inline torch::optional<std::size_t> size() const override {
     return (G_.empty() ? 1 : G_.size()) * (f_.empty() ? 1 : f_.size());
   }
 };

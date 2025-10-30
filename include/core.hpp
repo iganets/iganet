@@ -20,7 +20,6 @@
 #include <fstream>
 #include <iostream>
 #include <tuple>
-#include <vector>
 
 #include <utils/getenv.hpp>
 
@@ -118,7 +117,7 @@ private:
 } // namespace logging
 
 /// @brief Logger
-struct {
+inline struct {
 private:
   /// @brief Output stream
   std::ostream &outputStream = std::cout;
@@ -137,7 +136,7 @@ public:
   void setLogLevel(enum log level) { this->level = level; }
 
   /// @brief Sets the log file
-  void setLogFile(std::string filename) {
+  void setLogFile(const std::string &filename) {
     outputFile = std::ofstream(filename);
     outputStream.rdbuf(outputFile.rdbuf());
   }
@@ -837,7 +836,7 @@ inline bool is_verbose(std::ostream &os) {
 
 namespace std {
 
-/// Print (as string) an std::array of generic objects
+/// Print (as string) a std::array of generic objects
 template <typename T, std::size_t N>
 inline std::ostream &operator<<(std::ostream &os, const std::array<T, N> &obj) {
   at::optional<std::string> name_ = c10::demangle(typeid(obj).name());
@@ -870,7 +869,7 @@ inline std::ostream &output_tuple(std::ostream &os,
 
 } // namespace detail
 
-/// Print (as string) an std::tuple of generic objects
+/// Print (as string) a std::tuple of generic objects
 template <typename... Ts>
 inline std::ostream &operator<<(std::ostream &os,
                                 const std::tuple<Ts...> &obj) {

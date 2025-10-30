@@ -2145,6 +2145,26 @@ operator<<(std::ostream &os,
   return os;
 }
 
+template <typename T>
+concept HasFindKnotIndices = requires(T t, typename T::eval_type x) {
+  { t.find_knot_indices(x) };
+};
+
+template <typename T>
+concept HasTemplatedFindKnotIndices = requires(T t, typename T::eval_type x) {
+  { t.template find_knot_indices<functionspace::interior>(x) };
+};
+
+template <typename T>
+concept HasFindCoeffIndices = requires(T t, typename T::eval_type x) {
+  { t.find_knot_indices(x) };
+};
+
+template <typename T>
+concept HasTemplatedFindCoeffIndices = requires(T t, typename T::eval_type x) {
+  { t.template find_knot_indices<functionspace::interior>(x) };
+};
+
 /// @brief IgANetCustomizable2
 ///
 /// This class implements a customizable variant of IgANets2 that
@@ -2156,12 +2176,81 @@ template <typename, typename, typename = void> class IgANetCustomizable2;
 
 template <detail::HasAsTensor... Inputs, detail::HasAsTensor... Outputs>
 class IgANetCustomizable2<std::tuple<Inputs...>, std::tuple<Outputs...>, void> {
+private:
+  /// @brief Returns the interior knot indices of all tuple elements
+  static auto find_interior_knot_indices(auto&& tuple) {
+    return std::apply([](auto&&... elems) {
+        return std::make_tuple(
+            ([&] {
+                using T = std::decay_t<decltype(elems)>;
+                if constexpr (HasFindKnotIndices<T>)
+                  return elems.find_knot_indices(typename T::eval_type{});
+              else if constexpr (HasTemplatedFindKnotIndices<T>)
+                return elems.template find_knot_indices<functionspace::interior>(
+                    typename T::eval_type{});
+        })()...
+      );
+    }, tuple);
+  }
+
+  /// @brief Returns the boundary knot indices of all tuple elements
+  static auto find_boundary_knot_indices(auto&& tuple) {
+    return std::apply([](auto&&... elems) {
+        return std::make_tuple(
+            ([&] {
+                using T = std::decay_t<decltype(elems)>;
+                if constexpr (HasFindKnotIndices<T>)
+                  // Note that this is a fake call here
+                  return elems.find_knot_indices(typename T::eval_type{});
+              else if constexpr (HasTemplatedFindKnotIndices<T>)
+                return elems.template find_knot_indices<functionspace::boundary>(
+                    typename T::boundary_eval_type{});
+        })()...
+      );
+    }, tuple);
+  }
+
+  /// @brief Returns the interior coeff indices of all tuple elements
+  static auto find_interior_coeff_indices(auto&& tuple) {
+    return std::apply([](auto&&... elems) {
+        return std::make_tuple(
+            ([&] {
+                using T = std::decay_t<decltype(elems)>;
+                if constexpr (HasFindCoeffIndices<T>)
+                  return elems.find_coeff_indices(typename T::eval_type{});
+              else if constexpr (HasTemplatedFindCoeffIndices<T>)
+                return elems.template find_coeff_indices<functionspace::interior>(
+                    typename T::eval_type{});
+        })()...
+      );
+    }, tuple);
+  }
+
+  /// @brief Returns the boundary coeff indices of all tuple elements
+  static auto find_boundary_coeff_indices(auto&& tuple) {
+    return std::apply([](auto&&... elems) {
+        return std::make_tuple(
+            ([&] {
+                using T = std::decay_t<decltype(elems)>;
+                if constexpr (HasFindCoeffIndices<T>)
+                  // Note that this is a fake call here
+                    return elems.find_coeff_indices(typename T::eval_type{});
+                else if constexpr (HasTemplatedFindCoeffIndices<T>)
+                  return elems.template find_coeff_indices<functionspace::boundary>(
+                      typename T::boundary_eval_type{});
+          })()...
+        );
+      }, tuple);
+  }
+
 public:
   /// @brief Type of the knot indices of the inputs in the interior
-  using inputs_interior_knot_indices_type = std::tuple<
-      decltype(std::declval<Inputs>()
-                   .template find_knot_indices<functionspace::interior>(
-                       std::declval<typename Inputs::eval_type>()))...>;
+  using inputs_interior_knot_indices_type = decltype(find_interior_knot_indices(std::declval<std::tuple<Inputs...>>()));
+
+    //std::tuple<
+//      decltype(std::declval<Inputs>()
+//                   .template find_knot_indices<functionspace::interior>(
+//                       std::declval<typename Inputs::eval_type>()))...>;
 
   /// @brief Type alias for the type of the index-th knot indices of the inputs
   /// in the interior
@@ -2170,11 +2259,12 @@ public:
       typename std::tuple_element_t<index, inputs_interior_knot_indices_type>;
 
   /// @brief Type of the knot indices of the inputs at the boundary
-  using inputs_boundary_knot_indices_type = std::tuple<
-      decltype(std::declval<Inputs>()
-                   .template find_knot_indices<functionspace::boundary>(
-                       std::declval<
-                           typename Inputs::boundary_eval_type>()))...>;
+  using inputs_boundary_knot_indices_type = decltype(find_boundary_knot_indices(std::declval<std::tuple<Inputs...>>()));
+  // std::tuple<
+  //     decltype(std::declval<Inputs>()
+  //                  .template find_knot_indices<functionspace::boundary>(
+  //                      std::declval<
+  //                          typename Inputs::boundary_eval_type>()))...>;
 
   /// @brief Type alias for the type of the index-th knot indices of the inputs
   /// at the boundary
@@ -2183,10 +2273,12 @@ public:
       typename std::tuple_element_t<index, inputs_boundary_knot_indices_type>;
 
   /// @brief Type of the knot indices of the outputs in the interior
-  using outputs_interior_knot_indices_type = std::tuple<
-      decltype(std::declval<Outputs>()
-                   .template find_knot_indices<functionspace::interior>(
-                       std::declval<typename Outputs::eval_type>()))...>;
+  using outputs_interior_knot_indices_type = decltype(find_interior_knot_indices(std::declval<std::tuple<Outputs...>>()));
+
+  // std::tuple<
+  //     decltype(std::declval<Outputs>()
+  //                  .template find_knot_indices<functionspace::interior>(
+  //                      std::declval<typename Outputs::eval_type>()))...>;
 
   /// @brief Type alias for the type of the index-th knot indices of the outputs
   /// in the interior
@@ -2195,11 +2287,13 @@ public:
       typename std::tuple_element_t<index, outputs_interior_knot_indices_type>;
 
   /// @brief Type of the knot indices of the outputs at the boundary
-  using outputs_boundary_knot_indices_type = std::tuple<
-      decltype(std::declval<Outputs>()
-                   .template find_knot_indices<functionspace::boundary>(
-                       std::declval<
-                           typename Outputs::boundary_eval_type>()))...>;
+  using outputs_boundary_knot_indices_type = decltype(find_boundary_knot_indices(std::declval<std::tuple<Outputs...>>()));
+
+  // std::tuple<
+  //     decltype(std::declval<Outputs>()
+  //                  .template find_knot_indices<functionspace::boundary>(
+  //                      std::declval<
+  //                          typename Outputs::boundary_eval_type>()))...>;
 
   /// @brief Type alias for the type of the index-th knot indices of the outputs
   /// at the boundary
@@ -2208,10 +2302,12 @@ public:
       typename std::tuple_element_t<index, outputs_boundary_knot_indices_type>;
 
   /// @brief Type of the coefficient indices of the inputs in the interior
-  using inputs_interior_coeff_indices_type = std::tuple<
-      decltype(std::declval<Inputs>()
-                   .template find_coeff_indices<functionspace::interior>(
-                       std::declval<typename Inputs::eval_type>()))...>;
+  using inputs_interior_coeff_indices_type = decltype(find_interior_coeff_indices(std::declval<std::tuple<Inputs...>>()));
+
+  // std::tuple<
+  //     decltype(std::declval<Inputs>()
+  //                  .template find_coeff_indices<functionspace::interior>(
+  //                      std::declval<typename Inputs::eval_type>()))...>;
 
   /// @brief Type alias for the type of the index-th coefficient indices of the
   /// inputs in the interior
@@ -2220,11 +2316,13 @@ public:
       typename std::tuple_element_t<index, inputs_interior_coeff_indices_type>;
 
   /// @brief Type of the coefficient indices of the inputs at the boundary
-  using inputs_boundary_coeff_indices_type = std::tuple<
-      decltype(std::declval<Inputs>()
-                   .template find_coeff_indices<functionspace::boundary>(
-                       std::declval<
-                           typename Inputs::boundary_eval_type>()))...>;
+  using inputs_boundary_coeff_indices_type = decltype(find_boundary_coeff_indices(std::declval<std::tuple<Inputs...>>()));
+
+  // std::tuple<
+  //     decltype(std::declval<Inputs>()
+  //                  .template find_coeff_indices<functionspace::boundary>(
+  //                      std::declval<
+  //                          typename Inputs::boundary_eval_type>()))...>;
 
   /// @brief Type alias for the type of the index-th coefficient indices of the
   /// inputs at the boundary
@@ -2233,10 +2331,12 @@ public:
       typename std::tuple_element_t<index, inputs_boundary_coeff_indices_type>;
 
   /// @brief Type of the coefficient indices of the outputs in the interior
-  using outputs_interior_coeff_indices_type = std::tuple<
-      decltype(std::declval<Outputs>()
-                   .template find_coeff_indices<functionspace::interior>(
-                       std::declval<typename Outputs::eval_type>()))...>;
+  using outputs_interior_coeff_indices_type = decltype(find_interior_coeff_indices(std::declval<std::tuple<Outputs...>>()));
+
+  // std::tuple<
+  //     decltype(std::declval<Outputs>()
+  //                  .template find_coeff_indices<functionspace::interior>(
+  //                      std::declval<typename Outputs::eval_type>()))...>;
 
   /// @brief Type alias for the type of the index-th coefficient indices of the
   /// outputs in the interior
@@ -2245,11 +2345,13 @@ public:
       typename std::tuple_element_t<index, outputs_interior_coeff_indices_type>;
 
   /// @brief Type of the coefficient indices of the outputs at the boundary
-  using outputs_boundary_coeff_indices_type = std::tuple<
-      decltype(std::declval<Outputs>()
-                   .template find_coeff_indices<functionspace::boundary>(
-                       std::declval<
-                           typename Outputs::boundary_eval_type>()))...>;
+  using outputs_boundary_coeff_indices_type = decltype(find_boundary_coeff_indices(std::declval<std::tuple<Outputs...>>()));
+
+  // std::tuple<
+  //     decltype(std::declval<Outputs>()
+  //                  .template find_coeff_indices<functionspace::boundary>(
+  //                      std::declval<
+  //                          typename Outputs::boundary_eval_type>()))...>;
 
   /// @brief Type alias for the type of the index-th coefficient indices of the
   /// outputs at the boundary
