@@ -30,12 +30,12 @@ public:
   /// @brief Base type
   using Base = IgABase<GeometryMap, Variable>;
 
-  /// @brief Base class constructord
+  /// @brief Base class constructor
   using Base::IgABase;
 
   /// @brief Returns a string representation of the IgANet object
-  inline virtual void
-  pretty_print(std::ostream &os = Log(log::info)) const noexcept override {
+  inline void
+  pretty_print(std::ostream &os) const noexcept override {
     os << name() << "(\n"
        << "G = " << Base::G_ << "\n"
        << "f = " << Base::f_ << "\n"

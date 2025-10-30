@@ -739,7 +739,7 @@ public:
         const std::string &key = "iganet") const {
     assert(layers_.size() == activations_.size());
 
-    archive.write(key + ".layers", torch::full({1}, (int64_t)layers_.size()));
+    archive.write(key + ".layers", torch::full({1}, static_cast<int64_t>(layers_.size())));
     for (std::size_t i = 0; i < layers_.size(); ++i) {
       archive.write(
           key + ".layer[" + std::to_string(i) + "].in_features",
@@ -895,8 +895,8 @@ public:
     return archive;
   }
 
-  inline virtual void
-  pretty_print(std::ostream &os = Log(log::info)) const noexcept override {
+  inline void
+  pretty_print(std::ostream &os) const noexcept override {
     os << "(\n";
 
     int i = 0;
@@ -945,8 +945,7 @@ public:
   using optimizer_type = Optimizer;
 
   /// @brief Type of the optimizer options
-  using optimizer_options_type =
-      typename optimizer_options_type<Optimizer>::type;
+  using optimizer_options_type = optimizer_options_type<Optimizer>::type;
 
 protected:
   /// @brief IgANet generator
@@ -960,7 +959,7 @@ protected:
 
 public:
   /// @brief Default constructor
-  explicit IgANet(IgANetOptions defaults = {},
+  explicit IgANet(const IgANetOptions &defaults = {},
                   iganet::Options<typename Base::value_type> options =
                       iganet::Options<typename Base::value_type>{})
       : // Construct the base class
@@ -1208,7 +1207,7 @@ public:
       opt_->step(closure);
 
       typename Base::value_type current_loss =
-          loss.template item<typename Base::value_type>();
+          loss.item<typename Base::value_type>();
       Log(log::verbose) << "Epoch " << std::to_string(epoch) << ": "
                         << current_loss << std::endl;
 
@@ -1216,7 +1215,7 @@ public:
           std::abs(current_loss - previous_loss) < options_.min_loss_change() ||
           std::abs(current_loss - previous_loss) / current_loss <
               options_.min_loss_rel_change() ||
-          loss.isnan().template item<bool>()) {
+          loss.isnan().item<bool>()) {
         Log(log::info) << "Total epochs: " << epoch
                        << ", loss: " << current_loss << std::endl;
         break;
@@ -1299,7 +1298,7 @@ public:
         // Update the parameters based on the calculated gradients
         opt_->step(closure);
 
-        Loss += loss.template item<typename Base::value_type>();
+        Loss += loss.item<typename Base::value_type>();
       }
 
       Log(log::verbose) << "Epoch " << std::to_string(epoch) << ": " << Loss
@@ -1332,7 +1331,7 @@ public:
   }
 
   /// @brief Returns the IgANet object as JSON object
-  inline virtual nlohmann::json to_json() const override {
+  inline nlohmann::json to_json() const override {
     return "Not implemented yet";
   }
 
@@ -1358,8 +1357,8 @@ public:
   }
 
   /// @brief Returns a string representation of the IgANet object
-  inline virtual void
-  pretty_print(std::ostream &os = Log(log::info)) const noexcept override {
+  inline void
+  pretty_print(std::ostream &os) const noexcept override {
     os << name() << "(\n"
        << "net = " << net_ << "\n";
     if constexpr (Base::has_GeometryMap)
@@ -1558,8 +1557,7 @@ public:
   using optimizer_type = Optimizer;
 
   /// @brief Type of the optimizer options
-  using optimizer_options_type =
-      typename optimizer_options_type<Optimizer>::type;
+  using optimizer_options_type = optimizer_options_type<Optimizer>::type;
 
 protected:
   /// @brief IgANet generator
@@ -1573,7 +1571,7 @@ protected:
 
 public:
   /// @brief Default constructor
-  explicit IgANet2(IgANetOptions defaults = {},
+  explicit IgANet2(const IgANetOptions &defaults = {},
                    iganet::Options<typename Base::value_type> options =
                        iganet::Options<typename Base::value_type>{})
       : // Construct the base class
@@ -1817,7 +1815,7 @@ public:
       opt_->step(closure);
 
       typename Base::value_type current_loss =
-          loss.template item<typename Base::value_type>();
+          loss.item<typename Base::value_type>();
       Log(log::verbose) << "Epoch " << std::to_string(epoch) << ": "
                         << current_loss << std::endl;
 
@@ -1825,7 +1823,7 @@ public:
           std::abs(current_loss - previous_loss) < options_.min_loss_change() ||
           std::abs(current_loss - previous_loss) / current_loss <
               options_.min_loss_rel_change() ||
-          loss.isnan().template item<bool>()) {
+          loss.isnan().item<bool>()) {
         Log(log::info) << "Total epochs: " << epoch
                        << ", loss: " << current_loss << std::endl;
         break;
@@ -1908,7 +1906,7 @@ public:
         // Update the parameters based on the calculated gradients
         opt_->step(closure);
 
-        Loss += loss.template item<typename Base::value_type>();
+        Loss += loss.item<typename Base::value_type>();
       }
 
       Log(log::verbose) << "Epoch " << std::to_string(epoch) << ": " << Loss
@@ -1941,7 +1939,7 @@ public:
   }
 
   /// @brief Returns the IgANet object as JSON object
-  inline virtual nlohmann::json to_json() const override {
+  inline nlohmann::json to_json() const override {
     return "Not implemented yet";
   }
 
@@ -1967,8 +1965,8 @@ public:
   }
 
   /// @brief Returns a string representation of the IgANet object
-  inline virtual void
-  pretty_print(std::ostream &os = Log(log::info)) const noexcept override {
+  inline void
+  pretty_print(std::ostream &os) const noexcept override {
     os << name() << "(\n"
        << "net = " << net_ << "\n";
 
@@ -2179,10 +2177,10 @@ class IgANetCustomizable2<std::tuple<Inputs...>, std::tuple<Outputs...>, void> {
 private:
   /// @brief Returns the interior knot indices of all tuple elements
   static auto find_interior_knot_indices(auto&& tuple) {
-    return std::apply([](auto&&... elems) {
+    return std::apply([]<typename... Elems>(Elems&&... elems) {
         return std::make_tuple(
             ([&] {
-                using T = std::decay_t<decltype(elems)>;
+                using T = std::decay_t<Elems>;
                 if constexpr (HasFindKnotIndices<T>)
                   return elems.find_knot_indices(typename T::eval_type{});
               else if constexpr (HasTemplatedFindKnotIndices<T>)
@@ -2195,10 +2193,10 @@ private:
 
   /// @brief Returns the boundary knot indices of all tuple elements
   static auto find_boundary_knot_indices(auto&& tuple) {
-    return std::apply([](auto&&... elems) {
+    return std::apply([]<typename... Elems>(Elems&&... elems) {
         return std::make_tuple(
             ([&] {
-                using T = std::decay_t<decltype(elems)>;
+                using T = std::decay_t<Elems>;
                 if constexpr (HasFindKnotIndices<T>)
                   // Note that this is a fake call here
                   return elems.find_knot_indices(typename T::eval_type{});
@@ -2212,10 +2210,10 @@ private:
 
   /// @brief Returns the interior coeff indices of all tuple elements
   static auto find_interior_coeff_indices(auto&& tuple) {
-    return std::apply([](auto&&... elems) {
+    return std::apply([]<typename... Elems>(Elems&&... elems) {
         return std::make_tuple(
             ([&] {
-                using T = std::decay_t<decltype(elems)>;
+                using T = std::decay_t<Elems>;
                 if constexpr (HasFindCoeffIndices<T>)
                   return elems.find_coeff_indices(typename T::eval_type{});
               else if constexpr (HasTemplatedFindCoeffIndices<T>)
@@ -2228,10 +2226,10 @@ private:
 
   /// @brief Returns the boundary coeff indices of all tuple elements
   static auto find_boundary_coeff_indices(auto&& tuple) {
-    return std::apply([](auto&&... elems) {
+    return std::apply([]<typename... Elems>(Elems&&... elems) {
         return std::make_tuple(
             ([&] {
-                using T = std::decay_t<decltype(elems)>;
+                using T = std::decay_t<Elems>;
                 if constexpr (HasFindCoeffIndices<T>)
                   // Note that this is a fake call here
                     return elems.find_coeff_indices(typename T::eval_type{});
@@ -2256,7 +2254,7 @@ public:
   /// in the interior
   template <std::size_t index>
   using input_interior_knot_indices_t =
-      typename std::tuple_element_t<index, inputs_interior_knot_indices_type>;
+      std::tuple_element_t<index, inputs_interior_knot_indices_type>;
 
   /// @brief Type of the knot indices of the inputs at the boundary
   using inputs_boundary_knot_indices_type = decltype(find_boundary_knot_indices(std::declval<std::tuple<Inputs...>>()));
@@ -2270,7 +2268,7 @@ public:
   /// at the boundary
   template <std::size_t index>
   using input_boundary_knot_indices_t =
-      typename std::tuple_element_t<index, inputs_boundary_knot_indices_type>;
+      std::tuple_element_t<index, inputs_boundary_knot_indices_type>;
 
   /// @brief Type of the knot indices of the outputs in the interior
   using outputs_interior_knot_indices_type = decltype(find_interior_knot_indices(std::declval<std::tuple<Outputs...>>()));
@@ -2284,7 +2282,7 @@ public:
   /// in the interior
   template <std::size_t index>
   using output_interior_knot_indices_t =
-      typename std::tuple_element_t<index, outputs_interior_knot_indices_type>;
+      std::tuple_element_t<index, outputs_interior_knot_indices_type>;
 
   /// @brief Type of the knot indices of the outputs at the boundary
   using outputs_boundary_knot_indices_type = decltype(find_boundary_knot_indices(std::declval<std::tuple<Outputs...>>()));
@@ -2299,7 +2297,7 @@ public:
   /// at the boundary
   template <std::size_t index>
   using output_boundary_knot_indices_t =
-      typename std::tuple_element_t<index, outputs_boundary_knot_indices_type>;
+      std::tuple_element_t<index, outputs_boundary_knot_indices_type>;
 
   /// @brief Type of the coefficient indices of the inputs in the interior
   using inputs_interior_coeff_indices_type = decltype(find_interior_coeff_indices(std::declval<std::tuple<Inputs...>>()));
@@ -2313,7 +2311,7 @@ public:
   /// inputs in the interior
   template <std::size_t index>
   using input_interior_coeff_indices_t =
-      typename std::tuple_element_t<index, inputs_interior_coeff_indices_type>;
+      std::tuple_element_t<index, inputs_interior_coeff_indices_type>;
 
   /// @brief Type of the coefficient indices of the inputs at the boundary
   using inputs_boundary_coeff_indices_type = decltype(find_boundary_coeff_indices(std::declval<std::tuple<Inputs...>>()));
@@ -2328,7 +2326,7 @@ public:
   /// inputs at the boundary
   template <std::size_t index>
   using input_boundary_coeff_indices_t =
-      typename std::tuple_element_t<index, inputs_boundary_coeff_indices_type>;
+      std::tuple_element_t<index, inputs_boundary_coeff_indices_type>;
 
   /// @brief Type of the coefficient indices of the outputs in the interior
   using outputs_interior_coeff_indices_type = decltype(find_interior_coeff_indices(std::declval<std::tuple<Outputs...>>()));
@@ -2342,7 +2340,7 @@ public:
   /// outputs in the interior
   template <std::size_t index>
   using output_interior_coeff_indices_t =
-      typename std::tuple_element_t<index, outputs_interior_coeff_indices_type>;
+      std::tuple_element_t<index, outputs_interior_coeff_indices_type>;
 
   /// @brief Type of the coefficient indices of the outputs at the boundary
   using outputs_boundary_coeff_indices_type = decltype(find_boundary_coeff_indices(std::declval<std::tuple<Outputs...>>()));
@@ -2357,7 +2355,7 @@ public:
   /// outputs at the boundary
   template <std::size_t index>
   using output_boundary_coeff_indices_t =
-      typename std::tuple_element_t<index, outputs_boundary_coeff_indices_type>;
+      std::tuple_element_t<index, outputs_boundary_coeff_indices_type>;
 };
 
 template <detail::HasAsTensor... Inputs, detail::HasAsTensor... Outputs,

@@ -42,7 +42,7 @@ namespace iganet {
 /// \f]
 ///
 /// with non-negative weights \f$w_i\f$. All operations are performed
-/// on the B-spline object which is afterwards converted to a NURBS
+/// on the B-spline object which is afterward converted to a NURBS
 /// object through perspective projection onto the coordinates
 /// \f$\left(x/w, y/w, z/w\right)\f$.
 template <typename real_t, short_t GeoDim, short_t... Degrees>
@@ -56,21 +56,21 @@ public:
   /// @brief Value type
   using value_type = real_t;
 
-  /// @brief Deduces the type of the template template parameter `BSpline`
+  /// @brief Deduces the type of the template parameter `BSpline`
   /// when exposed to the class template parameters `real_t` and
   /// `GeoDim`, and the `Degrees` parameter pack. The optional
   /// template parameter `degree_elevate` can be used to
   /// (de-)elevate the degrees by an additive constant
   template <template <typename, short_t, short_t...> class BSpline,
-            std::make_signed<short_t>::type degree_elevate = 0>
+            std::make_signed_t<short_t> degree_elevate = 0>
   using derived_type =
       BSpline<real_t, GeoDim + 1, (Degrees + degree_elevate)...>;
 
   /// @brief Deduces the self-type possibly degrees (de-)elevated by
   /// the additive constant `degree_elevate`
-  template <std::make_signed<short_t>::type degree_elevate = 0>
+  template <std::make_signed_t<short_t> degree_elevate = 0>
   using self_type =
-      typename Base::template derived_type<UniformNurbsCore, degree_elevate>;
+      Base::template derived_type<UniformNurbsCore, degree_elevate>;
 
   /// @brief Deduces the derived self-type when exposed to different
   /// class template parameters `real_t` and `GeoDim`, and the
@@ -92,7 +92,7 @@ public:
   /// @brief Default constructor
   ///
   /// @param[in] options Options configuration
-  UniformNurbsCore(Options<real_t> options = Options<real_t>{})
+  explicit UniformNurbsCore(Options<real_t> options = Options<real_t>{})
       : Base(options) {}
 
   /// @brief Constructor for equidistant knot vectors
@@ -102,7 +102,7 @@ public:
   /// @param[in] init Type of initialization
   ///
   /// @param[in] options Options configuration
-  UniformNurbsCore(const std::array<int64_t, Base::parDim_> &ncoeffs,
+  explicit UniformNurbsCore(const std::array<int64_t, Base::parDim_> &ncoeffs,
                    enum init init = init::greville,
                    Options<real_t> options = Options<real_t>{})
       : Base(ncoeffs, init, options) {
@@ -150,7 +150,7 @@ public:
   ///
   /// @param[in] options Options configuration
   template <typename other_t>
-  UniformNurbsCore(
+  explicit UniformNurbsCore(
       const UniformNurbsCore<other_t, GeoDim + 1, Degrees...> &other,
       Options<real_t> options = Options<real_t>{})
       : Base(static_cast<UniformBSplineCore<other_t, GeoDim + 1, Degrees...>>(
@@ -168,7 +168,7 @@ public:
   /// @note Since the weights are the entry of the homogeneous
   /// coordinates which are stored in coeff one can likewise retrieve
   /// them using `coeffs(GeoDim)`
-  inline const torch::Tensor &weights() const noexcept {
+  [[nodiscard]] inline const torch::Tensor &weights() const noexcept {
     return Base::coeffs_[GeoDim];
   }
 
@@ -201,20 +201,20 @@ public:
   /// @brief Value type
   using value_type = real_t;
 
-  /// @brief Deduces the type of the template template parameter `BSpline`
+  /// @brief Deduces the type of the template parameter `BSpline`
   /// when exposed to the class template parameters `real_t` and
   /// `GeoDim`, and the `Degrees` parameter pack. The optional
   /// template parameter `degree_elevate` can be used to
   /// (de-)elevate the degrees by an additive constant
   template <template <typename, short_t, short_t...> class BSpline,
-            std::make_signed<short_t>::type degree_elevate = 0>
+            std::make_signed_t<short_t> degree_elevate = 0>
   using derived_type = BSpline<real_t, GeoDim, (Degrees + degree_elevate)...>;
 
   /// @brief Deduces the self-type possibly degrees (de-)elevated by
   /// the additive constant `degree_elevate`
-  template <std::make_signed<short_t>::type degree_elevate = 0>
+  template <std::make_signed_t<short_t> degree_elevate = 0>
   using self_type =
-      typename Base::template derived_type<NonUniformNurbsCore, degree_elevate>;
+      Base::template derived_type<NonUniformNurbsCore, degree_elevate>;
 
   /// @brief Deduces the derived self-type when exposed to different
   /// class template parameters `real_t` and `GeoDim`, and the

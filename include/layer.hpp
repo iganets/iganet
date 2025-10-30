@@ -15,6 +15,7 @@
 #pragma once
 
 #include <core.hpp>
+#include <utility>
 #include <utils/fqn.hpp>
 
 namespace iganet {
@@ -61,13 +62,13 @@ enum class activation : short_t {
 /// @brief Abstract activation function structure
 class ActivationFunction : protected utils::FullQualifiedName {
 public:
-  virtual ~ActivationFunction() = default;
+  ~ActivationFunction() override = default;
 
   /// @brief Applies the activation function to the given input
   virtual torch::Tensor apply(const torch::Tensor &) const = 0;
 
   /// @brief Returns a string representation of the activation function
-  virtual void pretty_print(std::ostream &os) const noexcept = 0;
+  void pretty_print(std::ostream &os) const noexcept override = 0;
 
   /// @brief Writes the activation function into a
   /// torch::serialize::OutputArchive object
@@ -97,7 +98,7 @@ public:
   }
 
   /// @brief Returns a string representation of the activation function
-  inline virtual void pretty_print(std::ostream &os) const noexcept override {
+  inline void pretty_print(std::ostream &os) const noexcept override {
     os << utils::FullQualifiedName::name();
   }
 
@@ -106,7 +107,7 @@ public:
   inline torch::serialize::OutputArchive &
   write(torch::serialize::OutputArchive &archive,
         const std::string &key = "none") const override {
-    archive.write(key + ".type", torch::full({1}, (int64_t)activation::none));
+    archive.write(key + ".type", torch::full({1}, static_cast<int64_t>(activation::none)));
 
     return archive;
   }
@@ -119,7 +120,7 @@ public:
     torch::Tensor tensor;
 
     archive.read(key + ".type", tensor);
-    if (tensor.item<int64_t>() != (int64_t)activation::none)
+    if (tensor.item<int64_t>() != static_cast<int64_t>(activation::none))
       throw std::runtime_error("activation mismatch");
 
     return archive;
@@ -133,23 +134,23 @@ public:
 /// https://arxiv.org/abs/1502.03167
 class BatchNorm : public ActivationFunction {
 public:
-  explicit BatchNorm(const torch::Tensor &running_mean,
-                     const torch::Tensor &running_var,
+  explicit BatchNorm(torch::Tensor running_mean,
+                     torch::Tensor running_var,
                      torch::nn::functional::BatchNormFuncOptions options = {})
-      : running_mean_(running_mean), running_var_(running_var),
-        options_(std::move(options)) {}
+      : options_(std::move(options)), running_mean_(std::move(running_mean)),
+        running_var_(std::move(running_var)) {}
 
-  explicit BatchNorm(const torch::Tensor &running_mean,
-                     const torch::Tensor &running_var,
+  explicit BatchNorm(torch::Tensor running_mean,
+                     torch::Tensor running_var,
                      const torch::Tensor &weight, const torch::Tensor &bias,
                      double eps, double momentum, bool training = false)
-      : running_mean_(running_mean), running_var_(running_var),
-        options_(torch::nn::functional::BatchNormFuncOptions()
+      : options_(torch::nn::functional::BatchNormFuncOptions()
                      .weight(weight)
                      .bias(bias)
                      .eps(eps)
                      .momentum(momentum)
-                     .training(training)) {}
+                     .training(training)), running_mean_(std::move(running_mean)),
+        running_var_(std::move(running_var)) {}
 
   ~BatchNorm() override = default;
 
@@ -182,8 +183,8 @@ public:
   }
 
   /// @brief Returns a string representation of the activation function
-  inline virtual void
-  pretty_print(std::ostream &os = Log(log::info)) const noexcept override {
+  inline void
+  pretty_print(std::ostream &os) const noexcept override {
     os << utils::FullQualifiedName::name() << "(\n  eps=" << options_.eps()
        << ", momentum="
        << options_
@@ -209,7 +210,8 @@ public:
   write(torch::serialize::OutputArchive &archive,
         const std::string &key = "batch_norm") const override {
     archive.write(key + ".type",
-                  torch::full({1}, (int64_t)activation::batch_norm));
+                  torch::full({1}, static_cast<int64_t>(
+                                                      activation::batch_norm)));
     archive.write(key + ".running_mean", this->running_mean());
     archive.write(key + ".running_var", this->running_var());
     archive.write(key + ".weight", this->options_.weight());
@@ -235,7 +237,7 @@ public:
     torch::Tensor tensor;
 
     archive.read(key + ".type", tensor);
-    if (tensor.item<int64_t>() != (int64_t)activation::batch_norm)
+    if (tensor.item<int64_t>() != static_cast<int64_t>(activation::batch_norm))
       throw std::runtime_error("activation mismatch");
 
     archive.read(key + ".running_mean", this->running_mean());
@@ -288,8 +290,8 @@ public:
   inline torch::nn::functional::CELUFuncOptions &options() { return options_; }
 
   /// @brief Returns a string representation of the activation function
-  inline virtual void
-  pretty_print(std::ostream &os = Log(log::info)) const noexcept override {
+  inline void
+  pretty_print(std::ostream &os) const noexcept override {
     os << utils::FullQualifiedName::name() << "(\n  alpha=" << options_.alpha()
        << ", inplace=" << options_.inplace() << "\n)";
   }
@@ -299,7 +301,7 @@ public:
   inline torch::serialize::OutputArchive &
   write(torch::serialize::OutputArchive &archive,
         const std::string &key = "celu") const override {
-    archive.write(key + ".type", torch::full({1}, (int64_t)activation::celu));
+    archive.write(key + ".type", torch::full({1}, static_cast<int64_t>(activation::celu)));
     archive.write(key + ".alpha",
                   torch::full({1}, (double)this->options_.alpha()));
     archive.write(key + ".inplace",
@@ -316,7 +318,7 @@ public:
     torch::Tensor tensor;
 
     archive.read(key + ".type", tensor);
-    if (tensor.item<int64_t>() != (int64_t)activation::celu)
+    if (tensor.item<int64_t>() != static_cast<int64_t>(activation::celu))
       throw std::runtime_error("activation mismatch");
 
     archive.read(key + ".alpha", tensor);
@@ -365,7 +367,7 @@ public:
   inline torch::nn::functional::ELUFuncOptions &options() { return options_; }
 
   /// @brief Returns a string representation of the activation function
-  inline virtual void
+  inline void
   pretty_print(std::ostream &os = Log(log::info)) const noexcept override {
     os << utils::FullQualifiedName::name() << "(\n  alpha=" << options_.alpha()
        << ", inplace=" << options_.inplace() << "\n)";
@@ -376,7 +378,7 @@ public:
   inline torch::serialize::OutputArchive &
   write(torch::serialize::OutputArchive &archive,
         const std::string &key = "elu") const override {
-    archive.write(key + ".type", torch::full({1}, (int64_t)activation::elu));
+    archive.write(key + ".type", torch::full({1}, static_cast<int64_t>(activation::elu)));
     archive.write(key + ".alpha",
                   torch::full({1}, (double)this->options_.alpha()));
     archive.write(key + ".inplace",
@@ -393,7 +395,7 @@ public:
     torch::Tensor tensor;
 
     archive.read(key + ".type", tensor);
-    if (tensor.item<int64_t>() != (int64_t)activation::elu)
+    if (tensor.item<int64_t>() != static_cast<int64_t>(activation::elu))
       throw std::runtime_error("activation mismatch");
 
     archive.read(key + ".alpha", tensor);
@@ -428,8 +430,8 @@ public:
   }
 
   /// @brief Returns a string representation of the activation function
-  inline virtual void
-  pretty_print(std::ostream &os = Log(log::info)) const noexcept override {
+  inline void
+  pretty_print(std::ostream &os) const noexcept override {
     os << utils::FullQualifiedName::name();
   }
 
@@ -438,7 +440,7 @@ public:
   inline torch::serialize::OutputArchive &
   write(torch::serialize::OutputArchive &archive,
         const std::string &key = "gelu") const override {
-    archive.write(key + ".type", torch::full({1}, (int64_t)activation::gelu));
+    archive.write(key + ".type", torch::full({1}, static_cast<int64_t>(activation::gelu)));
 
     return archive;
   }
@@ -451,7 +453,7 @@ public:
     torch::Tensor tensor;
 
     archive.read(key + ".type", tensor);
-    if (tensor.item<int64_t>() != (int64_t)activation::gelu)
+    if (tensor.item<int64_t>() != static_cast<int64_t>(activation::gelu))
       throw std::runtime_error("activation mismatch");
 
     return archive;
@@ -491,8 +493,8 @@ public:
   inline torch::nn::functional::GLUFuncOptions &options() { return options_; }
 
   /// @brief Returns a string representation of the activation function
-  inline virtual void
-  pretty_print(std::ostream &os = Log(log::info)) const noexcept override {
+  inline void
+  pretty_print(std::ostream &os) const noexcept override {
     os << utils::FullQualifiedName::name() << "(\n  dim=" << options_.dim()
        << "\n)";
   }
@@ -502,8 +504,8 @@ public:
   inline torch::serialize::OutputArchive &
   write(torch::serialize::OutputArchive &archive,
         const std::string &key = "glu") const override {
-    archive.write(key + ".type", torch::full({1}, (int64_t)activation::glu));
-    archive.write(key + ".dim", torch::full({1}, (int)this->options_.dim()));
+    archive.write(key + ".type", torch::full({1}, static_cast<int64_t>(activation::glu)));
+    archive.write(key + ".dim", torch::full({1}, static_cast<int>(this->options_.dim())));
 
     return archive;
   }
@@ -516,7 +518,7 @@ public:
     torch::Tensor tensor;
 
     archive.read(key + ".type", tensor);
-    if (tensor.item<int64_t>() != (int64_t)activation::glu)
+    if (tensor.item<int64_t>() != static_cast<int64_t>(activation::glu))
       throw std::runtime_error("activation mismatch");
 
     archive.read(key + ".dim", tensor);
@@ -564,7 +566,7 @@ public:
   }
 
   /// @brief Returns a string representation of the activation function
-  inline virtual void
+  inline void
   pretty_print(std::ostream &os = Log(log::info)) const noexcept override {
     os << utils::FullQualifiedName::name() << "(\n  eps=" << options_.eps();
 
@@ -582,7 +584,8 @@ public:
   write(torch::serialize::OutputArchive &archive,
         const std::string &key = "group_norm") const override {
     archive.write(key + ".type",
-                  torch::full({1}, (int64_t)activation::group_norm));
+                  torch::full({1}, static_cast<int64_t>(
+                                                      activation::group_norm)));
     archive.write(key + ".weight", this->options_.weight());
     archive.write(key + ".bias", this->options_.bias());
     archive.write(key + ".eps", torch::full({1}, (double)this->options_.eps()));
@@ -598,7 +601,7 @@ public:
     torch::Tensor tensor;
 
     archive.read(key + ".type", tensor);
-    if (tensor.item<int64_t>() != (int64_t)activation::group_norm)
+    if (tensor.item<int64_t>() != static_cast<int64_t>(activation::group_norm))
       throw std::runtime_error("activation mismatch");
 
     archive.read(key + ".weight", this->options_.weight());
@@ -645,7 +648,7 @@ public:
   }
 
   /// @brief Returns a string representation of the activation function
-  inline virtual void
+  inline void
   pretty_print(std::ostream &os = Log(log::info)) const noexcept override {
     os << utils::FullQualifiedName::name() << "(\n  tau=" << options_.tau()
        << ", dim=" << options_.dim() << ", hard=" << options_.hard() << "\n)";
@@ -657,7 +660,7 @@ public:
   write(torch::serialize::OutputArchive &archive,
         const std::string &key = "gumbel_softmax") const override {
     archive.write(key + ".type",
-                  torch::full({1}, (int64_t)activation::gumbel_softmax));
+                  torch::full({1}, static_cast<int64_t>(activation::gumbel_softmax)));
     archive.write(key + ".tau", torch::full({1}, (double)this->options_.tau()));
     archive.write(key + ".dim", torch::full({1}, (int)this->options_.dim()));
     archive.write(key + ".hard", torch::full({1}, (bool)this->options_.hard()));
@@ -673,7 +676,7 @@ public:
     torch::Tensor tensor;
 
     archive.read(key + ".type", tensor);
-    if (tensor.item<int64_t>() != (int64_t)activation::gumbel_softmax)
+    if (tensor.item<int64_t>() != static_cast<int64_t>(activation::gumbel_softmax))
       throw std::runtime_error("activation mismatch");
 
     archive.read(key + ".tau", tensor);
@@ -718,7 +721,7 @@ public:
   }
 
   /// @brief Returns a string representation of the activation function
-  inline virtual void
+  inline void
   pretty_print(std::ostream &os = Log(log::info)) const noexcept override {
     os << utils::FullQualifiedName::name()
        << "(\n  lambda=" << options_.lambda() << "\n)";
@@ -730,7 +733,8 @@ public:
   write(torch::serialize::OutputArchive &archive,
         const std::string &key = "hardshrink") const override {
     archive.write(key + ".type",
-                  torch::full({1}, (int64_t)activation::hardshrink));
+                  torch::full({1}, static_cast<int64_t>(
+                                                      activation::hardshrink)));
     archive.write(key + ".lambda",
                   torch::full({1}, (double)this->options_.lambda()));
 
@@ -745,7 +749,7 @@ public:
     torch::Tensor tensor;
 
     archive.read(key + ".type", tensor);
-    if (tensor.item<int64_t>() != (int64_t)activation::hardshrink)
+    if (tensor.item<int64_t>() != static_cast<int64_t>(activation::hardshrink))
       throw std::runtime_error("activation mismatch");
 
     archive.read(key + ".lambda", tensor);
@@ -780,7 +784,7 @@ public:
   }
 
   /// @brief Returns a string representation of the activation function
-  inline virtual void
+  inline void
   pretty_print(std::ostream &os = Log(log::info)) const noexcept override {
     os << utils::FullQualifiedName::name();
   }
@@ -791,7 +795,7 @@ public:
   write(torch::serialize::OutputArchive &archive,
         const std::string &key = "hardsigmoid") const override {
     archive.write(key + ".type",
-                  torch::full({1}, (int64_t)activation::hardsigmoid));
+                  torch::full({1}, static_cast<int64_t>(activation::hardsigmoid)));
 
     return archive;
   }
@@ -804,7 +808,7 @@ public:
     torch::Tensor tensor;
 
     archive.read(key + ".type", tensor);
-    if (tensor.item<int64_t>() != (int64_t)activation::hardsigmoid)
+    if (tensor.item<int64_t>() != static_cast<int64_t>(activation::hardsigmoid))
       throw std::runtime_error("activation mismatch");
 
     return archive;
@@ -833,7 +837,7 @@ public:
   }
 
   /// @brief Returns a string representation of the activation function
-  inline virtual void
+  inline void
   pretty_print(std::ostream &os = Log(log::info)) const noexcept override {
     os << utils::FullQualifiedName::name();
   }
@@ -844,7 +848,8 @@ public:
   write(torch::serialize::OutputArchive &archive,
         const std::string &key = "hardswish") const override {
     archive.write(key + ".type",
-                  torch::full({1}, (int64_t)activation::hardswish));
+                  torch::full({1}, static_cast<int64_t>(
+                                                      activation::hardswish)));
 
     return archive;
   }
@@ -857,7 +862,7 @@ public:
     torch::Tensor tensor;
 
     archive.read(key + ".type", tensor);
-    if (tensor.item<int64_t>() != (int64_t)activation::hardswish)
+    if (tensor.item<int64_t>() != static_cast<int64_t>(activation::hardswish))
       throw std::runtime_error("activation mismatch");
 
     return archive;
@@ -876,7 +881,8 @@ public:
 /// \f]
 class Hardtanh : public ActivationFunction {
 public:
-  explicit Hardtanh(torch::nn::functional::HardtanhFuncOptions options = {})
+  explicit Hardtanh(
+      const torch::nn::functional::HardtanhFuncOptions &options = {})
       : options_(options) {}
 
   explicit Hardtanh(double min_val, double max_val, bool inplace = false)
@@ -903,7 +909,7 @@ public:
   }
 
   /// @brief Returns a string representation of the activation function
-  inline virtual void
+  inline void
   pretty_print(std::ostream &os = Log(log::info)) const noexcept override {
     os << utils::FullQualifiedName::name()
        << "(\n  min_val=" << options_.min_val()
@@ -917,7 +923,7 @@ public:
   write(torch::serialize::OutputArchive &archive,
         const std::string &key = "hardtanh") const override {
     archive.write(key + ".type",
-                  torch::full({1}, (int64_t)activation::hardtanh));
+                  torch::full({1}, static_cast<int64_t>(activation::hardtanh)));
     archive.write(key + ".min_val",
                   torch::full({1}, (double)this->options_.min_val()));
     archive.write(key + ".max_val",
@@ -936,7 +942,7 @@ public:
     torch::Tensor tensor;
 
     archive.read(key + ".type", tensor);
-    if (tensor.item<int64_t>() != (int64_t)activation::hardtanh)
+    if (tensor.item<int64_t>() != static_cast<int64_t>(activation::hardtanh))
       throw std::runtime_error("activation mismatch");
 
     archive.read(key + ".min_val", tensor);
@@ -995,7 +1001,7 @@ public:
   }
 
   /// @brief Returns a string representation of the activation function
-  inline virtual void
+  inline void
   pretty_print(std::ostream &os = Log(log::info)) const noexcept override {
     os << utils::FullQualifiedName::name() << "(\n  eps=" << options_.eps()
        << ", momentum=" << options_.momentum()
@@ -1017,7 +1023,7 @@ public:
   write(torch::serialize::OutputArchive &archive,
         const std::string &key = "instance_norm") const override {
     archive.write(key + ".type",
-                  torch::full({1}, (int64_t)activation::instance_norm));
+                  torch::full({1}, static_cast<int64_t>(activation::instance_norm)));
     archive.write(key + ".running_mean", this->options_.running_mean());
     archive.write(key + ".var", this->options_.running_var());
     archive.write(key + ".weight", this->options_.weight());
@@ -1039,7 +1045,7 @@ public:
     torch::Tensor tensor;
 
     archive.read(key + ".type", tensor);
-    if (tensor.item<int64_t>() != (int64_t)activation::instance_norm)
+    if (tensor.item<int64_t>() != static_cast<int64_t>(activation::instance_norm))
       throw std::runtime_error("activation mismatch");
 
     archive.read(key + ".running_mean", this->options_.running_mean());
@@ -1099,8 +1105,8 @@ public:
   }
 
   /// @brief Returns a string representation of the activation function
-  inline virtual void
-  pretty_print(std::ostream &os = Log(log::info)) const noexcept override {
+  inline void
+  pretty_print(std::ostream &os) const noexcept override {
     os << utils::FullQualifiedName::name() << "(\n  eps=" << options_.eps();
 
     if (is_verbose(os)) {
@@ -1118,7 +1124,8 @@ public:
   write(torch::serialize::OutputArchive &archive,
         const std::string &key = "layer_norm") const override {
     archive.write(key + ".type",
-                  torch::full({1}, (int64_t)activation::layer_norm));
+                  torch::full({1}, static_cast<int64_t>(
+                                                      activation::layer_norm)));
     archive.write(key + ".weight", this->options_.weight());
     archive.write(key + ".bias", this->options_.bias());
     archive.write(key + ".eps", torch::full({1}, (double)this->options_.eps()));
@@ -1134,7 +1141,7 @@ public:
     torch::Tensor tensor;
 
     archive.read(key + ".type", tensor);
-    if (tensor.item<int64_t>() != (int64_t)activation::layer_norm)
+    if (tensor.item<int64_t>() != static_cast<int64_t>(activation::layer_norm))
       throw std::runtime_error("activation mismatch");
 
     archive.read(key + ".weight", this->options_.weight());
@@ -1186,8 +1193,8 @@ public:
   }
 
   /// @brief Returns a string representation of the activation function
-  inline virtual void
-  pretty_print(std::ostream &os = Log(log::info)) const noexcept override {
+  inline void
+  pretty_print(std::ostream &os) const noexcept override {
     os << utils::FullQualifiedName::name()
        << "(\n  negative_slope=" << options_.negative_slope()
        << ", inplace=" << options_.inplace() << "\n)";
@@ -1199,7 +1206,8 @@ public:
   write(torch::serialize::OutputArchive &archive,
         const std::string &key = "leaky_relu") const override {
     archive.write(key + ".type",
-                  torch::full({1}, (int64_t)activation::leaky_relu));
+                  torch::full({1}, static_cast<int64_t>(
+                                                      activation::leaky_relu)));
 
     archive.write(key + ".negative_slope",
                   torch::full({1}, (double)this->options_.negative_slope()));
@@ -1217,7 +1225,7 @@ public:
     torch::Tensor tensor;
 
     archive.read(key + ".type", tensor);
-    if (tensor.item<int64_t>() != (int64_t)activation::leaky_relu)
+    if (tensor.item<int64_t>() != static_cast<int64_t>(activation::leaky_relu))
       throw std::runtime_error("activation mismatch");
 
     archive.read(key + ".negative_slope", tensor);
@@ -1267,8 +1275,8 @@ public:
   }
 
   /// @brief Returns a string representation of the activation function
-  inline virtual void
-  pretty_print(std::ostream &os = Log(log::info)) const noexcept override {
+  inline void
+  pretty_print(std::ostream &os) const noexcept override {
     os << utils::FullQualifiedName::name() << "(\n  size=" << options_.size()
        << ", alpha=" << options_.alpha() << ", beta=" << options_.beta()
        << ", k=" << options_.k() << "\n)";
@@ -1280,7 +1288,8 @@ public:
   write(torch::serialize::OutputArchive &archive,
         const std::string &key = "local_response_norm") const override {
     archive.write(key + ".type",
-                  torch::full({1}, (int64_t)activation::local_response_norm));
+                  torch::full({1}, static_cast<int64_t>(
+                                       activation::local_response_norm)));
 
     archive.write(key + ".size",
                   torch::full({1}, (int64_t)this->options_.size()));
@@ -1301,7 +1310,7 @@ public:
     torch::Tensor tensor;
 
     archive.read(key + ".type", tensor);
-    if (tensor.item<int64_t>() != (int64_t)activation::local_response_norm)
+    if (tensor.item<int64_t>() != static_cast<int64_t>(activation::local_response_norm))
       throw std::runtime_error("activation mismatch");
 
     archive.read(key + ".size", tensor);
@@ -1337,8 +1346,8 @@ public:
   }
 
   /// @brief Returns a string representation of the activation function
-  inline virtual void
-  pretty_print(std::ostream &os = Log(log::info)) const noexcept override {
+  inline void
+  pretty_print(std::ostream &os) const noexcept override {
     os << utils::FullQualifiedName::name();
   }
 
@@ -1348,7 +1357,8 @@ public:
   write(torch::serialize::OutputArchive &archive,
         const std::string &key = "logsigmoid") const override {
     archive.write(key + ".type",
-                  torch::full({1}, (int64_t)activation::logsigmoid));
+                  torch::full({1}, static_cast<int64_t>(
+                                                      activation::logsigmoid)));
 
     return archive;
   }
@@ -1361,7 +1371,7 @@ public:
     torch::Tensor tensor;
 
     archive.read(key + ".type", tensor);
-    if (tensor.item<int64_t>() != (int64_t)activation::logsigmoid)
+    if (tensor.item<int64_t>() != static_cast<int64_t>(activation::logsigmoid))
       throw std::runtime_error("activation mismatch");
 
     return archive;
@@ -1403,8 +1413,8 @@ public:
   }
 
   /// @brief Returns a string representation of the activation function
-  inline virtual void
-  pretty_print(std::ostream &os = Log(log::info)) const noexcept override {
+  inline  void
+  pretty_print(std::ostream &os) const noexcept override {
     os << utils::FullQualifiedName::name() << "(\n  dim=" << options_.dim()
        << "\n)";
   }
@@ -1415,7 +1425,8 @@ public:
   write(torch::serialize::OutputArchive &archive,
         const std::string &key = "logsoftmax") const override {
     archive.write(key + ".type",
-                  torch::full({1}, (int64_t)activation::logsoftmax));
+                  torch::full({1}, static_cast<int64_t>(
+                                                      activation::logsoftmax)));
 
     return archive;
   }
@@ -1428,7 +1439,7 @@ public:
     torch::Tensor tensor;
 
     archive.read(key + ".type", tensor);
-    if (tensor.item<int64_t>() != (int64_t)activation::logsoftmax)
+    if (tensor.item<int64_t>() != static_cast<int64_t>(activation::logsoftmax))
       throw std::runtime_error("activation mismatch");
 
     return archive;
@@ -1455,8 +1466,8 @@ public:
   }
 
   /// @brief Returns a string representation of the activation function
-  inline virtual void
-  pretty_print(std::ostream &os = Log(log::info)) const noexcept override {
+  inline void
+  pretty_print(std::ostream &os) const noexcept override {
     os << utils::FullQualifiedName::name();
   }
 
@@ -1465,7 +1476,7 @@ public:
   inline torch::serialize::OutputArchive &
   write(torch::serialize::OutputArchive &archive,
         const std::string &key = "mish") const override {
-    archive.write(key + ".type", torch::full({1}, (int64_t)activation::mish));
+    archive.write(key + ".type", torch::full({1}, static_cast<int64_t>(activation::mish)));
 
     return archive;
   }
@@ -1478,7 +1489,7 @@ public:
     torch::Tensor tensor;
 
     archive.read(key + ".type", tensor);
-    if (tensor.item<int64_t>() != (int64_t)activation::mish)
+    if (tensor.item<int64_t>() != static_cast<int64_t>(activation::mish))
       throw std::runtime_error("activation mismatch");
 
     return archive;
@@ -1514,8 +1525,8 @@ public:
   }
 
   /// @brief Returns a string representation of the activation function
-  inline virtual void
-  pretty_print(std::ostream &os = Log(log::info)) const noexcept override {
+  inline void
+  pretty_print(std::ostream &os) const noexcept override {
     os << utils::FullQualifiedName::name() << "(\n  eps=" << options_.eps()
        << "(\n  p=" << options_.p() << "(\n  dim=" << options_.dim() << "\n)";
   }
@@ -1526,7 +1537,8 @@ public:
   write(torch::serialize::OutputArchive &archive,
         const std::string &key = "normalize") const override {
     archive.write(key + ".type",
-                  torch::full({1}, (int64_t)activation::normalize));
+                  torch::full({1}, static_cast<int64_t>(
+                                                      activation::normalize)));
     archive.write(key + ".p", torch::full({1}, (double)this->options_.p()));
     archive.write(key + ".eps", torch::full({1}, (double)this->options_.eps()));
     archive.write(key + ".dim",
@@ -1543,7 +1555,7 @@ public:
     torch::Tensor tensor;
 
     archive.read(key + ".type", tensor);
-    if (tensor.item<int64_t>() != (int64_t)activation::normalize)
+    if (tensor.item<int64_t>() != static_cast<int64_t>(activation::normalize))
       throw std::runtime_error("activation mismatch");
 
     archive.read(key + ".p", tensor);
@@ -1563,7 +1575,7 @@ private:
 /// @brief PReLU activation function
 class PReLU : public ActivationFunction {
 public:
-  explicit PReLU(const torch::Tensor &weight) : weight_(weight) {}
+  explicit PReLU(torch::Tensor weight) : weight_(std::move(weight)) {}
 
   ~PReLU() override = default;
 
@@ -1579,8 +1591,8 @@ public:
   }
 
   /// @brief Returns a string representation of the activation function
-  inline virtual void
-  pretty_print(std::ostream &os = Log(log::info)) const noexcept override {
+  inline void
+  pretty_print(std::ostream &os) const noexcept override {
     os << utils::FullQualifiedName::name();
 
     if (is_verbose(os))
@@ -1592,7 +1604,7 @@ public:
   inline torch::serialize::OutputArchive &
   write(torch::serialize::OutputArchive &archive,
         const std::string &key = "prelu") const override {
-    archive.write(key + ".type", torch::full({1}, (int64_t)activation::prelu));
+    archive.write(key + ".type", torch::full({1}, static_cast<int64_t>(activation::prelu)));
     archive.write(key + ".weight", this->weight());
 
     return archive;
@@ -1606,7 +1618,7 @@ public:
     torch::Tensor tensor;
 
     archive.read(key + ".type", tensor);
-    if (tensor.item<int64_t>() != (int64_t)activation::prelu)
+    if (tensor.item<int64_t>() != static_cast<int64_t>(activation::prelu))
       throw std::runtime_error("activation mismatch");
 
     archive.read(key + ".weight", this->weight());
@@ -1647,8 +1659,8 @@ public:
   inline torch::nn::functional::ReLUFuncOptions &options() { return options_; }
 
   /// @brief Returns a string representation of the activation function
-  inline virtual void
-  pretty_print(std::ostream &os = Log(log::info)) const noexcept override {
+  inline void
+  pretty_print(std::ostream &os) const noexcept override {
     os << utils::FullQualifiedName::name()
        << "(\n  inplace=" << options_.inplace() << "\n)";
   }
@@ -1658,7 +1670,7 @@ public:
   inline torch::serialize::OutputArchive &
   write(torch::serialize::OutputArchive &archive,
         const std::string &key = "relu") const override {
-    archive.write(key + ".type", torch::full({1}, (int64_t)activation::relu));
+    archive.write(key + ".type", torch::full({1}, static_cast<int64_t>(activation::relu)));
     archive.write(key + ".inplace",
                   torch::full({1}, (bool)this->options_.inplace()));
 
@@ -1673,7 +1685,7 @@ public:
     torch::Tensor tensor;
 
     archive.read(key + ".type", tensor);
-    if (tensor.item<int64_t>() != (int64_t)activation::relu)
+    if (tensor.item<int64_t>() != static_cast<int64_t>(activation::relu))
       throw std::runtime_error("activation mismatch");
 
     archive.read(key + ".inplace", tensor);
@@ -1715,8 +1727,8 @@ public:
   inline torch::nn::functional::ReLU6FuncOptions &options() { return options_; }
 
   /// @brief Returns a string representation of the activation function
-  inline virtual void
-  pretty_print(std::ostream &os = Log(log::info)) const noexcept override {
+  inline void
+  pretty_print(std::ostream &os) const noexcept override {
     os << utils::FullQualifiedName::name()
        << "(\n  inplace=" << options_.inplace() << "\n)";
   }
@@ -1726,7 +1738,7 @@ public:
   inline torch::serialize::OutputArchive &
   write(torch::serialize::OutputArchive &archive,
         const std::string &key = "relu6") const override {
-    archive.write(key + ".type", torch::full({1}, (int64_t)activation::relu6));
+    archive.write(key + ".type", torch::full({1}, static_cast<int64_t>(activation::relu6)));
     archive.write(key + ".inplace",
                   torch::full({1}, (bool)this->options_.inplace()));
 
@@ -1741,7 +1753,7 @@ public:
     torch::Tensor tensor;
 
     archive.read(key + ".type", tensor);
-    if (tensor.item<int64_t>() != (int64_t)activation::relu6)
+    if (tensor.item<int64_t>() != static_cast<int64_t>(activation::relu6))
       throw std::runtime_error("activation mismatch");
 
     archive.read(key + ".inplace", tensor);
@@ -1765,7 +1777,7 @@ private:
 /// \f]
 class RReLU : public ActivationFunction {
 public:
-  explicit RReLU(torch::nn::functional::RReLUFuncOptions options = {})
+  explicit RReLU(const torch::nn::functional::RReLUFuncOptions &options = {})
       : options_(options) {}
 
   explicit RReLU(double lower, double upper, bool inplace = false)
@@ -1790,8 +1802,8 @@ public:
   inline torch::nn::functional::RReLUFuncOptions &options() { return options_; }
 
   /// @brief Returns a string representation of the activation function
-  inline virtual void
-  pretty_print(std::ostream &os = Log(log::info)) const noexcept override {
+  inline void
+  pretty_print(std::ostream &os) const noexcept override {
     os << utils::FullQualifiedName::name() << "(\n  lower=" << options_.lower()
        << ",  upper=" << options_.upper() << ",  inplace=" << options_.inplace()
        << "\n)";
@@ -1802,7 +1814,7 @@ public:
   inline torch::serialize::OutputArchive &
   write(torch::serialize::OutputArchive &archive,
         const std::string &key = "rrelu") const override {
-    archive.write(key + ".type", torch::full({1}, (int64_t)activation::rrelu));
+    archive.write(key + ".type", torch::full({1}, static_cast<int64_t>(activation::rrelu)));
     archive.write(key + ".lower",
                   torch::full({1}, (double)this->options_.lower()));
     archive.write(key + ".upper",
@@ -1821,7 +1833,7 @@ public:
     torch::Tensor tensor;
 
     archive.read(key + ".type", tensor);
-    if (tensor.item<int64_t>() != (int64_t)activation::rrelu)
+    if (tensor.item<int64_t>() != static_cast<int64_t>(activation::rrelu))
       throw std::runtime_error("activation mismatch");
 
     archive.read(key + ".lower", tensor);
@@ -1870,8 +1882,8 @@ public:
   inline torch::nn::functional::SELUFuncOptions &options() { return options_; }
 
   /// @brief Returns a string representation of the activation function
-  inline virtual void
-  pretty_print(std::ostream &os = Log(log::info)) const noexcept override {
+  inline void
+  pretty_print(std::ostream &os) const noexcept override {
     os << utils::FullQualifiedName::name()
        << "(\n  inplace=" << options_.inplace() << "\n)";
   }
@@ -1881,7 +1893,7 @@ public:
   inline torch::serialize::OutputArchive &
   write(torch::serialize::OutputArchive &archive,
         const std::string &key = "selu") const override {
-    archive.write(key + ".type", torch::full({1}, (int64_t)activation::selu));
+    archive.write(key + ".type", torch::full({1}, static_cast<int64_t>(activation::selu)));
     archive.write(key + ".inplace",
                   torch::full({1}, (bool)this->options_.inplace()));
 
@@ -1896,7 +1908,7 @@ public:
     torch::Tensor tensor;
 
     archive.read(key + ".type", tensor);
-    if (tensor.item<int64_t>() != (int64_t)activation::selu)
+    if (tensor.item<int64_t>() != static_cast<int64_t>(activation::selu))
       throw std::runtime_error("activation mismatch");
 
     archive.read(key + ".inplace", tensor);
@@ -1922,8 +1934,8 @@ public:
   }
 
   /// @brief Returns a string representation of the activation function
-  inline virtual void
-  pretty_print(std::ostream &os = Log(log::info)) const noexcept override {
+  inline void
+  pretty_print(std::ostream &os) const noexcept override {
     os << utils::FullQualifiedName::name();
   }
 
@@ -1933,7 +1945,7 @@ public:
   write(torch::serialize::OutputArchive &archive,
         const std::string &key = "sigmoid") const override {
     archive.write(key + ".type",
-                  torch::full({1}, (int64_t)activation::sigmoid));
+                  torch::full({1}, static_cast<int64_t>(activation::sigmoid)));
 
     return archive;
   }
@@ -1946,7 +1958,7 @@ public:
     torch::Tensor tensor;
 
     archive.read(key + ".type", tensor);
-    if (tensor.item<int64_t>() != (int64_t)activation::sigmoid)
+    if (tensor.item<int64_t>() != static_cast<int64_t>(activation::sigmoid))
       throw std::runtime_error("activation mismatch");
 
     return archive;
@@ -1966,8 +1978,8 @@ public:
   }
 
   /// @brief Returns a string representation of the activation function
-  inline virtual void
-  pretty_print(std::ostream &os = Log(log::info)) const noexcept override {
+  inline void
+  pretty_print(std::ostream &os) const noexcept override {
     os << utils::FullQualifiedName::name();
   }
 
@@ -1976,7 +1988,7 @@ public:
   inline torch::serialize::OutputArchive &
   write(torch::serialize::OutputArchive &archive,
         const std::string &key = "silu") const override {
-    archive.write(key + ".type", torch::full({1}, (int64_t)activation::silu));
+    archive.write(key + ".type", torch::full({1}, static_cast<int64_t>(activation::silu)));
 
     return archive;
   }
@@ -1989,7 +2001,7 @@ public:
     torch::Tensor tensor;
 
     archive.read(key + ".type", tensor);
-    if (tensor.item<int64_t>() != (int64_t)activation::silu)
+    if (tensor.item<int64_t>() != static_cast<int64_t>(activation::silu))
       throw std::runtime_error("activation mismatch");
 
     return archive;
@@ -2029,8 +2041,8 @@ public:
   }
 
   /// @brief Returns a string representation of the activation function
-  inline virtual void
-  pretty_print(std::ostream &os = Log(log::info)) const noexcept override {
+  inline void
+  pretty_print(std::ostream &os) const noexcept override {
     os << utils::FullQualifiedName::name() << "(\n  dim=" << options_.dim()
        << "\n)";
   }
@@ -2041,7 +2053,7 @@ public:
   write(torch::serialize::OutputArchive &archive,
         const std::string &key = "softmax") const override {
     archive.write(key + ".type",
-                  torch::full({1}, (int64_t)activation::softmax));
+                  torch::full({1}, static_cast<int64_t>(activation::softmax)));
     archive.write(key + ".dim",
                   torch::full({1}, (int64_t)this->options_.dim()));
 
@@ -2056,7 +2068,7 @@ public:
     torch::Tensor tensor;
 
     archive.read(key + ".type", tensor);
-    if (tensor.item<int64_t>() != (int64_t)activation::softmax)
+    if (tensor.item<int64_t>() != static_cast<int64_t>(activation::softmax))
       throw std::runtime_error("activation mismatch");
 
     archive.read(key + ".dim", tensor);
@@ -2100,8 +2112,8 @@ public:
   }
 
   /// @brief Returns a string representation of the activation function
-  inline virtual void
-  pretty_print(std::ostream &os = Log(log::info)) const noexcept override {
+  inline void
+  pretty_print(std::ostream &os) const noexcept override {
     os << utils::FullQualifiedName::name() << "(\n  dim=" << options_.dim()
        << "\n)";
   }
@@ -2112,7 +2124,7 @@ public:
   write(torch::serialize::OutputArchive &archive,
         const std::string &key = "softmin") const override {
     archive.write(key + ".type",
-                  torch::full({1}, (int64_t)activation::softmin));
+                  torch::full({1}, static_cast<int64_t>(activation::softmin)));
     archive.write(key + ".dim",
                   torch::full({1}, (int64_t)this->options_.dim()));
 
@@ -2127,7 +2139,7 @@ public:
     torch::Tensor tensor;
 
     archive.read(key + ".type", tensor);
-    if (tensor.item<int64_t>() != (int64_t)activation::softmin)
+    if (tensor.item<int64_t>() != static_cast<int64_t>(activation::softmin))
       throw std::runtime_error("activation mismatch");
 
     archive.read(key + ".dim", tensor);
@@ -2173,8 +2185,8 @@ public:
   }
 
   /// @brief Returns a string representation of the activation function
-  inline virtual void
-  pretty_print(std::ostream &os = Log(log::info)) const noexcept override {
+  inline void
+  pretty_print(std::ostream &os) const noexcept override {
     os << utils::FullQualifiedName::name() << "(\n  beta=" << options_.beta()
        << ",  theshold=" << options_.threshold() << "\n)";
   }
@@ -2185,7 +2197,7 @@ public:
   write(torch::serialize::OutputArchive &archive,
         const std::string &key = "softplus") const override {
     archive.write(key + ".type",
-                  torch::full({1}, (int64_t)activation::softplus));
+                  torch::full({1}, static_cast<int64_t>(activation::softplus)));
     archive.write(key + ".beta",
                   torch::full({1}, (double)this->options_.beta()));
     archive.write(key + ".threshold",
@@ -2202,7 +2214,7 @@ public:
     torch::Tensor tensor;
 
     archive.read(key + ".type", tensor);
-    if (tensor.item<int64_t>() != (int64_t)activation::softplus)
+    if (tensor.item<int64_t>() != static_cast<int64_t>(activation::softplus))
       throw std::runtime_error("activation mismatch");
 
     archive.read(key + ".beta", tensor);
@@ -2254,8 +2266,8 @@ public:
   }
 
   /// @brief Returns a string representation of the activation function
-  inline virtual void
-  pretty_print(std::ostream &os = Log(log::info)) const noexcept override {
+  inline void
+  pretty_print(std::ostream &os) const noexcept override {
     os << utils::FullQualifiedName::name()
        << "(\n  lambda=" << options_.lambda() << "\n)";
   }
@@ -2266,7 +2278,8 @@ public:
   write(torch::serialize::OutputArchive &archive,
         const std::string &key = "softshrink") const override {
     archive.write(key + ".type",
-                  torch::full({1}, (int64_t)activation::softshrink));
+                  torch::full({1}, static_cast<int64_t>(
+                                                      activation::softshrink)));
     archive.write(key + ".lambda",
                   torch::full({1}, (double)this->options_.lambda()));
 
@@ -2281,7 +2294,7 @@ public:
     torch::Tensor tensor;
 
     archive.read(key + ".type", tensor);
-    if (tensor.item<int64_t>() != (int64_t)activation::softshrink)
+    if (tensor.item<int64_t>() != static_cast<int64_t>(activation::softshrink))
       throw std::runtime_error("activation mismatch");
 
     archive.read(key + ".lambda", tensor);
@@ -2307,8 +2320,8 @@ public:
   }
 
   /// @brief Returns a string representation of the activation function
-  inline virtual void
-  pretty_print(std::ostream &os = Log(log::info)) const noexcept override {
+  inline void
+  pretty_print(std::ostream &os) const noexcept override {
     os << utils::FullQualifiedName::name();
   }
 
@@ -2318,7 +2331,7 @@ public:
   write(torch::serialize::OutputArchive &archive,
         const std::string &key = "softsign") const override {
     archive.write(key + ".type",
-                  torch::full({1}, (int64_t)activation::softsign));
+                  torch::full({1}, static_cast<int64_t>(activation::softsign)));
 
     return archive;
   }
@@ -2331,7 +2344,7 @@ public:
     torch::Tensor tensor;
 
     archive.read(key + ".type", tensor);
-    if (tensor.item<int64_t>() != (int64_t)activation::softsign)
+    if (tensor.item<int64_t>() != static_cast<int64_t>(activation::softsign))
       throw std::runtime_error("activation mismatch");
 
     return archive;
@@ -2351,8 +2364,8 @@ public:
   }
 
   /// @brief Returns a string representation of the activation function
-  inline virtual void
-  pretty_print(std::ostream &os = Log(log::info)) const noexcept override {
+  inline void
+  pretty_print(std::ostream &os) const noexcept override {
     os << utils::FullQualifiedName::name();
   }
 
@@ -2361,7 +2374,7 @@ public:
   inline torch::serialize::OutputArchive &
   write(torch::serialize::OutputArchive &archive,
         const std::string &key = "tanh") const override {
-    archive.write(key + ".type", torch::full({1}, (int64_t)activation::tanh));
+    archive.write(key + ".type", torch::full({1}, static_cast<int64_t>(activation::tanh)));
 
     return archive;
   }
@@ -2374,7 +2387,7 @@ public:
     torch::Tensor tensor;
 
     archive.read(key + ".type", tensor);
-    if (tensor.item<int64_t>() != (int64_t)activation::tanh)
+    if (tensor.item<int64_t>() != static_cast<int64_t>(activation::tanh))
       throw std::runtime_error("activation mismatch");
 
     return archive;
@@ -2394,8 +2407,8 @@ public:
   }
 
   /// @brief Returns a string representation of the activation function
-  inline virtual void
-  pretty_print(std::ostream &os = Log(log::info)) const noexcept override {
+  inline void
+  pretty_print(std::ostream &os) const noexcept override {
     os << utils::FullQualifiedName::name();
   }
 
@@ -2405,7 +2418,8 @@ public:
   write(torch::serialize::OutputArchive &archive,
         const std::string &key = "tanhshrink") const override {
     archive.write(key + ".type",
-                  torch::full({1}, (int64_t)activation::tanhshrink));
+                  torch::full({1}, static_cast<int64_t>(
+                                                      activation::tanhshrink)));
 
     return archive;
   }
@@ -2418,7 +2432,7 @@ public:
     torch::Tensor tensor;
 
     archive.read(key + ".type", tensor);
-    if (tensor.item<int64_t>() != (int64_t)activation::tanhshrink)
+    if (tensor.item<int64_t>() != static_cast<int64_t>(activation::tanhshrink))
       throw std::runtime_error("activation mismatch");
 
     return archive;
@@ -2436,7 +2450,7 @@ public:
 /// \f]
 class Threshold : public ActivationFunction {
 public:
-  explicit Threshold(torch::nn::functional::ThresholdFuncOptions options)
+  explicit Threshold(const torch::nn::functional::ThresholdFuncOptions &options)
       : options_(options) {}
 
   explicit Threshold(double threshold, double value, bool inplace = false)
@@ -2461,8 +2475,8 @@ public:
   }
 
   /// @brief Returns a string representation of the activation function
-  inline virtual void
-  pretty_print(std::ostream &os = Log(log::info)) const noexcept override {
+  inline void
+  pretty_print(std::ostream &os) const noexcept override {
     os << utils::FullQualifiedName::name()
        << "(\n  threshold=" << options_.threshold()
        << ",  value=" << options_.value() << ",  inplace=" << options_.inplace()
@@ -2475,13 +2489,14 @@ public:
   write(torch::serialize::OutputArchive &archive,
         const std::string &key = "threshold") const override {
     archive.write(key + ".type",
-                  torch::full({1}, (int64_t)activation::threshold));
+                  torch::full({1}, static_cast<int64_t>(
+                                                      activation::threshold)));
     archive.write(key + ".threshold",
-                  torch::full({1}, (double)this->options_.threshold()));
+                  torch::full({1}, this->options_.threshold()));
     archive.write(key + ".value",
-                  torch::full({1}, (double)this->options_.value()));
+                  torch::full({1}, this->options_.value()));
     archive.write(key + ".inplace",
-                  torch::full({1}, (bool)this->options_.inplace()));
+                  torch::full({1}, this->options_.inplace()));
 
     return archive;
   }
@@ -2494,7 +2509,7 @@ public:
     torch::Tensor tensor;
 
     archive.read(key + ".type", tensor);
-    if (tensor.item<int64_t>() != (int64_t)activation::threshold)
+    if (tensor.item<int64_t>() != static_cast<int64_t>(activation::threshold))
       throw std::runtime_error("activation mismatch");
 
     archive.read(key + ".threshold", tensor);

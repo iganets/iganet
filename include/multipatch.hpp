@@ -25,13 +25,13 @@ template <typename Patch> class MultiPatch {
 
 public:
   /// @brief Default constructor
-  MultiPatch() {}
+  MultiPatch() = default;
 
   /// @brief Copy constructor
   MultiPatch(const MultiPatch &other) : patches_(other.patches_) {}
 
   /// @brief Move constructor
-  MultiPatch(MultiPatch &&other) { patches_.swap(other.patches_); }
+  MultiPatch(MultiPatch &&other) noexcept { patches_.swap(other.patches_); }
 
 public:
   /// @brief Returns an iterator to the patches
@@ -72,13 +72,13 @@ public:
 
 public:
   /// @brief Returns the number of patches
-  std::size_t npatches() const { return patches_.size(); }
+  [[nodiscard]] std::size_t npatches() const { return patches_.size(); }
 
   /// @brief Returns the number of interfaces
-  std::size_t ninterfaces() const { return patches_.size(); }
+  [[nodiscard]] std::size_t ninterfaces() const { return patches_.size(); }
 
   /// @brief Returns the number of outer boundaries
-  std::size_t nboundaries() const { return patches_.size(); }
+  [[nodiscard]] std::size_t nboundaries() const { return patches_.size(); }
 
 public:
   /// @brief Adds a single patch
@@ -101,13 +101,13 @@ public:
 
   /// @brief Returns a non-constant reference to a single patch
   Patch &patch(std::size_t index) {
-    assert(index >= 0 && index < patches_.size());
+    assert(index < patches_.size());
     return *patches_[index];
   }
 
   /// @brief Returns a constant reference to a single patch
   const Patch &patch(std::size_t index) const {
-    assert(index >= 0 && index < patches_.size());
+    assert(index < patches_.size());
     return *patches_[index];
   }
 

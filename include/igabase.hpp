@@ -87,8 +87,8 @@ private:
       std::index_sequence<Is...>) {
     static_assert(sizeof...(Objs) == sizeof...(NumCoeffs));
     return std::make_tuple(std::apply(
-        [&](auto &&...args) {
-          return Objs(std::forward<decltype(args)>(args)..., init, options);
+        [&]<typename... Args>(Args &&...args) {
+          return Objs(std::forward<Args>(args)..., init, options);
         },
         std::get<Is>(numCoeffs))...);
   }
@@ -111,8 +111,8 @@ private:
       iganet::Options<value_type> options, std::index_sequence<Is...>) {
     static_assert(sizeof...(Objs) == sizeof...(NumCoeffsTuples));
     return std::make_tuple(std::apply(
-        [&](auto &&...args) {
-          return Objs(std::forward<decltype(args)>(args)..., init, options);
+        [&]<typename... Args>(Args &&...args) {
+          return Objs(std::forward<Args>(args)..., init, options);
         },
         std::get<Is>(numCoeffs))...);
   }
@@ -541,8 +541,8 @@ private:
       iganet::Options<value_type> options, std::index_sequence<Is...>) {
     static_assert(sizeof...(Objs) == sizeof...(NumCoeffs));
     return std::make_tuple(std::apply(
-        [&](auto &&...args) {
-          return Objs(std::forward<decltype(args)>(args)..., init, options);
+        [&]<typename... Args>(Args &&...args) {
+          return Objs(std::forward<Args>(args)..., init, options);
         },
         std::get<Is>(numCoeffs))...);
   }

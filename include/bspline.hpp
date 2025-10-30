@@ -254,7 +254,7 @@ public:
   /// @brief Value type
   using value_type = real_t;
 
-  /// @brief Deduces the type of the template template parameter `BSpline`
+  /// @brief Deduces the type of the template parameter `BSpline`
   /// when exposed to the class template parameters `real_t` and
   /// `GeoDim`, and the `Degrees` parameter pack. The optional
   /// template parameter `degree_elevate` can be used to
@@ -473,7 +473,7 @@ public:
   }
 
   /// @brief Destructor
-  virtual ~UniformBSplineCore() = default;
+  ~UniformBSplineCore() override = default;
 
   /// @brief Returns the parametric dimension
   ///
@@ -3324,7 +3324,7 @@ public:
   /// @brief Constructors from the base class
   using BSplineCore::BSplineCore;
 
-  /// @brief Deduces the type of the template template parameter `T`
+  /// @brief Deduces the type of the template parameter `T`
   /// when exposed to the class template parameters `real_t` and
   /// `GeoDim`, and the `Degrees` parameter pack. The optional
   /// template parameter `degree_elevate` can be used to
