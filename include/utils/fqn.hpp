@@ -17,14 +17,14 @@
 #include <core.hpp>
 
 #include <torch/csrc/api/include/torch/types.h>
-#include <torch/torch.h>
 
-namespace iganet {
-namespace utils {
+
+namespace iganet::utils {
 
 /// @brief Full qualified name descriptor
 class FullQualifiedName {
 public:
+  virtual ~FullQualifiedName() = default;
   /// @brief Returns the full qualified name of the object
   ///
   /// @result Full qualified name of the object as string
@@ -62,5 +62,5 @@ protected:
   mutable at::optional<std::string> name_;
 };
 
-} // namespace utils
-} // namespace iganet
+} // namespace iganet::utils
+

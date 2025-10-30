@@ -24,7 +24,7 @@ namespace utils {
 template <typename T> T getenv(std::string variable, const T &default_value) {
 
   char *env_value = std::getenv(variable.c_str());
-  if (env_value != NULL)
+  if (env_value != nullptr)
     if constexpr (std::is_integral_v<T>)
       return static_cast<T>(std::atoll(env_value));
     else if constexpr (std::is_floating_point_v<T>)
@@ -41,7 +41,7 @@ std::vector<T> getenv(std::string variable,
                       std::initializer_list<T> default_value) {
 
   char *env_value = std::getenv(variable.c_str());
-  if (env_value != NULL) {
+  if (env_value != nullptr) {
     std::stringstream ss(env_value);
     std::vector<T> result;
     std::string item;

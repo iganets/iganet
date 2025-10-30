@@ -120,7 +120,7 @@ public:
               boundary_spline_type(std::array<int64_t, 0>{}, init, options)}) {}
 
   /// @brief Destructor
-  virtual ~BoundaryCore() = default;
+  ~BoundaryCore() override = default;
 
   /// @brief Sets the coefficients of all spline objects from a
   /// single tensor that holds both boundary and inner coefficients
@@ -325,7 +325,7 @@ using value_type = Spline::value_type;
                   init, options)}) {}
 
   /// @brief Destructor
-  virtual ~BoundaryCore() = default;
+  ~BoundaryCore() override = default;
 
   /// @brief Sets the coefficients of all spline objects from a
   /// single tensor that holds both boundary and inner coefficients
@@ -598,7 +598,7 @@ using value_type =  Spline::value_type;
                   init, options)}) {}
 
   /// @brief Destructor
-  virtual ~BoundaryCore() = default;
+  ~BoundaryCore() override = default;
 
   /// @brief Sets the coefficients of all spline objects from a
   /// single tensor that holds both boundary and inner coefficients
@@ -941,7 +941,7 @@ using value_type =  Spline::value_type;
                   init, options)}) {}
 
   /// @brief Destructor
-  virtual ~BoundaryCore() = default;
+  ~BoundaryCore() override = default;
 
   /// @brief Sets the coefficients of all spline objects from a
   /// single tensor that holds both boundary and inner coefficients

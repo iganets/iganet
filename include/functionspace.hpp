@@ -92,7 +92,7 @@ public:
 
   /// @brief Constructor
   /// @{
-  FunctionSpace(const std::array<int64_t, Splines::parDim()> &...ncoeffs,
+  explicit FunctionSpace(const std::array<int64_t, Splines::parDim()> &...ncoeffs,
                 enum init init = init::greville,
                 Options<value_type> options = iganet::Options<value_type>{})
       : spline_({ncoeffs, init, options}...),

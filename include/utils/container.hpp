@@ -20,10 +20,8 @@
 
 #include <options.hpp>
 
-#include <torch/torch.h>
 
-namespace iganet {
-namespace utils {
+namespace iganet::utils {
 
 /// @brief Converts an std::vector object into std::array
 template <std::size_t N, typename T>
@@ -43,13 +41,13 @@ inline std::vector<T> to_vector(std::array<T, N> &&array) {
 
 /// @brief Converts a list of arguments into std::array
 template <typename... Args> inline auto to_array(Args &&...args) {
-  return std::array<typename std::common_type<Args...>::type, sizeof...(Args)>{
+  return std::array<std::common_type_t<Args...>, sizeof...(Args)>{
       std::move(args)...};
 }
 
 /// @brief Converts a list of arguments into std::vector
 template <typename... Args> inline auto to_vector(Args &&...args) {
-  return std::vector<typename std::common_type<Args...>::type>{
+  return std::vector<std::common_type_t<Args...>>{
       std::move(args)...};
 }
 
@@ -223,7 +221,7 @@ inline auto concat(std::array<T, N> &&...arrays) {
 /// @{
 template <typename... Ts>
 inline auto concat(const std::vector<Ts> &...vectors) {
-  std::vector<typename std::common_type<Ts...>::type> result;
+  std::vector<std::common_type_t<Ts...>> result;
 
   (result.insert(result.end(), vectors.begin(), vectors.end()), ...);
 
@@ -231,7 +229,7 @@ inline auto concat(const std::vector<Ts> &...vectors) {
 }
 
 template <typename... Ts> inline auto concat(std::vector<Ts> &&...vectors) {
-  std::vector<typename std::common_type<Ts...>::type> result;
+  std::vector<std::common_type_t<Ts...>> result;
 
   (result.insert(result.end(), std::make_move_iterator(vectors.begin()),
                  std::make_move_iterator(vectors.end())),
@@ -381,5 +379,5 @@ inline constexpr std::array<T, N - M> remove_from_back(std::array<T, N> array) {
   return result;
 }
 
-} // namespace utils
-} // namespace iganet
+} // namespace iganet::utils
+

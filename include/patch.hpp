@@ -24,6 +24,9 @@ namespace iganet {
 /// @brief Abstract patch function base class
 template <typename real_t, short_t GeoDim, short_t ParDim> class BSplinePatch {
 public:
+  /// @brief Destructor
+  virtual ~BSplinePatch() = default;
+
   /// @brief Returns the `device` property
   virtual torch::Device device() const noexcept = 0;
 

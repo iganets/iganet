@@ -102,7 +102,8 @@ inline constexpr auto operator+(deriv lhs, deriv rhs) {
 ///
 /// @result Derivative enumerator raised to the exponent
 inline constexpr auto operator^(deriv lhs, short_t rhs) {
-  return deriv(static_cast<short_t>(lhs) * static_cast<short_t>(rhs));
+  return static_cast<deriv>(static_cast<short_t>(lhs) *
+                            static_cast<short_t>(rhs));
 }
 
 /// @brief SplineCore base class
@@ -396,7 +397,7 @@ public:
                      const utils::TensorArray<geoDim_> &coeffs,
                      bool clone = false,
                      Options<real_t> options = Options<real_t>{})
-      : options_(options), ncoeffs_(ncoeffs), ncoeffs_reverse_(ncoeffs) {
+      : ncoeffs_(ncoeffs), ncoeffs_reverse_(ncoeffs), options_(options) {
     // Reverse ncoeffs
     std::reverse(ncoeffs_reverse_.begin(), ncoeffs_reverse_.end());
 
@@ -433,8 +434,8 @@ public:
   UniformBSplineCore(const std::array<int64_t, parDim_> &ncoeffs,
                      utils::TensorArray<geoDim_> &&coeffs,
                      Options<real_t> options = Options<real_t>{})
-      : options_(options), ncoeffs_(ncoeffs), ncoeffs_reverse_(ncoeffs),
-        coeffs_(std::move(coeffs)) {
+      : ncoeffs_(ncoeffs), ncoeffs_reverse_(ncoeffs), coeffs_(std::move(coeffs)),
+        options_(options) {
     // Reverse ncoeffs
     std::reverse(ncoeffs_reverse_.begin(), ncoeffs_reverse_.end());
 
@@ -451,8 +452,8 @@ public:
   explicit UniformBSplineCore(
       const UniformBSplineCore<other_t, GeoDim, Degrees...> &other,
       Options<real_t> options = Options<real_t>{})
-      : options_(options), ncoeffs_(other.ncoeffs()),
-        ncoeffs_reverse_(ncoeffs_), nknots_(other.nknots()) {
+      : nknots_(other.nknots()), ncoeffs_(other.ncoeffs()),
+        ncoeffs_reverse_(ncoeffs_), options_(options) {
     // Reverse ncoeffs
     std::reverse(ncoeffs_reverse_.begin(), ncoeffs_reverse_.end());
 
@@ -1205,11 +1206,11 @@ public:
                          this]<std::size_t... Is>(std::index_sequence<Is...>) {
           return utils::TensorArray<parDim_>{
               (eval_prefactor<degrees_[Is],
-                              (short_t)deriv /
+                              static_cast<short_t>(deriv) /
                                   utils::integer_pow<10, Is>::value % 10>() *
                eval_basfunc_univariate<
                    degrees_[Is], Is,
-                   (short_t)deriv / utils::integer_pow<10, Is>::value % 10>(
+                   static_cast<short_t>(deriv) / utils::integer_pow<10, Is>::value % 10>(
                    xi[Is].flatten(), knot_indices[Is].flatten())
                    .transpose(0, 1))...};
         };
@@ -1221,8 +1222,8 @@ public:
       else /* not memory optimize */ {
 
         if constexpr (parDim_ == 1) {
-          return eval_prefactor<degrees_[0], (short_t)deriv % 10>() *
-                 eval_basfunc_univariate<degrees_[0], 0, (short_t)deriv % 10>(
+          return eval_prefactor<degrees_[0], static_cast<short_t>(deriv) % 10>() *
+                 eval_basfunc_univariate<degrees_[0], 0, static_cast<short_t>(deriv) % 10>(
                      xi[0].flatten(), knot_indices[0].flatten());
 
         } else {
@@ -1232,13 +1233,13 @@ public:
                               std::index_sequence<Is...>) {
             return (1 * ... *
                     (eval_prefactor<degrees_[Is],
-                                    (short_t)deriv /
+                                    static_cast<short_t>(deriv) /
                                         utils::integer_pow<10, Is>::value %
                                         10>())) *
                    utils::kronproduct(
                        eval_basfunc_univariate<
                            degrees_[Is], Is,
-                           (short_t)deriv / utils::integer_pow<10, Is>::value %
+                           static_cast<short_t>(deriv) / utils::integer_pow<10, Is>::value %
                                10>(xi[Is].flatten(),
                                    knot_indices[Is].flatten())...);
           };
@@ -1490,7 +1491,7 @@ public:
   }
 
   /// @brief Returns the B-spline object as XML object
-  [[nodiscard]] inline pugi::xml_document to_xml(int id = 0, std::string label = "",
+  [[nodiscard]] inline pugi::xml_document to_xml(int id = 0, const std::string &label = "",
                                    int index = -1) const {
     pugi::xml_document doc;
     pugi::xml_node root = doc.append_child("xml");
@@ -1614,7 +1615,7 @@ public:
 
   /// @brief Updates the B-spline object from XML object
   inline UniformBSplineCore &from_xml(const pugi::xml_document &doc, int id = 0,
-                                      std::string label = "", int index = -1) {
+                                      const std::string &label = "", int index = -1) {
     return from_xml(doc.child("xml"), id, label, index);
   }
 
@@ -1913,7 +1914,7 @@ public:
   template <typename other_t, short_t GeoDim_, short_t... Degrees_>
   bool isclose(const UniformBSplineCore<other_t, GeoDim_, Degrees_...> &other,
                real_t rtol = real_t{1e-5}, real_t atol = real_t{1e-8}) const {
-    if constexpr (!std::is_same<real_t, other_t>::value)
+    if constexpr (!std::is_same_v<real_t, other_t>)
       return false;
     bool result(true);
 
@@ -1945,7 +1946,7 @@ public:
   template <typename other_t, short_t GeoDim_, short_t... Degrees_>
   bool operator==(
       const UniformBSplineCore<other_t, GeoDim_, Degrees_...> &other) const {
-    if constexpr (!std::is_same<real_t, other_t>::value)
+    if constexpr (!std::is_same_v<real_t, other_t>)
       return false;
     bool result(true);
 
@@ -2784,12 +2785,12 @@ public:
   /// template parameter `degree_elevate` can be used to
   /// (de-)elevate the degrees by an additive constant
   template <template <typename, short_t, short_t...> class BSpline,
-            std::make_signed<short_t>::type degree_elevate = 0>
+            std::make_signed_t<short_t> degree_elevate = 0>
   using derived_type = BSpline<real_t, GeoDim, (Degrees + degree_elevate)...>;
 
   /// @brief Deduces the self-type possibly degrees (de-)elevated by
   /// the additive constant `degree_elevate`
-  template <std::make_signed<short_t>::type degree_elevate = 0>
+  template <std::make_signed_t<short_t> degree_elevate = 0>
   using self_type =  Base::template derived_type<NonUniformBSplineCore,
                                                          degree_elevate>;
 
@@ -3329,13 +3330,13 @@ public:
   /// template parameter `degree_elevate` can be used to
   /// (de-)elevate the degrees by an additive constant
   template <template <typename, short_t, short_t...> class T,
-            std::make_signed<short_t>::type degree_elevate = 0>
+            std::make_signed_t<short_t> degree_elevate = 0>
   using derived_type = BSplineCommon<
       typename BSplineCore::template derived_type<T, degree_elevate>>;
 
   /// @brief Deduces the self-type possibly degrees (de-)elevated by
   /// the additive constant `degree_elevate`
-  template <std::make_signed<short_t>::type degree_elevate = 0>
+  template <std::make_signed_t<short_t> degree_elevate = 0>
   using self_type =
       BSplineCommon<typename BSplineCore::template self_type<degree_elevate>>;
 
@@ -3451,7 +3452,7 @@ public:
   inline static Ptr
   make_shared(Options<typename BSplineCore::value_type> options =
                   Options<typename BSplineCore::value_type>{}) {
-    return Ptr(new BSplineCommon(options));
+    return std::make_shared<BSplineCommon>(options);
   }
 
   inline static Ptr
@@ -3459,7 +3460,7 @@ public:
               enum init init = init::greville,
               Options<typename BSplineCore::value_type> options =
                   Options<typename BSplineCore::value_type>{}) {
-    return Ptr(new BSplineCommon(ncoeffs, init, options));
+    return std::make_shared<BSplineCommon>(ncoeffs, init, options);
   }
 
   inline static Ptr
@@ -3468,7 +3469,7 @@ public:
               bool clone = false,
               Options<typename BSplineCore::value_type> options =
                   Options<typename BSplineCore::value_type>{}) {
-    return Ptr(new BSplineCommon(ncoeffs, coeffs, clone, options));
+    return std::make_shared<BSplineCommon>(ncoeffs, coeffs, clone, options);
   }
 
   inline static Ptr
@@ -3476,7 +3477,7 @@ public:
               utils::TensorArray<BSplineCore::geoDim_> &&coeffs,
               Options<typename BSplineCore::value_type> options =
                   Options<typename BSplineCore::value_type>{}) {
-    return Ptr(new BSplineCommon(ncoeffs, coeffs, options));
+    return std::make_shared<BSplineCommon>(ncoeffs, coeffs, options);
   }
 
   inline static Ptr
@@ -3485,7 +3486,7 @@ public:
               enum init init = init::greville,
               Options<typename BSplineCore::value_type> options =
                   Options<typename BSplineCore::value_type>{}) {
-    return Ptr(new BSplineCommon(kv, init, options));
+    return std::make_shared<BSplineCommon>(kv, init, options);
   }
 
   inline static Ptr
@@ -3495,7 +3496,7 @@ public:
               bool clone = false,
               Options<typename BSplineCore::value_type> options =
                   Options<typename BSplineCore::value_type>{}) {
-    return Ptr(new BSplineCommon(kv, coeffs, clone, options));
+    return std::make_shared<BSplineCommon>(kv, coeffs, clone, options);
   }
   /// @}
 
@@ -4206,7 +4207,7 @@ public:
       auto div_ = [&, this]<std::size_t... Is>(std::index_sequence<Is...>) {
         return utils::BlockTensor<torch::Tensor, 1, 1>{
             (*BSplineCore::template eval<
-                 (deriv)utils::integer_pow<10, Is>::value, memory_optimized>(
+                 static_cast<deriv>(utils::integer_pow<10, Is>::value), memory_optimized>(
                  xi, knot_indices, coeff_indices)[Is] +
              ...)};
       };
@@ -4480,7 +4481,8 @@ public:
       // Lambda expression to evaluate the gradient
       auto grad_ = [&, this]<std::size_t... Is>(std::index_sequence<Is...>) {
         return utils::BlockTensor<torch::Tensor, 1, BSplineCore::parDim_>{
-            BSplineCore::template eval<(deriv)utils::integer_pow<10, Is>::value,
+            BSplineCore::template eval<
+                static_cast<deriv>(utils::integer_pow<10, Is>::value),
                                        memory_optimized>(xi, knot_indices,
                                                          coeff_indices)...};
       };
@@ -4782,10 +4784,10 @@ public:
         return utils::BlockTensor<torch::Tensor, BSplineCore::parDim_,
                                   BSplineCore::geoDim_, BSplineCore::parDim_>{
             BSplineCore::template eval<
-                (deriv)utils::integer_pow<10,
-                                          Is / BSplineCore::parDim_>::value +
-                    (deriv)utils::integer_pow<10,
-                                              Is % BSplineCore::parDim_>::value,
+                static_cast<deriv>(
+                    utils::integer_pow<10, Is / BSplineCore::parDim_>::value) +
+                    static_cast<deriv>(utils::integer_pow<
+                                       10, Is % BSplineCore::parDim_>::value),
                 memory_optimized>(xi, knot_indices, coeff_indices)...}
             .reorder_ikj();
       };
@@ -5123,7 +5125,8 @@ public:
       auto jac_ = [&, this]<std::size_t... Is>(std::index_sequence<Is...>) {
         return utils::BlockTensor<torch::Tensor, BSplineCore::parDim_,
                                   BSplineCore::geoDim_>{
-            BSplineCore::template eval<(deriv)utils::integer_pow<10, Is>::value,
+            BSplineCore::template eval<
+                static_cast<deriv>(utils::integer_pow<10, Is>::value),
                                        memory_optimized>(xi, knot_indices,
                                                          coeff_indices)...}
             .tr();
@@ -5381,7 +5384,7 @@ public:
       auto lapl_ = [&, this]<std::size_t... Is>(std::index_sequence<Is...>) {
         return utils::BlockTensor<torch::Tensor, 1, 1, BSplineCore::geoDim_>{
             (BSplineCore::template eval<
-                 (deriv)utils::integer_pow<10, Is>::value ^ 2,
+                 static_cast<deriv>(utils::integer_pow<10, Is>::value) ^ 2,
                  memory_optimized>(xi, knot_indices, coeff_indices) +
              ...)}
             .reorder_ikj();
