@@ -96,8 +96,8 @@ public:
       const std::array<int64_t, Splines::parDim()> &...ncoeffs,
       enum init init = init::greville,
       Options<value_type> options = iganet::Options<value_type>{})
-      : spline_({ncoeffs, init, options}...),
-        boundary_({ncoeffs, init::none, options}...) {
+      : spline_(Splines(ncoeffs, init, options)...),
+        boundary_(Boundaries(ncoeffs, init::none, options)...) {
     boundary_from_full_tensor(this->as_tensor());
   }
 
@@ -106,8 +106,8 @@ public:
                        Splines::parDim()> &...kv,
       enum init init = init::greville,
       Options<value_type> options = iganet::Options<value_type>{})
-      : spline_({kv, init, options}...),
-        boundary_({kv, init::none, options}...) {
+      : spline_(Splines(kv, init, options)...),
+        boundary_(Boundaries(kv, init::none, options)...) {
 
     static_assert((Splines::is_nonuniform() && ... && true),
                   "Constructor is only available for non-uniform splines");
