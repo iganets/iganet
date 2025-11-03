@@ -9,9 +9,6 @@ on:
         description: "Extra flags to pass to CMake"
         required: false
         type: string
-  push:
-  pull_request:
-  workflow_dispatch:
 
 jobs:
   build:
