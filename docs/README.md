@@ -19,13 +19,6 @@ The library is licenced under the [Mozilla Public License Version 2.0](https://w
 1. [Hello IgANets](tutorial01.md)
 2. [Working with B-spline functions](tutorial02.md)
 
-## Documentation
-
-- The list of [Examples](../examples/README.md)
-- The list of [PerfTests](../perftests/README.md)
-- The list of [UnitTests](../unittests/README.md)
-- The list of [WebApps](../webapps/README.md)
-
 ## Mathematical notation
 
 IgANets adopts the following mathematical symbols and notation conventions.
