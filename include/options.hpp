@@ -24,29 +24,26 @@ namespace iganet {
 
 struct half {};
 
-  /// @brief Concept to identify template parameters that are acceptable as DTypes
-  template<typename T>
-  concept DType =
-    std::is_same_v<T, bool> ||
-    std::is_same_v<T, char> ||
-    std::is_same_v<T, short> ||
-    std::is_same_v<T, int> ||
-    std::is_same_v<T, long> ||
-    std::is_same_v<T, long long> ||
-    std::is_same_v<T, half> ||
-    std::is_same_v<T, float> ||
-    std::is_same_v<T, double> ||
-    std::is_same_v<T, std::complex<half>> ||
+/// @brief Concept to identify template parameters that are acceptable as DTypes
+template <typename T>
+concept DType =
+    std::is_same_v<T, bool> || std::is_same_v<T, char> ||
+    std::is_same_v<T, short> || std::is_same_v<T, int> ||
+    std::is_same_v<T, long> || std::is_same_v<T, long long> ||
+    std::is_same_v<T, half> || std::is_same_v<T, float> ||
+    std::is_same_v<T, double> || std::is_same_v<T, std::complex<half>> ||
     std::is_same_v<T, std::complex<float>> ||
     std::is_same_v<T, std::complex<double>>;
-    
+
 /// Determines the LibTorch dtype from template parameter
 ///
 /// @tparam T C++ type
 ///
 /// @result Torch type corresponding to the C++ type
 /// @{
-  template <typename T> requires DType<T> inline constexpr torch::Dtype dtype();
+template <typename T>
+  requires DType<T>
+inline constexpr torch::Dtype dtype();
 
 template <> inline constexpr torch::Dtype dtype<bool>() { return torch::kBool; }
 
@@ -58,9 +55,11 @@ template <> inline constexpr torch::Dtype dtype<short>() {
 
 template <> inline constexpr torch::Dtype dtype<int>() { return torch::kInt; }
 
-  template <> inline constexpr torch::Dtype dtype<long>() { return torch::kLong; }
+template <> inline constexpr torch::Dtype dtype<long>() { return torch::kLong; }
 
-  template <> inline constexpr torch::Dtype dtype<long long>() { return torch::kLong; }
+template <> inline constexpr torch::Dtype dtype<long long>() {
+  return torch::kLong;
+}
 
 template <> inline constexpr torch::Dtype dtype<half>() { return torch::kHalf; }
 
@@ -102,7 +101,7 @@ inline int guess_device_index() {
 /// dtype from the template argument and the selection of the device
 ///
 /// @tparam real_t Type of real-valued data
-  template <typename real_t>
+template <typename real_t>
   requires DType<real_t>
 class Options : private iganet::utils::FullQualifiedName {
 public:
@@ -126,8 +125,11 @@ public:
                         ? torch::kXLA
                     : (utils::getenv("IGANET_DEVICE", std::string{}) == "XPU")
                         ? torch::kXPU
-                        : (torch::cuda::is_available() ? torch::kCUDA
-                                                       : (torch::xpu::is_available() ? torch::kXPU : torch::kCPU)))) {}
+                        : (torch::cuda::is_available()
+                               ? torch::kCUDA
+                               : (torch::xpu::is_available() ? torch::kXPU
+                                                             : torch::kCPU)))) {
+  }
 
   /// Constructor from torch::TensorOptions
   explicit Options(torch::TensorOptions &&options)
@@ -140,19 +142,27 @@ public:
   inline torch::Device device() const noexcept { return options_.device(); }
 
   /// @brief Returns the `device_index` property
-  inline int32_t device_index() const noexcept { return options_.device_index(); }
+  inline int32_t device_index() const noexcept {
+    return options_.device_index();
+  }
 
   /// @brief Returns the `dtype` property
-  inline torch::Dtype dtype() const noexcept { return ::iganet::dtype<real_t>(); }
+  inline torch::Dtype dtype() const noexcept {
+    return ::iganet::dtype<real_t>();
+  }
 
   /// @brief Returns the `layout` property
   inline torch::Layout layout() const noexcept { return options_.layout(); }
 
   /// @brief Returns the `requires_grad` property
-  inline bool requires_grad() const noexcept { return options_.requires_grad(); }
+  inline bool requires_grad() const noexcept {
+    return options_.requires_grad();
+  }
 
   /// @brief Returns the `pinned_memory` property
-  inline bool pinned_memory() const noexcept { return options_.pinned_memory(); }
+  inline bool pinned_memory() const noexcept {
+    return options_.pinned_memory();
+  }
 
   /// @brief Returns if the layout is sparse
   inline bool is_sparse() const noexcept { return options_.is_sparse(); }

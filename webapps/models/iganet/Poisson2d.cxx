@@ -82,28 +82,22 @@ public:
   }
 
   /// @brief Imports the model from XML (as JSON object)
-  void importXML(const std::string &patch,
-                 const std::string& component,
-                 const nlohmann::json &json,
-                 int id = 0) override {}
+  void importXML(const std::string &patch, const std::string &component,
+                 const nlohmann::json &json, int id = 0) override {}
 
   /// @brief Imports the model from XML (as XML object)
-  void importXML(const std::string &patch,
-                 const std::string& component,
-                 const pugi::xml_node &xml,
-                 int id = 0) override {}
+  void importXML(const std::string &patch, const std::string &component,
+                 const pugi::xml_node &xml, int id = 0) override {}
 
   /// @brief Exports the model to XML (as JSON object)
   nlohmann::json exportXML(const std::string &patch,
-                           const std::string& component,
-                           int id = 0) override {
+                           const std::string &component, int id = 0) override {
     return R"({ "reason" : "Not implemented yet" })"_json;
   }
 
   /// @brief Exports the model to XML (as XML object)
   pugi::xml_node &exportXML(const std::string &patch,
-                            const std::string& component,
-                            pugi::xml_node &xml,
+                            const std::string &component, pugi::xml_node &xml,
                             int id = 0) override {
     return xml;
   }

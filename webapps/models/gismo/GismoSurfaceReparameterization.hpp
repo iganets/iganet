@@ -21,7 +21,8 @@ namespace iganet {
 /// @brief Computes the Mobius transformation
 template <typename T>
 inline void mobiusTransform(const gismo::gsAsConstVector<T> &c,
-                            const gismo::gsVector<T, 2> &uv, gismo::gsVector<T, 2> &xieta,
+                            const gismo::gsVector<T, 2> &uv,
+                            gismo::gsVector<T, 2> &xieta,
                             gismo::gsMatrix<T, 2, 2> &jac) {
   T s = uv(0), t = uv(1);
   T alpha_1 = c(0), alpha_2 = c(1), beta_1 = c(2), beta_2 = c(3);
@@ -48,7 +49,7 @@ inline void mobiusTransform(const gismo::gsAsConstVector<T> &c,
 }
 
 /// @brief Objective function for surface reparameterization
-  template <typename T> class gsObjFuncSurface : public gismo::gsOptProblem<T> {
+template <typename T> class gsObjFuncSurface : public gismo::gsOptProblem<T> {
 
 private:
   typedef typename gismo::gsExprAssembler<T>::geometryMap geometryMap;
@@ -72,12 +73,13 @@ public:
     }
     m_mp.patch(0).scale(1 / scaleFactor.array());
 
-    //    const gismo::gsBasis<T> & tbasis = m_mp.basis(0); // basis(u,v) -> deriv will
-    //    give dphi/du ,dphi/dv const gismo::gsGeometry<T> & tgeom = m_mp.patch(0);
+    //    const gismo::gsBasis<T> & tbasis = m_mp.basis(0); // basis(u,v) ->
+    //    deriv will give dphi/du ,dphi/dv const gismo::gsGeometry<T> & tgeom =
+    //    m_mp.patch(0);
     //    //G(u,v) -> deriv will give dG/du, dG/dv
     //    // The basis is composed by the square domain
-    //    gismo::gsComposedBasis<T> cbasis(mobiusDomain, tbasis); // basis(u,v) =
-    //    basis(sigma(xi,eta)) -> deriv will give dphi/dxi, dphi/deta
+    //    gismo::gsComposedBasis<T> cbasis(mobiusDomain, tbasis); // basis(u,v)
+    //    = basis(sigma(xi,eta)) -> deriv will give dphi/dxi, dphi/deta
     //
     //    gismo::gsMultiBasis<T> mbasis(cbasis);
 
@@ -101,8 +103,8 @@ public:
 
     m_MobiusDomain.updateGeom(coefsM);
 
-    //  gismo::gsComposedGeometry<real_t> cgeom(mobiusDomain, tgeom); // G(u,v) =
-    //  G(sigma(xi,eta))  -> deriv will give dG/dxi, dG/deta
+    //  gismo::gsComposedGeometry<real_t> cgeom(mobiusDomain, tgeom); // G(u,v)
+    //  = G(sigma(xi,eta))  -> deriv will give dG/dxi, dG/deta
     gismo::gsComposedGeometry<> cgeom(m_MobiusDomain, m_mp.patch(0));
 
     gismo::gsMultiBasis<> dbasis(cgeom.basis());
@@ -131,7 +133,8 @@ public:
     //  for (int i = 0; i < uv.cols(); ++i) {
     //    val1 += m_evaluator.eval(m_integration, uv.col(i)).value();
     //  }
-    ////  gismo::gsDebugVar( m_evaluator.eval(m_integration, uv.col(88)).value() );
+    ////  gismo::gsDebugVar( m_evaluator.eval(m_integration, uv.col(88)).value()
+    ///);
     //  //  T val = val1.sum()/51;
     //  T val = val1/51/51;
 
@@ -239,14 +242,15 @@ protected:
 
 /// @brief Converts a matrix of coefficients into a multi-patch B-spline object
 template <typename T>
-gismo::gsMultiPatch<T> convertIntoBSpline(const gismo::gsMultiPatch<T> &mp,
-                                          const gismo::gsMatrix<T> &coefsMobiusIn) {
+gismo::gsMultiPatch<T>
+convertIntoBSpline(const gismo::gsMultiPatch<T> &mp,
+                   const gismo::gsMatrix<T> &coefsMobiusIn) {
   gismo::gsMultiPatch<T> result;
 
   for (int ipatch = 0; ipatch < mp.nPatches(); ++ipatch) {
 
-    gismo::gsMatrix<T> uv =
-      gismo::gsPointGrid(mp.parameterRange(0), mp.patch(ipatch).basis().size() * 4);
+    gismo::gsMatrix<T> uv = gismo::gsPointGrid(
+        mp.parameterRange(0), mp.patch(ipatch).basis().size() * 4);
 
     gismo::gsVector<T, 2> tempUV, xieta;
     gismo::gsMatrix<T> eval_geo;
@@ -265,7 +269,8 @@ gismo::gsMultiPatch<T> convertIntoBSpline(const gismo::gsMultiPatch<T> &mp,
     }
 
     gismo::gsTensorBSplineBasis<2, T> bbasis =
-      static_cast<gismo::gsTensorBSplineBasis<2, T> &>(mp.patch(ipatch).basis());
+        static_cast<gismo::gsTensorBSplineBasis<2, T> &>(
+            mp.patch(ipatch).basis());
     gismo::gsFitting<> fittingSurface(uv, eval_geo, bbasis);
     fittingSurface.compute();
     // fittingSurface.parameterCorrection();

@@ -104,7 +104,7 @@ option(IGANET_WITH_MPI          "With MPI support"          OFF)
 option(IGANET_WITH_OPENMP       "With OpenMP support"       ON )
 
 if(NOT DEFINED IGANET_OPTIONAL)
-  set(IGANET_OPTIONAL "")
+  set(IGANET_OPTIONAL "" CACHE STRING "Build optional modules")
 endif()
 
 ########################################################################
@@ -134,7 +134,7 @@ target_link_libraries(iganet_core INTERFACE pugixml)
 
 if(IGANET_WITH_GISMO)
   include(gismo)
-  target_include_directories(iganet_core INTERFACE ${GISMO_INCLUDE_DIRS})  
+  target_include_directories(iganet_core INTERFACE ${GISMO_INCLUDE_DIRS})
   target_link_libraries(iganet_core INTERFACE gismo_static)
 endif()
 
@@ -321,8 +321,29 @@ endif()
 # Add optional modules
 ########################################################################
 enable_testing()
+include(get_module)
 
-foreach(module ${IGANET_OPTIONAL})
-  include(get_module)
-  get_module(${module} GIT_REPOSITORY https://github.com/iganets/iganet-${module}.git)
+
+foreach(entry IN LISTS IGANET_OPTIONAL)
+
+  # Extract entries of the form "module[branch]"
+  string(REGEX MATCH "^([^\[]+)\\[([^\]]+)\\]" _ "${entry}")
+  if(_)
+    set(module "${CMAKE_MATCH_1}")
+    set(branch "${CMAKE_MATCH_2}")
+  else()
+    set(module "${entry}")
+    set(branch "main")
+  endif()
+
+  if(EXISTS "${CMAKE_SOURCE_DIR}/.git")
+    get_module(
+      ${module}
+      GIT_REPOSITORY https://github.com/iganets/iganet-${module}.git
+      GIT_TAG ${branch})
+  else()
+    get_module(
+      ${module}
+      URL https://github.com/iganets/iganet-${module}/archive/refs/heads/${branch}.zip)
+  endif()
 endforeach()

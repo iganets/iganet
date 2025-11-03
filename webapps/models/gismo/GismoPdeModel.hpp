@@ -21,8 +21,7 @@ namespace iganet {
 namespace webapp {
 
 /// @brief G+Smo boundary condition POD
-template<typename T>
-struct GismoBoundaryCondition {
+template <typename T> struct GismoBoundaryCondition {
   /// @brief Boundary function expression
   gismo::gsFunctionExpr<T> function;
 
@@ -35,12 +34,12 @@ struct GismoBoundaryCondition {
 };
 
 /// @brief G+Smo boundary condition look-up table
-template<typename T>
-using GismoBoundaryConditionMap = std::map<int, std::map<int, GismoBoundaryCondition<T>>>;
-  
+template <typename T>
+using GismoBoundaryConditionMap =
+    std::map<int, std::map<int, GismoBoundaryCondition<T>>>;
+
 /// @brief G+Smo function POD
-template<typename T>
-struct GismoFunction {
+template <typename T> struct GismoFunction {
   /// @brief Function expression
   gismo::gsFunctionExpr<T> function;
 
@@ -48,11 +47,11 @@ struct GismoFunction {
   /// imposed on the parametric of physical domain
   bool isParametric;
 };
-  
+
 /// @brief G+Smo function look-up table
-template<typename T>
+template <typename T>
 using GismoFunctionMap = std::map<int, std::map<int, GismoFunction<T>>>;
-  
+
 /// @brief G+Smo PDE model
 template <short_t d, class T>
 class GismoPdeModel : public GismoGeometryModel<d, T> {
@@ -66,7 +65,7 @@ public:
                          const std::string &attribute) const override {
 
     if (component == "solution") {
-      
+
       if (patch == "" && attribute == "") {
 
         // Return solution as multipatch structure
@@ -81,7 +80,7 @@ public:
         try {
           patchIndex = stoi(patch);
         } catch (...) {
-          // Invalid patchIndex          
+          // Invalid patchIndex
           return R"({ INVALID REQUEST })"_json;
         }
 
@@ -94,14 +93,15 @@ public:
           return utils::to_json(solution_.patch(patchIndex));
 
         } else {
-          
+
           nlohmann::json json;
 
           // Return an individual attribute
           if (attribute == "degrees") {
             json["degrees"] = nlohmann::json::array();
 
-            for (std::size_t i = 0; i < solution_.patch(patchIndex).parDim(); ++i)
+            for (std::size_t i = 0; i < solution_.patch(patchIndex).parDim();
+                 ++i)
               json["degrees"].push_back(solution_.patch(patchIndex).degree(i));
           }
 
@@ -114,12 +114,13 @@ public:
           else if (attribute == "ncoeffs") {
             json["ncoeffs"] = nlohmann::json::array();
 
-            if (auto bspline =
-                dynamic_cast<const gismo::gsBSpline<T> *>(&solution_.patch(patchIndex)))
+            if (auto bspline = dynamic_cast<const gismo::gsBSpline<T> *>(
+                    &solution_.patch(patchIndex)))
               for (std::size_t i = 0; i < bspline->parDim(); ++i)
                 json["ncoeffs"].push_back(bspline->basis().size(i));
-            else if (auto bspline = dynamic_cast<const gismo::gsTensorBSpline<d, T> *>(
-                                                                                &solution_.patch(patchIndex)))
+            else if (auto bspline =
+                         dynamic_cast<const gismo::gsTensorBSpline<d, T> *>(
+                             &solution_.patch(patchIndex)))
               for (std::size_t i = 0; i < bspline->parDim(); ++i)
                 json["ncoeffs"].push_back(bspline->basis().size(i));
             else
@@ -129,12 +130,13 @@ public:
           else if (attribute == "nknots") {
             json["nknots"] = nlohmann::json::array();
 
-            if (auto bspline =
-                dynamic_cast<const gismo::gsBSpline<T> *>(&solution_.patch(patchIndex)))
+            if (auto bspline = dynamic_cast<const gismo::gsBSpline<T> *>(
+                    &solution_.patch(patchIndex)))
               for (std::size_t i = 0; i < bspline->parDim(); ++i)
                 json["nknots"].push_back(bspline->knots(i).size());
-            else if (auto bspline = dynamic_cast<const gismo::gsTensorBSpline<d, T> *>(
-                                                                                &solution_.patch(patchIndex)))
+            else if (auto bspline =
+                         dynamic_cast<const gismo::gsTensorBSpline<d, T> *>(
+                             &solution_.patch(patchIndex)))
               for (std::size_t i = 0; i < bspline->parDim(); ++i)
                 json["nknots"].push_back(bspline->knots(i).size());
             else
@@ -143,11 +145,12 @@ public:
 
           else if (attribute == "coeffs") {
 
-            if (auto bspline =
-                dynamic_cast<const gismo::gsBSpline<T> *>(&solution_.patch(patchIndex)))
+            if (auto bspline = dynamic_cast<const gismo::gsBSpline<T> *>(
+                    &solution_.patch(patchIndex)))
               json["coeffs"] = utils::to_json(bspline->coefs());
-            else if (auto bspline = dynamic_cast<const gismo::gsTensorBSpline<d, T> *>(
-                                                                                &solution_.patch(patchIndex)))
+            else if (auto bspline =
+                         dynamic_cast<const gismo::gsTensorBSpline<d, T> *>(
+                             &solution_.patch(patchIndex)))
               json["coeffs"] = utils::to_json(bspline->coefs());
             else
               return R"({ INVALID REQUEST })"_json;
@@ -157,12 +160,13 @@ public:
           else if (attribute == "knots") {
             json["knots"] = nlohmann::json::array();
 
-            if (auto bspline =
-                dynamic_cast<const gismo::gsBSpline<T> *>(&solution_.patch(patchIndex)))
+            if (auto bspline = dynamic_cast<const gismo::gsBSpline<T> *>(
+                    &solution_.patch(patchIndex)))
               for (std::size_t i = 0; i < bspline->parDim(); ++i)
                 json["knots"].push_back(bspline->knots(i));
-            else if (auto bspline = dynamic_cast<const gismo::gsTensorBSpline<d, T> *>(
-                                                                                &solution_.patch(patchIndex)))
+            else if (auto bspline =
+                         dynamic_cast<const gismo::gsTensorBSpline<d, T> *>(
+                             &solution_.patch(patchIndex)))
               for (std::size_t i = 0; i < bspline->parDim(); ++i)
                 json["knots"].push_back(bspline->knots(i));
             else

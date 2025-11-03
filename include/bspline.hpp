@@ -104,27 +104,30 @@ inline constexpr auto operator^(deriv lhs, short_t rhs) {
   return deriv(static_cast<short_t>(lhs) * static_cast<short_t>(rhs));
 }
 
-  /// @brief SplineCore base class
-  class SplineCore_ {};
+/// @brief SplineCore base class
+class SplineCore_ {};
 
-  /// @brief UniformSplineCore base class
-  class UniformSplineCore_ : public SplineCore_ {};
+/// @brief UniformSplineCore base class
+class UniformSplineCore_ : public SplineCore_ {};
 
-  /// @brief NonUniformSplineCore base class
-  class NonUniformSplineCore_ : public SplineCore_ {};
+/// @brief NonUniformSplineCore base class
+class NonUniformSplineCore_ : public SplineCore_ {};
 
-  /// @brief Concept to identify template parameters that are derived from iganet::SplineCore_
-  template<typename T>
-  concept SplineCoreType = std::is_base_of_v<SplineCore_, T>;
+/// @brief Concept to identify template parameters that are derived from
+/// iganet::SplineCore_
+template <typename T>
+concept SplineCoreType = std::is_base_of_v<SplineCore_, T>;
 
-  /// @brief Concept to identify template parameters that are derived from iganet::UniformSplineCore_
-  template<typename T>
-  concept UniformSplineCoreType = std::is_base_of_v<UniformSplineCore_, T>;
+/// @brief Concept to identify template parameters that are derived from
+/// iganet::UniformSplineCore_
+template <typename T>
+concept UniformSplineCoreType = std::is_base_of_v<UniformSplineCore_, T>;
 
-  /// @brief Concept to identify template parameters that are derived from iganet::NonUniformSplineCore_
-  template<typename T>
-  concept NonUniformSplineCoreType = std::is_base_of_v<NonUniformSplineCore_, T>;
-  
+/// @brief Concept to identify template parameters that are derived from
+/// iganet::NonUniformSplineCore_
+template <typename T>
+concept NonUniformSplineCoreType = std::is_base_of_v<NonUniformSplineCore_, T>;
+
 /// @brief Tensor-product uniform B-spline (core functionality)
 ///
 /// This class implements the core functionality of all B-spline
@@ -203,7 +206,9 @@ class UniformBSplineCore
       public utils::Serializable,
       public BSplinePatch<real_t, GeoDim, sizeof...(Degrees)> {
   /// @brief Enable access to private members
-  template <typename BSplineCore> requires SplineCoreType<BSplineCore> friend class BSplineCommon;
+  template <typename BSplineCore>
+    requires SplineCoreType<BSplineCore>
+  friend class BSplineCommon;
 
 protected:
   /// @brief Dimension of the parametric space
@@ -726,24 +731,35 @@ public:
             int64_t count = ncoeffs_[j] - (interior ? 2 : 0);
 
             // idx_base: (count, 1)
-            auto idx_base = torch::arange(count, options_.requires_grad(false).template dtype<int64_t>()).unsqueeze(1);
+            auto idx_base =
+                torch::arange(
+                    count,
+                    options_.requires_grad(false).template dtype<int64_t>())
+                    .unsqueeze(1);
 
             // offsets: (1, degree)
-            auto offsets = torch::arange(1, degrees_[j] + 1, options_.requires_grad(false).template dtype<int64_t>()).unsqueeze(0);
+            auto offsets =
+                torch::arange(
+                    1, degrees_[j] + 1,
+                    options_.requires_grad(false).template dtype<int64_t>())
+                    .unsqueeze(0);
 
             // indices: (count, degree)
             auto indices = idx_base + offset + offsets;
 
             // Gather relevant knot values: shape (count, degree)
-            auto gathered = knots_[j].index_select(0, indices.flatten()).view({count, degrees_[j]});
-            
+            auto gathered = knots_[j]
+                                .index_select(0, indices.flatten())
+                                .view({count, degrees_[j]});
+
             // Compute mean along degree dimension (dim=1)
             auto greville_ = gathered.mean(1);
-            
+
             coeffs[i] = torch::kron(greville_, coeffs[i]);
           } else
-            coeffs[i] =
-              torch::kron(torch::ones(ncoeffs_[j], options_), coeffs[i]);
+            coeffs[i] = torch::kron(
+                torch::ones(ncoeffs_[j] - (interior ? 2 : 0), options_),
+                coeffs[i]);
         }
 
         // Enable gradient calculation for non-leaf tensor
@@ -2069,10 +2085,9 @@ public:
         inner = torch::arange(0, num_inner + 1, options_);
         inner = inner / static_cast<real_t>(num_inner);
       }
-      
-      knots_[i] = torch::cat({start, inner, end});           
-    }
 
+      knots_[i] = torch::cat({start, inner, end});
+    }
   }
 
   /// @brief Initializes the B-spline coefficients
@@ -2148,22 +2163,32 @@ public:
         for (short_t j = 0; j < parDim_; ++j) {
           if (i == j) {
 
-	    int64_t count = ncoeffs_[j];
+            int64_t count = ncoeffs_[j];
 
-	    // idx_base: (count, 1)
-	    auto idx_base = torch::arange(count, options_.requires_grad(false).template dtype<int64_t>()).unsqueeze(1);
+            // idx_base: (count, 1)
+            auto idx_base =
+                torch::arange(
+                    count,
+                    options_.requires_grad(false).template dtype<int64_t>())
+                    .unsqueeze(1);
 
-	    // offsets: (1, degree)
-	    auto offsets = torch::arange(1, degrees_[j] + 1, options_.requires_grad(false).template dtype<int64_t>()).unsqueeze(0);
+            // offsets: (1, degree)
+            auto offsets =
+                torch::arange(
+                    1, degrees_[j] + 1,
+                    options_.requires_grad(false).template dtype<int64_t>())
+                    .unsqueeze(0);
 
-	    // indices: (count, degree)
-	    auto indices = idx_base + offsets;
+            // indices: (count, degree)
+            auto indices = idx_base + offsets;
 
-	    // Gather relevant knot values: shape (count, degree)
-	    auto gathered = knots_[j].index_select(0, indices.flatten()).view({count, degrees_[j]});
+            // Gather relevant knot values: shape (count, degree)
+            auto gathered = knots_[j]
+                                .index_select(0, indices.flatten())
+                                .view({count, degrees_[j]});
 
-	    // Compute mean along degree dimension (dim=1)
-	    auto greville_ = gathered.mean(1);
+            // Compute mean along degree dimension (dim=1)
+            auto greville_ = gathered.mean(1);
 
             coeffs_[i] = torch::kron(greville_, coeffs_[i]);
           } else
@@ -2502,7 +2527,7 @@ public:
           utils::to_tensorAccessor<real_t, 1>(coeffs_[g], torch::kCPU);
       auto coeffs_cpu_ptr = coeffs_cpu.template data_ptr<real_t>();
       coefs.col(g) =
-        gismo::gsAsConstVector<real_t>(coeffs_cpu_ptr, coeffs_cpu.size(0));
+          gismo::gsAsConstVector<real_t>(coeffs_cpu_ptr, coeffs_cpu.size(0));
     }
 
     std::array<gismo::gsKnotVector<real_t>, parDim_> kv;
@@ -2579,7 +2604,7 @@ public:
             utils::to_tensorAccessor<real_t, 1>(coeffs_[g], torch::kCPU);
         auto coeffs_cpu_ptr = coeffs_cpu.template data_ptr<real_t>();
         bspline.coefs().col(g) =
-          gismo::gsAsConstVector<real_t>(coeffs_cpu_ptr, coeffs_cpu.size(0));
+            gismo::gsAsConstVector<real_t>(coeffs_cpu_ptr, coeffs_cpu.size(0));
       }
     }
 
@@ -2615,7 +2640,7 @@ public:
             utils::to_tensorAccessor<real_t, 1>(coeffs_[g], torch::kCPU);
         auto coeffs_cpu_ptr = coeffs_cpu.template data_ptr<real_t>();
         bspline.coefs().col(g) =
-          gismo::gsAsConstVector<real_t>(coeffs_cpu_ptr, coeffs_cpu.size(0));
+            gismo::gsAsConstVector<real_t>(coeffs_cpu_ptr, coeffs_cpu.size(0));
       }
     }
 
@@ -2731,7 +2756,7 @@ operator>>(torch::serialize::InputArchive &archive,
            UniformBSplineCore<real_t, GeoDim, Degrees...> &obj) {
   return obj.read(archive);
 }
-  
+
 /// @brief Tensor-product non-uniform B-spline (core functionality)
 ///
 /// This class extends the base class UniformBSplineCore to
@@ -3251,23 +3276,27 @@ public:
 #endif // IGANET_WITH_GISMO
 };
 
-  /// @brief Spline base class
-  class Spline_ {};
+/// @brief Spline base class
+class Spline_ {};
 
-  /// @brief Concept to identify template parameters that are derived from iganet::Spline_
-  template<typename T>
-  concept SplineType = std::is_base_of_v<Spline_, T>;
+/// @brief Concept to identify template parameters that are derived from
+/// iganet::Spline_
+template <typename T>
+concept SplineType = std::is_base_of_v<Spline_, T>;
 
-  /// @brief Concept to identify template parameters that are derived from iganet::Spline_ and iganet::UniformSplineCore_
-  template<typename T>
-  concept UniformSplineType = std::is_base_of_v<Spline_, T> &&
-    std::is_base_of_v<UniformSplineCore_, T> && !std::is_base_of_v<NonUniformSplineCore_, T>;
+/// @brief Concept to identify template parameters that are derived from
+/// iganet::Spline_ and iganet::UniformSplineCore_
+template <typename T>
+concept UniformSplineType =
+    std::is_base_of_v<Spline_, T> && std::is_base_of_v<UniformSplineCore_, T> &&
+    !std::is_base_of_v<NonUniformSplineCore_, T>;
 
-    /// @brief Concept to identify template parameters that are derived from iganet::Spline_ and iganet::NonUniformSplineCore_
-  template<typename T>
-  concept NonUniformSplineType = std::is_base_of_v<Spline_, T> &&
-    std::is_base_of_v<NonUniformSplineCore_, T>;
-  
+/// @brief Concept to identify template parameters that are derived from
+/// iganet::Spline_ and iganet::NonUniformSplineCore_
+template <typename T>
+concept NonUniformSplineType = std::is_base_of_v<Spline_, T> &&
+                               std::is_base_of_v<NonUniformSplineCore_, T>;
+
 /// @brief B-spline (common high-level functionality)
 ///
 /// This class implements some high-level common functionality of
@@ -3281,9 +3310,9 @@ public:
 /// templated functions, which is why we implement high-level common
 /// functionality here and 'inject' the core functionality by
 /// deriving from a particular base class.
-  template <typename BSplineCore>
+template <typename BSplineCore>
   requires SplineCoreType<BSplineCore>
-  class BSplineCommon : public Spline_,
+class BSplineCommon : public Spline_,
                       public BSplineCore,
                       protected utils::FullQualifiedName {
 public:
@@ -3687,6 +3716,88 @@ public:
     return bbox;
   }
 
+  /// @brief Returns a block-tensor with the outward pointing normal
+  /// vector of the B-spline object
+  ///
+  /// @param[in] xi Point(s) where to evaluate the normal vector
+  ///
+  /// @result Block-tensor with the outward pointing normal vector
+  /// @{
+  template <bool memory_optimized = false>
+  inline auto nv(const torch::Tensor &xi) const {
+    return nv<memory_optimized>(utils::TensorArray1({xi}));
+  }
+
+  template <bool memory_optimized = false>
+  inline auto nv(const utils::TensorArray<BSplineCore::parDim_> &xi) const {
+    return nv<memory_optimized>(xi, BSplineCore::find_knot_indices(xi));
+  }
+  /// @}
+
+  /// @brief Returns a block-tensor with the outward pointing normal
+  /// vector of the B-spline object
+  ///
+  /// @param[in] xi Point(s) where to evaluate the normal vector
+  ///
+  /// @param[in] knot_indices Knot indices where to evaluate the normal vector
+  ///
+  /// @result Block-tensor with the outward pointing normal vector
+  template <bool memory_optimized = false>
+  inline auto
+  nv(const utils::TensorArray<BSplineCore::parDim_> &xi,
+     const utils::TensorArray<BSplineCore::parDim_> &knot_indices) const {
+    return nv<memory_optimized>(
+        xi, knot_indices,
+        BSplineCore::template find_coeff_indices<memory_optimized>(
+            knot_indices));
+  }
+
+  /// @brief Returns a block-tensor with the outward pointing normal
+  /// vector of the B-spline object
+  ///
+  /// @param[in] xi Point(s) where to evaluate the normal vector
+  ///
+  /// @param[in] knot_indices Knot indices where to evaluate the normal vector
+  ///
+  /// @param[in] coeff_indices Coefficient indices where to evaluate
+  /// the normal vector
+  ///
+  /// @result Block-tensor with the outward pointing normal vector
+  template <bool memory_optimized = false>
+  inline auto nv(const utils::TensorArray<BSplineCore::parDim_> &xi,
+                 const utils::TensorArray<BSplineCore::parDim_> &knot_indices,
+                 const torch::Tensor &coeff_indices) const {
+
+    if constexpr (BSplineCore::parDim_ == 1 && BSplineCore::geoDim_ == 2) {
+      // Compute the perpendicular vector
+      auto eval_ = BSplineCore::template eval<deriv::dx, memory_optimized>(
+          xi, knot_indices, coeff_indices);
+      return utils::BlockTensor<torch::Tensor, 1, 2>(*eval_[1], -*eval_[0]);
+    } else if constexpr (BSplineCore::parDim_ == 1 &&
+                         BSplineCore::geoDim_ == 3) {
+      // Compute the Frenet normal vector
+      auto t_ = BSplineCore::template eval<deriv::dx, memory_optimized>(
+                    xi, knot_indices, coeff_indices)
+                    .normalize();
+      auto a_ = BSplineCore::template eval<deriv::dx ^ 2, memory_optimized>(
+          xi, knot_indices, coeff_indices);
+      auto n_ = a_ - a_.dot(t_) * t_;
+      return utils::BlockTensor<torch::Tensor, 2, 3>(
+          n_(0, 0), n_(0, 1), n_(0, 2), t_(0, 0), t_(0, 1), t_(0, 2));
+    } else if constexpr (BSplineCore::parDim_ == 2 &&
+                         BSplineCore::geoDim_ == 3) {
+      // Compute the cross product of tangent vectors
+      auto jac_ = jac<memory_optimized>(xi, knot_indices, coeff_indices);
+      return utils::BlockTensor<torch::Tensor, 1, 3>(
+          jac_(1, 0) * jac_(2, 1) - jac_(2, 0) * jac_(1, 1),
+          jac_(2, 0) * jac_(0, 1) - jac_(0, 0) * jac_(2, 1),
+          jac_(0, 0) * jac_(1, 1) - jac_(1, 0) * jac_(0, 1));
+    } else {
+      throw std::runtime_error("Unsupported parametric/geometric dimension");
+      return utils::BlockTensor<torch::Tensor, 1, 1>{};
+    }
+  }
+
   //  clang-format off
   /// @brief Returns a block-tensor with the curl of the
   /// B-spline object with respect to the parametric variables
@@ -3711,7 +3822,7 @@ public:
   //  clang-format off
   /// @{
   template <bool memory_optimized = false>
-  auto curl(const torch::Tensor &xi) const {
+  inline auto curl(const torch::Tensor &xi) const {
     return curl<memory_optimized>(utils::TensorArray1({xi}));
   }
 
@@ -3856,7 +3967,7 @@ public:
   ///
   /// @{
   template <bool memory_optimized = false, typename Geometry>
-  auto icurl(const Geometry &G, const torch::Tensor &xi) const {
+  inline auto icurl(const Geometry &G, const torch::Tensor &xi) const {
     if constexpr (BSplineCore::parDim_ == 0)
       return utils::BlockTensor<torch::Tensor, 1, 1>{
           torch::zeros_like(BSplineCore::coeffs_[0])};
@@ -3991,7 +4102,7 @@ public:
   /// equal parametric and geometric dimensionality.
   /// @{
   template <bool memory_optimized = false>
-  auto div(const torch::Tensor &xi) const {
+  inline auto div(const torch::Tensor &xi) const {
     if constexpr (BSplineCore::parDim_ == 0)
       return utils::BlockTensor<torch::Tensor, 1, 1>{
           torch::zeros_like(BSplineCore::coeffs_[0])};
@@ -4123,7 +4234,7 @@ public:
   ///
   /// @{
   template <bool memory_optimized = false, typename Geometry>
-  auto idiv(const Geometry &G, const torch::Tensor &xi) {
+  inline auto idiv(const Geometry &G, const torch::Tensor &xi) {
     if constexpr (BSplineCore::parDim_ == 0)
       return utils::BlockTensor<torch::Tensor, 1, 1>{
           torch::zeros_like(BSplineCore::coeffs_[0])};
@@ -4396,7 +4507,7 @@ public:
   ///
   /// @{
   template <bool memory_optimized = false, typename Geometry>
-  auto igrad(const Geometry &G, const torch::Tensor &xi) const {
+  inline auto igrad(const Geometry &G, const torch::Tensor &xi) const {
     if constexpr (BSplineCore::parDim_ == 0)
       return utils::BlockTensor<torch::Tensor, 1, 1>{
           torch::zeros_like(BSplineCore::coeffs_[0])};
@@ -4708,7 +4819,7 @@ public:
   ///
   /// @{
   template <bool memory_optimized = false, typename Geometry>
-  auto ihess(const Geometry &G, const torch::Tensor &xi) const {
+  inline auto ihess(const Geometry &G, const torch::Tensor &xi) const {
     if constexpr (BSplineCore::parDim_ == 0)
       return utils::BlockTensor<torch::Tensor, 1, 1>{
           torch::zeros_like(BSplineCore::coeffs_[0])};
@@ -4821,30 +4932,36 @@ public:
       return utils::BlockTensor<torch::Tensor, 1, 1>{
           torch::zeros_like(BSplineCore::coeffs_[0])};
     else {
-      utils::BlockTensor<torch::Tensor, BSplineCore::parDim_, BSplineCore::parDim_, BSplineCore::geoDim_> hessu;
+      utils::BlockTensor<torch::Tensor, BSplineCore::parDim_,
+                         BSplineCore::parDim_, BSplineCore::geoDim_>
+          hessu;
 
       auto hessG = G.template hess<memory_optimized>(xi, knot_indices_G,
                                                      coeff_indices_G);
       auto ijacG = ijac<memory_optimized>(G, xi, knot_indices, coeff_indices,
                                           knot_indices_G, coeff_indices_G);
 
-      for (short_t component = 0; component < BSplineCore::geoDim_; ++component) {
-          auto hess_component = hess<memory_optimized>(xi, knot_indices, coeff_indices).slice(component);
+      for (short_t component = 0; component < BSplineCore::geoDim_;
+           ++component) {
+        auto hess_component =
+            hess<memory_optimized>(xi, knot_indices, coeff_indices)
+                .slice(component);
 
-          for (short_t k = 0; k < hessG.slices(); ++k) {
-              hess_component -= ijacG(component, k) * hessG.slice(k);
-          }
+        for (short_t k = 0; k < hessG.slices(); ++k) {
+          hess_component -= ijacG(component, k) * hessG.slice(k);
+        }
 
-          auto jacInv = G.template jac<memory_optimized>(xi, knot_indices_G, coeff_indices_G).ginv();
-          auto hessu_component = jacInv.tr() * hess_component * jacInv;
-          
-          for (short_t i = 0; i < BSplineCore::parDim_; ++i)
-            for (short_t j = 0; j < BSplineCore::parDim_; ++j)
-              hessu.set(i, j, component, hessu_component(i, j));
+        auto jacInv = G.template jac<memory_optimized>(xi, knot_indices_G,
+                                                       coeff_indices_G)
+                          .ginv();
+        auto hessu_component = jacInv.tr() * hess_component * jacInv;
+
+        for (short_t i = 0; i < BSplineCore::parDim_; ++i)
+          for (short_t j = 0; j < BSplineCore::parDim_; ++j)
+            hessu.set(i, j, component, hessu_component(i, j));
       }
 
       return hessu;
-
     }
   }
 
@@ -5034,7 +5151,7 @@ public:
   ///
   /// @{
   template <bool memory_optimized = false, typename Geometry>
-  auto ijac(const Geometry &G, const torch::Tensor &xi) const {
+  inline auto ijac(const Geometry &G, const torch::Tensor &xi) const {
     if constexpr (BSplineCore::parDim_ == 0)
       return utils::BlockTensor<torch::Tensor, 1, 1>{
           torch::zeros_like(BSplineCore::coeffs_[0])};

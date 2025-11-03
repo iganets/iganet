@@ -185,9 +185,11 @@ public:
   inline virtual void
   pretty_print(std::ostream &os = Log(log::info)) const noexcept override {
     os << utils::FullQualifiedName::name() << "(\n  eps=" << options_.eps()
-       << ", momentum=" << options_.momentum()
+       << ", momentum="
+       << options_
+              .momentum()
 #if TORCH_VERSION_MAJOR >= 2 && TORCH_VERSION_MINOR < 7
-      .value()
+              .value()
 #endif
        << ", training=" << options_.training();
 
@@ -213,12 +215,12 @@ public:
     archive.write(key + ".weight", this->options_.weight());
     archive.write(key + ".bias", this->options_.bias());
     archive.write(key + ".eps", torch::full({1}, (double)this->options_.eps()));
-    archive.write(key + ".momentum",
-                  torch::full({1}, (double)this->options_.momentum()
+    archive.write(key + ".momentum", torch::full({1}, (double)this->options_
+                                                          .momentum()
 #if TORCH_VERSION_MAJOR >= 2 && TORCH_VERSION_MINOR < 7
-      .value()
+                                                          .value()
 #endif
-	));
+                                                     ));
     archive.write(key + ".training",
                   torch::full({1}, (bool)this->options_.training()));
 

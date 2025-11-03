@@ -66,8 +66,8 @@ public:
   std::vector<std::string> getCapabilities() const {
     return std::vector{std::string("removepatch")};
   }
-};  
-  
+};
+
 /// @brief Model error computation
 class ModelComputeError {
 public:
@@ -136,7 +136,8 @@ public:
 class ModelReparameterize {
 public:
   /// @brief Reparameterizes the model
-  virtual void reparameterize(const std::string &patch, const nlohmann::json &json) = 0;
+  virtual void reparameterize(const std::string &patch,
+                              const nlohmann::json &json) = 0;
 
   // @brief Returns model capabilities
   std::vector<std::string> getCapabilities() const {
@@ -163,27 +164,21 @@ public:
 class ModelXML {
 public:
   /// @brief Imports model from XML (as JSON object)
-  virtual void importXML(const std::string &patch,
-                         const std::string &component,
-                         const nlohmann::json &json,
-                         int id) = 0;
+  virtual void importXML(const std::string &patch, const std::string &component,
+                         const nlohmann::json &json, int id) = 0;
 
   /// @brief Imports model from XML (as XML object)
-  virtual void importXML(const std::string &patch,
-                         const std::string &component,
-                         const pugi::xml_node &xml,
-                         int id) = 0;
+  virtual void importXML(const std::string &patch, const std::string &component,
+                         const pugi::xml_node &xml, int id) = 0;
 
   /// @brief Exports model to XML (as JSON object)
   virtual nlohmann::json exportXML(const std::string &patch,
-                                   const std::string &component,
-                                   int id) = 0;
+                                   const std::string &component, int id) = 0;
 
   /// @brief Exports model to XML (as XML object)
   virtual pugi::xml_node &exportXML(const std::string &patch,
                                     const std::string &component,
-                                    pugi::xml_node &root,
-                                    int id) = 0;
+                                    pugi::xml_node &root, int id) = 0;
 
   // @brief Returns model capabilities
   std::vector<std::string> getCapabilities() const {
@@ -245,7 +240,7 @@ public:
     if (auto m = dynamic_cast<const ModelAddPatch *>(this))
       for (auto const &capability : m->getCapabilities())
         json.push_back(capability);
-    
+
     if (auto m = dynamic_cast<const ModelComputeError *>(this))
       for (auto const &capability : m->getCapabilities())
         json.push_back(capability);
@@ -269,7 +264,7 @@ public:
     if (auto m = dynamic_cast<const ModelRemovePatch *>(this))
       for (auto const &capability : m->getCapabilities())
         json.push_back(capability);
-    
+
     if (auto m = dynamic_cast<const ModelReparameterize *>(this))
       for (auto const &capability : m->getCapabilities())
         json.push_back(capability);

@@ -58,11 +58,13 @@ private:
   void solve() {
 
     // Setup assembler
-    gismo::gsElasticityAssembler<T> assembler(Base::geo_, basis_, bc_, rhsFunc_);
+    gismo::gsElasticityAssembler<T> assembler(Base::geo_, basis_, bc_,
+                                              rhsFunc_);
     assembler.options().setReal("YoungsModulus", YoungsModulus_);
     assembler.options().setReal("PoissonsRatio", PoissonsRatio_);
     assembler.options().setInt("MaterialLaw", gismo::material_law::hooke);
-    assembler.options().setInt("DirichletStrategy", gismo::dirichlet::elimination);
+    assembler.options().setInt("DirichletStrategy",
+                               gismo::dirichlet::elimination);
 
     // Initialize assembler
     assembler.assemble();
@@ -92,7 +94,8 @@ public:
     // Set boundary conditions type and expression
     for (const auto &side : GismoBoundarySides<d>) {
       bcType_[side - 1] = gismo::condition_type::unknownType;
-      bcFunc_[side - 1] = gismo::give(gismo::gsFunctionExpr<T>("0", "0", "0", 3));
+      bcFunc_[side - 1] =
+          gismo::give(gismo::gsFunctionExpr<T>("0", "0", "0", 3));
       // bc_.addCondition(0, side, bcType_[side - 1], &bcFunc_[side - 1]);
     }
 
@@ -262,42 +265,44 @@ public:
       return R"({ INVALID REQUEST })"_json;
     }
 
-    if (component == "Displacement" ||
-        component == "Displacement_x" ||
-        component == "Displacement_y" ||
-        component == "Displacement_z") {
-      
+    if (component == "Displacement" || component == "Displacement_x" ||
+        component == "Displacement_y" || component == "Displacement_z") {
+
       nlohmann::json result;
 
       // degrees
       result["degrees"] = nlohmann::json::array();
-      
-      for (std::size_t i = 0; i < Base::solution_.patch(patchIndex).parDim(); ++i)
-        result["degrees"].push_back(Base::solution_.patch(patchIndex).degree(i));
+
+      for (std::size_t i = 0; i < Base::solution_.patch(patchIndex).parDim();
+           ++i)
+        result["degrees"].push_back(
+            Base::solution_.patch(patchIndex).degree(i));
 
       // ncoeffs
       result["ncoeffs"] = nlohmann::json::array();
-      
-      if (auto bspline =
-          dynamic_cast<const gismo::gsBSpline<T> *>(&Base::solution_.patch(patchIndex)))
+
+      if (auto bspline = dynamic_cast<const gismo::gsBSpline<T> *>(
+              &Base::solution_.patch(patchIndex)))
         for (std::size_t i = 0; i < bspline->parDim(); ++i)
           result["ncoeffs"].push_back(bspline->basis().size(i));
-      else if (auto bspline = dynamic_cast<const gismo::gsTensorBSpline<d, T> *>(
-                                                                                 &Base::solution_.patch(patchIndex)))
+      else if (auto bspline =
+                   dynamic_cast<const gismo::gsTensorBSpline<d, T> *>(
+                       &Base::solution_.patch(patchIndex)))
         for (std::size_t i = 0; i < bspline->parDim(); ++i)
           result["ncoeffs"].push_back(bspline->basis().size(i));
       else
         return R"({ INVALID REQUEST })"_json;
-      
+
       // nknots
       result["nknots"] = nlohmann::json::array();
 
-      if (auto bspline =
-          dynamic_cast<const gismo::gsBSpline<T> *>(&Base::solution_.patch(patchIndex)))
+      if (auto bspline = dynamic_cast<const gismo::gsBSpline<T> *>(
+              &Base::solution_.patch(patchIndex)))
         for (std::size_t i = 0; i < bspline->parDim(); ++i)
           result["nknots"].push_back(bspline->knots(i).size());
-      else if (auto bspline = dynamic_cast<const gismo::gsTensorBSpline<d, T> *>(
-                                                                                 &Base::solution_.patch(patchIndex)))
+      else if (auto bspline =
+                   dynamic_cast<const gismo::gsTensorBSpline<d, T> *>(
+                       &Base::solution_.patch(patchIndex)))
         for (std::size_t i = 0; i < bspline->parDim(); ++i)
           result["nknots"].push_back(bspline->knots(i).size());
       else
@@ -306,21 +311,22 @@ public:
       // knots
       result["knots"] = nlohmann::json::array();
 
-      if (auto bspline =
-          dynamic_cast<const gismo::gsBSpline<T> *>(&Base::solution_.patch(patchIndex)))
+      if (auto bspline = dynamic_cast<const gismo::gsBSpline<T> *>(
+              &Base::solution_.patch(patchIndex)))
         for (std::size_t i = 0; i < bspline->parDim(); ++i)
           result["knots"].push_back(bspline->knots(i));
-      else if (auto bspline = dynamic_cast<const gismo::gsTensorBSpline<d, T> *>(
-                                                                                 &Base::solution_.patch(patchIndex)))
+      else if (auto bspline =
+                   dynamic_cast<const gismo::gsTensorBSpline<d, T> *>(
+                       &Base::solution_.patch(patchIndex)))
         for (std::size_t i = 0; i < bspline->parDim(); ++i)
           result["knots"].push_back(bspline->knots(i));
       else
         return R"({ INVALID REQUEST })"_json;
-      
+
       // coeffs
       gismo::gsMatrix<T> coeffs;
       if (component == "Displacement") {
-        coeffs = Base::solution_.patch(patchIndex).coefs().rowwise().norm();        
+        coeffs = Base::solution_.patch(patchIndex).coefs().rowwise().norm();
       } else if (component == "Displacement_x") {
         coeffs = Base::solution_.patch(patchIndex).coefs().col(0);
       } else if (component == "Displacement_y") {
@@ -329,10 +335,10 @@ public:
         coeffs = Base::solution_.patch(patchIndex).coefs().col(2);
       }
       result["coeffs"] = utils::to_json(coeffs, true, false);
-      
-      return result;      
+
+      return result;
     }
-    
+
     else
       return Base::eval(patch, component, json);
   }
@@ -465,13 +471,13 @@ public:
 
     // Set geometry
     bc_.setGeoMap(Base::geo_);
-    
+
     throw std::runtime_error("Adding patches is not yet implemented in G+Smo");
 
     // Regenerate solution
     solve();
   }
-  
+
   /// @brief Remove existing patch from the model
   void removePatch(const std::string &patch,
                    const nlohmann::json &json = NULL) override {
@@ -481,10 +487,10 @@ public:
 
     // Set geometry
     bc_.setGeoMap(Base::geo_);
-    
+
     int patchIndex(-1);
 
-    if (json.contains("data")) {      
+    if (json.contains("data")) {
       if (json["data"].contains("patch"))
         patchIndex = json["data"]["patch"].get<int>();
     }
@@ -492,7 +498,8 @@ public:
     // if (patchIndex == -1)
     //   throw std::runtime_error("Invalid patch index");
 
-    // throw std::runtime_error("Patch removal is not yet implemented in G+Smo");
+    // throw std::runtime_error("Patch removal is not yet implemented in
+    // G+Smo");
 
     // Regenerate solution
     solve();

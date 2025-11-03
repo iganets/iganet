@@ -504,7 +504,7 @@ inline std::string getExtraLibsVersion() {
     s += ", ";
   s += "HIP " + std::to_string(HIP_VERSION);
 #endif
-  
+
   // G+Smo
 #if defined(GISMO_VERSION)
   if (!s.empty())
