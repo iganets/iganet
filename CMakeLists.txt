@@ -140,8 +140,6 @@ endif()
 
 if(IGANET_WITH_MATPLOT)
   include(Matplot++)
-  #include_directories(${matplotplusplus_SOURCE_DIR}/source)
-  #include_directories(${matplotplusplus_BINARY_DIR}/source/matplot)
   target_link_libraries(iganet_core INTERFACE Matplot++::matplot)
 endif()
 
