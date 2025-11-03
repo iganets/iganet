@@ -2,7 +2,10 @@ name: CI push
 
 on:
   push:
+    paths:
+      - '.github/workflows/ci-push.yml'
     paths-ignore:
+      - '.github/**'
       - 'docs/**'
       - 'filedata/**'
       - 'ops/**'
