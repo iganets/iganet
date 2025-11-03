@@ -5,7 +5,7 @@ on:
 
 jobs:
   build:
-    uses: iganets/.github/.github/workflows/cmake-multi-platform.yml@master
+    uses: iganets/.github/.github/workflows/cmake-multi-platform.yml@main
     with:
       cmake_flags: "-DIGANET_OPTIONAL=examples"
     secrets: inherit
