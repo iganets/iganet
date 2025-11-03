@@ -2,7 +2,15 @@ name: CI push
 
 on:
   push:
+    paths-ignore:
+      - '.github/**'
+      - 'docs/**'
+      - 'filedata/**'
+      - 'ops/**'
 
 jobs:
   build:
-    uses: iganets/.github/.github/workflows/cmake-multi-platform.yml@master
+    uses: iganets/.github/.github/workflows/cmake-multi-platform.yml@main
+    with:
+      IGANET_OPTIONAL: "examples"
+    secrets: inherit

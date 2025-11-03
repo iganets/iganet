@@ -4,10 +4,15 @@ on:
   pull_request:
     branches:
       - master
+    paths-ignore:
+      - '.github/**'      
+      - 'docs/**'
+      - 'filedata/**'
+      - 'ops/**'
 
 jobs:
   build:
-    uses: iganets/.github/.github/workflows/cmake-multi-platform.yml@master
+    uses: iganets/.github/.github/workflows/cmake-multi-platform.yml@main
     with:
-      cmake_flags: "-DIGANET_OPTIONAL=examples"
+      IGANET_OPTIONAL: "unittests"
     secrets: inherit

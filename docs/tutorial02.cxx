@@ -77,20 +77,16 @@ int main() {
         << S_cpts << "\n";
   //! [Multivariate uniform B-spline with externally defined control points]
 
-  //! [Multivariate uniform B-spline with externally defined control points
-  //! updated]
+  //! [Multivariate uniform B-spline with externally defined control points updated]
   coeffs[0][3] = 10;
 
   Log() << "\n\nUpdate control point coordinates" << S_cpts.coeffs_view()
         << "\n";
-  //! [Multivariate uniform B-spline with externally defined control points
-  //! updated]
+  //! [Multivariate uniform B-spline with externally defined control points updated]
 
-  //! [Multivariate uniform B-spline with externally defined and cloned control
-  //! points]
+  //! [Multivariate uniform B-spline with externally defined and cloned control points]
   UniformBSpline<double, 2, 2, 3> S_cpts_cloned({5, 5}, coeffs, true);
-  //! [Multivariate uniform B-spline with externally defined and cloned control
-  //! points]
+  //! [Multivariate uniform B-spline with externally defined and cloned control points]
 
   //! [Duplicating multivariate uniform B-spline]
   auto S_soft_copy(S);

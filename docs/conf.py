@@ -40,12 +40,12 @@ if read_the_docs_build:
     output_dir = "_build/"
     configureDoxyfile(input_dir, output_dir)
     subprocess.call("doxygen", shell=True)
-    breathe_projects["IgANet"] = output_dir + "xml"
+    breathe_projects["IGAnet"] = output_dir + "xml"
 
 
 # -- Project information -----------------------------------------------------
 
-project = "IgANet"
+project = "IGAnet"
 copyright = "2021-2025, Matthias Möller (m.moller@tudelft.nl)"
 author = "Matthias Möller"
 
@@ -102,7 +102,7 @@ html_theme_options = {
 # so a file named "default.css" will overwrite the builtin "default.css".
 html_static_path = ["_static"]
 
-html_logo = "_static/IgANet_logo_white.png"
+html_logo = "_static/IGAnet_logo.png"
 
 # Breathe Configuration
-breathe_default_project = "IgANet"
+breathe_default_project = "IGAnet"

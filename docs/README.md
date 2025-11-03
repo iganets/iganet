@@ -1,34 +1,27 @@
-# IgANets - Isogeometric Analysis Networks
+# IGAnets - Isogeometric Analysis Networks
 
 These pages were created on \showdate "%d/%m/%Y" at \showdate
 "%H:%M:%S". The latest revision of this manual is <a
 href="https://iganets.github.io/iganet" target="_parent">available
 online</a>.
 
-**IgANets** (Isogeometric Analysis Networks) is a C++ library that
+**IGAnets** (Isogeometric Analysis Networks) is a C++ library that
 combines Isogeometric Analysis with deep operator learning. It builds
 upon the C++ API of the Torch library and is written in C++20. The
 library aims to provide an easy to use, user-friendly and yet
-computationally efficient framework for implementing IgANet
+computationally efficient framework for implementing IGAnet
 applications.
 
 The library is licenced under the [Mozilla Public License Version 2.0](https://www.mozilla.org/MPL/2.0).
 
 ## Getting started
 
-1. [Hello IgANets](tutorial01.md)
+1. [Hello IGAnets](tutorial01.md)
 2. [Working with B-spline functions](tutorial02.md)
-
-## Documentation
-
-- The list of [Examples](../examples/README.md)
-- The list of [PerfTests](../perftests/README.md)
-- The list of [UnitTests](../unittests/README.md)
-- The list of [WebApps](../webapps/README.md)
 
 ## Mathematical notation
 
-IgANets adopts the following mathematical symbols and notation conventions.
+IGAnets adopts the following mathematical symbols and notation conventions.
 
 ### B-Spline basis functions
 

@@ -2,9 +2,9 @@
 # CMakeLists.txt
 #
 # Author: Matthias Moller
-# Copyright (C) 2021-2025 by the IgANet authors
+# Copyright (C) 2021-2025 by the IGAnet authors
 #
-# This file is part of the IgANet project
+# This file is part of the IGAnet project
 #
 # This Source Code Form is subject to the terms of the Mozilla Public
 # License, v. 2.0. If a copy of the MPL was not distributed with this
