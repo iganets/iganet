@@ -23,5 +23,5 @@ jobs:
   deploy:
     uses: iganets/.github/.github/workflows/gh-pages.yml@main
     with:
-      IGANET_OPTIONAL: "examples"
+      IGANET_OPTIONAL: "examples;unittests;perftests"
     secrets: inherit
