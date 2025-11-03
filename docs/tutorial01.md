@@ -1,13 +1,13 @@
-# Tutorial 01: Hello IgANets
+# Tutorial 01: Hello IGAnets
 
 ## TL;DR
 
-In this tutorial you will get to know the structure of **IgANets** and
+In this tutorial you will get to know the structure of **IGAnets** and
 how to write your first program.
 
 ## Code repository
 
-The source code can be obtained from https://github.com/IgANets/IgaNet
+The source code can be obtained from https://github.com/IGAnets/IgaNet
 as well as https://gitlab.com/iganets/iganet.
 
 It contains the following sub-folders:
@@ -18,7 +18,7 @@ It contains the following sub-folders:
 
 -   `filedata` contains some example data files
 
--   `include` contains the IgANet header files
+-   `include` contains the IGAnet header files
 
 -   `mex` contains some Matlab MEX functions
 
@@ -34,7 +34,7 @@ It contains the following sub-folders:
 
 ## Getting started
 
-In order to utilize IgANets in your application you need to
+In order to utilize IGAnets in your application you need to
 
 1.  include the main header file `iganet.h`,
 2.  call `iganet::init()` to initialize some internals at the start of the program, and
@@ -45,7 +45,7 @@ The following toy application
 ```cpp
 #include <iganet.h>
 
-// Include the IgANet namespace
+// Include the IGAnet namespace
 using namespace iganet;
 
 int main() {
@@ -62,7 +62,7 @@ int main() {
 will output some information about the system it is run on, e.g.,
 
 ```
-[INFO] IgANets - Isogeometric Analysis Networks (version 24.04.0)
+[INFO] IGAnets - Isogeometric Analysis Networks (version 24.04.0)
 Compiled by AppleClang 16.0.0.16000026 (C++ 202002, libc++ 180100, LibTorch 2.4.1)
 Running on Apple M1 (memory 8 GB, #intraop threads: 8, #interop threads: 1, devices: CPU, MPS)
 [INFO] Succeeded
@@ -98,7 +98,7 @@ Running on Apple M1 (memory 8 GB, #intraop threads: 3, #interop threads: 2, devi
 
 ### Setting the default device
 
-IgANets checks all available devices during initialization. Unless the
+IGAnets checks all available devices during initialization. Unless the
 environment variables `IGANET_DEVICE` and/or `IGANET_DEVICE_INDEX` are
 set, it uses the first GPU as default device and falls back to CPU
 mode otherwise.
@@ -159,7 +159,7 @@ options = TensorOptions(dtype=float, device=mps, layout=Strided (default), requi
 
 ### The logging mechanism
 
-IgANets has its own logging mechanism. Instead of writing output to
+IGAnets has its own logging mechanism. Instead of writing output to
 `std::cout` and `std:cerr` it is recommended to write ouput to
 `iganet::Log(...)` and specify the log level as follows
 

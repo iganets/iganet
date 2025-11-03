@@ -1,13 +1,13 @@
-.. _IgANet Index:
+.. _IGAnet Index:
 
-.. image:: _static/IgANet_logo_color.png
+.. image:: _static/iganet_logo.png
     :width: 350
-    :alt: LibKet
+    :alt: IGAnet
 
-Welcome to IgANet
+Welcome to IGAnet
 =================
 
-.. _IgANet User Documentation:
+.. _IGAnet User Documentation:
 
 User Documentation
 ------------------

@@ -57,7 +57,7 @@ std::__1::array<at::Tensor, 1ul>(
 
 </details>
 
-All IgANets object have the member function `pretty_print(std::ostream
+All IGAnets object have the member function `pretty_print(std::ostream
 &os)` and an overload of the `operator<<` so that the curve \f$ C \f$
 can be printed as follows
 
@@ -171,7 +171,7 @@ std::__1::array<at::Tensor, 1ul>(
 
 </details>
 
-Note that IgANets has overload of the `operator<<` for the standard
+Note that IGAnets has overload of the `operator<<` for the standard
 containers `std::array` and `std::vector`. If you want to address
 individual properties restricted to a single parametric or geometric
 dimension type
