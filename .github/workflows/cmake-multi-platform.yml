@@ -17,6 +17,9 @@ jobs:
   build:
     runs-on: ${{ matrix.os }}
 
+    # Prevent triggering of two jobs when a push event is combined with a pull request
+    if: github.event_name != 'push' || github.event.pull_request == null
+
     strategy:
       # Set fail-fast to false to ensure that feedback is delivered for all matrix combinations. Consider changing this to true when your workflow is stable.
       fail-fast: false
