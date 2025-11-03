@@ -942,15 +942,7 @@ WARN_LOGFILE           =
 INPUT                  = @PROJECT_SOURCE_DIR@/docs/README.md \
                          @PROJECT_SOURCE_DIR@/docs \
                          @PROJECT_SOURCE_DIR@/include \
-                         @PROJECT_SOURCE_DIR@/examples/README.md \
-                         @PROJECT_SOURCE_DIR@/examples \
-                         @PROJECT_SOURCE_DIR@/perftests/README.md \
-                         @PROJECT_SOURCE_DIR@/perftests \
-                         @PROJECT_SOURCE_DIR@/unittests/README.md \
-                         @PROJECT_SOURCE_DIR@/unittests \
-                         @PROJECT_SOURCE_DIR@/webapps/README.md \
-                         @PROJECT_SOURCE_DIR@/webapps \
-                         @PROJECT_SOURCE_DIR@/webapps/models
+                         @PROJECT_SOURCE_DIR@/optional
 
 # This tag can be used to specify the character encoding of the source files
 # that doxygen parses. Internally doxygen uses the UTF-8 encoding. Doxygen uses
