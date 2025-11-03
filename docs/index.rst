@@ -1,6 +1,6 @@
 .. _IGAnet Index:
 
-.. image:: _static/iganet_logo.png
+.. image:: _static/iganets_logo.png
     :width: 350
     :alt: IGAnet
 
