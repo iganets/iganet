@@ -7,7 +7,7 @@ on:
 
 jobs:
   build:
-    uses: iganets/.github/.github/workflows/cmake-multi-platform.yml@main
+    uses: iganets/.github/.github/workflows/cmake-multi-platform.yml@mmoelle1-patch-1
     with:
       cmake_flags: "-DIGANET_OPTIONAL=examples"
     secrets: inherit
