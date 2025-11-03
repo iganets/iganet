@@ -6,13 +6,14 @@ on:
       - 'cmake/**'
       - 'filedata/**'
       - 'ops/**'
+    branches: [master]
   pull_request:
     paths-ignore:
       - 'cmake/**'
       - 'filedata/**'
       - 'ops/**'
-#    branches: [master]
-  workflow_dispatch:  # Allows manual triggers of this workflow
+    branches: [master]
+  workflow_dispatch:
 
 permissions:
   contents: write

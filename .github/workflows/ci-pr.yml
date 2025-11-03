@@ -4,8 +4,6 @@ on:
   pull_request:
     branches:
       - master
-    paths:
-      - '.github/workflows/ci-pr.yml'
     paths-ignore:
       - '.github/**'      
       - 'docs/**'
