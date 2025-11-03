@@ -7,6 +7,5 @@ on:
       - master
 
 jobs:
-  if: (github.event_name != 'pull_request' && ! github.event.pull_request.head.repo.fork) || (github.event_name == 'pull_request' && (github.event.pull_request.head.repo.fork || github.actor == 'dependabot[bot]'))
   build:
     uses: iganets/.github/.github/workflows/cmake-multi-platform.yml@main
