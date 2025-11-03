@@ -2,18 +2,12 @@ name: Deploy to GitHub Pages
 
 on:
   push:
-    paths:
-      - '.github/workflows/gh-pages.yml'
     paths-ignore:
-      - '.github/**'
       - 'cmake/**'
       - 'filedata/**'
       - 'ops/**'
   pull_request:
-    paths:
-      - '.github/workflows/gh-pages.yml'
     paths-ignore:
-      - '.github/**'
       - 'cmake/**'
       - 'filedata/**'
       - 'ops/**'
