@@ -1,0 +1,8 @@
+name: CI push
+
+on:
+  push:
+
+jobs:
+  build:
+    uses: iganets/.github/.github/workflows/cmake-multi-platform.yml@master

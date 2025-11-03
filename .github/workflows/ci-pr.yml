@@ -1,0 +1,13 @@
+name: CI pull request
+
+on:
+  pull_request:
+    branches:
+      - master
+
+jobs:
+  build:
+    uses: iganets/.github/.github/workflows/cmake-multi-platform.yml@master
+    with:
+      cmake_flags: "-DIGANET_OPTIONAL=examples"
+    secrets: inherit
