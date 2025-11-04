@@ -3,7 +3,7 @@ name: CI pull request
 on:
   pull_request:
     branches:
-      - master
+      - main
     paths-ignore:
       - '.github/**'      
       - 'docs/**'
