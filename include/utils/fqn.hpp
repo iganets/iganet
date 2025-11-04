@@ -17,14 +17,13 @@
 #include <core.hpp>
 
 #include <torch/csrc/api/include/torch/types.h>
-#include <torch/torch.h>
 
-namespace iganet {
-namespace utils {
+namespace iganet::utils {
 
 /// @brief Full qualified name descriptor
 class FullQualifiedName {
 public:
+  virtual ~FullQualifiedName() = default;
   /// @brief Returns the full qualified name of the object
   ///
   /// @result Full qualified name of the object as string
@@ -32,7 +31,7 @@ public:
     // If the name optional is empty at this point, we grab the name of the
     // dynamic type via RTTI. Note that we cannot do this in the constructor,
     // because in the constructor of a base class `this` always refers to the
-    // base type. Inheritance effectively does not work in constructors. Also
+    // base type. Inheritance effectively does not work in constructors. Also,
     // this note from http://en.cppreference.com/w/cpp/language/typeid: If
     // typeid is used on an object under construction or destruction (in a
     // destructor or in a constructor, including constructor's initializer list
@@ -62,5 +61,4 @@ protected:
   mutable at::optional<std::string> name_;
 };
 
-} // namespace utils
-} // namespace iganet
+} // namespace iganet::utils

@@ -17,10 +17,9 @@
 #include <tuple>
 #include <vector>
 
-namespace iganet {
-namespace utils {
+namespace iganet::utils {
 
-/// @brief Concatenates the entries of an std::tuple object into a
+/// @brief Concatenates the entries of a std::tuple object into a
 /// single Torch tensor along the given dimension
 template <typename... Tensors>
 torch::Tensor cat_tuple_into_tensor(const std::tuple<Tensors...> &tensors,
@@ -33,7 +32,7 @@ torch::Tensor cat_tuple_into_tensor(const std::tuple<Tensors...> &tensors,
   return torch::cat(vec, dim);
 }
 
-/// @brief Concatenates the entries of an std::tuple object into a
+/// @brief Concatenates the entries of a std::tuple object into a
 /// single Torch tensor along the given dimension after applying the
 /// callback function
 template <typename... Tensors, typename Func>
@@ -50,7 +49,7 @@ torch::Tensor cat_tuple_into_tensor(const std::tuple<Tensors...> &tensors,
   return torch::cat(vec, dim);
 }
 
-/// @brief Returns an std::tuple object with N replications of the given value
+/// @brief Returns a std::tuple object with N replications of the given value
 template <std::size_t N, typename T>
 constexpr auto repeat_tuple(const T &value) {
   return [&]<std::size_t... Is>(std::index_sequence<Is...>) {
@@ -86,5 +85,4 @@ void slice_tensor_into_tuple(std::tuple<Tensors...> &tuple,
 }
 /// @}
 
-} // namespace utils
-} // namespace iganet
+} // namespace iganet::utils

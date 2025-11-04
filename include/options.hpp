@@ -136,6 +136,10 @@ public:
       : options_(options.dtype(::iganet::dtype<real_t>())) {}
 
   /// @brief Implicit conversion operator
+  ///
+  /// @note Do not mark this operator 'explicit' as this will prevent that
+  /// objects of type Options are implicitly converted into objects of type
+  /// torch::TensorOptions
   operator torch::TensorOptions() const { return options_; }
 
   /// @brief Returns the `device` property
@@ -147,7 +151,7 @@ public:
   }
 
   /// @brief Returns the `dtype` property
-  inline torch::Dtype dtype() const noexcept {
+  static inline torch::Dtype dtype() noexcept {
     return ::iganet::dtype<real_t>();
   }
 
@@ -211,8 +215,7 @@ public:
   using value_type = real_t;
 
   /// @brief Returns a string representation of the Options object
-  inline virtual void
-  pretty_print(std::ostream &os = Log(log::info)) const noexcept override {
+  inline void pretty_print(std::ostream &os) const noexcept override {
     os << name() << "(\noptions = " << options_ << "\n)";
   }
 
@@ -221,7 +224,7 @@ private:
   const torch::TensorOptions options_;
 };
 
-/// @brief Print (as string) a Options object
+/// @brief Print (as string) an Options object
 template <typename real_t>
 inline std::ostream &operator<<(std::ostream &os, const Options<real_t> &obj) {
   obj.pretty_print(os);

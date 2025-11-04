@@ -20,12 +20,9 @@
 
 #include <options.hpp>
 
-#include <torch/torch.h>
+namespace iganet::utils {
 
-namespace iganet {
-namespace utils {
-
-/// @brief Converts an std::vector object into std::array
+/// @brief Converts a std::vector object into std::array
 template <std::size_t N, typename T>
 inline std::array<T, N> to_array(std::vector<T> &&vector) {
   std::array<T, N> array;
@@ -33,7 +30,7 @@ inline std::array<T, N> to_array(std::vector<T> &&vector) {
   return array;
 }
 
-/// @brief Converts an std::array object into std::vector
+/// @brief Converts a std::array object into std::vector
 template <typename T, std::size_t N>
 inline std::vector<T> to_vector(std::array<T, N> &&array) {
   std::vector<T> vector;
@@ -43,17 +40,16 @@ inline std::vector<T> to_vector(std::array<T, N> &&array) {
 
 /// @brief Converts a list of arguments into std::array
 template <typename... Args> inline auto to_array(Args &&...args) {
-  return std::array<typename std::common_type<Args...>::type, sizeof...(Args)>{
+  return std::array<std::common_type_t<Args...>, sizeof...(Args)>{
       std::move(args)...};
 }
 
 /// @brief Converts a list of arguments into std::vector
 template <typename... Args> inline auto to_vector(Args &&...args) {
-  return std::vector<typename std::common_type<Args...>::type>{
-      std::move(args)...};
+  return std::vector<std::common_type_t<Args...>>{std::move(args)...};
 }
 
-/// @brief Converts an std::array to torch::Tensor
+/// @brief Converts a std::array to torch::Tensor
 /// @{
 template <typename T, std::size_t N>
 inline auto
@@ -98,7 +94,7 @@ inline auto to_tensor(const std::array<T, N> &array,
 }
 /// @}
 
-/// @brief Converts an std::initializer_list to torch::Tensor
+/// @brief Converts a std::initializer_list to torch::Tensor
 /// @{
 template <typename T>
 inline auto
@@ -142,7 +138,7 @@ inline auto to_tensor(std::initializer_list<T> &list,
 }
 /// @}
 
-/// @brief Converts an std::vector to torch::Tensor
+/// @brief Converts a std::vector to torch::Tensor
 /// @{
 template <typename T>
 inline auto
@@ -187,7 +183,7 @@ inline auto to_tensor(const std::vector<T> &vector,
 }
 /// @}
 
-/// @brief Converts an std::array<int64_t, N> to a at::IntArrayRef object
+/// @brief Converts a std::array<int64_t, N> to an at::IntArrayRef object
 template <typename T, std::size_t N>
 inline auto to_ArrayRef(const std::array<T, N> &array) {
   return at::ArrayRef<T>{array};
@@ -223,7 +219,7 @@ inline auto concat(std::array<T, N> &&...arrays) {
 /// @{
 template <typename... Ts>
 inline auto concat(const std::vector<Ts> &...vectors) {
-  std::vector<typename std::common_type<Ts...>::type> result;
+  std::vector<std::common_type_t<Ts...>> result;
 
   (result.insert(result.end(), vectors.begin(), vectors.end()), ...);
 
@@ -231,7 +227,7 @@ inline auto concat(const std::vector<Ts> &...vectors) {
 }
 
 template <typename... Ts> inline auto concat(std::vector<Ts> &&...vectors) {
-  std::vector<typename std::common_type<Ts...>::type> result;
+  std::vector<std::common_type_t<Ts...>> result;
 
   (result.insert(result.end(), std::make_move_iterator(vectors.begin()),
                  std::make_move_iterator(vectors.end())),
@@ -293,14 +289,14 @@ inline constexpr auto operator+(T data, std::vector<T> vector) {
   return result;
 }
 
-/// @brief Creates an std::array object filled with a constant
+/// @brief Creates a std::array object filled with a constant
 template <typename T, std::size_t N> inline constexpr auto make_array(T value) {
   std::array<T, N> result;
   result.fill(value);
   return result;
 }
 
-/// @brief Creates an std::array object from another std::array object
+/// @brief Creates a std::array object from another std::array object
 template <typename T, typename U, std::size_t N>
 inline constexpr std::array<T, N> make_array(std::array<U, N> array) {
   std::array<T, N> result;
@@ -309,7 +305,7 @@ inline constexpr std::array<T, N> make_array(std::array<U, N> array) {
   return result;
 }
 
-/// @brief Negates all entries of an std::array
+/// @brief Negates all entries of a std::array
 template <typename T, std::size_t N>
 inline constexpr std::array<T, N> operator-(std::array<T, N> array) {
   std::array<T, N> result;
@@ -358,7 +354,7 @@ inline constexpr std::array<T, N> operator/(std::array<T, N> lhs,
   return result;
 }
 
-/// @brief Derives an std::array object from a given std::array object dropping
+/// @brief Derives a std::array object from a given std::array object dropping
 /// the first M entries
 template <typename T, std::size_t N, std::size_t M = 1>
 inline constexpr std::array<T, N - M>
@@ -370,7 +366,7 @@ remove_from_front(std::array<T, N> array) {
   return result;
 }
 
-/// @brief Derives an std::array object from a given std::array object dropping
+/// @brief Derives a std::array object from a given std::array object dropping
 /// the last M entries
 template <typename T, std::size_t N, std::size_t M = 1>
 inline constexpr std::array<T, N - M> remove_from_back(std::array<T, N> array) {
@@ -381,5 +377,4 @@ inline constexpr std::array<T, N - M> remove_from_back(std::array<T, N> array) {
   return result;
 }
 
-} // namespace utils
-} // namespace iganet
+} // namespace iganet::utils

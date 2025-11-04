@@ -17,8 +17,8 @@
 #include <tuple>
 #include <utility>
 
-namespace iganet {
-namespace utils {
+namespace iganet::utils {
+
 namespace detail {
 
 template <typename... T> class zip_helper {
@@ -35,7 +35,7 @@ public:
     std::tuple<decltype(std::declval<T>().begin())...> _iterators;
 
     template <std::size_t... I> auto deref(std::index_sequence<I...>) const {
-      return typename iterator::value_type{*std::get<I>(_iterators)...};
+      return iterator::value_type{*std::get<I>(_iterators)...};
     }
 
     template <std::size_t... I> void increment(std::index_sequence<I...>) {
@@ -98,5 +98,4 @@ template <typename... T> auto zip(T &&...seqs) {
   return iganet::utils::detail::zip_helper<T...>(std::forward<T>(seqs)...);
 }
 
-} // namespace utils
-} // namespace iganet
+} // namespace iganet::utils

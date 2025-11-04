@@ -17,6 +17,7 @@
 #include <chrono>
 
 #include <core.hpp>
+#include <utility>
 
 namespace iganet {
 
@@ -28,8 +29,8 @@ private:
     std::string name_;
     int64_t bytes_;
 
-    MemoryObject(const std::string &name, int64_t bytes)
-        : name_(name), bytes_(bytes) {}
+    MemoryObject(std::string name, int64_t bytes)
+        : name_(std::move(name)), bytes_(bytes) {}
   };
 
   /// @brief Map holding the list of registered objects
@@ -46,18 +47,20 @@ private:
   std::chrono::high_resolution_clock::time_point init_;
 
   /// @brief Converts bytes into best human-readable unit
-  std::string convert_bytes(int64_t bytes) const {
+  [[nodiscard]] std::string convert_bytes(int64_t bytes) const {
     if (bytes < 1024ull)
       return std::to_string(bytes) + "b";
     else if (bytes < 1024ull * 1024ull)
-      return std::to_string(bytes / double(1024)) + "kb";
+      return std::to_string(bytes / static_cast<double>(1024)) + "kb";
     else if (bytes < 1024ull * 1024ull * 1024ull)
-      return std::to_string(bytes / double(1024 * 1024)) + "mb";
+      return std::to_string(bytes / static_cast<double>(1024 * 1024)) + "mb";
     else if (bytes < 1024ull * 1024ull * 1024ull * 1024ull)
-      return std::to_string(bytes / double(1024 * 1024 * 1024)) + "gb";
+      return std::to_string(bytes / static_cast<double>(1024 * 1024 * 1024)) +
+             "gb";
     else
-      return std::to_string(bytes / double(1024) / double(1024) / double(1024) /
-                            double(1024)) +
+      return std::to_string(
+                 bytes / static_cast<double>(1024) / static_cast<double>(1024) /
+                 static_cast<double>(1024) / static_cast<double>(1024)) +
              "tb";
   }
 
@@ -89,7 +92,8 @@ public:
   }
 
   /// @brief Registers generic type to memory debugger
-  template <typename T> void add(const std::string &name, const T &obj) {
+  template <typename T>
+  void add(const std::string &name, [[maybe_unused]] const T &obj) {
     counter_++;
     bytes_ += sizeof(obj);
     objects_.insert(

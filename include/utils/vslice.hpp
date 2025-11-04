@@ -21,8 +21,7 @@
 
 #include <torch/torch.h>
 
-namespace iganet {
-namespace utils {
+namespace iganet::utils {
 
 /// @brief Vectorized version of `torch::indexing::Slice` (see
 /// https://pytorch.org/cppdocs/notes/tensor_indexing.html)
@@ -172,5 +171,4 @@ inline auto VSlice(const utils::TensorArray<N> &index,
   }
 }
 
-} // namespace utils
-} // namespace iganet
+} // namespace iganet::utils

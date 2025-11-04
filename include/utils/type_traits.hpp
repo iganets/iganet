@@ -16,8 +16,7 @@
 
 #include <type_traits>
 
-namespace iganet {
-namespace utils {
+namespace iganet::utils {
 
 /// @brief Type trait for std::tuple type
 /// @{
@@ -34,12 +33,11 @@ template <class T> struct is_tuple_of_tuples : std::false_type {};
 
 template <class... Ts>
 struct is_tuple_of_tuples<std::tuple<Ts...>>
-    : std::common_type<is_tuple<Ts>...>::type {};
+    : std::common_type_t<is_tuple<Ts>...> {};
 /// @}
 
 /// @brief Alias for is_tuple_of_tuples::type
-template <class T>
-using is_tuple_of_tuples_t = typename is_tuple_of_tuples<T>::type;
+template <class T> using is_tuple_of_tuples_t = is_tuple_of_tuples<T>::type;
 
 /// @brief Alias for is_tuple_of_tuples::value
 template <class T>
@@ -68,12 +66,10 @@ template <typename T, typename... Tuples> struct tuple_cat<T, Tuples...> {
 /// @}
 
 /// @brief Alias for tuple_cat::type
-template <typename... Tuples>
-using tuple_cat_t = typename tuple_cat<Tuples...>::type;
+template <typename... Tuples> using tuple_cat_t = tuple_cat<Tuples...>::type;
 
 /// @brief Alias for tuple_cat::value
 template <typename... Tuples>
 inline constexpr auto tuple_cat_v = tuple_cat<Tuples...>::value;
 
-} // namespace utils
-} // namespace iganet
+} // namespace iganet::utils

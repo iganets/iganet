@@ -89,7 +89,8 @@ enum class deriv : short_t {
 ///
 /// @result Sum of the two enumerators
 inline constexpr auto operator+(deriv lhs, deriv rhs) {
-  return deriv(static_cast<short_t>(lhs) + static_cast<short_t>(rhs));
+  return static_cast<deriv>(static_cast<short_t>(lhs) +
+                            static_cast<short_t>(rhs));
 }
 
 /// @brief Raises an enumerator for specifying the derivative of B-spline
@@ -101,7 +102,8 @@ inline constexpr auto operator+(deriv lhs, deriv rhs) {
 ///
 /// @result Derivative enumerator raised to the exponent
 inline constexpr auto operator^(deriv lhs, short_t rhs) {
-  return deriv(static_cast<short_t>(lhs) * static_cast<short_t>(rhs));
+  return static_cast<deriv>(static_cast<short_t>(lhs) *
+                            static_cast<short_t>(rhs));
 }
 
 /// @brief SplineCore base class
@@ -252,18 +254,18 @@ public:
   /// @brief Value type
   using value_type = real_t;
 
-  /// @brief Deduces the type of the template template parameter `BSpline`
+  /// @brief Deduces the type of the template parameter `BSpline`
   /// when exposed to the class template parameters `real_t` and
   /// `GeoDim`, and the `Degrees` parameter pack. The optional
   /// template parameter `degree_elevate` can be used to
   /// (de-)elevate the degrees by an additive constant
   template <template <typename, short_t, short_t...> class BSpline,
-            std::make_signed<short_t>::type degree_elevate = 0>
+            std::make_signed_t<short_t> degree_elevate = 0>
   using derived_type = BSpline<real_t, GeoDim, (Degrees + degree_elevate)...>;
 
   /// @brief Deduces the self-type possibly degrees (de-)elevated by
   /// the additive constant `degree_elevate`
-  template <std::make_signed<short_t>::type degree_elevate = 0>
+  template <std::make_signed_t<short_t> degree_elevate = 0>
   using self_type = derived_type<UniformBSplineCore, degree_elevate>;
 
   /// @brief Deduces the derived self-type when exposed to different
@@ -279,37 +281,37 @@ public:
       UniformBSplineCore<other_t, GeoDim, Degrees...>;
 
   /// @brief Returns the `device` property
-  inline torch::Device device() const noexcept override {
+  [[nodiscard]] inline torch::Device device() const noexcept override {
     return options_.device();
   }
 
   /// @brief Returns the `device_index` property
-  inline int32_t device_index() const noexcept override {
+  [[nodiscard]] inline int32_t device_index() const noexcept override {
     return options_.device_index();
   }
 
   /// @brief Returns the `dtype` property
-  inline torch::Dtype dtype() const noexcept override {
+  [[nodiscard]] inline torch::Dtype dtype() const noexcept override {
     return options_.dtype();
   }
 
   /// @brief Returns the `layout` property
-  inline torch::Layout layout() const noexcept override {
+  [[nodiscard]] inline torch::Layout layout() const noexcept override {
     return options_.layout();
   }
 
   /// @brief Returns the `requires_grad` property
-  inline bool requires_grad() const noexcept override {
+  [[nodiscard]] inline bool requires_grad() const noexcept override {
     return options_.requires_grad();
   }
 
   /// @brief Returns the `pinned_memory` property
-  inline bool pinned_memory() const noexcept override {
+  [[nodiscard]] inline bool pinned_memory() const noexcept override {
     return options_.pinned_memory();
   }
 
   /// @brief Returns true if the layout is sparse
-  inline bool is_sparse() const noexcept override {
+  [[nodiscard]] inline bool is_sparse() const noexcept override {
     return options_.is_sparse();
   }
 
@@ -350,7 +352,7 @@ public:
   /// @brief Default constructor
   ///
   /// @param[in] options Options configuration
-  UniformBSplineCore(Options<real_t> options = Options<real_t>{})
+  explicit UniformBSplineCore(Options<real_t> options = Options<real_t>{})
       : options_(options) {
     nknots_.fill(0);
     ncoeffs_.fill(0);
@@ -364,10 +366,10 @@ public:
   /// @param[in] init Type of initialization
   ///
   /// @param[in] options Options configuration
-  UniformBSplineCore(const std::array<int64_t, parDim_> &ncoeffs,
-                     enum init init = init::greville,
-                     Options<real_t> options = Options<real_t>{})
-      : options_(options), ncoeffs_(ncoeffs), ncoeffs_reverse_(ncoeffs) {
+  explicit UniformBSplineCore(const std::array<int64_t, parDim_> &ncoeffs,
+                              enum init init = init::greville,
+                              Options<real_t> options = Options<real_t>{})
+      : ncoeffs_(ncoeffs), ncoeffs_reverse_(ncoeffs), options_(options) {
     // Reverse ncoeffs
     std::reverse(ncoeffs_reverse_.begin(), ncoeffs_reverse_.end());
 
@@ -395,7 +397,7 @@ public:
                      const utils::TensorArray<geoDim_> &coeffs,
                      bool clone = false,
                      Options<real_t> options = Options<real_t>{})
-      : options_(options), ncoeffs_(ncoeffs), ncoeffs_reverse_(ncoeffs) {
+      : ncoeffs_(ncoeffs), ncoeffs_reverse_(ncoeffs), options_(options) {
     // Reverse ncoeffs
     std::reverse(ncoeffs_reverse_.begin(), ncoeffs_reverse_.end());
 
@@ -432,8 +434,8 @@ public:
   UniformBSplineCore(const std::array<int64_t, parDim_> &ncoeffs,
                      utils::TensorArray<geoDim_> &&coeffs,
                      Options<real_t> options = Options<real_t>{})
-      : options_(options), ncoeffs_(ncoeffs), ncoeffs_reverse_(ncoeffs),
-        coeffs_(std::move(coeffs)) {
+      : ncoeffs_(ncoeffs), ncoeffs_reverse_(ncoeffs),
+        coeffs_(std::move(coeffs)), options_(options) {
     // Reverse ncoeffs
     std::reverse(ncoeffs_reverse_.begin(), ncoeffs_reverse_.end());
 
@@ -447,11 +449,11 @@ public:
   ///
   /// @param[in] options Options configuration
   template <typename other_t>
-  UniformBSplineCore(
+  explicit UniformBSplineCore(
       const UniformBSplineCore<other_t, GeoDim, Degrees...> &other,
       Options<real_t> options = Options<real_t>{})
-      : options_(options), ncoeffs_(other.ncoeffs()),
-        ncoeffs_reverse_(ncoeffs_), nknots_(other.nknots()) {
+      : nknots_(other.nknots()), ncoeffs_(other.ncoeffs()),
+        ncoeffs_reverse_(ncoeffs_), options_(options) {
     // Reverse ncoeffs
     std::reverse(ncoeffs_reverse_.begin(), ncoeffs_reverse_.end());
 
@@ -469,6 +471,9 @@ public:
                       .to(options.requires_grad(false))
                       .requires_grad_(options.requires_grad());
   }
+
+  /// @brief Destructor
+  ~UniformBSplineCore() override = default;
 
   /// @brief Returns the parametric dimension
   ///
@@ -513,7 +518,7 @@ public:
   /// @param[in] i Parametric dimension
   ///
   /// @result Knot vector for the given parametric dimension
-  inline const torch::Tensor &knots(short_t i) const noexcept {
+  [[nodiscard]] inline const torch::Tensor &knots(short_t i) const noexcept {
     assert(i >= 0 && i < parDim_);
     return knots_[i];
   }
@@ -549,7 +554,7 @@ public:
   /// @param[in] i Parametric dimension
   ///
   /// @result Knot vector dimension for the given parametric dimension
-  inline int64_t nknots(short_t i) const noexcept {
+  [[nodiscard]] inline int64_t nknots(short_t i) const noexcept {
     assert(i >= 0 && i < parDim_);
     return nknots_[i];
   }
@@ -568,7 +573,7 @@ public:
   /// @param[in] i Geometric dimension
   ///
   /// @result Coefficient vector for the given geometric dimension
-  inline const torch::Tensor &coeffs(short_t i) const noexcept {
+  [[nodiscard]] inline const torch::Tensor &coeffs(short_t i) const noexcept {
     assert(i >= 0 && i < geoDim_);
     return coeffs_[i];
   }
@@ -620,7 +625,7 @@ public:
   /// @brief Returns the total number of coefficients
   ///
   /// @result Total number of coefficients
-  inline int64_t ncumcoeffs() const noexcept {
+  [[nodiscard]] inline int64_t ncumcoeffs() const noexcept {
     int64_t s = 1;
 
     for (short_t i = 0; i < parDim_; ++i)
@@ -643,7 +648,7 @@ public:
   /// @param[in] i Parametric dimension
   ///
   /// @result Total number of coefficients in given parametric dimension
-  inline int64_t ncoeffs(short_t i) const noexcept {
+  [[nodiscard]] inline int64_t ncoeffs(short_t i) const noexcept {
     assert(i >= 0 && i < parDim_);
     return ncoeffs_[i];
   }
@@ -661,7 +666,7 @@ public:
   /// @brief Returns all coefficients as a single tensor
   ///
   /// @result Tensor of coefficients
-  inline torch::Tensor as_tensor() const noexcept override {
+  [[nodiscard]] inline torch::Tensor as_tensor() const noexcept override {
     return as_tensor_(std::make_index_sequence<geoDim_>{});
   }
 
@@ -695,7 +700,7 @@ public:
   /// all coefficients
   //
   /// @result Size of the tensor
-  inline int64_t as_tensor_size() const noexcept override {
+  [[nodiscard]] inline int64_t as_tensor_size() const noexcept override {
     return geoDim_ * ncumcoeffs();
   }
 
@@ -1201,12 +1206,13 @@ public:
                          this]<std::size_t... Is>(std::index_sequence<Is...>) {
           return utils::TensorArray<parDim_>{
               (eval_prefactor<degrees_[Is],
-                              (short_t)deriv /
+                              static_cast<short_t>(deriv) /
                                   utils::integer_pow<10, Is>::value % 10>() *
-               eval_basfunc_univariate<
-                   degrees_[Is], Is,
-                   (short_t)deriv / utils::integer_pow<10, Is>::value % 10>(
-                   xi[Is].flatten(), knot_indices[Is].flatten())
+               eval_basfunc_univariate<degrees_[Is], Is,
+                                       static_cast<short_t>(deriv) /
+                                           utils::integer_pow<10, Is>::value %
+                                           10>(xi[Is].flatten(),
+                                               knot_indices[Is].flatten())
                    .transpose(0, 1))...};
         };
 
@@ -1217,8 +1223,10 @@ public:
       else /* not memory optimize */ {
 
         if constexpr (parDim_ == 1) {
-          return eval_prefactor<degrees_[0], (short_t)deriv % 10>() *
-                 eval_basfunc_univariate<degrees_[0], 0, (short_t)deriv % 10>(
+          return eval_prefactor<degrees_[0],
+                                static_cast<short_t>(deriv) % 10>() *
+                 eval_basfunc_univariate<degrees_[0], 0,
+                                         static_cast<short_t>(deriv) % 10>(
                      xi[0].flatten(), knot_indices[0].flatten());
 
         } else {
@@ -1228,15 +1236,15 @@ public:
                               std::index_sequence<Is...>) {
             return (1 * ... *
                     (eval_prefactor<degrees_[Is],
-                                    (short_t)deriv /
+                                    static_cast<short_t>(deriv) /
                                         utils::integer_pow<10, Is>::value %
                                         10>())) *
                    utils::kronproduct(
                        eval_basfunc_univariate<
                            degrees_[Is], Is,
-                           (short_t)deriv / utils::integer_pow<10, Is>::value %
-                               10>(xi[Is].flatten(),
-                                   knot_indices[Is].flatten())...);
+                           static_cast<short_t>(deriv) /
+                               utils::integer_pow<10, Is>::value % 10>(
+                           xi[Is].flatten(), knot_indices[Is].flatten())...);
           };
 
           // Note that the kronecker product must be called in reverse order
@@ -1410,7 +1418,7 @@ public:
   }
 
   /// @brief Returns the B-spline object as JSON object
-  inline nlohmann::json to_json() const override {
+  [[nodiscard]] inline nlohmann::json to_json() const override {
     nlohmann::json json;
     json["degrees"] = degrees_;
     json["geoDim"] = geoDim_;
@@ -1424,12 +1432,12 @@ public:
   }
 
   /// @brief Returns the B-spline object's knots as JSON object
-  inline nlohmann::json knots_to_json() const {
+  [[nodiscard]] inline nlohmann::json knots_to_json() const {
     return ::iganet::utils::to_json<real_t, 1>(knots_);
   }
 
   /// @brief Returns the B-spline object's coefficients as JSON object
-  inline nlohmann::json coeffs_to_json() const {
+  [[nodiscard]] inline nlohmann::json coeffs_to_json() const {
     auto coeffs_json = nlohmann::json::array();
     for (short_t g = 0; g < geoDim_; ++g) {
       auto [coeffs_cpu, coeffs_accessor] =
@@ -1486,8 +1494,8 @@ public:
   }
 
   /// @brief Returns the B-spline object as XML object
-  inline pugi::xml_document to_xml(int id = 0, std::string label = "",
-                                   int index = -1) const {
+  [[nodiscard]] inline pugi::xml_document
+  to_xml(int id = 0, const std::string &label = "", int index = -1) const {
     pugi::xml_document doc;
     pugi::xml_node root = doc.append_child("xml");
     to_xml(root, id, label, index);
@@ -1497,7 +1505,8 @@ public:
 
   /// @brief Returns the B-spline object as XML node
   inline pugi::xml_node &to_xml(pugi::xml_node &root, int id = 0,
-                                std::string label = "", int index = -1) const {
+                                const std::string &label = "",
+                                int index = -1) const {
     // add Geometry node
     pugi::xml_node geo = root.append_child("Geometry");
 
@@ -1610,13 +1619,15 @@ public:
 
   /// @brief Updates the B-spline object from XML object
   inline UniformBSplineCore &from_xml(const pugi::xml_document &doc, int id = 0,
-                                      std::string label = "", int index = -1) {
+                                      const std::string &label = "",
+                                      int index = -1) {
     return from_xml(doc.child("xml"), id, label, index);
   }
 
   /// @brief Updates the B-spline object from XML node
   inline UniformBSplineCore &from_xml(const pugi::xml_node &root, int id = 0,
-                                      std::string label = "", int index = -1) {
+                                      const std::string &label = "",
+                                      int index = -1) {
 
     std::array<bool, std::max(parDim_, short_t{1})> nknots_found{false},
         ncoeffs_found{false};
@@ -1660,8 +1671,8 @@ public:
               std::vector<real_t> kv;
               std::string values = std::regex_replace(
                   knots.text().get(), std::regex("[\t\r\n\a]+| +"), " ");
-              for (auto value = strtok(&values[0], " "); value != NULL;
-                   value = strtok(NULL, " "))
+              for (auto value = strtok(&values[0], " "); value != nullptr;
+                   value = strtok(nullptr, " "))
                 kv.push_back(static_cast<real_t>(std::stod(value)));
 
               knots_[0] = utils::to_tensor(kv, options_);
@@ -1703,7 +1714,7 @@ public:
               if (basis.attribute("type").value() ==
                   std::string("BSplineBasis")) {
 
-                short_t index = basis.attribute("index").as_int();
+                int index = basis.attribute("index").as_int();
 
                 // Check for "KnotVector"
                 if (pugi::xml_node knots = basis.child("KnotVector");
@@ -1713,8 +1724,8 @@ public:
                   std::string values = std::regex_replace(
                       knots.text().get(), std::regex("[\t\r\n\a]+| +"), " ");
 
-                  for (auto value = strtok(&values[0], " "); value != NULL;
-                       value = strtok(NULL, " "))
+                  for (auto value = strtok(&values[0], " "); value != nullptr;
+                       value = strtok(nullptr, " "))
                     kv.push_back(static_cast<real_t>(std::stod(value)));
 
                   knots_[index] = utils::to_tensor(kv, options_);
@@ -1763,15 +1774,15 @@ public:
           auto value = strtok(&values[0], " ");
 
           for (short_t g = 0; g < geoDim_; ++g) {
-            if (value == NULL)
+            if (value == nullptr)
               throw std::runtime_error(
                   "XML object does not provide enough coefficients");
 
             coeffs_accessors[g][0] = static_cast<real_t>(std::stod(value));
-            value = strtok(NULL, " ");
+            value = strtok(nullptr, " ");
           }
 
-          if (value != NULL)
+          if (value != nullptr)
             throw std::runtime_error(
                 "XML object provides too many coefficients");
 
@@ -1780,15 +1791,15 @@ public:
 
           for (int64_t i = 0; i < utils::prod(ncoeffs_); ++i)
             for (short_t g = 0; g < geoDim_; ++g) {
-              if (value == NULL)
+              if (value == nullptr)
                 throw std::runtime_error(
                     "XML object does not provide enough coefficients");
 
               coeffs_accessors[g][i] = static_cast<real_t>(std::stod(value));
-              value = strtok(NULL, " ");
+              value = strtok(nullptr, " ");
             }
 
-          if (value != NULL)
+          if (value != nullptr)
             throw std::runtime_error(
                 "XML object provides too many coefficients");
         }
@@ -1909,7 +1920,7 @@ public:
   template <typename other_t, short_t GeoDim_, short_t... Degrees_>
   bool isclose(const UniformBSplineCore<other_t, GeoDim_, Degrees_...> &other,
                real_t rtol = real_t{1e-5}, real_t atol = real_t{1e-8}) const {
-    if constexpr (!std::is_same<real_t, other_t>::value)
+    if constexpr (!std::is_same_v<real_t, other_t>)
       return false;
     bool result(true);
 
@@ -1941,7 +1952,7 @@ public:
   template <typename other_t, short_t GeoDim_, short_t... Degrees_>
   bool operator==(
       const UniformBSplineCore<other_t, GeoDim_, Degrees_...> &other) const {
-    if constexpr (!std::is_same<real_t, other_t>::value)
+    if constexpr (!std::is_same_v<real_t, other_t>)
       return false;
     bool result(true);
 
@@ -1992,7 +2003,7 @@ public:
     std::array<int64_t, parDim_> nknots(nknots_);
     std::array<int64_t, parDim_> ncoeffs(ncoeffs_);
 
-    for (short_t refine = 0; refine < numRefine; ++refine) {
+    for (int refine = 0; refine < numRefine; ++refine) {
       if (dim == -1)
         for (short_t i = 0; i < parDim_; ++i) {
           ncoeffs[i] += nknots[i] - 2 * degrees_[i] - 1; // must be done first
@@ -2056,7 +2067,7 @@ private:
   /// @brief Computes the prefactor \f$p_d!/(p_d-r_d)! = p_d \cdots
   /// (p_d-r_d+1)\f$
   template <int64_t degree, int64_t deriv, int64_t terminal = degree - deriv>
-  inline int64_t constexpr eval_prefactor() const {
+  [[nodiscard]] inline int64_t constexpr eval_prefactor() const {
     if constexpr (degree > terminal)
       return degree * eval_prefactor<degree - 1, deriv, terminal>();
     else
@@ -2780,14 +2791,14 @@ public:
   /// template parameter `degree_elevate` can be used to
   /// (de-)elevate the degrees by an additive constant
   template <template <typename, short_t, short_t...> class BSpline,
-            std::make_signed<short_t>::type degree_elevate = 0>
+            std::make_signed_t<short_t> degree_elevate = 0>
   using derived_type = BSpline<real_t, GeoDim, (Degrees + degree_elevate)...>;
 
   /// @brief Deduces the self-type possibly degrees (de-)elevated by
   /// the additive constant `degree_elevate`
-  template <std::make_signed<short_t>::type degree_elevate = 0>
-  using self_type = typename Base::template derived_type<NonUniformBSplineCore,
-                                                         degree_elevate>;
+  template <std::make_signed_t<short_t> degree_elevate = 0>
+  using self_type =
+      Base::template derived_type<NonUniformBSplineCore, degree_elevate>;
 
   /// @brief Deduces the derived self-type when exposed to different
   /// class template parameters `real_t` and `GeoDim`, and the
@@ -2818,10 +2829,11 @@ public:
   /// @param[in] init Type of initialization
   ///
   /// @param[in] options Options configuration
-  NonUniformBSplineCore(const std::array<std::vector<typename Base::value_type>,
-                                         Base::parDim_> &kv,
-                        enum init init = init::greville,
-                        Options<real_t> options = Options<real_t>{})
+  explicit NonUniformBSplineCore(
+      const std::array<std::vector<typename Base::value_type>, Base::parDim_>
+          &kv,
+      enum init init = init::greville,
+      Options<real_t> options = Options<real_t>{})
       : Base(options) {
     init_knots(kv);
     Base::init_coeffs(init);
@@ -3002,12 +3014,12 @@ public:
       for (int64_t j = 1; j < kv_accessor.size(0); ++j) {
 
         if ((dim == -1 || dim == i) && (kv_accessor[j - 1] < kv_accessor[j]))
-          for (short_t refine = 1; refine < (2 << (numRefine - 1)); ++refine)
-            kv.push_back(kv_accessor[j - 1] +
-                         static_cast<typename Base::value_type>(refine) /
-                             static_cast<typename Base::value_type>(
-                                 2 << (numRefine - 1)) *
-                             (kv_accessor[j] - kv_accessor[j - 1]));
+          for (int refine = 1; refine < (2 << (numRefine - 1)); ++refine)
+            kv.push_back(
+                kv_accessor[j - 1] +
+                static_cast<Base::value_type>(refine) /
+                    static_cast<Base::value_type>(2 << (numRefine - 1)) *
+                    (kv_accessor[j] - kv_accessor[j - 1]));
 
         kv.push_back(kv_accessor[j]);
       }
@@ -3112,7 +3124,7 @@ public:
 
         if ((dim == -1 || dim == i) && (kv_accessor[j - 1] < kv_accessor[j]) &&
             (kv_accessor[j] < kv_accessor[kv_accessor.size(0) - 1]))
-          for (short_t reduce = 0; reduce < numReduce; ++reduce)
+          for (int reduce = 0; reduce < numReduce; ++reduce)
             kv.push_back(kv_accessor[j]);
 
         kv.push_back(kv_accessor[j]);
@@ -3319,19 +3331,19 @@ public:
   /// @brief Constructors from the base class
   using BSplineCore::BSplineCore;
 
-  /// @brief Deduces the type of the template template parameter `T`
+  /// @brief Deduces the type of the template parameter `T`
   /// when exposed to the class template parameters `real_t` and
   /// `GeoDim`, and the `Degrees` parameter pack. The optional
   /// template parameter `degree_elevate` can be used to
   /// (de-)elevate the degrees by an additive constant
   template <template <typename, short_t, short_t...> class T,
-            std::make_signed<short_t>::type degree_elevate = 0>
+            std::make_signed_t<short_t> degree_elevate = 0>
   using derived_type = BSplineCommon<
       typename BSplineCore::template derived_type<T, degree_elevate>>;
 
   /// @brief Deduces the self-type possibly degrees (de-)elevated by
   /// the additive constant `degree_elevate`
-  template <std::make_signed<short_t>::type degree_elevate = 0>
+  template <std::make_signed_t<short_t> degree_elevate = 0>
   using self_type =
       BSplineCommon<typename BSplineCore::template self_type<degree_elevate>>;
 
@@ -3447,7 +3459,7 @@ public:
   inline static Ptr
   make_shared(Options<typename BSplineCore::value_type> options =
                   Options<typename BSplineCore::value_type>{}) {
-    return Ptr(new BSplineCommon(options));
+    return std::make_shared<BSplineCommon>(options);
   }
 
   inline static Ptr
@@ -3455,7 +3467,7 @@ public:
               enum init init = init::greville,
               Options<typename BSplineCore::value_type> options =
                   Options<typename BSplineCore::value_type>{}) {
-    return Ptr(new BSplineCommon(ncoeffs, init, options));
+    return std::make_shared<BSplineCommon>(ncoeffs, init, options);
   }
 
   inline static Ptr
@@ -3464,7 +3476,7 @@ public:
               bool clone = false,
               Options<typename BSplineCore::value_type> options =
                   Options<typename BSplineCore::value_type>{}) {
-    return Ptr(new BSplineCommon(ncoeffs, coeffs, clone, options));
+    return std::make_shared<BSplineCommon>(ncoeffs, coeffs, clone, options);
   }
 
   inline static Ptr
@@ -3472,7 +3484,7 @@ public:
               utils::TensorArray<BSplineCore::geoDim_> &&coeffs,
               Options<typename BSplineCore::value_type> options =
                   Options<typename BSplineCore::value_type>{}) {
-    return Ptr(new BSplineCommon(ncoeffs, coeffs, options));
+    return std::make_shared<BSplineCommon>(ncoeffs, coeffs, options);
   }
 
   inline static Ptr
@@ -3481,7 +3493,7 @@ public:
               enum init init = init::greville,
               Options<typename BSplineCore::value_type> options =
                   Options<typename BSplineCore::value_type>{}) {
-    return Ptr(new BSplineCommon(kv, init, options));
+    return std::make_shared<BSplineCommon>(kv, init, options);
   }
 
   inline static Ptr
@@ -3491,7 +3503,7 @@ public:
               bool clone = false,
               Options<typename BSplineCore::value_type> options =
                   Options<typename BSplineCore::value_type>{}) {
-    return Ptr(new BSplineCommon(kv, coeffs, clone, options));
+    return std::make_shared<BSplineCommon>(kv, coeffs, clone, options);
   }
   /// @}
 
@@ -3622,7 +3634,7 @@ public:
   }
 
   /// @brief Scales the B-spline object by a scalar
-  inline auto scale(typename BSplineCore::value_type s, int dim = -1) {
+  inline auto scale(BSplineCore::value_type s, int dim = -1) {
     if (dim == -1)
       for (int i = 0; i < BSplineCore::geoDim(); ++i)
         BSplineCore::coeffs(i) *= s;
@@ -3648,7 +3660,7 @@ public:
   }
 
   /// @brief Rotates the B-spline object by an angle in 2d
-  inline auto rotate(typename BSplineCore::value_type angle) {
+  inline auto rotate(BSplineCore::value_type angle) {
 
     static_assert(BSplineCore::geoDim() == 2,
                   "Rotation about one angle is only available in 2D");
@@ -4202,8 +4214,8 @@ public:
       auto div_ = [&, this]<std::size_t... Is>(std::index_sequence<Is...>) {
         return utils::BlockTensor<torch::Tensor, 1, 1>{
             (*BSplineCore::template eval<
-                 (deriv)utils::integer_pow<10, Is>::value, memory_optimized>(
-                 xi, knot_indices, coeff_indices)[Is] +
+                 static_cast<deriv>(utils::integer_pow<10, Is>::value),
+                 memory_optimized>(xi, knot_indices, coeff_indices)[Is] +
              ...)};
       };
 
@@ -4476,9 +4488,9 @@ public:
       // Lambda expression to evaluate the gradient
       auto grad_ = [&, this]<std::size_t... Is>(std::index_sequence<Is...>) {
         return utils::BlockTensor<torch::Tensor, 1, BSplineCore::parDim_>{
-            BSplineCore::template eval<(deriv)utils::integer_pow<10, Is>::value,
-                                       memory_optimized>(xi, knot_indices,
-                                                         coeff_indices)...};
+            BSplineCore::template eval<
+                static_cast<deriv>(utils::integer_pow<10, Is>::value),
+                memory_optimized>(xi, knot_indices, coeff_indices)...};
       };
 
       return grad_(std::make_index_sequence<BSplineCore::parDim_>{});
@@ -4778,10 +4790,10 @@ public:
         return utils::BlockTensor<torch::Tensor, BSplineCore::parDim_,
                                   BSplineCore::geoDim_, BSplineCore::parDim_>{
             BSplineCore::template eval<
-                (deriv)utils::integer_pow<10,
-                                          Is / BSplineCore::parDim_>::value +
-                    (deriv)utils::integer_pow<10,
-                                              Is % BSplineCore::parDim_>::value,
+                static_cast<deriv>(
+                    utils::integer_pow<10, Is / BSplineCore::parDim_>::value) +
+                    static_cast<deriv>(utils::integer_pow<
+                                       10, Is % BSplineCore::parDim_>::value),
                 memory_optimized>(xi, knot_indices, coeff_indices)...}
             .reorder_ikj();
       };
@@ -5119,9 +5131,9 @@ public:
       auto jac_ = [&, this]<std::size_t... Is>(std::index_sequence<Is...>) {
         return utils::BlockTensor<torch::Tensor, BSplineCore::parDim_,
                                   BSplineCore::geoDim_>{
-            BSplineCore::template eval<(deriv)utils::integer_pow<10, Is>::value,
-                                       memory_optimized>(xi, knot_indices,
-                                                         coeff_indices)...}
+            BSplineCore::template eval<
+                static_cast<deriv>(utils::integer_pow<10, Is>::value),
+                memory_optimized>(xi, knot_indices, coeff_indices)...}
             .tr();
       };
 
@@ -5377,7 +5389,7 @@ public:
       auto lapl_ = [&, this]<std::size_t... Is>(std::index_sequence<Is...>) {
         return utils::BlockTensor<torch::Tensor, 1, 1, BSplineCore::geoDim_>{
             (BSplineCore::template eval<
-                 (deriv)utils::integer_pow<10, Is>::value ^ 2,
+                 static_cast<deriv>(utils::integer_pow<10, Is>::value) ^ 2,
                  memory_optimized>(xi, knot_indices, coeff_indices) +
              ...)}
             .reorder_ikj();
@@ -6593,8 +6605,7 @@ public:
   }
 
   /// @brief Returns a string representation of the BSplineCommon object
-  inline virtual void
-  pretty_print(std::ostream &os = Log(log::info)) const noexcept override {
+  inline void pretty_print(std::ostream &os) const noexcept override {
     os << name() << "(\nparDim = " << BSplineCore::parDim()
        << ", geoDim = " << BSplineCore::geoDim() << ", degrees = ";
 
@@ -6686,7 +6697,7 @@ public:
 
   /// @brief Returns a new B-spline object whose coefficients are
   /// scaled by a scalar
-  BSplineCommon operator*(typename BSplineCore::value_type s) const {
+  BSplineCommon operator*(BSplineCore::value_type s) const {
 
     BSplineCommon result{*this};
 
@@ -6712,7 +6723,7 @@ public:
 
   /// @brief Returns a new B-spline object whose coefficients are
   /// scaled by a scalar
-  BSplineCommon operator/(typename BSplineCore::value_type s) const {
+  BSplineCommon operator/(BSplineCore::value_type s) const {
 
     BSplineCommon result{*this};
 
@@ -6765,7 +6776,7 @@ public:
   }
 
   /// @brief Scales the coefficients by a scalar
-  BSplineCommon &operator*=(typename BSplineCore::value_type s) {
+  BSplineCommon &operator*=(BSplineCore::value_type s) {
 
     for (short_t i = 0; i < BSplineCore::geoDim(); ++i)
       BSplineCore::coeffs(i) *= s;
@@ -6784,7 +6795,7 @@ public:
   }
 
   /// @brief Scales the coefficients by a scalar
-  BSplineCommon &operator/=(typename BSplineCore::value_type s) {
+  BSplineCommon &operator/=(BSplineCore::value_type s) {
 
     for (short_t i = 0; i < BSplineCore::geoDim(); ++i)
       BSplineCore::coeffs(i) /= s;

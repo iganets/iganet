@@ -15,16 +15,13 @@
 #pragma once
 
 #include <array>
-#include <exception>
-#include <initializer_list>
 #include <memory>
 #include <type_traits>
 
 #include <core.hpp>
 #include <utils/fqn.hpp>
 
-namespace iganet {
-namespace utils {
+namespace iganet::utils {
 
 /// @brief Type trait checks if template argument is of type std::shared_ptr<T>
 /// @{
@@ -34,12 +31,12 @@ template <typename T>
 struct is_shared_ptr<std::shared_ptr<T>> : std::true_type {};
 /// @}
 
-/// @brief Returns an std::shared_ptr<T> object from arg
+/// @brief Returns a std::shared_ptr<T> object from arg
 template <typename T> inline auto make_shared(T &&arg) {
-  if constexpr (is_shared_ptr<typename std::decay<T>::type>::value)
-    return std::forward<typename std::decay<T>::type>(arg);
+  if constexpr (is_shared_ptr<std::decay_t<T>>::value)
+    return std::forward<std::decay_t<T>>(arg);
   else
-    return std::make_shared<typename std::decay<T>::type>(std::forward<T>(arg));
+    return std::make_shared<std::decay_t<T>>(std::forward<T>(arg));
 }
 
 /// @brief Forward declaration of BlockTensor
@@ -57,26 +54,26 @@ public:
   /// @brief Default constructor
   BlockTensorCore() = default;
 
-  /// @brief Constructur from BlockTensorCore objects
+  /// @brief Constructor from BlockTensorCore objects
   template <typename... Ts, std::size_t... dims>
-  BlockTensorCore(BlockTensorCore<Ts, dims...> &&...other) {
+  explicit BlockTensorCore(BlockTensorCore<Ts, dims...> &&...other) {
     auto it = data_.begin();
     (std::transform(other.data().begin(), other.data().end(), it,
-                    [&it](auto &&d) {
-                      it++;
-                      return std::move(d);
+                    [&it]<typename D>(D &&d) {
+                      ++it;
+                      return std::forward<D>(d);
                     }),
      ...);
   }
 
-  /// @brief Constructur from BlockTensor objects
+  /// @brief Constructor from BlockTensor objects
   template <typename... Ts, std::size_t... dims>
-  BlockTensorCore(BlockTensor<Ts, dims...> &&...other) {
+  explicit BlockTensorCore(BlockTensor<Ts, dims...> &&...other) {
     auto it = data_.begin();
     (std::transform(other.data().begin(), other.data().end(), it,
-                    [&it](auto &&d) {
-                      it++;
-                      return std::move(d);
+                    [&it]<typename D>(D &&d) {
+                      ++it;
+                      return std::forward<D>(d);
                     }),
      ...);
   }
@@ -115,38 +112,37 @@ public:
 
   /// @brief Returns a constant shared pointer to entry (idx)
   inline const std::shared_ptr<T> &operator[](std::size_t idx) const {
-    assert(0 <= idx && idx < (Dims * ...));
+    assert(idx < (Dims * ...));
     return data_[idx];
   }
 
   /// @brief Returns a non-constant shared pointer to entry (idx)
   inline std::shared_ptr<T> &operator[](std::size_t idx) {
-    assert(0 <= idx && idx < (Dims * ...));
+    assert(idx < (Dims * ...));
     return data_[idx];
   }
 
   /// @brief Returns a constant reference to entry (idx)
   inline const T &operator()(std::size_t idx) const {
-    assert(0 <= idx && idx < (Dims * ...));
+    assert(idx < (Dims * ...));
     return *data_[idx];
   }
 
   /// @brief Returns a non-constant reference to entry (idx)
   inline T &operator()(std::size_t idx) {
-    assert(0 <= idx && idx < (Dims * ...));
+    assert(idx < (Dims * ...));
     return *data_[idx];
   }
 
   /// @brief Stores the given data object at the given index
   template <typename Data> inline T &set(std::size_t idx, Data &&data) {
-    assert(0 <= idx && idx < (Dims * ...));
+    assert(idx < (Dims * ...));
     data_[idx] = make_shared<Data>(std::forward<Data>(data));
     return *data_[idx];
   }
 
   /// @brief Returns a string representation of the BlockTensorCore object
-  inline virtual void
-  pretty_print(std::ostream &os = Log(log::info)) const noexcept = 0;
+  inline void pretty_print(std::ostream &os) const noexcept override = 0;
 };
 
 /// Prints (as string) a compile-time block tensor object
@@ -170,8 +166,7 @@ public:
   inline static constexpr std::size_t rows() { return Rows; }
 
   /// @brief Returns a string representation of the BlockTensor object
-  inline virtual void
-  pretty_print(std::ostream &os = Log(log::info)) const noexcept override {
+  inline void pretty_print(std::ostream &os) const noexcept override {
     os << Base::name() << "\n";
     for (std::size_t row = 0; row < Rows; ++row)
       os << "[" << row << "] = \n" << *Base::data_[row] << "\n";
@@ -201,13 +196,13 @@ public:
 
   /// @brief Returns a constant reference to entry (row, col)
   inline const T &operator()(std::size_t row, std::size_t col) const {
-    assert(0 <= row && row < Rows && 0 <= col && col < Cols);
+    assert(row < Rows && col < Cols);
     return *Base::data_[Cols * row + col];
   }
 
   /// @brief Returns a non-constant reference to entry (row, col)
   inline T &operator()(std::size_t row, std::size_t col) {
-    assert(0 <= row && row < Rows && 0 <= col && col < Cols);
+    assert(row < Rows && col < Cols);
     return *Base::data_[Cols * row + col];
   }
 
@@ -216,7 +211,7 @@ public:
   /// @brief Stores the given data object at the given position
   template <typename D>
   inline T &set(std::size_t row, std::size_t col, D &&data) {
-    assert(0 <= row && row < Rows && 0 <= col && col < Cols);
+    assert(row < Rows && col < Cols);
     Base::data_[Cols * row + col] = make_shared<D>(std::forward<D>(data));
     return *Base::data_[Cols * row + col];
   }
@@ -802,7 +797,7 @@ public:
   /// inverse of the block tensor. For square matrices it computes
   /// the regular inverse matrix based on explicit iversion formulas
   /// assuming that the matrix is invertible and transposed it
-  /// afterwards. For rectangular matrices it computes the
+  /// afterward. For rectangular matrices it computes the
   /// generalized inverse i.e. \f$((A^T A)^{-1} A^T)^T = A (A^T A)^{-T}\f$.
   inline auto ginvtr() const {
     if constexpr (Rows == Cols)
@@ -884,8 +879,7 @@ public:
   }
 
   /// @brief Returns a string representation of the BlockTensor object
-  inline virtual void
-  pretty_print(std::ostream &os = Log(log::info)) const noexcept override {
+  inline void pretty_print(std::ostream &os) const noexcept override {
     os << Base::name() << "\n";
     for (std::size_t row = 0; row < Rows; ++row)
       for (std::size_t col = 0; col < Cols; ++col)
@@ -900,7 +894,7 @@ template <typename T, typename U, std::size_t Rows, std::size_t Common,
           std::size_t Cols>
 inline auto operator*(const BlockTensor<T, Rows, Common> &lhs,
                       const BlockTensor<U, Common, Cols> &rhs) {
-  BlockTensor<typename std::common_type<T, U>::type, Rows, Cols> result;
+  BlockTensor<std::common_type_t<T, U>, Rows, Cols> result;
   for (std::size_t row = 0; row < Rows; ++row)
     for (std::size_t col = 0; col < Cols; ++col) {
       T tmp =
@@ -952,15 +946,13 @@ public:
   /// @brief Returns a constant reference to entry (row, col, slice)
   inline const T &operator()(std::size_t row, std::size_t col,
                              std::size_t slice) const {
-    assert(0 <= row && row < Rows && 0 <= col && col < Cols && 0 <= slice &&
-           slice < Slices);
+    assert(row < Rows && col < Cols && slice < Slices);
     return *Base::data_[Rows * Cols * slice + Cols * row + col];
   }
 
   /// @brief Returns a non-constant reference to entry (row, col, slice)
   inline T &operator()(std::size_t row, std::size_t col, std::size_t slice) {
-    assert(0 <= row && row < Rows && 0 <= col && col < Cols && 0 <= slice &&
-           slice < Slices);
+    assert(row < Rows && col < Cols && slice < Slices);
     return *Base::data_[Rows * Cols * slice + Cols * row + col];
   }
 
@@ -976,7 +968,7 @@ public:
 
   /// @brief Returns a rank-2 tensor of the k-th slice
   inline auto slice(std::size_t slice) const {
-    assert(0 <= slice && slice < Slices);
+    assert(slice < Slices);
     BlockTensor<T, Rows, Cols> result;
     for (std::size_t row = 0; row < Rows; ++row)
       for (std::size_t col = 0; col < Cols; ++col)
@@ -1035,8 +1027,7 @@ public:
   }
 
   /// @brief Returns a string representation of the BSplineCommon object
-  inline virtual void
-  pretty_print(std::ostream &os = Log(log::info)) const noexcept override {
+  inline void pretty_print(std::ostream &os) const noexcept override {
     os << Base::name() << "\n";
     for (std::size_t slice = 0; slice < Slices; ++slice)
       for (std::size_t row = 0; row < Rows; ++row)
@@ -1052,7 +1043,7 @@ template <typename T, typename U, std::size_t Rows, std::size_t Common,
           std::size_t Cols, std::size_t Slices>
 inline auto operator*(const BlockTensor<T, Rows, Common> &lhs,
                       const BlockTensor<U, Common, Cols, Slices> &rhs) {
-  BlockTensor<typename std::common_type<T, U>::type, Rows, Cols, Slices> result;
+  BlockTensor<std::common_type_t<T, U>, Rows, Cols, Slices> result;
   for (std::size_t slice = 0; slice < Slices; ++slice)
     for (std::size_t row = 0; row < Rows; ++row)
       for (std::size_t col = 0; col < Cols; ++col) {
@@ -1093,7 +1084,7 @@ template <typename T, typename U, std::size_t Rows, std::size_t Common,
           std::size_t Cols, std::size_t Slices>
 inline auto operator*(const BlockTensor<T, Rows, Common, Slices> &lhs,
                       const BlockTensor<U, Common, Cols> &rhs) {
-  BlockTensor<typename std::common_type<T, U>::type, Rows, Cols, Slices> result;
+  BlockTensor<std::common_type_t<T, U>, Rows, Cols, Slices> result;
   for (std::size_t slice = 0; slice < Slices; ++slice)
     for (std::size_t row = 0; row < Rows; ++row)
       for (std::size_t col = 0; col < Cols; ++col) {
@@ -1196,7 +1187,7 @@ blocktensor_unary_op(arccosh);
 template <typename T, typename U, typename V, std::size_t... Dims>
 inline auto add(const BlockTensor<T, Dims...> &input,
                 const BlockTensor<U, Dims...> &other, V alpha = 1.0) {
-  BlockTensor<typename std::common_type<T, U>::type, Dims...> result;
+  BlockTensor<std::common_type_t<T, U>, Dims...> result;
   for (std::size_t idx = 0; idx < (Dims * ...); ++idx)
     result[idx] =
         std::make_shared<T>(torch::add(*input[idx], *other[idx], alpha));
@@ -1230,7 +1221,7 @@ template <typename T, typename U, typename V, typename W, std::size_t... Dims>
 inline auto addcdiv(const BlockTensor<T, Dims...> &input,
                     const BlockTensor<U, Dims...> &tensor1,
                     const BlockTensor<V, Dims...> &tensor2, W value = 1.0) {
-  BlockTensor<typename std::common_type<T, U, V>::type, Dims...> result;
+  BlockTensor<std::common_type_t<T, U, V>, Dims...> result;
   for (std::size_t idx = 0; idx < (Dims * ...); ++idx)
     result[idx] = std::make_shared<T>(
         torch::addcdiv(*input[idx], *tensor1[idx], *tensor2[idx], value));
@@ -1245,7 +1236,7 @@ template <typename T, typename U, typename V, typename W, std::size_t... Dims>
 inline auto addcmul(const BlockTensor<T, Dims...> &input,
                     const BlockTensor<U, Dims...> &tensor1,
                     const BlockTensor<V, Dims...> &tensor2, W value = 1.0) {
-  BlockTensor<typename std::common_type<T, U, V>::type, Dims...> result;
+  BlockTensor<std::common_type_t<T, U, V>, Dims...> result;
   for (std::size_t idx = 0; idx < (Dims * ...); ++idx)
     result[idx] = std::make_shared<T>(
         torch::addcmul(*input[idx], *tensor1[idx], *tensor2[idx], value));
@@ -1599,7 +1590,7 @@ blocktensor_unary_op(square);
 template <typename T, typename U, typename V, std::size_t... Dims>
 inline auto sub(const BlockTensor<T, Dims...> &input,
                 const BlockTensor<U, Dims...> &other, V alpha = 1.0) {
-  BlockTensor<typename std::common_type<T, U>::type, Dims...> result;
+  BlockTensor<std::common_type_t<T, U>, Dims...> result;
   for (std::size_t idx = 0; idx < (Dims * ...); ++idx)
     result[idx] =
         std::make_shared<T>(torch::sub(*input[idx], *other[idx], alpha));
@@ -1610,7 +1601,7 @@ inline auto sub(const BlockTensor<T, Dims...> &input,
 template <typename T, typename U, typename V, std::size_t... Dims>
 inline auto subtract(const BlockTensor<T, Dims...> &input,
                      const BlockTensor<U, Dims...> &other, V alpha = 1.0) {
-  BlockTensor<typename std::common_type<T, U>::type, Dims...> result;
+  BlockTensor<std::common_type_t<T, U>, Dims...> result;
   for (std::size_t idx = 0; idx < (Dims * ...); ++idx)
     result[idx] =
         std::make_shared<T>(torch::sub(*input[idx], *other[idx], alpha));
@@ -1637,7 +1628,7 @@ blocktensor_unary_op(trunc)
 template <typename T, typename U, std::size_t... Dims>
 inline auto operator+(const BlockTensor<T, Dims...> &lhs,
                       const BlockTensor<U, Dims...> &rhs) {
-  BlockTensor<typename std::common_type<T, U>::type, Dims...> result;
+  BlockTensor<std::common_type_t<T, U>, Dims...> result;
   for (std::size_t idx = 0; idx < (Dims * ...); ++idx)
     result[idx] = std::make_shared<T>(*lhs[idx] + *rhs[idx]);
   return result;
@@ -1685,7 +1676,7 @@ inline auto operator+=(BlockTensor<T, Dims...> &lhs, const U &rhs) {
 template <typename T, typename U, std::size_t... Dims>
 inline auto operator-(const BlockTensor<T, Dims...> &lhs,
                       const BlockTensor<U, Dims...> &rhs) {
-  BlockTensor<typename std::common_type<T, U>::type, Dims...> result;
+  BlockTensor<std::common_type_t<T, U>, Dims...> result;
   for (std::size_t idx = 0; idx < (Dims * ...); ++idx)
     result[idx] = std::make_shared<T>(*lhs[idx] - *rhs[idx]);
   return result;
@@ -1781,5 +1772,4 @@ inline bool operator!=(const BlockTensor<T, TDims...> &lhs,
   return !(lhs == rhs);
 }
 
-} // namespace utils
-} // namespace iganet
+} // namespace iganet::utils

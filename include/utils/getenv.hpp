@@ -17,14 +17,13 @@
 #include <sstream>
 #include <stdlib.h>
 
-namespace iganet {
-namespace utils {
+namespace iganet::utils {
 
 /// @brief Returns the value from an environment variable
 template <typename T> T getenv(std::string variable, const T &default_value) {
 
   char *env_value = std::getenv(variable.c_str());
-  if (env_value != NULL)
+  if (env_value != nullptr)
     if constexpr (std::is_integral_v<T>)
       return static_cast<T>(std::atoll(env_value));
     else if constexpr (std::is_floating_point_v<T>)
@@ -41,7 +40,7 @@ std::vector<T> getenv(std::string variable,
                       std::initializer_list<T> default_value) {
 
   char *env_value = std::getenv(variable.c_str());
-  if (env_value != NULL) {
+  if (env_value != nullptr) {
     std::stringstream ss(env_value);
     std::vector<T> result;
     std::string item;
@@ -60,5 +59,4 @@ std::vector<T> getenv(std::string variable,
     return std::vector<T>{default_value};
 }
 
-} // namespace utils
-} // namespace iganet
+} // namespace iganet::utils

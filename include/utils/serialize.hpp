@@ -21,14 +21,16 @@
 
 #include <torch/torch.h>
 
-namespace iganet {
-namespace utils {
+namespace iganet::utils {
 
 /// @brief Serialization prototype
 ///
 /// This abstract class defines the functions that must be
 /// implemented to serialize an object
 struct Serializable {
+  /// @brief Destructor
+  virtual ~Serializable() = default;
+
   /// @brief Returns the object as JSON object
   virtual nlohmann::json to_json() const = 0;
 
@@ -76,7 +78,7 @@ inline auto to_json(const torch::Tensor &tensor) {
   }
 }
 
-/// @brief Converts an std::array of torch::Tensor objects to a JSON
+/// @brief Converts a std::array of torch::Tensor objects to a JSON
 /// object
 template <typename T, std::size_t N, std::size_t M>
 inline auto to_json(const utils::TensorArray<M> &tensors) {
@@ -455,7 +457,7 @@ inline pugi::xml_node &to_xml(const torch::Tensor &tensor, pugi::xml_node &root,
   }
 }
 
-/// @brief Converts an std::array of torch::Tensor objects to an XML
+/// @brief Converts a std::array of torch::Tensor objects to an XML
 /// object
 template <typename T, std::size_t N, std::size_t M>
 inline pugi::xml_document to_xml(const utils::TensorArray<M> &tensors,
@@ -468,7 +470,7 @@ inline pugi::xml_document to_xml(const utils::TensorArray<M> &tensors,
   return doc;
 }
 
-/// @brief Converts an std::array of torch::Tensor objects to an XML
+/// @brief Converts a std::array of torch::Tensor objects to an XML
 /// object
 template <typename T, std::size_t N, std::size_t M>
 inline pugi::xml_node &to_xml(const utils::TensorArray<M> &tensors,
@@ -551,15 +553,15 @@ from_xml(const pugi::xml_node &root, torch::Tensor &tensor,
 
         for (int64_t i = 0; i < rows; ++i)
           for (int64_t j = 0; j < cols; ++j) {
-            if (value == NULL)
+            if (value == nullptr)
               throw std::runtime_error(
                   "XML object does not provide enough coefficients");
 
             accessor[i][j] = static_cast<T>(std::stod(value));
-            value = strtok(NULL, " ");
+            value = strtok(nullptr, " ");
           }
 
-        if (value != NULL)
+        if (value != nullptr)
           throw std::runtime_error("XML object provides too many coefficients");
 
         if (tensor.device().type() != torch::kCPU)
@@ -569,15 +571,14 @@ from_xml(const pugi::xml_node &root, torch::Tensor &tensor,
 
       } else {
 
-        std::vector<int64_t> sizes;
-
         // Check for "Dimensions"
         if (pugi::xml_node dims = node.child("Dimensions")) {
+          std::vector<int64_t> sizes;
 
           std::string values = std::regex_replace(
               dims.text().get(), std::regex("[\t\r\n\a]+| +"), " ");
-          for (auto value = strtok(&values[0], " "); value != NULL;
-               value = strtok(NULL, " "))
+          for (auto value = strtok(&values[0], " "); value != nullptr;
+               value = strtok(nullptr, " "))
             sizes.push_back(static_cast<std::size_t>(std::stoi(value)));
 
           if (!alloc && (tensor.sizes() != sizes))
@@ -600,45 +601,45 @@ from_xml(const pugi::xml_node &root, torch::Tensor &tensor,
 
             if constexpr (N == 1) {
               for (int64_t i = 0; i < sizes[0]; ++i) {
-                if (value == NULL)
+                if (value == nullptr)
                   throw std::runtime_error(
                       "XML object does not provide enough coefficients");
 
                 accessor[i] = static_cast<T>(std::stod(value));
-                value = strtok(NULL, " ");
+                value = strtok(nullptr, " ");
               }
             } else if constexpr (N == 2) {
               for (int64_t i = 0; i < sizes[0]; ++i)
                 for (int64_t j = 0; j < sizes[1]; ++j) {
-                  if (value == NULL)
+                  if (value == nullptr)
                     throw std::runtime_error(
                         "XML object does not provide enough coefficients");
 
                   accessor[i][j] = static_cast<T>(std::stod(value));
-                  value = strtok(NULL, " ");
+                  value = strtok(nullptr, " ");
                 }
             } else if constexpr (N == 3) {
               for (int64_t i = 0; i < sizes[0]; ++i)
                 for (int64_t j = 0; j < sizes[1]; ++j)
                   for (int64_t k = 0; k < sizes[2]; ++k) {
-                    if (value == NULL)
+                    if (value == nullptr)
                       throw std::runtime_error(
                           "XML object does not provide enough coefficients");
 
                     accessor[i][j][k] = static_cast<T>(std::stod(value));
-                    value = strtok(NULL, " ");
+                    value = strtok(nullptr, " ");
                   }
             } else if constexpr (N == 4) {
               for (int64_t i = 0; i < sizes[0]; ++i)
                 for (int64_t j = 0; j < sizes[1]; ++j)
                   for (int64_t k = 0; k < sizes[2]; ++k)
                     for (int64_t l = 0; l < sizes[3]; ++l) {
-                      if (value == NULL)
+                      if (value == nullptr)
                         throw std::runtime_error(
                             "XML object does not provide enough coefficients");
 
                       accessor[i][j][k][l] = static_cast<T>(std::stod(value));
-                      value = strtok(NULL, " ");
+                      value = strtok(nullptr, " ");
                     }
             } else if constexpr (N == 5) {
               for (int64_t i = 0; i < sizes[0]; ++i)
@@ -646,14 +647,14 @@ from_xml(const pugi::xml_node &root, torch::Tensor &tensor,
                   for (int64_t k = 0; k < sizes[2]; ++k)
                     for (int64_t l = 0; l < sizes[3]; ++l)
                       for (int64_t m = 0; m < sizes[4]; ++m) {
-                        if (value == NULL)
+                        if (value == nullptr)
                           throw std::runtime_error(
                               "XML object does not provide enough "
                               "coefficients");
 
                         accessor[i][j][k][l][m] =
                             static_cast<T>(std::stod(value));
-                        value = strtok(NULL, " ");
+                        value = strtok(nullptr, " ");
                       }
             } else if constexpr (N == 6) {
               for (int64_t i = 0; i < sizes[0]; ++i)
@@ -662,18 +663,18 @@ from_xml(const pugi::xml_node &root, torch::Tensor &tensor,
                     for (int64_t l = 0; l < sizes[3]; ++l)
                       for (int64_t m = 0; m < sizes[4]; ++m)
                         for (int64_t n = 0; n < sizes[5]; ++n) {
-                          if (value == NULL)
+                          if (value == nullptr)
                             throw std::runtime_error(
                                 "XML object does not provide enough "
                                 "coefficients");
 
                           accessor[i][j][k][l][m][n] =
                               static_cast<T>(std::stod(value));
-                          value = strtok(NULL, " ");
+                          value = strtok(nullptr, " ");
                         }
             }
 
-            if (value != NULL)
+            if (value != nullptr)
               throw std::runtime_error(
                   "XML object provides too many coefficients");
 
@@ -698,7 +699,7 @@ from_xml(const pugi::xml_node &root, torch::Tensor &tensor,
   return tensor;
 }
 
-/// @brief Converts an XML document object to an std::array of torch::Tensor
+/// @brief Converts an XML document object to a std::array of torch::Tensor
 /// objects
 template <typename T, std::size_t N, std::size_t M>
 inline utils::TensorArray<M> &
@@ -709,7 +710,7 @@ from_xml(const pugi::xml_document &doc, utils::TensorArray<M> &tensors,
   return from_xml<T, N>(doc.child("xml"), tensors, tag, id, label, alloc);
 }
 
-/// @brief Converts an XML object to an std::array of torch::Tensor objects
+/// @brief Converts an XML object to a std::array of torch::Tensor objects
 template <typename T, std::size_t N, std::size_t M>
 inline utils::TensorArray<M> &
 from_xml(const pugi::xml_node &root, utils::TensorArray<M> &tensors,
@@ -723,5 +724,4 @@ from_xml(const pugi::xml_node &root, utils::TensorArray<M> &tensors,
   return tensors;
 }
 
-} // namespace utils
-} // namespace iganet
+} // namespace iganet::utils

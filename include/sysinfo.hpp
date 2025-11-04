@@ -34,7 +34,7 @@
 namespace iganet {
 
 /// @brief Returns the IgANet version
-inline std::string getIgANetVersion() { return std::string(IGANET_VERSION); }
+inline std::string getIgANetVersion() { return {IGANET_VERSION}; }
 
 /// @brief Returns the version of the compiler
 inline std::string getCompilerVersion() {
@@ -489,7 +489,7 @@ inline std::string getStdLibVersion() {
 
 /// @brief Returns the version of extra libraries
 inline std::string getExtraLibsVersion() {
-  std::string s("");
+  std::string s;
 
   // CUDA
 #if defined(CUDA_VERSION)
@@ -561,8 +561,8 @@ inline std::string getCpuInfo() {
 
   // Supply an oversized buffer, and avoid an extra call to sysctlbyname.
   CPUBrandString.resize(size);
-  if (sysctlbyname("machdep.cpu.brand_string", &CPUBrandString[0], &size, NULL,
-                   0) == 0 &&
+  if (sysctlbyname("machdep.cpu.brand_string", &CPUBrandString[0], &size,
+                   nullptr, 0) == 0 &&
       size > 0) {
     if (CPUBrandString[size - 1] == '\0')
       size--;
@@ -627,8 +627,8 @@ inline uint64_t getMemoryInBytes() {
   int64_t memsize;
   std::size_t size = sizeof(memsize);
 
-  if (sysctlbyname("hw.memsize", &memsize, &size, NULL, 0) == 0) {
-    return (uint64_t)memsize;
+  if (sysctlbyname("hw.memsize", &memsize, &size, nullptr, 0) == 0) {
+    return static_cast<uint64_t>(memsize);
   }
 
 #elif __linux__ || __unix__
