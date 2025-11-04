@@ -14,23 +14,9 @@ It contains the following sub-folders:
 
 -   `docs` contains the documentation
 
--   `examples` contains several examples
-
 -   `filedata` contains some example data files
 
 -   `include` contains the IGAnet header files
-
--   `mex` contains some Matlab MEX functions
-
--   `ops` contains files for creating Docker images
-
--   `perftest` contains some performance tests
-
--   `python` contains the Python wrapper
-
--   `unittests` contains the unit tests
-
--   `webapps` contains the WebApp code
 
 ## Getting started
 
