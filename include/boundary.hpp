@@ -101,8 +101,8 @@ public:
                          [](const auto &...bspline) {
                            return std::make_tuple(bspline.clone()...);
                          },
-                         other.coeffs())
-                   : other.coeffs()) {}
+                         other.sides())
+                   : other.sides()) {}
 
   /// @brief Constructor
   explicit BoundaryCore(const std::array<int64_t, 1> &,
@@ -165,13 +165,13 @@ public:
     return std::get<s - 1>(bdr_);
   }
 
-  /// @brief Returns a constant reference to the array of
-  /// coefficients for all boundary segments.
-  inline constexpr auto &coeffs() const { return bdr_; }
+  /// @brief Returns a constant reference to the tuple of boundary
+  /// sides.
+  inline constexpr auto &sides() const { return bdr_; }
 
-  /// @brief Returns a non-constant reference to the array of
-  /// coefficients for all boundary segments.
-  inline constexpr auto &coeffs() { return bdr_; }
+  /// @brief Returns a non-constant reference to the tuple of boundary
+  ///  sides.
+  inline constexpr auto &sides() { return bdr_; }
 
   /// @brief Returns the total number of coefficients
   inline int64_t ncumcoeffs() const {
@@ -285,8 +285,8 @@ public:
                          [](const auto &...bspline) {
                            return std::make_tuple(bspline.clone()...);
                          },
-                         other.coeffs())
-                   : other.coeffs()) {}
+                         other.sides())
+                   : other.sides()) {}
 
   /// @brief Constructor
   explicit BoundaryCore(const std::array<int64_t, 2> &ncoeffs,
@@ -396,13 +396,11 @@ public:
     return std::get<s - 1>(bdr_);
   }
 
-  /// @brief Returns a constant reference to the array of
-  /// coefficients for all boundary segments.
-  inline constexpr auto &coeffs() const { return bdr_; }
+  /// @brief Returns a constant reference to the tuple of boundary sides
+  inline constexpr auto &sides() const { return bdr_; }
 
-  /// @brief Returns a non-constant reference to the array of
-  /// coefficients for all boundary segments.
-  inline constexpr auto &coeffs() { return bdr_; }
+  /// @brief Returns a non-constant reference to the tuple of boundary sides
+  inline constexpr auto &sides() { return bdr_; }
 
   /// @brief Returns the total number of coefficients
   inline int64_t ncumcoeffs() const {
@@ -539,8 +537,8 @@ public:
                          [](const auto &...bspline) {
                            return std::make_tuple(bspline.clone()...);
                          },
-                         other.coeffs())
-                   : other.coeffs()) {}
+                         other.sides())
+                   : other.sides()) {}
 
   /// @brief Constructor
   explicit BoundaryCore(const std::array<int64_t, 3> &ncoeffs,
@@ -699,13 +697,11 @@ public:
     return std::get<s - 1>(bdr_);
   }
 
-  /// @brief Returns a constant reference to the array of
-  /// coefficients for all boundary segments.
-  inline constexpr auto &coeffs() const { return bdr_; }
+  /// @brief Returns a constant reference to the tuple of boundary sides
+  inline constexpr auto &sides() const { return bdr_; }
 
-  /// @brief Returns a non-constant reference to the array of
-  /// coefficients for all boundary segments.
-  inline constexpr auto &coeffs() { return bdr_; }
+  /// @brief Returns a non-constant reference to the tuple of sides
+  inline constexpr auto &sides() { return bdr_; }
 
   /// @brief Returns the total number of coefficients
   inline int64_t ncumcoeffs() const {
@@ -867,8 +863,8 @@ public:
                          [](const auto &...bspline) {
                            return std::make_tuple(bspline.clone()...);
                          },
-                         other.coeffs())
-                   : other.coeffs()) {}
+                         other.sides())
+                   : other.sides()) {}
 
   /// @brief Constructor
   explicit BoundaryCore(const std::array<int64_t, 4> &ncoeffs,
@@ -1062,13 +1058,11 @@ public:
     return std::get<s - 1>(bdr_);
   }
 
-  /// @brief Returns a constant reference to the array of
-  /// coefficients for all boundary segments.
-  inline constexpr auto &coeffs() const { return bdr_; }
+  /// @brief Returns a constant reference to the tuple of boundary sides
+  inline constexpr auto &sides() const { return bdr_; }
 
-  /// @brief Returns a non-constant reference to the array of
-  /// coefficients for all boundary segments.
-  inline constexpr auto &coeffs() { return bdr_; }
+  /// @brief Returns a non-constant reference to the tuple of boundary sides
+  inline constexpr auto &ides() { return bdr_; }
 
   /// @brief Returns the total number of coefficients
   inline int64_t ncumcoeffs() const {
@@ -1708,9 +1702,8 @@ private:
   template <typename BoundaryCore_, size_t... Is>
   inline bool isequal_(std::index_sequence<Is...>,
                        const BoundaryCommon<BoundaryCore_> &other) const {
-    return (
-        (std::get<Is>(BoundaryCore::bdr_) == std::get<Is>(other.coeffs())) &&
-        ...);
+    return ((std::get<Is>(BoundaryCore::bdr_) == std::get<Is>(other.sides())) &&
+            ...);
   }
 
 public:
@@ -1737,7 +1730,7 @@ private:
                        BoundaryCore::spline_type::value_type rtol,
                        BoundaryCore::spline_type::value_type atol) const {
     return ((std::get<Is>(BoundaryCore::bdr_)
-                 .isclose(std::get<Is>(other.coeffs()))) &&
+                 .isclose(std::get<Is>(other.sides()))) &&
             ...);
   }
 
