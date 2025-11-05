@@ -1218,10 +1218,12 @@ public:
           loss.isnan().item<bool>()) {
         Log(log::info) << "Total epochs: " << epoch
                        << ", loss: " << current_loss << std::endl;
-        break;
+        return;
       }
       previous_loss = current_loss;
     }
+    Log(log::info) << "Max epochs reached: " << options_.max_epoch()
+                   << ", loss: " << previous_loss << std::endl;
   }
 
   /// @brief Trains the IgANet
@@ -1239,7 +1241,7 @@ public:
     // Loop over epochs
     for (int64_t epoch = 0; epoch != options_.max_epoch(); ++epoch) {
 
-      typename Base::value_type Loss(0);
+      typename Base::value_type current_loss(0);
 
       for (auto &batch : loader) {
         inputs = batch.data;
@@ -1298,29 +1300,24 @@ public:
         // Update the parameters based on the calculated gradients
         opt_->step(closure);
 
-        Loss += loss.item<typename Base::value_type>();
+        current_loss += loss.item<typename Base::value_type>();
       }
+      Log(log::verbose) << "Epoch " << std::to_string(epoch) << ": "
+                        << current_loss << std::endl;
 
-      Log(log::verbose) << "Epoch " << std::to_string(epoch) << ": " << Loss
-                        << std::endl;
-
-      if (Loss < options_.min_loss()) {
-        Log(log::info) << "Total epochs: " << epoch << ", loss: " << Loss
-                       << std::endl;
-        break;
+      if (current_loss < options_.min_loss() ||
+          std::abs(current_loss - previous_loss) < options_.min_loss_change() ||
+          std::abs(current_loss - previous_loss) / current_loss <
+              options_.min_loss_rel_change() ||
+          loss.isnan().item<bool>()) {
+        Log(log::info) << "Total epochs: " << epoch
+                       << ", loss: " << current_loss << std::endl;
+        return;
       }
-
-      if (Loss == previous_loss) {
-        Log(log::info) << "Total epochs: " << epoch << ", loss: " << Loss
-                       << std::endl;
-        break;
-      }
-      previous_loss = Loss;
-
-      if (epoch == options_.max_epoch() - 1)
-        Log(log::warning) << "Total epochs: " << epoch << ", loss: " << Loss
-                          << std::endl;
+      previous_loss = current_loss;
     }
+    Log(log::info) << "Max epochs reached: " << options_.max_epoch()
+                   << ", loss: " << previous_loss << std::endl;
   }
 
   /// @brief Evaluate IgANet
@@ -1825,10 +1822,12 @@ public:
           loss.isnan().item<bool>()) {
         Log(log::info) << "Total epochs: " << epoch
                        << ", loss: " << current_loss << std::endl;
-        break;
+        return;
       }
       previous_loss = current_loss;
     }
+    Log(log::info) << "Max epochs reached: " << options_.max_epoch()
+                   << ", loss: " << previous_loss << std::endl;
   }
 
   /// @brief Trains the IgANet
@@ -1846,7 +1845,7 @@ public:
     // Loop over epochs
     for (int64_t epoch = 0; epoch != options_.max_epoch(); ++epoch) {
 
-      typename Base::value_type Loss(0);
+      typename Base::value_type current_loss(0);
 
       for (auto &batch : loader) {
         inputs = batch.data;
@@ -1905,29 +1904,24 @@ public:
         // Update the parameters based on the calculated gradients
         opt_->step(closure);
 
-        Loss += loss.item<typename Base::value_type>();
+        current_loss += loss.item<typename Base::value_type>();
       }
+      Log(log::verbose) << "Epoch " << std::to_string(epoch) << ": "
+                        << current_loss << std::endl;
 
-      Log(log::verbose) << "Epoch " << std::to_string(epoch) << ": " << Loss
-                        << std::endl;
-
-      if (Loss < options_.min_loss()) {
-        Log(log::info) << "Total epochs: " << epoch << ", loss: " << Loss
-                       << std::endl;
-        break;
+      if (current_loss < options_.min_loss() ||
+          std::abs(current_loss - previous_loss) < options_.min_loss_change() ||
+          std::abs(current_loss - previous_loss) / current_loss <
+              options_.min_loss_rel_change() ||
+          loss.isnan().item<bool>()) {
+        Log(log::info) << "Total epochs: " << epoch
+                       << ", loss: " << current_loss << std::endl;
+        return;
       }
-
-      if (Loss == previous_loss) {
-        Log(log::info) << "Total epochs: " << epoch << ", loss: " << Loss
-                       << std::endl;
-        break;
-      }
-      previous_loss = Loss;
-
-      if (epoch == options_.max_epoch() - 1)
-        Log(log::warning) << "Total epochs: " << epoch << ", loss: " << Loss
-                          << std::endl;
+      previous_loss = current_loss;
     }
+    Log(log::info) << "Max epochs reached: " << options_.max_epoch()
+                   << ", loss: " << previous_loss << std::endl;
   }
 
   /// @brief Evaluate IgANet
