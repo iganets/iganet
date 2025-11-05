@@ -2238,11 +2238,6 @@ public:
   using inputs_interior_knot_indices_type = decltype(find_interior_knot_indices(
       std::declval<std::tuple<Inputs...>>()));
 
-  // std::tuple<
-  //      decltype(std::declval<Inputs>()
-  //                   .template find_knot_indices<functionspace::interior>(
-  //                       std::declval<typename Inputs::eval_type>()))...>;
-
   /// @brief Type alias for the type of the index-th knot indices of the inputs
   /// in the interior
   template <std::size_t index>
@@ -2252,11 +2247,6 @@ public:
   /// @brief Type of the knot indices of the inputs at the boundary
   using inputs_boundary_knot_indices_type = decltype(find_boundary_knot_indices(
       std::declval<std::tuple<Inputs...>>()));
-  // std::tuple<
-  //     decltype(std::declval<Inputs>()
-  //                  .template find_knot_indices<functionspace::boundary>(
-  //                      std::declval<
-  //                          typename Inputs::boundary_eval_type>()))...>;
 
   /// @brief Type alias for the type of the index-th knot indices of the inputs
   /// at the boundary
@@ -2269,11 +2259,6 @@ public:
       decltype(find_interior_knot_indices(
           std::declval<std::tuple<Outputs...>>()));
 
-  // std::tuple<
-  //     decltype(std::declval<Outputs>()
-  //                  .template find_knot_indices<functionspace::interior>(
-  //                      std::declval<typename Outputs::eval_type>()))...>;
-
   /// @brief Type alias for the type of the index-th knot indices of the outputs
   /// in the interior
   template <std::size_t index>
@@ -2284,12 +2269,6 @@ public:
   using outputs_boundary_knot_indices_type =
       decltype(find_boundary_knot_indices(
           std::declval<std::tuple<Outputs...>>()));
-
-  // std::tuple<
-  //     decltype(std::declval<Outputs>()
-  //                  .template find_knot_indices<functionspace::boundary>(
-  //                      std::declval<
-  //                          typename Outputs::boundary_eval_type>()))...>;
 
   /// @brief Type alias for the type of the index-th knot indices of the outputs
   /// at the boundary
@@ -2302,11 +2281,6 @@ public:
       decltype(find_interior_coeff_indices(
           std::declval<std::tuple<Inputs...>>()));
 
-  // std::tuple<
-  //     decltype(std::declval<Inputs>()
-  //                  .template find_coeff_indices<functionspace::interior>(
-  //                      std::declval<typename Inputs::eval_type>()))...>;
-
   /// @brief Type alias for the type of the index-th coefficient indices of the
   /// inputs in the interior
   template <std::size_t index>
@@ -2317,12 +2291,6 @@ public:
   using inputs_boundary_coeff_indices_type =
       decltype(find_boundary_coeff_indices(
           std::declval<std::tuple<Inputs...>>()));
-
-  // std::tuple<
-  //     decltype(std::declval<Inputs>()
-  //                  .template find_coeff_indices<functionspace::boundary>(
-  //                      std::declval<
-  //                          typename Inputs::boundary_eval_type>()))...>;
 
   /// @brief Type alias for the type of the index-th coefficient indices of the
   /// inputs at the boundary
@@ -2335,11 +2303,6 @@ public:
       decltype(find_interior_coeff_indices(
           std::declval<std::tuple<Outputs...>>()));
 
-  // std::tuple<
-  //     decltype(std::declval<Outputs>()
-  //                  .template find_coeff_indices<functionspace::interior>(
-  //                      std::declval<typename Outputs::eval_type>()))...>;
-
   /// @brief Type alias for the type of the index-th coefficient indices of the
   /// outputs in the interior
   template <std::size_t index>
@@ -2350,12 +2313,6 @@ public:
   using outputs_boundary_coeff_indices_type =
       decltype(find_boundary_coeff_indices(
           std::declval<std::tuple<Outputs...>>()));
-
-  // std::tuple<
-  //     decltype(std::declval<Outputs>()
-  //                  .template find_coeff_indices<functionspace::boundary>(
-  //                      std::declval<
-  //                          typename Outputs::boundary_eval_type>()))...>;
 
   /// @brief Type alias for the type of the index-th coefficient indices of the
   /// outputs at the boundary
