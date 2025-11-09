@@ -5651,7 +5651,9 @@ public:
         res0 = json["res0"].get<int64_t>();
 
       // Create figure with specified backend
-      auto f = matplot::figure<Backend>(true);
+      auto f = matplot::figure<Backend>(false);
+      f->backend()->run_command("unset warnings");
+      f->ioff();
       auto ax = f->current_axes();
 
       // Create line
@@ -5786,7 +5788,9 @@ public:
         res0 = json["res0"].get<int64_t>();
 
       // Create figure with specified backend
-      auto f = matplot::figure<Backend>(true);
+      auto f = matplot::figure<Backend>(false);
+      f->backend()->run_command("unset warnings");
+      f->ioff();
       auto ax = f->current_axes();
 
       // Create curve
@@ -5935,7 +5939,9 @@ public:
         res0 = json["res0"].get<int64_t>();
 
       // Create figure with specified backend
-      auto f = matplot::figure<Backend>(true);
+      auto f = matplot::figure<Backend>(false);
+      f->backend()->run_command("unset warnings");
+      f->ioff();
       auto ax = f->current_axes();
 
       auto Coords =
@@ -6106,7 +6112,9 @@ public:
         res1 = json["res1"].get<int64_t>();
 
       // Create figure with specified backend
-      auto f = matplot::figure<Backend>(true);
+      auto f = matplot::figure<Backend>(false);
+      f->backend()->run_command("unset warnings");
+      f->ioff();
       auto ax = f->current_axes();
 
       // Create mesh
@@ -6266,7 +6274,9 @@ public:
         res1 = json["res1"].get<int64_t>();
 
       // Create figure with specified backend
-      auto f = matplot::figure<Backend>(true);
+      auto f = matplot::figure<Backend>(false);
+      f->backend()->run_command("unset warnings");
+      f->ioff();
       auto ax = f->current_axes();
 
       // Create surface
