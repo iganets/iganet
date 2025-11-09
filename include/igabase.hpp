@@ -20,18 +20,18 @@
 
 namespace iganet {
 
+//  clang-format off
 /// @brief Enumerator for the collocation point specifier
 enum class collPts : short_t {
-  greville = 0,          /*!< Greville points */
-  greville_interior = 1, /*!< Greville points in the interior */
-  greville_ref1 = 2,     /*!< Greville points, once refined */
-  greville_interior_ref1 =
-      3,             /*!< Greville points in the interior, once refined */
-  greville_ref2 = 4, /*!< Greville points, twice refined */
-  greville_interior_ref2 =
-      5, /*!< Greville points in the interior, twice refined */
+  greville               = 0, /*!< Greville points */
+  greville_interior      = 1, /*!< Greville points in the interior */
+  greville_ref1          = 2, /*!< Greville points, once refined */
+  greville_interior_ref1 = 3, /*!< Greville points in the interior, once refined */
+  greville_ref2          = 4, /*!< Greville points, twice refined */
+  greville_interior_ref2 = 5, /*!< Greville points in the interior, twice refined */
 };
-
+//  clang-format on
+  
 namespace detail {
 template <typename T>
 concept HasAsTensor = requires(T a) {
