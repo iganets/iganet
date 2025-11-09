@@ -1028,7 +1028,7 @@ public:
   ///        u_0 & \cdots & u_{d_\text{par}}
   ///     \end{bmatrix}
   /// \f]
-  //  clang-format off
+  //  clang-format on
   ///
   /// @{
   template <functionspace comp = functionspace::interior,
