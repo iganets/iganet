@@ -5,7 +5,7 @@
 [![Documentation](https://img.shields.io/badge/docs-mkdocs-blue.svg)](https://iganets.github.io/iganet/)
 
 [![GitHub Releases](https://img.shields.io/github/release/iganets/iganet.svg)](https://github.com/iganets/iganet/releases)
-[![GitHub Downloads](https://img.shields.io/github/downloads/iganets/iganet/total)](https://github.com/iganets/iganet/releases)
+[![GitHub Downloads](https://img.shields.io/github/downloads/iganets/iganet/total.svg)](https://github.com/iganets/iganet/releases)
 [![GitHub Issues](https://img.shields.io/github/issues/iganets/iganet.svg)](https://github.com/iganets/iganet/issues)
 
 IGAnets is a novel approach to combine the concept of deep operator learning with the mathematical framework of isogeometric analysis.
