@@ -323,7 +323,6 @@ endif()
 enable_testing()
 include(get_module)
 
-
 foreach(entry IN LISTS IGANET_OPTIONAL)
 
   # Extract entries of the form "module[branch]"
