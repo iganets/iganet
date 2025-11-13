@@ -764,6 +764,8 @@ public:
        const std::string &key = "iganet") {
     torch::Tensor layers, in_features, outputs_features, bias, activation;
 
+    auto options = iganet::Options<real_t>{};
+    
     archive.read(key + ".layers", layers);
     for (int64_t i = 0; i < layers.item<int64_t>(); ++i) {
       archive.read(key + ".layer[" + std::to_string(i) + "].in_features",
@@ -776,8 +778,9 @@ public:
           torch::nn::Linear(
               torch::nn::LinearOptions(in_features.item<int64_t>(),
                                        outputs_features.item<int64_t>())
-                  .bias(bias.item<bool>()))));
-
+              .bias(bias.item<bool>()))));
+      layers_.back()->to(options.device(), options.dtype(), true);
+      
       archive.read(key + ".layer[" + std::to_string(i) + "].activation.type",
                    activation);
       switch (static_cast<enum activation>(activation.item<int64_t>())) {
@@ -2073,12 +2076,7 @@ public:
           Base::collPts());
     }
 
-    net_->read(archive, key + ".net");
-
-    auto o = iganet::Options<typename Base::value_type>{};
-    for (auto& layer : net_->layers_)
-      layer->to(o.device(), o.dtype(), true);
-    
+    net_->read(archive, key + ".net");    
     torch::serialize::InputArchive archive_net;
     archive.read(key + ".net.data", archive_net);
     net_->load(archive_net);
