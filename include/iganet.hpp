@@ -2021,7 +2021,7 @@ public:
           [&](auto &&...elems) {
             std::size_t counter = 0;
             (elems.write(archive,
-                         key + ".output[" + std::to_string(counter++) + "]"),
+                         key + ".collpts[" + std::to_string(counter++) + "]"),
              ...);
           },
           Base::collPts());
@@ -2067,13 +2067,18 @@ public:
           [&](auto &&...elems) {
             std::size_t counter = 0;
             (elems.read(archive,
-                        key + ".output[" + std::to_string(counter++) + "]"),
+                        key + ".collpts[" + std::to_string(counter++) + "]"),
              ...);
           },
           Base::collPts());
     }
 
     net_->read(archive, key + ".net");
+
+    auto o = iganet::Options<typename Base::value_type>{};
+    for (auto& layer : net_->layers_)
+      layer->to(o.device(), o.dtype(), true);
+    
     torch::serialize::InputArchive archive_net;
     archive.read(key + ".net.data", archive_net);
     net_->load(archive_net);
