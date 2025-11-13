@@ -1874,6 +1874,9 @@ public:
       ncoeffs_[i] = tensor.item<int64_t>();
     }
 
+    ncoeffs_reverse_ = ncoeffs_;
+    std::reverse(ncoeffs_reverse_.begin(), ncoeffs_reverse_.end());
+    
     for (short_t i = 0; i < geoDim_; ++i)
       archive.read(key + ".coeffs[" + std::to_string(i) + "]", coeffs_[i]);
 
