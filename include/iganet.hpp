@@ -1356,6 +1356,11 @@ public:
     return result;
   }
 
+  /// @brief Registers a parameter
+  torch::Tensor& register_parameter(std::string name, torch::Tensor tensor, bool requires_grad = true) {
+    return net_->register_parameter(name, tensor, requires_grad);
+  }
+
   /// @brief Returns a string representation of the IgANet object
   inline void pretty_print(std::ostream &os) const noexcept override {
     os << name() << "(\n"
@@ -1960,6 +1965,11 @@ public:
     return result;
   }
 
+  /// @brief Registers a parameter
+  torch::Tensor& register_parameter(std::string name, torch::Tensor tensor, bool requires_grad = true) {
+    return net_->register_parameter(name, tensor, requires_grad);
+  }
+  
   /// @brief Returns a string representation of the IgANet object
   inline void pretty_print(std::ostream &os) const noexcept override {
     os << name() << "(\n"
