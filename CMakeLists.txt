@@ -12,8 +12,11 @@
 #
 # CMakeLists.txt accepts the following command line parameters
 #
+# IGANET_BUILD_CPUONLY
 # IGANET_BUILD_DOCS
 # IGANET_BUILD_PCH
+#
+# IGANET_OPTIONAL
 #
 # IGANET_WITH_GISMO
 # IGANET_WITH_MATPLOT
