@@ -35,11 +35,13 @@ endif()
 ########################################################################
 # Install header files
 ########################################################################
-file(GLOB SOURCES ${PROJECT_BINARY_DIR}/include/*.hpp ${PROJECT_BINARY_DIR}/include/*.h)
+file(GLOB SOURCES
+  ${PROJECT_BINARY_DIR}/include/*.h
+  ${PROJECT_BINARY_DIR}/include/*.hpp
+  ${PROJECT_BINARY_DIR}/include/utils/*.h
+  ${PROJECT_BINARY_DIR}/include/utils/*.hpp
+  ${PROJECT_SOURCE_DIR}/include/*.h
+  ${PROJECT_SOURCE_DIR}/include/*.hpp
+  ${PROJECT_SOURCE_DIR}/include/utils/*.h
+  ${PROJECT_SOURCE_DIR}/include/utils/*.hpp)
 install(FILES ${SOURCES} DESTINATION include/iganet)
-
-file(GLOB SOURCES ${PROJECT_BINARY_DIR}/include/*.hpp ${PROJECT_BINARY_DIR}/include/*.h)
-install(FILES ${SOURCES} DESTINATION include/iganet)
-
-file(GLOB SOURCES ${PROJECT_BINARY_DIR}/include/utils/*.hpp ${PROJECT_BINARY_DIR}/include/utils/*.h)
-install(FILES ${SOURCES} DESTINATION include/iganet/utils)
