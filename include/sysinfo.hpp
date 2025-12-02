@@ -15,6 +15,7 @@
 #pragma once
 
 #include <string>
+#include <filesystem>
 
 #if defined(_WIN32) || defined(_WIN64)
 #include <windows.h>
@@ -673,4 +674,27 @@ inline std::string getVersion() {
          (torch::xpu::is_available() ? ", XPU" : "") + ")\n";
 }
 
+/// @brief Returns the path of the executable
+std::filesystem::path getExecutablePath()
+{
+#if defined(_WIN32)
+    char buffer[MAX_PATH];
+    DWORD len = GetModuleFileNameA(NULL, buffer, MAX_PATH);
+    if (len == 0 || len == MAX_PATH)
+        throw std::runtime_error("Failed to get executable path");
+    return std::filesystem::path(buffer).parent_path();
+
+#elif defined(__APPLE__)
+    char buffer[1024];
+    uint32_t size = sizeof(buffer);
+    if (_NSGetExecutablePath(buffer, &size) != 0)
+        throw std::runtime_error("Buffer too small for executable path");
+    return std::filesystem::canonical(buffer).parent_path();
+
+#else // Linux / Unix
+    std::filesystem::path exe = std::filesystem::canonical("/proc/self/exe");
+    return exe.parent_path();
+#endif
+}
+  
 } // namespace iganet
