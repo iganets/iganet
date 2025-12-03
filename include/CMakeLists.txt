@@ -12,20 +12,20 @@
 #
 ########################################################################
 
-target_include_directories(iganet_core INTERFACE ${PROJECT_BINARY_DIR}/include)
-target_include_directories(iganet_core INTERFACE ${PROJECT_SOURCE_DIR}/include)
+target_include_directories(iganet_core INTERFACE ${CMAKE_CURRENT_SOURCE_DIR})
+target_include_directories(iganet_core INTERFACE ${CMAKE_CURRENT_BINARY_DIR})
 
 ########################################################################
 # Config file
 ########################################################################
-configure_file(${PROJECT_SOURCE_DIR}/include/config.hpp.in
-  "${PROJECT_BINARY_DIR}/include/config.hpp" @ONLY)
+configure_file(${CMAKE_CURRENT_SOURCE_DIR}/config.hpp.in
+  "${CMAKE_CURRENT_BINARY_DIR}/config.hpp" @ONLY)
 
 ########################################################################
 # Precompiled headers
 ########################################################################
 if(IGANET_BUILD_PCH AND NOT WIN32 AND NOT ${CMAKE_VERSION} VERSION_LESS "3.16.0")
-  file(GLOB HEADERS *.hpp ${PROJECT_BINARY_DIR}/include/*.hpp)
+  file(GLOB HEADERS ${CMAKE_CURRENT_SOURCE_DIR}/*.hpp ${CMAKE_CURRENT_BINARY_DIR}/*.hpp)
 
   add_executable(iganet_pch .iganet_pch.cxx iganet.h ${HEADERS})
   target_link_libraries(iganet_pch PRIVATE iganet::core)
@@ -35,15 +35,17 @@ endif()
 ########################################################################
 # Install header files
 ########################################################################
-install(DIRECTORY ${PROJECT_BINARY_DIR}/include/
-	DESTINATION include
+include(GNUInstallDirs)
+
+install(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+	DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
 	FILES_MATCHING
         PATTERN "*.h"
         PATTERN "*.hpp"
 )
 
-install(DIRECTORY ${PROJECT_SOURCE_DIR}/include/
-	DESTINATION include
+install(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+	DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
 	FILES_MATCHING
         PATTERN "*.h"
         PATTERN "*.hpp"
