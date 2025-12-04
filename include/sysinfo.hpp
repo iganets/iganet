@@ -33,6 +33,8 @@
 #endif
 #endif
 
+#include <config.hpp>
+
 namespace iganet {
 
 /// @brief Returns the IgANet version
