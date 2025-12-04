@@ -20,6 +20,7 @@
 #if defined(_WIN32) || defined(_WIN64)
 #include <windows.h>
 #elif __APPLE__
+#include <mach-o/dyld.h>
 #include <sys/sysctl.h>
 #include <sys/utsname.h>
 #elif __linux__ || __unix__
