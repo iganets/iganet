@@ -2696,8 +2696,8 @@ public:
       const std::function<std::array<typename Spline::value_type,
                                      Spline::geoDim()>(
           const std::array<typename Spline::value_type, Spline::parDim()> &)>
-          transformation) {
-    spline_.transform(transformation);
+          mapping) {
+    spline_.transform(mapping);
     return *this;
   }
 
