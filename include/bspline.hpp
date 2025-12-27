@@ -23,6 +23,7 @@
 #include <core.hpp>
 #include <options.hpp>
 #include <patch.hpp>
+#include <igasolver.hpp>
 
 #include <utils/blocktensor.hpp>
 #include <utils/container.hpp>
@@ -53,17 +54,15 @@ using utils::operator+;
 //  clang-format off
 /// @brief Enumerator for specifying the initialization of B-spline coefficients
 enum class init : short_t {
-  none = 0,  /*!< leave coefficient values uninitialized */
-  zeros = 1, /*!< set coefficient values to zero */
-  ones = 2,  /*!< set coefficient values to one */
-  linear =
-      3, /*!< set coefficient values to \f$0,1,\dots \#\text{coeffs}-1\f$ */
-  random = 4,   /*!< set coefficient values to random numbers */
-  greville = 5, /*!< set coefficient values to the Greville abscissae */
+  none = 0,     /*!< leave coefficient values uninitialized                      */
+  zeros = 1,    /*!< set coefficient values to zero                              */
+  ones = 2,     /*!< set coefficient values to one                               */
+  linear = 3,   /*!< set coefficient values to \f$0,1,\dots \#\text{coeffs}-1\f$ */
+  random = 4,   /*!< set coefficient values to random numbers                    */
+  greville = 5, /*!< set coefficient values to the Greville abscissae            */
   linspace = 6  /*!< set coefficient values to \f$0,1,\dots\f$ pattern (mostly
                    for testing) */
 };
-//  clang-format on
 
 /// @brief Enumerator for specifying the derivative of B-spline evaluation
 ///
@@ -72,14 +71,14 @@ enum class init : short_t {
 /// * 3d Laplace operator `dx^2+dy^2+dz^2`
 /// * 2d convection operator with time derivative dt+dx+dy`
 enum class deriv : short_t {
-  func = 0, /*!< function value */
-
+  func = 0,  /*!< function value                   */
   dx = 1,    /*!< first derivative in x-direction  */
   dy = 10,   /*!< first derivative in y-direction  */
   dz = 100,  /*!< first derivative in z-direction  */
   dt = 1000, /*!< first derivative in t-direction  */
 };
-
+//  clang-format on
+  
 /// @brief Adds two enumerators for specifying the derivative of B-spline
 /// evaluation
 ///
@@ -911,6 +910,19 @@ public:
   inline auto eval(const utils::TensorArray<parDim_> &xi) const {
     return eval<deriv, memory_optimized>(xi, find_knot_indices(xi));
   }
+
+  template <deriv deriv = deriv::func, bool memory_optimized = false>
+  inline auto eval_tr(const torch::Tensor &xi) const {
+    if constexpr (parDim_ == 1)
+      return eval_tr<deriv, memory_optimized>(utils::TensorArray1({xi}));
+    else
+      throw std::runtime_error("Invalid parametric dimension");
+  }
+
+  template <deriv deriv = deriv::func, bool memory_optimized = false>
+  inline auto eval_tr(const utils::TensorArray<parDim_> &xi) const {
+    return eval_tr<deriv, memory_optimized>(xi, find_knot_indices(xi));
+  }
   /// @}
 
   /// @brief Returns the value of the univariate B-spline object in
@@ -932,6 +944,13 @@ public:
   inline auto eval(const utils::TensorArray<parDim_> &xi,
                    const utils::TensorArray<parDim_> &knot_indices) const {
     return eval<deriv, memory_optimized>(
+        xi, knot_indices, find_coeff_indices<memory_optimized>(knot_indices));
+  }
+
+  template <deriv deriv = deriv::func, bool memory_optimized = false>
+  inline auto eval_tr(const utils::TensorArray<parDim_> &xi,
+                   const utils::TensorArray<parDim_> &knot_indices) const {
+    return eval_tr<deriv, memory_optimized>(
         xi, knot_indices, find_coeff_indices<memory_optimized>(knot_indices));
   }
 
@@ -1017,7 +1036,96 @@ public:
         // not memory-optimized
 
         auto basfunc = eval_basfunc<deriv, memory_optimized>(xi, knot_indices);
+        
+        if (coeffs(0).dim() > 1) {
+          // coeffs has extra dimension
+          auto sizes = xi[0].sizes() + (-1_i64);
+          for (short_t i = 0; i < geoDim_; ++i)
+            result.set(i, utils::dotproduct(basfunc.unsqueeze(-1),
+                                            coeffs(i)
+                                                .index_select(0, coeff_indices)
+                                                .view({-1, xi[0].numel(),
+                                                       coeffs(i).size(-1)}))
+                              .view(sizes));
+        } else {
+          // coeffs does not have extra dimension
+          for (short_t i = 0; i < geoDim_; ++i)
+            result.set(i, utils::dotproduct(basfunc,
+                                            coeffs(i)
+                                                .index_select(0, coeff_indices)
+                                                .view({-1, xi[0].numel()}))
+                              .view(xi[0].sizes()));
+        }
+        return result;
+      }
+    }
+  }
 
+  template <deriv deriv = deriv::func, bool memory_optimized = false>
+  inline auto eval_tr(const utils::TensorArray<parDim_> &xi,
+                   const utils::TensorArray<parDim_> &knot_indices,
+                   const torch::Tensor &coeff_indices) const {
+
+    utils::BlockTensor<torch::Tensor, 1, geoDim_> result;
+
+    if constexpr (parDim_ == 0) {
+      for (short_t i = 0; i < geoDim_; ++i)
+        if constexpr (deriv == deriv::func)
+          result.set(i, coeffs_[i]);
+        else
+          result.set(i, torch::zeros_like(coeffs_[i]));
+      return result;
+    } // parDim == 0
+
+    else {
+
+      // Check compatibility of arguments
+      for (short_t i = 0; i < parDim_; ++i)
+        assert(xi[i].sizes() == knot_indices[i].sizes());
+      for (short_t i = 1; i < parDim_; ++i)
+        assert(xi[0].sizes() == xi[i].sizes());
+
+      if constexpr (memory_optimized) {
+        // memory-optimized
+
+        if (coeffs(0).dim() > 1)
+          throw std::runtime_error(
+              "Memory-optimized evaluation requires single-valued coefficient");
+
+        else {
+          auto basfunc =
+              eval_basfunc_tr<deriv, memory_optimized>(xi, knot_indices);
+
+          // Lambda expression to evaluate the spline function
+          std::function<torch::Tensor(short_t, short_t)> eval_;
+
+          eval_ = [&, this](short_t i, short_t dim) {
+            if (dim == 0) {
+              return torch::matmul(
+                  coeffs(i)
+                      .index_select(0, coeff_indices)
+                      .view({xi[0].numel(), -1, degrees_[0] + 1}),
+                  basfunc[0].view({xi[0].numel(), -1, 1}));
+            } else {
+              return torch::matmul(
+                  (eval_(i, dim - 1))
+                      .view({xi[0].numel(), -1, degrees_[dim] + 1}),
+                  basfunc[dim].view({xi[0].numel(), -1, 1}));
+            }
+          };
+
+          for (short_t i = 0; i < geoDim_; ++i)
+            result.set(i, (eval_(i, parDim_ - 1)).view(xi[0].sizes()));
+
+          return result;
+        } // coeffs(0).dim() > 1
+      }
+
+      else {
+        // not memory-optimized
+
+        auto basfunc = eval_basfunc_tr<deriv, memory_optimized>(xi, knot_indices);
+        
         if (coeffs(0).dim() > 1) {
           // coeffs has extra dimension
           auto sizes = xi[0].sizes() + (-1_i64);
@@ -1153,6 +1261,28 @@ public:
     } else
       return eval_basfunc<deriv, memory_optimized>(xi, find_knot_indices(xi));
   }
+
+  template <deriv deriv = deriv::func, bool memory_optimized = false>
+  inline auto eval_basfunc_tr(const torch::Tensor &xi) const {
+    if constexpr (parDim_ == 0) {
+      if constexpr (deriv == deriv::func)
+        return torch::ones_like(coeffs_[0]);
+      else
+        return torch::zeros_like(coeffs_[0]);
+    } else
+      return eval_basfunc_tr<deriv, memory_optimized>(utils::TensorArray1({xi}));
+  }
+
+  template <deriv deriv = deriv::func, bool memory_optimized = false>
+  inline auto eval_basfunc_tr(const utils::TensorArray<parDim_> &xi) const {
+    if constexpr (parDim_ == 0) {
+      if constexpr (deriv == deriv::func)
+        return torch::ones_like(coeffs_[0]);
+      else
+        return torch::zeros_like(coeffs_[0]);
+    } else
+      return eval_basfunc_tr<deriv, memory_optimized>(xi, find_knot_indices(xi));
+  }
   /// @}
 
   /// @brief Returns the vector of multivariate B-spline basis
@@ -1177,6 +1307,19 @@ public:
         return torch::zeros_like(coeffs_[0]);
     } else
       return eval_basfunc<deriv, memory_optimized>(
+          utils::TensorArray1({xi}), utils::TensorArray1({knot_indices}));
+  }
+
+  template <deriv deriv = deriv::func, bool memory_optimized = false>
+  inline auto eval_basfunc_tr(const torch::Tensor &xi,
+                           const torch::Tensor &knot_indices) const {
+    if constexpr (parDim_ == 0) {
+      if constexpr (deriv == deriv::func)
+        return torch::ones_like(coeffs_[0]);
+      else
+        return torch::zeros_like(coeffs_[0]);
+    } else
+      return eval_basfunc_tr<deriv, memory_optimized>(
           utils::TensorArray1({xi}), utils::TensorArray1({knot_indices}));
   }
 
@@ -1239,8 +1382,82 @@ public:
                                     static_cast<short_t>(deriv) /
                                         utils::integer_pow<10, Is>::value %
                                         10>())) *
-                   utils::kronproduct(
+            utils::kronproduct(
                        eval_basfunc_univariate<
+                           degrees_[Is], Is,
+                           static_cast<short_t>(deriv) /
+                               utils::integer_pow<10, Is>::value % 10>(
+                           xi[Is].flatten(), knot_indices[Is].flatten())...);
+          };
+
+          // Note that the kronecker product must be called in reverse order
+          return basfunc_(utils::make_reverse_index_sequence<parDim_>{});
+        }
+      }
+    }
+  }
+
+  template <deriv deriv = deriv::func, bool memory_optimized = false>
+  inline auto
+  eval_basfunc_tr(const utils::TensorArray<parDim_> &xi,
+               const utils::TensorArray<parDim_> &knot_indices) const {
+
+    if constexpr (parDim_ == 0) {
+      if constexpr (deriv == deriv::func)
+        return torch::ones_like(coeffs_[0]);
+      else
+        return torch::zeros_like(coeffs_[0]);
+    }
+
+    else {
+      // Check compatibility of arguments
+      for (short_t i = 0; i < parDim_; ++i)
+        assert(xi[i].sizes() == knot_indices[i].sizes());
+      for (short_t i = 1; i < parDim_; ++i)
+        assert(xi[0].sizes() == xi[i].sizes());
+
+      if constexpr (memory_optimized) {
+
+        // Lambda expression to evaluate the vector of basis functions
+        auto basfunc_ = [&,
+                         this]<std::size_t... Is>(std::index_sequence<Is...>) {
+          return utils::TensorArray<parDim_>{
+              (eval_prefactor<degrees_[Is],
+                              static_cast<short_t>(deriv) /
+                                  utils::integer_pow<10, Is>::value % 10>() *
+               eval_basfunc_univariate_tr<degrees_[Is], Is,
+                                       static_cast<short_t>(deriv) /
+                                           utils::integer_pow<10, Is>::value %
+                                           10>(xi[Is].flatten(),
+                                               knot_indices[Is].flatten())
+                   .transpose(0, 1))...};
+        };
+
+        return basfunc_(std::make_index_sequence<parDim_>{});
+
+      }
+
+      else /* not memory optimize */ {
+
+        if constexpr (parDim_ == 1) {
+          return eval_prefactor<degrees_[0],
+                                static_cast<short_t>(deriv) % 10>() *
+                 eval_basfunc_univariate_tr<degrees_[0], 0,
+                                         static_cast<short_t>(deriv) % 10>(
+                     xi[0].flatten(), knot_indices[0].flatten());
+
+        } else {
+
+          // Lambda expression to evaluate the cumulated basis function
+          auto basfunc_ = [&, this]<std::size_t... Is>(
+                              std::index_sequence<Is...>) {
+            return (1 * ... *
+                    (eval_prefactor<degrees_[Is],
+                                    static_cast<short_t>(deriv) /
+                                        utils::integer_pow<10, Is>::value %
+                                        10>())) *
+            utils::kronproduct<-1>(
+                       eval_basfunc_univariate_tr<
                            degrees_[Is], Is,
                            static_cast<short_t>(deriv) /
                                utils::integer_pow<10, Is>::value % 10>(
@@ -1259,12 +1476,13 @@ public:
   inline UniformBSplineCore &
   transform(const std::function<
             std::array<real_t, geoDim_>(const std::array<real_t, parDim_> &)>
-                transformation) {
+            mapping) {
+
     static_assert(parDim_ <= 4, "Unsupported parametric dimension");
 
     // 0D
     if constexpr (parDim_ == 0) {
-      auto c = transformation(std::array<real_t, parDim_>{});
+      auto c = mapping(std::array<real_t, parDim_>{});
       for (short_t d = 0; d < geoDim_; ++d)
         coeffs_[d].detach()[0] = c[d];
     }
@@ -1273,7 +1491,7 @@ public:
     else if constexpr (parDim_ == 1) {
 #pragma omp parallel for
       for (int64_t i = 0; i < ncoeffs_[0]; ++i) {
-        auto c = transformation(
+        auto c = mapping(
             std::array<real_t, parDim_>{i / real_t(ncoeffs_[0] - 1)});
         for (short_t d = 0; d < geoDim_; ++d)
           coeffs_[d].detach()[i] = c[d];
@@ -1285,7 +1503,7 @@ public:
 #pragma omp parallel for collapse(2)
       for (int64_t j = 0; j < ncoeffs_[1]; ++j) {
         for (int64_t i = 0; i < ncoeffs_[0]; ++i) {
-          auto c = transformation(std::array<real_t, parDim_>{
+          auto c = mapping(std::array<real_t, parDim_>{
               i / real_t(ncoeffs_[0] - 1), j / real_t(ncoeffs_[1] - 1)});
           for (short_t d = 0; d < geoDim_; ++d)
             coeffs_[d].detach()[j * ncoeffs_[0] + i] = c[d];
@@ -1299,7 +1517,7 @@ public:
       for (int64_t k = 0; k < ncoeffs_[2]; ++k) {
         for (int64_t j = 0; j < ncoeffs_[1]; ++j) {
           for (int64_t i = 0; i < ncoeffs_[0]; ++i) {
-            auto c = transformation(std::array<real_t, parDim_>{
+            auto c = mapping(std::array<real_t, parDim_>{
                 i / real_t(ncoeffs_[0] - 1), j / real_t(ncoeffs_[1] - 1),
                 k / real_t(ncoeffs_[2] - 1)});
             for (short_t d = 0; d < geoDim_; ++d)
@@ -1317,7 +1535,7 @@ public:
         for (int64_t k = 0; k < ncoeffs_[2]; ++k) {
           for (int64_t j = 0; j < ncoeffs_[1]; ++j) {
             for (int64_t i = 0; i < ncoeffs_[0]; ++i) {
-              auto c = transformation(std::array<real_t, parDim_>{
+              auto c = mapping(std::array<real_t, parDim_>{
                   i / real_t(ncoeffs_[0] - 1), j / real_t(ncoeffs_[1] - 1),
                   k / real_t(ncoeffs_[2] - 1), l / real_t(ncoeffs_[3] - 1)});
               for (short_t d = 0; d < geoDim_; ++d)
@@ -1331,7 +1549,7 @@ public:
       }
     } else
       throw std::runtime_error("Unsupported parametric dimension");
-
+    
     return *this;
   }
 
@@ -1340,13 +1558,14 @@ public:
   inline UniformBSplineCore &
   transform(const std::function<
                 std::array<real_t, N>(const std::array<real_t, parDim_> &)>
-                transformation,
+                mapping,
             std::array<short_t, N> dims) {
+    
     static_assert(parDim_ <= 4, "Unsupported parametric dimension");
 
     // 0D
     if constexpr (parDim_ == 0) {
-      auto c = transformation(std::array<real_t, parDim_>{});
+      auto c = mapping(std::array<real_t, parDim_>{});
       for (std::size_t d = 0; d < N; ++d)
         coeffs_[dims[d]].detach()[0] = c[d];
     }
@@ -1355,7 +1574,7 @@ public:
     else if constexpr (parDim_ == 1) {
 #pragma omp parallel for
       for (int64_t i = 0; i < ncoeffs_[0]; ++i) {
-        auto c = transformation(
+        auto c = mapping(
             std::array<real_t, parDim_>{i / real_t(ncoeffs_[0] - 1)});
         for (std::size_t d = 0; d < N; ++d)
           coeffs_[dims[d]].detach()[i] = c[d];
@@ -1367,7 +1586,7 @@ public:
 #pragma omp parallel for collapse(2)
       for (int64_t j = 0; j < ncoeffs_[1]; ++j) {
         for (int64_t i = 0; i < ncoeffs_[0]; ++i) {
-          auto c = transformation(std::array<real_t, parDim_>{
+          auto c = mapping(std::array<real_t, parDim_>{
               i / real_t(ncoeffs_[0] - 1), j / real_t(ncoeffs_[1] - 1)});
           for (std::size_t d = 0; d < N; ++d)
             coeffs_[dims[d]].detach()[j * ncoeffs_[0] + i] = c[d];
@@ -1381,7 +1600,7 @@ public:
       for (int64_t k = 0; k < ncoeffs_[2]; ++k) {
         for (int64_t j = 0; j < ncoeffs_[1]; ++j) {
           for (int64_t i = 0; i < ncoeffs_[0]; ++i) {
-            auto c = transformation(std::array<real_t, parDim_>{
+            auto c = mapping(std::array<real_t, parDim_>{
                 i / real_t(ncoeffs_[0] - 1), j / real_t(ncoeffs_[1] - 1),
                 k / real_t(ncoeffs_[2] - 1)});
             for (std::size_t d = 0; d < N; ++d)
@@ -1399,7 +1618,7 @@ public:
         for (int64_t k = 0; k < ncoeffs_[2]; ++k) {
           for (int64_t j = 0; j < ncoeffs_[1]; ++j) {
             for (int64_t i = 0; i < ncoeffs_[0]; ++i) {
-              auto c = transformation(std::array<real_t, parDim_>{
+              auto c = mapping(std::array<real_t, parDim_>{
                   i / real_t(ncoeffs_[0] - 1), j / real_t(ncoeffs_[1] - 1),
                   k / real_t(ncoeffs_[2] - 1), l / real_t(ncoeffs_[3] - 1)});
               for (std::size_t d = 0; d < N; ++d)
@@ -1413,7 +1632,7 @@ public:
       }
     } else
       throw std::runtime_error("Unsupported parametric dimension");
-
+    
     return *this;
   }
 
@@ -2472,6 +2691,52 @@ protected:
       }
 
       return b.view({degree + 1, xi.numel()});
+    }
+  }
+
+  template <short_t degree, short_t dim, short_t deriv>
+  inline auto eval_basfunc_univariate_tr(const torch::Tensor &xi,
+                                         const torch::Tensor &knot_indices) const {
+    assert(xi.sizes() == knot_indices.sizes());
+    
+    if constexpr (deriv > degree) {
+      return torch::zeros({xi.numel(), degree + 1}, options_);  // swapped shape
+    } else {
+      torch::Tensor b = torch::ones({xi.numel()}, options_);
+      
+      // Calculate R_k, k = 1, ..., degree-deriv
+      for (short_t k = 1; k <= degree - deriv; ++k) {
+        auto t1 = knots_[dim].index_select(0, utils::VSlice(knot_indices, -k + 1, 1));
+        auto t21 = knots_[dim].index_select(0, utils::VSlice(knot_indices, 1, k + 1)) - t1;
+        
+        auto mask = (t21 < std::numeric_limits<real_t>::epsilon())
+          .to(::iganet::dtype<real_t>());
+        
+        auto w = torch::div(xi.repeat(k) - t1 - mask, t21 - mask);
+        
+        b = torch::cat({torch::mul(torch::ones_like(w, options_) - w, b),
+            torch::zeros_like(xi, options_)},
+          0) +
+          torch::cat({torch::zeros_like(xi, options_), torch::mul(w, b)}, 0);
+      }
+      
+      // Calculate DR_k, k = degree-deriv+1, ..., degree
+      for (short_t k = degree - deriv + 1; k <= degree; ++k) {
+        auto t21 = knots_[dim].index_select(0, utils::VSlice(knot_indices, 1, k + 1)) -
+          knots_[dim].index_select(0, utils::VSlice(knot_indices, -k + 1, 1));
+        
+        auto mask = (t21 < std::numeric_limits<real_t>::epsilon())
+          .to(::iganet::dtype<real_t>());
+        
+        auto w = torch::div(torch::ones_like(t21, options_) - mask, t21 - mask);
+        
+        b = torch::cat({torch::mul(-w, b), torch::zeros_like(xi, options_)},
+                       0) +
+          torch::cat({torch::zeros_like(xi, options_), torch::mul(w, b)}, 0);
+      }
+      
+      // Swap axes: shape [degree+1, xi.numel()] → [xi.numel(), degree+1]
+      return b.view({degree + 1, xi.numel()}).transpose(0, 1);
     }
   }
 
