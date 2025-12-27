@@ -21,7 +21,9 @@
 #include <utils/index_sequence.hpp>
 #include <utils/integer_pow.hpp>
 #include <utils/linalg.hpp>
+#include <utils/matrix.hpp>
 #include <utils/serialize.hpp>
+#include <utils/spsolver.hpp>
 #include <utils/tensorarray.hpp>
 #include <utils/tuple.hpp>
 #include <utils/type_traits.hpp>
