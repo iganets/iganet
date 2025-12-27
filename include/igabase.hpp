@@ -41,6 +41,7 @@ concept HasAsTensor = requires(T a) {
 
 
 /// @brief Collocation points helper
+/// @{  
 template<typename> class CollPtsHelper;
 
 template <detail::HasAsTensor CollPts>  
@@ -250,6 +251,7 @@ public:
       return collPts(collPts, space, std::make_index_sequence<type::nspaces()>{});
   }
 };
+/// @}
   
 /// @brief IgA base class
 ///
