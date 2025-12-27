@@ -19,7 +19,7 @@
 #include <utils/linalg.hpp>
 #include <utils/tensorarray.hpp>
 
-#include <torch/torch.h>
+#include <core.hpp>
 
 namespace iganet::utils {
 

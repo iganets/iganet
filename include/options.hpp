@@ -18,8 +18,6 @@
 #include <utils/fqn.hpp>
 #include <utils/getenv.hpp>
 
-#include <torch/torch.h>
-
 namespace iganet {
 
 struct half {};

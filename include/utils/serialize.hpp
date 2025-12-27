@@ -14,12 +14,11 @@
 
 #pragma once
 
+#include <core.hpp>
 #include <utils/tensorarray.hpp>
 
 #include <nlohmann/json.hpp>
 #include <pugixml.hpp>
-
-#include <torch/torch.h>
 
 namespace iganet::utils {
 

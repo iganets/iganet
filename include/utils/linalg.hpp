@@ -14,7 +14,7 @@
 
 #pragma once
 
-#include <torch/torch.h>
+#include <core.hpp>
 
 namespace iganet::utils {
 
@@ -66,7 +66,7 @@ inline auto kronproduct(T0 &&t0, T1 &&t1) {
     if constexpr (dim == 0)
       return torch::mul(t0.repeat_interleave(t1.size(dim), 0),
                         t1.repeat({t0.size(dim), 1}));
-    else if constexpr (dim == 1)
+    else if constexpr (dim == 1 || dim == -1)
       return torch::mul(t0.repeat_interleave(t1.size(dim), 1),
                         t1.repeat({1, t0.size(dim)}));
   case 3:
@@ -76,7 +76,7 @@ inline auto kronproduct(T0 &&t0, T1 &&t1) {
     else if constexpr (dim == 1)
       return torch::mul(t0.repeat_interleave(t1.size(dim), 1),
                         t1.repeat({1, t0.size(dim), 1}));
-    else if constexpr (dim == 2)
+    else if constexpr (dim == 2 || dim == -1)
       return torch::mul(t0.repeat_interleave(t1.size(dim), 0),
                         t1.repeat({1, 1, t0.size(dim)}));
   case 4:
@@ -89,7 +89,7 @@ inline auto kronproduct(T0 &&t0, T1 &&t1) {
     else if constexpr (dim == 2)
       return torch::mul(t0.repeat_interleave(t1.size(dim), 0),
                         t1.repeat({1, 1, t0.size(dim), 1}));
-    else if constexpr (dim == 3)
+    else if constexpr (dim == 3 || dim == -1)
       return torch::mul(t0.repeat_interleave(t1.size(dim), 0),
                         t1.repeat({1, 1, 1, t0.size(dim)}));
   case 5:
@@ -105,7 +105,7 @@ inline auto kronproduct(T0 &&t0, T1 &&t1) {
     else if constexpr (dim == 3)
       return torch::mul(t0.repeat_interleave(t1.size(dim), 0),
                         t1.repeat({1, 1, 1, t0.size(dim), 1}));
-    else if constexpr (dim == 4)
+    else if constexpr (dim == 4 || dim == -1)
       return torch::mul(t0.repeat_interleave(t1.size(dim), 0),
                         t1.repeat({1, 1, 1, 1, t0.size(dim)}));
   case 6:
@@ -124,7 +124,7 @@ inline auto kronproduct(T0 &&t0, T1 &&t1) {
     else if constexpr (dim == 4)
       return torch::mul(t0.repeat_interleave(t1.size(dim), 0),
                         t1.repeat({1, 1, 1, 1, t0.size(dim), 1}));
-    else if constexpr (dim == 5)
+    else if constexpr (dim == 5 || dim == -1)
       return torch::mul(t0.repeat_interleave(t1.size(dim), 0),
                         t1.repeat({1, 1, 1, 1, 1, t0.size(dim)}));
   case 7:
@@ -146,7 +146,7 @@ inline auto kronproduct(T0 &&t0, T1 &&t1) {
     else if constexpr (dim == 5)
       return torch::mul(t0.repeat_interleave(t1.size(dim), 0),
                         t1.repeat({1, 1, 1, 1, 1, t0.size(dim), 1}));
-    else if constexpr (dim == 6)
+    else if constexpr (dim == 6 || dim == -1)
       return torch::mul(t0.repeat_interleave(t1.size(dim), 0),
                         t1.repeat({1, 1, 1, 1, 1, 1, t0.size(dim)}));
   case 8:
@@ -171,7 +171,7 @@ inline auto kronproduct(T0 &&t0, T1 &&t1) {
     else if constexpr (dim == 6)
       return torch::mul(t0.repeat_interleave(t1.size(dim), 0),
                         t1.repeat({1, 1, 1, 1, 1, 1, t0.size(dim), 1}));
-    else if constexpr (dim == 7)
+    else if constexpr (dim == 7 || dim == -1)
       return torch::mul(t0.repeat_interleave(t1.size(dim), 0),
                         t1.repeat({1, 1, 1, 1, 1, 1, 1, t0.size(dim)}));
   default:

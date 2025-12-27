@@ -17,10 +17,9 @@
 #include <array>
 #include <initializer_list>
 
+#include <core.hpp>
 #include <options.hpp>
 #include <utils/container.hpp>
-
-#include <torch/torch.h>
 
 namespace iganet::utils {
 
