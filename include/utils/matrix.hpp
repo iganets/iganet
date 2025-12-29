@@ -1,5 +1,5 @@
 /**
-   @file include/utils/matrix.hpp
+   @file utils/matrix.hpp
 
    @brief Matrix utility functions
 
@@ -14,7 +14,7 @@
 
 #pragma once
 
-#include <core.hpp>
+#include <core/core.hpp>
 #include <utils/tensorarray.hpp>
 
 namespace iganet::utils {

@@ -1,5 +1,5 @@
 /**
-   @file include/utils/blocktensor.hpp
+   @file utils/blocktensor.hpp
 
    @brief Compile-time block tensor
 
@@ -18,7 +18,7 @@
 #include <memory>
 #include <type_traits>
 
-#include <core.hpp>
+#include <core/core.hpp>
 #include <utils/fqn.hpp>
 
 namespace iganet::utils {

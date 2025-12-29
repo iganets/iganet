@@ -1,5 +1,5 @@
 /**
-   @file include/utils/fqn.hpp
+   @file utils/fqn.hpp
 
    @brief Full qualified name utility functions
 
@@ -14,9 +14,7 @@
 
 #pragma once
 
-#include <core.hpp>
-
-#include <torch/csrc/api/include/torch/types.h>
+#include <core/core.hpp>
 
 namespace iganet::utils {
 

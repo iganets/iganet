@@ -1,5 +1,5 @@
 /**
-   @file include/utils/serialize.hpp
+   @file utils/serialize.hpp
 
    @brief Serialization utility functions
 
@@ -14,7 +14,7 @@
 
 #pragma once
 
-#include <core.hpp>
+#include <core/core.hpp>
 #include <utils/tensorarray.hpp>
 
 #include <nlohmann/json.hpp>

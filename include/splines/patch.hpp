@@ -1,5 +1,5 @@
 /**
-   @file include/bspline.hpp
+   @file splines/bspline.hpp
 
    @brief Abstract patch function base class
 
@@ -14,7 +14,7 @@
 
 #pragma once
 
-#include <core.hpp>
+#include <core/core.hpp>
 
 #include <utils/blocktensor.hpp>
 #include <utils/tensorarray.hpp>

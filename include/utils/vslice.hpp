@@ -1,5 +1,5 @@
 /**
-   @file include/utils/vslice.hpp
+   @file utils/vslice.hpp
 
    @brief VSlice utility functions
 
@@ -16,10 +16,9 @@
 
 #include <array>
 
+#include <core/core.hpp>
 #include <utils/linalg.hpp>
 #include <utils/tensorarray.hpp>
-
-#include <core.hpp>
 
 namespace iganet::utils {
 

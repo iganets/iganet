@@ -1,5 +1,5 @@
 /**
-   @file include/memory.hpp
+   @file core/memory.hpp
 
    @brief Memory debugger
 
@@ -14,9 +14,9 @@
 
 #pragma once
 
-#include <chrono>
+#include <core/core.hpp>
 
-#include <core.hpp>
+#include <chrono>
 #include <utility>
 
 namespace iganet {

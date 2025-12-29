@@ -1,5 +1,5 @@
 /**
-   @file include/utils/container.hpp
+   @file utils/container.hpp
 
    @brief Container utility functions
 
@@ -18,7 +18,7 @@
 #include <initializer_list>
 #include <vector>
 
-#include <options.hpp>
+#include <core/options.hpp>
 
 namespace iganet::utils {
 

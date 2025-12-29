@@ -1,5 +1,5 @@
 /**
-   @file include/igasolver.hpp
+   @file igasolver.hpp
 
    @brief Isogeometric analysis solver
 
@@ -14,11 +14,11 @@
 
 #pragma once
 
-#include <boundary.hpp>
-#include <functionspace.hpp>
+#include <splines/boundary.hpp>
+#include <splines/functionspace.hpp>
 #include <igabase.hpp>
 
-#include <utils/spsolver.hpp>
+#include <utils/solver.hpp>
 
 namespace iganet {
 
@@ -72,7 +72,7 @@ public:
 
   /// @brief Computes the solution vector
   torch::Tensor solve() const {
-    auto [x, iter, res] = utils::spsolve_bicgstab(lhs(), rhs());    
+    auto [x, iter, res] = utils::solve_bicgstab(lhs(), rhs());    
     return x;
   }
   

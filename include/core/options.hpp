@@ -1,5 +1,5 @@
 /**
-   @file include/options.hpp
+   @file core/options.hpp
 
    @brief Options
 
@@ -14,7 +14,7 @@
 
 #pragma once
 
-#include <core.hpp>
+#include <core/core.hpp>
 #include <utils/fqn.hpp>
 #include <utils/getenv.hpp>
 

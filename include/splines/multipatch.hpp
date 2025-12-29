@@ -1,5 +1,5 @@
 /**
-   @file include/multipatch.hpp
+   @file splines/multipatch.hpp
 
    @brief Multi-patch container class
 

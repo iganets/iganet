@@ -1,7 +1,7 @@
 /**
-   @file include/utils/spsolver.hpp
+   @file utils/solver.hpp
 
-   @brief Sparse matrix solvers
+   @brief Solver utility functions
 
    @author Matthias Moller
 
@@ -14,16 +14,16 @@
 
 #pragma once
 
-#include <core.hpp>
+#include <core/core.hpp>
 
 namespace iganet::utils {
 
   /// @brief Solves the linear system A * x = b using the Conjugate
   /// Gradient (CG) method
-  auto spsolve_cg(const torch::Tensor& A,
-                  const torch::Tensor b,
-                  int max_iter = 1000,
-                  double tol = 1e-10) {
+  auto solve_cg(const torch::Tensor& A,
+                const torch::Tensor b,
+                int max_iter = 1000,
+                double tol = 1e-10) {
 
     auto x = torch::zeros_like(b);
 
@@ -54,10 +54,10 @@ namespace iganet::utils {
 
   /// @brief Solves the linear system A * x = b using the Bi-Conjugate
   /// Gradient Stabilized (BiCGStab) method
-  auto spsolve_bicgstab(const torch::Tensor& A,
-                        const torch::Tensor b,
-                        int max_iter = 1000,
-                        double tol = 1e-10) {
+  auto solve_bicgstab(const torch::Tensor& A,
+                      const torch::Tensor b,
+                      int max_iter = 1000,
+                      double tol = 1e-10) {
 
     auto x = torch::zeros_like(b);
 

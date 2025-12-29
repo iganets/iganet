@@ -1,5 +1,5 @@
 /**
-   @file include/layer.hpp
+   @file layer.hpp
 
    @brief Network layer
 
@@ -14,8 +14,9 @@
 
 #pragma once
 
-#include <core.hpp>
 #include <utility>
+
+#include <core/core.hpp>
 #include <utils/fqn.hpp>
 
 namespace iganet {

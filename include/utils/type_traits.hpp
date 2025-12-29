@@ -1,5 +1,5 @@
 /**
-   @file include/utils/type_traits.hpp
+   @file utils/type_traits.hpp
 
    @brief Type traits
 

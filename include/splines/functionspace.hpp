@@ -1,5 +1,5 @@
 /**
-   @file include/functionspace.hpp
+   @file splines/functionspace.hpp
 
    @brief Function spaces
 
@@ -16,7 +16,7 @@
 
 #include <boost/preprocessor/seq/for_each.hpp>
 
-#include <bspline.hpp>
+#include <splines/bspline.hpp>
 #include <utils/container.hpp>
 #include <utils/type_traits.hpp>
 #include <utils/zip.hpp>

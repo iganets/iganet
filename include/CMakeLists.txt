@@ -18,8 +18,8 @@ target_include_directories(iganet_core INTERFACE ${CMAKE_CURRENT_BINARY_DIR})
 ########################################################################
 # Config file
 ########################################################################
-configure_file(${CMAKE_CURRENT_SOURCE_DIR}/config.hpp.in
-  "${CMAKE_CURRENT_BINARY_DIR}/config.hpp" @ONLY)
+configure_file(${CMAKE_CURRENT_SOURCE_DIR}/core/config.hpp.in
+  "${CMAKE_CURRENT_BINARY_DIR}/core/config.hpp" @ONLY)
 
 ########################################################################
 # Precompiled headers
@@ -38,15 +38,15 @@ endif()
 include(GNUInstallDirs)
 
 install(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
-	DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
-	FILES_MATCHING
-        PATTERN "*.h"
-        PATTERN "*.hpp"
+  DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
+  FILES_MATCHING
+  PATTERN "*.h"
+  PATTERN "*.hpp"
 )
 
 install(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
-	DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
-	FILES_MATCHING
-        PATTERN "*.h"
-        PATTERN "*.hpp"
+  DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
+  FILES_MATCHING
+  PATTERN "*.h"
+  PATTERN "*.hpp"
 )

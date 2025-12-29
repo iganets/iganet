@@ -1,5 +1,5 @@
 /**
-   @file include/sysinfo.hpp
+   @file core/sysinfo.hpp
 
    @brief System information
 
@@ -33,7 +33,7 @@
 #endif
 #endif
 
-#include <config.hpp>
+#include <core/config.hpp>
 
 namespace iganet {
 

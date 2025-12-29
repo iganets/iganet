@@ -1,5 +1,5 @@
 /**
-   @file include/nurbs.hpp
+   @file splines/nurbs.hpp
 
    @brief Multivariate non-uniform rational B-splines
 
@@ -14,7 +14,7 @@
 
 #pragma once
 
-#include <bspline.hpp>
+#include <splines/bspline.hpp>
 
 namespace iganet {
 

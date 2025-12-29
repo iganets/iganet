@@ -1,5 +1,5 @@
 /**
-   @file include/bspline.hpp
+   @file splines/bspline.hpp
 
    @brief Multivariate B-splines
 
@@ -20,10 +20,9 @@
 #include <functional>
 #include <regex>
 
-#include <core.hpp>
-#include <options.hpp>
-#include <patch.hpp>
-
+#include <core/core.hpp>
+#include <core/options.hpp>
+#include <splines/patch.hpp>
 #include <utils/blocktensor.hpp>
 #include <utils/container.hpp>
 #include <utils/fqn.hpp>

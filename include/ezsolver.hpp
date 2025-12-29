@@ -1,5 +1,5 @@
 /**
-   @file include/ezinterp.hpp
+   @file ezinterp.hpp
 
    @brief Isogeometric analysis solver
 
@@ -14,7 +14,7 @@
 
 #pragma once
 
-#include <bspline.hpp>
+#include <splines/bspline.hpp>
 #include <igabase.hpp>
 #include <igasolver.hpp>
 

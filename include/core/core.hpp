@@ -1,5 +1,5 @@
 /**
-   @file include/core.hpp
+   @file core/core.hpp
 
    @brief Core components
 
@@ -14,7 +14,7 @@
 
 #pragma once
 
-#include <config.hpp>
+#include <core/config.hpp>
 
 #include <array>
 #include <fstream>
@@ -66,7 +66,8 @@
 #include <matplot/matplot.h>
 #endif
 
-#include <sysinfo.hpp>
+// This header file needs to be included after all other header files have been included
+#include <core/sysinfo.hpp>
 
 namespace iganet {
 

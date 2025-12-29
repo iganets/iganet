@@ -1,5 +1,5 @@
 /**
-   @file include/utils/linalg.hpp
+   @file utils/linalg.hpp
 
    @brief Linear algebra utility functions
 
@@ -14,7 +14,7 @@
 
 #pragma once
 
-#include <core.hpp>
+#include <core/core.hpp>
 
 namespace iganet::utils {
 

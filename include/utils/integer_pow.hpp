@@ -1,5 +1,5 @@
 /**
-   @file include/utils/integer_pow.hpp
+   @file utils/integer_pow.hpp
 
    @brief Integer power utility function
 

@@ -1,5 +1,5 @@
 /**
-   @file include/utils/tensorarray.hpp
+   @file utils/tensorarray.hpp
 
    @brief TensorArray utility functions
 
@@ -17,8 +17,8 @@
 #include <array>
 #include <initializer_list>
 
-#include <core.hpp>
-#include <options.hpp>
+#include <core/core.hpp>
+#include <core/options.hpp>
 #include <utils/container.hpp>
 
 namespace iganet::utils {

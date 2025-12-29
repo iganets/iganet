@@ -1,5 +1,5 @@
 /**
-   @file include/iganet.hpp
+   @file iganet.hpp
 
    @brief Isogeometric analysis network
 
@@ -16,8 +16,8 @@
 
 #include <any>
 
-#include <boundary.hpp>
-#include <functionspace.hpp>
+#include <splines/boundary.hpp>
+#include <splines/functionspace.hpp>
 #include <igabase.hpp>
 #include <layer.hpp>
 #include <optimizer.hpp>

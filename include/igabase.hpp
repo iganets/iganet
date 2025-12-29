@@ -1,5 +1,5 @@
 /**
-   @file include/igabase.hpp
+   @file igabase.hpp
 
    @brief Isogeometric analysis base class
 
@@ -14,10 +14,10 @@
 
 #pragma once
 
-#include <functionspace.hpp>
-#include <utils/tuple.hpp>
-
 #include <filesystem>
+
+#include <splines/functionspace.hpp>
+#include <utils/tuple.hpp>
 
 namespace iganet {
 

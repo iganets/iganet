@@ -1,5 +1,5 @@
 /**
-   @file include/boundary.hpp
+   @file splines/boundary.hpp
 
    @brief Boundary treatment
 
@@ -17,7 +17,7 @@
 #include <boost/preprocessor/cat.hpp>
 #include <boost/preprocessor/seq/for_each.hpp>
 
-#include <bspline.hpp>
+#include <splines/bspline.hpp>
 
 namespace iganet {
 

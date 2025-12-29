@@ -1,7 +1,7 @@
 /**
-   @file iganet.h
+   @file splines.h
 
-   @brief Isogeometric analysis network main header file
+   @brief Spline functionality
 
    @author Matthias Moller
 
@@ -14,14 +14,9 @@
 
 #pragma once
 
-#include <core.h>
-#include <splines.h>
-#include <utils.h>
-
-#include <creator.hpp>
-#include <ezsolver.hpp>
-#include <iganet.hpp>
-#include <igasolver.hpp>
-#include <layer.hpp>
-#include <optimizer.hpp>
-
+#include <splines/boundary.hpp>
+#include <splines/bspline.hpp>
+#include <splines/functionspace.hpp>
+#include <splines/multipatch.hpp>
+#include <splines/nurbs.hpp>
+#include <splines/patch.hpp>

@@ -1,5 +1,5 @@
 /**
-   @file include/utils.hpp
+   @file utils.h
 
    @brief Utility functions
 
@@ -23,7 +23,7 @@
 #include <utils/linalg.hpp>
 #include <utils/matrix.hpp>
 #include <utils/serialize.hpp>
-#include <utils/spsolver.hpp>
+#include <utils/solver.hpp>
 #include <utils/tensorarray.hpp>
 #include <utils/tuple.hpp>
 #include <utils/type_traits.hpp>

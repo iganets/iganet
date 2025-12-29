@@ -1,5 +1,5 @@
 /**
-   @file include/creator.hpp
+   @file creator.hpp
 
    @brief Geometry creator
 
@@ -17,7 +17,7 @@
 #include <cstdlib>
 #include <ctime>
 
-#include <bspline.hpp>
+#include <splines/bspline.hpp>
 #include <utils/fqn.hpp>
 
 namespace iganet {

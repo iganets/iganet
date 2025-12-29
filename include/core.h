@@ -1,7 +1,7 @@
 /**
-   @file iganet.h
+   @file core.h
 
-   @brief Isogeometric analysis network main header file
+   @brief Core functionality
 
    @author Matthias Moller
 
@@ -14,14 +14,6 @@
 
 #pragma once
 
-#include <core.h>
-#include <splines.h>
-#include <utils.h>
-
-#include <creator.hpp>
-#include <ezsolver.hpp>
-#include <iganet.hpp>
-#include <igasolver.hpp>
-#include <layer.hpp>
-#include <optimizer.hpp>
-
+#include <core/core.hpp>
+#include <core/memory.hpp>
+#include <core/options.hpp>

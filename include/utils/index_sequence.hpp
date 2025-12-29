@@ -1,5 +1,5 @@
 /**
-   @file include/utils/index_sequence.hpp
+   @file utils/index_sequence.hpp
 
    @brief Integer sequence utility function
 
