@@ -18,8 +18,10 @@
 #include <bspline.hpp>
 #include <core.hpp>
 #include <creator.hpp>
+#include <ezsolver.hpp>
 #include <functionspace.hpp>
 #include <iganet.hpp>
+#include <igasolver.hpp>
 #include <layer.hpp>
 #include <memory.hpp>
 #include <multipatch.hpp>
