@@ -1,7 +1,7 @@
 /**
    @file core.h
 
-   @brief Core functionality
+   @brief Core header file
 
    @author Matthias Moller
 

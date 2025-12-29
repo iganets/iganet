@@ -1,7 +1,7 @@
 /**
    @file splines.h
 
-   @brief Spline functionality
+   @brief Spline header file
 
    @author Matthias Moller
 

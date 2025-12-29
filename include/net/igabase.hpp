@@ -1,5 +1,5 @@
 /**
-   @file igabase.hpp
+   @file net/igabase.hpp
 
    @brief Isogeometric analysis base class
 

@@ -1,5 +1,5 @@
 /**
-   @file igasolver.hpp
+   @file solver/igasolver.hpp
 
    @brief Isogeometric analysis solver
 
@@ -14,10 +14,9 @@
 
 #pragma once
 
+#include <net/igabase.hpp>
 #include <splines/boundary.hpp>
 #include <splines/functionspace.hpp>
-#include <igabase.hpp>
-
 #include <utils/solver.hpp>
 
 namespace iganet {

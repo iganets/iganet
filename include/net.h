@@ -1,7 +1,7 @@
 /**
-   @file iganet.h
+   @file net.h
 
-   @brief Isogeometric analysis network main header file
+   @brief Network header file
 
    @author Matthias Moller
 
@@ -14,9 +14,7 @@
 
 #pragma once
 
-#include <core.h>
-#include <geometry.h>
-#include <net.h>
-#include <solver.h>
-#include <splines.h>
-#include <utils.h>
+#include <net/igabase.hpp>
+#include <net/iganet.hpp>
+#include <net/layer.hpp>
+#include <net/optimizer.hpp>

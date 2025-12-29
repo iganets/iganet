@@ -1,7 +1,7 @@
 /**
    @file utils.h
 
-   @brief Utility functions
+   @brief Utility header file
 
    @author Matthias Moller
 

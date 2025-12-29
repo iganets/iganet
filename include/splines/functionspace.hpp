@@ -17,6 +17,7 @@
 #include <boost/preprocessor/seq/for_each.hpp>
 
 #include <splines/bspline.hpp>
+#include <splines/boundary.hpp>
 #include <utils/container.hpp>
 #include <utils/type_traits.hpp>
 #include <utils/zip.hpp>

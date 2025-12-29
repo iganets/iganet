@@ -16,6 +16,7 @@
 
 #include <sstream>
 #include <stdlib.h>
+#include <vector>
 
 namespace iganet::utils {
 
