@@ -73,6 +73,36 @@ public:
   /// @brief Boundary evaluation type
   using boundary_eval_type = std::tuple<typename Boundaries::eval_type...>;
 
+  /// @brief Returns the geometric dimensions of the index-th space
+  template <std::size_t index> 
+  inline static constexpr short_t geoDim() noexcept {
+    static_assert(index < nspaces());
+    return std::tuple_element_t<index, spline_type>::geoDim();
+  }
+
+  /// @brief Returns the parametric dimensions of the index-th space
+  template <std::size_t index> 
+  inline static constexpr short_t parDim() noexcept {
+    static_assert(index < nspaces());
+    return std::tuple_element_t<index, spline_type>::parDim();
+  }
+
+  /// @brief Returns a constant reference to the array of degrees of
+  /// the index-th space
+  template <std::size_t index> 
+  inline static constexpr const auto& degrees() noexcept {
+    static_assert(index < nspaces());
+    return std::tuple_element_t<index, spline_type>::degrees();
+  }
+
+  /// @brief Returns a constant reference to the degree in the
+  /// \f$i\f$-th dimension of the index-th space
+  template <std::size_t index> 
+  inline static constexpr short_t degree(short_t i) noexcept {
+    static_assert(index < nspaces());
+    return std::tuple_element_t<index, spline_type>::degree(i);
+  }
+
 protected:
   /// @brief Splines
   spline_type spline_;
@@ -2448,6 +2478,36 @@ public:
   /// @brief Boundary evaluation type
   using boundary_eval_type = Boundary::eval_type;
 
+  /// @brief Returns the geometric dimensions of the index-th space
+  template <std::size_t index=0> 
+  inline static constexpr short_t geoDim() noexcept {
+    static_assert(index < nspaces());
+    return spline_type::geoDim();
+  }
+
+  /// @brief Returns the parametric dimensions of the index-th space
+  template <std::size_t index=0> 
+  inline static constexpr short_t parDim() noexcept {
+    static_assert(index < nspaces());
+    return spline_type::parDim();
+  }
+
+  /// @brief Returns a constant reference to the array of degrees of
+  /// the index-th space
+  template <std::size_t index=0> 
+  inline static constexpr const auto& degrees() noexcept {
+    static_assert(index < nspaces());
+    return spline_type::degrees();
+  }
+
+  /// @brief Returns a constant reference to the degree in the
+  /// \f$i\f$-th dimension of the index-th space
+  template <std::size_t index=0> 
+  inline static constexpr short_t degree(short_t i) noexcept {
+    static_assert(index < nspaces());
+    return spline_type::degree(i);
+  }
+  
 protected:
   /// @brief Spline
   spline_type spline_;
