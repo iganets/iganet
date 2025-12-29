@@ -18,6 +18,8 @@
 #include <functionspace.hpp>
 #include <igabase.hpp>
 
+#include <utils/spsolver.hpp>
+
 namespace iganet {
 
 /// @brief IgA solver
@@ -70,8 +72,7 @@ public:
 
   /// @brief Computes the solution vector
   torch::Tensor solve() const {
-
-    auto [x, iter, res] = utils::spsolve_cg(lhs(), rhs());
+    auto [x, iter, res] = utils::spsolve_bicgstab(lhs(), rhs());    
     return x;
   }
   
