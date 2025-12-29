@@ -23,7 +23,6 @@
 #include <core.hpp>
 #include <options.hpp>
 #include <patch.hpp>
-#include <igasolver.hpp>
 
 #include <utils/blocktensor.hpp>
 #include <utils/container.hpp>
@@ -498,7 +497,7 @@ public:
   /// @param[in] i Parametric dimension
   ///
   /// @result Degree for the given parametric dimension
-  inline static constexpr const short_t &degree(short_t i) noexcept {
+  inline static constexpr short_t degree(short_t i) noexcept {
     assert(i >= 0 && i < parDim_);
     return degrees_[i];
   }
