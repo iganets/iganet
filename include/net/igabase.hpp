@@ -30,6 +30,8 @@ enum class collPts : short_t {
   greville_interior_ref1 = 3, /*!< Greville points in the interior, once refined */
   greville_ref2          = 4, /*!< Greville points, twice refined */
   greville_interior_ref2 = 5, /*!< Greville points in the interior, twice refined */
+  greville_ref3          = 6, /*!< Greville points, three times refined */
+  greville_interior_ref3 = 7, /*!< Greville points in the interior, three times refined */
 };
 //  clang-format on
   
@@ -189,6 +191,44 @@ private:
                                            .greville()),
        ...);
       break;
+      
+    case collPts::greville_ref3:
+      // Get Greville abscissae inside the domain and at the boundary
+      ((std::get<Is>(collPts_.first) = space
+                                          .template space<Is>()
+                                          .clone()
+                                          .uniform_refine(3, -1)
+                                          .greville(
+                                              /* interior */ false)),
+       ...);
+
+      // Get Greville abscissae at the domain
+      ((std::get<Is>(collPts_.second) = space
+                                           .template boundary<Is>()
+                                           .clone()
+                                           .uniform_refine(3, -1)
+                                           .greville()),
+       ...);
+      break;
+
+    case collPts::greville_interior_ref3:
+      // Get Greville abscissae inside the domain
+      ((std::get<Is>(collPts_.first) = space
+                                          .template space<Is>()
+                                          .clone()
+                                          .uniform_refine(3, -1)
+                                          .greville(
+                                              /* interior */ true)),
+       ...);
+
+      // Get Greville abscissae at the domain
+      ((std::get<Is>(collPts_.second) = space
+                                           .template boundary<Is>()
+                                           .clone()
+                                           .uniform_refine(3, -1)
+                                           .greville()),
+       ...);
+      break;      
 
     default:
       throw std::runtime_error("Invalid collocation point specifier");
@@ -263,7 +303,33 @@ public:
                     .boundary()
                     .clone()
                     .uniform_refine(2, -1)
+                .greville()};
+
+      case collPts::greville_ref3:
+        return type{space
+                    .space()
+                    .clone()
+                    .uniform_refine(3, -1)
+                    .greville(
+                        /* interior */ false),
+                space
+                    .boundary()
+                    .clone()
+                    .uniform_refine(3, -1)
                     .greville()};
+
+      case collPts::greville_interior_ref3:
+        return type{space
+                    .space()
+                    .clone()
+                    .uniform_refine(3, -1)
+                    .greville(
+                        /* interior */ true),
+                space
+                    .boundary()
+                    .clone()
+                    .uniform_refine(3, -1)
+                    .greville()};        
 
       default:
         throw std::runtime_error("Invalid collocation point specifier");
@@ -965,6 +1031,36 @@ private:
        ...);
       break;
 
+    case collPts::greville_ref3:
+      // Get Greville abscissae inside the domain and at the boundary
+      ((std::get<Is>(collPts.first) =
+            G_.template space<Is>().clone().uniform_refine(3, -1).greville(
+                /* interior */ false)),
+       ...);
+
+      // Get Greville abscissae at the domain
+      ((std::get<Is>(collPts.second) = G_.template boundary<Is>()
+                                           .clone()
+                                           .uniform_refine(3, -1)
+                                           .greville()),
+       ...);
+      break;
+
+    case collPts::greville_interior_ref3:
+      // Get Greville abscissae inside the domain
+      ((std::get<Is>(collPts.first) =
+            G_.template space<Is>().clone().uniform_refine(3, -1).greville(
+                /* interior */ true)),
+       ...);
+
+      // Get Greville abscissae at the domain
+      ((std::get<Is>(collPts.second) = G_.template boundary<Is>()
+                                           .clone()
+                                           .uniform_refine(3, -1)
+                                           .greville()),
+       ...);
+      break;      
+
     default:
       throw std::runtime_error("Invalid collocation point specifier");
     }
@@ -1063,6 +1159,36 @@ private:
        ...);
       break;
 
+    case collPts::greville_ref3:
+      // Get Greville abscissae inside the domain and at the boundary
+      ((std::get<Is>(collPts.first) =
+            u_.template space<Is>().clone().uniform_refine(3, -1).greville(
+                /* interior */ false)),
+       ...);
+
+      // Get Greville abscissae at the domain
+      ((std::get<Is>(collPts.second) = u_.template boundary<Is>()
+                                           .clone()
+                                           .uniform_refine(3, -1)
+                                           .greville()),
+       ...);
+      break;
+
+    case collPts::greville_interior_ref3:
+      // Get Greville abscissae inside the domain and at the boundary
+      ((std::get<Is>(collPts.first) =
+            u_.template space<Is>().clone().uniform_refine(3, -1).greville(
+                /* interior */ true)),
+       ...);
+
+      // Get Greville abscissae at the domain
+      ((std::get<Is>(collPts.second) = u_.template boundary<Is>()
+                                           .clone()
+                                           .uniform_refine(3, -1)
+                                           .greville()),
+       ...);
+      break;      
+
     default:
       throw std::runtime_error("Invalid collocation point specifier");
     }
@@ -1111,6 +1237,16 @@ public:
                     /* interior */ true),
                 G_.boundary().clone().uniform_refine(2, -1).greville()};
 
+      case collPts::greville_ref3:
+        return {G_.space().clone().uniform_refine(3, -1).greville(
+                    /* interior */ false),
+                G_.boundary().clone().uniform_refine(3, -1).greville()};
+
+      case collPts::greville_interior_ref3:
+        return {G_.space().clone().uniform_refine(3, -1).greville(
+                    /* interior */ true),
+                G_.boundary().clone().uniform_refine(3, -1).greville()};
+
       default:
         throw std::runtime_error("Invalid collocation point specifier");
       }
@@ -1158,6 +1294,16 @@ public:
         return {u_.space().clone().uniform_refine(2, -1).greville(
                     /* interior */ true),
                 u_.boundary().clone().uniform_refine(2, -1).greville()};
+
+      case collPts::greville_ref3:
+        return {u_.space().clone().uniform_refine(3, -1).greville(
+                    /* interior */ false),
+                u_.boundary().clone().uniform_refine(3, -1).greville()};
+
+      case collPts::greville_interior_ref3:
+        return {u_.space().clone().uniform_refine(3, -1).greville(
+                    /* interior */ true),
+                u_.boundary().clone().uniform_refine(3, -1).greville()};        
 
       default:
         throw std::runtime_error("Invalid collocation point specifier");
@@ -1718,11 +1864,12 @@ private:
         []<typename... Elems>(Elems &&...elems) {
           return std::make_tuple(([&] {
             using T = std::decay_t<Elems>;
-            if constexpr (detail::HasFindKnotIndices<T>)
-              return elems.find_knot_indices(typename T::eval_type{});
-            else if constexpr (detail::HasTemplatedFindKnotIndices<T>)
+            if constexpr (detail::HasTemplatedFindKnotIndices<T>)
               return elems.template find_knot_indices<functionspace::interior>(
-                  typename T::eval_type{});
+                                                                               typename T::eval_type{});
+            else if constexpr (detail::HasFindKnotIndices<T>)
+              // Note that this is a fake call here
+              return elems.find_knot_indices(typename T::eval_type{});
           })()...);
         },
         tuple);
@@ -1734,12 +1881,12 @@ private:
         []<typename... Elems>(Elems &&...elems) {
           return std::make_tuple(([&] {
             using T = std::decay_t<Elems>;
-            if constexpr (detail::HasFindKnotIndices<T>)
+            if constexpr (detail::HasTemplatedFindKnotIndices<T>)
+              return elems.template find_knot_indices<functionspace::boundary>(
+                                                                               typename T::boundary_eval_type{});
+            else if constexpr (detail::HasFindKnotIndices<T>)
               // Note that this is a fake call here
               return elems.find_knot_indices(typename T::eval_type{});
-            else if constexpr (detail::HasTemplatedFindKnotIndices<T>)
-              return elems.template find_knot_indices<functionspace::boundary>(
-                  typename T::boundary_eval_type{});
           })()...);
         },
         tuple);
@@ -1751,11 +1898,12 @@ private:
         []<typename... Elems>(Elems &&...elems) {
           return std::make_tuple(([&] {
             using T = std::decay_t<Elems>;
-            if constexpr (detail::HasFindCoeffIndices<T>)
-              return elems.find_coeff_indices(typename T::eval_type{});
-            else if constexpr (detail::HasTemplatedFindCoeffIndices<T>)
+            if constexpr (detail::HasTemplatedFindCoeffIndices<T>)
               return elems.template find_coeff_indices<functionspace::interior>(
-                  typename T::eval_type{});
+                                                                                typename T::eval_type{});
+            else if constexpr (detail::HasFindCoeffIndices<T>)
+              // Note that this is a fake call here              
+              return elems.find_coeff_indices(typename T::eval_type{});
           })()...);
         },
         tuple);
@@ -1767,12 +1915,12 @@ private:
         []<typename... Elems>(Elems &&...elems) {
           return std::make_tuple(([&] {
             using T = std::decay_t<Elems>;
-            if constexpr (detail::HasFindCoeffIndices<T>)
+            if constexpr (detail::HasTemplatedFindCoeffIndices<T>)
+              return elems.template find_coeff_indices<functionspace::boundary>(
+                                                                                typename T::boundary_eval_type{});
+            else if constexpr (detail::HasFindCoeffIndices<T>)
               // Note that this is a fake call here
               return elems.find_coeff_indices(typename T::eval_type{});
-            else if constexpr (detail::HasTemplatedFindCoeffIndices<T>)
-              return elems.template find_coeff_indices<functionspace::boundary>(
-                  typename T::boundary_eval_type{});
           })()...);
         },
         tuple);
