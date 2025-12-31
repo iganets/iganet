@@ -3847,7 +3847,17 @@ public:
   /// If `dim = -1` the full coefficient vector of \a other is
   /// subtracted from that of the current B-spline object. Otherwise,
   /// only the specified direction is subtracted
-  inline auto diff(const BSplineCommon &other, int dim = -1) {
+  inline auto diff(const BSplineCommon &other, int dim = -1) const {
+    return this->clone().diff_(other, dim);
+  }
+
+  /// @brief Computes the difference between two compatible B-spline
+  /// objects in-place
+  ///
+  /// If `dim = -1` the full coefficient vector of \a other is
+  /// subtracted from that of the current B-spline object. Otherwise,
+  /// only the specified direction is subtracted
+  inline auto diff_(const BSplineCommon &other, int dim = -1) {
 
     bool compatible(true);
 
@@ -3875,7 +3885,17 @@ public:
   /// If `dim = -1` the full coefficient vector of \a other is
   /// subtracted from that of the current B-spline object. Otherwise,
   /// only the specified direction is subtracted
-  inline auto abs_diff(const BSplineCommon &other, int dim = -1) {
+  inline auto abs_diff(const BSplineCommon &other, int dim = -1) const {
+    return this->clone().abs_diff_(other, dim);
+  }
+
+  /// @brief Computes the absolute difference between two compatible
+  /// B-spline objects in-place
+  ///
+  /// If `dim = -1` the full coefficient vector of \a other is
+  /// subtracted from that of the current B-spline object. Otherwise,
+  /// only the specified direction is subtracted
+  inline auto abs_diff_(const BSplineCommon &other, int dim = -1) {
 
     bool compatible(true);
 
@@ -3899,8 +3919,20 @@ public:
     return *this;
   }
 
+  /// @brief Computes the norm of the B-spline object by computing the
+  /// mean-squared sum of the function values evaluated at the
+  /// Greville abscissae
+  inline auto norm() const {
+    return torch::mean(torch::pow(BSplineCore::eval(BSplineCore::greville())(0), 2));
+  }
+  
   /// @brief Scales the B-spline object by a scalar
-  inline auto scale(BSplineCore::value_type s, int dim = -1) {
+  inline auto scale(BSplineCore::value_type s, int dim = -1) const {
+    return this->clone().scale_(s, dim);
+  }
+    
+  /// @brief Scales the B-spline object by a scalar in-place
+  inline auto scale_(BSplineCore::value_type s, int dim = -1) {
     if (dim == -1)
       for (int i = 0; i < BSplineCore::geoDim(); ++i)
         BSplineCore::coeffs(i) *= s;
@@ -3911,7 +3943,13 @@ public:
 
   /// @brief Scales the B-spline object by a vector
   inline auto
-  scale(std::array<typename BSplineCore::value_type, BSplineCore::geoDim()> v) {
+  scale(std::array<typename BSplineCore::value_type, BSplineCore::geoDim()> v) const {
+    return this->clone().scale_(v);
+  }
+  
+  /// @brief Scales the B-spline object by a vector in-place
+  inline auto
+  scale_(std::array<typename BSplineCore::value_type, BSplineCore::geoDim()> v) {
     for (int i = 0; i < BSplineCore::geoDim(); ++i)
       BSplineCore::coeffs(i) *= v[i];
     return *this;
@@ -3919,6 +3957,12 @@ public:
 
   /// @brief Translates the B-spline object by a vector
   inline auto translate(
+                        std::array<typename BSplineCore::value_type, BSplineCore::geoDim()> v) const {
+    return this->clone().translate_(v);
+  }
+  
+  /// @brief Translates the B-spline object by a vector in-place
+  inline auto translate_(
       std::array<typename BSplineCore::value_type, BSplineCore::geoDim()> v) {
     for (int i = 0; i < BSplineCore::geoDim(); ++i)
       BSplineCore::coeffs(i) += v[i];
@@ -3926,7 +3970,12 @@ public:
   }
 
   /// @brief Rotates the B-spline object by an angle in 2d
-  inline auto rotate(BSplineCore::value_type angle) {
+  inline auto rotate(BSplineCore::value_type angle) const {
+    return this->clone().rotate_(angle);
+  }
+  
+  /// @brief Rotates the B-spline object by an angle in 2d in-place
+  inline auto rotate_(BSplineCore::value_type angle) {
 
     static_assert(BSplineCore::geoDim() == 2,
                   "Rotation about one angle is only available in 2D");
@@ -3942,7 +3991,12 @@ public:
   }
 
   /// @brief Rotates the B-spline object by three angles in 3d
-  inline auto rotate(std::array<typename BSplineCore::value_type, 3> angle) {
+  inline auto rotate(std::array<typename BSplineCore::value_type, 3> angle) const {
+    return this->clone().rotate_(angle);
+  }
+  
+  /// @brief Rotates the B-spline object by three angles in 3d in-place
+  inline auto rotate_(std::array<typename BSplineCore::value_type, 3> angle) {
 
     static_assert(BSplineCore::geoDim() == 3,
                   "Rotation about two angles is only available in 3D");
