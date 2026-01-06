@@ -1554,7 +1554,7 @@ public:
         // Construct the deep neural network
         net_(utils::concat(
                  std::vector<int64_t>{inputs(/* epoch */ 0).size(0)}, layers,
-                 std::vector<int64_t>{outputs(/* epoch */ 0).size(0)-36}),
+                 std::vector<int64_t>{outputs(/* epoch */ 0).size(0)}),
              activations, options),
 
         // Construct the optimizer
