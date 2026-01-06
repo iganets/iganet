@@ -44,8 +44,14 @@ protected:
   /// @brief Knot indices of the geometry map
   Customizable::template input_interior_knot_indices_t<0> G_knot_indices_;
 
+  /// @brief Knot indices of the geometry map at the boundary
+  Customizable::template input_boundary_knot_indices_t<0> G_knot_indices_boundary_;
+
   /// @brief Knot indices of variables
   Customizable::template output_interior_knot_indices_t<0> var_knot_indices_;
+
+  /// @brief Knot indices of variables at the boundary
+  Customizable::template output_boundary_knot_indices_t<0> var_knot_indices_boundary_;
 
 public:
   /// @brief Constructor
@@ -76,9 +82,13 @@ public:
     collPts_ =
       Base::template collPts<0>(iganet::collPts::greville);
     G_knot_indices_ =
-      G().template find_knot_indices<iganet::functionspace::interior>(collPts_.first);    
+      G().template find_knot_indices<iganet::functionspace::interior>(collPts_.first);
+    G_knot_indices_boundary_ =
+      G().template find_knot_indices<iganet::functionspace::boundary>(collPts_.second);    
     var_knot_indices_ =
-      u().template find_knot_indices<iganet::functionspace::interior>(collPts_.first);    
+      u().template find_knot_indices<iganet::functionspace::interior>(collPts_.first);
+    var_knot_indices_boundary_ =
+      u().template find_knot_indices<iganet::functionspace::boundary>(collPts_.second);    
   }
 };
 
@@ -92,13 +102,6 @@ private:
   /// @brief Base class
   using Base = EZSolverBase<GeometryMap, Variable>;
   
-  /// @brief Left-hand side function
-  std::function<
-    std::array<torch::Tensor, Variable::template geoDim<0>()>(
-                                                              const std::array<torch::Tensor, Variable::template parDim<0>()>&
-                                                              )
-    > lhs_;
-
   /// @brief Right-hand side function
   std::function<
     std::array<torch::Tensor, Variable::template geoDim<0>()>(
@@ -113,26 +116,35 @@ public:
            std::array<torch::Tensor, Variable::template geoDim<0>()>(
                                                                      const std::array<torch::Tensor, Variable::template parDim<0>()>&
                                                                      )
-           >& lhs,
-           const std::function<
-           std::array<torch::Tensor, Variable::template geoDim<0>()>(
-                                                                     const std::array<torch::Tensor, Variable::template parDim<0>()>&
-                                                                     )
            >& rhs)
-  : EZSolverBase<GeometryMap, Variable>(geometryMap.template space<0>().ncoeffs(), variable.template space<0>().ncoeffs()),
-    lhs_(lhs), rhs_(rhs) {}
+    : EZSolverBase<GeometryMap, Variable>(geometryMap.template space<0>().ncoeffs(), variable.template space<0>().ncoeffs()),
+      rhs_(rhs) {}
   
   /// @brief Assembles the left-hand side as the mass matrix
-  void assembleLhs() override {    
+  void assembleLhs() override {
+
+    auto S_xx = this->u().template eval_basfunc<functionspace::interior,
+                                                (deriv::dx^2)>(Base::collPts_.first,
+                                                               Base::var_knot_indices_);
+    auto S_yy = this->u().template eval_basfunc<functionspace::interior,
+                                                (deriv::dy^2)>(Base::collPts_.first,
+                                                               Base::var_knot_indices_);
+    
+    auto M = this->u().template eval_basfunc(Base::collPts_.first,Base::var_knot_indices_);
+
+    //M = torch::zeros({16, 100});
+        
+    auto mask = (Base::collPts_.first[0] == 0.0) | (Base::collPts_.first[0] == 1.0) | (Base::collPts_.first[1] == 0.0) | (Base::collPts_.first[1] == 1.0);
+    
     Base::lhs_ = iganet::utils::to_sparseCsrTensor(Base::var_knot_indices_,
                                                    this->u().template space<0>().degrees(),
                                                    this->u().template space<0>().ncoeffs(),
-                                                   this->u().template eval_basfunc(Base::collPts_.first, Base::var_knot_indices_).t(),
+                                                   torch::where(mask, M, S_xx+S_yy).t(),
                                                    { this->u().template space<0>().ncumcoeffs(),
-                                                      this->u().template space<0>().ncumcoeffs() });
+                                                      this->u().template space<0>().ncumcoeffs() });          
   }
   
-  /// @brief Assembles the right-hand side from the given mapping
+  /// @brief Assembles the right-hand side from the given function
   void assembleRhs() override {
     Base::rhs_ = rhs_(Base::collPts().first)[0];     
   }
@@ -148,12 +160,12 @@ private:
   /// @brief Base class
   using Base = EZSolverBase<GeometryMap, Variable>;
   
-  /// @brief Mapping
+  /// @brief Right-hand side function
   std::function<
     std::array<torch::Tensor, Variable::template geoDim<0>()>(
                                                               const std::array<torch::Tensor, Variable::template parDim<0>()>&
                                                               )
-    > mapping_;
+    > rhs_;
   
 public:
   /// @brief Constructor
@@ -162,8 +174,8 @@ public:
                   std::array<torch::Tensor, Variable::template geoDim<0>()>(
                                                                             const std::array<torch::Tensor, Variable::template parDim<0>()>&
                                                                             )
-                  >& mapping)
-    : EZSolverBase<GeometryMap, Variable>(geometryMap.template space<0>().ncoeffs(), variable.template space<0>().ncoeffs()), mapping_(mapping) {}
+                  >& rhs)
+    : EZSolverBase<GeometryMap, Variable>(geometryMap.template space<0>().ncoeffs(), variable.template space<0>().ncoeffs()), rhs_(rhs) {}
   
   /// @brief Assembles the left-hand side as the mass matrix
   void assembleLhs() override {    
@@ -175,16 +187,16 @@ public:
                                                       this->u().template space<0>().ncumcoeffs() });
   }
   
-  /// @brief Assembles the right-hand side from the given mapping
+  /// @brief Assembles the right-hand side from the given function
   void assembleRhs() override {
-    Base::rhs_ = mapping_(Base::collPts().first)[0];     
+    Base::rhs_ = rhs_(Base::collPts().first)[0];     
   }
 };
   
 /// @brief Easy-to-use interpolation function
 ///
-/// This function interpolates the given mapping in the Greville
-/// points of the variable function space
+/// This function interpolates the given mapping functions in the
+/// Greville points of the variable function space
 template <FunctionSpaceType GeometryMap, FunctionSpaceType Variable>
 auto ezinterp(const GeometryMap& geometryMap,
               const Variable& variable,
@@ -196,5 +208,18 @@ auto ezinterp(const GeometryMap& geometryMap,
   interp.assemble();
   return interp.solve().clone();
 }
+
+/// @brief Easy-to-use Poisson solver function
+template <FunctionSpaceType GeometryMap, FunctionSpaceType Variable>
+auto ezpoisson(const GeometryMap& geometryMap,
+               const Variable& variable,
+               const std::function<std::array<torch::Tensor, Variable::template geoDim<0>()>(const std::array<torch::Tensor, Variable::template parDim<0>()> &)>
+               rhs) {
+
+  EZSolver solver(geometryMap, variable, rhs);
+  solver.init();
+  solver.assemble();
+  return solver.solve().clone();
+}  
   
 } // namespace iganet
