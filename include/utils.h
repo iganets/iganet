@@ -26,7 +26,6 @@
 #include <utils/solver.hpp>
 #include <utils/tensorarray.hpp>
 #include <utils/tuple.hpp>
-#include <utils/type_traits.hpp>
 #include <utils/uuid.hpp>
 #include <utils/vslice.hpp>
 #include <utils/zip.hpp>
