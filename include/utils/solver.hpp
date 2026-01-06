@@ -95,6 +95,7 @@ namespace iganet::utils {
       x += alpha * p + omega * s;
       r = s - omega * t;
     }
-    
+
+    return std::make_tuple(x, max_iter, r.norm().item<double>());    
   }
 } // namespace iganet::utils
