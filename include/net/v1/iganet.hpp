@@ -42,7 +42,7 @@ namespace iganet::v1 {
 /// case that no reference solution is required
 template <typename GeometryMap, typename Variable>
   requires FunctionSpaceType<GeometryMap> && FunctionSpaceType<Variable>
-class IgABaseNoRefData {
+class [[deprecated("Use novel IgANet implementation")]] IgABaseNoRefData {
 public:
   /// @brief Value type
   using value_type = std::common_type_t<typename GeometryMap::value_type,
@@ -546,7 +546,7 @@ public:
 /// This class implements the base functionality of IgANets
 template <typename GeometryMap, typename Variable>
   requires FunctionSpaceType<GeometryMap> && FunctionSpaceType<Variable>
-class IgABase : public IgABaseNoRefData<GeometryMap, Variable> {
+class [[deprecated("Use novel IgANet implementation")]] IgABase : public IgABaseNoRefData<GeometryMap, Variable> {
 public:
   /// @brief Base type
   using Base = IgABaseNoRefData<GeometryMap, Variable>;
@@ -657,7 +657,7 @@ template <typename Optimizer, typename GeometryMap, typename Variable,
           template <typename, typename> typename IgABase = IgABase>
   requires OptimizerType<Optimizer> && FunctionSpaceType<GeometryMap> &&
                FunctionSpaceType<Variable>
-class IgANet : public IgABase<GeometryMap, Variable>,
+class [[deprecated("Use novel IgANet implementation")]] IgANet : public IgABase<GeometryMap, Variable>,
                utils::Serializable,
                private utils::FullQualifiedName {
 public:
@@ -1208,7 +1208,7 @@ operator<<(std::ostream &os,
 /// functions
 template <typename GeometryMap, typename Variable>
   requires FunctionSpaceType<GeometryMap> && FunctionSpaceType<Variable>
-class IgANetCustomizable {
+class [[deprecated("Use novel IgANetCustomizable implementation")]] IgANetCustomizable {
 public:
   /// @brief Type of the knot indices of the geometry map in the interior
   using geometryMap_interior_knot_indices_type =
