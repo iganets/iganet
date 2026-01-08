@@ -29,7 +29,7 @@ namespace iganet {
 /// member functions assembleLhs and assembleRhs.
 template <FunctionSpaceType GeometryMap, FunctionSpaceType Variable>
 class EZSolverBase : public iganet::IgASolver<std::tuple<GeometryMap>, std::tuple<Variable>>,
-                     public iganet::IgANetCustomizable2<std::tuple<GeometryMap>, std::tuple<Variable>> {
+                     public iganet::IgANetCustomizable<std::tuple<GeometryMap>, std::tuple<Variable>> {
   
 protected:
   /// @brief Type of the base class
@@ -39,7 +39,7 @@ protected:
   Base::template collPts_t<0> collPts_;
 
   /// @brief Type of the customizable class
-  using Customizable = iganet::IgANetCustomizable2<std::tuple<GeometryMap>, std::tuple<Variable>>;
+  using Customizable = iganet::IgANetCustomizable<std::tuple<GeometryMap>, std::tuple<Variable>>;
 
   /// @brief Knot indices of the geometry map
   Customizable::template input_interior_knot_indices_t<0> G_knot_indices_;

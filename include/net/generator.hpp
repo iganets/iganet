@@ -20,7 +20,8 @@
 
 #include <core/core.hpp>
 #include <core/options.hpp>
-#include <net/layer.hpp>
+#include <net/activation.hpp>
+#include <utils/zip.hpp>
 
 namespace iganet {
 

@@ -1,7 +1,7 @@
 /**
-   @file net/layer.hpp
+   @file net/activation.hpp
 
-   @brief Network layer
+   @brief Activation functions
 
    @author Matthias Moller
 
@@ -14,6 +14,7 @@
 
 #pragma once
 
+#include <iostream>
 #include <utility>
 
 #include <core/core.hpp>

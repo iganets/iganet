@@ -25,7 +25,7 @@ namespace iganet {
 ///
 /// This class implements the core functionality of IgA solvers
 template <typename Inputs, typename Outputs, typename CollPts = void>
-class IgASolver : public IgABase2<Inputs, Outputs, CollPts>,
+class IgASolver : public IgABase<Inputs, Outputs, CollPts>,
                   private utils::FullQualifiedName {
 
 protected:
@@ -37,10 +37,10 @@ protected:
   
 public:
   /// @brief Base type
-  using Base = IgABase2<Inputs, Outputs, CollPts>;
+  using Base = IgABase<Inputs, Outputs, CollPts>;
 
   /// @brief Base class constructor
-  using Base::IgABase2;
+  using Base::IgABase;
 
   /// @brief Returns a constant reference to the left-hand side object
   inline constexpr const auto &lhs() const { return lhs_; }

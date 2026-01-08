@@ -41,6 +41,20 @@ enum class functionspace : short_t {
 
 namespace detail {
 
+// @brief Concept to identify template parameters that have a templated
+// find_knot_indices function    
+template <typename T>
+concept HasTemplatedFindKnotIndices = requires(T t, typename T::eval_type x) {
+  { t.template find_knot_indices<functionspace::interior>(x) };
+};
+
+// @brief Concept to identify template parameters that have a templated
+// find_coeff_indices function    
+template <typename T>
+concept HasTemplatedFindCoeffIndices = requires(T t, typename T::eval_type x) {
+  { t.template find_coeff_indices<functionspace::interior>(x) };
+};  
+  
 /// @brief FunctionSpace base class
 class FunctionSpaceType {};
 

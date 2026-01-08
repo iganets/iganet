@@ -14,7 +14,8 @@
 
 #pragma once
 
+#include <net/activation.hpp>
 #include <net/igabase.hpp>
 #include <net/iganet.hpp>
-#include <net/layer.hpp>
 #include <net/optimizer.hpp>
+#include <net/v1/iganet.hpp>

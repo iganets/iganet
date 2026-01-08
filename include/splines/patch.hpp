@@ -21,6 +21,31 @@
 
 namespace iganet {
 
+  namespace detail {
+
+    // @brief Concept to identify template parameters that have an
+    // as_tensor function
+    template <typename T>
+    concept HasAsTensor = requires(T a) {
+      { a.as_tensor() };
+    };
+
+    // @brief Concept to identify template parameters that have an
+    // as_tensor_size function
+    template <typename T>
+    concept HasAsTensorSize = requires(T a) {
+      { a.as_tensor_size() };
+    };
+
+    // @brief Concept to identify template parameters that have a
+    // from_tensor function
+    template <typename T>
+    concept HasFromTensor = requires(T a) {
+      { a.from_tensor() };
+    };
+       
+  } // namespace detail
+  
 /// @brief Abstract patch function base class
 template <typename real_t, short_t GeoDim, short_t ParDim> class BSplinePatch {
 public:

@@ -14,6 +14,10 @@
 
 #pragma once
 
+#include <iostream>
+
+#include <core/core.hpp>
+
 namespace iganet {
 
 /// @brief Concept to identify template parameters that are derived from

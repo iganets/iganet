@@ -46,6 +46,7 @@
 #define GENERATE_IEXPR_SEQ (icurl)(idiv)(igrad)(ihess)(ijac)(ilapl)
 
 namespace iganet {
+  
 using namespace literals;
 using utils::operator+;
 
@@ -103,6 +104,24 @@ inline constexpr auto operator^(deriv lhs, short_t rhs) {
                             static_cast<short_t>(rhs));
 }
 
+namespace detail {
+
+// @brief Concept to identify template parameters that have a
+// find_knot_indices function  
+template <typename T>
+concept HasFindKnotIndices = requires(T t, typename T::eval_type x) {
+  { t.find_knot_indices(x) };
+};
+
+// @brief Concept to identify template parameters that have a
+// find_coeff_indices function    
+template <typename T>
+concept HasFindCoeffIndices = requires(T t, typename T::eval_type x) {
+  { t.find_coeff_indices(x) };
+};
+  
+} // namespace detail
+  
 /// @brief SplineCore base class
 class SplineCore_ {};
 
