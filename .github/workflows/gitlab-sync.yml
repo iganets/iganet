@@ -1,8 +1,9 @@
 name: GitLab Sync
 
 on:
-  - push
-  - delete
+  workflow_dispatch:
+  # push
+  # delete
 
 jobs:
   sync:
