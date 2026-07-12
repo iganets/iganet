@@ -17,4 +17,6 @@ optional
 *.sw?
 .idea
 .vscode
+.codex
 __pycache__
+/build

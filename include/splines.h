@@ -16,6 +16,7 @@
 
 #include <splines/boundary.hpp>
 #include <splines/bspline.hpp>
+#include <splines/constraints.hpp>
 #include <splines/functionspace.hpp>
 #include <splines/multipatch.hpp>
 #include <splines/nurbs.hpp>
