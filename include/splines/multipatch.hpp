@@ -162,6 +162,26 @@ template <typename real_t, short_t GeoDim, short_t ParDim>
 class DynamicBSplinePatch {
 public:
   using value_type = real_t;
+  struct PreparedEvaluation {
+    utils::TensorArray<ParDim> xi;
+    utils::TensorArray<ParDim> knot_indices;
+    torch::Tensor coeff_indices;
+    int64_t numeval{0};
+    std::vector<int64_t> sizes;
+    std::map<short_t, torch::Tensor> basfuncs;
+
+    [[nodiscard]] bool has_basfunc(deriv d) const noexcept {
+      return basfuncs.contains(static_cast<short_t>(d));
+    }
+
+    [[nodiscard]] const torch::Tensor &basfunc(deriv d) const {
+      const auto it = basfuncs.find(static_cast<short_t>(d));
+      if (it == basfuncs.end())
+        throw std::runtime_error(
+            "PreparedEvaluation does not contain requested basis derivative");
+      return it->second;
+    }
+  };
 
   template <typename other_t, short_t GeoDim_, short_t...>
   using derived_self_type = DynamicBSplinePatch<other_t, GeoDim_, ParDim>;
@@ -607,6 +627,44 @@ public:
     }
 
     return result;
+  }
+
+  /// @brief Prepares knot indices, coefficient indices, and basis values for fixed points
+  template <deriv... Derivs, bool memory_optimized = false>
+  [[nodiscard]] inline PreparedEvaluation
+  prepare_evaluation(const utils::TensorArray<ParDim> &xi) const {
+    auto knot_indices = find_knot_indices(xi);
+    return prepare_evaluation<Derivs...>(xi, knot_indices);
+  }
+
+  /// @brief Prepares coefficient indices and basis values from known knot indices
+  template <deriv... Derivs, bool memory_optimized = false>
+  [[nodiscard]] inline PreparedEvaluation
+  prepare_evaluation(const utils::TensorArray<ParDim> &xi,
+                     const utils::TensorArray<ParDim> &knot_indices) const {
+    PreparedEvaluation result;
+    result.xi = xi;
+    result.knot_indices = knot_indices;
+    result.coeff_indices = find_coeff_indices<memory_optimized>(knot_indices);
+    result.numeval = xi[0].numel();
+    result.sizes.assign(xi[0].sizes().begin(), xi[0].sizes().end());
+
+    ([&] {
+      result.basfuncs.emplace(static_cast<short_t>(Derivs),
+                              eval_basfunc<Derivs, memory_optimized>(
+                                  xi, knot_indices));
+    }(),
+     ...);
+
+    return result;
+  }
+
+  /// @brief Evaluates one derivative from a prepared cache
+  template <deriv Deriv>
+  [[nodiscard]] inline utils::BlockTensor<torch::Tensor, 1, GeoDim>
+  eval_from_prepared(const PreparedEvaluation &prepared) const {
+    return eval_from_precomputed(prepared.basfunc(Deriv), prepared.coeff_indices,
+                                 prepared.numeval, prepared.sizes);
   }
 
   /// @brief Updates the B-spline patch from an XML document

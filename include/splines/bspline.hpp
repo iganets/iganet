@@ -18,6 +18,7 @@
 #include <exception>
 #include <filesystem>
 #include <functional>
+#include <map>
 #include <regex>
 
 #include <core/core.hpp>
@@ -1209,6 +1210,7 @@ public:
       return result;
     }
   }
+
   /// @}
 
   /// @brief Returns the indices of the coefficients corresponding to the knot
@@ -3616,6 +3618,27 @@ public:
   /// @brief Constructors from the base class
   using BSplineCore::BSplineCore;
 
+  struct PreparedEvaluation {
+    utils::TensorArray<BSplineCore::parDim_> xi;
+    utils::TensorArray<BSplineCore::parDim_> knot_indices;
+    torch::Tensor coeff_indices;
+    int64_t numeval{0};
+    std::vector<int64_t> sizes;
+    std::map<short_t, torch::Tensor> basfuncs;
+
+    [[nodiscard]] bool has_basfunc(deriv d) const noexcept {
+      return basfuncs.contains(static_cast<short_t>(d));
+    }
+
+    [[nodiscard]] const torch::Tensor &basfunc(deriv d) const {
+      const auto it = basfuncs.find(static_cast<short_t>(d));
+      if (it == basfuncs.end())
+        throw std::runtime_error(
+            "PreparedEvaluation does not contain requested basis derivative");
+      return it->second;
+    }
+  };
+
   /// @brief Deduces the type of the template parameter `T`
   /// when exposed to the class template parameters `real_t` and
   /// `GeoDim`, and the `Degrees` parameter pack. The optional
@@ -3684,6 +3707,43 @@ public:
       : BSplineCommon(std::move(other)) {
     for (short_t i = 0; i < BSplineCore::geoDim_; ++i)
       BSplineCore::coeffs_[i] = std::move(coeffs[i]);
+  }
+
+  template <deriv... Derivs, bool memory_optimized = false>
+  [[nodiscard]] inline PreparedEvaluation
+  prepare_evaluation(const utils::TensorArray<BSplineCore::parDim_> &xi) const {
+    auto knot_indices = BSplineCore::find_knot_indices(xi);
+    return prepare_evaluation<Derivs...>(xi, knot_indices);
+  }
+
+  template <deriv... Derivs, bool memory_optimized = false>
+  [[nodiscard]] inline PreparedEvaluation
+  prepare_evaluation(const utils::TensorArray<BSplineCore::parDim_> &xi,
+                     const utils::TensorArray<BSplineCore::parDim_>
+                         &knot_indices) const {
+    PreparedEvaluation result;
+    result.xi = xi;
+    result.knot_indices = knot_indices;
+    result.coeff_indices =
+        BSplineCore::template find_coeff_indices<memory_optimized>(knot_indices);
+    result.numeval = xi[0].numel();
+    result.sizes.assign(xi[0].sizes().begin(), xi[0].sizes().end());
+
+    ([&] {
+      result.basfuncs.emplace(static_cast<short_t>(Derivs),
+                              this->template eval_basfunc<Derivs, memory_optimized>(
+                                  xi, knot_indices));
+    }(),
+     ...);
+
+    return result;
+  }
+
+  template <deriv Deriv>
+  [[nodiscard]] inline utils::BlockTensor<torch::Tensor, 1, BSplineCore::geoDim_>
+  eval_from_prepared(const PreparedEvaluation &prepared) const {
+    return eval_from_precomputed(prepared.basfunc(Deriv), prepared.coeff_indices,
+                                 prepared.numeval, prepared.sizes);
   }
 
   /// @brief Creates a new B-spline object as unique pointer
