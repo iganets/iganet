@@ -1,7 +1,7 @@
 /**
    @file net/collocation.hpp
 
-   @brief Isogeometric analysis base class
+   @brief Collocation point helpers
 
    @author Matthias Moller
 
@@ -13,6 +13,11 @@
 */
 
 #pragma once
+
+#include <type_traits>
+#include <utility>
+#include <variant>
+#include <vector>
 
 namespace iganet {
 
@@ -30,281 +35,212 @@ enum class collPts : short_t {
 };
 //  clang-format on
 
+template <typename EvalType, typename BoundaryEvalType,
+          typename InterfaceEvalType = std::monostate>
+struct CollocationData {
+  using interior_type = EvalType;
+  using boundary_type = BoundaryEvalType;
+  using interface_type = InterfaceEvalType;
+
+  EvalType first;
+  BoundaryEvalType second;
+  std::vector<InterfaceEvalType> interfaces;
+
+  [[nodiscard]] auto &interior() noexcept { return first; }
+  [[nodiscard]] const auto &interior() const noexcept { return first; }
+
+  [[nodiscard]] auto &boundary() noexcept { return second; }
+  [[nodiscard]] const auto &boundary() const noexcept { return second; }
+
+  [[nodiscard]] bool has_interfaces() const noexcept {
+    return !interfaces.empty();
+  }
+};
+
+namespace detail {
+
+template <typename T>
+concept HasBoundaryGrevilleLabel = requires(const T t, const std::string &label) {
+  { t.boundary_greville(label) };
+};
+
+template <typename T>
+concept HasBoundaryGreville = requires(const T t) { { t.boundary_greville() }; };
+
+template <typename T>
+concept HasInterfaces = requires(const T t) { { t.interfaces() }; };
+
+template <typename T>
+concept HasInterfaceGreville =
+    requires(const T t, const typename T::interface_type &interface) {
+      { t.interface_greville(interface) };
+    };
+
+template <typename T>
+concept HasPatchGreville = requires(const T t, bool interior) {
+  { t.greville(interior) };
+};
+
+template <typename T>
+using interface_eval_t =
+    std::pair<typename T::interface_type,
+              decltype(std::declval<const T>().interface_greville(
+                  std::declval<const typename T::interface_type &>()))>;
+
+template <typename T>
+using collocation_type_t = std::conditional_t<
+    HasInterfaces<T> && HasInterfaceGreville<T>,
+    CollocationData<typename T::eval_type, typename T::boundary_eval_type,
+                    interface_eval_t<T>>,
+    CollocationData<typename T::eval_type, typename T::boundary_eval_type>>;
+
+template <typename T>
+inline auto refined_space(const T &space, int refinement) {
+  if (refinement <= 0)
+    return space.clone();
+  return space.clone().uniform_refine(refinement, -1);
+}
+
+template <typename T>
+inline auto refined_boundary_space(const T &space, int refinement) {
+  if (refinement <= 0)
+    return space.clone();
+  return space.clone().uniform_refine(refinement, -1);
+}
+
+template <typename T>
+inline auto refined_space_eval(const T &space, bool interior, int refinement) {
+  if constexpr (HasPatchGreville<T>) {
+    return refined_space(space, refinement).greville(interior);
+  } else {
+    return refined_space(space.space(), refinement).greville(interior);
+  }
+}
+
+template <typename T>
+inline auto boundary_eval(const T &space, int refinement) {
+  if constexpr (HasBoundaryGreville<T>)
+    return space.boundary_greville();
+  else
+    return refined_boundary_space(space.boundary(), refinement).greville();
+}
+
+template <typename T>
+inline auto interface_eval(const T &space) {
+  using result_t = std::vector<interface_eval_t<T>>;
+  result_t result;
+
+  if constexpr (HasInterfaces<T> && HasInterfaceGreville<T>) {
+    result.reserve(space.ninterfaces());
+    for (const auto &interface : space.interfaces())
+      result.emplace_back(interface, space.interface_greville(interface));
+  }
+
+  return result;
+}
+
+template <typename T>
+inline int refinement_level(enum collPts collPts) {
+  switch (collPts) {
+  case collPts::greville:
+  case collPts::greville_interior:
+    return 0;
+  case collPts::greville_ref1:
+  case collPts::greville_interior_ref1:
+    return 1;
+  case collPts::greville_ref2:
+  case collPts::greville_interior_ref2:
+    return 2;
+  case collPts::greville_ref3:
+  case collPts::greville_interior_ref3:
+    return 3;
+  default:
+    throw std::runtime_error("Invalid collocation point specifier");
+  }
+}
+
+inline bool interior_only(enum collPts collPts) {
+  switch (collPts) {
+  case collPts::greville_interior:
+  case collPts::greville_interior_ref1:
+  case collPts::greville_interior_ref2:
+  case collPts::greville_interior_ref3:
+    return true;
+  case collPts::greville:
+  case collPts::greville_ref1:
+  case collPts::greville_ref2:
+  case collPts::greville_ref3:
+    return false;
+  default:
+    throw std::runtime_error("Invalid collocation point specifier");
+  }
+}
+
+template <typename T>
+inline collocation_type_t<T> make_collocation_data(enum collPts collPts,
+                                                   const T &space) {
+  collocation_type_t<T> result;
+  const int refinement = refinement_level<T>(collPts);
+  const bool interior = interior_only(collPts);
+
+  if constexpr (HasPatchGreville<T>) {
+    result.first = refined_space(space, refinement).greville(interior);
+    result.second = boundary_eval(space, refinement);
+  } else {
+    result.first = refined_space(space.space(), refinement).greville(interior);
+    result.second = boundary_eval(space, refinement);
+  }
+
+  if constexpr (HasInterfaces<T> && HasInterfaceGreville<T>)
+    result.interfaces = interface_eval(space);
+
+  return result;
+}
+
+} // namespace detail
+
 /// @brief Collocation points helper
-/// @{  
-template<typename> class CollPtsHelper;
+/// @{
+template <typename> class CollPtsHelper;
 
-template <detail::HasAsTensor CollPts>  
+template <detail::HasAsTensor CollPts>
 class CollPtsHelper<CollPts> {
-
 public:
-  /// @brief Type of the collocation points
-  using type = std::pair<typename CollPts::eval_type,
-                         typename CollPts::boundary_eval_type>;
+  using type = detail::collocation_type_t<CollPts>;
 
 private:
-  /// @brief Returns the collocation points of the index-th function space
-  ///
-  /// In the default implementation the collocation points are the Greville
-  /// abscissae in the interior of the domain and on the boundary
-  /// faces. This behavior can be changed by overriding this virtual
-  /// function in a derived class.
   template <typename FunctionSpace, std::size_t... Is>
-  static auto collPts(enum collPts collPts, const FunctionSpace& space, std::index_sequence<Is...>) {
+  static auto collPts_impl(enum collPts collPts, const FunctionSpace &space,
+                           std::index_sequence<Is...>) {
+    type result;
+    const int refinement = detail::refinement_level<FunctionSpace>(collPts);
+    const bool interior = detail::interior_only(collPts);
 
-    type collPts_;
+    ((std::get<Is>(result.first) =
+          detail::refined_space(space.template space<Is>(), refinement)
+              .greville(interior)),
+     ...);
 
-    switch (collPts) {
+    ((std::get<Is>(result.second) = detail::refined_boundary_space(
+                                       space.template boundary<Is>().clone(),
+                                       refinement)
+                                       .greville()),
+     ...);
 
-    case collPts::greville:
-      // Get Greville abscissae inside the domain and at the boundary
-      ((std::get<Is>(collPts_.first) =
-            space.template space<Is>().greville(
-                /* interior */ false)),
-       ...);
-
-      // Get Greville abscissae at the domain
-      ((std::get<Is>(collPts_.second) =
-            space.template boundary<Is>().greville()),
-       ...);
-      break;
-
-    case collPts::greville_interior:
-      // Get Greville abscissae inside the domain
-      ((std::get<Is>(collPts_.first) =
-            space.template space<Is>().greville(
-                /* interior */ true)),
-       ...);
-
-      // Get Greville abscissae at the domain
-      ((std::get<Is>(collPts_.second) =
-            space.template boundary<Is>().greville()),
-       ...);
-      break;
-
-    case collPts::greville_ref1:
-      // Get Greville abscissae inside the domain and at the boundary
-      ((std::get<Is>(collPts_.first) = space
-                                          .template space<Is>()
-                                          .clone()
-                                          .uniform_refine()
-                                          .greville(
-                                              /* interior */ false)),
-       ...);
-
-      // Get Greville abscissae at the domain
-      ((std::get<Is>(collPts_.second) = space
-                                           .template boundary<Is>()
-                                           .clone()
-                                           .uniform_refine()
-                                           .greville()),
-       ...);
-      break;
-
-    case collPts::greville_interior_ref1:
-      // Get Greville abscissae inside the domain
-      ((std::get<Is>(collPts_.first) = space
-                                          .template space<Is>()
-                                          .clone()
-                                          .uniform_refine()
-                                          .greville(
-                                              /* interior */ true)),
-       ...);
-
-      // Get Greville abscissae at the domain
-      ((std::get<Is>(collPts_.second) = space
-                                           .template boundary<Is>()
-                                           .clone()
-                                           .uniform_refine()
-                                           .greville()),
-       ...);
-      break;
-
-    case collPts::greville_ref2:
-      // Get Greville abscissae inside the domain and at the boundary
-      ((std::get<Is>(collPts_.first) = space
-                                          .template space<Is>()
-                                          .clone()
-                                          .uniform_refine(2, -1)
-                                          .greville(
-                                              /* interior */ false)),
-       ...);
-
-      // Get Greville abscissae at the domain
-      ((std::get<Is>(collPts_.second) = space
-                                           .template boundary<Is>()
-                                           .clone()
-                                           .uniform_refine(2, -1)
-                                           .greville()),
-       ...);
-      break;
-
-    case collPts::greville_interior_ref2:
-      // Get Greville abscissae inside the domain
-      ((std::get<Is>(collPts_.first) = space
-                                          .template space<Is>()
-                                          .clone()
-                                          .uniform_refine(2, -1)
-                                          .greville(
-                                              /* interior */ true)),
-       ...);
-
-      // Get Greville abscissae at the domain
-      ((std::get<Is>(collPts_.second) = space
-                                           .template boundary<Is>()
-                                           .clone()
-                                           .uniform_refine(2, -1)
-                                           .greville()),
-       ...);
-      break;
-      
-    case collPts::greville_ref3:
-      // Get Greville abscissae inside the domain and at the boundary
-      ((std::get<Is>(collPts_.first) = space
-                                          .template space<Is>()
-                                          .clone()
-                                          .uniform_refine(3, -1)
-                                          .greville(
-                                              /* interior */ false)),
-       ...);
-
-      // Get Greville abscissae at the domain
-      ((std::get<Is>(collPts_.second) = space
-                                           .template boundary<Is>()
-                                           .clone()
-                                           .uniform_refine(3, -1)
-                                           .greville()),
-       ...);
-      break;
-
-    case collPts::greville_interior_ref3:
-      // Get Greville abscissae inside the domain
-      ((std::get<Is>(collPts_.first) = space
-                                          .template space<Is>()
-                                          .clone()
-                                          .uniform_refine(3, -1)
-                                          .greville(
-                                              /* interior */ true)),
-       ...);
-
-      // Get Greville abscissae at the domain
-      ((std::get<Is>(collPts_.second) = space
-                                           .template boundary<Is>()
-                                           .clone()
-                                           .uniform_refine(3, -1)
-                                           .greville()),
-       ...);
-      break;      
-
-    default:
-      throw std::runtime_error("Invalid collocation point specifier");
-    }
-
-    return collPts_;
+    return result;
   }
 
 public:
-  /// @brief Returns the collocation points of the index-th function spaces
-  ///
-  /// In the default implementation the collocation points are the Greville
-  /// abscissae in the interior of the domain and on the boundary
-  /// faces. This behavior can be changed by overriding this virtual
-  /// function in a derived class.
-  template<typename FunctionSpace>
-  static auto collPts(enum collPts collPts, const FunctionSpace& space) {
-    if constexpr (FunctionSpace::nspaces() == 1)
-
-      switch (collPts) {
-
-      case collPts::greville:
-        return type{
-            space.space().greville(/* interior */ false),
-            space.boundary().greville()};
-
-      case collPts::greville_interior:
-        return type{space.space().greville(/* interior */ true),
-                space.boundary().greville()};
-
-      case collPts::greville_ref1:
-        return type{
-            space.space().clone().uniform_refine().greville(
-                /* interior */ false),
-            space
-                .boundary()
-                .clone()
-                .uniform_refine()
-                .greville()};
-
-      case collPts::greville_interior_ref1:
-        return type{
-            space.space().clone().uniform_refine().greville(
-                /* interior */ true),
-            space
-                .boundary()
-                .clone()
-                .uniform_refine()
-                .greville()};
-
-      case collPts::greville_ref2:
-        return type{space
-                    .space()
-                    .clone()
-                    .uniform_refine(2, -1)
-                    .greville(
-                        /* interior */ false),
-                space
-                    .boundary()
-                    .clone()
-                    .uniform_refine(2, -1)
-                    .greville()};
-
-      case collPts::greville_interior_ref2:
-        return type{space
-                    .space()
-                    .clone()
-                    .uniform_refine(2, -1)
-                    .greville(
-                        /* interior */ true),
-                space
-                    .boundary()
-                    .clone()
-                    .uniform_refine(2, -1)
-                .greville()};
-
-      case collPts::greville_ref3:
-        return type{space
-                    .space()
-                    .clone()
-                    .uniform_refine(3, -1)
-                    .greville(
-                        /* interior */ false),
-                space
-                    .boundary()
-                    .clone()
-                    .uniform_refine(3, -1)
-                    .greville()};
-
-      case collPts::greville_interior_ref3:
-        return type{space
-                    .space()
-                    .clone()
-                    .uniform_refine(3, -1)
-                    .greville(
-                        /* interior */ true),
-                space
-                    .boundary()
-                    .clone()
-                    .uniform_refine(3, -1)
-                    .greville()};        
-
-      default:
-        throw std::runtime_error("Invalid collocation point specifier");
-      }
-
-    else
-      return collPts(collPts, space, std::make_index_sequence<type::nspaces()>{});
+  template <typename FunctionSpace>
+  static auto collPts(enum collPts collPts, const FunctionSpace &space) {
+    if constexpr (FunctionSpace::nspaces() == 1) {
+      return detail::make_collocation_data(collPts, space);
+    } else {
+      return collPts_impl(collPts, space,
+                          std::make_index_sequence<FunctionSpace::nspaces()>{});
+    }
   }
 };
 /// @}
-  
+
 } // namespace iganet
