@@ -41,16 +41,15 @@ struct CollocationData {
   using interior_type = EvalType;
   using boundary_type = BoundaryEvalType;
   using interface_type = InterfaceEvalType;
-
   EvalType first;
   BoundaryEvalType second;
   std::vector<InterfaceEvalType> interfaces;
 
-  [[nodiscard]] auto &interior() noexcept { return first; }
-  [[nodiscard]] const auto &interior() const noexcept { return first; }
+  [[nodiscard]] auto &interior() noexcept { return this->first; }
+  [[nodiscard]] const auto &interior() const noexcept { return this->first; }
 
-  [[nodiscard]] auto &boundary() noexcept { return second; }
-  [[nodiscard]] const auto &boundary() const noexcept { return second; }
+  [[nodiscard]] auto &boundary() noexcept { return this->second; }
+  [[nodiscard]] const auto &boundary() const noexcept { return this->second; }
 
   [[nodiscard]] bool has_interfaces() const noexcept {
     return !interfaces.empty();
