@@ -78,8 +78,11 @@ concept HasInterfaceGreville =
 
 template <typename T>
 concept HasPatchGreville = requires(const T t, bool interior) {
-  { t.greville(interior) };
+  { t.patch_greville(interior) };
 };
+
+template <typename T>
+concept HasNSpaces = requires { T::nspaces(); };
 
 template <typename T>
 using interface_eval_t =
@@ -88,17 +91,45 @@ using interface_eval_t =
                   std::declval<const typename T::interface_type &>()))>;
 
 template <typename T>
-using collocation_type_t = std::conditional_t<
-    HasInterfaces<T> && HasInterfaceGreville<T>,
-    CollocationData<typename T::eval_type, typename T::boundary_eval_type,
-                    interface_eval_t<T>>,
-    CollocationData<typename T::eval_type, typename T::boundary_eval_type>>;
+using interior_eval_t = decltype(std::declval<const T>().patch_greville(true));
+
+template <typename T>
+using boundary_eval_auto_t = decltype(std::declval<const T>().boundary_greville());
+
+template <typename T, bool HasPatch = HasPatchGreville<T>,
+          bool HasInterface =
+              HasInterfaces<T> && HasInterfaceGreville<T> && HasBoundaryGreville<T>>
+struct collocation_type_selector {
+  using type = CollocationData<typename T::eval_type, typename T::boundary_eval_type>;
+};
+
+template <typename T>
+struct collocation_type_selector<T, true, false> {
+  using type = CollocationData<interior_eval_t<T>, typename T::boundary_eval_type>;
+};
+
+template <typename T>
+struct collocation_type_selector<T, true, true> {
+  using type = CollocationData<interior_eval_t<T>, boundary_eval_auto_t<T>,
+                               interface_eval_t<T>>;
+};
+
+template <typename T>
+using collocation_type_t = typename collocation_type_selector<T>::type;
 
 template <typename T>
 inline auto refined_space(const T &space, int refinement) {
   if (refinement <= 0)
     return space.clone();
   return space.clone().uniform_refine(refinement, -1);
+}
+
+template <HasPatchGreville T>
+inline const T &refined_space(const T &space, int refinement) {
+  if (refinement != 0)
+    throw std::runtime_error(
+        "Refined collocation is not implemented for MultiPatch collocation yet");
+  return space;
 }
 
 template <typename T>
@@ -184,7 +215,7 @@ inline collocation_type_t<T> make_collocation_data(enum collPts collPts,
   const bool interior = interior_only(collPts);
 
   if constexpr (HasPatchGreville<T>) {
-    result.first = refined_space(space, refinement).greville(interior);
+    result.first = refined_space(space, refinement).patch_greville(interior);
     result.second = boundary_eval(space, refinement);
   } else {
     result.first = refined_space(space.space(), refinement).greville(interior);
@@ -233,7 +264,9 @@ private:
 public:
   template <typename FunctionSpace>
   static auto collPts(enum collPts collPts, const FunctionSpace &space) {
-    if constexpr (FunctionSpace::nspaces() == 1) {
+    if constexpr (!detail::HasNSpaces<FunctionSpace>) {
+      return detail::make_collocation_data(collPts, space);
+    } else if constexpr (FunctionSpace::nspaces() == 1) {
       return detail::make_collocation_data(collPts, space);
     } else {
       return collPts_impl(collPts, space,
