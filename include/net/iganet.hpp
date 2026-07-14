@@ -1127,72 +1127,80 @@ template <typename, typename, typename = void> class IgANetCustomizable;
 template <detail::HasAsTensor... Inputs, detail::HasAsTensor... Outputs>
 class IgANetCustomizable<std::tuple<Inputs...>, std::tuple<Outputs...>, void> {
 private:
+  template <typename Elem>
+  static auto find_interior_knot_indices_single(Elem &&elem) {
+    using T = std::decay_t<Elem>;
+    if constexpr (detail::HasTemplatedFindKnotIndices<T>)
+      return elem.template find_knot_indices<functionspace::interior>(
+          typename T::eval_type{});
+    else if constexpr (detail::HasFindKnotIndices<T>)
+      // Note that this is a fake call here
+      return elem.find_knot_indices(typename T::eval_type{});
+  }
+
+  template <typename Elem>
+  static auto find_boundary_knot_indices_single(Elem &&elem) {
+    using T = std::decay_t<Elem>;
+    if constexpr (detail::HasTemplatedFindKnotIndices<T>)
+      return elem.template find_knot_indices<functionspace::boundary>(
+          typename T::boundary_eval_type{});
+    else if constexpr (detail::HasFindKnotIndices<T>)
+      // Note that this is a fake call here
+      return elem.find_knot_indices(typename T::eval_type{});
+  }
+
+  template <typename Elem>
+  static auto find_interior_coeff_indices_single(Elem &&elem) {
+    using T = std::decay_t<Elem>;
+    if constexpr (detail::HasTemplatedFindCoeffIndices<T>)
+      return elem.template find_coeff_indices<functionspace::interior>(
+          typename T::eval_type{});
+    else if constexpr (detail::HasFindCoeffIndices<T>)
+      // Note that this is a fake call here
+      return elem.find_coeff_indices(typename T::eval_type{});
+  }
+
+  template <typename Elem>
+  static auto find_boundary_coeff_indices_single(Elem &&elem) {
+    using T = std::decay_t<Elem>;
+    if constexpr (detail::HasTemplatedFindCoeffIndices<T>)
+      return elem.template find_coeff_indices<functionspace::boundary>(
+          typename T::boundary_eval_type{});
+    else if constexpr (detail::HasFindCoeffIndices<T>)
+      // Note that this is a fake call here
+      return elem.find_coeff_indices(typename T::eval_type{});
+  }
+
   /// @brief Returns the interior knot indices of all tuple elements
   static auto find_interior_knot_indices(auto &&tuple) {
-    return std::apply(
-        []<typename... Elems>(Elems &&...elems) {
-          return std::make_tuple(([&] {
-            using T = std::decay_t<Elems>;
-            if constexpr (detail::HasTemplatedFindKnotIndices<T>)
-              return elems.template find_knot_indices<functionspace::interior>(
-                                                                               typename T::eval_type{});
-            else if constexpr (detail::HasFindKnotIndices<T>)
-              // Note that this is a fake call here
-              return elems.find_knot_indices(typename T::eval_type{});
-          })()...);
-        },
-        tuple);
+    return std::apply([](auto &&...elems) {
+      return std::make_tuple(find_interior_knot_indices_single(
+          std::forward<decltype(elems)>(elems))...);
+    }, tuple);
   }
 
   /// @brief Returns the boundary knot indices of all tuple elements
   static auto find_boundary_knot_indices(auto &&tuple) {
-    return std::apply(
-        []<typename... Elems>(Elems &&...elems) {
-          return std::make_tuple(([&] {
-            using T = std::decay_t<Elems>;
-            if constexpr (detail::HasTemplatedFindKnotIndices<T>)
-              return elems.template find_knot_indices<functionspace::boundary>(
-                                                                               typename T::boundary_eval_type{});
-            else if constexpr (detail::HasFindKnotIndices<T>)
-              // Note that this is a fake call here
-              return elems.find_knot_indices(typename T::eval_type{});
-          })()...);
-        },
-        tuple);
+    return std::apply([](auto &&...elems) {
+      return std::make_tuple(find_boundary_knot_indices_single(
+          std::forward<decltype(elems)>(elems))...);
+    }, tuple);
   }
 
   /// @brief Returns the interior coeff indices of all tuple elements
   static auto find_interior_coeff_indices(auto &&tuple) {
-    return std::apply(
-        []<typename... Elems>(Elems &&...elems) {
-          return std::make_tuple(([&] {
-            using T = std::decay_t<Elems>;
-            if constexpr (detail::HasTemplatedFindCoeffIndices<T>)
-              return elems.template find_coeff_indices<functionspace::interior>(
-                                                                                typename T::eval_type{});
-            else if constexpr (detail::HasFindCoeffIndices<T>)
-              // Note that this is a fake call here              
-              return elems.find_coeff_indices(typename T::eval_type{});
-          })()...);
-        },
-        tuple);
+    return std::apply([](auto &&...elems) {
+      return std::make_tuple(find_interior_coeff_indices_single(
+          std::forward<decltype(elems)>(elems))...);
+    }, tuple);
   }
 
   /// @brief Returns the boundary coeff indices of all tuple elements
   static auto find_boundary_coeff_indices(auto &&tuple) {
-    return std::apply(
-        []<typename... Elems>(Elems &&...elems) {
-          return std::make_tuple(([&] {
-            using T = std::decay_t<Elems>;
-            if constexpr (detail::HasTemplatedFindCoeffIndices<T>)
-              return elems.template find_coeff_indices<functionspace::boundary>(
-                                                                                typename T::boundary_eval_type{});
-            else if constexpr (detail::HasFindCoeffIndices<T>)
-              // Note that this is a fake call here
-              return elems.find_coeff_indices(typename T::eval_type{});
-          })()...);
-        },
-        tuple);
+    return std::apply([](auto &&...elems) {
+      return std::make_tuple(find_boundary_coeff_indices_single(
+          std::forward<decltype(elems)>(elems))...);
+    }, tuple);
   }
 
 public:
