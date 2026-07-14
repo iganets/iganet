@@ -3742,8 +3742,8 @@ public:
   template <deriv Deriv>
   [[nodiscard]] inline utils::BlockTensor<torch::Tensor, 1, BSplineCore::geoDim_>
   eval_from_prepared(const PreparedEvaluation &prepared) const {
-    return eval_from_precomputed(prepared.basfunc(Deriv), prepared.coeff_indices,
-                                 prepared.numeval, prepared.sizes);
+    return this->eval_from_precomputed(prepared.basfunc(Deriv), prepared.coeff_indices,
+                                       prepared.numeval, prepared.sizes);
   }
 
   /// @brief Creates a new B-spline object as unique pointer
