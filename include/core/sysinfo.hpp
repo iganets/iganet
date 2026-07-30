@@ -678,7 +678,7 @@ inline std::string getVersion() {
 }
 
 /// @brief Returns the path of the executable
-std::filesystem::path getExecutablePath()
+inline std::filesystem::path getExecutablePath()
 {
 #if defined(_WIN32)
     char buffer[MAX_PATH];
