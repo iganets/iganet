@@ -37,12 +37,12 @@
 #include <torch/csrc/api/include/torch/types.h>
 #include <torch/torch.h>
 
-#ifdef CUDA_VERSION
+#ifdef IGANET_WITH_CUDA
 #include <c10/cuda/CUDACachingAllocator.h>
 #include <c10/cuda/CUDAFunctions.h>
 #endif
 
-#ifdef HIP_VERSION
+#ifdef IGANET_WITH_HIP
 #include <c10/hip/HIPCachingAllocator.h>
 #include <c10/hip/HIPFunctions.h>
 #endif
