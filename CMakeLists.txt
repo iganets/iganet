@@ -178,7 +178,7 @@ if(IGANET_WITH_OPENMP)
       PATHS /usr/local /usr/local/opt/libomp /opt /opt/local /opt/homebrew/opt/libomp
       PATH_SUFFIXES lib)
   endif()
-  find_package(OpenMP REQUIRED)
+  find_package(OpenMP REQUIRED COMPONENTS CXX)
   target_link_libraries(iganet_core INTERFACE OpenMP::OpenMP_CXX)
 endif()
 
