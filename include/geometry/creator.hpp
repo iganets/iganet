@@ -68,7 +68,7 @@ public:
 
     obj.transform([xmin, xmax](const std::array<T, 1> X) {
       return std::array<T, 1>{
-          static_cast<T>(xmax * X[0] + xmin * (X[0] - T(1)))};
+        static_cast<T>(xmin + (xmax - xmin) * X[0])};
     });
 
     return obj;
@@ -125,8 +125,8 @@ public:
 
     obj.transform([xmin, xmax, ymin, ymax](const std::array<T, 2> X) {
       return std::array<T, 2>{
-          static_cast<T>(xmax * X[0] + xmin * (X[0] - T(1))),
-          static_cast<T>(ymax * X[1] + ymin * (X[1] - T(1)))};
+          static_cast<T>(xmin + (xmax - xmin) * X[0]),
+          static_cast<T>(ymin + (ymax - ymin) * X[1])};
     });
 
     return obj;
@@ -193,9 +193,9 @@ public:
     obj.transform(
         [xmin, xmax, ymin, ymax, zmin, zmax](const std::array<T, 3> X) {
           return std::array<T, 3>{
-              static_cast<T>(xmax * X[0] + xmin * (X[0] - T(1))),
-              static_cast<T>(ymax * X[1] + ymin * (X[1] - T(1))),
-              static_cast<T>(zmax * X[2] + zmin * (X[2] - T(1)))};
+              static_cast<T>(xmin + (xmax - xmin) * X[0]),
+              static_cast<T>(ymin + (ymax - ymin) * X[1]),
+              static_cast<T>(zmin + (zmax - zmin) * X[2])};
         });
 
     return obj;
