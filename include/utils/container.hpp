@@ -25,6 +25,9 @@ namespace iganet::utils {
 /// @brief Converts a std::vector object into std::array
 template <std::size_t N, typename T>
 inline std::array<T, N> to_array(std::vector<T> &&vector) {
+  if (vector.size() != N)
+    throw std::invalid_argument("Cannot convert std::vector to std::array: size mismatch");
+  
   std::array<T, N> array;
   std::move(vector.begin(), vector.end(), array.begin());
   return array;
@@ -33,7 +36,7 @@ inline std::array<T, N> to_array(std::vector<T> &&vector) {
 /// @brief Converts a std::array object into std::vector
 template <typename T, std::size_t N>
 inline std::vector<T> to_vector(std::array<T, N> &&array) {
-  std::vector<T> vector;
+  std::vector<T> vector(N);
   std::move(array.begin(), array.end(), vector.begin());
   return vector;
 }
