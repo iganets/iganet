@@ -30,21 +30,54 @@ namespace iganet::utils {
   inline torch::Tensor to_sparseCsrTensor(const torch::Tensor& col_indices,
                                           const torch::Tensor& values,
                                           const torch::IntArrayRef& size) {
+
+    TORCH_CHECK(size.size() == 2,
+                "Sparse CSR matrix size must contain two entries");
     
-    // Compute cumulated row indices
-    auto crow_indices = torch::arange(0, col_indices.size(0)+1, 1, torch::kInt64) * col_indices.size(1);
+    TORCH_CHECK(col_indices.dim() == 2,
+                "col_indices must be a two-dimensional tensor");
     
-    // Append last entry if required
-    if (crow_indices.size(0) < size[0]) {
-      auto last = crow_indices[-1];
-      auto pad = last.repeat({size[0] - crow_indices.size(0)});
-      crow_indices = torch::cat({crow_indices, pad});
+    TORCH_CHECK(values.sizes() == col_indices.sizes(),
+                "values and col_indices must have identical shapes");
+    
+    TORCH_CHECK(
+                col_indices.scalar_type() == torch::kInt32 ||
+                col_indices.scalar_type() == torch::kInt64,
+                "col_indices must have dtype torch::kInt32 or torch::kInt64");
+    
+    TORCH_CHECK(values.device() == col_indices.device(),
+                "values and col_indices must be on the same device");
+    
+    const int64_t populated_rows = col_indices.size(0);
+    const int64_t entries_per_row = col_indices.size(1);
+    const int64_t matrix_rows = size[0];
+       
+    TORCH_CHECK(
+                populated_rows <= matrix_rows,
+                "col_indices contains ", populated_rows,
+                " rows, but the requested matrix has only ", matrix_rows, " rows");
+
+    // CSR requires exactly matrix_rows + 1 row pointers.
+    auto crow_indices =
+      torch::arange(
+                    populated_rows + 1,
+                    col_indices.options())
+      * entries_per_row;
+    
+    // Append empty trailing rows. Each empty row repeats the final
+    // accumulated number of nonzero entries.
+    const int64_t empty_rows = matrix_rows - populated_rows;
+    
+    if (empty_rows > 0) {
+      auto padding = crow_indices[-1].repeat({empty_rows});
+      crow_indices = torch::cat({crow_indices, padding});
     }
-        
+    
     return torch::sparse_csr_tensor(crow_indices.flatten(),
                                     col_indices.flatten(),
                                     values.flatten(),
-                                    size, values.options().layout(torch::Layout::SparseCsr));
+                                    size,
+                                    values.options().layout(torch::kSparseCsr));    
   }
 
   /// @brief Constructs a sparse-CSR matrix from the column indices,
