@@ -320,6 +320,12 @@ inline auto to_json(const gismo::gsMultiPatch<T> &mp, bool verbose = false) {
 }
 #endif
 
+template <typename T, std::size_t N>
+inline pugi::xml_node &to_xml(const torch::TensorAccessor<T, N> &accessor,
+                              torch::IntArrayRef sizes, pugi::xml_node &root,
+                              std::string tag = "Matrix", int id = 0,
+                              std::string label = "", int index = -1);
+
 /// @brief Converts a torch::TensorAccessor object to an XML document object
 template <typename T, std::size_t N>
 inline pugi::xml_document to_xml(const torch::TensorAccessor<T, N> &accessor,
@@ -328,7 +334,7 @@ inline pugi::xml_document to_xml(const torch::TensorAccessor<T, N> &accessor,
                                  std::string label = "", int index = -1) {
   pugi::xml_document doc;
   pugi::xml_node root = doc.append_child("xml");
-  to_xml(accessor, sizes, root, id, label, index);
+  to_xml(accessor, sizes, root, tag, id, label, index);
 
   return doc;
 }
@@ -337,8 +343,8 @@ inline pugi::xml_document to_xml(const torch::TensorAccessor<T, N> &accessor,
 template <typename T, std::size_t N>
 inline pugi::xml_node &to_xml(const torch::TensorAccessor<T, N> &accessor,
                               torch::IntArrayRef sizes, pugi::xml_node &root,
-                              std::string tag = "Matrix", int id = 0,
-                              std::string label = "", int index = -1) {
+                              std::string tag, int id, std::string label,
+                              int index) {
 
   // add node
   pugi::xml_node node = root.append_child(tag.c_str());
@@ -394,7 +400,7 @@ inline pugi::xml_node &to_xml(const torch::TensorAccessor<T, N> &accessor,
     } else if constexpr (N == 3) {
       for (std::size_t i = 0; i < sizes[0]; ++i)
         for (std::size_t j = 0; j < sizes[1]; ++j)
-          for (std::size_t k = 0; j < sizes[2]; ++k)
+          for (std::size_t k = 0; k < sizes[2]; ++k)
             ss << std::to_string(accessor[i][j][k]) << " ";
     } else if constexpr (N == 4) {
       for (std::size_t i = 0; i < sizes[0]; ++i)
@@ -420,7 +426,7 @@ inline pugi::xml_node &to_xml(const torch::TensorAccessor<T, N> &accessor,
                   ss << std::to_string(accessor[i][j][k][l][m][n]) << " ";
     } else
       throw std::runtime_error(
-          "Dimensions higher than 4 are not implemented yet");
+          "Dimensions higher than 6 are not implemented yet");
 
     pugi::xml_node data = node.append_child("Data");
     data.append_child(pugi::node_pcdata).set_value(ss.str().c_str());
@@ -429,6 +435,12 @@ inline pugi::xml_node &to_xml(const torch::TensorAccessor<T, N> &accessor,
   return root;
 }
 
+template <typename T, std::size_t N>
+inline pugi::xml_node &to_xml(const torch::Tensor &tensor,
+                              pugi::xml_node &root,
+                              std::string tag = "Matrix", int id = 0,
+                              std::string label = "", int index = -1);
+
 /// @brief Converts a torch::Tensor object to an XML document object
 template <typename T, std::size_t N>
 inline pugi::xml_document to_xml(const torch::Tensor &tensor,
@@ -436,7 +448,7 @@ inline pugi::xml_document to_xml(const torch::Tensor &tensor,
                                  std::string label = "", int index = -1) {
   pugi::xml_document doc;
   pugi::xml_node root = doc.append_child("xml");
-  to_xml<T, N>(tensor, root, id, label, index);
+  to_xml<T, N>(tensor, root, tag, id, label, index);
 
   return doc;
 }
@@ -444,8 +456,8 @@ inline pugi::xml_document to_xml(const torch::Tensor &tensor,
 /// @brief Converts a torch::Tensor object to an XML object
 template <typename T, std::size_t N>
 inline pugi::xml_node &to_xml(const torch::Tensor &tensor, pugi::xml_node &root,
-                              std::string tag = "Matrix", int id = 0,
-                              std::string label = "", int index = -1) {
+                              std::string tag, int id, std::string label,
+                              int index) {
 
   if (tensor.is_cuda()) {
     auto [tensor_cpu, accessor] = to_tensorAccessor<T, N>(tensor, torch::kCPU);
@@ -456,6 +468,12 @@ inline pugi::xml_node &to_xml(const torch::Tensor &tensor, pugi::xml_node &root,
   }
 }
 
+template <typename T, std::size_t N, std::size_t M>
+inline pugi::xml_node &to_xml(const utils::TensorArray<M> &tensors,
+                              pugi::xml_node &root,
+                              std::string tag = "Matrix", int id = 0,
+                              std::string label = "");
+
 /// @brief Converts a std::array of torch::Tensor objects to an XML
 /// object
 template <typename T, std::size_t N, std::size_t M>
@@ -464,7 +482,7 @@ inline pugi::xml_document to_xml(const utils::TensorArray<M> &tensors,
                                  std::string label = "", int index = -1) {
   pugi::xml_document doc;
   pugi::xml_node root = doc.append_child("xml");
-  to_xml<T, N>(tensors, root, id, label, index);
+  to_xml<T, N>(tensors, root, tag, id, label);
 
   return doc;
 }
@@ -473,8 +491,8 @@ inline pugi::xml_document to_xml(const utils::TensorArray<M> &tensors,
 /// object
 template <typename T, std::size_t N, std::size_t M>
 inline pugi::xml_node &to_xml(const utils::TensorArray<M> &tensors,
-                              pugi::xml_node &root, std::string tag = "Matrix",
-                              int id = 0, std::string label = "") {
+                              pugi::xml_node &root, std::string tag, int id,
+                              std::string label) {
 
   for (std::size_t i = 0; i < M; ++i) {
     if (tensors[i].is_cuda()) {
@@ -509,21 +527,28 @@ from_xml(const pugi::xml_node &root, torch::TensorAccessor<T, N> &accessor,
   return accessor;
 }
 
+template <typename T, std::size_t N>
+inline torch::Tensor &from_xml(const pugi::xml_node &root,
+                               torch::Tensor &tensor,
+                               std::string tag = "Matrix", int id = 0,
+                               std::string label = "", bool alloc = true,
+                               int index = -1);
+
 /// @brief Converts an XML document object to a torch::Tensor object
 template <typename T, std::size_t N>
 inline torch::Tensor &
 from_xml(const pugi::xml_document &doc, torch::Tensor &tensor,
          std::string tag = "Matrix", int id = 0, std::string label = "",
          bool alloc = true, int index = -1) {
-  return from_xml<T, N>(doc.child("xml"), tensor, tag, id, label, index);
+  return from_xml<T, N>(doc.child("xml"), tensor, tag, id, label, alloc,
+                        index);
 }
 
 /// @brief Converts an XML object to a torch::Tensor object
 template <typename T, std::size_t N>
 inline torch::Tensor &
 from_xml(const pugi::xml_node &root, torch::Tensor &tensor,
-         std::string tag = "Matrix", int id = 0, std::string label = "",
-         bool alloc = true, int index = -1) {
+         std::string tag, int id, std::string label, bool alloc, int index) {
 
   // Loop through all nodes
   for (pugi::xml_node node : root.children(tag.c_str())) {
@@ -537,11 +562,26 @@ from_xml(const pugi::xml_node &root, torch::Tensor &tensor,
         int64_t rows = node.attribute("rows").as_int();
         int64_t cols = node.attribute("cols").as_int();
 
-        if (!alloc && (tensor.size(0) != rows || tensor.size(1) != cols))
-          throw std::runtime_error("Invalid matrix dimensions");
-
-        else if (alloc && (tensor.size(0) != rows || tensor.size(1) != cols))
-          tensor = torch::zeros({rows, cols}, tensor.options());
+        if constexpr (N == 1) {
+          if (cols != 1)
+            throw std::runtime_error("Invalid matrix dimensions");
+          if (!alloc && (tensor.dim() != 1 || tensor.size(0) != rows))
+            throw std::runtime_error("Invalid matrix dimensions");
+          if (alloc && (tensor.dim() != 1 || tensor.size(0) != rows))
+            tensor = torch::zeros({rows}, tensor.options());
+        } else if constexpr (N == 2) {
+          if (!alloc &&
+              (tensor.dim() != 2 || tensor.size(0) != rows ||
+               tensor.size(1) != cols))
+            throw std::runtime_error("Invalid matrix dimensions");
+          if (alloc &&
+              (tensor.dim() != 2 || tensor.size(0) != rows ||
+               tensor.size(1) != cols))
+            tensor = torch::zeros({rows, cols}, tensor.options());
+        } else {
+          throw std::runtime_error(
+              "Tag \"Matrix\" only supports 1- and 2-dimensional tensors");
+        }
 
         std::string values = std::regex_replace(
             node.text().get(), std::regex("[\t\r\n\a]+| +"), " ");
@@ -550,15 +590,24 @@ from_xml(const pugi::xml_node &root, torch::Tensor &tensor,
             to_tensorAccessor<T, N>(tensor, torch::kCPU);
         auto value = strtok(&values[0], " ");
 
-        for (int64_t i = 0; i < rows; ++i)
-          for (int64_t j = 0; j < cols; ++j) {
+        if constexpr (N == 1) {
+          for (int64_t i = 0; i < rows; ++i) {
             if (value == nullptr)
               throw std::runtime_error(
                   "XML object does not provide enough coefficients");
-
-            accessor[i][j] = static_cast<T>(std::stod(value));
+            accessor[i] = static_cast<T>(std::stod(value));
             value = strtok(nullptr, " ");
           }
+        } else if constexpr (N == 2) {
+          for (int64_t i = 0; i < rows; ++i)
+            for (int64_t j = 0; j < cols; ++j) {
+              if (value == nullptr)
+                throw std::runtime_error(
+                    "XML object does not provide enough coefficients");
+              accessor[i][j] = static_cast<T>(std::stod(value));
+              value = strtok(nullptr, " ");
+            }
+        }
 
         if (value != nullptr)
           throw std::runtime_error("XML object provides too many coefficients");
@@ -698,6 +747,12 @@ from_xml(const pugi::xml_node &root, torch::Tensor &tensor,
   return tensor;
 }
 
+template <typename T, std::size_t N, std::size_t M>
+inline utils::TensorArray<M> &
+from_xml(const pugi::xml_node &root, utils::TensorArray<M> &tensors,
+         std::string tag = "Matrix", int id = 0, bool alloc = true,
+         std::string label = "");
+
 /// @brief Converts an XML document object to a std::array of torch::Tensor
 /// objects
 template <typename T, std::size_t N, std::size_t M>
@@ -706,15 +761,14 @@ from_xml(const pugi::xml_document &doc, utils::TensorArray<M> &tensors,
          std::string tag = "Matrix", int id = 0, bool alloc = true,
          std::string label = "") {
 
-  return from_xml<T, N>(doc.child("xml"), tensors, tag, id, label, alloc);
+  return from_xml<T, N>(doc.child("xml"), tensors, tag, id, alloc, label);
 }
 
 /// @brief Converts an XML object to a std::array of torch::Tensor objects
 template <typename T, std::size_t N, std::size_t M>
 inline utils::TensorArray<M> &
 from_xml(const pugi::xml_node &root, utils::TensorArray<M> &tensors,
-         std::string tag = "Matrix", int id = 0, bool alloc = true,
-         std::string label = "") {
+         std::string tag, int id, bool alloc, std::string label) {
 
   for (std::size_t i = 0; i < M; ++i) {
     from_xml<T, N>(root, tensors[i], tag, id, label, alloc, i);

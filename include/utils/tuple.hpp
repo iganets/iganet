@@ -14,6 +14,8 @@
 
 #pragma once
 
+#include <concepts>
+#include <functional>
 #include <tuple>
 #include <type_traits>
 #include <vector>
@@ -35,7 +37,7 @@ template <class T> struct is_tuple_of_tuples : std::false_type {};
 
 template <class... Ts>
 struct is_tuple_of_tuples<std::tuple<Ts...>>
-    : std::common_type_t<is_tuple<Ts>...> {};
+    : std::conjunction<is_tuple<Ts>...> {};
 /// @}
 
 /// @brief Alias for is_tuple_of_tuples::type
@@ -91,6 +93,7 @@ torch::Tensor cat_tuple_into_tensor(const std::tuple<Tensors...> &tensors,
 /// single Torch tensor along the given dimension after applying the
 /// callback function
 template <typename... Tensors, typename Func>
+  requires(std::invocable<Func, const Tensors &> && ...)
 torch::Tensor cat_tuple_into_tensor(const std::tuple<Tensors...> &tensors,
                                     Func &&func, int64_t dim = 0) {
   std::vector<torch::Tensor> vec;

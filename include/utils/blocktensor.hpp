@@ -1085,36 +1085,20 @@ template <typename T, typename U, std::size_t Rows, std::size_t Common,
 inline auto operator*(const BlockTensor<T, Rows, Common, Slices> &lhs,
                       const BlockTensor<U, Common, Cols> &rhs) {
   BlockTensor<std::common_type_t<T, U>, Rows, Cols, Slices> result;
+  auto multiply = [](const auto &left, const auto &right) {
+    return left.dim() > right.dim()
+               ? torch::mul(left, right.unsqueeze(-1))
+               : (left.dim() < right.dim()
+                      ? torch::mul(left.unsqueeze(-1), right)
+                      : torch::mul(left, right));
+  };
   for (std::size_t slice = 0; slice < Slices; ++slice)
     for (std::size_t row = 0; row < Rows; ++row)
       for (std::size_t col = 0; col < Cols; ++col) {
-        T tmp =
-            (lhs[Rows * Cols * slice + Common * row]->dim() > rhs[col]->dim()
-                 ? torch::mul(*lhs[Rows * Cols * slice + Common * row],
-                              rhs[col]->unsqueeze(-1))
-                 : (lhs[Rows * Cols * slice + Common * row]->dim() <
-                            rhs[col]->dim()
-                        ? torch::mul(lhs[Rows * Cols * slice + Common * row]
-                                         ->unsqueeze(-1),
-                                     *rhs[col])
-                        : torch::mul(*lhs[Rows * Cols * slice + Common * row],
-                                     *rhs[col])));
+        const auto lhs_offset = Rows * Common * slice + Common * row;
+        T tmp = multiply(*lhs[lhs_offset], *rhs[col]);
         for (std::size_t idx = 1; idx < Common; ++idx)
-          tmp +=
-              (lhs[Rows * Cols * slice + Common * row + idx]->dim() >
-                       rhs[Cols * idx + col]->dim()
-                   ? torch::mul(*lhs[Rows * Cols * slice + Common * row + idx],
-                                rhs[Cols * idx + col])
-                         ->unsqueeze(-1)
-                   : (lhs[Rows * Cols * slice + Common * row + idx]->dim() <
-                              rhs[Cols * idx + col]->dim()
-                          ? torch::mul(
-                                lhs[Rows * Cols * slice + Common * row + idx]
-                                    ->unsqueeze(-1),
-                                *rhs[Cols * idx + col])
-                          : torch::mul(
-                                *lhs[Rows * Cols * slice + Common * row + idx],
-                                *rhs[Cols * idx + col])));
+          tmp += multiply(*lhs[lhs_offset + idx], *rhs[Cols * idx + col]);
         result[Rows * Cols * slice + Cols * row + col] =
             std::make_shared<T>(tmp);
       }
@@ -1724,14 +1708,17 @@ inline auto operator-=(BlockTensor<T, Dims...> &lhs, const U &rhs) {
 template <typename T, typename U, std::size_t... Dims>
 inline auto operator*(const BlockTensor<T, Dims...> &lhs, const U &rhs) {
   BlockTensor<T, Dims...> result;
-  for (std::size_t idx = 0; idx < (Dims * ...); ++idx)
-    result[idx] =
-        (lhs[idx]->dim() > rhs.dim()
-             ? std::make_shared<T>(*lhs[idx] * rhs.unsqueeze(-1))
-             : (lhs[idx]->dim() < rhs.dim()
-                    ? std::make_shared<T>(lhs[idx]->unsqueeze(-1) * rhs)
-                    : std::make_shared<T>(*lhs[idx] * rhs)));
-  ;
+  for (std::size_t idx = 0; idx < (Dims * ...); ++idx) {
+    if constexpr (std::is_arithmetic_v<std::remove_cvref_t<U>>)
+      result[idx] = std::make_shared<T>(*lhs[idx] * rhs);
+    else
+      result[idx] =
+          (lhs[idx]->dim() > rhs.dim()
+               ? std::make_shared<T>(*lhs[idx] * rhs.unsqueeze(-1))
+               : (lhs[idx]->dim() < rhs.dim()
+                      ? std::make_shared<T>(lhs[idx]->unsqueeze(-1) * rhs)
+                      : std::make_shared<T>(*lhs[idx] * rhs)));
+  }
   return result;
 }
 
@@ -1740,13 +1727,17 @@ inline auto operator*(const BlockTensor<T, Dims...> &lhs, const U &rhs) {
 template <typename T, typename U, std::size_t... Dims>
 inline auto operator*(const T &lhs, const BlockTensor<U, Dims...> &rhs) {
   BlockTensor<U, Dims...> result;
-  for (std::size_t idx = 0; idx < (Dims * ...); ++idx)
-    result[idx] =
-        (lhs.dim() > rhs[idx]->dim()
-             ? std::make_shared<U>(lhs * rhs[idx]->unsqueeze(-1))
-             : (lhs.dim() < rhs[idx]->dim()
-                    ? std::make_shared<U>(lhs.unsqueeze(-1) * *rhs[idx])
-                    : std::make_shared<U>(lhs * *rhs[idx])));
+  for (std::size_t idx = 0; idx < (Dims * ...); ++idx) {
+    if constexpr (std::is_arithmetic_v<std::remove_cvref_t<T>>)
+      result[idx] = std::make_shared<U>(lhs * *rhs[idx]);
+    else
+      result[idx] =
+          (lhs.dim() > rhs[idx]->dim()
+               ? std::make_shared<U>(lhs * rhs[idx]->unsqueeze(-1))
+               : (lhs.dim() < rhs[idx]->dim()
+                      ? std::make_shared<U>(lhs.unsqueeze(-1) * *rhs[idx])
+                      : std::make_shared<U>(lhs * *rhs[idx])));
+  }
   return result;
 }
 
