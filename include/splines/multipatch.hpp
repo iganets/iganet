@@ -911,6 +911,12 @@ private:
 
     torch::Tensor result = torch::empty(
         {degree + 1, numeval}, xi.options().device(torch::kCPU));
+    if (order > degree) {
+      return torch::zeros({degree + 1, numeval},
+                          xi.options().device(torch::kCPU))
+          .to(xi.device());
+    }
+
     auto out = result.template accessor<value_type, 2>();
 
     auto xi_cpu = xi.flatten().to(torch::kCPU).contiguous();
