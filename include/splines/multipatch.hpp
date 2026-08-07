@@ -91,7 +91,7 @@ public:
 
   std::size_t addPatch(std::unique_ptr<Patch> patch) {
     std::size_t index = patches_.size();
-    patches_.push_back(patch.release());
+    patches_.push_back(std::shared_ptr<Patch>(std::move(patch)));
     return index;
   }
   /// @}
@@ -111,8 +111,13 @@ public:
     return *patches_[index];
   }
 
-  /// @brief Returns a constant reference to the vector of patches
-  std::vector<std::shared_ptr<Patch>> &patches() const { return patches_; }
+  /// @brief Returns a reference to the vector of patches
+  /// @{
+  std::vector<std::shared_ptr<Patch>> &patches() { return patches_; }
+  const std::vector<std::shared_ptr<Patch>> &patches() const {
+    return patches_;
+  }
+  /// @}
 
   /// @brief Returns the index of a given single patch
   /// @{
@@ -121,8 +126,11 @@ public:
   }
 
   std::size_t findPatchIndex(const Patch *patch) const {
-    auto it = std::find(patches_.begin(), patches_.end(), patch);
-    if (it != patches_.end())
+    auto it = std::find_if(patches_.begin(), patches_.end(),
+                           [patch](const auto &candidate) {
+                             return candidate.get() == patch;
+                           });
+    if (it == patches_.end())
       throw std::runtime_error("Did not find the patch index");
 
     return it - patches_.begin();
