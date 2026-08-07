@@ -15,6 +15,7 @@
 #pragma once
 
 #include <array>
+#include <stdexcept>
 
 #include <core/core.hpp>
 #include <utils/linalg.hpp>
@@ -44,6 +45,10 @@ namespace iganet::utils {
 template <bool transpose = false>
 inline auto VSlice(torch::Tensor index, int64_t start_offset,
                    int64_t stop_offset) {
+  if (stop_offset <= start_offset)
+    throw std::invalid_argument(
+        "VSlice requires stop_offset to be greater than start_offset");
+
   if constexpr (transpose)
     return index.repeat_interleave(stop_offset - start_offset) +
            torch::linspace(start_offset, stop_offset - 1,
@@ -75,7 +80,14 @@ inline auto VSlice(const utils::TensorArray<N> &index,
 
   // Check compatibility of arguments
   for (std::size_t i = 1; i < N; ++i)
-    assert(index[i - 1].numel() == index[i].numel());
+    if (index[i - 1].numel() != index[i].numel())
+      throw std::invalid_argument(
+          "VSlice requires index tensors with equal lengths");
+
+  for (std::size_t i = 0; i < N; ++i)
+    if (stop_offset[i] <= start_offset[i])
+      throw std::invalid_argument(
+          "VSlice requires every stop offset to exceed its start offset");
 
   auto dist = stop_offset - start_offset;
 

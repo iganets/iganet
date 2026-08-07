@@ -316,8 +316,8 @@ public:
 
       BlockTensor<T, Rows, Cols> result;
       result[0] = std::make_shared<T>(torch::div(*Base::data_[3], det_));
-      result[1] = std::make_shared<T>(torch::div(*Base::data_[2], -det_));
-      result[2] = std::make_shared<T>(torch::div(*Base::data_[1], -det_));
+      result[1] = std::make_shared<T>(torch::div(*Base::data_[1], -det_));
+      result[2] = std::make_shared<T>(torch::div(*Base::data_[2], -det_));
       result[3] = std::make_shared<T>(torch::div(*Base::data_[0], det_));
       return result;
     } else if constexpr (Rows == 3 && Cols == 3) {
@@ -568,8 +568,8 @@ public:
 
       BlockTensor<T, Cols, Rows> result;
       result[0] = std::make_shared<T>(torch::div(*Base::data_[3], det_));
-      result[1] = std::make_shared<T>(torch::div(*Base::data_[1], -det_));
-      result[2] = std::make_shared<T>(torch::div(*Base::data_[2], -det_));
+      result[1] = std::make_shared<T>(torch::div(*Base::data_[2], -det_));
+      result[2] = std::make_shared<T>(torch::div(*Base::data_[1], -det_));
       result[3] = std::make_shared<T>(torch::div(*Base::data_[0], det_));
       return result;
     } else if constexpr (Rows == 3 && Cols == 3) {
@@ -961,6 +961,7 @@ public:
   /// @brief Stores the given data object at the given position
   template <typename D>
   inline T &set(std::size_t row, std::size_t col, std::size_t slice, D &&data) {
+    assert(row < Rows && col < Cols && slice < Slices);
     Base::data_[Rows * Cols * slice + Cols * row + col] =
         make_shared<D>(std::forward<D>(data));
     return *Base::data_[Rows * Cols * slice + Cols * row + col];

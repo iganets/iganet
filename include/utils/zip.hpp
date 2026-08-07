@@ -14,6 +14,9 @@
 
 #pragma once
 
+#include <array>
+#include <iterator>
+#include <stdexcept>
 #include <tuple>
 #include <utility>
 
@@ -69,12 +72,26 @@ public:
         _begin{make_tuple_begin(_seqs,
                                 std::make_index_sequence<sizeof...(seqs)>{})},
         _end{make_tuple_end(_seqs,
-                            std::make_index_sequence<sizeof...(seqs)>{})} {}
+                            std::make_index_sequence<sizeof...(seqs)>{})} {
+    validate_lengths(std::make_index_sequence<sizeof...(seqs)>{});
+  }
 
   iterator begin() const { return _begin; }
   iterator end() const { return _end; }
 
 private:
+  template <std::size_t... Is>
+  void validate_lengths(std::index_sequence<Is...>) const {
+    if constexpr (sizeof...(Is) > 1) {
+      const std::array lengths{
+          std::distance(std::get<Is>(_seqs).begin(),
+                        std::get<Is>(_seqs).end())...};
+      for (std::size_t i = 1; i < lengths.size(); ++i)
+        if (lengths[i] != lengths[0])
+          throw std::invalid_argument("zip requires equally sized ranges");
+    }
+  }
+
   template <typename Tuple, std::size_t... Is>
   auto constexpr make_tuple_begin(Tuple &&t, std::index_sequence<Is...>) {
     return std::make_tuple(std::get<Is>(t).begin()...);
