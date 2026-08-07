@@ -22,6 +22,13 @@ namespace iganet::utils {
 
 namespace detail {
 
+inline bool tensor_values_are_finite(const torch::Tensor &tensor) {
+  const auto &values = tensor.layout() == torch::kStrided
+                           ? tensor
+                           : tensor.values();
+  return torch::isfinite(values).all().item<bool>();
+}
+
 inline void validate_iterative_solver_inputs(const torch::Tensor &A,
                                              const torch::Tensor &b,
                                              int max_iter, double tol) {
@@ -38,9 +45,9 @@ inline void validate_iterative_solver_inputs(const torch::Tensor &A,
   TORCH_CHECK(max_iter >= 0, "max_iter must be non-negative");
   TORCH_CHECK(std::isfinite(tol) && tol > 0.0,
               "tolerance must be finite and positive");
-  TORCH_CHECK(torch::isfinite(A).all().item<bool>(),
+  TORCH_CHECK(tensor_values_are_finite(A),
               "matrix contains NaN or Inf");
-  TORCH_CHECK(torch::isfinite(b).all().item<bool>(),
+  TORCH_CHECK(tensor_values_are_finite(b),
               "right-hand side contains NaN or Inf");
 }
 
