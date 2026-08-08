@@ -71,7 +71,7 @@ public:
 
   /// @brief Computes the solution vector
   torch::Tensor solve() const {
-    auto [x, iter, res] = utils::solve_bicgstab(lhs(), rhs());    
+    auto [x, iter, res] = utils::bicgstab(lhs(), rhs());
     return x;
   }
   
