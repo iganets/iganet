@@ -19,6 +19,9 @@
 #include <utils/blocktensor.hpp>
 #include <utils/tensorarray.hpp>
 
+#include <nlohmann/json.hpp>
+#include <pugixml.hpp>
+
 namespace iganet {
 
   namespace detail {
@@ -49,6 +52,9 @@ namespace iganet {
 /// @brief Abstract patch function base class
 template <typename real_t, short_t GeoDim, short_t ParDim> class BSplinePatch {
 public:
+  /// @brief Dimension of the parametric space
+  inline static constexpr short_t parDim() noexcept { return ParDim; }
+
   /// @brief Destructor
   virtual ~BSplinePatch() = default;
 
@@ -99,6 +105,31 @@ public:
                         const torch::Tensor &coeff_indices, int64_t numeval,
                         torch::IntArrayRef sizes) const = 0;
   /// @}
+
+  /// @brief Returns the B-spline patch as a JSON object
+  [[nodiscard]] virtual nlohmann::json to_json() const = 0;
+
+  /// @brief Updates the B-spline patch from a JSON object
+  virtual BSplinePatch &from_json(const nlohmann::json &json) = 0;
+
+  /// @brief Returns the B-spline patch as an XML document
+  [[nodiscard]] virtual pugi::xml_document
+  to_xml(int id = 0, const std::string &label = "", int index = -1) const = 0;
+
+  /// @brief Appends the B-spline patch to an XML node
+  virtual pugi::xml_node &to_xml(pugi::xml_node &root, int id = 0,
+                                 const std::string &label = "",
+                                 int index = -1) const = 0;
+
+  /// @brief Updates the B-spline patch from an XML document
+  virtual BSplinePatch &from_xml(const pugi::xml_document &doc, int id = 0,
+                                 const std::string &label = "",
+                                 int index = -1) = 0;
+
+  /// @brief Updates the B-spline patch from an XML node
+  virtual BSplinePatch &from_xml(const pugi::xml_node &root, int id = 0,
+                                 const std::string &label = "",
+                                 int index = -1) = 0;
 
   /// @brief Returns a string representation
   virtual void

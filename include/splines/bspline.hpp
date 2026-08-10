@@ -1696,7 +1696,8 @@ public:
   }
 
   /// @brief Updates the B-spline object from JSON object
-  inline UniformBSplineCore &from_json(const nlohmann::json &json) {
+  inline UniformBSplineCore &
+  from_json(const nlohmann::json &json) override {
 
     if (json["geoDim"].get<short_t>() != geoDim_)
       throw std::runtime_error(
@@ -1731,7 +1732,8 @@ public:
 
   /// @brief Returns the B-spline object as XML object
   [[nodiscard]] inline pugi::xml_document
-  to_xml(int id = 0, const std::string &label = "", int index = -1) const {
+  to_xml(int id = 0, const std::string &label = "",
+         int index = -1) const override {
     pugi::xml_document doc;
     pugi::xml_node root = doc.append_child("xml");
     to_xml(root, id, label, index);
@@ -1742,7 +1744,7 @@ public:
   /// @brief Returns the B-spline object as XML node
   inline pugi::xml_node &to_xml(pugi::xml_node &root, int id = 0,
                                 const std::string &label = "",
-                                int index = -1) const {
+                                int index = -1) const override {
     // add Geometry node
     pugi::xml_node geo = root.append_child("Geometry");
 
@@ -1856,14 +1858,14 @@ public:
   /// @brief Updates the B-spline object from XML object
   inline UniformBSplineCore &from_xml(const pugi::xml_document &doc, int id = 0,
                                       const std::string &label = "",
-                                      int index = -1) {
+                                      int index = -1) override {
     return from_xml(doc.child("xml"), id, label, index);
   }
 
   /// @brief Updates the B-spline object from XML node
   inline UniformBSplineCore &from_xml(const pugi::xml_node &root, int id = 0,
                                       const std::string &label = "",
-                                      int index = -1) {
+                                      int index = -1) override {
 
     std::array<bool, std::max(parDim_, short_t{1})> nknots_found{false},
         ncoeffs_found{false};
