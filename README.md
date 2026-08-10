@@ -48,40 +48,45 @@ IGAnets require a C++20 compiler, CMake and LibTorch (the C++ API of PyTorch).
 1.  Install prerequisites (CMake and LibTorch)
 
     #### Ubuntu
-      ```shell
+      ```bash
       apt-get install build-essential cmake unzip wget
       ```
 
     #### RedHat
-      ```shell
+      ```bash
       yum install make cmake gcc gcc-c++ unzip wget
       ```
 
-    #### Install LibTorch
+    #### Install LibTorch from PyTorch.org
 
-    Pre-compiled versions of LibTorch are available at [PyTorch.org](https://pytorch.org/get-started/locally/). Depending on your compiler toolchain you need to choose between the pre-cxx11 and the cxx11 ABI, i.e.
-
-    ```shell
-    wget https://download.pytorch.org/libtorch/cpu/libtorch-shared-with-deps-2.7.1%2Bcpu.zip -O libtorch.zip
+    Pre-compiled versions of LibTorch are available at [PyTorch.org](https://pytorch.org/get-started/locally/). 
+    ```bash
+    wget https://download.pytorch.org/libtorch/cpu/libtorch-shared-with-deps-2.13.0%2Bcpu.zip -O libtorch.zip
     unzip libtorch.zip -d $HOME/
     rm -f libtorch
-    ```
-    or
-    ```shell
-    wget https://download.pytorch.org/libtorch/cpu/libtorch-cxx11-abi-shared-with-deps-2.7.1%2Bcpu.zip -O libtorch.zip
-    unzip libtorch.zip -d $HOME/
-    rm -f libtorch
+    export TORCH_DIR=${HOME}/libtorch/share/cmake/Torch
     ```
 
     Note that there might be a newer LibTorch version available than indicated in the above code snippet.
 
+    ### Install LibTorch from PyPI
+
+    Alternatively, you can install LibTorch from PyPI using `pip` and set the `TORCH_DIR` environment variable:
+    ```bash
+    python3 -m venv $HOME/.venv/torch-cpu
+    source $HOME/.venv/torch-cpu/bin/activate
+    pip install torch
+    export TORCH_DIR="$(python3 -c \
+          'from pathlib import Path; import torch; print(Path(torch.__file__).parent / "share" / "cmake" / "Torch")')"
+    ```
+
 2.  Configure
-    ```shell
-    cmake .. -DTorch_DIR=${HOME}/libtorch/share/cmake/Torch
+    ```bash
+    cmake .. -DTorch_DIR=${TORCH_DIR}
     ```
 
 3.  Compile
-    ```shell
+    ```bash
     make -j 8
     ```
 
@@ -90,28 +95,19 @@ IGAnets require a C++20 compiler, CMake and LibTorch (the C++ API of PyTorch).
 ### macOS
 
 1.  Install prerequisites (CMake and LibTorch)
-    ```shell
+    ```bash
     brew install cmake pytorch
     ```
 
-    Note that since version 2.2.0, official builds of the LibTorch library for ARM64 and X86_64 can be downloaded from PyTorch.org:
-
-    - https://download.pytorch.org/libtorch/cpu/libtorch-macos-x86_64-2.7.1.zip
-    - https://download.pytorch.org/libtorch/cpu/libtorch-macos-arm64-2.7.1.zip
-
-    If you decide to use these version download and unzip them as shown for the Linux installation. It is, however, recommended to install LibTorch through `brew` as described above since this method is tested regularly by the IGAnets authors.
-
-    Note that there might be a newer LibTorch version available than indicated in the above code snippet.
-
 3.  Configure
-    ```shell
-    cmake .. -DTorch_DIR=/opt/homebrew/Cellar/pytorch/2.7.1/share/cmake/Torch
+    ```bash
+    cmake .. -DTorch_DIR=/opt/homebrew/Cellar/pytorch/2.13.0/share/cmake/Torch
     ```
 
-    Note that the specific version of PyTorch and/or protobuf might be different on your system.
+    Note that the specific version of PyTorch might be different on your system.
 
 4.  Compile
-    ```shell
+    ```bash
     make -j 8
     ```
 
@@ -119,10 +115,21 @@ IGAnets require a C++20 compiler, CMake and LibTorch (the C++ API of PyTorch).
 
 ## Compilation with CUDA support (only Linux)
 
-1.  Install the CUDA-enabled version of LibTorch
-
-    - https://download.pytorch.org/libtorch/cu121/libtorch-shared-with-deps-2.7.1%2Bcu128.zip
-    - https://download.pytorch.org/libtorch/cu121/libtorch-cxx11-abi-shared-with-deps-2.7.1%2Bcu128.zip
+1.  Install the CUDA-enabled version of LibTorch either through PyTorch.org 
+    ```bash
+    wget https://download.pytorch.org/libtorch/cu126/libtorch-shared-with-deps-2.13.0%2Bcu126.zip -O libtorch.zip
+    unzip libtorch.zip -d $HOME/
+    rm -f libtorch
+    export TORCH_DIR=${HOME}/libtorch/share/cmake/Torch
+    ```
+    or from PyPI
+    ```bash
+    python3 -m venv $HOME/.venv/torch-cuda
+    source $HOME/.venv/torch-cuda/bin/activate
+    pip install torch --index-url https://download.pytorch.org/whl/cu126
+    export TORCH_DIR="$(python3 -c \
+          'from pathlib import Path; import torch; print(Path(torch.__file__).parent / "share" / "cmake" / "Torch")')"
+    ```
 
     Note that the version must be compatible with the CUDA version installed on your system.
 
@@ -132,10 +139,21 @@ IGAnets require a C++20 compiler, CMake and LibTorch (the C++ API of PyTorch).
 
 ## Compilation with ROCm support (only Linux)
 
-1.  Install the ROCm-enabled version of LibTorch
-
-    - https://download.pytorch.org/libtorch/rocm6.3/libtorch-shared-with-deps-2.7.1%2Brocm6.3.zip
-    - https://download.pytorch.org/libtorch/rocm6.3/libtorch-cxx11-abi-shared-with-deps-2.7.1%2Brocm6.3.zip
+1.  Install the ROCm-enabled version of LibTorch either through PyTorch.org 
+    ```bash
+    wget https://download.pytorch.org/libtorch/rocm7.2/libtorch-shared-with-deps-2.13.0%2Brocm7.2.zip -O libtorch.zip
+    unzip libtorch.zip -d $HOME/
+    rm -f libtorch
+    export TORCH_DIR=${HOME}/libtorch/share/cmake/Torch
+    ```
+    or from PyPI
+    ```bash
+    python3 -m venv $HOME/.venv/torch-rocm
+    source $HOME/.venv/torch-rocm/bin/activate
+    pip install torch --index-url https://download.pytorch.org/whl/rocm7.2
+    export TORCH_DIR="$(python3 -c \
+          'from pathlib import Path; import torch; print(Path(torch.__file__).parent / "share" / "cmake" / "Torch")')"
+    ```
 
     Note that the version must be compatible with the ROCm version installed on your system.
 
@@ -154,21 +172,21 @@ IGAnets require a C++20 compiler, CMake and LibTorch (the C++ API of PyTorch).
 
 2. Install the XPU-enabled version of PyTorch in a virtual python environment
 
-   ```shell
+   ```bash
    python3 -m venv $HOME/.venv/torch-xpu
    source $HOME/.venv/torch-xpu/bin/activate
    pip install torch --index-url https://download.pytorch.org/whl/xpu
+   export TORCH_DIR="$(python3 -c \
+         'from pathlib import Path; import torch; print(Path(torch.__file__).parent / "share" / "cmake" / "Torch")')"
    ```
 
 3. Configure
-    ```shell
-    cmake .. -DTorch_DIR=$HOME/.venv/torch-xpu/lib/python3.11/site-packages/torch/share/cmake/Torch/
+    ```bash
+    cmake .. -DTorch_DIR=${TORCH_DIR}
     ```
 
-    Note that on the latest Intel Tiber AI Cloud installation, ZLib is
-    not found by default. This can be corrected by calling CMake with
-    the additional parameters
-    ```shell
+    Note that on the latest Intel Tiber AI Cloud installation, ZLib is not found by default. This can be corrected by calling CMake with the additional parameters
+    ```bash
     -DZLIB_LIBRARY=/usr/lib/x86_64-linux-gnu/libz.so.1 -DZLIB_INCLUDE_DIR=/usr/include
     ```
 
