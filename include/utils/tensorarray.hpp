@@ -108,7 +108,7 @@ auto to_tensorAccessor(const TensorArray<sizeof...(Is)> &tensorArray,
 template <typename T, std::size_t N, std::size_t... Is>
 auto to_tensorAccessor(const TensorArray<sizeof...(Is)> &tensorArray,
                        c10::DeviceType deviceType, std::index_sequence<Is...>) {
-  std::array<torch::TensorBase, sizeof...(Is)> tensorArray_device{
+  std::array<torch::Tensor, sizeof...(Is)> tensorArray_device{
       tensorArray[Is].to(deviceType)...};
   std::array<torch::TensorAccessor<T, N>, sizeof...(Is)> accessors{
       tensorArray_device[Is].template accessor<T, N>()...};
@@ -118,7 +118,7 @@ auto to_tensorAccessor(const TensorArray<sizeof...(Is)> &tensorArray,
 template <typename T, std::size_t N, size_t... Dims, std::size_t... Is>
 auto to_tensorAccessor(const BlockTensor<torch::Tensor, Dims...> &blocktensor,
                        c10::DeviceType deviceType, std::index_sequence<Is...>) {
-  std::array<torch::TensorBase, sizeof...(Is)> tensorArray_device{
+  std::array<torch::Tensor, sizeof...(Is)> tensorArray_device{
       blocktensor[Is]->to(deviceType)...};
   std::array<torch::TensorAccessor<T, N>, sizeof...(Is)> accessors{
       tensorArray_device[Is].template accessor<T, N>()...};
