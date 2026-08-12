@@ -19,6 +19,7 @@
 #include <array>
 #include <fstream>
 #include <iostream>
+#include <string_view>
 #include <tuple>
 
 #include <utils/getenv.hpp>
@@ -186,13 +187,14 @@ inline std::string memory_summary(c10::DeviceIndex device =
     if (bytes == 0)
       return "0 B";
 
-    std::array<std::string, 6> prefixes{"B", "KiB", "MiB", "GiB", "TiB", "PiB"};
+    constexpr std::array<std::string_view, 6> prefixes{
+        "B", "KiB", "MiB", "GiB", "TiB", "PiB"};
     int64_t n = std::floor(std::max(0.0, std::log2(static_cast<double>(bytes) /
                                                    static_cast<double>(768))) /
                            static_cast<double>(10));
 
     return std::to_string((int64_t)(bytes / std::pow(1024, n))) + " " +
-           prefixes[n];
+           std::string(prefixes[n]);
   };
 
 #if TORCH_VERSION_MAJOR > 2 ||                                                 \

@@ -15,6 +15,7 @@
 #pragma once
 
 #include <string>
+#include <string_view>
 #include <filesystem>
 
 #if defined(_WIN32) || defined(_WIN64)
@@ -38,7 +39,9 @@
 namespace iganet {
 
 /// @brief Returns the IgANet version
-inline std::string getIgANetVersion() { return {IGANET_VERSION}; }
+inline constexpr std::string_view getIgANetVersion() noexcept {
+  return IGANET_VERSION;
+}
 
 /// @brief Returns the version of the compiler
 inline std::string getCompilerVersion() {
@@ -665,7 +668,8 @@ inline std::string getMemoryInfo() {
 /// @brief Returns version information
 inline std::string getVersion() {
   return std::string("IgANets - Isogeometric Analysis Networks") +
-         " (version " + getIgANetVersion() + ")\n" + "Compiled by " +
+         " (version " + std::string(getIgANetVersion()) + ")\n" +
+         "Compiled by " +
          getCompilerVersion() + " (" + getCppVersion() + ", " +
          getStdLibVersion() + ", " + getExtraLibsVersion() + ")\n" +
          "Running on " + getCpuInfo() + " (memory " + getMemoryInfo() +
