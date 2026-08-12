@@ -19,6 +19,7 @@
 #include <filesystem>
 #include <functional>
 #include <regex>
+#include <string_view>
 
 #include <core/core.hpp>
 #include <core/options.hpp>
@@ -487,6 +488,18 @@ public:
                       .to(options.requires_grad(false))
                       .requires_grad_(options.requires_grad());
   }
+
+  /// @brief Copy constructor
+  UniformBSplineCore(const UniformBSplineCore &) = default;
+
+  /// @brief Move constructor
+  UniformBSplineCore(UniformBSplineCore &&) noexcept = default;
+
+  /// @brief Copy assignment operator
+  UniformBSplineCore &operator=(const UniformBSplineCore &) = default;
+
+  /// @brief Move assignment operator
+  UniformBSplineCore &operator=(UniformBSplineCore &&) noexcept = default;
 
   /// @brief Destructor
   ~UniformBSplineCore() override = default;
@@ -1877,7 +1890,7 @@ public:
       if constexpr (parDim_ == 0) {
 
         // Check for "Point" with given id, index, label
-        if (geo.attribute("type").value() == std::string("Point") &&
+        if (std::string_view{geo.attribute("type").value()} == "Point" &&
             (id >= 0 ? geo.attribute("id").as_int() == id : true) &&
             (index >= 0 ? geo.attribute("index").as_int() == index : true) &&
             (!label.empty() ? geo.attribute("label").value() == label : true)) {
@@ -1893,14 +1906,15 @@ public:
       else if constexpr (parDim_ == 1) {
 
         // Check for "BSpline" with given id, index, label
-        if (geo.attribute("type").value() == std::string("BSpline") &&
+        if (std::string_view{geo.attribute("type").value()} == "BSpline" &&
             (id >= 0 ? geo.attribute("id").as_int() == id : true) &&
             (index >= 0 ? geo.attribute("index").as_int() == index : true) &&
             (!label.empty() ? geo.attribute("label").value() == label : true)) {
 
           // Check for "BSplineBasis"
           if (pugi::xml_node basis = geo.child("Basis");
-              basis.attribute("type").value() == std::string("BSplineBasis")) {
+              std::string_view{basis.attribute("type").value()} ==
+                  "BSplineBasis") {
 
             // Check for "KnotVector"
             if (pugi::xml_node knots = basis.child("KnotVector");
@@ -1949,8 +1963,8 @@ public:
             for (pugi::xml_node basis : bases.children("Basis")) {
 
               // Check for "BSplineBasis"
-              if (basis.attribute("type").value() ==
-                  std::string("BSplineBasis")) {
+              if (std::string_view{basis.attribute("type").value()} ==
+                  "BSplineBasis") {
 
                 int index = basis.attribute("index").as_int();
 
@@ -3109,6 +3123,10 @@ public:
   /// @brief Constructor for equidistant knot vectors
   using UniformBSplineCore<real_t, GeoDim, Degrees...>::UniformBSplineCore;
 
+  /// @brief Constructs a non-uniform B-spline by consuming a uniform one
+  explicit NonUniformBSplineCore(Base &&other) noexcept
+      : Base(std::move(other)) {}
+
   /// @brief Constructor for non-equidistant knot vectors
   ///
   /// @param[in] kv Knot vectors
@@ -3679,6 +3697,48 @@ public:
 
   /// @brief Move constructor
   BSplineCommon(BSplineCommon &&) = default;
+
+  /// @brief Constructs the high-level B-spline from a compatible core
+  template <typename OtherCore>
+    requires SplineCoreType<std::remove_cvref_t<OtherCore>>
+  explicit BSplineCommon(OtherCore &&core)
+      : BSplineCore(std::forward<OtherCore>(core)) {}
+
+  /// @brief Converts a uniform B-spline into a non-uniform B-spline
+  ///
+  /// All run-time state is moved into the returned object. Consequently, this
+  /// operation is only available for rvalues and leaves the source object in a
+  /// valid but unspecified state.
+  [[nodiscard]] auto to_nonuniform() &&
+    requires UniformSplineCoreType<BSplineCore> &&
+             (!NonUniformSplineCoreType<BSplineCore>)
+  {
+    using target_core = typename BSplineCore::template derived_type<
+        NonUniformBSplineCore>;
+    return BSplineCommon<target_core>(
+        std::move(static_cast<BSplineCore &>(*this)));
+  }
+
+  /// @brief Converts a non-uniform B-spline into a uniform B-spline
+  ///
+  /// The conversion succeeds only if all knot vectors are canonical open
+  /// uniform knot vectors. Validation is performed before any state is moved.
+  [[nodiscard]] auto to_uniform() &&
+    requires NonUniformSplineCoreType<BSplineCore>
+  {
+    using target_core = typename BSplineCore::template derived_type<
+        UniformBSplineCore>;
+
+    BSplineCommon<target_core> canonical(
+        BSplineCore::ncoeffs(), init::none, BSplineCore::options());
+    for (short_t i = 0; i < BSplineCore::parDim(); ++i)
+      if (!torch::equal(BSplineCore::knots(i), canonical.knots(i)))
+        throw std::runtime_error(
+            "Cannot convert a non-uniform B-spline to a uniform B-spline");
+
+    return BSplineCommon<target_core>(
+        std::move(static_cast<target_core &>(*this)));
+  }
 
   /// @brief Move constructor with external coefficients
   BSplineCommon(BSplineCommon &&other,
