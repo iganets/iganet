@@ -16,6 +16,8 @@
 
 #include <splines/boundary.hpp>
 
+#include <string_view>
+
 namespace iganet {
 
 /// @brief Connection between two patch sides
@@ -499,8 +501,8 @@ public:
           "MultiPatch XML provides an incompatible parametric dimension");
 
     const pugi::xml_node patchRange = multiPatch.child("patches");
-    if (!patchRange ||
-        std::string(patchRange.attribute("type").value()) != "id_range")
+    if (!patchRange || std::string_view{patchRange.attribute("type").value()} !=
+                           "id_range")
       throw std::runtime_error("MultiPatch XML has no valid patch ID range");
 
     std::stringstream rangeData(patchRange.child_value());
