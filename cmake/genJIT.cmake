@@ -15,9 +15,41 @@
 #
 # CMake function: generate just-in-time compiler configuration
 #
-# Remark: The source files must be given with relative paths
+# SOURCE_FILES may contain absolute paths or paths relative to
+# CMAKE_CURRENT_SOURCE_DIR. Generated files are written to
+# CMAKE_CURRENT_BINARY_DIR by default. Use OUTPUT_DIRECTORY (or OUTPUT) to
+# select a different directory.
 #
 function(genJITCompiler SOURCE_FILES SOURCE_TARGET)
+
+  set(oneValueArgs OUTPUT OUTPUT_DIRECTORY)
+  cmake_parse_arguments(JIT "" "${oneValueArgs}" "" ${ARGN})
+
+  if (JIT_UNPARSED_ARGUMENTS)
+    message(FATAL_ERROR
+      "genJITCompiler received unknown arguments: ${JIT_UNPARSED_ARGUMENTS}")
+  endif()
+
+  if (JIT_OUTPUT AND JIT_OUTPUT_DIRECTORY)
+    message(FATAL_ERROR
+      "genJITCompiler accepts either OUTPUT or OUTPUT_DIRECTORY, not both")
+  endif()
+
+  if (JIT_OUTPUT_DIRECTORY)
+    set(JIT_GENERATED_OUTPUT_DIRECTORY "${JIT_OUTPUT_DIRECTORY}")
+  elseif (JIT_OUTPUT)
+    set(JIT_GENERATED_OUTPUT_DIRECTORY "${JIT_OUTPUT}")
+  else()
+    set(JIT_GENERATED_OUTPUT_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}")
+  endif()
+
+  if (NOT IS_ABSOLUTE "${JIT_GENERATED_OUTPUT_DIRECTORY}")
+    get_filename_component(JIT_GENERATED_OUTPUT_DIRECTORY
+      "${JIT_GENERATED_OUTPUT_DIRECTORY}" ABSOLUTE
+      BASE_DIR "${CMAKE_CURRENT_BINARY_DIR}")
+  endif()
+
+  file(MAKE_DIRECTORY "${JIT_GENERATED_OUTPUT_DIRECTORY}")
 
   #
   # Set JIT compiler command
@@ -67,14 +99,14 @@ function(genJITCompiler SOURCE_FILES SOURCE_TARGET)
 
   # Set additional target-specific compile definitions and options (if available)
   if (TARGET ${SOURCE_TARGET})
-    get_target_property(JIT_COMPILE_DEFINITIONS ${SOURCE_TARGET} COMPILE_DEFINITIONS)
+    get_target_property(JIT_COMPILE_DEFINITIONS ${SOURCE_TARGET} INTERFACE_COMPILE_DEFINITIONS)
     if (JIT_COMPILE_DEFINITIONS)
       foreach (flag ${JIT_COMPILE_DEFINITIONS})
         set (JIT_CXX_FLAGS "${JIT_CXX_FLAGS} -D${flag}")
       endforeach()
     endif()
 
-    get_target_property(JIT_COMPILE_OPTIONS ${SOURCE_TARGET} COMPILE_OPTIONS)
+    get_target_property(JIT_COMPILE_OPTIONS ${SOURCE_TARGET} INTERFACE_COMPILE_OPTIONS)
     if (JIT_COMPILE_OPTIONS)
       foreach (flag ${JIT_COMPILE_OPTIONS})
         set (JIT_CXX_FLAGS "${JIT_CXX_FLAGS} ${flag}")
@@ -99,7 +131,7 @@ function(genJITCompiler SOURCE_FILES SOURCE_TARGET)
   # ====================================================================
 
   # Set SYSROOT on MacOS
-  if (APPLE)
+  if (APPLE AND CMAKE_OSX_SYSROOT)
     set(JIT_CXX_FLAGS "${JIT_CXX_FLAGS} -isysroot ${CMAKE_OSX_SYSROOT}")
   endif()
 
@@ -137,7 +169,7 @@ function(genJITCompiler SOURCE_FILES SOURCE_TARGET)
 
   # Generate list of target-specific include directories (if available)
   if (TARGET ${SOURCE_TARGET})
-    get_target_property(IGANET_INCLUDE_DIRECTORIES ${SOURCE_TARGET} INCLUDE_DIRECTORIES)
+    get_target_property(IGANET_INCLUDE_DIRECTORIES ${SOURCE_TARGET} INTERFACE_INCLUDE_DIRECTORIES)
     if (IGANET_INCLUDE_DIRECTORIES)
       foreach (dir ${IGANET_INCLUDE_DIRECTORIES})
         set (JIT_INCLUDE_DIRECTORIES
@@ -166,7 +198,7 @@ function(genJITCompiler SOURCE_FILES SOURCE_TARGET)
 
   # Generate list of target-specific external libraries
   if (TARGET ${SOURCE_TARGET})
-    get_target_property(IGANET_LINK_LIBRARIES ${SOURCE_TARGET} LINK_DIRECTORIES)
+    get_target_property(IGANET_LINK_LIBRARIES ${SOURCE_TARGET} INTERFACE_LINK_DIRECTORIES)
     if (IGANET_LINK_LIBRARIES)
       foreach (lib ${IGANET_LINK_LIBRARIES})
         set (JIT_LIBRARIES
@@ -177,7 +209,7 @@ function(genJITCompiler SOURCE_FILES SOURCE_TARGET)
 
   # Generate list of target-specific external libraries
   if (TARGET ${SOURCE_TARGET})
-    get_target_property(IGANET_LINK_LIBRARIES ${SOURCE_TARGET} LINK_LIBRARIES)
+    get_target_property(IGANET_LINK_LIBRARIES ${SOURCE_TARGET} INTERFACE_LINK_LIBRARIES)
     if (IGANET_LINK_LIBRARIES)
 
       # Generate include and link directories
@@ -288,10 +320,21 @@ function(genJITCompiler SOURCE_FILES SOURCE_TARGET)
   # ====================================================================
 
   # Generate source files
-  foreach (input_file ${SOURCE_FILES})
-    get_filename_component(output_file ${input_file} NAME_WLE)
-    configure_file(${CMAKE_CURRENT_SOURCE_DIR}/${input_file}
-      ${CMAKE_CURRENT_BINARY_DIR}/${output_file} @ONLY)
+  foreach (input_file IN LISTS SOURCE_FILES)
+    if (IS_ABSOLUTE "${input_file}")
+      set(input_path "${input_file}")
+    else()
+      get_filename_component(input_path "${input_file}" ABSOLUTE
+        BASE_DIR "${CMAKE_CURRENT_SOURCE_DIR}")
+    endif()
+
+    if (NOT EXISTS "${input_path}")
+      message(FATAL_ERROR "JIT source file does not exist: ${input_path}")
+    endif()
+
+    get_filename_component(output_file "${input_path}" NAME_WLE)
+    configure_file("${input_path}"
+      "${JIT_GENERATED_OUTPUT_DIRECTORY}/${output_file}" @ONLY)
   endforeach()
 
 endfunction()

@@ -16,10 +16,12 @@
 
 #include <utils/blocktensor.hpp>
 #include <utils/container.hpp>
+#include <utils/dlloader.hpp>
 #include <utils/fqn.hpp>
 #include <utils/getenv.hpp>
 #include <utils/index_sequence.hpp>
 #include <utils/integer_pow.hpp>
+#include <utils/jit.hpp>
 #include <utils/linalg.hpp>
 #include <utils/matrix.hpp>
 #include <utils/serialize.hpp>

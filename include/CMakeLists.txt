@@ -22,6 +22,13 @@ configure_file(${CMAKE_CURRENT_SOURCE_DIR}/core/config.hpp.in
   "${CMAKE_CURRENT_BINARY_DIR}/core/config.hpp" @ONLY)
 
 ########################################################################
+# JIT compiler
+########################################################################
+include("${PROJECT_SOURCE_DIR}/cmake/genJIT.cmake")
+genJITCompiler("${CMAKE_CURRENT_SOURCE_DIR}/utils/jit.hpp.in" iganet::core
+  OUTPUT_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/utils")
+
+########################################################################
 # Precompiled headers
 ########################################################################
 if(IGANET_BUILD_PCH AND NOT WIN32 AND NOT ${CMAKE_VERSION} VERSION_LESS "3.16.0")
