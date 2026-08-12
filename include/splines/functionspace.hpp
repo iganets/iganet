@@ -420,7 +420,7 @@ private:
   template <std::size_t... Is>
   inline pugi::xml_node &to_xml_(std::index_sequence<Is...>,
                                  pugi::xml_node &root, int id = 0,
-                                 std::string label = "") const {
+                                 const std::string &label = "") const {
 
     (std::get<Is>(spline_).to_xml(root, id, label, Is), ...);
     return root;
@@ -439,7 +439,7 @@ public:
 
   /// @brief Returns the function space object as XML node
   inline pugi::xml_node &to_xml(pugi::xml_node &root, int id = 0,
-                                std::string label = "") const {
+                                const std::string &label = "") const {
     return to_xml_(std::make_index_sequence<FunctionSpace::nspaces()>{}, root,
                    id, label);
   }
@@ -449,7 +449,7 @@ private:
   template <std::size_t... Is>
   inline FunctionSpace &from_xml_(std::index_sequence<Is...>,
                                   const pugi::xml_node &root, int id = 0,
-                                  std::string label = "") {
+                                  const std::string &label = "") {
 
     (std::get<Is>(spline_).from_xml(root, id, label, Is), ...);
     return *this;
@@ -464,7 +464,7 @@ public:
 
   /// @brief Updates the function space object from XML node
   inline FunctionSpace &from_xml(const pugi::xml_node &root, int id = 0,
-                                 std::string label = "") {
+                                 const std::string &label = "") {
     return from_xml_(std::make_index_sequence<FunctionSpace::nspaces()>{}, root,
                      id, label);
   }
@@ -2723,7 +2723,7 @@ public:
 
   /// @brief Returns the function space object as XML node
   inline pugi::xml_node &to_xml(pugi::xml_node &root, int id = 0,
-                                std::string label = "") const {
+                                const std::string &label = "") const {
     return spline_.to_xml(root, id, label);
   }
 
@@ -2735,7 +2735,7 @@ public:
 
   /// @brief Updates the function space object from XML node
   inline FunctionSpace &from_xml(const pugi::xml_node &root, int id = 0,
-                                 std::string label = "") {
+                                 const std::string &label = "") {
     spline_.from_xml(root, id, label);
     return *this;
   }

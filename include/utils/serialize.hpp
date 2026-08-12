@@ -324,14 +324,14 @@ template <typename T, std::size_t N>
 inline pugi::xml_node &to_xml(const torch::TensorAccessor<T, N> &accessor,
                               torch::IntArrayRef sizes, pugi::xml_node &root,
                               std::string tag = "Matrix", int id = 0,
-                              std::string label = "", int index = -1);
+                              const std::string &label = "", int index = -1);
 
 /// @brief Converts a torch::TensorAccessor object to an XML document object
 template <typename T, std::size_t N>
 inline pugi::xml_document to_xml(const torch::TensorAccessor<T, N> &accessor,
                                  torch::IntArrayRef sizes,
                                  std::string tag = "Matrix", int id = 0,
-                                 std::string label = "", int index = -1) {
+                                 const std::string &label = "", int index = -1) {
   pugi::xml_document doc;
   pugi::xml_node root = doc.append_child("xml");
   to_xml(accessor, sizes, root, tag, id, label, index);
@@ -343,7 +343,7 @@ inline pugi::xml_document to_xml(const torch::TensorAccessor<T, N> &accessor,
 template <typename T, std::size_t N>
 inline pugi::xml_node &to_xml(const torch::TensorAccessor<T, N> &accessor,
                               torch::IntArrayRef sizes, pugi::xml_node &root,
-                              std::string tag, int id, std::string label,
+                              std::string tag, int id, const std::string &label,
                               int index) {
 
   // add node
@@ -439,13 +439,13 @@ template <typename T, std::size_t N>
 inline pugi::xml_node &to_xml(const torch::Tensor &tensor,
                               pugi::xml_node &root,
                               std::string tag = "Matrix", int id = 0,
-                              std::string label = "", int index = -1);
+                              const std::string &label = "", int index = -1);
 
 /// @brief Converts a torch::Tensor object to an XML document object
 template <typename T, std::size_t N>
 inline pugi::xml_document to_xml(const torch::Tensor &tensor,
                                  std::string tag = "Matrix", int id = 0,
-                                 std::string label = "", int index = -1) {
+                                 const std::string &label = "", int index = -1) {
   pugi::xml_document doc;
   pugi::xml_node root = doc.append_child("xml");
   to_xml<T, N>(tensor, root, tag, id, label, index);
@@ -456,7 +456,7 @@ inline pugi::xml_document to_xml(const torch::Tensor &tensor,
 /// @brief Converts a torch::Tensor object to an XML object
 template <typename T, std::size_t N>
 inline pugi::xml_node &to_xml(const torch::Tensor &tensor, pugi::xml_node &root,
-                              std::string tag, int id, std::string label,
+                              std::string tag, int id, const std::string &label,
                               int index) {
 
   if (tensor.is_cuda()) {
@@ -472,14 +472,14 @@ template <typename T, std::size_t N, std::size_t M>
 inline pugi::xml_node &to_xml(const utils::TensorArray<M> &tensors,
                               pugi::xml_node &root,
                               std::string tag = "Matrix", int id = 0,
-                              std::string label = "");
+                              const std::string &label = "");
 
 /// @brief Converts a std::array of torch::Tensor objects to an XML
 /// object
 template <typename T, std::size_t N, std::size_t M>
 inline pugi::xml_document to_xml(const utils::TensorArray<M> &tensors,
                                  std::string tag = "Matrix", int id = 0,
-                                 std::string label = "", int index = -1) {
+                                 const std::string &label = "", int index = -1) {
   pugi::xml_document doc;
   pugi::xml_node root = doc.append_child("xml");
   to_xml<T, N>(tensors, root, tag, id, label);
@@ -492,7 +492,7 @@ inline pugi::xml_document to_xml(const utils::TensorArray<M> &tensors,
 template <typename T, std::size_t N, std::size_t M>
 inline pugi::xml_node &to_xml(const utils::TensorArray<M> &tensors,
                               pugi::xml_node &root, std::string tag, int id,
-                              std::string label) {
+                              const std::string &label) {
 
   for (std::size_t i = 0; i < M; ++i) {
     if (tensors[i].is_cuda()) {
@@ -513,7 +513,7 @@ template <typename T, std::size_t N>
 inline torch::TensorAccessor<T, N> &
 from_xml(const pugi::xml_document &doc, torch::TensorAccessor<T, N> &accessor,
          torch::IntArrayRef sizes, std::string tag = "Matrix", int id = 0,
-         std::string label = "", int index = -1) {
+         const std::string &label = "", int index = -1) {
   return from_xml(doc.child("xml"), accessor, sizes, tag, id, label, index);
 }
 
@@ -522,7 +522,7 @@ template <typename T, std::size_t N>
 inline torch::TensorAccessor<T, N> &
 from_xml(const pugi::xml_node &root, torch::TensorAccessor<T, N> &accessor,
          torch::IntArrayRef sizes, std::string tag = "Matrix", int id = 0,
-         std::string label = "", int index = -1) {
+         const std::string &label = "", int index = -1) {
 
   return accessor;
 }
@@ -531,14 +531,15 @@ template <typename T, std::size_t N>
 inline torch::Tensor &from_xml(const pugi::xml_node &root,
                                torch::Tensor &tensor,
                                std::string tag = "Matrix", int id = 0,
-                               std::string label = "", bool alloc = true,
+                               const std::string &label = "", bool alloc = true,
                                int index = -1);
 
 /// @brief Converts an XML document object to a torch::Tensor object
 template <typename T, std::size_t N>
 inline torch::Tensor &
 from_xml(const pugi::xml_document &doc, torch::Tensor &tensor,
-         std::string tag = "Matrix", int id = 0, std::string label = "",
+         std::string tag = "Matrix", int id = 0,
+         const std::string &label = "",
          bool alloc = true, int index = -1) {
   return from_xml<T, N>(doc.child("xml"), tensor, tag, id, label, alloc,
                         index);
@@ -548,7 +549,8 @@ from_xml(const pugi::xml_document &doc, torch::Tensor &tensor,
 template <typename T, std::size_t N>
 inline torch::Tensor &
 from_xml(const pugi::xml_node &root, torch::Tensor &tensor,
-         std::string tag, int id, std::string label, bool alloc, int index) {
+         std::string tag, int id, const std::string &label, bool alloc,
+         int index) {
 
   // Loop through all nodes
   for (pugi::xml_node node : root.children(tag.c_str())) {
@@ -751,7 +753,7 @@ template <typename T, std::size_t N, std::size_t M>
 inline utils::TensorArray<M> &
 from_xml(const pugi::xml_node &root, utils::TensorArray<M> &tensors,
          std::string tag = "Matrix", int id = 0, bool alloc = true,
-         std::string label = "");
+         const std::string &label = "");
 
 /// @brief Converts an XML document object to a std::array of torch::Tensor
 /// objects
@@ -759,7 +761,7 @@ template <typename T, std::size_t N, std::size_t M>
 inline utils::TensorArray<M> &
 from_xml(const pugi::xml_document &doc, utils::TensorArray<M> &tensors,
          std::string tag = "Matrix", int id = 0, bool alloc = true,
-         std::string label = "") {
+         const std::string &label = "") {
 
   return from_xml<T, N>(doc.child("xml"), tensors, tag, id, alloc, label);
 }
@@ -768,7 +770,7 @@ from_xml(const pugi::xml_document &doc, utils::TensorArray<M> &tensors,
 template <typename T, std::size_t N, std::size_t M>
 inline utils::TensorArray<M> &
 from_xml(const pugi::xml_node &root, utils::TensorArray<M> &tensors,
-         std::string tag, int id, bool alloc, std::string label) {
+         std::string tag, int id, bool alloc, const std::string &label) {
 
   for (std::size_t i = 0; i < M; ++i) {
     from_xml<T, N>(root, tensors[i], tag, id, label, alloc, i);

@@ -101,13 +101,13 @@ public:
   /// @{
   template <typename T>
   void add_geometryMap(T &obj, const pugi::xml_document &doc, int id = 0,
-                       std::string label = "") {
+                       const std::string &label = "") {
     G_.emplace_back(obj.from_xml(doc.child("xml"), id, label).as_tensor());
   }
 
   template <typename T>
   void add_geometryMap(T &&obj, const pugi::xml_document &doc, int id = 0,
-                       std::string label = "") {
+                       const std::string &label = "") {
     G_.emplace_back(obj.from_xml(doc.child("xml"), id, label).as_tensor());
   }
   /// @}
@@ -116,13 +116,13 @@ public:
   /// @{
   template <typename T>
   void add_geometryMap(T &obj, const pugi::xml_node &root, int id = 0,
-                       std::string label = "") {
+                       const std::string &label = "") {
     G_.emplace_back(obj.from_xml(root, id, label).as_tensor());
   }
 
   template <typename T>
   void add_geometryMap(T &&obj, const pugi::xml_node &root, int id = 0,
-                       std::string label = "") {
+                       const std::string &label = "") {
     G_.emplace_back(obj.from_xml(root, id, label).as_tensor());
   }
   /// @}
@@ -142,13 +142,13 @@ public:
   /// @{
   template <typename T>
   void add_referenceData(T &obj, const pugi::xml_document &doc, int id = 0,
-                         std::string label = "") {
+                         const std::string &label = "") {
     f_.emplace_back(obj.from_xml(doc.child("xml"), id, label).as_tensor());
   }
 
   template <typename T>
   void add_referenceData(T &&obj, const pugi::xml_document &doc, int id = 0,
-                         std::string label = "") {
+                         const std::string &label = "") {
     f_.emplace_back(obj.from_xml(doc.child("xml"), id, label).as_tensor());
   }
   ///@}
@@ -157,13 +157,13 @@ public:
   /// @{
   template <typename T>
   void add_referenceData(T &obj, const pugi::xml_node &root, int id = 0,
-                         std::string label = "") {
+                         const std::string &label = "") {
     f_.emplace_back(obj.from_xml(root, id, label).as_tensor());
   }
 
   template <typename T>
   void add_referenceData(T &&obj, const pugi::xml_node &root, int id = 0,
-                         std::string label = "") {
+                         const std::string &label = "") {
     f_.emplace_back(obj.from_xml(root, id, label).as_tensor());
   }
   /// @}
@@ -236,13 +236,13 @@ public:
   /// @{
   template <typename T>
   void add_geometryMap(T &obj, const pugi::xml_document &doc, int id = 0,
-                       std::string label = "") {
+                       const std::string &label = "") {
     G_.emplace_back(obj.from_xml(doc.child("xml"), id, label).as_tensor());
   }
 
   template <typename T>
   void add_geometryMap(T &&obj, const pugi::xml_document &doc, int id = 0,
-                       std::string label = "") {
+                       const std::string &label = "") {
     G_.emplace_back(obj.from_xml(doc.child("xml"), id, label).as_tensor());
   }
   /// @}
@@ -251,13 +251,13 @@ public:
   /// @{
   template <typename T>
   void add_geometryMap(T &obj, const pugi::xml_node &root, int id = 0,
-                       std::string label = "") {
+                       const std::string &label = "") {
     G_.emplace_back(obj.from_xml(root, id, label).as_tensor());
   }
 
   template <typename T>
   void add_geometryMap(T &&obj, const pugi::xml_node &root, int id = 0,
-                       std::string label = "") {
+                       const std::string &label = "") {
     G_.emplace_back(obj.from_xml(root, id, label).as_tensor());
   }
   /// @}
@@ -277,13 +277,13 @@ public:
   /// @{
   template <typename T>
   void add_referenceData(T &obj, const pugi::xml_document &doc, int id = 0,
-                         std::string label = "") {
+                         const std::string &label = "") {
     f_.emplace_back(obj.from_xml(doc.child("xml"), id, label).as_tensor());
   }
 
   template <typename T>
   void add_referenceData(T &&obj, const pugi::xml_document &doc, int id = 0,
-                         std::string label = "") {
+                         const std::string &label = "") {
     f_.emplace_back(obj.from_xml(doc.child("xml"), id, label).as_tensor());
   }
   ///@}
@@ -292,13 +292,13 @@ public:
   /// @{
   template <typename T>
   void add_referenceData(T &obj, const pugi::xml_node &root, int id = 0,
-                         std::string label = "") {
+                         const std::string &label = "") {
     f_.emplace_back(obj.from_xml(root, id, label).as_tensor());
   }
 
   template <typename T>
   void add_referenceData(T &&obj, const pugi::xml_node &root, int id = 0,
-                         std::string label = "") {
+                         const std::string &label = "") {
     f_.emplace_back(obj.from_xml(root, id, label).as_tensor());
   }
   /// @}
@@ -331,13 +331,13 @@ public:
   /// @{
   template <typename T>
   void add_solution(T &obj, const pugi::xml_document &doc, int id = 0,
-                    std::string label = "") {
+                    const std::string &label = "") {
     u_.emplace_back(obj.from_xml(doc.child("xml"), id, label).as_tensor());
   }
 
   template <typename T>
   void add_solution(T &&obj, const pugi::xml_document &doc, int id = 0,
-                    std::string label = "") {
+                    const std::string &label = "") {
     u_.emplace_back(obj.from_xml(doc.child("xml"), id, label).as_tensor());
   }
   /// @}
@@ -346,13 +346,13 @@ public:
   /// @{
   template <typename T>
   void add_solution(T &obj, const pugi::xml_node &root, int id = 0,
-                    std::string label = "") {
+                    const std::string &label = "") {
     u_.emplace_back(obj.from_xml(root, id, label).as_tensor());
   }
 
   template <typename T>
   void add_solution(T &&obj, const pugi::xml_node &root, int id = 0,
-                    std::string label = "") {
+                    const std::string &label = "") {
     u_.emplace_back(obj.from_xml(root, id, label).as_tensor());
   }
   /// @}
