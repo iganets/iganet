@@ -26,9 +26,11 @@
 #include <splines/patch.hpp>
 #include <utils/blocktensor.hpp>
 #include <utils/container.hpp>
+#include <utils/dlloader.hpp>
 #include <utils/fqn.hpp>
 #include <utils/index_sequence.hpp>
 #include <utils/integer_pow.hpp>
+#include <utils/jit.hpp>
 #include <utils/linalg.hpp>
 #include <utils/serialize.hpp>
 #include <utils/tensorarray.hpp>
@@ -47,19 +49,20 @@
 #define GENERATE_IEXPR_SEQ (icurl)(idiv)(igrad)(ihess)(ijac)(ilapl)
 
 namespace iganet {
-  
+
 using namespace literals;
 using utils::operator+;
 
 //  clang-format off
 /// @brief Enumerator for specifying the initialization of B-spline coefficients
 enum class init : short_t {
-  none = 0,     /*!< leave coefficient values uninitialized                      */
-  zeros = 1,    /*!< set coefficient values to zero                              */
-  ones = 2,     /*!< set coefficient values to one                               */
-  linear = 3,   /*!< set coefficient values to \f$0,1,\dots \#\text{coeffs}-1\f$ */
-  random = 4,   /*!< set coefficient values to random numbers                    */
-  greville = 5, /*!< set coefficient values to the Greville abscissae            */
+  none = 0,  /*!< leave coefficient values uninitialized                      */
+  zeros = 1, /*!< set coefficient values to zero                              */
+  ones = 2,  /*!< set coefficient values to one                               */
+  linear =
+      3, /*!< set coefficient values to \f$0,1,\dots \#\text{coeffs}-1\f$ */
+  random = 4,   /*!< set coefficient values to random numbers   */
+  greville = 5, /*!< set coefficient values to the Greville abscissae */
   linspace = 6  /*!< set coefficient values to \f$0,1,\dots\f$ pattern (mostly
                    for testing) */
 };
@@ -78,7 +81,7 @@ enum class deriv : short_t {
   dt = 1000, /*!< first derivative in t-direction  */
 };
 //  clang-format on
-  
+
 /// @brief Adds two enumerators for specifying the derivative of B-spline
 /// evaluation
 ///
@@ -108,21 +111,21 @@ inline constexpr auto operator^(deriv lhs, short_t rhs) {
 namespace detail {
 
 // @brief Concept to identify template parameters that have a
-// find_knot_indices function  
+// find_knot_indices function
 template <typename T>
 concept HasFindKnotIndices = requires(T t, typename T::eval_type x) {
   { t.find_knot_indices(x) };
 };
 
 // @brief Concept to identify template parameters that have a
-// find_coeff_indices function    
+// find_coeff_indices function
 template <typename T>
 concept HasFindCoeffIndices = requires(T t, typename T::eval_type x) {
   { t.find_coeff_indices(x) };
 };
-  
+
 } // namespace detail
-  
+
 /// @brief SplineCore base class
 class SplineCore_ {};
 
@@ -979,7 +982,7 @@ public:
 
   template <deriv deriv = deriv::func, bool memory_optimized = false>
   inline auto eval_tr(const utils::TensorArray<parDim_> &xi,
-                   const utils::TensorArray<parDim_> &knot_indices) const {
+                      const utils::TensorArray<parDim_> &knot_indices) const {
     return eval_tr<deriv, memory_optimized>(
         xi, knot_indices, find_coeff_indices<memory_optimized>(knot_indices));
   }
@@ -1066,7 +1069,7 @@ public:
         // not memory-optimized
 
         auto basfunc = eval_basfunc<deriv, memory_optimized>(xi, knot_indices);
-        
+
         if (coeffs(0).dim() > 1) {
           // coeffs has extra dimension
           auto sizes = xi[0].sizes() + (-1_i64);
@@ -1093,8 +1096,8 @@ public:
 
   template <deriv deriv = deriv::func, bool memory_optimized = false>
   inline auto eval_tr(const utils::TensorArray<parDim_> &xi,
-                   const utils::TensorArray<parDim_> &knot_indices,
-                   const torch::Tensor &coeff_indices) const {
+                      const utils::TensorArray<parDim_> &knot_indices,
+                      const torch::Tensor &coeff_indices) const {
 
     utils::BlockTensor<torch::Tensor, 1, geoDim_> result;
 
@@ -1154,8 +1157,9 @@ public:
       else {
         // not memory-optimized
 
-        auto basfunc = eval_basfunc_tr<deriv, memory_optimized>(xi, knot_indices);
-        
+        auto basfunc =
+            eval_basfunc_tr<deriv, memory_optimized>(xi, knot_indices);
+
         if (coeffs(0).dim() > 1) {
           // coeffs has extra dimension
           auto sizes = xi[0].sizes() + (-1_i64);
@@ -1300,7 +1304,8 @@ public:
       else
         return torch::zeros_like(coeffs_[0]);
     } else
-      return eval_basfunc_tr<deriv, memory_optimized>(utils::TensorArray1({xi}));
+      return eval_basfunc_tr<deriv, memory_optimized>(
+          utils::TensorArray1({xi}));
   }
 
   template <deriv deriv = deriv::func, bool memory_optimized = false>
@@ -1311,7 +1316,8 @@ public:
       else
         return torch::zeros_like(coeffs_[0]);
     } else
-      return eval_basfunc_tr<deriv, memory_optimized>(xi, find_knot_indices(xi));
+      return eval_basfunc_tr<deriv, memory_optimized>(xi,
+                                                      find_knot_indices(xi));
   }
   /// @}
 
@@ -1342,7 +1348,7 @@ public:
 
   template <deriv deriv = deriv::func, bool memory_optimized = false>
   inline auto eval_basfunc_tr(const torch::Tensor &xi,
-                           const torch::Tensor &knot_indices) const {
+                              const torch::Tensor &knot_indices) const {
     if constexpr (parDim_ == 0) {
       if constexpr (deriv == deriv::func)
         return torch::ones_like(coeffs_[0]);
@@ -1412,7 +1418,7 @@ public:
                                     static_cast<short_t>(deriv) /
                                         utils::integer_pow<10, Is>::value %
                                         10>())) *
-            utils::kronproduct(
+                   utils::kronproduct(
                        eval_basfunc_univariate<
                            degrees_[Is], Is,
                            static_cast<short_t>(deriv) /
@@ -1430,7 +1436,7 @@ public:
   template <deriv deriv = deriv::func, bool memory_optimized = false>
   inline auto
   eval_basfunc_tr(const utils::TensorArray<parDim_> &xi,
-               const utils::TensorArray<parDim_> &knot_indices) const {
+                  const utils::TensorArray<parDim_> &knot_indices) const {
 
     if constexpr (parDim_ == 0) {
       if constexpr (deriv == deriv::func)
@@ -1451,16 +1457,16 @@ public:
         // Lambda expression to evaluate the vector of basis functions
         auto basfunc_ = [&,
                          this]<std::size_t... Is>(std::index_sequence<Is...>) {
-          return utils::TensorArray<parDim_>{
-              (eval_prefactor<degrees_[Is],
-                              static_cast<short_t>(deriv) /
-                                  utils::integer_pow<10, Is>::value % 10>() *
-               eval_basfunc_univariate_tr<degrees_[Is], Is,
-                                       static_cast<short_t>(deriv) /
-                                           utils::integer_pow<10, Is>::value %
-                                           10>(xi[Is].flatten(),
-                                               knot_indices[Is].flatten())
-                   .transpose(0, 1))...};
+          return utils::TensorArray<parDim_>{(
+              eval_prefactor<degrees_[Is],
+                             static_cast<short_t>(deriv) /
+                                 utils::integer_pow<10, Is>::value % 10>() *
+              eval_basfunc_univariate_tr<degrees_[Is], Is,
+                                         static_cast<short_t>(deriv) /
+                                             utils::integer_pow<10, Is>::value %
+                                             10>(xi[Is].flatten(),
+                                                 knot_indices[Is].flatten())
+                  .transpose(0, 1))...};
         };
 
         return basfunc_(std::make_index_sequence<parDim_>{});
@@ -1473,7 +1479,7 @@ public:
           return eval_prefactor<degrees_[0],
                                 static_cast<short_t>(deriv) % 10>() *
                  eval_basfunc_univariate_tr<degrees_[0], 0,
-                                         static_cast<short_t>(deriv) % 10>(
+                                            static_cast<short_t>(deriv) % 10>(
                      xi[0].flatten(), knot_indices[0].flatten());
 
         } else {
@@ -1486,7 +1492,7 @@ public:
                                     static_cast<short_t>(deriv) /
                                         utils::integer_pow<10, Is>::value %
                                         10>())) *
-            utils::kronproduct<-1>(
+                   utils::kronproduct<-1>(
                        eval_basfunc_univariate_tr<
                            degrees_[Is], Is,
                            static_cast<short_t>(deriv) /
@@ -1506,7 +1512,7 @@ public:
   inline UniformBSplineCore &
   transform(const std::function<
             std::array<real_t, geoDim_>(const std::array<real_t, parDim_> &)>
-            mapping) {
+                mapping) {
 
     static_assert(parDim_ <= 4, "Unsupported parametric dimension");
 
@@ -1521,8 +1527,8 @@ public:
     else if constexpr (parDim_ == 1) {
 #pragma omp parallel for
       for (int64_t i = 0; i < ncoeffs_[0]; ++i) {
-        auto c = mapping(
-            std::array<real_t, parDim_>{i / real_t(ncoeffs_[0] - 1)});
+        auto c =
+            mapping(std::array<real_t, parDim_>{i / real_t(ncoeffs_[0] - 1)});
         for (short_t d = 0; d < geoDim_; ++d)
           coeffs_[d].detach()[i] = c[d];
       }
@@ -1579,7 +1585,7 @@ public:
       }
     } else
       throw std::runtime_error("Unsupported parametric dimension");
-    
+
     return *this;
   }
 
@@ -1590,7 +1596,7 @@ public:
                 std::array<real_t, N>(const std::array<real_t, parDim_> &)>
                 mapping,
             std::array<short_t, N> dims) {
-    
+
     static_assert(parDim_ <= 4, "Unsupported parametric dimension");
 
     // 0D
@@ -1604,8 +1610,8 @@ public:
     else if constexpr (parDim_ == 1) {
 #pragma omp parallel for
       for (int64_t i = 0; i < ncoeffs_[0]; ++i) {
-        auto c = mapping(
-            std::array<real_t, parDim_>{i / real_t(ncoeffs_[0] - 1)});
+        auto c =
+            mapping(std::array<real_t, parDim_>{i / real_t(ncoeffs_[0] - 1)});
         for (std::size_t d = 0; d < N; ++d)
           coeffs_[dims[d]].detach()[i] = c[d];
       }
@@ -1662,7 +1668,7 @@ public:
       }
     } else
       throw std::runtime_error("Unsupported parametric dimension");
-    
+
     return *this;
   }
 
@@ -1709,8 +1715,7 @@ public:
   }
 
   /// @brief Updates the B-spline object from JSON object
-  inline UniformBSplineCore &
-  from_json(const nlohmann::json &json) override {
+  inline UniformBSplineCore &from_json(const nlohmann::json &json) override {
 
     if (json["geoDim"].get<short_t>() != geoDim_)
       throw std::runtime_error(
@@ -1914,7 +1919,7 @@ public:
           // Check for "BSplineBasis"
           if (pugi::xml_node basis = geo.child("Basis");
               std::string_view{basis.attribute("type").value()} ==
-                  "BSplineBasis") {
+              "BSplineBasis") {
 
             // Check for "KnotVector"
             if (pugi::xml_node knots = basis.child("KnotVector");
@@ -2128,7 +2133,7 @@ public:
 
     ncoeffs_reverse_ = ncoeffs_;
     std::reverse(ncoeffs_reverse_.begin(), ncoeffs_reverse_.end());
-    
+
     for (short_t i = 0; i < geoDim_; ++i)
       archive.read(key + ".coeffs[" + std::to_string(i) + "]", coeffs_[i]);
 
@@ -2682,7 +2687,7 @@ protected:
         // mask that is 1 if t2-t1 < eps and 0 otherwise. Note that
         // we do not have to take the absolute value as t2 >= t1.
         auto mask = (t21 < std::numeric_limits<real_t>::epsilon())
-                        .to(::iganet::dtype<real_t>());
+                        .to(::iganet::dtype_v<real_t>);
 
         // Instead of computing (xi-t1)/(t2-t1) which is prone to
         // yielding 0/0 we compute (xi-t1-mask)/(t2-t1-mask) which
@@ -2709,7 +2714,7 @@ protected:
         // mask that is 1 if t2-t1 < eps and 0 otherwise. Note that
         // we do not have to take the absolute value as t2 >= t1.
         auto mask = (t21 < std::numeric_limits<real_t>::epsilon())
-                        .to(::iganet::dtype<real_t>());
+                        .to(::iganet::dtype_v<real_t>);
 
         // Instead of computing 1/(t2-t1) which is prone to yielding
         // 0/0 we compute (1-mask)/(t2-t1-mask) which equals the
@@ -2728,46 +2733,51 @@ protected:
   }
 
   template <short_t degree, short_t dim, short_t deriv>
-  inline auto eval_basfunc_univariate_tr(const torch::Tensor &xi,
-                                         const torch::Tensor &knot_indices) const {
+  inline auto
+  eval_basfunc_univariate_tr(const torch::Tensor &xi,
+                             const torch::Tensor &knot_indices) const {
     assert(xi.sizes() == knot_indices.sizes());
-    
+
     if constexpr (deriv > degree) {
-      return torch::zeros({xi.numel(), degree + 1}, options_);  // swapped shape
+      return torch::zeros({xi.numel(), degree + 1}, options_); // swapped shape
     } else {
       torch::Tensor b = torch::ones({xi.numel()}, options_);
-      
+
       // Calculate R_k, k = 1, ..., degree-deriv
       for (short_t k = 1; k <= degree - deriv; ++k) {
-        auto t1 = knots_[dim].index_select(0, utils::VSlice(knot_indices, -k + 1, 1));
-        auto t21 = knots_[dim].index_select(0, utils::VSlice(knot_indices, 1, k + 1)) - t1;
-        
+        auto t1 =
+            knots_[dim].index_select(0, utils::VSlice(knot_indices, -k + 1, 1));
+        auto t21 =
+            knots_[dim].index_select(0, utils::VSlice(knot_indices, 1, k + 1)) -
+            t1;
+
         auto mask = (t21 < std::numeric_limits<real_t>::epsilon())
-          .to(::iganet::dtype<real_t>());
-        
+                        .to(::iganet::dtype_v<real_t>);
+
         auto w = torch::div(xi.repeat(k) - t1 - mask, t21 - mask);
-        
+
         b = torch::cat({torch::mul(torch::ones_like(w, options_) - w, b),
-            torch::zeros_like(xi, options_)},
-          0) +
-          torch::cat({torch::zeros_like(xi, options_), torch::mul(w, b)}, 0);
+                        torch::zeros_like(xi, options_)},
+                       0) +
+            torch::cat({torch::zeros_like(xi, options_), torch::mul(w, b)}, 0);
       }
-      
+
       // Calculate DR_k, k = degree-deriv+1, ..., degree
       for (short_t k = degree - deriv + 1; k <= degree; ++k) {
-        auto t21 = knots_[dim].index_select(0, utils::VSlice(knot_indices, 1, k + 1)) -
-          knots_[dim].index_select(0, utils::VSlice(knot_indices, -k + 1, 1));
-        
+        auto t21 =
+            knots_[dim].index_select(0, utils::VSlice(knot_indices, 1, k + 1)) -
+            knots_[dim].index_select(0, utils::VSlice(knot_indices, -k + 1, 1));
+
         auto mask = (t21 < std::numeric_limits<real_t>::epsilon())
-          .to(::iganet::dtype<real_t>());
-        
+                        .to(::iganet::dtype_v<real_t>);
+
         auto w = torch::div(torch::ones_like(t21, options_) - mask, t21 - mask);
-        
+
         b = torch::cat({torch::mul(-w, b), torch::zeros_like(xi, options_)},
                        0) +
-          torch::cat({torch::zeros_like(xi, options_), torch::mul(w, b)}, 0);
+            torch::cat({torch::zeros_like(xi, options_), torch::mul(w, b)}, 0);
       }
-      
+
       // Swap axes: shape [degree+1, xi.numel()] → [xi.numel(), degree+1]
       return b.view({degree + 1, xi.numel()}).transpose(0, 1);
     }
@@ -2801,7 +2811,7 @@ protected:
       // mask that is 1 if t2-t1 < eps and 0 otherwise. Note that
       // we do not have to take the absolute value as t2 >= t1.
       auto mask = (t21 < std::numeric_limits<real_t>::epsilon())
-                      .to(::iganet::dtype<real_t>());
+                      .to(::iganet::dtype_v<real_t>);
 
       // Instead of computing (xi-t1)/(t2-t1) which is prone to
       // yielding 0/0 we compute (xi-t1-mask)/(t2-t1-mask) which
@@ -3713,8 +3723,8 @@ public:
     requires UniformSplineCoreType<BSplineCore> &&
              (!NonUniformSplineCoreType<BSplineCore>)
   {
-    using target_core = typename BSplineCore::template derived_type<
-        NonUniformBSplineCore>;
+    using target_core =
+        typename BSplineCore::template derived_type<NonUniformBSplineCore>;
     return BSplineCommon<target_core>(
         std::move(static_cast<BSplineCore &>(*this)));
   }
@@ -3726,11 +3736,11 @@ public:
   [[nodiscard]] auto to_uniform() &&
     requires NonUniformSplineCoreType<BSplineCore>
   {
-    using target_core = typename BSplineCore::template derived_type<
-        UniformBSplineCore>;
+    using target_core =
+        typename BSplineCore::template derived_type<UniformBSplineCore>;
 
-    BSplineCommon<target_core> canonical(
-        BSplineCore::ncoeffs(), init::none, BSplineCore::options());
+    BSplineCommon<target_core> canonical(BSplineCore::ncoeffs(), init::none,
+                                         BSplineCore::options());
     for (short_t i = 0; i < BSplineCore::parDim(); ++i)
       if (!torch::equal(BSplineCore::knots(i), canonical.knots(i)))
         throw std::runtime_error(
@@ -4004,14 +4014,15 @@ public:
   /// mean-squared sum of the function values evaluated at the
   /// Greville abscissae
   inline auto norm() const {
-    return torch::mean(torch::pow(BSplineCore::eval(BSplineCore::greville())(0), 2));
+    return torch::mean(
+        torch::pow(BSplineCore::eval(BSplineCore::greville())(0), 2));
   }
-  
+
   /// @brief Scales the B-spline object by a scalar
   inline auto scale(BSplineCore::value_type s, int dim = -1) const {
     return this->clone().scale_(s, dim);
   }
-    
+
   /// @brief Scales the B-spline object by a scalar in-place
   inline auto scale_(BSplineCore::value_type s, int dim = -1) {
     if (dim == -1)
@@ -4024,13 +4035,14 @@ public:
 
   /// @brief Scales the B-spline object by a vector
   inline auto
-  scale(std::array<typename BSplineCore::value_type, BSplineCore::geoDim()> v) const {
+  scale(std::array<typename BSplineCore::value_type, BSplineCore::geoDim()> v)
+      const {
     return this->clone().scale_(v);
   }
-  
+
   /// @brief Scales the B-spline object by a vector in-place
-  inline auto
-  scale_(std::array<typename BSplineCore::value_type, BSplineCore::geoDim()> v) {
+  inline auto scale_(
+      std::array<typename BSplineCore::value_type, BSplineCore::geoDim()> v) {
     for (int i = 0; i < BSplineCore::geoDim(); ++i)
       BSplineCore::coeffs(i) *= v[i];
     return *this;
@@ -4038,10 +4050,11 @@ public:
 
   /// @brief Translates the B-spline object by a vector
   inline auto translate(
-                        std::array<typename BSplineCore::value_type, BSplineCore::geoDim()> v) const {
+      std::array<typename BSplineCore::value_type, BSplineCore::geoDim()> v)
+      const {
     return this->clone().translate_(v);
   }
-  
+
   /// @brief Translates the B-spline object by a vector in-place
   inline auto translate_(
       std::array<typename BSplineCore::value_type, BSplineCore::geoDim()> v) {
@@ -4054,7 +4067,7 @@ public:
   inline auto rotate(BSplineCore::value_type angle) const {
     return this->clone().rotate_(angle);
   }
-  
+
   /// @brief Rotates the B-spline object by an angle in 2d in-place
   inline auto rotate_(BSplineCore::value_type angle) {
 
@@ -4072,10 +4085,11 @@ public:
   }
 
   /// @brief Rotates the B-spline object by three angles in 3d
-  inline auto rotate(std::array<typename BSplineCore::value_type, 3> angle) const {
+  inline auto
+  rotate(std::array<typename BSplineCore::value_type, 3> angle) const {
     return this->clone().rotate_(angle);
   }
-  
+
   /// @brief Rotates the B-spline object by three angles in 3d in-place
   inline auto rotate_(std::array<typename BSplineCore::value_type, 3> angle) {
 
@@ -6583,7 +6597,7 @@ public:
       } else {
         // Plot unicolor mesh
         matplot::view(2);
-        matplot::colormap(std::vector<std::vector<double>>{{ 0.0, 0.0, 1.0 }});
+        matplot::colormap(std::vector<std::vector<double>>{{0.0, 0.0, 1.0}});
         ax->mesh(Xfine, Yfine, Zfine)->hidden_3d(false).line_width(2);
       }
 
@@ -6749,7 +6763,7 @@ public:
           throw std::runtime_error("BSpline for coloring must have geoDim=1");
       } else {
         // Plot unicolor surface
-        matplot::colormap(std::vector<std::vector<double>>{{ 0.0, 0.0, 1.0 }});
+        matplot::colormap(std::vector<std::vector<double>>{{0.0, 0.0, 1.0}});
         ax->mesh(Xfine, Yfine, Zfine)->hidden_3d(false).line_width(2);
       }
 
@@ -7239,6 +7253,65 @@ operator<<(std::ostream &os,
   return os;
 }
 
+/// @brief Create tensor-product uniform B-spline
+template <typename real_t, iganet::short_t GeoDim, iganet::short_t ParDim>
+std::shared_ptr<iganet::BSplinePatch<real_t, GeoDim, ParDim>>
+createUniformBSpline(
+    const std::array<iganet::short_t, ParDim> &degrees,
+    const std::array<int64_t, ParDim> &ncoeffs,
+    enum iganet::init init = iganet::init::greville,
+    iganet::Options<real_t> options = iganet::Options<real_t>{}) {
+  static_assert(std::is_same_v<real_t, float> ||
+                    std::is_same_v<real_t, double> ||
+                    std::is_same_v<real_t, long double>,
+                "Unsupported scalar type for JIT source generation");
+
+  using patch_t = iganet::BSplinePatch<real_t, GeoDim, ParDim>;
+
+  std::string includes = R"(
+#include <splines/bspline.hpp>
+
+#ifdef __clang__
+#pragma clang diagnostic ignored "-Wreturn-type-c-linkage"
+#endif
+)";
+
+  std::ostringstream src;
+  src << "using real_t = " << iganet::type_name_v<real_t> << ";\n"
+      << "using patch_t = iganet::BSplinePatch<real_t, " << GeoDim << ", "
+      << ParDim << ">;\n"
+      << "using bspline_t = iganet::UniformBSpline<real_t, " << GeoDim;
+  for (const auto degree : degrees)
+    src << ", " << degree;
+  src << ">;\n\n"
+      << "EXPORT std::shared_ptr<patch_t> create_patch(\n"
+      << "    const std::array<int64_t, " << ParDim << "> &ncoeffs,\n"
+      << "    enum iganet::init init, iganet::Options<real_t> options) {\n"
+      << "  return std::make_shared<bspline_t>(ncoeffs, init, options);\n"
+      << "}\n";
+
+  const auto libname =
+      iganet::jit{}.compile(includes, src.str(), "CreateUniformBSpline");
+  auto handler = std::make_shared<iganet::DLHandler>(libname);
+
+  using create_patch_fn =
+      std::shared_ptr<patch_t> (*)(const std::array<int64_t, ParDim> &,
+                                   enum iganet::init, iganet::Options<real_t>);
+  const auto create_patch =
+      reinterpret_cast<create_patch_fn>(handler->getSymbol("create_patch"));
+  auto patch = create_patch(ncoeffs, init, options);
+  auto *patch_ptr = patch.get();
+
+  // Keep the library loaded until after the dynamically created patch and its
+  // shared_ptr control block have been destroyed.
+  return std::shared_ptr<patch_t>(
+      patch_ptr, [patch = std::move(patch),
+                  handler = std::move(handler)](patch_t *) mutable {
+        patch.reset();
+        handler.reset();
+      });
+}
+
 /// @brief Tensor-product non-uniform B-spline
 template <typename real_t, short_t GeoDim, short_t... Degrees>
 using NonUniformBSpline =
@@ -7251,5 +7324,192 @@ operator<<(std::ostream &os,
            const NonUniformBSpline<real_t, GeoDim, Degrees...> &obj) {
   obj.pretty_print(os);
   return os;
+}
+
+/// @brief Create tensor-product non-uniform B-spline
+template <typename real_t, iganet::short_t GeoDim, iganet::short_t ParDim>
+std::shared_ptr<iganet::BSplinePatch<real_t, GeoDim, ParDim>>
+createNonUniformBSpline(
+    const std::array<iganet::short_t, ParDim> &degrees,
+    const std::array<int64_t, ParDim> &ncoeffs,
+    enum iganet::init init = iganet::init::greville,
+    iganet::Options<real_t> options = iganet::Options<real_t>{}) {
+  static_assert(std::is_same_v<real_t, float> ||
+                    std::is_same_v<real_t, double> ||
+                    std::is_same_v<real_t, long double>,
+                "Unsupported scalar type for JIT source generation");
+
+  using patch_t = iganet::BSplinePatch<real_t, GeoDim, ParDim>;
+
+  std::string includes = R"(
+#include <splines/bspline.hpp>
+
+#ifdef __clang__
+#pragma clang diagnostic ignored "-Wreturn-type-c-linkage"
+#endif
+)";
+
+  std::ostringstream src;
+  src << "using real_t = " << iganet::type_name_v<real_t> << ";\n"
+      << "using patch_t = iganet::BSplinePatch<real_t, " << GeoDim << ", "
+      << ParDim << ">;\n"
+      << "using bspline_t = iganet::NonUniformBSpline<real_t, " << GeoDim;
+  for (const auto degree : degrees)
+    src << ", " << degree;
+  src << ">;\n\n"
+      << "EXPORT std::shared_ptr<patch_t> create_patch(\n"
+      << "    const std::array<int64_t, " << ParDim << "> &ncoeffs,\n"
+      << "    enum iganet::init init, iganet::Options<real_t> options) {\n"
+      << "  return std::make_shared<bspline_t>(ncoeffs, init, options);\n"
+      << "}\n";
+
+  const auto libname =
+      iganet::jit{}.compile(includes, src.str(), "CreateNonUniformBSpline");
+  auto handler = std::make_shared<iganet::DLHandler>(libname);
+
+  using create_patch_fn =
+      std::shared_ptr<patch_t> (*)(const std::array<int64_t, ParDim> &,
+                                   enum iganet::init, iganet::Options<real_t>);
+  const auto create_patch =
+      reinterpret_cast<create_patch_fn>(handler->getSymbol("create_patch"));
+  auto patch = create_patch(ncoeffs, init, options);
+  auto *patch_ptr = patch.get();
+
+  // Keep the library loaded until after the dynamically created patch and its
+  // shared_ptr control block have been destroyed.
+  return std::shared_ptr<patch_t>(
+      patch_ptr, [patch = std::move(patch),
+                  handler = std::move(handler)](patch_t *) mutable {
+        patch.reset();
+        handler.reset();
+      });
+}
+
+/// @brief Creates a tensor-product non-uniform B-spline from an XML node
+template <typename real_t, iganet::short_t GeoDim, iganet::short_t ParDim>
+std::shared_ptr<iganet::BSplinePatch<real_t, GeoDim, ParDim>>
+createNonUniformBSpline(
+    const pugi::xml_node &root, int id = 0, const std::string &label = "",
+    int index = -1,
+    iganet::Options<real_t> options = iganet::Options<real_t>{}) {
+  pugi::xml_node geometry;
+  const std::string geometryType =
+      ParDim == 0 ? "Point"
+      : ParDim == 1
+          ? "BSpline"
+          : std::string("TensorBSpline").append(std::to_string(ParDim));
+
+  for (const auto &candidate : root.children("Geometry")) {
+    if (std::string_view{candidate.attribute("type").value()} == geometryType &&
+        (id >= 0 ? candidate.attribute("id").as_int() == id : true) &&
+        (index >= 0 ? candidate.attribute("index").as_int() == index : true) &&
+        (!label.empty() ? candidate.attribute("label").value() == label
+                        : true)) {
+      geometry = candidate;
+      break;
+    }
+  }
+  if (!geometry)
+    throw std::runtime_error(
+        "XML object does not provide geometry with given attributes");
+
+  const auto coefs = geometry.child("coefs");
+  if (!coefs || coefs.attribute("geoDim").as_int() != GeoDim)
+    throw std::runtime_error(
+        "XML object provides an incompatible geometric dimension");
+
+  std::array<iganet::short_t, ParDim> degrees{};
+  std::array<int64_t, ParDim> ncoeffs{};
+
+  if constexpr (ParDim == 1) {
+    const auto basis = geometry.child("Basis");
+    const auto knots = basis.child("KnotVector");
+    if (std::string_view{basis.attribute("type").value()} != "BSplineBasis" ||
+        !knots || !knots.attribute("degree"))
+      throw std::runtime_error("XML object does not provide a valid basis");
+
+    degrees[0] = knots.attribute("degree").as_int();
+    std::stringstream values(knots.child_value());
+    real_t value;
+    int64_t nknots = 0;
+    while (values >> value)
+      ++nknots;
+    ncoeffs[0] = nknots - degrees[0] - 1;
+    if (ncoeffs[0] <= 0)
+      throw std::runtime_error("XML object provides an invalid knot vector");
+  } else if constexpr (ParDim > 1) {
+    const auto bases = geometry.child("Basis");
+    const std::string basisType =
+        std::string("TensorBSplineBasis").append(std::to_string(ParDim));
+    if (std::string_view{bases.attribute("type").value()} != basisType)
+      throw std::runtime_error("XML object does not provide a valid basis");
+
+    std::array<bool, ParDim> found{};
+    for (const auto &basis : bases.children("Basis")) {
+      const int direction = basis.attribute("index").as_int(-1);
+      const auto knots = basis.child("KnotVector");
+      if (direction < 0 || direction >= ParDim || found[direction] ||
+          std::string_view{basis.attribute("type").value()} != "BSplineBasis" ||
+          !knots || !knots.attribute("degree"))
+        throw std::runtime_error("XML object does not provide a valid basis");
+
+      degrees[direction] = knots.attribute("degree").as_int();
+      std::stringstream values(knots.child_value());
+      real_t value;
+      int64_t nknots = 0;
+      while (values >> value)
+        ++nknots;
+      ncoeffs[direction] = nknots - degrees[direction] - 1;
+      if (ncoeffs[direction] <= 0)
+        throw std::runtime_error("XML object provides an invalid knot vector");
+      found[direction] = true;
+    }
+    if (std::any_of(found.begin(), found.end(),
+                    [](bool value) { return !value; }))
+      throw std::runtime_error("XML object does not provide all bases");
+  }
+
+  auto patch = createNonUniformBSpline<real_t, GeoDim, ParDim>(
+      degrees, ncoeffs, iganet::init::none, options);
+  patch->from_xml(root, id, label, index);
+  return patch;
+}
+
+/// @brief Creates a tensor-product non-uniform B-spline from an XML document
+template <typename real_t, iganet::short_t GeoDim, iganet::short_t ParDim>
+std::shared_ptr<iganet::BSplinePatch<real_t, GeoDim, ParDim>>
+createNonUniformBSpline(
+    const pugi::xml_document &doc, int id = 0, const std::string &label = "",
+    int index = -1,
+    iganet::Options<real_t> options = iganet::Options<real_t>{}) {
+  return createNonUniformBSpline<real_t, GeoDim, ParDim>(doc.child("xml"), id,
+                                                         label, index, options);
+}
+
+/// @brief Creates a tensor-product non-uniform B-spline from a JSON object
+template <typename real_t, iganet::short_t GeoDim, iganet::short_t ParDim>
+std::shared_ptr<iganet::BSplinePatch<real_t, GeoDim, ParDim>>
+createNonUniformBSpline(
+    const nlohmann::json &json,
+    iganet::Options<real_t> options = iganet::Options<real_t>{}) {
+  if (json.at("geoDim").get<iganet::short_t>() != GeoDim)
+    throw std::runtime_error(
+        "JSON object provides an incompatible geometric dimension");
+  if (json.at("parDim").get<iganet::short_t>() != ParDim)
+    throw std::runtime_error(
+        "JSON object provides an incompatible parametric dimension");
+
+  const auto degrees =
+      json.at("degrees").template get<std::array<iganet::short_t, ParDim>>();
+  const auto ncoeffs =
+      json.at("ncoeffs").template get<std::array<int64_t, ParDim>>();
+  if (std::any_of(ncoeffs.begin(), ncoeffs.end(),
+                  [](int64_t count) { return count <= 0; }))
+    throw std::runtime_error("JSON object provides invalid coefficient counts");
+
+  auto patch = createNonUniformBSpline<real_t, GeoDim, ParDim>(
+      degrees, ncoeffs, iganet::init::none, options);
+  patch->from_json(json);
+  return patch;
 }
 } // namespace iganet
