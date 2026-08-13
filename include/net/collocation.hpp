@@ -1,11 +1,11 @@
 /**
    @file net/collocation.hpp
 
-   @brief Isogeometric analysis base class
+   @brief Isogeometric analysis base class.
 
-   @author Matthias Moller
+   @author Matthias Moller.
 
-   @copyright This file is part of the IgANet project
+   @copyright This file is part of the IgANet project.
 
    This Source Code Form is subject to the terms of the Mozilla Public
    License, v. 2.0. If a copy of the MPL was not distributed with this
@@ -17,16 +17,16 @@
 namespace iganet {
 
 //  clang-format off
-/// @brief Enumerator for the collocation point specifier
+/// @brief Enumerator for the collocation point specifier.
 enum class collPts : short_t {
-  greville               = 0, /*!< Greville points */
-  greville_interior      = 1, /*!< Greville points in the interior */
-  greville_ref1          = 2, /*!< Greville points, once refined */
-  greville_interior_ref1 = 3, /*!< Greville points in the interior, once refined */
-  greville_ref2          = 4, /*!< Greville points, twice refined */
-  greville_interior_ref2 = 5, /*!< Greville points in the interior, twice refined */
-  greville_ref3          = 6, /*!< Greville points, three times refined */
-  greville_interior_ref3 = 7, /*!< Greville points in the interior, three times refined */
+  greville               = 0, /*!< Greville points. */
+  greville_interior      = 1, /*!< Greville points in the interior. */
+  greville_ref1          = 2, /*!< Greville points, once refined. */
+  greville_interior_ref1 = 3, /*!< Greville points in the interior, once refined. */
+  greville_ref2          = 4, /*!< Greville points, twice refined. */
+  greville_interior_ref2 = 5, /*!< Greville points in the interior, twice refined. */
+  greville_ref3          = 6, /*!< Greville points, three times refined. */
+  greville_interior_ref3 = 7, /*!< Greville points in the interior, three times refined. */
 };
 //  clang-format on
 
@@ -38,12 +38,12 @@ template <detail::HasAsTensor CollPts>
 class CollPtsHelper<CollPts> {
 
 public:
-  /// @brief Type of the collocation points
+  /// @brief Type of the collocation points.
   using type = std::pair<typename CollPts::eval_type,
                          typename CollPts::boundary_eval_type>;
 
 private:
-  /// @brief Returns the collocation points of the index-th function space
+  /// @brief Returns the collocation points of the index-th function space.
   ///
   /// In the default implementation the collocation points are the Greville
   /// abscissae in the interior of the domain and on the boundary
@@ -204,12 +204,16 @@ private:
   }
 
 public:
-  /// @brief Returns the collocation points of the index-th function spaces
+  /// @brief Returns the collocation points of the index-th function spaces.
   ///
   /// In the default implementation the collocation points are the Greville
   /// abscissae in the interior of the domain and on the boundary
   /// faces. This behavior can be changed by overriding this virtual
   /// function in a derived class.
+  /// @tparam FunctionSpace Template parameter `FunctionSpace`.
+  /// @param collPts Value of `collPts`.
+  /// @param space Value of `space`.
+  /// @return Result of the operation.
   template<typename FunctionSpace>
   static auto collPts(enum collPts collPts, const FunctionSpace& space) {
     if constexpr (FunctionSpace::nspaces() == 1)

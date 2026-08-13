@@ -1,11 +1,11 @@
 /**
    @file splines/bspline.hpp
 
-   @brief Multivariate B-splines
+   @brief Multivariate B-splines.
 
-   @author Matthias Moller
+   @author Matthias Moller.
 
-   @copyright This file is part of the IgANet project
+   @copyright This file is part of the IgANet project.
 
    This Source Code Form is subject to the terms of the Mozilla Public
    License, v. 2.0. If a copy of the MPL was not distributed with this
@@ -36,13 +36,13 @@
 #include <utils/tensorarray.hpp>
 #include <utils/vslice.hpp>
 
-/// @brief Sequence of expression (parametric coordinates)
+/// @brief Sequence of expression (parametric coordinates).
 ///
 /// For each item in this sequence corresponding expressions will be
 /// generated for function spaces, boundary spaces, etc.
 #define GENERATE_EXPR_SEQ (curl)(div)(grad)(hess)(jac)(lapl)
 
-/// @brief Sequence of expression (physical coordinates)
+/// @brief Sequence of expression (physical coordinates).
 ///
 /// For each item in this sequence corresponding expressions will be
 /// generated for function spaces, boundary spaces, etc.
@@ -54,55 +54,55 @@ using namespace literals;
 using utils::operator+;
 
 //  clang-format off
-/// @brief Enumerator for specifying the initialization of B-spline coefficients
+/// @brief Enumerator for specifying the initialization of B-spline coefficients.
 enum class init : short_t {
-  none = 0,  /*!< leave coefficient values uninitialized                      */
-  zeros = 1, /*!< set coefficient values to zero                              */
-  ones = 2,  /*!< set coefficient values to one                               */
+  none = 0,  /*!< leave coefficient values uninitialized. */
+  zeros = 1, /*!< set coefficient values to zero. */
+  ones = 2,  /*!< set coefficient values to one. */
   linear =
-      3, /*!< set coefficient values to \f$0,1,\dots \#\text{coeffs}-1\f$ */
-  random = 4,   /*!< set coefficient values to random numbers   */
-  greville = 5, /*!< set coefficient values to the Greville abscissae */
+      3, /*!< set coefficient values to \f$0,1,\dots \#\text{coeffs}-1\f$. */
+  random = 4,   /*!< set coefficient values to random numbers. */
+  greville = 5, /*!< set coefficient values to the Greville abscissae. */
   linspace = 6  /*!< set coefficient values to \f$0,1,\dots\f$ pattern (mostly
-                   for testing) */
+                   for testing). */
 };
 
-/// @brief Enumerator for specifying the derivative of B-spline evaluation
+/// @brief Enumerator for specifying the derivative of B-spline evaluation.
 ///
-/// **Examples**
+/// **Examples**.
 ///
 /// * 3d Laplace operator `dx^2+dy^2+dz^2`
-/// * 2d convection operator with time derivative dt+dx+dy`
+/// * 2d convection operator with time derivative `dt+dx+dy`.
 enum class deriv : short_t {
-  func = 0,  /*!< function value                   */
-  dx = 1,    /*!< first derivative in x-direction  */
-  dy = 10,   /*!< first derivative in y-direction  */
-  dz = 100,  /*!< first derivative in z-direction  */
-  dt = 1000, /*!< first derivative in t-direction  */
+  func = 0,  /*!< function value. */
+  dx = 1,    /*!< first derivative in x-direction. */
+  dy = 10,   /*!< first derivative in y-direction. */
+  dz = 100,  /*!< first derivative in z-direction. */
+  dt = 1000, /*!< first derivative in t-direction. */
 };
 //  clang-format on
 
 /// @brief Adds two enumerators for specifying the derivative of B-spline
-/// evaluation
+/// evaluation.
 ///
-/// @param[in] lhs First derivative enumerator
+/// @param[in] lhs First derivative enumerator.
 ///
-/// @param[in] rhs Second derivative enumerator
+/// @param[in] rhs Second derivative enumerator.
 ///
-/// @result Sum of the two enumerators
+/// @result Sum of the two enumerators.
 inline constexpr auto operator+(deriv lhs, deriv rhs) {
   return static_cast<deriv>(static_cast<short_t>(lhs) +
                             static_cast<short_t>(rhs));
 }
 
 /// @brief Raises an enumerator for specifying the derivative of B-spline
-/// evaluation to a higher exponent
+/// evaluation to a higher exponent.
 ///
-/// @param[in] lhs Derivative enumerator
+/// @param[in] lhs Derivative enumerator.
 ///
-/// @param[in] rhs Exponent
+/// @param[in] rhs Exponent.
 ///
-/// @result Derivative enumerator raised to the exponent
+/// @result Derivative enumerator raised to the exponent.
 inline constexpr auto operator^(deriv lhs, short_t rhs) {
   return static_cast<deriv>(static_cast<short_t>(lhs) *
                             static_cast<short_t>(rhs));
@@ -126,54 +126,54 @@ concept HasFindCoeffIndices = requires(T t, typename T::eval_type x) {
 
 } // namespace detail
 
-/// @brief SplineCore base class
+/// @brief SplineCore base class.
 class SplineCore_ {};
 
-/// @brief UniformSplineCore base class
+/// @brief UniformSplineCore base class.
 class UniformSplineCore_ : public SplineCore_ {};
 
-/// @brief NonUniformSplineCore base class
+/// @brief NonUniformSplineCore base class.
 class NonUniformSplineCore_ : public SplineCore_ {};
 
 /// @brief Concept to identify template parameters that are derived from
-/// iganet::SplineCore_
+/// iganet::SplineCore_.
 template <typename T>
 concept SplineCoreType = std::is_base_of_v<SplineCore_, T>;
 
 /// @brief Concept to identify template parameters that are derived from
-/// iganet::UniformSplineCore_
+/// iganet::UniformSplineCore_.
 template <typename T>
 concept UniformSplineCoreType = std::is_base_of_v<UniformSplineCore_, T>;
 
 /// @brief Concept to identify template parameters that are derived from
-/// iganet::NonUniformSplineCore_
+/// iganet::NonUniformSplineCore_.
 template <typename T>
 concept NonUniformSplineCoreType = std::is_base_of_v<NonUniformSplineCore_, T>;
 
-/// @brief Tensor-product uniform B-spline (core functionality)
+/// @brief Tensor-product uniform B-spline (core functionality).
 ///
 /// This class implements the core functionality of all B-spline
 /// classes and serves as base class for (non-)uniform B-splines.
 ///
-/// Mathematically, this class defines a mapping
+/// Mathematically, this class defines a mapping.
 ///
 /// \f[
 /// \mathbf{f}:\hat\Omega \mapsto \Omega
 /// \f]
 ///
-/// from the \f$d_\text{par}\f$-dimensional *parametric space*
+/// from the \f$d_\text{par}\f$-dimensional *parametric space*.
 /// \f$\hat\Omega=[0,1]^{d_\text{par}}\f$ to the
 /// \f$d_\text{geo}\f$-dimensional *geometric space*
 /// \f$\Omega\subset\mathbb{R}^{d_\text{geo}}\f$.
 ///
 /// This mapping is defined by tensor-product B-spline basis
-/// functions
+/// functions.
 ///
 /// \f[
 /// B_I(\boldsymbol{\xi}) = \bigotimes_{d=1}^{d_\text{par}} B_{i_d,p_d}(\xi_d)
 /// \f]
 ///
-/// and the control points
+/// and the control points.
 ///
 /// \f[
 /// \mathbf{c}_I = \mathbf{c}_{i_1,i_2,\dots, i_{d_\text{par}}} \in
@@ -181,7 +181,7 @@ concept NonUniformSplineCoreType = std::is_base_of_v<NonUniformSplineCore_, T>;
 /// \f]
 ///
 /// Here, \f$i_d\f$ are the local numbers of the univariate
-/// B-splines \f$\left(B_{i_d,p_d}\right)_{i_d=1}^{n_d}\f$ in the
+/// B-splines \f$\left(B_{i_d,p_d}\right)_{i_d=1}^{n_d}\f$ in the.
 /// \f$d\f$-th parametric dimension, \f$p_d\f$ is the respective
 /// *degree*, and \f$n_d\f$ is the number of univariate B-splines in
 /// the \f$d\f$-th direction. Moreover, \f$0\le \xi_{i_d}\le 1\f$ is
@@ -194,7 +194,7 @@ concept NonUniformSplineCoreType = std::is_base_of_v<NonUniformSplineCore_, T>;
 ///
 /// Here and below we adopt the vector notation \f$\boldsymbol{\xi}
 /// = \left(\xi_1,\xi_2,\dots,\xi_{d_\text{par}}\right)^\top\f$ and
-/// combine multiple local indices
+/// combine multiple local indices.
 /// \f$i_1,i_2,\dots,i_{d_\text{par}}\f$ of univariate B-spline
 /// basis functions into the global index \f$1\le I \le N\f$ with
 /// \f$N=n_1\cdot n_2\cdot\dots\cdot n_{d_\text{par}}\f$ denoting
@@ -202,7 +202,7 @@ concept NonUniformSplineCoreType = std::is_base_of_v<NonUniformSplineCore_, T>;
 ///
 /// This class implements B-spline functions and their derivatives
 /// for 1, 2, 3, and 4 parametric dimensions. The univariate
-/// B-splines are uniquely determined by their knot vectors
+/// B-splines are uniquely determined by their knot vectors.
 ///
 /// \f[
 /// \left(t_{i_d}\right)_{i_d=1}^{n_d+p_d+1}
@@ -227,127 +227,139 @@ class UniformBSplineCore
     : public UniformSplineCore_,
       public utils::Serializable,
       public BSplinePatch<real_t, GeoDim, sizeof...(Degrees)> {
-  /// @brief Enable access to private members
+  /// @brief Enable access to private members.
   template <typename BSplineCore>
     requires SplineCoreType<BSplineCore>
   friend class BSplineCommon;
 
 protected:
-  /// @brief Dimension of the parametric space
+  /// @brief Dimension of the parametric space.
   /// \f$\hat\Omega=[0,1]^{d_\text{par}}\f$
   static constexpr const short_t parDim_ = sizeof...(Degrees);
 
-  /// @brief Dimension of the geometric space
+  /// @brief Dimension of the geometric space.
   /// \f$\Omega\subset\mathbb{R}^{d_\text{geo}}\f$
   static constexpr const short_t geoDim_ = GeoDim;
 
-  /// @brief Array storing the degrees
+  /// @brief Array storing the degrees.
   /// \f$\left(p_d\right)_{d=1}^{d_\text{par}}\f$
   static constexpr const std::array<short_t, parDim_> degrees_ = {Degrees...};
 
-  /// @brief Array storing the sizes of the knot vectors
+  /// @brief Array storing the sizes of the knot vectors.
   /// \f$\left(n_d+p_d+1\right)_{d=1}^{d_\text{par}}\f$
   std::array<int64_t, parDim_> nknots_;
 
   /// @brief Array storing the sizes of the coefficients of the
-  /// control net \f$\left(n_d\right)_{d=1}^{d_\text{par}}\f$
+  /// control net \f$\left(n_d\right)_{d=1}^{d_\text{par}}\f$.
   std::array<int64_t, parDim_> ncoeffs_;
 
   /// @brief Array storing the sizes of the coefficients of the
   /// control net \f$\left(n_d\right)_{d=1}^{d_\text{par}}\f$ in
-  /// reverse order (needed for coeffs_view)
+  /// reverse order (needed for coeffs_view).
   std::array<int64_t, parDim_> ncoeffs_reverse_;
 
-  /// @brief Array storing the knot vectors
+  /// @brief Array storing the knot vectors.
   /// \f$\left(\left(t_{i_d}\right)_{i_d=1}^{n_d+p_d+1}\right)_{d=1}^{d_\text{par}}\f$
   utils::TensorArray<parDim_> knots_;
 
-  /// @brief Array storing the coefficients of the control net
+  /// @brief Array storing the coefficients of the control net.
   /// \f$\left(\mathbf{c}_{i_d}\right)_{i_d=1}^{n_d}\f$,
   /// \f$\mathbf{c}_{i_d}\in\mathbb{R}^{d_\text{geo}}\f$
   utils::TensorArray<geoDim_> coeffs_;
 
-  /// @brief Options
+  /// @brief Options.
   Options<real_t> options_;
 
 public:
-  /// @brief Value type
+  /// @brief Value type.
   using value_type = real_t;
 
   /// @brief Deduces the type of the template parameter `BSpline`
   /// when exposed to the class template parameters `real_t` and
   /// `GeoDim`, and the `Degrees` parameter pack. The optional
   /// template parameter `degree_elevate` can be used to
-  /// (de-)elevate the degrees by an additive constant
+  /// (de-)elevate the degrees by an additive constant.
   template <template <typename, short_t, short_t...> class BSpline,
             std::make_signed_t<short_t> degree_elevate = 0>
   using derived_type = BSpline<real_t, GeoDim, (Degrees + degree_elevate)...>;
 
   /// @brief Deduces the self-type possibly degrees (de-)elevated by
-  /// the additive constant `degree_elevate`
+  /// the additive constant `degree_elevate`.
   template <std::make_signed_t<short_t> degree_elevate = 0>
   using self_type = derived_type<UniformBSplineCore, degree_elevate>;
 
   /// @brief Deduces the derived self-type when exposed to different
   /// class template parameters `real_t` and `GeoDim`, and the
-  /// `Degrees` parameter pack
+  /// `Degrees` parameter pack.
   template <typename other_t, short_t GeoDim_, short_t... Degrees_>
   using derived_self_type = UniformBSplineCore<other_t, GeoDim_, Degrees_...>;
 
   /// @brief Deduces the derived self-type when exposed to a
-  /// different class template parameter `real_t`
+  /// different class template parameter `real_t`.
   template <typename other_t>
   using real_derived_self_type =
       UniformBSplineCore<other_t, GeoDim, Degrees...>;
 
-  /// @brief Returns the `device` property
+  /// @brief Returns the `device` property.
+  /// @tparam other_t Template parameter `other_t`.
+  /// @return Result of the operation.
   [[nodiscard]] inline torch::Device device() const noexcept override {
     return options_.device();
   }
 
-  /// @brief Returns the `device_index` property
+  /// @brief Returns the `device_index` property.
+  /// @return Result of the operation.
   [[nodiscard]] inline int32_t device_index() const noexcept override {
     return options_.device_index();
   }
 
-  /// @brief Returns the `dtype` property
+  /// @brief Returns the `dtype` property.
+  /// @return Result of the operation.
   [[nodiscard]] inline torch::Dtype dtype() const noexcept override {
     return options_.dtype();
   }
 
-  /// @brief Returns the `layout` property
+  /// @brief Returns the `layout` property.
+  /// @return Result of the operation.
   [[nodiscard]] inline torch::Layout layout() const noexcept override {
     return options_.layout();
   }
 
-  /// @brief Returns the `requires_grad` property
+  /// @brief Returns the `requires_grad` property.
+  /// @return Result of the operation.
   [[nodiscard]] inline bool requires_grad() const noexcept override {
     return options_.requires_grad();
   }
 
-  /// @brief Returns the `pinned_memory` property
+  /// @brief Returns the `pinned_memory` property.
+  /// @return Result of the operation.
   [[nodiscard]] inline bool pinned_memory() const noexcept override {
     return options_.pinned_memory();
   }
 
-  /// @brief Returns true if the layout is sparse
+  /// @brief Returns true if the layout is sparse.
+  /// @return Result of the operation.
   [[nodiscard]] inline bool is_sparse() const noexcept override {
     return options_.is_sparse();
   }
 
-  /// @brief Returns true if the B-spline is uniform
+  /// @brief Returns true if the B-spline is uniform.
+  /// @return Result of the operation.
   inline static constexpr bool is_uniform() noexcept { return true; }
 
-  /// @brief Returns true if the B-spline is non-uniform
+  /// @brief Returns true if the B-spline is non-uniform.
+  /// @return Result of the operation.
   inline static constexpr bool is_nonuniform() noexcept { return false; }
 
-  /// @brief Sets the B-spline object's `requires_grad` property
+  /// @brief Sets the B-spline object's `requires_grad` property.
   ///
   /// @note: It is only necessary to set `requires_grad` to true if
   /// gradients with respect to B-spline entities, e.g., the control
   /// points should be computed. For computing the gradients with
   /// respect to the sampling points the B-spline's `requires_grad`
   /// property can be false.
+  /// @param requires_grad Value of `requires_grad`.
+  /// @return Result of the operation.
   inline UniformBSplineCore &
   set_requires_grad(bool requires_grad) noexcept override {
     if (options_.requires_grad() == requires_grad)
@@ -366,12 +378,13 @@ public:
     return *this;
   }
 
-  /// @brief Returns a constant reference to the B-spline object's options
+  /// @brief Returns a constant reference to the B-spline object's options.
+  /// @return Result of the operation.
   inline const Options<real_t> &options() const noexcept { return options_; }
 
-  /// @brief Default constructor
+  /// @brief Default constructor.
   ///
-  /// @param[in] options Options configuration
+  /// @param[in] options Options configuration.
   explicit UniformBSplineCore(Options<real_t> options = Options<real_t>{})
       : options_(options) {
     nknots_.fill(0);
@@ -379,13 +392,13 @@ public:
     ncoeffs_reverse_.fill(0);
   }
 
-  /// @brief Constructor for equidistant knot vectors
+  /// @brief Constructor for equidistant knot vectors.
   ///
-  /// @param[in] ncoeffs Number of coefficients per parametric dimension
+  /// @param[in] ncoeffs Number of coefficients per parametric dimension.
   ///
-  /// @param[in] init Type of initialization
+  /// @param[in] init Type of initialization.
   ///
-  /// @param[in] options Options configuration
+  /// @param[in] options Options configuration.
   explicit UniformBSplineCore(const std::array<int64_t, parDim_> &ncoeffs,
                               enum init init = init::greville,
                               Options<real_t> options = Options<real_t>{})
@@ -400,16 +413,16 @@ public:
     init_coeffs(init);
   }
 
-  /// @brief Constructor for equidistant knot vectors
+  /// @brief Constructor for equidistant knot vectors.
   ///
-  /// @param[in] ncoeffs Number of coefficients per parametric dimension
+  /// @param[in] ncoeffs Number of coefficients per parametric dimension.
   ///
-  /// @param[in] coeffs Vectors of coefficients per parametric dimension
+  /// @param[in] coeffs Vectors of coefficients per parametric dimension.
   ///
   /// @param[in] clone  If true, coefficients will be cloned. Otherwise,
-  /// coefficients will be aliased
+  /// coefficients will be aliased.
   ///
-  /// @param[in] options Options configuration
+  /// @param[in] options Options configuration.
   ///
   /// @note It is not checked whether vectors of coefficients are
   /// compatible with the given Options object if clone is false.
@@ -441,13 +454,13 @@ public:
         coeffs_[i] = coeffs[i];
   }
 
-  /// @brief Constructor for equidistant knot vectors
+  /// @brief Constructor for equidistant knot vectors.
   ///
-  /// @param[in] ncoeffs Number of coefficients per parametric dimension
+  /// @param[in] ncoeffs Number of coefficients per parametric dimension.
   ///
-  /// @param[in] coeffs Vectors of coefficients per parametric dimension
+  /// @param[in] coeffs Vectors of coefficients per parametric dimension.
   ///
-  /// @param[in] options Options configuration
+  /// @param[in] options Options configuration.
   ///
   /// @note It is not checked whether vectors of coefficients are
   /// compatible with the given Options object if clone is false.
@@ -463,11 +476,11 @@ public:
     init_knots();
   }
 
-  /// @brief Copy constructor
+  /// @brief Copy constructor.
   ///
-  /// @param[in] other Uniform B-spline object to copy
+  /// @param[in] other Uniform B-spline object to copy.
   ///
-  /// @param[in] options Options configuration
+  /// @param[in] options Options configuration.
   template <typename other_t>
   explicit UniformBSplineCore(
       const UniformBSplineCore<other_t, GeoDim, Degrees...> &other,
@@ -492,144 +505,146 @@ public:
                       .requires_grad_(options.requires_grad());
   }
 
-  /// @brief Copy constructor
+  /// @brief Copy constructor.
   UniformBSplineCore(const UniformBSplineCore &) = default;
 
-  /// @brief Move constructor
+  /// @brief Move constructor.
   UniformBSplineCore(UniformBSplineCore &&) noexcept = default;
 
-  /// @brief Copy assignment operator
+  /// @brief Copy assignment operator.
+  /// @return Result of the operation.
   UniformBSplineCore &operator=(const UniformBSplineCore &) = default;
 
-  /// @brief Move assignment operator
+  /// @brief Move assignment operator.
+  /// @return Result of the operation.
   UniformBSplineCore &operator=(UniformBSplineCore &&) noexcept = default;
 
-  /// @brief Destructor
+  /// @brief Destructor.
   ~UniformBSplineCore() override = default;
 
-  /// @brief Returns the parametric dimension
+  /// @brief Returns the parametric dimension.
   ///
-  /// @result Number of parametric dimensions
+  /// @result Number of parametric dimensions.
   inline static constexpr short_t parDim() noexcept { return parDim_; }
 
-  /// @brief Returns the geometric dimension
+  /// @brief Returns the geometric dimension.
   ///
-  /// @result Number of geometric dimensions
+  /// @result Number of geometric dimensions.
   inline static constexpr short_t geoDim() noexcept { return geoDim_; }
 
-  /// @brief Returns a constant reference to the array of degrees
+  /// @brief Returns a constant reference to the array of degrees.
   ///
-  /// @result Array of degrees for all parametric dimensions
+  /// @result Array of degrees for all parametric dimensions.
   inline static constexpr const std::array<short_t, parDim_> &
   degrees() noexcept {
     return degrees_;
   }
 
-  /// @brief Returns a constant reference to the degree in the
+  /// @brief Returns a constant reference to the degree in the.
   /// \f$i\f$-th dimension
   ///
-  /// @param[in] i Parametric dimension
+  /// @param[in] i Parametric dimension.
   ///
-  /// @result Degree for the given parametric dimension
+  /// @result Degree for the given parametric dimension.
   inline static constexpr short_t degree(short_t i) noexcept {
     assert(i >= 0 && i < parDim_);
     return degrees_[i];
   }
 
   /// @brief Returns a constant reference to the array of knot
-  /// vectors
+  /// vectors.
   ///
-  /// @result Array of knot vectors
+  /// @result Array of knot vectors.
   inline const utils::TensorArray<parDim_> &knots() const noexcept {
     return knots_;
   }
 
-  /// @brief Returns a constant reference to the knot vector in the
+  /// @brief Returns a constant reference to the knot vector in the.
   /// \f$i\f$-th dimension
   ///
-  /// @param[in] i Parametric dimension
+  /// @param[in] i Parametric dimension.
   ///
-  /// @result Knot vector for the given parametric dimension
+  /// @result Knot vector for the given parametric dimension.
   [[nodiscard]] inline const torch::Tensor &knots(short_t i) const noexcept {
     assert(i >= 0 && i < parDim_);
     return knots_[i];
   }
 
   /// @brief Returns a non-constant reference to the array of knot
-  /// vectors
+  /// vectors.
   ///
-  /// @result Array of knot vectors
+  /// @result Array of knot vectors.
   inline utils::TensorArray<parDim_> &knots() noexcept { return knots_; }
 
   /// @brief Returns a non-constant reference to the knot vector in
-  /// the \f$i\f$-th dimension
+  /// the \f$i\f$-th dimension.
   ///
-  /// @param[in] i Parametric dimension
+  /// @param[in] i Parametric dimension.
   ///
-  /// @result Knot vector for the given parametric dimension
+  /// @result Knot vector for the given parametric dimension.
   inline torch::Tensor &knots(short_t i) noexcept {
     assert(i >= 0 && i < parDim_);
     return knots_[i];
   }
 
   /// @brief Returns a constant reference to the array of knot
-  /// vector dimensions
+  /// vector dimensions.
   ///
-  /// @result Array of knot vector dimensions
+  /// @result Array of knot vector dimensions.
   inline const std::array<int64_t, parDim_> &nknots() const noexcept {
     return nknots_;
   }
 
-  /// @brief Returns the dimension of the knot vector in the
+  /// @brief Returns the dimension of the knot vector in the.
   /// \f$i\f$-th dimension
   ///
-  /// @param[in] i Parametric dimension
+  /// @param[in] i Parametric dimension.
   ///
-  /// @result Knot vector dimension for the given parametric dimension
+  /// @result Knot vector dimension for the given parametric dimension.
   [[nodiscard]] inline int64_t nknots(short_t i) const noexcept {
     assert(i >= 0 && i < parDim_);
     return nknots_[i];
   }
 
   /// @brief Returns a constant reference to the array of
-  /// coefficient vectors
+  /// coefficient vectors.
   ///
-  /// @result Array of coefficient vectors
+  /// @result Array of coefficient vectors.
   inline const utils::TensorArray<geoDim_> &coeffs() const noexcept {
     return coeffs_;
   }
 
   /// @brief Returns a constant reference to the coefficient vector
-  /// in the \f$i\f$-th dimension
+  /// in the \f$i\f$-th dimension.
   ///
-  /// @param[in] i Geometric dimension
+  /// @param[in] i Geometric dimension.
   ///
-  /// @result Coefficient vector for the given geometric dimension
+  /// @result Coefficient vector for the given geometric dimension.
   [[nodiscard]] inline const torch::Tensor &coeffs(short_t i) const noexcept {
     assert(i >= 0 && i < geoDim_);
     return coeffs_[i];
   }
 
   /// @brief Returns a non-constant reference to the array of
-  /// coefficient vectors
+  /// coefficient vectors.
   ///
-  /// @result Array of coefficient vectord
+  /// @result Array of coefficient vectord.
   inline utils::TensorArray<geoDim_> &coeffs() noexcept { return coeffs_; }
 
   /// @brief Returns a non-constant reference to the coefficient
-  /// vector in the \f$i\f$-th dimension
+  /// vector in the \f$i\f$-th dimension.
   ///
-  /// @param[in] i Geometric dimension
+  /// @param[in] i Geometric dimension.
   ///
-  /// @result Coefficient vector for the given geometric dimension
+  /// @result Coefficient vector for the given geometric dimension.
   inline torch::Tensor &coeffs(short_t i) noexcept {
     assert(i >= 0 && i < geoDim_);
     return coeffs_[i];
   }
 
-  /// @brief Returns an array of views to the coefficient vectors
+  /// @brief Returns an array of views to the coefficient vectors.
   ///
-  /// @result Array of views to the coefficient vectors
+  /// @result Array of views to the coefficient vectors.
   inline utils::TensorArray<geoDim_> coeffs_view() const noexcept {
     utils::TensorArray<geoDim_> coeffs;
     for (short_t i = 0; i < geoDim_; ++i)
@@ -637,12 +652,12 @@ public:
     return coeffs;
   }
 
-  /// @brief Returns a view to the coefficient vector in the
+  /// @brief Returns a view to the coefficient vector in the.
   /// \f$i\f$-th dimension
   ///
-  /// @param[in] i Geometric dimension
+  /// @param[in] i Geometric dimension.
   ///
-  /// @result View of the coefficient vector for the given geometric dimension
+  /// @result View of the coefficient vector for the given geometric dimension.
   inline const auto coeffs_view(short_t i) const noexcept {
     assert(i >= 0 && i < geoDim_);
     if constexpr (parDim_ > 1)
@@ -654,9 +669,9 @@ public:
       return coeffs_[i];
   }
 
-  /// @brief Returns the total number of coefficients
+  /// @brief Returns the total number of coefficients.
   ///
-  /// @result Total number of coefficients
+  /// @result Total number of coefficients.
   [[nodiscard]] inline int64_t ncumcoeffs() const noexcept {
     int64_t s = 1;
 
@@ -667,45 +682,45 @@ public:
   }
 
   /// @brief Returns a constant reference to the array of
-  /// coefficient vector dimensions
+  /// coefficient vector dimensions.
   ///
-  /// @result Array of coefficient vector dimensions
+  /// @result Array of coefficient vector dimensions.
   inline const std::array<int64_t, parDim_> &ncoeffs() const noexcept {
     return ncoeffs_;
   }
 
-  /// @brief Returns the total number of coefficients in the
+  /// @brief Returns the total number of coefficients in the.
   /// \f$i\f$-th direction
   ///
-  /// @param[in] i Parametric dimension
+  /// @param[in] i Parametric dimension.
   ///
-  /// @result Total number of coefficients in given parametric dimension
+  /// @result Total number of coefficients in given parametric dimension.
   [[nodiscard]] inline int64_t ncoeffs(short_t i) const noexcept {
     assert(i >= 0 && i < parDim_);
     return ncoeffs_[i];
   }
 
 private:
-  /// @brief Returns all coefficients as a single tensor
+  /// @brief Returns all coefficients as a single tensor.
   ///
-  /// @result Tensor of coefficients
+  /// @result Tensor of coefficients.
   template <std::size_t... Is>
   inline torch::Tensor as_tensor_(std::index_sequence<Is...>) const noexcept {
     return torch::cat({coeffs_[Is]...});
   }
 
 public:
-  /// @brief Returns all coefficients as a single tensor
+  /// @brief Returns all coefficients as a single tensor.
   ///
-  /// @result Tensor of coefficients
+  /// @result Tensor of coefficients.
   [[nodiscard]] inline torch::Tensor as_tensor() const noexcept override {
     return as_tensor_(std::make_index_sequence<geoDim_>{});
   }
 
 private:
-  /// @brief Sets all coefficients from a single tensor
+  /// @brief Sets all coefficients from a single tensor.
   ///
-  /// @result Updates spline object
+  /// @result Updates spline object.
   template <std::size_t... Is>
   inline UniformBSplineCore &
   from_tensor_(std::index_sequence<Is...>,
@@ -718,27 +733,27 @@ private:
   }
 
 public:
-  /// @brief Sets all coefficients from a single tensor
+  /// @brief Sets all coefficients from a single tensor.
   ///
-  /// @param[in] tensor Tensor from which to extract the coefficients
+  /// @param[in] tensor Tensor from which to extract the coefficients.
   ///
-  /// @result Updated spline object
+  /// @result Updated spline object.
   inline UniformBSplineCore &
   from_tensor(const torch::Tensor &tensor) noexcept override {
     return from_tensor_(std::make_index_sequence<geoDim_>{}, tensor);
   }
 
   /// @brief Returns the size of the single tensor representation of
-  /// all coefficients
+  /// all coefficients.
   //
-  /// @result Size of the tensor
+  /// @result Size of the tensor.
   [[nodiscard]] inline int64_t as_tensor_size() const noexcept override {
     return geoDim_ * ncumcoeffs();
   }
 
-  /// @brief Returns the Greville abscissae
+  /// @brief Returns the Greville abscissae.
   ///
-  /// The Greville abscissae are defined as
+  /// The Greville abscissae are defined as.
   ///
   /// \f[
   ///   g_{i_d} = \frac{\xi_{i_d+1} + \xi_{i_d+2} + \dots +
@@ -747,9 +762,9 @@ public:
   ///
   ///
   /// @param[in] interior If true only interior Greville abscissae are
-  /// considered
+  /// considered.
   ///
-  /// @result Array of Greville abscissae
+  /// @result Array of Greville abscissae.
   inline auto greville(bool interior = false) const {
     if constexpr (parDim_ == 0) {
       return torch::zeros(1, options_);
@@ -809,22 +824,22 @@ public:
   }
 
   /// @brief Returns the value of the B-spline object from
-  /// precomputed basis function
+  /// precomputed basis function.
   ///
   /// This function implements steps 2-3 of algorithm \ref
   /// BSplineEvaluation for univariate B-splines
-  /// (i.e. \f$d_\text{par}=1\f$)
+  /// (i.e. \f$d_\text{par}=1\f$).
   ///
   /// @param[in] basfunc Value(s) of the multivariate B-spline basis
-  ///                    functions evaluated at the point(s) `xi`
+  ///                    functions evaluated at the point(s) `xi`.
   ///
-  /// @param[in] coeff_indices Indices where to evaluate the coefficients
+  /// @param[in] coeff_indices Indices where to evaluate the coefficients.
   ///
-  /// @param[in] numeval Number of evaluation points
+  /// @param[in] numeval Number of evaluation points.
   ///
-  /// @param[in] sizes Dimension of the result
+  /// @param[in] sizes Dimension of the result.
   ///
-  /// @result Value(s) of the univariate B-spline object
+  /// @result Value(s) of the univariate B-spline object.
   ///
   ///
   /// @note This function does not work of the basis functions are
@@ -845,6 +860,12 @@ public:
     return result;
   }
 
+  /// @brief Provides the `eval_from_precomputed` operation.
+  /// @param basfunc Value of `basfunc`.
+  /// @param coeff_indices Value of `coeff_indices`.
+  /// @param numeval Value of `numeval`.
+  /// @param sizes Value of `sizes`.
+  /// @return Result of the operation.
   inline utils::BlockTensor<torch::Tensor, 1, geoDim_>
   eval_from_precomputed(const utils::TensorArray<parDim_> &basfunc,
                         const torch::Tensor &coeff_indices, int64_t numeval,
@@ -881,14 +902,14 @@ public:
   }
   /// @}
 
-  /// @brief Returns the value of the B-spline object in the point `xi`
+  /// @brief Returns the value of the B-spline object in the point `xi`.
   ///
   /// This implementation follows the procedure described in
   /// Chapters 2 and 3 of \cite Lyche:2011.
   ///
   /// @anchor BSplineEvaluation **Algorithm: B-spline evaluation**
   ///
-  /// 1. Determine the indices
+  /// 1. Determine the indices.
   ///    \f$(i_d)_{d=1}^{d_\text{par}}\f$ of the knot spans such that
   ///
   ///    \f[
@@ -897,7 +918,7 @@ public:
   ///    \f]
   ///
   /// 2. Evaluate the vectors of univariate B-spline basis functions (or
-  ///    their derivatives) that are non-zero at \f$\boldsymbol{\xi}\f$
+  ///    their derivatives) that are non-zero at \f$\boldsymbol{\xi}\f$.
   ///
   ///    \f[
   ///      D^{r_d}\mathbf{B}_d =
@@ -910,25 +931,25 @@ public:
   ///    derivative in the \f$d\f$-direction.
   ///
   /// 3. Multiply the tensor-product of the above row vectors by the
-  ///    column vector of control points
+  ///    column vector of control points.
   ///
   ///    \f[
   ///    \left( \bigotimes_{d=1}^{d_\text{par}} D^{r_d}\mathbf{B}_d \right)
   ///    \cdot \mathbf{c}_\mathcal{J}, \f]
   ///
   ///    where \f$\mathcal{J}\f$ is the subset of global indices
-  ///    that belong to the coefficients
+  ///    that belong to the coefficients.
   ///
   ///    \f[
   ///    \mathbf{c}_{i_1-p_1:i_1,\dots,i_\text{par}-p_\text{par}:i_\text{par}}
   ///    \f]
   ///
-  /// @tparam deriv Composition of derivative indicators of type \ref deriv
+  /// @tparam deriv Composition of derivative indicators of type \ref deriv.
   ///
-  /// @param[in] xi Point(s) where to evaluate the multivariate B-spline object
+  /// @param[in] xi Point(s) where to evaluate the multivariate B-spline object.
   ///
   /// @result Value(s) of the multivariate B-spline evaluated at the point(s)
-  /// `xi`
+  /// `xi`.
   ///
   /// @{
   template <deriv deriv = deriv::func, bool memory_optimized = false>
@@ -939,11 +960,23 @@ public:
       throw std::runtime_error("Invalid parametric dimension");
   }
 
+  /// @brief Provides the `eval` operation.
+  /// @tparam deriv Template parameter `deriv`.
+  /// @tparam memory_optimized Template parameter `memory_optimized`.
+  /// @param xi Parametric coordinates.
+  /// @return Result of the operation.
   template <deriv deriv = deriv::func, bool memory_optimized = false>
   inline auto eval(const utils::TensorArray<parDim_> &xi) const {
     return eval<deriv, memory_optimized>(xi, find_knot_indices(xi));
   }
 
+  /// @brief Provides the `eval_tr` operation.
+  /// @tparam deriv Template parameter `deriv`.
+  /// @tparam memory_optimized Template parameter `memory_optimized`.
+  /// @tparam deriv Template parameter `deriv`.
+  /// @tparam memory_optimized Template parameter `memory_optimized`.
+  /// @param xi Parametric coordinates.
+  /// @return Result of the operation.
   template <deriv deriv = deriv::func, bool memory_optimized = false>
   inline auto eval_tr(const torch::Tensor &xi) const {
     if constexpr (parDim_ == 1)
@@ -952,6 +985,11 @@ public:
       throw std::runtime_error("Invalid parametric dimension");
   }
 
+  /// @brief Provides the `eval_tr` operation.
+  /// @tparam deriv Template parameter `deriv`.
+  /// @tparam memory_optimized Template parameter `memory_optimized`.
+  /// @param xi Parametric coordinates.
+  /// @return Result of the operation.
   template <deriv deriv = deriv::func, bool memory_optimized = false>
   inline auto eval_tr(const utils::TensorArray<parDim_> &xi) const {
     return eval_tr<deriv, memory_optimized>(xi, find_knot_indices(xi));
@@ -959,20 +997,20 @@ public:
   /// @}
 
   /// @brief Returns the value of the univariate B-spline object in
-  /// the points `xi`
+  /// the points `xi`.
   ///
   /// This function implements steps 2-3 of algorithm \ref
   /// BSplineEvaluation for univariate B-splines
-  /// (i.e. \f$d_\text{par}=1\f$)
+  /// (i.e. \f$d_\text{par}=1\f$).
   ///
-  /// @tparam deriv Composition of derivative indicators of type \ref deriv
+  /// @tparam deriv Composition of derivative indicators of type \ref deriv.
   ///
-  /// @param[in] xi Point(s) where to evaluate the univariate B-spline object
+  /// @param[in] xi Point(s) where to evaluate the univariate B-spline object.
   ///
   /// @param[in] knot_indices Knot indices where to evaluate the univariate
-  /// B-spline object
+  /// B-spline object.
   ///
-  /// @result Value(s) of the univariate B-spline evaluated at the point(s) `xi`
+  /// @result Value(s) of the univariate B-spline evaluated at the point(s) `xi`.
   template <deriv deriv = deriv::func, bool memory_optimized = false>
   inline auto eval(const utils::TensorArray<parDim_> &xi,
                    const utils::TensorArray<parDim_> &knot_indices) const {
@@ -980,6 +1018,12 @@ public:
         xi, knot_indices, find_coeff_indices<memory_optimized>(knot_indices));
   }
 
+  /// @brief Provides the `eval_tr` operation.
+  /// @tparam deriv Template parameter `deriv`.
+  /// @tparam memory_optimized Template parameter `memory_optimized`.
+  /// @param xi Parametric coordinates.
+  /// @param knot_indices Value of `knot_indices`.
+  /// @return Result of the operation.
   template <deriv deriv = deriv::func, bool memory_optimized = false>
   inline auto eval_tr(const utils::TensorArray<parDim_> &xi,
                       const utils::TensorArray<parDim_> &knot_indices) const {
@@ -988,23 +1032,23 @@ public:
   }
 
   /// @brief Returns the value of the univariate B-spline object in
-  /// the points `xi`
+  /// the points `xi`.
   ///
   /// This function implements steps 2-3 of algorithm \ref
   /// BSplineEvaluation for univariate B-splines
-  /// (i.e. \f$d_\text{par}=1\f$)
+  /// (i.e. \f$d_\text{par}=1\f$).
   ///
-  /// @tparam deriv Composition of derivative indicators of type \ref deriv
+  /// @tparam deriv Composition of derivative indicators of type \ref deriv.
   ///
-  /// @param[in] xi Point(s) where to evaluate the univariate B-spline object
+  /// @param[in] xi Point(s) where to evaluate the univariate B-spline object.
   ///
   /// @param[in] knot_indices Knot indices where to evaluate the univariate
-  /// B-spline object
+  /// B-spline object.
   ///
   /// @param[in] coeff_indices Coefficient indices where to evaluate the
-  /// univariate B-spline object
+  /// univariate B-spline object.
   ///
-  /// @result Value(s) of the univariate B-spline evaluated at the point(s) `xi`
+  /// @result Value(s) of the univariate B-spline evaluated at the point(s) `xi`.
   template <deriv deriv = deriv::func, bool memory_optimized = false>
   inline auto eval(const utils::TensorArray<parDim_> &xi,
                    const utils::TensorArray<parDim_> &knot_indices,
@@ -1094,6 +1138,13 @@ public:
     }
   }
 
+  /// @brief Provides the `eval_tr` operation.
+  /// @tparam deriv Template parameter `deriv`.
+  /// @tparam memory_optimized Template parameter `memory_optimized`.
+  /// @param xi Parametric coordinates.
+  /// @param knot_indices Value of `knot_indices`.
+  /// @param coeff_indices Value of `coeff_indices`.
+  /// @return Result of the operation.
   template <deriv deriv = deriv::func, bool memory_optimized = false>
   inline auto eval_tr(const utils::TensorArray<parDim_> &xi,
                       const utils::TensorArray<parDim_> &knot_indices,
@@ -1184,9 +1235,9 @@ public:
     }
   }
 
-  /// @brief Returns the indices of knot spans containing `xi`
+  /// @brief Returns the indices of knot spans containing `xi`.
   ///
-  /// This function returns the indices
+  /// This function returns the indices.
   /// \f$(i_d)_{d=1}^{d_\text{par}}\f$ of the knot spans such that
   ///
   /// \f[
@@ -1195,11 +1246,11 @@ public:
   /// \f]
   ///
   /// The indices are returned as `utils::TensorArray<parDim_>` in the
-  /// same order as provided in `xi`
+  /// same order as provided in `xi`.
   ///
-  /// @param[in] xi Point(s) where to evaluate the B-spline object
+  /// @param[in] xi Point(s) where to evaluate the B-spline object.
   ///
-  /// @result Indices of the knot spans containing `xi`
+  /// @result Indices of the knot spans containing `xi`.
   ///
   /// @{
   inline auto find_knot_indices(const torch::Tensor &xi) const noexcept {
@@ -1209,6 +1260,9 @@ public:
       return find_knot_indices(utils::TensorArray1({xi}));
   }
 
+  /// @brief Provides the `find_knot_indices` operation.
+  /// @param xi Parametric coordinates.
+  /// @return Result of the operation.
   inline utils::TensorArray<parDim_>
   find_knot_indices(const utils::TensorArray<parDim_> &xi) const noexcept {
     if constexpr (parDim_ == 0)
@@ -1229,11 +1283,11 @@ public:
   /// @}
 
   /// @brief Returns the indices of the coefficients corresponding to the knot
-  /// indices `indices`
+  /// indices `indices`.
   ///
-  /// @param[in] indices Indices of the knot spans
+  /// @param[in] indices Indices of the knot spans.
   ///
-  /// @result Indices of the coefficients corresponding to the knot indices
+  /// @result Indices of the coefficients corresponding to the knot indices.
   ///
   /// @{
   template <bool memory_optimized = false>
@@ -1245,6 +1299,10 @@ public:
           utils::TensorArray1({indices}));
   }
 
+  /// @brief Provides the `find_coeff_indices` operation.
+  /// @tparam memory_optimized Template parameter `memory_optimized`.
+  /// @param indices Value of `indices`.
+  /// @return Result of the operation.
   template <bool memory_optimized = false>
   inline auto
   find_coeff_indices(const utils::TensorArray<parDim_> &indices) const {
@@ -1266,12 +1324,12 @@ public:
   /// @}
 
   /// @brief Returns the vector of multivariate B-spline basis
-  /// functions (or their derivatives) evaluated in the point `xi`
+  /// functions (or their derivatives) evaluated in the point `xi`.
   ///
-  /// @param[in] xi Point(s) where to evaluate the B-spline object
+  /// @param[in] xi Point(s) where to evaluate the B-spline object.
   ///
   /// @result Multivariate B-spline basis functions (or their derivatives)
-  /// evaluated in the point `xi`
+  /// evaluated in the point `xi`.
   ///
   /// @{
   template <deriv deriv = deriv::func, bool memory_optimized = false>
@@ -1285,6 +1343,11 @@ public:
       return eval_basfunc<deriv, memory_optimized>(utils::TensorArray1({xi}));
   }
 
+  /// @brief Provides the `eval_basfunc` operation.
+  /// @tparam deriv Template parameter `deriv`.
+  /// @tparam memory_optimized Template parameter `memory_optimized`.
+  /// @param xi Parametric coordinates.
+  /// @return Result of the operation.
   template <deriv deriv = deriv::func, bool memory_optimized = false>
   inline auto eval_basfunc(const utils::TensorArray<parDim_> &xi) const {
     if constexpr (parDim_ == 0) {
@@ -1296,6 +1359,11 @@ public:
       return eval_basfunc<deriv, memory_optimized>(xi, find_knot_indices(xi));
   }
 
+  /// @brief Provides the `eval_basfunc_tr` operation.
+  /// @tparam deriv Template parameter `deriv`.
+  /// @tparam memory_optimized Template parameter `memory_optimized`.
+  /// @param xi Parametric coordinates.
+  /// @return Result of the operation.
   template <deriv deriv = deriv::func, bool memory_optimized = false>
   inline auto eval_basfunc_tr(const torch::Tensor &xi) const {
     if constexpr (parDim_ == 0) {
@@ -1308,6 +1376,11 @@ public:
           utils::TensorArray1({xi}));
   }
 
+  /// @brief Provides the `eval_basfunc_tr` operation.
+  /// @tparam deriv Template parameter `deriv`.
+  /// @tparam memory_optimized Template parameter `memory_optimized`.
+  /// @param xi Parametric coordinates.
+  /// @return Result of the operation.
   template <deriv deriv = deriv::func, bool memory_optimized = false>
   inline auto eval_basfunc_tr(const utils::TensorArray<parDim_> &xi) const {
     if constexpr (parDim_ == 0) {
@@ -1322,15 +1395,15 @@ public:
   /// @}
 
   /// @brief Returns the vector of multivariate B-spline basis
-  /// functions (or their derivatives) evaluated in the point `xi`
+  /// functions (or their derivatives) evaluated in the point `xi`.
   ///
-  /// @param[in] xi Point(s) where to evaluate the B-spline object
+  /// @param[in] xi Point(s) where to evaluate the B-spline object.
   ///
   /// @param[in] knot_indices Knot indices where to evaluate the univariate
-  /// B-spline object
+  /// B-spline object.
   ///
   /// @result Multivariate B-spline basis functions (or their derivatives)
-  /// evaluated in the point `xi`
+  /// evaluated in the point `xi`.
   ///
   /// @{
   template <deriv deriv = deriv::func, bool memory_optimized = false>
@@ -1346,6 +1419,12 @@ public:
           utils::TensorArray1({xi}), utils::TensorArray1({knot_indices}));
   }
 
+  /// @brief Provides the `eval_basfunc_tr` operation.
+  /// @tparam deriv Template parameter `deriv`.
+  /// @tparam memory_optimized Template parameter `memory_optimized`.
+  /// @param xi Parametric coordinates.
+  /// @param knot_indices Value of `knot_indices`.
+  /// @return Result of the operation.
   template <deriv deriv = deriv::func, bool memory_optimized = false>
   inline auto eval_basfunc_tr(const torch::Tensor &xi,
                               const torch::Tensor &knot_indices) const {
@@ -1359,6 +1438,12 @@ public:
           utils::TensorArray1({xi}), utils::TensorArray1({knot_indices}));
   }
 
+  /// @brief Provides the `eval_basfunc` operation.
+  /// @tparam deriv Template parameter `deriv`.
+  /// @tparam memory_optimized Template parameter `memory_optimized`.
+  /// @param xi Parametric coordinates.
+  /// @param knot_indices Value of `knot_indices`.
+  /// @return Result of the operation.
   template <deriv deriv = deriv::func, bool memory_optimized = false>
   inline auto
   eval_basfunc(const utils::TensorArray<parDim_> &xi,
@@ -1433,6 +1518,12 @@ public:
     }
   }
 
+  /// @brief Provides the `eval_basfunc_tr` operation.
+  /// @tparam deriv Template parameter `deriv`.
+  /// @tparam memory_optimized Template parameter `memory_optimized`.
+  /// @param xi Parametric coordinates.
+  /// @param knot_indices Value of `knot_indices`.
+  /// @return Result of the operation.
   template <deriv deriv = deriv::func, bool memory_optimized = false>
   inline auto
   eval_basfunc_tr(const utils::TensorArray<parDim_> &xi,
@@ -1508,7 +1599,9 @@ public:
   }
   /// @}
 
-  /// @brief Transforms the coefficients based on the given mapping
+  /// @brief Transforms the coefficients based on the given mapping.
+  /// @param mapping Value of `mapping`.
+  /// @return Result of the operation.
   inline UniformBSplineCore &
   transform(const std::function<
             std::array<real_t, geoDim_>(const std::array<real_t, parDim_> &)>
@@ -1589,7 +1682,11 @@ public:
     return *this;
   }
 
-  /// @brief Transforms the coefficients based on the given mapping
+  /// @brief Transforms the coefficients based on the given mapping.
+  /// @tparam N Template parameter `N`.
+  /// @param mapping Value of `mapping`.
+  /// @param dims Value of `dims`.
+  /// @return Result of the operation.
   template <std::size_t N>
   inline UniformBSplineCore &
   transform(const std::function<
@@ -1672,7 +1769,8 @@ public:
     return *this;
   }
 
-  /// @brief Returns the B-spline object as JSON object
+  /// @brief Returns the B-spline object as JSON object.
+  /// @return Result of the operation.
   [[nodiscard]] inline nlohmann::json to_json() const override {
     nlohmann::json json;
     json["degrees"] = degrees_;
@@ -1686,12 +1784,14 @@ public:
     return json;
   }
 
-  /// @brief Returns the B-spline object's knots as JSON object
+  /// @brief Returns the B-spline object's knots as JSON object.
+  /// @return Result of the operation.
   [[nodiscard]] inline nlohmann::json knots_to_json() const {
     return ::iganet::utils::to_json<real_t, 1>(knots_);
   }
 
-  /// @brief Returns the B-spline object's coefficients as JSON object
+  /// @brief Returns the B-spline object's coefficients as JSON object.
+  /// @return Result of the operation.
   [[nodiscard]] inline nlohmann::json coeffs_to_json() const {
     auto coeffs_json = nlohmann::json::array();
     for (short_t g = 0; g < geoDim_; ++g) {
@@ -1714,7 +1814,9 @@ public:
     return coeffs_json;
   }
 
-  /// @brief Updates the B-spline object from JSON object
+  /// @brief Updates the B-spline object from JSON object.
+  /// @param json JSON value to process.
+  /// @return Result of the operation.
   inline UniformBSplineCore &from_json(const nlohmann::json &json) override {
 
     if (json["geoDim"].get<short_t>() != geoDim_)
@@ -1748,7 +1850,11 @@ public:
     return *this;
   }
 
-  /// @brief Returns the B-spline object as XML object
+  /// @brief Returns the B-spline object as XML object.
+  /// @param id Object identifier.
+  /// @param label Object label.
+  /// @param index Object index.
+  /// @return Result of the operation.
   [[nodiscard]] inline pugi::xml_document
   to_xml(int id = 0, const std::string &label = "",
          int index = -1) const override {
@@ -1759,7 +1865,12 @@ public:
     return doc;
   }
 
-  /// @brief Returns the B-spline object as XML node
+  /// @brief Returns the B-spline object as XML node.
+  /// @param root Root XML node.
+  /// @param id Object identifier.
+  /// @param label Object label.
+  /// @param index Object index.
+  /// @return Result of the operation.
   inline pugi::xml_node &to_xml(pugi::xml_node &root, int id = 0,
                                 const std::string &label = "",
                                 int index = -1) const override {
@@ -1873,14 +1984,24 @@ public:
     return root;
   }
 
-  /// @brief Updates the B-spline object from XML object
+  /// @brief Updates the B-spline object from XML object.
+  /// @param doc Value of `doc`.
+  /// @param id Object identifier.
+  /// @param label Object label.
+  /// @param index Object index.
+  /// @return Result of the operation.
   inline UniformBSplineCore &from_xml(const pugi::xml_document &doc, int id = 0,
                                       const std::string &label = "",
                                       int index = -1) override {
     return from_xml(doc.child("xml"), id, label, index);
   }
 
-  /// @brief Updates the B-spline object from XML node
+  /// @brief Updates the B-spline object from XML node.
+  /// @param root Root XML node.
+  /// @param id Object identifier.
+  /// @param label Object label.
+  /// @param index Object index.
+  /// @return Result of the operation.
   inline UniformBSplineCore &from_xml(const pugi::xml_node &root, int id = 0,
                                       const std::string &label = "",
                                       int index = -1) override {
@@ -2090,7 +2211,9 @@ public:
     return *this;
   }
 
-  /// @brief Loads the B-spline from file
+  /// @brief Loads the B-spline from file.
+  /// @param filename Path of the file to process.
+  /// @param key Serialization key.
   inline void load(const std::string &filename,
                    const std::string &key = "bspline") {
     torch::serialize::InputArchive archive;
@@ -2098,7 +2221,10 @@ public:
     read(archive, key);
   }
 
-  /// @brief Reads the B-spline from a torch::serialize::InputArchive object
+  /// @brief Reads the B-spline from a torch::serialize::InputArchive object.
+  /// @param archive Serialization archive.
+  /// @param key Serialization key.
+  /// @return Result of the operation.
   inline torch::serialize::InputArchive &
   read(torch::serialize::InputArchive &archive,
        const std::string &key = "bspline") {
@@ -2140,14 +2266,19 @@ public:
     return archive;
   }
 
-  /// @brief Saves the B-spline to file
+  /// @brief Saves the B-spline to file.
+  /// @param filename Path of the file to process.
+  /// @param key Serialization key.
   inline void save(const std::string &filename,
                    const std::string &key = "bspline") const {
     torch::serialize::OutputArchive archive;
     write(archive, key).save_to(filename);
   }
 
-  /// @brief Writes the B-spline into a torch::serialize::OutputArchive object
+  /// @brief Writes the B-spline into a torch::serialize::OutputArchive object.
+  /// @param archive Serialization archive.
+  /// @param key Serialization key.
+  /// @return Result of the operation.
   inline torch::serialize::OutputArchive &
   write(torch::serialize::OutputArchive &archive,
         const std::string &key = "bspline") const {
@@ -2176,7 +2307,14 @@ public:
   }
 
   /// @brief Returns true if both B-spline objects are close up to the given
-  /// tolerances
+  /// tolerances.
+  /// @tparam other_t Template parameter `other_t`.
+  /// @tparam GeoDim_ Template parameter `GeoDim_`.
+  /// @tparam Degrees_ Template parameter `Degrees_`.
+  /// @param other Second input value.
+  /// @param rtol Value of `rtol`.
+  /// @param atol Value of `atol`.
+  /// @return Result of the operation.
   template <typename other_t, short_t GeoDim_, short_t... Degrees_>
   bool isclose(const UniformBSplineCore<other_t, GeoDim_, Degrees_...> &other,
                real_t rtol = real_t{1e-5}, real_t atol = real_t{1e-8}) const {
@@ -2208,7 +2346,12 @@ public:
     return result;
   }
 
-  /// @brief Returns true if both B-spline objects are the same
+  /// @brief Returns true if both B-spline objects are the same.
+  /// @tparam other_t Template parameter `other_t`.
+  /// @tparam GeoDim_ Template parameter `GeoDim_`.
+  /// @tparam Degrees_ Template parameter `Degrees_`.
+  /// @param other Second input value.
+  /// @return Result of the operation.
   template <typename other_t, short_t GeoDim_, short_t... Degrees_>
   bool operator==(
       const UniformBSplineCore<other_t, GeoDim_, Degrees_...> &other) const {
@@ -2240,7 +2383,12 @@ public:
     return result;
   }
 
-  /// @brief Returns true if both B-spline objects are different
+  /// @brief Returns true if both B-spline objects are different.
+  /// @tparam other_t Template parameter `other_t`.
+  /// @tparam GeoDim_ Template parameter `GeoDim_`.
+  /// @tparam Degrees_ Template parameter `Degrees_`.
+  /// @param other Second input value.
+  /// @return Result of the operation.
   template <typename other_t, short_t GeoDim_, short_t... Degrees_>
   bool operator!=(
       const UniformBSplineCore<other_t, GeoDim_, Degrees_...> &other) const {
@@ -2250,11 +2398,14 @@ public:
   }
 
   /// @brief Returns the B-spline object with uniformly refined knot
-  /// and coefficient vectors
+  /// and coefficient vectors.
   ///
   /// If `dim = -1`, new knot values are inserted uniformly in each
   /// knot span in all spatial dimensions. Otherwise, i.e., `dim !=
   /// -1` new knots are only inserted in the specified dimension.
+  /// @param numRefine Value of `numRefine`.
+  /// @param dim Value of `dim`.
+  /// @return Result of the operation.
   inline UniformBSplineCore &uniform_refine(int numRefine = 1, int dim = -1) {
     assert(numRefine > 0);
     assert(dim == -1 || (dim >= 0 && dim < parDim_));
@@ -2325,7 +2476,7 @@ public:
 
 private:
   /// @brief Computes the prefactor \f$p_d!/(p_d-r_d)! = p_d \cdots
-  /// (p_d-r_d+1)\f$
+  /// (p_d-r_d+1)\f$.
   template <int64_t degree, int64_t deriv, int64_t terminal = degree - deriv>
   [[nodiscard]] inline int64_t constexpr eval_prefactor() const {
     if constexpr (degree > terminal)
@@ -2335,7 +2486,7 @@ private:
   }
 
 public:
-  /// @brief Initializes the B-spline knots
+  /// @brief Initializes the B-spline knots.
   inline void init_knots() {
 
     for (short_t i = 0; i < parDim_; ++i) {
@@ -2361,7 +2512,8 @@ public:
     }
   }
 
-  /// @brief Initializes the B-spline coefficients
+  /// @brief Initializes the B-spline coefficients.
+  /// @param init Value of `init`.
   inline void init_coeffs(enum init init) {
     switch (init) {
 
@@ -2491,7 +2643,9 @@ public:
   }
 
 protected:
-  /// @brief Updates the B-spline coefficients after knot insertion
+  /// @brief Updates the B-spline coefficients after knot insertion.
+  /// @param knots Value of `knots`.
+  /// @param knot_indices Value of `knot_indices`.
   inline void update_coeffs(const utils::TensorArray<parDim_> &knots,
                             const utils::TensorArray<parDim_> &knot_indices) {
 
@@ -2559,12 +2713,12 @@ protected:
 
   //  clang-format off
   /// @brief Returns the vector of univariate B-spline basis
-  /// functions (or their derivatives) evaluated in the point `xi`
+  /// functions (or their derivatives) evaluated in the point `xi`.
   ///
   /// This function implements step 2 of algorithm \ref
   /// BSplineEvaluation, that is, it evaluates the vector of
   /// univariate B-spline basis functions (or their derivatives)
-  /// that are non-zero at \f$\xi_d \in [t_{i_d}, t_{i_d+1})\f$
+  /// that are non-zero at \f$\xi_d \in [t_{i_d}, t_{i_d+1})\f$.
   ///
   /// \f[
   ///   D^{r_d}\mathbf{B}_d(\xi_d)
@@ -2576,7 +2730,7 @@ protected:
   /// B-spline and \f$ r_d \f$ denotes the requested derivative in
   /// the \f$d\f$-direction.
   ///
-  /// According to the procedure described in Chapters 2 and 3 of
+  /// According to the procedure described in Chapters 2 and 3 of.
   /// \cite Lyche:2011 this can be accomplished by the following
   /// expression
   ///
@@ -2587,7 +2741,7 @@ protected:
   ///     D\mathbf{R}_{p_d-r_d+1}\cdot \cdots \cdot D\mathbf{R}_{p_d}(\xi_d),
   /// \f]
   ///
-  /// where (cf. Equation (2.20) in \cite Lyche:2011)
+  /// where (cf. Equation (2.20) in \cite Lyche:2011).
   ///
   /// \f[
   ///   \mathbf{R}_k(\xi_d) =
@@ -2602,7 +2756,7 @@ protected:
   ///   \end{pmatrix}
   /// \f]
   ///
-  /// and (cf. Equation (3.30) in \cite Lyche:2011)
+  /// and (cf. Equation (3.30) in \cite Lyche:2011).
   ///
   /// \f[
   ///   D\mathbf{R}_k(\xi_d) =
@@ -2617,7 +2771,7 @@ protected:
   ///   \end{pmatrix}.
   /// \f]
   ///
-  /// To improve computational efficiency, the prefactor
+  /// To improve computational efficiency, the prefactor.
   ///
   /// \f[
   ///    \frac{p_d!}{(p_d-r_d)!}=p_d \cdots (p_d-r_d+1)
@@ -2626,41 +2780,44 @@ protected:
   /// is computed as
   /// compile-time expression by the eval_prefactor() function.
   ///
-  /// Moreover, the above expression for
+  /// Moreover, the above expression for.
   /// \f$D^{r_d}\mathbf{B}_d(\xi_d)\f$ is evaluated as described in
   /// Algorithm 2.22 (R-vector version) in \cite Lyche:2011) and its
   /// generalization to derivatives, respectively.
   ///
   /// The algorithm goes as follows:
   ///
-  /// 1. \f$\mathbf{b} = 1\f$
+  /// 1. \f$\mathbf{b} = 1\f$.
   ///
-  /// 2. For \f$k = 1, \dots, p_d-r_d\f$
+  /// 2. For \f$k = 1, \dots, p_d-r_d\f$.
   ///
-  ///    1. \f$\mathbf{t}_1 = \left(t_{i_d-k+1},\dots,t_{i_d}\right)\f$
+  ///    1. \f$\mathbf{t}_1 = \left(t_{i_d-k+1},\dots,t_{i_d}\right)\f$.
   ///
-  ///    2. \f$\mathbf{t}_2 = \left(t_{i_d+1},\dots,t_{i_d+k}\right)\f$
+  ///    2. \f$\mathbf{t}_2 = \left(t_{i_d+1},\dots,t_{i_d+k}\right)\f$.
   ///
-  ///    3. \f$\mathbf{w}   =
+  ///    3. \f$\mathbf{w}   =.
   ///    \left(\xi_d-\mathbf{t}_1\right)\div\left(\mathbf{t}_2-\mathbf{t}_1\right)\f$
   ///
   ///    4. \f$\mathbf{b}   = \left[\left(1-\mathbf{w}\right)\odot\mathbf{b},
   ///    0\right]
-  ///                       + \left[0, \mathbf{w}\odot\mathbf{b}\right]\f$
+  ///                       + \left[0, \mathbf{w}\odot\mathbf{b}\right]\f$.
   ///
-  /// 3. For \f$k = p_d-r_d+1, \dots, p_d\f$
+  /// 3. For \f$k = p_d-r_d+1, \dots, p_d\f$.
   ///
-  ///    1. \f$\mathbf{t}_1 = \left(t_{i_d-k+1},\dots,t_{i_d}\right)\f$
+  ///    1. \f$\mathbf{t}_1 = \left(t_{i_d-k+1},\dots,t_{i_d}\right)\f$.
   ///
-  ///    2. \f$\mathbf{t}_2 = \left(t_{i_d+1},\dots,t_{i_d+k}\right)\f$
+  ///    2. \f$\mathbf{t}_2 = \left(t_{i_d+1},\dots,t_{i_d+k}\right)\f$.
   ///
-  ///    3. \f$\mathbf{w}   = 1\div\left(\mathbf{t}_2-\mathbf{t}_1\right)\f$
+  ///    3. \f$\mathbf{w}   = 1\div\left(\mathbf{t}_2-\mathbf{t}_1\right)\f$.
   ///
   ///    4. \f$\mathbf{b}   = \left[-\mathbf{w}\odot\mathbf{b}, 0\right]
-  ///                       + \left[0, \mathbf{w}\odot\mathbf{b}\right]\f$
+  ///                       + \left[0, \mathbf{w}\odot\mathbf{b}\right]\f$.
   ///
   /// where \f$\div\f$ and \f$\odot\f$ denote the element-wise
   /// division and multiplication of vectors, respectively.
+  /// @param xi Parametric coordinates.
+  /// @param knot_indices Value of `knot_indices`.
+  /// @return Result of the operation.
   //  clang-format on
   template <short_t degree, short_t dim, short_t deriv>
   inline auto eval_basfunc_univariate(const torch::Tensor &xi,
@@ -2732,6 +2889,13 @@ protected:
     }
   }
 
+  /// @brief Provides the `eval_basfunc_univariate_tr` operation.
+  /// @tparam degree Template parameter `degree`.
+  /// @tparam dim Template parameter `dim`.
+  /// @tparam deriv Template parameter `deriv`.
+  /// @param xi Parametric coordinates.
+  /// @param knot_indices Value of `knot_indices`.
+  /// @return Result of the operation.
   template <short_t degree, short_t dim, short_t deriv>
   inline auto
   eval_basfunc_univariate_tr(const torch::Tensor &xi,
@@ -2783,12 +2947,17 @@ protected:
     }
   }
 
-  /// @brief Returns the knot insertion matrix
+  /// @brief Returns the knot insertion matrix.
   ///
   /// This functions implements the Oslo algorithm (Algorithm 4.11
   /// in \cite Lyche:2011) to compute the univariate knot insertion
   /// matrix from the given knot vector to the new knot vector
   /// passed as argument `knots`.
+  /// @tparam degree Template parameter `degree`.
+  /// @tparam dim Template parameter `dim`.
+  /// @param knots Value of `knots`.
+  /// @param knot_indices Value of `knot_indices`.
+  /// @return Result of the operation.
   template <short_t degree, short_t dim>
   inline auto
   update_coeffs_univariate(const torch::Tensor &knots,
@@ -2837,7 +3006,8 @@ protected:
 public:
   /// @brief Converts the B-spline object into a gsBSpline object of
   /// the parametric dimension is one and a gsTensorBSpline object
-  /// otherwise
+  /// otherwise.
+  /// @return Result of the operation.
   auto to_gismo() const {
 
 #ifdef IGANET_WITH_GISMO
@@ -2971,8 +3141,15 @@ public:
 
 #else // IGANET_WITH_GISMO
 
+  /// @brief Provides the `to_gismo` operation.
+  /// @tparam BSpline Template parameter `BSpline`.
+  /// @param bspline Value of `bspline`.
+  /// @param updateKnotVector Whether to update the knot vectors.
+  /// @param updateCoeffs Whether to update the coefficients.
+  /// @return Result of the operation.
   template <typename BSpline>
-  BSpline &to_gismo(BSpline &bspline, bool, bool) const {
+  BSpline &to_gismo(BSpline &bspline, bool updateKnotVector,
+                    bool updateCoeffs) const {
     throw std::runtime_error(
         "This functions must be compiled with -DIGANET_WITH_GISMO turned on");
     return bspline;
@@ -3054,7 +3231,15 @@ public:
 
 #else // IGANET_WITH_GISMO
 
-  template <typename BSpline> auto &from_gismo(BSpline &bspline, bool, bool) {
+  /// @brief Provides the `from_gismo` operation.
+  /// @tparam BSpline Template parameter `BSpline`.
+  /// @param bspline Value of `bspline`.
+  /// @param updateCoeffs Whether to update the coefficients.
+  /// @param updateKnotVector Whether to update the knot vectors.
+  /// @return Result of the operation.
+  template <typename BSpline>
+  auto &from_gismo(BSpline &bspline, bool updateCoeffs,
+                   bool updateKnotVector) {
     throw std::runtime_error(
         "This functions must be compiled with -DIGANET_WITH_GISMO turned on");
     return *this;
@@ -3063,7 +3248,13 @@ public:
 #endif // IGANET_WITH_GISMO
 };
 
-/// @brief Serializes a B-spline object
+/// @brief Serializes a B-spline object.
+/// @tparam real_t Template parameter `real_t`.
+/// @tparam GeoDim Template parameter `GeoDim`.
+/// @tparam Degrees Template parameter `Degrees`.
+/// @param archive Serialization archive.
+/// @param obj Object to process.
+/// @return Result of the operation.
 template <typename real_t, short_t GeoDim, short_t... Degrees>
 inline torch::serialize::OutputArchive &
 operator<<(torch::serialize::OutputArchive &archive,
@@ -3071,7 +3262,13 @@ operator<<(torch::serialize::OutputArchive &archive,
   return obj.write(archive);
 }
 
-/// @brief Deserializes a B-spline object
+/// @brief Deserializes a B-spline object.
+/// @tparam real_t Template parameter `real_t`.
+/// @tparam GeoDim Template parameter `GeoDim`.
+/// @tparam Degrees Template parameter `Degrees`.
+/// @param archive Serialization archive.
+/// @param obj Object to process.
+/// @return Result of the operation.
 template <typename real_t, short_t GeoDim, short_t... Degrees>
 inline torch::serialize::InputArchive &
 operator>>(torch::serialize::InputArchive &archive,
@@ -3079,71 +3276,75 @@ operator>>(torch::serialize::InputArchive &archive,
   return obj.read(archive);
 }
 
-/// @brief Tensor-product non-uniform B-spline (core functionality)
+/// @brief Tensor-product non-uniform B-spline (core functionality).
 ///
 /// This class extends the base class UniformBSplineCore to
 /// non-uniform B-splines. Like its base class it only implements
-/// the core functionality of non-uniform B-splines
+/// the core functionality of non-uniform B-splines.
 template <typename real_t, short_t GeoDim, short_t... Degrees>
 class NonUniformBSplineCore
     : public NonUniformSplineCore_,
       public UniformBSplineCore<real_t, GeoDim, Degrees...> {
 private:
-  /// @brief Base type
+  /// @brief Base type.
   using Base = UniformBSplineCore<real_t, GeoDim, Degrees...>;
 
 public:
-  /// @brief Value type
+  /// @brief Value type.
   using value_type = real_t;
 
   /// @brief Deduces the type of the template template parameter `BSpline`
   /// when exposed to the class template parameters `real_t` and
   /// `GeoDim`, and the `Degrees` parameter pack. The optional
   /// template parameter `degree_elevate` can be used to
-  /// (de-)elevate the degrees by an additive constant
+  /// (de-)elevate the degrees by an additive constant.
   template <template <typename, short_t, short_t...> class BSpline,
             std::make_signed_t<short_t> degree_elevate = 0>
   using derived_type = BSpline<real_t, GeoDim, (Degrees + degree_elevate)...>;
 
   /// @brief Deduces the self-type possibly degrees (de-)elevated by
-  /// the additive constant `degree_elevate`
+  /// the additive constant `degree_elevate`.
   template <std::make_signed_t<short_t> degree_elevate = 0>
   using self_type =
       Base::template derived_type<NonUniformBSplineCore, degree_elevate>;
 
   /// @brief Deduces the derived self-type when exposed to different
   /// class template parameters `real_t` and `GeoDim`, and the
-  /// `Degrees` parameter pack
+  /// `Degrees` parameter pack.
   template <typename other_t, short_t GeoDim_, short_t... Degrees_>
   using derived_self_type =
       NonUniformBSplineCore<other_t, GeoDim_, Degrees_...>;
 
   /// @brief Deduces the derived self-type when exposed to a
-  /// different class template parameter `real_t`
+  /// different class template parameter `real_t`.
   template <typename other_t>
   using real_derived_self_type =
       NonUniformBSplineCore<other_t, GeoDim, Degrees...>;
 
-  /// @brief Returns true if the B-spline is uniform
+  /// @brief Returns true if the B-spline is uniform.
+  /// @tparam other_t Template parameter `other_t`.
+  /// @return Result of the operation.
   inline static constexpr bool is_uniform() { return false; }
 
-  /// @brief Returns true if the B-spline is non-uniform
+  /// @brief Returns true if the B-spline is non-uniform.
+  /// @return Result of the operation.
   inline static constexpr bool is_nonuniform() { return true; }
 
-  /// @brief Constructor for equidistant knot vectors
+  /// @brief Constructor for equidistant knot vectors.
   using UniformBSplineCore<real_t, GeoDim, Degrees...>::UniformBSplineCore;
 
-  /// @brief Constructs a non-uniform B-spline by consuming a uniform one
+  /// @brief Constructs a non-uniform B-spline by consuming a uniform one.
+  /// @param other Second input value.
   explicit NonUniformBSplineCore(Base &&other) noexcept
       : Base(std::move(other)) {}
 
-  /// @brief Constructor for non-equidistant knot vectors
+  /// @brief Constructor for non-equidistant knot vectors.
   ///
-  /// @param[in] kv Knot vectors
+  /// @param[in] kv Knot vectors.
   ///
-  /// @param[in] init Type of initialization
+  /// @param[in] init Type of initialization.
   ///
-  /// @param[in] options Options configuration
+  /// @param[in] options Options configuration.
   explicit NonUniformBSplineCore(
       const std::array<std::vector<typename Base::value_type>, Base::parDim_>
           &kv,
@@ -3154,16 +3355,16 @@ public:
     Base::init_coeffs(init);
   }
 
-  /// @brief Constructor for non-equidistant knot vectors
+  /// @brief Constructor for non-equidistant knot vectors.
   ///
-  /// @param[in] kv Knot vectors
+  /// @param[in] kv Knot vectors.
   ///
-  /// @param[in] coeffs Vectors of coefficients per parametric dimension
+  /// @param[in] coeffs Vectors of coefficients per parametric dimension.
   ///
   /// @param[in] clone  If true, coefficients will be cloned. Otherwise,
-  /// coefficients will be aliased
+  /// coefficients will be aliased.
   ///
-  /// @param[in] options Options configuration
+  /// @param[in] options Options configuration.
   ///
   /// @note It is not checked whether vectors of coefficients are
   /// compatible with the given Options object if clone is false.
@@ -3188,7 +3389,7 @@ public:
   }
 
 private:
-  /// @brief Initializes the B-spline knots
+  /// @brief Initializes the B-spline knots.
   inline void init_knots(
       const std::array<std::vector<typename Base::value_type>, Base::parDim_>
           &kv) {
@@ -3212,11 +3413,22 @@ public:
   /// @brief Returns the value of the multivariate B-spline object in the point
   /// `xi`
   /// @{
+  /// @tparam deriv Template parameter `deriv`.
+  /// @tparam memory_optimized Template parameter `memory_optimized`.
+  /// @param xi Parametric coordinates.
+  /// @return Result of the operation.
   template <deriv deriv = deriv::func, bool memory_optimized = false>
   inline auto eval(const torch::Tensor &xi) const {
     return eval<deriv, memory_optimized>(utils::TensorArray1({xi}));
   }
 
+  /// @brief Provides the `eval` operation.
+  /// @tparam deriv Template parameter `deriv`.
+  /// @tparam memory_optimized Template parameter `memory_optimized`.
+  /// @tparam deriv Template parameter `deriv`.
+  /// @tparam memory_optimized Template parameter `memory_optimized`.
+  /// @param xi Parametric coordinates.
+  /// @return Result of the operation.
   template <deriv deriv = deriv::func, bool memory_optimized = false>
   inline auto eval(const utils::TensorArray<Base::parDim_> &xi) const {
     if constexpr (Base::parDim_ == 0) {
@@ -3232,6 +3444,12 @@ public:
           xi, find_knot_indices(xi));
   }
 
+  /// @brief Provides the `eval` operation.
+  /// @tparam deriv Template parameter `deriv`.
+  /// @tparam memory_optimized Template parameter `memory_optimized`.
+  /// @param xi Parametric coordinates.
+  /// @param knot_indices Value of `knot_indices`.
+  /// @return Result of the operation.
   template <deriv deriv = deriv::func, bool memory_optimized = false>
   inline auto
   eval(const utils::TensorArray<Base::parDim_> &xi,
@@ -3248,6 +3466,13 @@ public:
       return Base::template eval<deriv, memory_optimized>(xi, knot_indices);
   }
 
+  /// @brief Provides the `eval` operation.
+  /// @tparam deriv Template parameter `deriv`.
+  /// @tparam memory_optimized Template parameter `memory_optimized`.
+  /// @param xi Parametric coordinates.
+  /// @param knot_indices Value of `knot_indices`.
+  /// @param coeff_indices Value of `coeff_indices`.
+  /// @return Result of the operation.
   template <deriv deriv = deriv::func, bool memory_optimized = false>
   inline auto eval(const utils::TensorArray<Base::parDim_> &xi,
                    const utils::TensorArray<Base::parDim_> &knot_indices,
@@ -3266,9 +3491,9 @@ public:
   }
   /// @}
 
-  /// @brief Returns the indices of knot spans containing `xi`
+  /// @brief Returns the indices of knot spans containing `xi`.
   ///
-  /// This function returns the indices
+  /// This function returns the indices.
   /// \f$(i_d)_{d=1}^{d_\text{par}}\f$ of the knot spans such that
   ///
   /// \f[
@@ -3279,6 +3504,8 @@ public:
   /// The indices are returned as `utils::TensorArray<parDim_>` in the
   /// same order as provided in `xi`
   /// @{
+  /// @param xi Parametric coordinates.
+  /// @return Result of the operation.
   inline auto find_knot_indices(const torch::Tensor &xi) const {
     if constexpr (Base::parDim_ == 0)
       return torch::zeros_like(Base::coeffs_[0]).to(torch::kInt64);
@@ -3286,6 +3513,9 @@ public:
       return find_knot_indices(utils::TensorArray1({xi}));
   }
 
+  /// @brief Provides the `find_knot_indices` operation.
+  /// @param xi Parametric coordinates.
+  /// @return Result of the operation.
   inline auto
   find_knot_indices(const utils::TensorArray<Base::parDim_> &xi) const {
 
@@ -3303,11 +3533,14 @@ public:
   /// @}
 
   /// @brief Returns the B-spline object with uniformly refined knot
-  /// and coefficient vectors
+  /// and coefficient vectors.
   ///
   /// If `dim = -1`, new knot values are inserted uniformly in each
   /// knot span in all spatial dimensions. Otherwise, i.e., `dim !=
   /// -1` new knots are only inserted in the specified dimension.
+  /// @param numRefine Value of `numRefine`.
+  /// @param dim Value of `dim`.
+  /// @return Result of the operation.
   inline NonUniformBSplineCore &uniform_refine(int numRefine = 1,
                                                int dim = -1) {
     assert(numRefine > 0);
@@ -3372,7 +3605,9 @@ public:
   }
 
   /// @brief Returns the B-spline object with refined knot and
-  /// coefficient vectors
+  /// coefficient vectors.
+  /// @param knots Value of `knots`.
+  /// @return Result of the operation.
   inline NonUniformBSplineCore &
   insert_knots(const utils::TensorArray<Base::parDim_> &knots) {
     std::array<int64_t, Base::parDim_> nknots(Base::nknots_);
@@ -3416,7 +3651,10 @@ public:
   }
 
   /// @brief Returns the B-spline object with updated knot and
-  /// coefficient vectors with reduced continuity
+  /// coefficient vectors with reduced continuity.
+  /// @param numReduce Value of `numReduce`.
+  /// @param dim Value of `dim`.
+  /// @return Result of the operation.
   inline NonUniformBSplineCore &reduce_continuity(int numReduce = 1,
                                                   int dim = -1) {
     assert(numReduce > 0);
@@ -3594,7 +3832,15 @@ public:
 
 #else // IGANET_WITH_GISMO
 
-  template <typename BSpline> auto &from_gismo(BSpline &bspline, bool, bool) {
+  /// @brief Provides the `from_gismo` operation.
+  /// @tparam BSpline Template parameter `BSpline`.
+  /// @param bspline Value of `bspline`.
+  /// @param updateCoeffs Whether to update the coefficients.
+  /// @param updateKnotVector Whether to update the knot vectors.
+  /// @return Result of the operation.
+  template <typename BSpline>
+  auto &from_gismo(BSpline &bspline, bool updateCoeffs,
+                   bool updateKnotVector) {
     throw std::runtime_error(
         "This functions must be compiled with -DIGANET_WITH_GISMO turned on");
     return *this;
@@ -3603,28 +3849,28 @@ public:
 #endif // IGANET_WITH_GISMO
 };
 
-/// @brief Spline base class
+/// @brief Spline base class.
 class Spline_ {};
 
 /// @brief Concept to identify template parameters that are derived from
-/// iganet::Spline_
+/// iganet::Spline_.
 template <typename T>
 concept SplineType = std::is_base_of_v<Spline_, T>;
 
 /// @brief Concept to identify template parameters that are derived from
-/// iganet::Spline_ and iganet::UniformSplineCore_
+/// iganet::Spline_ and iganet::UniformSplineCore_.
 template <typename T>
 concept UniformSplineType =
     std::is_base_of_v<Spline_, T> && std::is_base_of_v<UniformSplineCore_, T> &&
     !std::is_base_of_v<NonUniformSplineCore_, T>;
 
 /// @brief Concept to identify template parameters that are derived from
-/// iganet::Spline_ and iganet::NonUniformSplineCore_
+/// iganet::Spline_ and iganet::NonUniformSplineCore_.
 template <typename T>
 concept NonUniformSplineType = std::is_base_of_v<Spline_, T> &&
                                std::is_base_of_v<NonUniformSplineCore_, T>;
 
-/// @brief B-spline (common high-level functionality)
+/// @brief B-spline (common high-level functionality).
 ///
 /// This class implements some high-level common functionality of
 /// all B-spline classes, e.g., plotting which rely on low-level
@@ -3643,56 +3889,61 @@ class BSplineCommon : public Spline_,
                       public BSplineCore,
                       protected utils::FullQualifiedName {
 public:
-  /// @brief Constructors from the base class
+  /// @brief Constructors from the base class.
   using BSplineCore::BSplineCore;
 
   /// @brief Deduces the type of the template parameter `T`
   /// when exposed to the class template parameters `real_t` and
   /// `GeoDim`, and the `Degrees` parameter pack. The optional
   /// template parameter `degree_elevate` can be used to
-  /// (de-)elevate the degrees by an additive constant
+  /// (de-)elevate the degrees by an additive constant.
   template <template <typename, short_t, short_t...> class T,
             std::make_signed_t<short_t> degree_elevate = 0>
   using derived_type = BSplineCommon<
       typename BSplineCore::template derived_type<T, degree_elevate>>;
 
   /// @brief Deduces the self-type possibly degrees (de-)elevated by
-  /// the additive constant `degree_elevate`
+  /// the additive constant `degree_elevate`.
   template <std::make_signed_t<short_t> degree_elevate = 0>
   using self_type =
       BSplineCommon<typename BSplineCore::template self_type<degree_elevate>>;
 
   /// @brief Deduces the derived self-type when exposed to different
   /// class template parameters `real_t` and `GeoDim`, and the
-  /// `Degrees` parameter pack
+  /// `Degrees` parameter pack.
   template <typename real_t, short_t GeoDim, short_t... Degrees>
   using derived_self_type =
       BSplineCommon<typename BSplineCore::template derived_self_type<
           real_t, GeoDim, Degrees...>>;
 
   /// @brief Deduces the derived self-type when exposed to a
-  /// different class template parameter `real_t`
+  /// different class template parameter `real_t`.
   template <typename other_t>
   using real_derived_self_type = BSplineCommon<
       typename BSplineCore::template real_derived_self_type<other_t>>;
 
-  /// @brief Shared pointer for BSplineCommon
+  /// @brief Shared pointer for BSplineCommon.
   using Ptr = std::shared_ptr<BSplineCommon>;
 
-  /// @brief Unique pointer for BSplineCommon
+  /// @brief Unique pointer for BSplineCommon.
   using uPtr = std::unique_ptr<BSplineCommon>;
 
-  /// @brief Copy constructor
+  /// @brief Copy constructor.
   BSplineCommon(const BSplineCommon &) = default;
 
-  /// @brief Copy/clone constructor
+  /// @brief Copy/clone constructor.
+  /// @param other Second input value.
+  /// @param clone Value of `clone`.
   BSplineCommon(const BSplineCommon &other, bool clone) : BSplineCommon(other) {
     if (clone)
       for (short_t i = 0; i < BSplineCore::geoDim_; ++i)
         BSplineCore::coeffs_[i] = other.coeffs(i).clone();
   }
 
-  /// @brief Copy constructor with external coefficients
+  /// @brief Copy constructor with external coefficients.
+  /// @param other Second input value.
+  /// @param coeffs Value of `coeffs`.
+  /// @param clone Value of `clone`.
   BSplineCommon(const BSplineCommon &other,
                 const utils::TensorArray<BSplineCore::geoDim_> &coeffs,
                 bool clone = false)
@@ -3705,20 +3956,23 @@ public:
         BSplineCore::coeffs_[i] = coeffs[i];
   }
 
-  /// @brief Move constructor
+  /// @brief Move constructor.
   BSplineCommon(BSplineCommon &&) = default;
 
-  /// @brief Constructs the high-level B-spline from a compatible core
+  /// @brief Constructs the high-level B-spline from a compatible core.
+  /// @tparam OtherCore Template parameter `OtherCore`.
+  /// @param core Value of `core`.
   template <typename OtherCore>
     requires SplineCoreType<std::remove_cvref_t<OtherCore>>
   explicit BSplineCommon(OtherCore &&core)
       : BSplineCore(std::forward<OtherCore>(core)) {}
 
-  /// @brief Converts a uniform B-spline into a non-uniform B-spline
+  /// @brief Converts a uniform B-spline into a non-uniform B-spline.
   ///
   /// All run-time state is moved into the returned object. Consequently, this
   /// operation is only available for rvalues and leaves the source object in a
   /// valid but unspecified state.
+  /// @return Result of the operation.
   [[nodiscard]] auto to_nonuniform() &&
     requires UniformSplineCoreType<BSplineCore> &&
              (!NonUniformSplineCoreType<BSplineCore>)
@@ -3729,10 +3983,11 @@ public:
         std::move(static_cast<BSplineCore &>(*this)));
   }
 
-  /// @brief Converts a non-uniform B-spline into a uniform B-spline
+  /// @brief Converts a non-uniform B-spline into a uniform B-spline.
   ///
   /// The conversion succeeds only if all knot vectors are canonical open
   /// uniform knot vectors. Validation is performed before any state is moved.
+  /// @return Result of the operation.
   [[nodiscard]] auto to_uniform() &&
     requires NonUniformSplineCoreType<BSplineCore>
   {
@@ -3750,7 +4005,9 @@ public:
         std::move(static_cast<target_core &>(*this)));
   }
 
-  /// @brief Move constructor with external coefficients
+  /// @brief Move constructor with external coefficients.
+  /// @param other Second input value.
+  /// @param coeffs Value of `coeffs`.
   BSplineCommon(BSplineCommon &&other,
                 utils::TensorArray<BSplineCore::geoDim_> &&coeffs)
       : BSplineCommon(std::move(other)) {
@@ -3760,12 +4017,19 @@ public:
 
   /// @brief Creates a new B-spline object as unique pointer
   /// @{
+  /// @param options Configuration options.
+  /// @return Result of the operation.
   inline static Ptr
   make_unique(Options<typename BSplineCore::value_type> options =
                   Options<typename BSplineCore::value_type>{}) {
     return uPtr(new BSplineCommon(options));
   }
 
+  /// @brief Provides the `make_unique` operation.
+  /// @param ncoeffs Value of `ncoeffs`.
+  /// @param init Value of `init`.
+  /// @param options Configuration options.
+  /// @return Result of the operation.
   inline static Ptr
   make_unique(const std::array<int64_t, BSplineCore::parDim_> &ncoeffs,
               enum init init = init::greville,
@@ -3774,6 +4038,12 @@ public:
     return uPtr(new BSplineCommon(ncoeffs, init, options));
   }
 
+  /// @brief Provides the `make_unique` operation.
+  /// @param ncoeffs Value of `ncoeffs`.
+  /// @param coeffs Value of `coeffs`.
+  /// @param clone Value of `clone`.
+  /// @param options Configuration options.
+  /// @return Result of the operation.
   inline static Ptr
   make_unique(const std::array<int64_t, BSplineCore::parDim_> &ncoeffs,
               const utils::TensorArray<BSplineCore::geoDim_> &coeffs,
@@ -3783,6 +4053,11 @@ public:
     return uPtr(new BSplineCommon(ncoeffs, coeffs, clone, options));
   }
 
+  /// @brief Provides the `make_unique` operation.
+  /// @param ncoeffs Value of `ncoeffs`.
+  /// @param coeffs Value of `coeffs`.
+  /// @param options Configuration options.
+  /// @return Result of the operation.
   inline static Ptr
   make_unique(const std::array<int64_t, BSplineCore::parDim_> &ncoeffs,
               utils::TensorArray<BSplineCore::geoDim_> &&coeffs,
@@ -3791,6 +4066,11 @@ public:
     return uPtr(new BSplineCommon(ncoeffs, coeffs, options));
   }
 
+  /// @brief Provides the `make_unique` operation.
+  /// @param kv Value of `kv`.
+  /// @param init Value of `init`.
+  /// @param options Configuration options.
+  /// @return Result of the operation.
   inline static Ptr
   make_unique(const std::array<std::vector<typename BSplineCore::value_type>,
                                BSplineCore::parDim_> &kv,
@@ -3800,6 +4080,12 @@ public:
     return uPtr(new BSplineCommon(kv, init, options));
   }
 
+  /// @brief Provides the `make_unique` operation.
+  /// @param kv Value of `kv`.
+  /// @param coeffs Value of `coeffs`.
+  /// @param clone Value of `clone`.
+  /// @param options Configuration options.
+  /// @return Result of the operation.
   inline static Ptr
   make_unique(const std::array<std::vector<typename BSplineCore::value_type>,
                                BSplineCore::parDim_> &kv,
@@ -3813,12 +4099,19 @@ public:
 
   /// @brief Creates a new B-spline object as shared pointer
   /// @{
+  /// @param options Configuration options.
+  /// @return Result of the operation.
   inline static Ptr
   make_shared(Options<typename BSplineCore::value_type> options =
                   Options<typename BSplineCore::value_type>{}) {
     return std::make_shared<BSplineCommon>(options);
   }
 
+  /// @brief Provides the `make_shared` operation.
+  /// @param ncoeffs Value of `ncoeffs`.
+  /// @param init Value of `init`.
+  /// @param options Configuration options.
+  /// @return Result of the operation.
   inline static Ptr
   make_shared(const std::array<int64_t, BSplineCore::parDim_> &ncoeffs,
               enum init init = init::greville,
@@ -3827,6 +4120,12 @@ public:
     return std::make_shared<BSplineCommon>(ncoeffs, init, options);
   }
 
+  /// @brief Provides the `make_shared` operation.
+  /// @param ncoeffs Value of `ncoeffs`.
+  /// @param coeffs Value of `coeffs`.
+  /// @param clone Value of `clone`.
+  /// @param options Configuration options.
+  /// @return Result of the operation.
   inline static Ptr
   make_shared(const std::array<int64_t, BSplineCore::parDim_> &ncoeffs,
               const utils::TensorArray<BSplineCore::geoDim_> &coeffs,
@@ -3836,6 +4135,11 @@ public:
     return std::make_shared<BSplineCommon>(ncoeffs, coeffs, clone, options);
   }
 
+  /// @brief Provides the `make_shared` operation.
+  /// @param ncoeffs Value of `ncoeffs`.
+  /// @param coeffs Value of `coeffs`.
+  /// @param options Configuration options.
+  /// @return Result of the operation.
   inline static Ptr
   make_shared(const std::array<int64_t, BSplineCore::parDim_> &ncoeffs,
               utils::TensorArray<BSplineCore::geoDim_> &&coeffs,
@@ -3844,6 +4148,11 @@ public:
     return std::make_shared<BSplineCommon>(ncoeffs, coeffs, options);
   }
 
+  /// @brief Provides the `make_shared` operation.
+  /// @param kv Value of `kv`.
+  /// @param init Value of `init`.
+  /// @param options Configuration options.
+  /// @return Result of the operation.
   inline static Ptr
   make_shared(const std::array<std::vector<typename BSplineCore::value_type>,
                                BSplineCore::parDim_> &kv,
@@ -3853,6 +4162,12 @@ public:
     return std::make_shared<BSplineCommon>(kv, init, options);
   }
 
+  /// @brief Provides the `make_shared` operation.
+  /// @param kv Value of `kv`.
+  /// @param coeffs Value of `coeffs`.
+  /// @param clone Value of `clone`.
+  /// @param options Configuration options.
+  /// @return Result of the operation.
   inline static Ptr
   make_shared(const std::array<std::vector<typename BSplineCore::value_type>,
                                BSplineCore::parDim_> &kv,
@@ -3865,17 +4180,21 @@ public:
   /// @}
 
   /// @brief Returns the B-spline object with uniformly refined knot
-  /// and coefficient vectors
+  /// and coefficient vectors.
   ///
   /// If `dim = -1`, new knot values are inserted uniformly in each
   /// knot span in all spatial dimensions. Otherwise, i.e., `dim !=
   /// -1` new knots are only inserted in the specified dimension.
+  /// @param numRefine Value of `numRefine`.
+  /// @param dim Value of `dim`.
+  /// @return Result of the operation.
   inline BSplineCommon &uniform_refine(int numRefine = 1, int dim = -1) {
     BSplineCore::uniform_refine(numRefine, dim);
     return *this;
   }
 
-  /// @brief Returns a clone of the B-spline object
+  /// @brief Returns a clone of the B-spline object.
+  /// @return Result of the operation.
   inline auto clone() const {
     BSplineCommon result;
 
@@ -3892,7 +4211,10 @@ public:
     return result;
   }
 
-  /// @brief Returns a copy of the B-spline object with settings from options
+  /// @brief Returns a copy of the B-spline object with settings from options.
+  /// @tparam real_t Template parameter `real_t`.
+  /// @param options Configuration options.
+  /// @return Result of the operation.
   template <typename real_t> inline auto to(Options<real_t> options) const {
     BSplineCommon<typename BSplineCore::template real_derived_self_type<real_t>>
         result(options);
@@ -3910,7 +4232,9 @@ public:
     return result;
   }
 
-  /// @brief Returns a copy of the B-spline object with settings from device
+  /// @brief Returns a copy of the B-spline object with settings from device.
+  /// @param device Target device.
+  /// @return Result of the operation.
   inline auto to(torch::Device device) const {
     BSplineCommon result(BSplineCore::options_.device(device));
 
@@ -3927,27 +4251,35 @@ public:
     return result;
   }
 
-  /// @brief Returns a copy of the B-spline object with real_t type
+  /// @brief Returns a copy of the B-spline object with real_t type.
+  /// @tparam real_t Template parameter `real_t`.
+  /// @return Result of the operation.
   template <typename real_t> inline auto to() const {
     return to(BSplineCore::options_.template dtype<real_t>());
   }
 
   /// @brief Computes the difference between two compatible B-spline
-  /// objects
+  /// objects.
   ///
   /// If `dim = -1` the full coefficient vector of \a other is
   /// subtracted from that of the current B-spline object. Otherwise,
-  /// only the specified direction is subtracted
+  /// only the specified direction is subtracted.
+  /// @param other Second input value.
+  /// @param dim Value of `dim`.
+  /// @return Result of the operation.
   inline auto diff(const BSplineCommon &other, int dim = -1) const {
     return this->clone().diff_(other, dim);
   }
 
   /// @brief Computes the difference between two compatible B-spline
-  /// objects in-place
+  /// objects in-place.
   ///
   /// If `dim = -1` the full coefficient vector of \a other is
   /// subtracted from that of the current B-spline object. Otherwise,
-  /// only the specified direction is subtracted
+  /// only the specified direction is subtracted.
+  /// @param other Second input value.
+  /// @param dim Value of `dim`.
+  /// @return Result of the operation.
   inline auto diff_(const BSplineCommon &other, int dim = -1) {
 
     bool compatible(true);
@@ -3971,21 +4303,27 @@ public:
   }
 
   /// @brief Computes the absolute difference between two compatible
-  /// B-spline objects
+  /// B-spline objects.
   ///
   /// If `dim = -1` the full coefficient vector of \a other is
   /// subtracted from that of the current B-spline object. Otherwise,
-  /// only the specified direction is subtracted
+  /// only the specified direction is subtracted.
+  /// @param other Second input value.
+  /// @param dim Value of `dim`.
+  /// @return Result of the operation.
   inline auto abs_diff(const BSplineCommon &other, int dim = -1) const {
     return this->clone().abs_diff_(other, dim);
   }
 
   /// @brief Computes the absolute difference between two compatible
-  /// B-spline objects in-place
+  /// B-spline objects in-place.
   ///
   /// If `dim = -1` the full coefficient vector of \a other is
   /// subtracted from that of the current B-spline object. Otherwise,
-  /// only the specified direction is subtracted
+  /// only the specified direction is subtracted.
+  /// @param other Second input value.
+  /// @param dim Value of `dim`.
+  /// @return Result of the operation.
   inline auto abs_diff_(const BSplineCommon &other, int dim = -1) {
 
     bool compatible(true);
@@ -4012,18 +4350,25 @@ public:
 
   /// @brief Computes the norm of the B-spline object by computing the
   /// mean-squared sum of the function values evaluated at the
-  /// Greville abscissae
+  /// Greville abscissae.
+  /// @return Result of the operation.
   inline auto norm() const {
     return torch::mean(
         torch::pow(BSplineCore::eval(BSplineCore::greville())(0), 2));
   }
 
-  /// @brief Scales the B-spline object by a scalar
+  /// @brief Scales the B-spline object by a scalar.
+  /// @param s Value of `s`.
+  /// @param dim Value of `dim`.
+  /// @return Result of the operation.
   inline auto scale(BSplineCore::value_type s, int dim = -1) const {
     return this->clone().scale_(s, dim);
   }
 
-  /// @brief Scales the B-spline object by a scalar in-place
+  /// @brief Scales the B-spline object by a scalar in-place.
+  /// @param s Value of `s`.
+  /// @param dim Value of `dim`.
+  /// @return Result of the operation.
   inline auto scale_(BSplineCore::value_type s, int dim = -1) {
     if (dim == -1)
       for (int i = 0; i < BSplineCore::geoDim(); ++i)
@@ -4033,14 +4378,18 @@ public:
     return *this;
   }
 
-  /// @brief Scales the B-spline object by a vector
+  /// @brief Scales the B-spline object by a vector.
+  /// @param v Value of `v`.
+  /// @return Result of the operation.
   inline auto
   scale(std::array<typename BSplineCore::value_type, BSplineCore::geoDim()> v)
       const {
     return this->clone().scale_(v);
   }
 
-  /// @brief Scales the B-spline object by a vector in-place
+  /// @brief Scales the B-spline object by a vector in-place.
+  /// @param v Value of `v`.
+  /// @return Result of the operation.
   inline auto scale_(
       std::array<typename BSplineCore::value_type, BSplineCore::geoDim()> v) {
     for (int i = 0; i < BSplineCore::geoDim(); ++i)
@@ -4048,14 +4397,18 @@ public:
     return *this;
   }
 
-  /// @brief Translates the B-spline object by a vector
+  /// @brief Translates the B-spline object by a vector.
+  /// @param v Value of `v`.
+  /// @return Result of the operation.
   inline auto translate(
       std::array<typename BSplineCore::value_type, BSplineCore::geoDim()> v)
       const {
     return this->clone().translate_(v);
   }
 
-  /// @brief Translates the B-spline object by a vector in-place
+  /// @brief Translates the B-spline object by a vector in-place.
+  /// @param v Value of `v`.
+  /// @return Result of the operation.
   inline auto translate_(
       std::array<typename BSplineCore::value_type, BSplineCore::geoDim()> v) {
     for (int i = 0; i < BSplineCore::geoDim(); ++i)
@@ -4063,12 +4416,16 @@ public:
     return *this;
   }
 
-  /// @brief Rotates the B-spline object by an angle in 2d
+  /// @brief Rotates the B-spline object by an angle in 2d.
+  /// @param angle Value of `angle`.
+  /// @return Result of the operation.
   inline auto rotate(BSplineCore::value_type angle) const {
     return this->clone().rotate_(angle);
   }
 
-  /// @brief Rotates the B-spline object by an angle in 2d in-place
+  /// @brief Rotates the B-spline object by an angle in 2d in-place.
+  /// @param angle Value of `angle`.
+  /// @return Result of the operation.
   inline auto rotate_(BSplineCore::value_type angle) {
 
     static_assert(BSplineCore::geoDim() == 2,
@@ -4084,13 +4441,17 @@ public:
     return *this;
   }
 
-  /// @brief Rotates the B-spline object by three angles in 3d
+  /// @brief Rotates the B-spline object by three angles in 3d.
+  /// @param angle Value of `angle`.
+  /// @return Result of the operation.
   inline auto
   rotate(std::array<typename BSplineCore::value_type, 3> angle) const {
     return this->clone().rotate_(angle);
   }
 
-  /// @brief Rotates the B-spline object by three angles in 3d in-place
+  /// @brief Rotates the B-spline object by three angles in 3d in-place.
+  /// @param angle Value of `angle`.
+  /// @return Result of the operation.
   inline auto rotate_(std::array<typename BSplineCore::value_type, 3> angle) {
 
     static_assert(BSplineCore::geoDim() == 3,
@@ -4124,7 +4485,8 @@ public:
     return *this;
   }
 
-  /// @brief Computes the bounding box of the B-spline object
+  /// @brief Computes the bounding box of the B-spline object.
+  /// @return Result of the operation.
   inline auto boundingBox() const {
 
     // Lambda expression to compute the minimum value of all dimensions
@@ -4144,9 +4506,9 @@ public:
   }
 
   /// @brief Returns a block-tensor with the outward pointing normal
-  /// vector of the B-spline object
+  /// vector of the B-spline object.
   ///
-  /// @param[in] xi Point(s) where to evaluate the normal vector
+  /// @param[in] xi Point(s) where to evaluate the normal vector.
   ///
   /// @result Block-tensor with the outward pointing normal vector
   /// @{
@@ -4155,6 +4517,11 @@ public:
     return nv<memory_optimized>(utils::TensorArray1({xi}));
   }
 
+  /// @brief Provides the `nv` operation.
+  /// @tparam memory_optimized Template parameter `memory_optimized`.
+  /// @tparam memory_optimized Template parameter `memory_optimized`.
+  /// @param xi Parametric coordinates.
+  /// @return Result of the operation.
   template <bool memory_optimized = false>
   inline auto nv(const utils::TensorArray<BSplineCore::parDim_> &xi) const {
     return nv<memory_optimized>(xi, BSplineCore::find_knot_indices(xi));
@@ -4162,13 +4529,13 @@ public:
   /// @}
 
   /// @brief Returns a block-tensor with the outward pointing normal
-  /// vector of the B-spline object
+  /// vector of the B-spline object.
   ///
-  /// @param[in] xi Point(s) where to evaluate the normal vector
+  /// @param[in] xi Point(s) where to evaluate the normal vector.
   ///
-  /// @param[in] knot_indices Knot indices where to evaluate the normal vector
+  /// @param[in] knot_indices Knot indices where to evaluate the normal vector.
   ///
-  /// @result Block-tensor with the outward pointing normal vector
+  /// @result Block-tensor with the outward pointing normal vector.
   template <bool memory_optimized = false>
   inline auto
   nv(const utils::TensorArray<BSplineCore::parDim_> &xi,
@@ -4180,16 +4547,16 @@ public:
   }
 
   /// @brief Returns a block-tensor with the outward pointing normal
-  /// vector of the B-spline object
+  /// vector of the B-spline object.
   ///
-  /// @param[in] xi Point(s) where to evaluate the normal vector
+  /// @param[in] xi Point(s) where to evaluate the normal vector.
   ///
-  /// @param[in] knot_indices Knot indices where to evaluate the normal vector
+  /// @param[in] knot_indices Knot indices where to evaluate the normal vector.
   ///
   /// @param[in] coeff_indices Coefficient indices where to evaluate
-  /// the normal vector
+  /// the normal vector.
   ///
-  /// @result Block-tensor with the outward pointing normal vector
+  /// @result Block-tensor with the outward pointing normal vector.
   template <bool memory_optimized = false>
   inline auto nv(const utils::TensorArray<BSplineCore::parDim_> &xi,
                  const utils::TensorArray<BSplineCore::parDim_> &knot_indices,
@@ -4227,12 +4594,12 @@ public:
 
   //  clang-format off
   /// @brief Returns a block-tensor with the curl of the
-  /// B-spline object with respect to the parametric variables
+  /// B-spline object with respect to the parametric variables.
   ///
-  /// @param[in] xi Point(s) where to evaluate the curl
+  /// @param[in] xi Point(s) where to evaluate the curl.
   ///
   /// @result Block-tensor with the curl with respect to the
-  /// parametric variables `xi`
+  /// parametric variables `xi`.
   /// \f[
   ///     \nabla_{\boldsymbol{\xi}} \times \mathbf{u}
   ///        =
@@ -4253,6 +4620,11 @@ public:
     return curl<memory_optimized>(utils::TensorArray1({xi}));
   }
 
+  /// @brief Provides the `curl` operation.
+  /// @tparam memory_optimized Template parameter `memory_optimized`.
+  /// @tparam memory_optimized Template parameter `memory_optimized`.
+  /// @param xi Parametric coordinates.
+  /// @return Result of the operation.
   template <bool memory_optimized = false>
   inline auto curl(const utils::TensorArray<BSplineCore::parDim_> &xi) const {
     return curl<memory_optimized>(xi, BSplineCore::find_knot_indices(xi));
@@ -4261,14 +4633,14 @@ public:
 
   //  clang-format off
   /// @brief Returns a block-tensor with the curl of the
-  /// B-spline object with respect to the parametric variables
+  /// B-spline object with respect to the parametric variables.
   ///
-  /// @param[in] xi Point(s) where to evaluate the curl
+  /// @param[in] xi Point(s) where to evaluate the curl.
   ///
-  /// @param[in] knot_indices Knot indices where to evaluate the curl
+  /// @param[in] knot_indices Knot indices where to evaluate the curl.
   ///
   /// @result Block-tensor with the curl with respect to
-  /// the parametric variables
+  /// the parametric variables.
   /// \f[
   ///     \nabla_{\boldsymbol{\xi}} \times \mathbf{u}
   ///        =
@@ -4294,17 +4666,17 @@ public:
   }
 
   /// @brief Returns a block-tensor with the curl of the B-spline
-  /// object with respect to the parametric variables
+  /// object with respect to the parametric variables.
   ///
-  /// @param[in] xi Point(s) where to evaluate the curl
+  /// @param[in] xi Point(s) where to evaluate the curl.
   ///
-  /// @param[in] knot_indices Knot indices where to evaluate the curl
+  /// @param[in] knot_indices Knot indices where to evaluate the curl.
   ///
   /// @param[in] coeff_indices Coefficient indices where to evaluate
-  /// the curl
+  /// the curl.
   ///
   /// @result Block-tensor with the curl of the B-spline with respect
-  /// to the parametric variables
+  /// to the parametric variables.
   ///
   /// \f[
   ///     \nabla_{\boldsymbol{\xi}} \cdot \mathbf{u}
@@ -4336,11 +4708,11 @@ public:
 
     if constexpr (BSplineCore::parDim_ == 2)
 
-      /// curl = 0,
+      /// @brief curl = 0,
       ///        0,
-      ///        du_y / dx - du_x / dy
+      ///        du_y / dx - du_x / dy.
       ///
-      /// Only the third component is returned
+      /// Only the third component is returned.
       return utils::BlockTensor<torch::Tensor, 1, 1>(
           *BSplineCore::template eval<deriv::dx, memory_optimized>(
               xi, knot_indices, coeff_indices)[1] -
@@ -4349,9 +4721,9 @@ public:
 
     else if constexpr (BSplineCore::parDim_ == 3)
 
-      /// curl = du_z / dy - du_y / dz,
+      /// @brief curl = du_z / dy - du_y / dz,
       ///        du_x / dz - du_z / dx,
-      ///        du_y / dx - du_x / dy
+      ///        du_y / dx - du_x / dy.
       return utils::BlockTensor<torch::Tensor, 1, 3>(
           *BSplineCore::template eval<deriv::dy, memory_optimized>(
               xi, knot_indices, coeff_indices)[2] -
@@ -4374,16 +4746,16 @@ public:
 
   /// @brief Returns a block-tensor with the curl of the
   /// B-spline object in the points `xi` with respect to the
-  /// physical variables
+  /// physical variables.
   ///
-  /// @tparam Geometry Type of the geometry B-spline object
+  /// @tparam Geometry Type of the geometry B-spline object.
   ///
-  /// @param[in] G B-spline geometry object
+  /// @param[in] G B-spline geometry object.
   ///
-  /// @param[in] xi Point(s) where to evaluate the curl
+  /// @param[in] xi Point(s) where to evaluate the curl.
   ///
   /// @result Block-tensor with the curl with respect to the
-  /// parametric variables
+  /// parametric variables.
   /// \f[
   ///     \nabla \times {\mathbf{x}} u
   ///        =
@@ -4402,6 +4774,12 @@ public:
       return icurl<memory_optimized, Geometry>(G, utils::TensorArray1({xi}));
   }
 
+  /// @brief Provides the `icurl` operation.
+  /// @tparam memory_optimized Template parameter `memory_optimized`.
+  /// @tparam Geometry Template parameter `Geometry`.
+  /// @param G Value of `G`.
+  /// @param xi Parametric coordinates.
+  /// @return Result of the operation.
   template <bool memory_optimized = false, typename Geometry>
   inline auto icurl(const Geometry &G,
                     const utils::TensorArray<BSplineCore::parDim_> &xi) const {
@@ -4416,20 +4794,20 @@ public:
 
   /// @brief Returns a block-tensor with the curl of the
   /// B-spline object in the points `xi` with respect to the
-  /// physical variables
+  /// physical variables.
   ///
-  /// @tparam Geometry Type of the geometry B-spline object
+  /// @tparam Geometry Type of the geometry B-spline object.
   ///
-  /// @param[in] G B-spline geometry object
+  /// @param[in] G B-spline geometry object.
   ///
-  /// @param[in] xi Point(s) where to evaluate the gradient
+  /// @param[in] xi Point(s) where to evaluate the gradient.
   ///
-  /// @param[in] knot_indices Knot indices where to evaluate the gradient
+  /// @param[in] knot_indices Knot indices where to evaluate the gradient.
   ///
-  /// @param[in] knot_indices_G Knot indices where to evaluate Jacobian of `G`
+  /// @param[in] knot_indices_G Knot indices where to evaluate Jacobian of `G`.
   ///
   /// @result Block-tensor with the curl with respect to the
-  /// physical variables
+  /// physical variables.
   /// \f[
   ///     \nabla \times {\mathbf{x}} u
   ///        =
@@ -4456,27 +4834,27 @@ public:
 
   /// @brief Returns a block-tensor with the curl of the
   /// B-spline object in the points `xi` with respect to the
-  /// physical variables
+  /// physical variables.
   ///
-  /// @tparam Geometry Type of the geometry B-spline object
+  /// @tparam Geometry Type of the geometry B-spline object.
   ///
-  /// @param[in] G B-spline geometry object
+  /// @param[in] G B-spline geometry object.
   ///
-  /// @param[in] xi Point(s) where to evaluate the gradient
+  /// @param[in] xi Point(s) where to evaluate the gradient.
   ///
-  /// @param[in] knot_indices Knot indices where to evaluate the gradient
+  /// @param[in] knot_indices Knot indices where to evaluate the gradient.
   ///
   /// @param[in] knot_indices_G Knot indices where to evaluate the Jacobian of
-  /// `G`
+  /// `G`.
   ///
   /// @param[in] coeff_indices Coefficient indices where to evaluate the
-  /// gradient
+  /// gradient.
   ///
   /// @param[in] coeff_indices_G Coefficient indices where to evaluate the
-  /// Jacobian of `G`
+  /// Jacobian of `G`.
   ///
   /// @result Block-tensor with the curl with respect to the
-  /// physical variables
+  /// physical variables.
   /// \f[
   ///     \nabla \times {\mathbf{x}} u
   ///        =
@@ -4508,12 +4886,12 @@ public:
   }
 
   /// @brief Returns a block-tensor with the divergence of the
-  /// B-spline object with respect to the parametric variables
+  /// B-spline object with respect to the parametric variables.
   ///
-  /// @param[in] xi Point(s) where to evaluate the divergence
+  /// @param[in] xi Point(s) where to evaluate the divergence.
   ///
   /// @result Block-tensor with the divergence with respect to the
-  /// parametric variables `xi`
+  /// parametric variables `xi`.
   /// \f[
   ///     \nabla_{\boldsymbol{\xi}} \cdot \mathbf{u}
   ///        =
@@ -4536,6 +4914,10 @@ public:
     return div<memory_optimized>(utils::TensorArray1({xi}));
   }
 
+  /// @brief Provides the `div` operation.
+  /// @tparam memory_optimized Template parameter `memory_optimized`.
+  /// @param xi Parametric coordinates.
+  /// @return Result of the operation.
   template <bool memory_optimized = false>
   inline auto div(const utils::TensorArray<BSplineCore::parDim_> &xi) const {
     if constexpr (BSplineCore::parDim_ == 0)
@@ -4546,14 +4928,14 @@ public:
   /// @}
 
   /// @brief Returns a block-tensor with the divergence of the
-  /// B-spline object with respect to the parametric variables
+  /// B-spline object with respect to the parametric variables.
   ///
-  /// @param[in] xi Point(s) where to evaluate the divergence
+  /// @param[in] xi Point(s) where to evaluate the divergence.
   ///
-  /// @param[in] knot_indices Knot indices where to evaluate the divergence
+  /// @param[in] knot_indices Knot indices where to evaluate the divergence.
   ///
   /// @result Block-tensor with the divergence with respect to
-  /// the parametric variables
+  /// the parametric variables.
   /// \f[
   ///     \nabla_{\boldsymbol{\xi}} \cdot \mathbf{u}
   ///        =
@@ -4581,17 +4963,17 @@ public:
   }
 
   /// @brief Returns a block-tensor with the divergence of the
-  /// B-spline object with respect to the parametric variables
+  /// B-spline object with respect to the parametric variables.
   ///
-  /// @param[in] xi Point(s) where to evaluate the divergence
+  /// @param[in] xi Point(s) where to evaluate the divergence.
   ///
-  /// @param[in] knot_indices Knot indices where to evaluate the divergence
+  /// @param[in] knot_indices Knot indices where to evaluate the divergence.
   ///
   /// @param[in] coeff_indices Coefficient indices where to evaluate the
-  /// divergence
+  /// divergence.
   ///
   /// @result Block-tensor with the divergence of the B-spline with
-  /// respect to the parametric variables
+  /// respect to the parametric variables.
   /// \f[
   ///     \nabla_{\boldsymbol{\xi}} \cdot \mathbf{u}
   ///        =
@@ -4639,16 +5021,16 @@ public:
   }
 
   /// @brief Returns a block-tensor with the divergence of the
-  /// B-spline object with respect to the physical variables
+  /// B-spline object with respect to the physical variables.
   ///
-  /// @tparam Geometry Type of the geometry B-spline object
+  /// @tparam Geometry Type of the geometry B-spline object.
   ///
-  /// @param[in] G B-spline geometry object
+  /// @param[in] G B-spline geometry object.
   ///
-  /// @param[in] xi Point(s) where to evaluate the divergence
+  /// @param[in] xi Point(s) where to evaluate the divergence.
   ///
   /// @result Block-tensor with the divergence with respect to the
-  /// parametric variables
+  /// parametric variables.
   /// \f[
   ///     \nabla_{\mathbf{x}} \cdot \mathbf{u}
   ///        =
@@ -4669,6 +5051,12 @@ public:
       return idiv<memory_optimized, Geometry>(G, utils::TensorArray1({xi}));
   }
 
+  /// @brief Provides the `idiv` operation.
+  /// @tparam memory_optimized Template parameter `memory_optimized`.
+  /// @tparam Geometry Template parameter `Geometry`.
+  /// @param G Value of `G`.
+  /// @param xi Parametric coordinates.
+  /// @return Result of the operation.
   template <bool memory_optimized = false, typename Geometry>
   inline auto idiv(const Geometry &G,
                    const utils::TensorArray<BSplineCore::parDim_> &xi) const {
@@ -4682,21 +5070,21 @@ public:
   /// @}
 
   /// @brief Returns a block-tensor with the divergence of the
-  /// B-spline object with respect to the physical variables
+  /// B-spline object with respect to the physical variables.
   ///
-  /// @tparam Geometry Type of the geometry B-spline object
+  /// @tparam Geometry Type of the geometry B-spline object.
   ///
-  /// @param[in] G B-spline geometry object
+  /// @param[in] G B-spline geometry object.
   ///
-  /// @param[in] xi Point(s) where to evaluate the divergence
+  /// @param[in] xi Point(s) where to evaluate the divergence.
   ///
-  /// @param[in] knot_indices Knot indices where to evaluate the divergence
+  /// @param[in] knot_indices Knot indices where to evaluate the divergence.
   ///
   /// @param[in] knot_indices_G Knot indices where to evaluate the Jacobian of
-  /// `G`
+  /// `G`.
   ///
   /// @result Block-tensor with the divergence with respect to the
-  /// physical variables
+  /// physical variables.
   /// \f[
   ///     \nabla_{\mathbf{x}} \cdot \mathbf{u}
   ///        =
@@ -4724,27 +5112,27 @@ public:
   }
 
   /// @brief Returns a block-tensor with the divergence of the
-  /// B-spline object with respect to the physical variables
+  /// B-spline object with respect to the physical variables.
   ///
-  /// @tparam Geometry Type of the geometry B-spline object
+  /// @tparam Geometry Type of the geometry B-spline object.
   ///
-  /// @param[in] G B-spline geometry object
+  /// @param[in] G B-spline geometry object.
   ///
-  /// @param[in] xi Point(s) where to evaluate the divergence
+  /// @param[in] xi Point(s) where to evaluate the divergence.
   ///
-  /// @param[in] knot_indices Knot indices where to evaluate the divergence
+  /// @param[in] knot_indices Knot indices where to evaluate the divergence.
   ///
   /// @param[in] knot_indices_G Knot indices where to evaluate the Jacobian of
-  /// `G`
+  /// `G`.
   ///
   /// @param[in] coeff_indices Coefficient indices where to evaluate the
-  /// divergence
+  /// divergence.
   ///
   /// @param[in] coeff_indices_G Coefficient indices where to evaluate the
-  /// Jacobian of `G`
+  /// Jacobian of `G`.
   ///
   /// @result Block-tensor with the divergence with respect to the
-  /// physical variables
+  /// physical variables.
   /// \f[
   ///     \nabla_{\mathbf{x}} \cdot \mathbf{u}
   ///        =
@@ -4772,12 +5160,12 @@ public:
   }
 
   /// @brief Returns a block-tensor with the gradient of the B-spline
-  /// object in the points `xi` with respect to the parametric variables
+  /// object in the points `xi` with respect to the parametric variables.
   ///
-  /// @param[in] xi Point(s) where to evaluate the gradient
+  /// @param[in] xi Point(s) where to evaluate the gradient.
   ///
   /// @result Block-tensor with the gradient with respect to the
-  /// parametric variables `xi`
+  /// parametric variables `xi`.
   /// \f[
   ///     \nabla_{\boldsymbol{\xi}}u
   ///        =
@@ -4804,6 +5192,10 @@ public:
       return grad<memory_optimized>(utils::TensorArray1({xi}));
   }
 
+  /// @brief Provides the `grad` operation.
+  /// @tparam memory_optimized Template parameter `memory_optimized`.
+  /// @param xi Parametric coordinates.
+  /// @return Result of the operation.
   template <bool memory_optimized = false>
   inline auto grad(const utils::TensorArray<BSplineCore::parDim_> &xi) const {
 
@@ -4820,14 +5212,14 @@ public:
 
   /// @brief Returns a block-tensor with the gradient of the
   /// B-spline object in the points `xi` with respect to the
-  /// parametric variables
+  /// parametric variables.
   ///
-  /// @param[in] xi Point(s) where to evaluate the gradient
+  /// @param[in] xi Point(s) where to evaluate the gradient.
   ///
-  /// @param[in] knot_indices Knot indices where to evaluate the gradient
+  /// @param[in] knot_indices Knot indices where to evaluate the gradient.
   ///
   /// @result Block-tensor with the gradient with respect to
-  /// the parametric variables
+  /// the parametric variables.
   /// \f[
   ///     \nabla_{\boldsymbol{\xi}}u
   ///        =
@@ -4859,17 +5251,17 @@ public:
 
   /// @brief Returns a block-tensor with the gradient of the
   /// B-spline object in the points `xi` with respect to the
-  /// parametric variables
+  /// parametric variables.
   ///
-  /// @param[in] xi Point(s) where to evaluate the gradient
+  /// @param[in] xi Point(s) where to evaluate the gradient.
   ///
-  /// @param[in] knot_indices Knot indices where to evaluate the gradient
+  /// @param[in] knot_indices Knot indices where to evaluate the gradient.
   ///
   /// @param[in] coeff_indices Coefficient indices where to evaluate the
-  /// gradient
+  /// gradient.
   ///
   /// @result Block-tensor with the gradient with respect to the
-  /// parametric variables
+  /// parametric variables.
   /// \f[
   ///     \nabla_{\boldsymbol{\xi}}u
   ///        =
@@ -4914,16 +5306,16 @@ public:
 
   /// @brief Returns a block-tensor with the gradient of the
   /// B-spline object in the points `xi` with respect to the
-  /// physical variables
+  /// physical variables.
   ///
-  /// @tparam Geometry Type of the geometry B-spline object
+  /// @tparam Geometry Type of the geometry B-spline object.
   ///
-  /// @param[in] G B-spline geometry object
+  /// @param[in] G B-spline geometry object.
   ///
-  /// @param[in] xi Point(s) where to evaluate the gradient
+  /// @param[in] xi Point(s) where to evaluate the gradient.
   ///
   /// @result Block-tensor with the gradient with respect to the
-  /// parametric variables
+  /// parametric variables.
   /// \f[
   ///     \nabla_{\mathbf{x}} u
   ///        =
@@ -4942,6 +5334,12 @@ public:
       return igrad<memory_optimized, Geometry>(G, utils::TensorArray1({xi}));
   }
 
+  /// @brief Provides the `igrad` operation.
+  /// @tparam memory_optimized Template parameter `memory_optimized`.
+  /// @tparam Geometry Template parameter `Geometry`.
+  /// @param G Value of `G`.
+  /// @param xi Parametric coordinates.
+  /// @return Result of the operation.
   template <bool memory_optimized = false, typename Geometry>
   inline auto igrad(const Geometry &G,
                     const utils::TensorArray<BSplineCore::parDim_> &xi) const {
@@ -4956,20 +5354,20 @@ public:
 
   /// @brief Returns a block-tensor with the gradient of the
   /// B-spline object in the points `xi` with respect to the
-  /// physical variables
+  /// physical variables.
   ///
-  /// @tparam Geometry Type of the geometry B-spline object
+  /// @tparam Geometry Type of the geometry B-spline object.
   ///
-  /// @param[in] G B-spline geometry object
+  /// @param[in] G B-spline geometry object.
   ///
-  /// @param[in] xi Point(s) where to evaluate the gradient
+  /// @param[in] xi Point(s) where to evaluate the gradient.
   ///
-  /// @param[in] knot_indices Knot indices where to evaluate the gradient
+  /// @param[in] knot_indices Knot indices where to evaluate the gradient.
   ///
-  /// @param[in] knot_indices_G Knot indices where to evaluate Jacobian of `G`
+  /// @param[in] knot_indices_G Knot indices where to evaluate Jacobian of `G`.
   ///
   /// @result Block-tensor with the gradient with respect to the
-  /// physical variables
+  /// physical variables.
   /// \f[
   ///     \nabla_{\mathbf{x}} u
   ///        =
@@ -4996,27 +5394,27 @@ public:
 
   /// @brief Returns a block-tensor with the gradient of the
   /// B-spline object in the points `xi` with respect to the
-  /// physical variables
+  /// physical variables.
   ///
-  /// @tparam Geometry Type of the geometry B-spline object
+  /// @tparam Geometry Type of the geometry B-spline object.
   ///
-  /// @param[in] G B-spline geometry object
+  /// @param[in] G B-spline geometry object.
   ///
-  /// @param[in] xi Point(s) where to evaluate the gradient
+  /// @param[in] xi Point(s) where to evaluate the gradient.
   ///
-  /// @param[in] knot_indices Knot indices where to evaluate the gradient
+  /// @param[in] knot_indices Knot indices where to evaluate the gradient.
   ///
   /// @param[in] knot_indices_G Knot indices where to evaluate the Jacobian of
-  /// `G`
+  /// `G`.
   ///
   /// @param[in] coeff_indices Coefficient indices where to evaluate the
-  /// gradient
+  /// gradient.
   ///
   /// @param[in] coeff_indices_G Coefficient indices where to evaluate the
-  /// Jacobian of `G`
+  /// Jacobian of `G`.
   ///
   /// @result Block-tensor with the gradient with respect to the
-  /// physical variables
+  /// physical variables.
   /// \f[
   ///     \nabla_{\mathbf{x}} u
   ///        =
@@ -5044,12 +5442,12 @@ public:
   //  clang-format off
   /// @brief Returns a block-tensor with the Hessian of the B-spline
   /// object in the points `xi` with respect to the parametric
-  /// variables
+  /// variables.
   ///
-  /// @param[in] xi Point(s) where to evaluate the Hessian
+  /// @param[in] xi Point(s) where to evaluate the Hessian.
   ///
   /// @result Block-tensor with the Hessian with respect to the
-  /// parametric variables `xi`
+  /// parametric variables `xi`.
   /// \f[
   ///     H_{\boldsymbol{\xi}}(u)
   ///        =
@@ -5086,6 +5484,10 @@ public:
       return hess<memory_optimized>(utils::TensorArray1({xi}));
   }
 
+  /// @brief Provides the `hess` operation.
+  /// @tparam memory_optimized Template parameter `memory_optimized`.
+  /// @param xi Parametric coordinates.
+  /// @return Result of the operation.
   template <bool memory_optimized = false>
   inline auto hess(const utils::TensorArray<BSplineCore::parDim_> &xi) const {
     if constexpr (BSplineCore::parDim_ == 0)
@@ -5099,14 +5501,14 @@ public:
   //  clang-format off
   /// @brief Returns a block-tensor with the Hessian of the B-spline
   /// object in the points `xi` with respect to the parametric
-  /// variables
+  /// variables.
   ///
-  /// @param[in] xi Point(s) where to evaluate the gradient
+  /// @param[in] xi Point(s) where to evaluate the gradient.
   ///
-  /// @param[in] knot_indices Knot indices where to evaluate the Hessian
+  /// @param[in] knot_indices Knot indices where to evaluate the Hessian.
   ///
   /// @result Block-tensor with the Hessian with respect to
-  /// the parametric variables
+  /// the parametric variables.
   /// \f[
   ///     H_{\boldsymbol{\xi}}(u)
   ///        =
@@ -5149,16 +5551,16 @@ public:
   //  clang-format off
   /// @brief Returns a block-tensor with the Hessian of the B-spline
   /// object in the points `xi` with respect to the parametric
-  /// variables
+  /// variables.
   ///
-  /// @param[in] xi Point(s) where to evaluate the Hessian
+  /// @param[in] xi Point(s) where to evaluate the Hessian.
   ///
-  /// @param[in] knot_indices Knot indices where to evaluate the Hessian
+  /// @param[in] knot_indices Knot indices where to evaluate the Hessian.
   ///
-  /// @param[in] coeff_indices Coefficient indices where to evaluate the Hessian
+  /// @param[in] coeff_indices Coefficient indices where to evaluate the Hessian.
   ///
   /// @result Block-tensor with the Hessian with respect to the
-  /// parametric variables
+  /// parametric variables.
   /// \f[
   ///     H_{\boldsymbol{\xi}}(u)
   ///        =
@@ -5220,16 +5622,16 @@ public:
 
   /// @brief Returns a block-tensor with the Hessian of the B-spline
   /// object in the points `xi` with respect to the physical
-  /// variables
+  /// variables.
   ///
-  /// @tparam Geometry Type of the geometry B-spline object
+  /// @tparam Geometry Type of the geometry B-spline object.
   ///
-  /// @param[in] G B-spline geometry object
+  /// @param[in] G B-spline geometry object.
   ///
-  /// @param[in] xi Point(s) where to evaluate the Hessian
+  /// @param[in] xi Point(s) where to evaluate the Hessian.
   ///
   /// @result Block-tensor with the Hessian with respect to the
-  /// parametric variables
+  /// parametric variables.
   /// \f[
   ///     H_{\mathbf{x}}(u)
   ///        =
@@ -5254,6 +5656,12 @@ public:
       return ihess<memory_optimized, Geometry>(G, utils::TensorArray1({xi}));
   }
 
+  /// @brief Provides the `ihess` operation.
+  /// @tparam memory_optimized Template parameter `memory_optimized`.
+  /// @tparam Geometry Template parameter `Geometry`.
+  /// @param G Value of `G`.
+  /// @param xi Parametric coordinates.
+  /// @return Result of the operation.
   template <bool memory_optimized = false, typename Geometry>
   inline auto ihess(const Geometry &G,
                     const utils::TensorArray<BSplineCore::parDim_> &xi) const {
@@ -5268,20 +5676,20 @@ public:
 
   /// @brief Returns a block-tensor with the Hessian of the B-spline
   /// object in the points `xi` with respect to the physical
-  /// variables
+  /// variables.
   ///
-  /// @tparam Geometry Type of the geometry B-spline object
+  /// @tparam Geometry Type of the geometry B-spline object.
   ///
-  /// @param[in] G B-spline geometry object
+  /// @param[in] G B-spline geometry object.
   ///
-  /// @param[in] xi Point(s) where to evaluate the Hessian
+  /// @param[in] xi Point(s) where to evaluate the Hessian.
   ///
-  /// @param[in] knot_indices Knot indices where to evaluate the Hessian
+  /// @param[in] knot_indices Knot indices where to evaluate the Hessian.
   ///
-  /// @param[in] knot_indices_G Knot indices where to evaluate Jacobian of `G`
+  /// @param[in] knot_indices_G Knot indices where to evaluate Jacobian of `G`.
   ///
   /// @result Block-tensor with the Hessian with respect to the
-  /// physical variables
+  /// physical variables.
   /// \f[
   ///     H_{\mathbf{x}}(u)
   ///        =
@@ -5314,26 +5722,26 @@ public:
 
   /// @brief Returns a block-tensor with the Hessian of the B-spline
   /// object in the points `xi` with respect to the physical
-  /// variables
+  /// variables.
   ///
-  /// @tparam Geometry Type of the geometry B-spline object
+  /// @tparam Geometry Type of the geometry B-spline object.
   ///
-  /// @param[in] G B-spline geometry object
+  /// @param[in] G B-spline geometry object.
   ///
-  /// @param[in] xi Point(s) where to evaluate the Hessian
+  /// @param[in] xi Point(s) where to evaluate the Hessian.
   ///
-  /// @param[in] knot_indices Knot indices where to evaluate the Hessian
+  /// @param[in] knot_indices Knot indices where to evaluate the Hessian.
   ///
   /// @param[in] knot_indices_G Knot indices where to evaluate the Jacobian of
-  /// `G`
+  /// `G`.
   ///
-  /// @param[in] coeff_indices Coefficient indices where to evaluate the Hessian
+  /// @param[in] coeff_indices Coefficient indices where to evaluate the Hessian.
   ///
   /// @param[in] coeff_indices_G Coefficient indices where to evaluate the
-  /// Jacobian of `G`
+  /// Jacobian of `G`.
   ///
   /// @result Block-tensor with the Hessian with respect to the
-  /// physical variables
+  /// physical variables.
   /// \f[
   ///     H_{\mathbf{x}}(u)
   ///        =
@@ -5395,12 +5803,12 @@ public:
   //  clang-format off
   /// @brief Returns a block-tensor with the Jacobian of the
   /// B-spline object in the points `xi` with respect to the
-  /// parametric variables
+  /// parametric variables.
   ///
-  /// @param[in] xi Point(s) where to evaluate the Jacobian
+  /// @param[in] xi Point(s) where to evaluate the Jacobian.
   ///
   /// @result Block-tensor with the Jacobian with respect to the
-  /// parametric variables
+  /// parametric variables.
   /// \f[
   ///     J_{\boldsymbol{\xi}}(u)
   ///        =
@@ -5432,6 +5840,10 @@ public:
       return jac<memory_optimized>(utils::TensorArray1({xi}));
   }
 
+  /// @brief Provides the `jac` operation.
+  /// @tparam memory_optimized Template parameter `memory_optimized`.
+  /// @param xi Parametric coordinates.
+  /// @return Result of the operation.
   template <bool memory_optimized = false>
   inline auto jac(const utils::TensorArray<BSplineCore::parDim_> &xi) const {
     if constexpr (BSplineCore::parDim_ == 0)
@@ -5445,14 +5857,14 @@ public:
   //  clang-format off
   /// @brief Returns a block-tensor with the Jacobian of the
   /// B-spline object in the points `xi` with respect to the
-  /// parametric variables
+  /// parametric variables.
   ///
-  /// @param[in] xi Point(s) where to evaluate the Jacobian
+  /// @param[in] xi Point(s) where to evaluate the Jacobian.
   ///
-  /// @param[in] knot_indices Knot indices where to evaluate the Jacobian
+  /// @param[in] knot_indices Knot indices where to evaluate the Jacobian.
   ///
   /// @result Block-tensor with the Jacobian with respect to the
-  /// parametric variables
+  /// parametric variables.
   /// \f[
   ///     J_{\boldsymbol{\xi}}(u)
   ///        =
@@ -5490,17 +5902,17 @@ public:
   //  clang-format off
   /// @brief Returns a block-tensor with the Jacobian of the
   /// B-spline object in the points `xi` with respect to the
-  /// parametric variables
+  /// parametric variables.
   ///
-  /// @param[in] xi Point(s) where to evaluate the Jacobian
+  /// @param[in] xi Point(s) where to evaluate the Jacobian.
   ///
-  /// @param[in] knot_indices Knot indices where to evaluate the Jacobian
+  /// @param[in] knot_indices Knot indices where to evaluate the Jacobian.
   ///
   /// @param[in] coeff_indices Coefficient indices where to evaluate the
-  /// Jacobian
+  /// Jacobian.
   ///
   /// @result Block-tensor with the Jacobian with respect to the
-  /// parametric variables
+  /// parametric variables.
   /// \f[
   ///     J_{\boldsymbol{\xi}}(u)
   ///        =
@@ -5558,16 +5970,16 @@ public:
 
   /// @brief Returns a block-tensor with the Jacobian of the
   /// B-spline object in the points `xi` with respect to the
-  /// physical variables
+  /// physical variables.
   ///
-  /// @tparam Geometry Type of the geometry B-spline object
+  /// @tparam Geometry Type of the geometry B-spline object.
   ///
-  /// @param[in] G B-spline geometry object
+  /// @param[in] G B-spline geometry object.
   ///
-  /// @param[in] xi Point(s) where to evaluate the Jacobian
+  /// @param[in] xi Point(s) where to evaluate the Jacobian.
   ///
   /// @result Block-tensor with the Jacobian with respect to the
-  /// parametric variables
+  /// parametric variables.
   /// \f[
   ///     J_{\mathbf{x}}(u)
   ///        =
@@ -5586,6 +5998,12 @@ public:
       return ijac<memory_optimized, Geometry>(G, utils::TensorArray1({xi}));
   }
 
+  /// @brief Provides the `ijac` operation.
+  /// @tparam memory_optimized Template parameter `memory_optimized`.
+  /// @tparam Geometry Template parameter `Geometry`.
+  /// @param G Value of `G`.
+  /// @param xi Parametric coordinates.
+  /// @return Result of the operation.
   template <bool memory_optimized = false, typename Geometry>
   inline auto ijac(const Geometry &G,
                    const utils::TensorArray<BSplineCore::parDim_> &xi) const {
@@ -5600,21 +6018,21 @@ public:
 
   /// @brief Returns a block-tensor with the Jacobian of the
   /// B-spline object in the points `xi` with respect to the
-  /// physical variables
+  /// physical variables.
   ///
-  /// @tparam Geometry Type of the geometry B-spline object
+  /// @tparam Geometry Type of the geometry B-spline object.
   ///
-  /// @param[in] G B-spline geometry object
+  /// @param[in] G B-spline geometry object.
   ///
-  /// @param[in] xi Point(s) where to evaluate the Jacobian
+  /// @param[in] xi Point(s) where to evaluate the Jacobian.
   ///
-  /// @param[in] knot_indices Knot indices where to evaluate the Jacobian
+  /// @param[in] knot_indices Knot indices where to evaluate the Jacobian.
   ///
   /// @param[in] knot_indices_G Knot indices where to evaluate the Jacobian of
-  /// `G`
+  /// `G`.
   ///
   /// @result Block-tensor with the Jacobian with respect to the
-  /// physical variables
+  /// physical variables.
   /// \f[
   ///     J_{\mathbf{x}}(u)
   ///        =
@@ -5641,27 +6059,27 @@ public:
 
   /// @brief Returns a block-tensor with the Jacobian of the
   /// B-spline object in the points `xi` with respect to the
-  /// physical variables
+  /// physical variables.
   ///
-  /// @tparam Geometry Type of the geometry B-spline object
+  /// @tparam Geometry Type of the geometry B-spline object.
   ///
-  /// @param[in] G B-spline geometry object
+  /// @param[in] G B-spline geometry object.
   ///
-  /// @param[in] xi Point(s) where to evaluate the Jacobian
+  /// @param[in] xi Point(s) where to evaluate the Jacobian.
   ///
-  /// @param[in] knot_indices Knot indices where to evaluate the Jacobain
+  /// @param[in] knot_indices Knot indices where to evaluate the Jacobain.
   ///
   /// @param[in] knot_indices_G Knot indices where to evaluate the Jacobian of
-  /// `G`
+  /// `G`.
   ///
   /// @param[in] coeff_indices Coefficient indices where to evaluate the
-  /// Jacobian
+  /// Jacobian.
   ///
   /// @param[in] coeff_indices_G Coefficient indices where to evaluate the
-  /// Jacobian of `G`
+  /// Jacobian of `G`.
   ///
   /// @result Block-tensor with the Jacobian with respect to the
-  /// physical variables
+  /// physical variables.
   /// \f[
   ///     J_{\mathbf{x}}(u)
   ///        =
@@ -5688,12 +6106,12 @@ public:
 
   //  clang-format off
   /// @brief Returns a block-tensor with the Laplacian of the B-spline
-  /// object in the points `xi` with respect to the parametric variables
+  /// object in the points `xi` with respect to the parametric variables.
   ///
-  /// @param[in] xi Point(s) where to evaluate the Laplacian
+  /// @param[in] xi Point(s) where to evaluate the Laplacian.
   ///
   /// @result Block-tensor with the Laplacian with respect to the
-  /// parametric variables `xi`
+  /// parametric variables `xi`.
   /// \f[
   ///     L_{\boldsymbol{\xi}}(u)
   ///        =
@@ -5715,6 +6133,10 @@ public:
       return lapl<memory_optimized>(utils::TensorArray1({xi}));
   }
 
+  /// @brief Provides the `lapl` operation.
+  /// @tparam memory_optimized Template parameter `memory_optimized`.
+  /// @param xi Parametric coordinates.
+  /// @return Result of the operation.
   template <bool memory_optimized = false>
   inline auto lapl(const utils::TensorArray<BSplineCore::parDim_> &xi) const {
     if constexpr (BSplineCore::parDim_ == 0)
@@ -5728,14 +6150,14 @@ public:
   //  clang-format off
   /// @brief Returns a block-tensor with the Laplacian of the B-spline
   /// object in the points `xi` with respect to the parametric
-  /// variables
+  /// variables.
   ///
-  /// @param[in] xi Point(s) where to evaluate the Laplacian
+  /// @param[in] xi Point(s) where to evaluate the Laplacian.
   ///
-  /// @param[in] knot_indices Knot indices where to evaluate the Laplacian
+  /// @param[in] knot_indices Knot indices where to evaluate the Laplacian.
   ///
   /// @result Block-tensor with the Laplacian with respect to
-  /// the parametric variables
+  /// the parametric variables.
   /// \f[
   ///     L_{\boldsymbol{\xi}}(u)
   ///        =
@@ -5763,17 +6185,17 @@ public:
   //  clang-format off
   /// @brief Returns a block-tensor with the Laplacian of the B-spline
   /// object in the points `xi` with respect to the parametric
-  /// variables
+  /// variables.
   ///
-  /// @param[in] xi Point(s) where to evaluate the Laplacian
+  /// @param[in] xi Point(s) where to evaluate the Laplacian.
   ///
-  /// @param[in] knot_indices Knot indices where to evaluate the Laplacian
+  /// @param[in] knot_indices Knot indices where to evaluate the Laplacian.
   ///
   /// @param[in] coeff_indices Coefficient indices where to evaluate the
-  /// Laplacian
+  /// Laplacian.
   ///
   /// @result Block-tensor with the Laplacian with respect to the
-  /// parametric variables
+  /// parametric variables.
   /// \f[
   ///     L_{\boldsymbol{\xi}}(u)
   ///        =
@@ -5816,16 +6238,16 @@ public:
 
   /// @brief Returns a block-tensor with the Laplacian of the B-spline
   /// object in the points `xi` with respect to the physical
-  /// variables
+  /// variables.
   ///
-  /// @tparam Geometry Type of the geometry B-spline object
+  /// @tparam Geometry Type of the geometry B-spline object.
   ///
-  /// @param[in] G B-spline geometry object
+  /// @param[in] G B-spline geometry object.
   ///
-  /// @param[in] xi Point(s) where to evaluate the Laplacian
+  /// @param[in] xi Point(s) where to evaluate the Laplacian.
   ///
   /// @result Block-tensor with the Laplacian with respect to the
-  /// parametric variables
+  /// parametric variables.
   /// \f[
   ///     L_{\mathbf{x}}(u)
   ///        =
@@ -5851,6 +6273,12 @@ public:
       return ilapl<memory_optimized, Geometry>(G, utils::TensorArray1({xi}));
   }
 
+  /// @brief Provides the `ilapl` operation.
+  /// @tparam memory_optimized Template parameter `memory_optimized`.
+  /// @tparam Geometry Template parameter `Geometry`.
+  /// @param G Value of `G`.
+  /// @param xi Parametric coordinates.
+  /// @return Result of the operation.
   template <bool memory_optimized = false, typename Geometry>
   inline auto ilapl(const Geometry &G,
                     const utils::TensorArray<BSplineCore::parDim_> &xi) const {
@@ -5865,20 +6293,20 @@ public:
 
   /// @brief Returns a block-tensor with the Laplacian of the B-spline
   /// object in the points `xi` with respect to the physical
-  /// variables
+  /// variables.
   ///
-  /// @tparam Geometry Type of the geometry B-spline object
+  /// @tparam Geometry Type of the geometry B-spline object.
   ///
-  /// @param[in] G B-spline geometry object
+  /// @param[in] G B-spline geometry object.
   ///
-  /// @param[in] xi Point(s) where to evaluate the Laplacian
+  /// @param[in] xi Point(s) where to evaluate the Laplacian.
   ///
-  /// @param[in] knot_indices Knot indices where to evaluate the Laplacian
+  /// @param[in] knot_indices Knot indices where to evaluate the Laplacian.
   ///
-  /// @param[in] knot_indices_G Knot indices where to evaluate Jacobian of `G`
+  /// @param[in] knot_indices_G Knot indices where to evaluate Jacobian of `G`.
   ///
   /// @result Block-tensor with the Laplacian with respect to the
-  /// physical variables
+  /// physical variables.
   /// \f[
   ///     L_{\mathbf{x}}(u)
   ///        =
@@ -5912,27 +6340,27 @@ public:
 
   /// @brief Returns a block-tensor with the Laplacian of the B-spline
   /// object in the points `xi` with respect to the physical
-  /// variables
+  /// variables.
   ///
-  /// @tparam Geometry Type of the geometry B-spline object
+  /// @tparam Geometry Type of the geometry B-spline object.
   ///
-  /// @param[in] G B-spline geometry object
+  /// @param[in] G B-spline geometry object.
   ///
-  /// @param[in] xi Point(s) where to evaluate the Laplacian
+  /// @param[in] xi Point(s) where to evaluate the Laplacian.
   ///
-  /// @param[in] knot_indices Knot indices where to evaluate the Laplacian
+  /// @param[in] knot_indices Knot indices where to evaluate the Laplacian.
   ///
   /// @param[in] knot_indices_G Knot indices where to evaluate the Jacobian of
-  /// `G`
+  /// `G`.
   ///
   /// @param[in] coeff_indices Coefficient indices where to evaluate the
-  /// Laplacian
+  /// Laplacian.
   ///
   /// @param[in] coeff_indices_G Coefficient indices where to evaluate the
-  /// Jacobian of `G`
+  /// Jacobian of `G`.
   ///
   /// @result Block-tensor with the Laplacian with respect to the
-  /// physical variables
+  /// physical variables.
   /// \f[
   ///     L_{\mathbf{x}}(u)
   ///        =
@@ -5982,11 +6410,11 @@ public:
     }
   }
 
-  /// Plots the B-spline object
+  /// @brief Plots the B-spline object.
   ///
-  /// @param[in] json JSON configuration
+  /// @param[in] json JSON configuration.
   ///
-  /// @result Plot of the B-spline object
+  /// @result Plot of the B-spline object.
 #ifdef IGANET_WITH_MATPLOT
   template <typename Backend = matplot::backend::gnuplot>
 #else
@@ -5996,13 +6424,13 @@ public:
     return plot<Backend>(*this, json);
   }
 
-  /// Plots the B-spline object together with a set of sampling points
+  /// @brief Plots the B-spline object together with a set of sampling points.
   ///
-  /// @param[in] xi Sampling points
+  /// @param[in] xi Sampling points.
   ///
-  /// @param[in] json JSON configuration
+  /// @param[in] json JSON configuration.
   ///
-  /// @result Plot of the B-spline object
+  /// @result Plot of the B-spline object.
 #ifdef IGANET_WITH_MATPLOT
   template <typename Backend = matplot::backend::gnuplot>
 #else
@@ -6014,13 +6442,13 @@ public:
     return plot<Backend>(*this, xi, json);
   }
 
-  /// Plots the B-spline object together with a set of sampling points
+  /// @brief Plots the B-spline object together with a set of sampling points.
   ///
-  /// @param[in] xi Vector of sampling points
+  /// @param[in] xi Vector of sampling points.
   ///
-  /// @param[in] json JSON configuration
+  /// @param[in] json JSON configuration.
   ///
-  /// @result Plot of the B-spline object
+  /// @result Plot of the B-spline object.
 #ifdef IGANET_WITH_MATPLOT
   template <typename Backend = matplot::backend::gnuplot>
 #else
@@ -6033,13 +6461,13 @@ public:
     return plot<Backend>(*this, xi, json);
   }
 
-  /// Plots the B-spline object colored by another B-spline object
+  /// @brief Plots the B-spline object colored by another B-spline object.
   ///
-  /// @param[in] color B-spline object representing the color
+  /// @param[in] color B-spline object representing the color.
   ///
-  /// @param[in] json JSON configuration
+  /// @param[in] json JSON configuration.
   ///
-  /// @result Plot of the B-spline object
+  /// @result Plot of the B-spline object.
 #ifdef IGANET_WITH_MATPLOT
   template <typename Backend = matplot::backend::gnuplot,
             typename BSplineCoreColor>
@@ -6854,16 +7282,16 @@ public:
 #endif
   }
 
-  /// Plots the B-spline object colored by another B-spline object
-  /// together with a set of sampling points
+  /// @brief Plots the B-spline object colored by another B-spline object
+  /// together with a set of sampling points.
   ///
-  /// @param[in] color B-spline object representing the color
+  /// @param[in] color B-spline object representing the color.
   ///
-  /// @param[in] xi Sampling points
+  /// @param[in] xi Sampling points.
   ///
-  /// @param[in] json JSON configuration
+  /// @param[in] json JSON configuration.
   ///
-  /// @result Plot of the B-spline object
+  /// @result Plot of the B-spline object.
 #ifdef IGANET_WITH_MATPLOT
   template <typename Backend = matplot::backend::gnuplot,
             typename BSplineCoreColor>
@@ -6940,16 +7368,16 @@ public:
 #endif
   }
 
-  /// Plots the B-spline object colored by another B-spline object
-  /// together with a set of sampling points
+  /// @brief Plots the B-spline object colored by another B-spline object
+  /// together with a set of sampling points.
   ///
-  /// @param[in] color B-spline object representing the color
+  /// @param[in] color B-spline object representing the color.
   ///
-  /// @param[in] xi Vector of sampling points
+  /// @param[in] xi Vector of sampling points.
   ///
-  /// @param[in] json JSON configuration
+  /// @param[in] json JSON configuration.
   ///
-  /// @result Plot of the B-spline object
+  /// @result Plot of the B-spline object.
 #ifdef IGANET_WITH_MATPLOT
   template <typename Backend = matplot::backend::gnuplot,
             typename BSplineCoreColor>
@@ -7029,7 +7457,8 @@ public:
 #endif
   }
 
-  /// @brief Returns a string representation of the BSplineCommon object
+  /// @brief Returns a string representation of the BSplineCommon object.
+  /// @param os Output stream.
   inline void pretty_print(std::ostream &os) const noexcept override {
     os << name() << "(\nparDim = " << BSplineCore::parDim()
        << ", geoDim = " << BSplineCore::geoDim() << ", degrees = ";
@@ -7086,12 +7515,14 @@ public:
   }
 
   /// @brief Returns a new B-spline object whose coefficients are the
-  /// sum of that of two compatible B-spline objects
+  /// sum of that of two compatible B-spline objects.
   ///
   /// @note This method does not check if the knot vectors of the two
   /// B-spline objects are compatible. It simply adds the two
   /// coefficients arrays and throws an error if their sizes do not
   /// match. Any compatibility checks must be performed outside.
+  /// @param other Second input value.
+  /// @return Result of the operation.
   BSplineCommon operator+(const BSplineCommon &other) const {
 
     BSplineCommon result{*this};
@@ -7103,13 +7534,15 @@ public:
   }
 
   /// @brief Returns a new B-spline object whose coefficients are the
-  /// difference of that of two compatible B-spline objects
+  /// difference of that of two compatible B-spline objects.
   ///
   /// @note This method does not check if the knot vectors of the two
   /// B-spline objects are compatible. It simply subtracts the
   /// coefficients arrays of two B-spline objects from each other and
   /// throws an error if their sizes do not match. Any compatibility
   /// checks must be performed outside.
+  /// @param other Second input value.
+  /// @return Result of the operation.
   BSplineCommon operator-(const BSplineCommon &other) const {
 
     BSplineCommon result{*this};
@@ -7121,7 +7554,9 @@ public:
   }
 
   /// @brief Returns a new B-spline object whose coefficients are
-  /// scaled by a scalar
+  /// scaled by a scalar.
+  /// @param s Value of `s`.
+  /// @return Result of the operation.
   BSplineCommon operator*(BSplineCore::value_type s) const {
 
     BSplineCommon result{*this};
@@ -7133,7 +7568,9 @@ public:
   }
 
   /// @brief Returns a new B-spline object whose coefficients are
-  /// scaled by a vector
+  /// scaled by a vector.
+  /// @param v Value of `v`.
+  /// @return Result of the operation.
   BSplineCommon operator*(
       std::array<typename BSplineCore::value_type, BSplineCore::geoDim()> v)
       const {
@@ -7147,7 +7584,9 @@ public:
   }
 
   /// @brief Returns a new B-spline object whose coefficients are
-  /// scaled by a scalar
+  /// scaled by a scalar.
+  /// @param s Value of `s`.
+  /// @return Result of the operation.
   BSplineCommon operator/(BSplineCore::value_type s) const {
 
     BSplineCommon result{*this};
@@ -7159,7 +7598,9 @@ public:
   }
 
   /// @brief Returns a new B-spline object whose coefficients are
-  /// scaled by a vector
+  /// scaled by a vector.
+  /// @param v Value of `v`.
+  /// @return Result of the operation.
   BSplineCommon operator/(
       std::array<typename BSplineCore::value_type, BSplineCore::geoDim()> v)
       const {
@@ -7172,12 +7613,14 @@ public:
     return result;
   }
 
-  /// @brief Adds the coefficients of another B-spline object
+  /// @brief Adds the coefficients of another B-spline object.
   ///
   /// @note This method does not check if the knot vectors of the two
   /// B-spline objects are compatible. It simply adds the two
   /// coefficients arrays and throws an error if their sizes do not
   /// match. Any compatibility checks must be performed outside.
+  /// @param other Second input value.
+  /// @return Result of the operation.
   BSplineCommon &operator+=(const BSplineCommon &other) {
 
     for (short_t i = 0; i < BSplineCore::geoDim(); ++i)
@@ -7186,12 +7629,14 @@ public:
     return *this;
   }
 
-  /// @brief Substracts the coefficients of another B-spline object
+  /// @brief Substracts the coefficients of another B-spline object.
   ///
   /// @note This method does not check if the knot vectors of the two
   /// B-spline objects are compatible. It simply substracts the two
   /// coefficients arrays and throws an error if their sizes do not
   /// match. Any compatibility checks must be performed outside.
+  /// @param other Second input value.
+  /// @return Result of the operation.
   BSplineCommon &operator-=(const BSplineCommon &other) {
 
     for (short_t i = 0; i < BSplineCore::geoDim(); ++i)
@@ -7200,7 +7645,9 @@ public:
     return *this;
   }
 
-  /// @brief Scales the coefficients by a scalar
+  /// @brief Scales the coefficients by a scalar.
+  /// @param s Value of `s`.
+  /// @return Result of the operation.
   BSplineCommon &operator*=(BSplineCore::value_type s) {
 
     for (short_t i = 0; i < BSplineCore::geoDim(); ++i)
@@ -7209,7 +7656,9 @@ public:
     return *this;
   }
 
-  /// @brief Scales the coefficients by a vector
+  /// @brief Scales the coefficients by a vector.
+  /// @param v Value of `v`.
+  /// @return Result of the operation.
   BSplineCommon &operator*=(
       std::array<typename BSplineCore::value_type, BSplineCore::geoDim()> v) {
 
@@ -7219,7 +7668,9 @@ public:
     return *this;
   }
 
-  /// @brief Scales the coefficients by a scalar
+  /// @brief Scales the coefficients by a scalar.
+  /// @param s Value of `s`.
+  /// @return Result of the operation.
   BSplineCommon &operator/=(BSplineCore::value_type s) {
 
     for (short_t i = 0; i < BSplineCore::geoDim(); ++i)
@@ -7228,7 +7679,9 @@ public:
     return *this;
   }
 
-  /// @brief Scales the coefficients by a vector
+  /// @brief Scales the coefficients by a vector.
+  /// @param v Value of `v`.
+  /// @return Result of the operation.
   BSplineCommon &operator/=(
       std::array<typename BSplineCore::value_type, BSplineCore::geoDim()> v) {
 
@@ -7239,12 +7692,21 @@ public:
   }
 };
 
-/// @brief Tensor-product uniform B-spline
+/// @brief Tensor-product uniform B-spline.
 template <typename real_t, short_t GeoDim, short_t... Degrees>
 using UniformBSpline =
     BSplineCommon<UniformBSplineCore<real_t, GeoDim, Degrees...>>;
 
-/// @brief Prints a UniformBSpline object
+/// @brief Prints a UniformBSpline object.
+/// @tparam real_t Template parameter `real_t`.
+/// @tparam GeoDim Template parameter `GeoDim`.
+/// @tparam Degrees Template parameter `Degrees`.
+/// @tparam real_t Template parameter `real_t`.
+/// @tparam GeoDim Template parameter `GeoDim`.
+/// @tparam Degrees Template parameter `Degrees`.
+/// @param os Output stream.
+/// @param obj Object to process.
+/// @return Result of the operation.
 template <typename real_t, short_t GeoDim, short_t... Degrees>
 inline std::ostream &
 operator<<(std::ostream &os,
@@ -7253,7 +7715,15 @@ operator<<(std::ostream &os,
   return os;
 }
 
-/// @brief Create tensor-product uniform B-spline
+/// @brief Create tensor-product uniform B-spline.
+/// @tparam real_t Template parameter `real_t`.
+/// @tparam GeoDim Template parameter `GeoDim`.
+/// @tparam ParDim Template parameter `ParDim`.
+/// @param degrees Value of `degrees`.
+/// @param ncoeffs Value of `ncoeffs`.
+/// @param init Value of `init`.
+/// @param options Configuration options.
+/// @return Result of the operation.
 template <typename real_t, iganet::short_t GeoDim, iganet::short_t ParDim>
 std::shared_ptr<iganet::BSplinePatch<real_t, GeoDim, ParDim>>
 createUniformBSpline(
@@ -7311,13 +7781,26 @@ createUniformBSpline(
         handler.reset();
       });
 }
+/// @brief Provides the `operator<<` operation.
+/// @param os Output stream.
+/// @param obj Object to process.
+/// @return Result of the operation.
 
-/// @brief Tensor-product non-uniform B-spline
+/// @brief Tensor-product non-uniform B-spline.
 template <typename real_t, short_t GeoDim, short_t... Degrees>
 using NonUniformBSpline =
     BSplineCommon<NonUniformBSplineCore<real_t, GeoDim, Degrees...>>;
 
-/// @brief Prints a NonUniformBSpline object
+/// @brief Prints a NonUniformBSpline object.
+/// @tparam real_t Template parameter `real_t`.
+/// @tparam GeoDim Template parameter `GeoDim`.
+/// @tparam Degrees Template parameter `Degrees`.
+/// @tparam real_t Template parameter `real_t`.
+/// @tparam GeoDim Template parameter `GeoDim`.
+/// @tparam Degrees Template parameter `Degrees`.
+/// @param os Output stream.
+/// @param obj Object to process.
+/// @return Result of the operation.
 template <typename real_t, short_t GeoDim, short_t... Degrees>
 inline std::ostream &
 operator<<(std::ostream &os,
@@ -7326,7 +7809,15 @@ operator<<(std::ostream &os,
   return os;
 }
 
-/// @brief Create tensor-product non-uniform B-spline
+/// @brief Create tensor-product non-uniform B-spline.
+/// @tparam real_t Scalar type.
+/// @tparam GeoDim Geometric dimension.
+/// @tparam ParDim Parametric dimension.
+/// @param degrees Polynomial degrees in each parametric direction.
+/// @param ncoeffs Number of coefficients in each parametric direction.
+/// @param init Coefficient initialization method.
+/// @param options Configuration options.
+/// @return The dynamically created B-spline patch.
 template <typename real_t, iganet::short_t GeoDim, iganet::short_t ParDim>
 std::shared_ptr<iganet::BSplinePatch<real_t, GeoDim, ParDim>>
 createNonUniformBSpline(
@@ -7394,6 +7885,15 @@ template <iganet::short_t ParDim> struct BSplineMetadata {
 
 enum class SerializationFormat { xml, json };
 
+/// @brief Parses B-spline metadata from an XML node.
+/// @tparam real_t Scalar type.
+/// @tparam GeoDim Geometric dimension.
+/// @tparam ParDim Parametric dimension.
+/// @param root Root XML node.
+/// @param id Object identifier.
+/// @param label Object label.
+/// @param index Object index.
+/// @return Parsed degree and coefficient-count metadata.
 template <typename real_t, iganet::short_t GeoDim, iganet::short_t ParDim>
 BSplineMetadata<ParDim> parseBSplineMetadata(const pugi::xml_node &root, int id,
                                              const std::string &label,
@@ -7447,6 +7947,7 @@ BSplineMetadata<ParDim> parseBSplineMetadata(const pugi::xml_node &root, int id,
     std::array<bool, ParDim> found{};
     for (const auto &basis : bases.children("Basis")) {
       const int direction = basis.attribute("index").as_int(-1);
+      /// @brief Provides the `if` operation.
       if (direction < 0 || direction >= ParDim || found[direction])
         throw std::runtime_error("XML object does not provide a valid basis");
       readBasis(basis, direction);
@@ -7459,6 +7960,12 @@ BSplineMetadata<ParDim> parseBSplineMetadata(const pugi::xml_node &root, int id,
   return metadata;
 }
 
+/// @brief Parses B-spline metadata from a JSON object.
+/// @tparam real_t Scalar type.
+/// @tparam GeoDim Geometric dimension.
+/// @tparam ParDim Parametric dimension.
+/// @param json JSON object to parse.
+/// @return Parsed degree and coefficient-count metadata.
 template <typename real_t, iganet::short_t GeoDim, iganet::short_t ParDim>
 BSplineMetadata<ParDim> parseBSplineMetadata(const nlohmann::json &json) {
   if (json.at("geoDim").get<iganet::short_t>() != GeoDim)
@@ -7478,8 +7985,17 @@ BSplineMetadata<ParDim> parseBSplineMetadata(const nlohmann::json &json) {
 
 } // namespace detail
 
-/// @brief Creates a tensor-product non-uniform B-spline from an XML node
+/// @brief Creates a tensor-product non-uniform B-spline from an XML node.
 /// @throws std::runtime_error if parsing or spline validation fails.
+/// @tparam real_t Template parameter `real_t`.
+/// @tparam GeoDim Template parameter `GeoDim`.
+/// @tparam ParDim Template parameter `ParDim`.
+/// @param root Root XML node.
+/// @param id Object identifier.
+/// @param label Object label.
+/// @param index Object index.
+/// @param options Configuration options.
+/// @return Result of the operation.
 template <typename real_t, iganet::short_t GeoDim, iganet::short_t ParDim>
 std::shared_ptr<iganet::BSplinePatch<real_t, GeoDim, ParDim>>
 createNonUniformBSpline(
@@ -7495,8 +8011,17 @@ createNonUniformBSpline(
   return patch;
 }
 
-/// @brief Creates a tensor-product non-uniform B-spline from an XML document
+/// @brief Creates a tensor-product non-uniform B-spline from an XML document.
 /// @throws std::runtime_error if parsing or spline validation fails.
+/// @tparam real_t Template parameter `real_t`.
+/// @tparam GeoDim Template parameter `GeoDim`.
+/// @tparam ParDim Template parameter `ParDim`.
+/// @param doc Value of `doc`.
+/// @param id Object identifier.
+/// @param label Object label.
+/// @param index Object index.
+/// @param options Configuration options.
+/// @return Result of the operation.
 template <typename real_t, iganet::short_t GeoDim, iganet::short_t ParDim>
 std::shared_ptr<iganet::BSplinePatch<real_t, GeoDim, ParDim>>
 createNonUniformBSpline(
@@ -7507,8 +8032,14 @@ createNonUniformBSpline(
                                                          label, index, options);
 }
 
-/// @brief Creates a tensor-product non-uniform B-spline from a JSON object
+/// @brief Creates a tensor-product non-uniform B-spline from a JSON object.
 /// @throws std::runtime_error if parsing or spline validation fails.
+/// @tparam real_t Template parameter `real_t`.
+/// @tparam GeoDim Template parameter `GeoDim`.
+/// @tparam ParDim Template parameter `ParDim`.
+/// @param json JSON value to process.
+/// @param options Configuration options.
+/// @return Result of the operation.
 template <typename real_t, iganet::short_t GeoDim, iganet::short_t ParDim>
 std::shared_ptr<iganet::BSplinePatch<real_t, GeoDim, ParDim>>
 createNonUniformBSpline(
@@ -7527,6 +8058,17 @@ namespace detail {
 
 /// @brief Loads a non-uniform B-spline and converts it to a uniform B-spline
 /// inside one JIT-generated dynamic library.
+/// @tparam real_t Scalar type.
+/// @tparam GeoDim Geometric dimension.
+/// @tparam ParDim Parametric dimension.
+/// @param degrees Polynomial degrees in each parametric direction.
+/// @param serialized Serialized XML or JSON representation.
+/// @param format Serialization format.
+/// @param id Object identifier used for XML input.
+/// @param label Object label used for XML input.
+/// @param index Object index used for XML input.
+/// @param options Configuration options.
+/// @return The converted uniform B-spline patch.
 template <typename real_t, iganet::short_t GeoDim, iganet::short_t ParDim>
 std::shared_ptr<iganet::BSplinePatch<real_t, GeoDim, ParDim>>
 createUniformBSplineFromSerialized(
@@ -7606,12 +8148,21 @@ createUniformBSplineFromSerialized(
 
 } // namespace detail
 
-/// @brief Creates a tensor-product uniform B-spline from an XML node
+/// @brief Creates a tensor-product uniform B-spline from an XML node.
 ///
 /// Parsing and conversion exceptions raised inside the JIT library propagate
 /// unchanged to the caller.
 /// @throws std::runtime_error if parsing, spline validation, or conversion to
 /// a canonical uniform B-spline fails.
+/// @tparam real_t Template parameter `real_t`.
+/// @tparam GeoDim Template parameter `GeoDim`.
+/// @tparam ParDim Template parameter `ParDim`.
+/// @param root Root XML node.
+/// @param id Object identifier.
+/// @param label Object label.
+/// @param index Object index.
+/// @param options Configuration options.
+/// @return Result of the operation.
 template <typename real_t, iganet::short_t GeoDim, iganet::short_t ParDim>
 std::shared_ptr<iganet::BSplinePatch<real_t, GeoDim, ParDim>>
 createUniformBSpline(
@@ -7628,8 +8179,17 @@ createUniformBSpline(
       label, index, options);
 }
 
-/// @brief Creates a tensor-product uniform B-spline from an XML document
+/// @brief Creates a tensor-product uniform B-spline from an XML document.
 /// @throws std::runtime_error if parsing, validation, or conversion fails.
+/// @tparam real_t Template parameter `real_t`.
+/// @tparam GeoDim Template parameter `GeoDim`.
+/// @tparam ParDim Template parameter `ParDim`.
+/// @param doc Value of `doc`.
+/// @param id Object identifier.
+/// @param label Object label.
+/// @param index Object index.
+/// @param options Configuration options.
+/// @return Result of the operation.
 template <typename real_t, iganet::short_t GeoDim, iganet::short_t ParDim>
 std::shared_ptr<iganet::BSplinePatch<real_t, GeoDim, ParDim>>
 createUniformBSpline(
@@ -7640,7 +8200,7 @@ createUniformBSpline(
                                                       label, index, options);
 }
 
-/// @brief Creates a tensor-product uniform B-spline from a JSON object
+/// @brief Creates a tensor-product uniform B-spline from a JSON object.
 ///
 /// Parsing and conversion exceptions raised inside the JIT library propagate
 /// unchanged to the caller.

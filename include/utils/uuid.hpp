@@ -1,11 +1,11 @@
 /**
    @file utils/uuid.hpp
 
-   @brief UUID utility functions
+   @brief UUID utility functions.
 
-   @author Matthias Moller
+   @author Matthias Moller.
 
-   @copyright This file is part of the IgANet project
+   @copyright This file is part of the IgANet project.
 
    This Source Code Form is subject to the terms of the Mozilla Public
    License, v. 2.0. If a copy of the MPL was not distributed with this
@@ -22,9 +22,9 @@ namespace iganet::utils {
 class uuid {
 public:
   /// @brief Generates an uuid string in the form
-  /// b9317db-02a2-4882-9b94-d1e1defe8c56
+  /// b9317db-02a2-4882-9b94-d1e1defe8c56.
   ///
-  /// @result std::string
+  /// @result std::string.
   static std::string create() {
     std::stringstream hexstream;
     hexstream << uuid::random_hex(4) << "-" << uuid::random_hex(2) << "-"
@@ -34,11 +34,11 @@ public:
   }
 
 private:
-  /// @brief Generates a string of random hex chars
+  /// @brief Generates a string of random hex chars.
   ///
-  /// @param[in] len Length in bytes
+  /// @param[in] len Length in bytes.
   ///
-  /// @result std::string  String random hex chars (2x length of the bytes)
+  /// @result std::string  String random hex chars (2x length of the bytes).
   static std::string random_hex(const unsigned int len) {
     std::stringstream ss;
     for (auto i = 0; i < len; i++) {
@@ -51,9 +51,9 @@ private:
     return ss.str();
   }
 
-  /// @brief Generates a safe pseudo-random character
+  /// @brief Generates a safe pseudo-random character.
   ///
-  /// @result unsigned int
+  /// @result unsigned int.
   static unsigned int random_char() {
     std::random_device rd;
     std::mt19937 gen(rd());

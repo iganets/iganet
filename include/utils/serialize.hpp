@@ -1,11 +1,11 @@
 /**
    @file utils/serialize.hpp
 
-   @brief Serialization utility functions
+   @brief Serialization utility functions.
 
-   @author Matthias Moller
+   @author Matthias Moller.
 
-   @copyright This file is part of the IgANet project
+   @copyright This file is part of the IgANet project.
 
    This Source Code Form is subject to the terms of the Mozilla Public
    License, v. 2.0. If a copy of the MPL was not distributed with this
@@ -22,22 +22,28 @@
 
 namespace iganet::utils {
 
-/// @brief Serialization prototype
+/// @brief Serialization prototype.
 ///
 /// This abstract class defines the functions that must be
-/// implemented to serialize an object
+/// implemented to serialize an object.
 struct Serializable {
-  /// @brief Destructor
+  /// @brief Destructor.
   virtual ~Serializable() = default;
 
-  /// @brief Returns the object as JSON object
+  /// @brief Returns the object as JSON object.
+  /// @return Result of the operation.
   virtual nlohmann::json to_json() const = 0;
 
-  /// @brief Returns a string representation of the object
+  /// @brief Returns a string representation of the object.
+  /// @param os Output stream.
   virtual void pretty_print(std::ostream &os = Log(log::info)) const = 0;
 };
 
-/// @brief Converts a torch::TensorAccessor object to a JSON object
+/// @brief Converts a torch::TensorAccessor object to a JSON object.
+/// @tparam T Template parameter `T`.
+/// @tparam N Template parameter `N`.
+/// @param accessor Value of `accessor`.
+/// @return Result of the operation.
 template <typename T, std::size_t N>
 inline auto to_json(const torch::TensorAccessor<T, N> &accessor) {
   auto json = nlohmann::json::array();
@@ -65,7 +71,11 @@ inline auto to_json(const torch::TensorAccessor<T, N> &accessor) {
   return json;
 }
 
-/// @brief Converts a torch::Tensor object to a JSON object
+/// @brief Converts a torch::Tensor object to a JSON object.
+/// @tparam T Template parameter `T`.
+/// @tparam N Template parameter `N`.
+/// @param tensor Tensor to process.
+/// @return Result of the operation.
 template <typename T, std::size_t N>
 inline auto to_json(const torch::Tensor &tensor) {
   if (tensor.is_cuda()) {
@@ -78,7 +88,12 @@ inline auto to_json(const torch::Tensor &tensor) {
 }
 
 /// @brief Converts a std::array of torch::Tensor objects to a JSON
-/// object
+/// object.
+/// @tparam T Template parameter `T`.
+/// @tparam N Template parameter `N`.
+/// @tparam M Template parameter `M`.
+/// @param tensors Value of `tensors`.
+/// @return Result of the operation.
 template <typename T, std::size_t N, std::size_t M>
 inline auto to_json(const utils::TensorArray<M> &tensors) {
   auto json = nlohmann::json::array();
@@ -98,7 +113,7 @@ inline auto to_json(const utils::TensorArray<M> &tensors) {
 }
 
 #ifdef IGANET_WITH_GISMO
-/// @brief Converts a gismo::gsMatrix object to a JSON object
+/// @brief Converts a gismo::gsMatrix object to a JSON object.
 template <typename T, int Rows, int Cols, int Options>
 inline auto to_json(const gismo::gsMatrix<T, Rows, Cols, Options> &matrix,
                     bool flatten = false, bool transpose = false) {
@@ -172,7 +187,7 @@ inline auto to_json(const gismo::gsMatrix<T, Rows, Cols, Options> &matrix,
   return json;
 }
 
-/// @brief Converts a gismo::gsBSpline object to a JSON object
+/// @brief Converts a gismo::gsBSpline object to a JSON object.
 template <typename T> inline auto to_json(const gismo::gsBSpline<T> &bspline) {
   auto json = nlohmann::json();
 
@@ -201,7 +216,7 @@ template <typename T> inline auto to_json(const gismo::gsBSpline<T> &bspline) {
   return json;
 }
 
-/// @brief Converts a gismo::gsTensorBSpline object to a JSON object
+/// @brief Converts a gismo::gsTensorBSpline object to a JSON object.
 template <int d, typename T>
 inline auto to_json(const gismo::gsTensorBSpline<d, T> &bspline) {
   auto json = nlohmann::json();
@@ -231,7 +246,7 @@ inline auto to_json(const gismo::gsTensorBSpline<d, T> &bspline) {
   return json;
 }
 
-/// @brief Converts a gismo::gsGeometry object to a JSON object
+/// @brief Converts a gismo::gsGeometry object to a JSON object.
 template <typename T>
 inline auto to_json(const gismo::gsGeometry<T> &geometry) {
 
@@ -250,7 +265,7 @@ inline auto to_json(const gismo::gsGeometry<T> &geometry) {
     return nlohmann::json("{ Invalid patch type }");
 }
 
-/// @brief Converts a gismo::gsMultiPatch::InterfaceRep object to a JSON object
+/// @brief Converts a gismo::gsMultiPatch::InterfaceRep object to a JSON object.
 template <typename T>
 inline auto
 to_json(const typename gismo::gsMultiPatch<T>::ifContainer &interfaces) {
@@ -273,7 +288,7 @@ to_json(const typename gismo::gsMultiPatch<T>::ifContainer &interfaces) {
   return json;
 }
 
-/// @brief Converts a gismo::gsMultiPatch::BoundaryRep object to a JSON object
+/// @brief Converts a gismo::gsMultiPatch::BoundaryRep object to a JSON object.
 template <typename T>
 inline auto
 to_json(const typename gismo::gsMultiPatch<T>::bContainer &boundaries) {
@@ -292,7 +307,7 @@ to_json(const typename gismo::gsMultiPatch<T>::bContainer &boundaries) {
   return json;
 }
 
-/// @brief Converts a gismo::gsMultiPatch object to a JSON object
+/// @brief Converts a gismo::gsMultiPatch object to a JSON object.
 template <typename T>
 inline auto to_json(const gismo::gsMultiPatch<T> &mp, bool verbose = false) {
 
@@ -326,7 +341,16 @@ inline pugi::xml_node &to_xml(const torch::TensorAccessor<T, N> &accessor,
                               std::string tag = "Matrix", int id = 0,
                               const std::string &label = "", int index = -1);
 
-/// @brief Converts a torch::TensorAccessor object to an XML document object
+/// @brief Converts a torch::TensorAccessor object to an XML document object.
+/// @tparam T Template parameter `T`.
+/// @tparam N Template parameter `N`.
+/// @param accessor Value of `accessor`.
+/// @param sizes Value of `sizes`.
+/// @param tag Value of `tag`.
+/// @param id Object identifier.
+/// @param label Object label.
+/// @param index Object index.
+/// @return Result of the operation.
 template <typename T, std::size_t N>
 inline pugi::xml_document to_xml(const torch::TensorAccessor<T, N> &accessor,
                                  torch::IntArrayRef sizes,
@@ -339,7 +363,17 @@ inline pugi::xml_document to_xml(const torch::TensorAccessor<T, N> &accessor,
   return doc;
 }
 
-/// @brief Converts a torch::TensorAccessor object to an XML object
+/// @brief Converts a torch::TensorAccessor object to an XML object.
+/// @tparam T Template parameter `T`.
+/// @tparam N Template parameter `N`.
+/// @param accessor Value of `accessor`.
+/// @param sizes Value of `sizes`.
+/// @param root Root XML node.
+/// @param tag Value of `tag`.
+/// @param id Object identifier.
+/// @param label Object label.
+/// @param index Object index.
+/// @return Result of the operation.
 template <typename T, std::size_t N>
 inline pugi::xml_node &to_xml(const torch::TensorAccessor<T, N> &accessor,
                               torch::IntArrayRef sizes, pugi::xml_node &root,
@@ -441,7 +475,15 @@ inline pugi::xml_node &to_xml(const torch::Tensor &tensor,
                               std::string tag = "Matrix", int id = 0,
                               const std::string &label = "", int index = -1);
 
-/// @brief Converts a torch::Tensor object to an XML document object
+/// @brief Converts a torch::Tensor object to an XML document object.
+/// @tparam T Template parameter `T`.
+/// @tparam N Template parameter `N`.
+/// @param tensor Tensor to process.
+/// @param tag Value of `tag`.
+/// @param id Object identifier.
+/// @param label Object label.
+/// @param index Object index.
+/// @return Result of the operation.
 template <typename T, std::size_t N>
 inline pugi::xml_document to_xml(const torch::Tensor &tensor,
                                  std::string tag = "Matrix", int id = 0,
@@ -453,7 +495,16 @@ inline pugi::xml_document to_xml(const torch::Tensor &tensor,
   return doc;
 }
 
-/// @brief Converts a torch::Tensor object to an XML object
+/// @brief Converts a torch::Tensor object to an XML object.
+/// @tparam T Template parameter `T`.
+/// @tparam N Template parameter `N`.
+/// @param tensor Tensor to process.
+/// @param root Root XML node.
+/// @param tag Value of `tag`.
+/// @param id Object identifier.
+/// @param label Object label.
+/// @param index Object index.
+/// @return Result of the operation.
 template <typename T, std::size_t N>
 inline pugi::xml_node &to_xml(const torch::Tensor &tensor, pugi::xml_node &root,
                               std::string tag, int id, const std::string &label,
@@ -475,7 +526,16 @@ inline pugi::xml_node &to_xml(const utils::TensorArray<M> &tensors,
                               const std::string &label = "");
 
 /// @brief Converts a std::array of torch::Tensor objects to an XML
-/// object
+/// object.
+/// @tparam T Template parameter `T`.
+/// @tparam N Template parameter `N`.
+/// @tparam M Template parameter `M`.
+/// @param tensors Value of `tensors`.
+/// @param tag Value of `tag`.
+/// @param id Object identifier.
+/// @param label Object label.
+/// @param index Object index.
+/// @return Result of the operation.
 template <typename T, std::size_t N, std::size_t M>
 inline pugi::xml_document to_xml(const utils::TensorArray<M> &tensors,
                                  std::string tag = "Matrix", int id = 0,
@@ -488,7 +548,16 @@ inline pugi::xml_document to_xml(const utils::TensorArray<M> &tensors,
 }
 
 /// @brief Converts a std::array of torch::Tensor objects to an XML
-/// object
+/// object.
+/// @tparam T Template parameter `T`.
+/// @tparam N Template parameter `N`.
+/// @tparam M Template parameter `M`.
+/// @param tensors Value of `tensors`.
+/// @param root Root XML node.
+/// @param tag Value of `tag`.
+/// @param id Object identifier.
+/// @param label Object label.
+/// @return Result of the operation.
 template <typename T, std::size_t N, std::size_t M>
 inline pugi::xml_node &to_xml(const utils::TensorArray<M> &tensors,
                               pugi::xml_node &root, std::string tag, int id,
@@ -508,7 +577,17 @@ inline pugi::xml_node &to_xml(const utils::TensorArray<M> &tensors,
   return root;
 }
 
-/// @brief Converts an XML document object to a torch::TensorAccessor object
+/// @brief Converts an XML document object to a torch::TensorAccessor object.
+/// @tparam T Template parameter `T`.
+/// @tparam N Template parameter `N`.
+/// @param doc Value of `doc`.
+/// @param accessor Value of `accessor`.
+/// @param sizes Value of `sizes`.
+/// @param tag Value of `tag`.
+/// @param id Object identifier.
+/// @param label Object label.
+/// @param index Object index.
+/// @return Result of the operation.
 template <typename T, std::size_t N>
 inline torch::TensorAccessor<T, N> &
 from_xml(const pugi::xml_document &doc, torch::TensorAccessor<T, N> &accessor,
@@ -517,7 +596,17 @@ from_xml(const pugi::xml_document &doc, torch::TensorAccessor<T, N> &accessor,
   return from_xml(doc.child("xml"), accessor, sizes, tag, id, label, index);
 }
 
-/// @brief Converts an XML object to a torch::TensorAccessor object
+/// @brief Converts an XML object to a torch::TensorAccessor object.
+/// @tparam T Template parameter `T`.
+/// @tparam N Template parameter `N`.
+/// @param root Root XML node.
+/// @param accessor Value of `accessor`.
+/// @param sizes Value of `sizes`.
+/// @param tag Value of `tag`.
+/// @param id Object identifier.
+/// @param label Object label.
+/// @param index Object index.
+/// @return Result of the operation.
 template <typename T, std::size_t N>
 inline torch::TensorAccessor<T, N> &
 from_xml(const pugi::xml_node &root, torch::TensorAccessor<T, N> &accessor,
@@ -534,7 +623,17 @@ inline torch::Tensor &from_xml(const pugi::xml_node &root,
                                const std::string &label = "", bool alloc = true,
                                int index = -1);
 
-/// @brief Converts an XML document object to a torch::Tensor object
+/// @brief Converts an XML document object to a torch::Tensor object.
+/// @tparam T Template parameter `T`.
+/// @tparam N Template parameter `N`.
+/// @param doc Value of `doc`.
+/// @param tensor Tensor to process.
+/// @param tag Value of `tag`.
+/// @param id Object identifier.
+/// @param label Object label.
+/// @param alloc Value of `alloc`.
+/// @param index Object index.
+/// @return Result of the operation.
 template <typename T, std::size_t N>
 inline torch::Tensor &
 from_xml(const pugi::xml_document &doc, torch::Tensor &tensor,
@@ -545,7 +644,17 @@ from_xml(const pugi::xml_document &doc, torch::Tensor &tensor,
                         index);
 }
 
-/// @brief Converts an XML object to a torch::Tensor object
+/// @brief Converts an XML object to a torch::Tensor object.
+/// @tparam T Template parameter `T`.
+/// @tparam N Template parameter `N`.
+/// @param root Root XML node.
+/// @param tensor Tensor to process.
+/// @param tag Value of `tag`.
+/// @param id Object identifier.
+/// @param label Object label.
+/// @param alloc Value of `alloc`.
+/// @param index Object index.
+/// @return Result of the operation.
 template <typename T, std::size_t N>
 inline torch::Tensor &
 from_xml(const pugi::xml_node &root, torch::Tensor &tensor,
@@ -756,7 +865,17 @@ from_xml(const pugi::xml_node &root, utils::TensorArray<M> &tensors,
          const std::string &label = "");
 
 /// @brief Converts an XML document object to a std::array of torch::Tensor
-/// objects
+/// objects.
+/// @tparam T Template parameter `T`.
+/// @tparam N Template parameter `N`.
+/// @tparam M Template parameter `M`.
+/// @param doc Value of `doc`.
+/// @param tensors Value of `tensors`.
+/// @param tag Value of `tag`.
+/// @param id Object identifier.
+/// @param alloc Value of `alloc`.
+/// @param label Object label.
+/// @return Result of the operation.
 template <typename T, std::size_t N, std::size_t M>
 inline utils::TensorArray<M> &
 from_xml(const pugi::xml_document &doc, utils::TensorArray<M> &tensors,
@@ -766,7 +885,17 @@ from_xml(const pugi::xml_document &doc, utils::TensorArray<M> &tensors,
   return from_xml<T, N>(doc.child("xml"), tensors, tag, id, alloc, label);
 }
 
-/// @brief Converts an XML object to a std::array of torch::Tensor objects
+/// @brief Converts an XML object to a std::array of torch::Tensor objects.
+/// @tparam T Template parameter `T`.
+/// @tparam N Template parameter `N`.
+/// @tparam M Template parameter `M`.
+/// @param root Root XML node.
+/// @param tensors Value of `tensors`.
+/// @param tag Value of `tag`.
+/// @param id Object identifier.
+/// @param alloc Value of `alloc`.
+/// @param label Object label.
+/// @return Result of the operation.
 template <typename T, std::size_t N, std::size_t M>
 inline utils::TensorArray<M> &
 from_xml(const pugi::xml_node &root, utils::TensorArray<M> &tensors,

@@ -1,11 +1,11 @@
 /**
    @file utils/solver.hpp
 
-   @brief Solver utility functions
+   @brief Solver utility functions.
 
-   @author Matthias Moller
+   @author Matthias Moller.
 
-   @copyright This file is part of the IgANet project
+   @copyright This file is part of the IgANet project.
 
    This Source Code Form is subject to the terms of the Mozilla Public
    License, v. 2.0. If a copy of the MPL was not distributed with this
@@ -24,7 +24,7 @@
 namespace iganet::utils {
 
 /// @brief Specifies the callable interface required by the preconditioned
-/// iterative solvers
+/// iterative solvers.
 template <typename T>
 concept IterativeSolverPreconditioner =
     requires(T &preconditioner, const torch::Tensor &residual) {
@@ -34,6 +34,9 @@ concept IterativeSolverPreconditioner =
 namespace detail {
 
 #ifndef NDEBUG
+/// @brief Provides the `tensor_values_are_finite` operation.
+/// @param tensor Tensor to process.
+/// @return Result of the operation.
 inline bool tensor_values_are_finite(const torch::Tensor &tensor) {
   const auto &values = tensor.layout() == torch::kStrided
                            ? tensor
@@ -41,6 +44,11 @@ inline bool tensor_values_are_finite(const torch::Tensor &tensor) {
   return torch::isfinite(values).all().item<bool>();
 }
 
+/// @brief Provides the `validate_iterative_solver_inputs` operation.
+/// @param A Value of `A`.
+/// @param b Value of `b`.
+/// @param max_iter Value of `max_iter`.
+/// @param tol Value of `tol`.
 inline void validate_iterative_solver_inputs(const torch::Tensor &A,
                                              const torch::Tensor &b,
                                              int max_iter, double tol) {
@@ -63,16 +71,25 @@ inline void validate_iterative_solver_inputs(const torch::Tensor &A,
               "right-hand side contains NaN or Inf");
 }
 
+/// @brief Provides the `check_finite_scalar` operation.
+/// @param value Value to process.
+/// @param message Value of `message`.
 inline void check_finite_scalar(const torch::Tensor &value,
                                 const char *message) {
   TORCH_CHECK(torch::isfinite(value).item<bool>(), message);
 }
 
+/// @brief Provides the `check_finite_tensor` operation.
+/// @param value Value to process.
+/// @param message Value of `message`.
 inline void check_finite_tensor(const torch::Tensor &value,
                                 const char *message) {
   TORCH_CHECK(tensor_values_are_finite(value), message);
 }
 
+/// @brief Provides the `validate_preconditioner_output` operation.
+/// @param value Value to process.
+/// @param residual Value of `residual`.
 inline void validate_preconditioner_output(const torch::Tensor &value,
                                            const torch::Tensor &residual) {
   TORCH_CHECK(value.sizes() == residual.sizes(),
@@ -87,6 +104,9 @@ inline void validate_preconditioner_output(const torch::Tensor &value,
               "preconditioner returned NaN or Inf");
 }
 
+/// @brief Provides the `validate_inverse_preconditioner` operation.
+/// @param inverse_preconditioner Value of `inverse_preconditioner`.
+/// @param A Value of `A`.
 inline void validate_inverse_preconditioner(
     const torch::Tensor &inverse_preconditioner, const torch::Tensor &A) {
   TORCH_CHECK(inverse_preconditioner.dim() == 2 &&
@@ -101,22 +121,33 @@ inline void validate_inverse_preconditioner(
               "inverse preconditioner contains NaN or Inf");
 }
 
+/// @brief Provides the `validate_gmres_parameters` operation.
+/// @param restart Value of `restart`.
 inline void validate_gmres_parameters(int restart) {
   TORCH_CHECK(restart > 0, "GMRES restart must be positive");
 }
 
+/// @brief Provides the `check_nonzero_finite_scalar` operation.
+/// @param value Value to process.
+/// @param message Value of `message`.
 inline void check_nonzero_finite_scalar(const torch::Tensor &value,
                                         const char *message) {
   check_finite_scalar(value, message);
   TORCH_CHECK(value.item<double>() != 0.0, message);
 }
 
+/// @brief Provides the `check_positive_finite_scalar` operation.
+/// @param value Value to process.
+/// @param message Value of `message`.
 inline void check_positive_finite_scalar(const torch::Tensor &value,
                                          const char *message) {
   check_finite_scalar(value, message);
   TORCH_CHECK(value.item<double>() > 0.0, message);
 }
 
+/// @brief Provides the `check_nonnegative_finite_scalar` operation.
+/// @param value Value to process.
+/// @param message Value of `message`.
 inline void check_nonnegative_finite_scalar(const torch::Tensor &value,
                                             const char *message) {
   check_finite_scalar(value, message);
@@ -152,7 +183,12 @@ inline void check_nonnegative_finite_scalar(const torch::Tensor &,
 } // namespace detail
 
   /// @brief Solves the linear system A * x = b using the Conjugate
-  /// Gradient (CG) method
+  /// Gradient (CG) method.
+  /// @param A Value of `A`.
+  /// @param b Value of `b`.
+  /// @param max_iter Value of `max_iter`.
+  /// @param tol Value of `tol`.
+  /// @return Result of the operation.
   inline auto cg(const torch::Tensor& A,
                        const torch::Tensor b,
                        int max_iter = 1000,
@@ -197,10 +233,17 @@ inline void check_nonnegative_finite_scalar(const torch::Tensor &,
   }
 
   /// @brief Solves the linear system A * x = b using the preconditioned
-  /// Conjugate Gradient (PCG) method
+  /// Conjugate Gradient (PCG) method.
   ///
   /// The preconditioner must be callable with a residual tensor and return
   /// the action of the inverse preconditioner on that residual.
+  /// @tparam Preconditioner Template parameter `Preconditioner`.
+  /// @param A Value of `A`.
+  /// @param b Value of `b`.
+  /// @param preconditioner Value of `preconditioner`.
+  /// @param max_iter Value of `max_iter`.
+  /// @param tol Value of `tol`.
+  /// @return Result of the operation.
   template <IterativeSolverPreconditioner Preconditioner>
   inline auto pcg(const torch::Tensor &A, const torch::Tensor b,
                         Preconditioner &&preconditioner,
@@ -253,7 +296,13 @@ inline void check_nonnegative_finite_scalar(const torch::Tensor &,
     return std::make_tuple(x, max_iter, r.norm().item<double>());
   }
 
-  /// @brief PCG overload taking the inverse preconditioner as a tensor
+  /// @brief PCG overload taking the inverse preconditioner as a tensor.
+  /// @param A Value of `A`.
+  /// @param b Value of `b`.
+  /// @param inverse_preconditioner Value of `inverse_preconditioner`.
+  /// @param max_iter Value of `max_iter`.
+  /// @param tol Value of `tol`.
+  /// @return Result of the operation.
   inline auto pcg(const torch::Tensor &A, const torch::Tensor b,
                         const torch::Tensor &inverse_preconditioner,
                         int max_iter = 1000, double tol = 1e-10) {
@@ -265,7 +314,12 @@ inline void check_nonnegative_finite_scalar(const torch::Tensor &,
   }
 
   /// @brief Solves the linear system A * x = b using the Bi-Conjugate
-  /// Gradient Stabilized (BiCGStab) method
+  /// Gradient Stabilized (BiCGStab) method.
+  /// @param A Value of `A`.
+  /// @param b Value of `b`.
+  /// @param max_iter Value of `max_iter`.
+  /// @param tol Value of `tol`.
+  /// @return Result of the operation.
   inline auto bicgstab(const torch::Tensor& A,
                              const torch::Tensor b,
                              int max_iter = 1000,
@@ -338,10 +392,17 @@ inline void check_nonnegative_finite_scalar(const torch::Tensor &,
   }
 
   /// @brief Solves the linear system A * x = b using the preconditioned
-  /// Bi-Conjugate Gradient Stabilized (PBiCGStab) method
+  /// Bi-Conjugate Gradient Stabilized (PBiCGStab) method.
   ///
   /// The preconditioner must be callable with a residual tensor and return
   /// the action of the inverse preconditioner on that residual.
+  /// @tparam Preconditioner Template parameter `Preconditioner`.
+  /// @param A Value of `A`.
+  /// @param b Value of `b`.
+  /// @param preconditioner Value of `preconditioner`.
+  /// @param max_iter Value of `max_iter`.
+  /// @param tol Value of `tol`.
+  /// @return Result of the operation.
   template <IterativeSolverPreconditioner Preconditioner>
   inline auto pbicgstab(const torch::Tensor &A, const torch::Tensor b,
                              Preconditioner &&preconditioner,
@@ -413,7 +474,13 @@ inline void check_nonnegative_finite_scalar(const torch::Tensor &,
     return std::make_tuple(x, max_iter, r.norm().item<double>());
   }
 
-  /// @brief PBiCGStab overload taking the inverse preconditioner as a tensor
+  /// @brief PBiCGStab overload taking the inverse preconditioner as a tensor.
+  /// @param A Value of `A`.
+  /// @param b Value of `b`.
+  /// @param inverse_preconditioner Value of `inverse_preconditioner`.
+  /// @param max_iter Value of `max_iter`.
+  /// @param tol Value of `tol`.
+  /// @return Result of the operation.
   inline auto pbicgstab(
       const torch::Tensor &A, const torch::Tensor b,
       const torch::Tensor &inverse_preconditioner, int max_iter = 1000,
@@ -425,10 +492,17 @@ inline void check_nonnegative_finite_scalar(const torch::Tensor &,
     return pbicgstab(A, b, apply, max_iter, tol);
   }
 
-  /// @brief Solves A * x = b using preconditioned MINRES
+  /// @brief Solves A * x = b using preconditioned MINRES.
   ///
   /// A must be symmetric and the preconditioner must be symmetric positive
   /// definite. The preconditioner returns the action of its inverse.
+  /// @tparam Preconditioner Template parameter `Preconditioner`.
+  /// @param A Value of `A`.
+  /// @param b Value of `b`.
+  /// @param preconditioner Value of `preconditioner`.
+  /// @param max_iter Value of `max_iter`.
+  /// @param tol Value of `tol`.
+  /// @return Result of the operation.
   template <IterativeSolverPreconditioner Preconditioner>
   inline auto pminres(const torch::Tensor &A, const torch::Tensor b,
                             Preconditioner &&preconditioner,
@@ -508,7 +582,13 @@ inline void check_nonnegative_finite_scalar(const torch::Tensor &,
     return std::make_tuple(x, max_iter, residual);
   }
 
-  /// @brief PMINRES overload taking the inverse preconditioner as a tensor
+  /// @brief PMINRES overload taking the inverse preconditioner as a tensor.
+  /// @param A Value of `A`.
+  /// @param b Value of `b`.
+  /// @param inverse_preconditioner Value of `inverse_preconditioner`.
+  /// @param max_iter Value of `max_iter`.
+  /// @param tol Value of `tol`.
+  /// @return Result of the operation.
   inline auto pminres(const torch::Tensor &A, const torch::Tensor b,
                             const torch::Tensor &inverse_preconditioner,
                             int max_iter = 1000, double tol = 1e-10) {
@@ -519,7 +599,12 @@ inline void check_nonnegative_finite_scalar(const torch::Tensor &,
     return pminres(A, b, apply, max_iter, tol);
   }
 
-  /// @brief Solves A * x = b using MINRES
+  /// @brief Solves A * x = b using MINRES.
+  /// @param A Value of `A`.
+  /// @param b Value of `b`.
+  /// @param max_iter Value of `max_iter`.
+  /// @param tol Value of `tol`.
+  /// @return Result of the operation.
   inline auto minres(const torch::Tensor &A, const torch::Tensor b,
                            int max_iter = 1000, double tol = 1e-10) {
     auto identity = [](const torch::Tensor &residual) {
@@ -528,10 +613,18 @@ inline void check_nonnegative_finite_scalar(const torch::Tensor &,
     return pminres(A, b, identity, max_iter, tol);
   }
 
-  /// @brief Solves A * x = b using restarted, right-preconditioned GMRES
+  /// @brief Solves A * x = b using restarted, right-preconditioned GMRES.
   ///
   /// The preconditioner must return the action of the inverse preconditioner.
   /// Setting restart equal to max_iter gives unrestarted GMRES.
+  /// @tparam Preconditioner Template parameter `Preconditioner`.
+  /// @param A Value of `A`.
+  /// @param b Value of `b`.
+  /// @param preconditioner Value of `preconditioner`.
+  /// @param max_iter Value of `max_iter`.
+  /// @param tol Value of `tol`.
+  /// @param restart Value of `restart`.
+  /// @return Result of the operation.
   template <IterativeSolverPreconditioner Preconditioner>
   inline auto fgmres(const torch::Tensor &A, const torch::Tensor b,
                            Preconditioner &&preconditioner,
@@ -649,7 +742,14 @@ inline void check_nonnegative_finite_scalar(const torch::Tensor &,
     return std::make_tuple(x, max_iter, residual);
   }
 
-  /// @brief FGMRES overload taking the inverse preconditioner as a tensor
+  /// @brief FGMRES overload taking the inverse preconditioner as a tensor.
+  /// @param A Value of `A`.
+  /// @param b Value of `b`.
+  /// @param inverse_preconditioner Value of `inverse_preconditioner`.
+  /// @param max_iter Value of `max_iter`.
+  /// @param tol Value of `tol`.
+  /// @param restart Value of `restart`.
+  /// @return Result of the operation.
   inline auto fgmres(const torch::Tensor &A, const torch::Tensor b,
                            const torch::Tensor &inverse_preconditioner,
                            int max_iter = 1000, double tol = 1e-10,
@@ -661,7 +761,13 @@ inline void check_nonnegative_finite_scalar(const torch::Tensor &,
     return fgmres(A, b, apply, max_iter, tol, restart);
   }
 
-  /// @brief Solves A * x = b using restarted GMRES
+  /// @brief Solves A * x = b using restarted GMRES.
+  /// @param A Value of `A`.
+  /// @param b Value of `b`.
+  /// @param max_iter Value of `max_iter`.
+  /// @param tol Value of `tol`.
+  /// @param restart Value of `restart`.
+  /// @return Result of the operation.
   inline auto gmres(const torch::Tensor &A, const torch::Tensor b,
                           int max_iter = 1000, double tol = 1e-10,
                           int restart = 30) {

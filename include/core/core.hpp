@@ -1,11 +1,11 @@
 /**
    @file core/core.hpp
 
-   @brief Core components
+   @brief Core components.
 
-   @author Matthias Moller
+   @author Matthias Moller.
 
-   @copyright This file is part of the IgANet project
+   @copyright This file is part of the IgANet project.
 
    This Source Code Form is subject to the terms of the Mozilla Public
    License, v. 2.0. If a copy of the MPL was not distributed with this
@@ -72,45 +72,58 @@
 
 namespace iganet {
 
+/// @brief Signed short integer type used by IgANet's compact enumerations.
 using short_t = short int;
 
 namespace literals {
 
-/// @brief User-defined literals for integer values
+/// @brief User-defined literals for integer values.
 /// @{
+/// @param value Unsigned literal value to convert.
+/// @return The value converted to `short_t`.
 inline short_t operator""_s(unsigned long long value) { return value; };
+/// @param value Unsigned literal value to convert.
+/// @return The value converted to `int8_t`.
 inline int8_t operator""_i8(unsigned long long value) { return value; };
+/// @param value Unsigned literal value to convert.
+/// @return The value converted to `int16_t`.
 inline int16_t operator""_i16(unsigned long long value) { return value; };
+/// @param value Unsigned literal value to convert.
+/// @return The value converted to `int32_t`.
 inline int32_t operator""_i32(unsigned long long value) { return value; };
+/// @param value Unsigned literal value to convert.
+/// @return The value converted to `int64_t`.
 inline int64_t operator""_i64(unsigned long long value) { return value; };
 /// @}
 } // namespace literals
 
 //  clang-format off
-/// @brief Enumerator for specifying the logging level
+/// @brief Enumerator for specifying the logging level.
 enum class log : short_t {
-  none = 0,    /*!< no logging */
-  fatal = 1,   /*!< log fatal errors */
-  error = 2,   /*!< log errors */
-  warning = 3, /*!< log warnings */
-  info = 4,    /*!< log information */
-  debug = 5,   /*!< log debug information */
-  verbose = 6  /*!< log everything */
+  none = 0,    /*!< no logging. */
+  fatal = 1,   /*!< log fatal errors. */
+  error = 2,   /*!< log errors. */
+  warning = 3, /*!< log warnings. */
+  info = 4,    /*!< log information. */
+  debug = 5,   /*!< log debug information. */
+  verbose = 6  /*!< log everything. */
 };
 //  clang-format on
 
 namespace logging {
-/// @brief Dummy stream buffer
+/// @brief Dummy stream buffer.
 class NullStreamBuffer : public std::streambuf {
 public:
-  /// @brief Dummy output
+  /// @brief Dummy output.
+  /// @param c Character received by the stream buffer.
+  /// @return `c` converted to a non-end-of-file value.
   int overflow(int c) override { return traits_type::not_eof(c); }
 };
 
-/// @brief Dummy output stream
+/// @brief Dummy output stream.
 class NullOStream : public std::ostream {
 public:
-  /// @brief Constructor
+  /// @brief Constructor.
   NullOStream() : std::ostream(&nullStreamBuffer) {}
 
 private:
@@ -118,32 +131,37 @@ private:
 };
 } // namespace logging
 
-/// @brief Logger
+/// @brief Logger.
 inline struct {
 private:
-  /// @brief Output stream
+  /// @brief Output stream.
   std::ostream &outputStream = std::cout;
 
-  /// @brief Dummy output stream
+  /// @brief Dummy output stream.
   logging::NullOStream nullStream;
 
-  /// @brief Output file
+  /// @brief Output file.
   std::ofstream outputFile;
 
-  /// @brief Log level
+  /// @brief Log level.
   enum log level = log::info;
 
 public:
-  /// @brief Sets the log level
+  /// @brief Sets the log level.
+  /// @param level Highest verbosity level that should produce output.
   void setLogLevel(enum log level) { this->level = level; }
 
-  /// @brief Sets the log file
+  /// @brief Sets the log file.
+  /// @param filename Path of the file that receives subsequent log output.
   void setLogFile(const std::string &filename) {
     outputFile = std::ofstream(filename);
     outputStream.rdbuf(outputFile.rdbuf());
   }
 
-  /// @brief Returns the output stream
+  /// @brief Returns the output stream.
+  /// @param level Severity of the message that is about to be written.
+  /// @return The configured output stream if `level` is enabled; otherwise a
+  /// dummy stream that discards its input.
   std::ostream &operator()(enum log level = log::info) {
     if (this->level >= level)
       switch (level) {
@@ -168,7 +186,10 @@ public:
 } Log;
 
 /// @brief Return a human-readable printout of the current memory allocator
-/// statistics for a given device
+/// statistics for a given device.
+/// @param device Index of the CUDA or HIP device to inspect.
+/// @return A formatted allocator report, or an availability message when
+/// IgANet was built without CUDA or HIP support.
 inline std::string memory_summary(c10::DeviceIndex device =
 #ifdef CUDA_VERSION
                                       c10::cuda::current_device()
@@ -768,7 +789,10 @@ inline std::string memory_summary(c10::DeviceIndex device =
   return os.str();
 }
 
-/// @brief Initializes the library
+/// @brief Initializes the library.
+/// @param os Stream that receives version and runtime information.
+/// @throws std::runtime_error If MPI support is enabled and MPI cannot be
+/// initialized.
 inline void init(std::ostream &os = Log(log::info)) {
   torch::manual_seed(1);
 
@@ -799,7 +823,10 @@ inline void init(std::ostream &os = Log(log::info)) {
     os << getVersion();
 }
 
-/// @brief Finalizes the library
+/// @brief Finalizes the library.
+/// @param os Stream that receives the final status message.
+/// @throws std::runtime_error If MPI support is enabled and MPI cannot be
+/// finalized.
 inline void finalize(std::ostream &os = Log(log::info)) {
 
 #if defined(CUDA_VERSION) || defined(HIP_VERSION)
@@ -814,22 +841,33 @@ inline void finalize(std::ostream &os = Log(log::info)) {
   os << "Succeeded\n";
 }
 
-/// Stream manipulator
+/// @brief Stream manipulators.
 /// @{
+/// @brief Returns the stream-local index used to store IgANet verbosity.
+/// @return An index allocated by `std::ios_base::xalloc`.
 inline int get_iomanip() {
   static int i = std::ios_base::xalloc();
   return i;
 }
 
+/// @brief Enables verbose output on a stream.
+/// @param os Stream whose verbosity flag is modified.
+/// @return `os`, allowing use as a stream manipulator.
 inline std::ostream &verbose(std::ostream &os) {
   os.iword(get_iomanip()) = 1;
   return os;
 }
+/// @brief Disables verbose output on a stream.
+/// @param os Stream whose verbosity flag is modified.
+/// @return `os`, allowing use as a stream manipulator.
 inline std::ostream &regular(std::ostream &os) {
   os.iword(get_iomanip()) = 0;
   return os;
 }
 
+/// @brief Tests whether verbose output is enabled on a stream.
+/// @param os Stream whose verbosity flag is queried.
+/// @return `true` if verbose output is enabled; otherwise `false`.
 inline bool is_verbose(std::ostream &os) {
   return os.iword(get_iomanip()) != 0;
 }
@@ -839,7 +877,12 @@ inline bool is_verbose(std::ostream &os) {
 
 namespace std {
 
-/// Print (as string) a std::array of generic objects
+/// @brief Prints a `std::array` of generic objects.
+/// @tparam T Element type of the array.
+/// @tparam N Number of elements in the array.
+/// @param os Output stream.
+/// @param obj Array to print.
+/// @return `os` after the array representation has been written.
 template <typename T, std::size_t N>
 inline std::ostream &operator<<(std::ostream &os, const std::array<T, N> &obj) {
   at::optional<std::string> name_ = c10::demangle(typeid(obj).name());
@@ -862,6 +905,12 @@ inline std::ostream &operator<<(std::ostream &os, const std::array<T, N> &obj) {
 }
 
 namespace detail {
+/// @brief Writes each element of a tuple to a separate line.
+/// @tparam Ts Types stored in the tuple.
+/// @tparam Is Tuple indices to write.
+/// @param os Output stream.
+/// @param obj Tuple to print.
+/// @return `os` after all selected elements have been written.
 template <typename... Ts, std::size_t... Is>
 inline std::ostream &output_tuple(std::ostream &os,
                                   const std::tuple<Ts...> &obj,
@@ -872,7 +921,11 @@ inline std::ostream &output_tuple(std::ostream &os,
 
 } // namespace detail
 
-/// Print (as string) a std::tuple of generic objects
+/// @brief Prints a `std::tuple` of generic objects.
+/// @tparam Ts Types stored in the tuple.
+/// @param os Output stream.
+/// @param obj Tuple to print.
+/// @return `os` after the tuple representation has been written.
 template <typename... Ts>
 inline std::ostream &operator<<(std::ostream &os,
                                 const std::tuple<Ts...> &obj) {

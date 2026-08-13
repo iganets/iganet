@@ -1,11 +1,11 @@
 /**
    @file utils/index_sequence.hpp
 
-   @brief Integer sequence utility function
+   @brief Integer sequence utility function.
 
-   @author Matthias Moller
+   @author Matthias Moller.
 
-   @copyright This file is part of the IgANet project
+   @copyright This file is part of the IgANet project.
 
    This Source Code Form is subject to the terms of the Mozilla Public
    License, v. 2.0. If a copy of the MPL was not distributed with this
@@ -20,7 +20,7 @@ namespace iganet::utils {
 
 namespace detail {
 
-/// @brief Reverse index sequence helper
+/// @brief Reverse index sequence helper.
 template <std::size_t, typename> struct make_reverse_index_sequence_helper;
 
 template <std::size_t N, std::size_t... NN>
@@ -29,7 +29,7 @@ struct make_reverse_index_sequence_helper<N, std::index_sequence<NN...>>
 
 } // namespace detail
 
-/// @brief Reverse index sequence
+/// @brief Reverse index sequence.
 template <std::size_t N>
 struct make_reverse_index_sequence
     : detail::make_reverse_index_sequence_helper<

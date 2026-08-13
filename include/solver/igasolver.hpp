@@ -1,11 +1,11 @@
 /**
    @file solver/igasolver.hpp
 
-   @brief Isogeometric analysis solver
+   @brief Isogeometric analysis solver.
 
-   @author Matthias Moller
+   @author Matthias Moller.
 
-   @copyright This file is part of the IgANet project
+   @copyright This file is part of the IgANet project.
 
    This Source Code Form is subject to the terms of the Mozilla Public
    License, v. 2.0. If a copy of the MPL was not distributed with this
@@ -21,61 +21,67 @@
 
 namespace iganet {
 
-/// @brief IgA solver
+/// @brief IgA solver.
 ///
-/// This class implements the core functionality of IgA solvers
+/// This class implements the core functionality of IgA solvers.
 template <typename Inputs, typename Outputs, typename CollPts = void>
 class IgASolver : public IgABase<Inputs, Outputs, CollPts>,
                   private utils::FullQualifiedName {
 
 protected:
-  /// @brief Left-hand side tensor
+  /// @brief Left-hand side tensor.
   torch::Tensor lhs_;
 
-  /// @brief Right-hand side tensor
+  /// @brief Right-hand side tensor.
   torch::Tensor rhs_;
   
 public:
-  /// @brief Base type
+  /// @brief Base type.
   using Base = IgABase<Inputs, Outputs, CollPts>;
 
-  /// @brief Base class constructor
+  /// @brief Base class constructor.
   using Base::IgABase;
 
-  /// @brief Returns a constant reference to the left-hand side object
+  /// @brief Returns a constant reference to the left-hand side object.
+  /// @return Result of the operation.
   inline constexpr const auto &lhs() const { return lhs_; }
 
-  /// @brief Returns a non-constant reference to the left-hand side object
+  /// @brief Returns a non-constant reference to the left-hand side object.
+  /// @return Result of the operation.
   inline constexpr auto &lhs() { return lhs_; }
 
-  /// @brief Returns a constant reference to the right-hand side object
+  /// @brief Returns a constant reference to the right-hand side object.
+  /// @return Result of the operation.
   inline constexpr const auto &rhs() const { return rhs_; }
 
-  /// @brief Returns a non-constant reference to the right-hand side object
+  /// @brief Returns a non-constant reference to the right-hand side object.
+  /// @return Result of the operation.
   inline constexpr auto &rhs() { return rhs_; }
 
-  /// @brief Initializes the solver
+  /// @brief Initializes the solver.
   virtual void init() = 0;
   
-  /// @brief Assembles the solver
+  /// @brief Assembles the solver.
   virtual void assemble() {
     assembleLhs();
     assembleRhs();
   }
   
-  /// @brief Assembles the left-hand side of the solver
+  /// @brief Assembles the left-hand side of the solver.
   virtual void assembleLhs() = 0;
 
-  /// @brief Assembles the right-hand side of the solver
+  /// @brief Assembles the right-hand side of the solver.
   virtual void assembleRhs() = 0;
 
-  /// @brief Computes the solution vector
+  /// @brief Computes the solution vector.
+  /// @return Result of the operation.
   torch::Tensor solve() const {
     auto [x, iter, res] = utils::bicgstab(lhs(), rhs());
     return x;
   }
   
-  /// @brief Returns a string representation of the IgASolver object
+  /// @brief Returns a string representation of the IgASolver object.
+  /// @param os Output stream.
   inline void pretty_print(std::ostream &os) const noexcept override {
     os << name() << "(\n";
     
@@ -96,7 +102,13 @@ public:
   }  
 };
   
-/// @brief Prints an IgASolver object
+/// @brief Prints an IgASolver object.
+/// @tparam Inputs Template parameter `Inputs`.
+/// @tparam Outputs Template parameter `Outputs`.
+/// @tparam CollPts Template parameter `CollPts`.
+/// @param os Output stream.
+/// @param obj Object to process.
+/// @return Result of the operation.
 template <typename Inputs, typename Outputs, typename CollPts>
 inline std::ostream &
 operator<<(std::ostream &os,

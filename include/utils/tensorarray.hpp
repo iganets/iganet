@@ -1,11 +1,11 @@
 /**
    @file utils/tensorarray.hpp
 
-   @brief TensorArray utility functions
+   @brief TensorArray utility functions.
 
-   @author Matthias Moller
+   @author Matthias Moller.
 
-   @copyright This file is part of the IgANet project
+   @copyright This file is part of the IgANet project.
 
    This Source Code Form is subject to the terms of the Mozilla Public
    License, v. 2.0. If a copy of the MPL was not distributed with this
@@ -34,6 +34,8 @@ using TensorArray4 = TensorArray<4>;
 /// @brief Converts a set of std::initializer_list objects to a TensorArray
 /// object
 /// @{
+/// @tparam Ts Template parameter `Ts`.
+/// @return Result of the operation.
 template <typename... Ts>
 inline constexpr TensorArray<sizeof...(Ts)>
 to_tensorArray(std::initializer_list<Ts> &&...lists) {
@@ -41,6 +43,9 @@ to_tensorArray(std::initializer_list<Ts> &&...lists) {
                     torch::IntArrayRef{-1}, Options<Ts>{})...};
 }
 
+/// @brief Provides the `function` operation.
+/// @tparam Ts Template parameter `Ts`.
+/// @return Result of the operation.
 template <typename... Ts>
 inline constexpr TensorArray<sizeof...(Ts)>
 to_tensorArray(torch::IntArrayRef sizes, std::initializer_list<Ts> &&...lists) {
@@ -48,6 +53,10 @@ to_tensorArray(torch::IntArrayRef sizes, std::initializer_list<Ts> &&...lists) {
                     Options<Ts>{})...};
 }
 
+/// @brief Provides the `function` operation.
+/// @tparam Ts Template parameter `Ts`.
+/// @tparam T Template parameter `T`.
+/// @return Result of the operation.
 template <typename... Ts, typename T>
 inline constexpr TensorArray<sizeof...(Ts)>
 to_tensorArray(const iganet::Options<T> &options,
@@ -59,6 +68,10 @@ to_tensorArray(const iganet::Options<T> &options,
                     torch::IntArrayRef{-1}, options)...};
 }
 
+/// @brief Provides the `function` operation.
+/// @tparam Ts Template parameter `Ts`.
+/// @tparam T Template parameter `T`.
+/// @return Result of the operation.
 template <typename... Ts, typename T>
 inline constexpr TensorArray<sizeof...(Ts)>
 to_tensorArray(torch::IntArrayRef sizes, const iganet::Options<T> &options,
@@ -74,11 +87,23 @@ to_tensorArray(torch::IntArrayRef sizes, const iganet::Options<T> &options,
 /// @brief Converts a torch::Tensor object to a
 /// torch::TensorAccessor object
 /// @{
+/// @tparam T Template parameter `T`.
+/// @tparam N Template parameter `N`.
+/// @param tensor Tensor to process.
+/// @return Result of the operation.
 template <typename T, std::size_t N>
 auto to_tensorAccessor(const torch::Tensor &tensor) {
   return tensor.accessor<T, N>();
 }
 
+/// @brief Provides the `to_tensorAccessor` operation.
+/// @tparam T Template parameter `T`.
+/// @tparam N Template parameter `N`.
+/// @tparam T Template parameter `T`.
+/// @tparam N Template parameter `N`.
+/// @param tensor Tensor to process.
+/// @param deviceType Value of `deviceType`.
+/// @return Result of the operation.
 template <typename T, std::size_t N>
 auto to_tensorAccessor(const torch::Tensor &tensor,
                        c10::DeviceType deviceType) {
@@ -98,6 +123,11 @@ namespace detail {
 /// @brief Converts a std::array of torch::Tensor objects to an
 /// array of torch::TensorAccessor objects
 /// @{
+/// @tparam T Template parameter `T`.
+/// @tparam N Template parameter `N`.
+/// @tparam Is Template parameter `Is`.
+/// @param tensorArray Value of `tensorArray`.
+/// @return Result of the operation.
 template <typename T, std::size_t N, std::size_t... Is>
 auto to_tensorAccessor(const TensorArray<sizeof...(Is)> &tensorArray,
                        std::index_sequence<Is...>) {
@@ -105,6 +135,13 @@ auto to_tensorAccessor(const TensorArray<sizeof...(Is)> &tensorArray,
       tensorArray[Is].template accessor<T, N>()...};
 }
 
+/// @brief Provides the `to_tensorAccessor` operation.
+/// @tparam T Template parameter `T`.
+/// @tparam N Template parameter `N`.
+/// @tparam Is Template parameter `Is`.
+/// @param tensorArray Value of `tensorArray`.
+/// @param deviceType Value of `deviceType`.
+/// @return Result of the operation.
 template <typename T, std::size_t N, std::size_t... Is>
 auto to_tensorAccessor(const TensorArray<sizeof...(Is)> &tensorArray,
                        c10::DeviceType deviceType, std::index_sequence<Is...>) {
@@ -115,6 +152,14 @@ auto to_tensorAccessor(const TensorArray<sizeof...(Is)> &tensorArray,
   return std::tuple(tensorArray_device, accessors);
 }
 
+/// @brief Provides the `to_tensorAccessor` operation.
+/// @tparam T Template parameter `T`.
+/// @tparam N Template parameter `N`.
+/// @tparam Dims Template parameter `Dims`.
+/// @tparam Is Template parameter `Is`.
+/// @param blocktensor Value of `blocktensor`.
+/// @param deviceType Value of `deviceType`.
+/// @return Result of the operation.
 template <typename T, std::size_t N, size_t... Dims, std::size_t... Is>
 auto to_tensorAccessor(const BlockTensor<torch::Tensor, Dims...> &blocktensor,
                        c10::DeviceType deviceType, std::index_sequence<Is...>) {
@@ -130,12 +175,24 @@ auto to_tensorAccessor(const BlockTensor<torch::Tensor, Dims...> &blocktensor,
 /// @brief Converts a std::array of torch::Tensor objects to an
 /// array of torch::TensorAccessor objects
 /// @{
+/// @tparam T Template parameter `T`.
+/// @tparam N Template parameter `N`.
+/// @tparam M Template parameter `M`.
+/// @param tensorArray Value of `tensorArray`.
+/// @return Result of the operation.
 template <typename T, std::size_t N, std::size_t M>
 auto to_tensorAccessor(const TensorArray<M> &tensorArray) {
   return detail::to_tensorAccessor<T, N>(tensorArray,
                                          std::make_index_sequence<M>());
 }
 
+/// @brief Provides the `to_tensorAccessor` operation.
+/// @tparam T Template parameter `T`.
+/// @tparam N Template parameter `N`.
+/// @tparam M Template parameter `M`.
+/// @param tensorArray Value of `tensorArray`.
+/// @param deviceType Value of `deviceType`.
+/// @return Result of the operation.
 template <typename T, std::size_t N, std::size_t M>
 auto to_tensorAccessor(const TensorArray<M> &tensorArray,
                        c10::DeviceType deviceType) {
@@ -143,6 +200,13 @@ auto to_tensorAccessor(const TensorArray<M> &tensorArray,
                                          std::make_index_sequence<M>());
 }
 
+/// @brief Provides the `to_tensorAccessor` operation.
+/// @tparam T Template parameter `T`.
+/// @tparam N Template parameter `N`.
+/// @tparam Dims Template parameter `Dims`.
+/// @param blocktensor Value of `blocktensor`.
+/// @param deviceType Value of `deviceType`.
+/// @return Result of the operation.
 template <typename T, std::size_t N, std::size_t... Dims>
 auto to_tensorAccessor(const BlockTensor<torch::Tensor, Dims...> &blocktensor,
                        c10::DeviceType deviceType) {
@@ -163,7 +227,11 @@ auto to_tensorAccessor(const BlockTensor<torch::Tensor, Dims...> &blocktensor,
 
 namespace std {
 
-/// Print (as string) a TensorArray object
+/// @brief Print (as string) a TensorArray object.
+/// @tparam N Template parameter `N`.
+/// @param os Output stream.
+/// @param obj Object to process.
+/// @return Result of the operation.
 template <std::size_t N>
 inline std::ostream &operator<<(std::ostream &os,
                                 const std::array<torch::Tensor, N> &obj) {

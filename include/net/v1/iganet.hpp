@@ -1,11 +1,11 @@
 /**
    @file net/v1/iganet.hpp
 
-   @brief Isogeometric analysis networks (deprecated V1)
+   @brief Isogeometric analysis networks (deprecated V1).
 
-   @author Matthias Moller
+   @author Matthias Moller.
 
-   @copyright This file is part of the IgANet project
+   @copyright This file is part of the IgANet project.
 
    This Source Code Form is subject to the terms of the Mozilla Public
    License, v. 2.0. If a copy of the MPL was not distributed with this
@@ -27,62 +27,67 @@
 
 namespace iganet::v1 {
 
-  /// @brief IgANetOptions
+  /// @brief IgANetOptions.
   struct IgANetOptions {
+  /// @brief Provides the `TORCH_ARG` operation.
   TORCH_ARG(int64_t, max_epoch) = 100;
+  /// @brief Provides the `TORCH_ARG` operation.
   TORCH_ARG(int64_t, batch_size) = 1000;
+  /// @brief Provides the `TORCH_ARG` operation.
   TORCH_ARG(double, min_loss) = 1e-4;
+  /// @brief Provides the `TORCH_ARG` operation.
   TORCH_ARG(double, min_loss_change) = 0;
+  /// @brief Provides the `TORCH_ARG` operation.
   TORCH_ARG(double, min_loss_rel_change) = 1e-3;
   };
 
-/// @brief IgA base class (no reference data)
+/// @brief IgA base class (no reference data).
 ///
 /// This class implements the base functionality of IgANets for the
-/// case that no reference solution is required
+/// case that no reference solution is required.
 template <typename GeometryMap, typename Variable>
   requires FunctionSpaceType<GeometryMap> && FunctionSpaceType<Variable>
 class [[deprecated("Use novel IgANet implementation")]] IgABaseNoRefData {
 public:
-  /// @brief Value type
+  /// @brief Value type.
   using value_type = std::common_type_t<typename GeometryMap::value_type,
                                         typename Variable::value_type>;
 
-  /// @brief Type of the geometry map function space(s)
+  /// @brief Type of the geometry map function space(s).
   using geometryMap_type = GeometryMap;
 
-  /// @brief Type of the variable function space(s)
+  /// @brief Type of the variable function space(s).
   using variable_type = Variable;
 
-  /// @brief Type of the geometry map collocation points
+  /// @brief Type of the geometry map collocation points.
   using geometryMap_collPts_type =
       std::pair<typename GeometryMap::eval_type,
                 typename GeometryMap::boundary_eval_type>;
 
-  /// @brief Type of the variable collocation points
+  /// @brief Type of the variable collocation points.
   using variable_collPts_type =
       std::pair<typename Variable::eval_type,
                 typename Variable::boundary_eval_type>;
 
-  /// @brief Indicates whether this class provides a geometry map
+  /// @brief Indicates whether this class provides a geometry map.
   bool static constexpr has_GeometryMap = true;
 
-  /// @brief Indicates whether this class provides reference data
+  /// @brief Indicates whether this class provides reference data.
   bool static constexpr has_RefData = false;
 
-  /// @brief Indicates whether this class provides a solution
+  /// @brief Indicates whether this class provides a solution.
   bool static constexpr has_Solution = true;
 
 protected:
-  /// @brief Spline representation of the geometry map
+  /// @brief Spline representation of the geometry map.
   GeometryMap G_;
 
-  /// @brief Spline representation of the solution
+  /// @brief Spline representation of the solution.
   Variable u_;
 
 private:
   /// @brief Constructor: number of spline coefficients (different for Geometry
-  /// and Variable types)
+  /// and Variable types).
   template <std::size_t... GeometryMapNumCoeffs, std::size_t... Is,
             std::size_t... VariableNumCoeffs, std::size_t... Js>
   IgABaseNoRefData(
@@ -97,7 +102,8 @@ private:
         u_(std::get<Js>(variableNumCoeffs)..., init::random, options) {}
 
 public:
-  /// @brief Default constructor
+  /// @brief Default constructor.
+  /// @param options Configuration options.
   explicit IgABaseNoRefData(
       iganet::Options<value_type> options = iganet::Options<value_type>{})
       : G_(), u_() {}
@@ -105,6 +111,9 @@ public:
   /// @brief Constructor: number of spline coefficients (same for geometry map
   /// and variables)
   /// @{
+  /// @tparam NumCoeffs Template parameter `NumCoeffs`.
+  /// @param numCoeffs Value of `numCoeffs`.
+  /// @param options Configuration options.
   template <std::size_t NumCoeffs>
   explicit IgABaseNoRefData(
       std::array<int64_t, NumCoeffs> numCoeffs,
@@ -112,6 +121,10 @@ public:
       : IgABaseNoRefData(std::tuple{numCoeffs}, std::tuple{numCoeffs},
                          options) {}
 
+  /// @brief Provides the `IgABaseNoRefData` operation.
+  /// @tparam NumCoeffs Template parameter `NumCoeffs`.
+  /// @param numCoeffs Value of `numCoeffs`.
+  /// @param options Configuration options.
   template <std::size_t... NumCoeffs>
   explicit IgABaseNoRefData(
       std::tuple<std::array<int64_t, NumCoeffs>...> numCoeffs,
@@ -122,6 +135,11 @@ public:
   /// @brief Constructor: number of spline coefficients (different for
   /// geometry map and variables)
   /// @{
+  /// @tparam GeometryMapNumCoeffs Template parameter `GeometryMapNumCoeffs`.
+  /// @tparam VariableNumCoeffs Template parameter `VariableNumCoeffs`.
+  /// @param geometryMapNumCoeffs Value of `geometryMapNumCoeffs`.
+  /// @param variableNumCoeffs Value of `variableNumCoeffs`.
+  /// @param options Configuration options.
   template <std::size_t GeometryMapNumCoeffs, std::size_t VariableNumCoeffs>
   IgABaseNoRefData(
       std::array<int64_t, GeometryMapNumCoeffs> geometryMapNumCoeffs,
@@ -130,6 +148,10 @@ public:
       : IgABaseNoRefData(std::tuple{geometryMapNumCoeffs},
                          std::tuple{variableNumCoeffs}, options) {}
 
+  /// @brief Provides the `IgABaseNoRefData` operation.
+  /// @param geometryMapNumCoeffs Value of `geometryMapNumCoeffs`.
+  /// @param variableNumCoeffs Value of `variableNumCoeffs`.
+  /// @param options Configuration options.
   template <std::size_t... GeometryMapNumCoeffs,
             std::size_t... VariableNumCoeffs>
   IgABaseNoRefData(
@@ -145,27 +167,31 @@ public:
   }
   /// @}
 
-  /// @brief Destructor
+  /// @brief Destructor.
   virtual ~IgABaseNoRefData() = default;
 
   /// @brief Returns a constant reference to the spline
-  /// representation of the geometry map
+  /// representation of the geometry map.
+  /// @return Result of the operation.
   inline const GeometryMap &G() const { return G_; }
 
   /// @brief Returns a non-constant reference to the spline
-  /// representation of the geometry map
+  /// representation of the geometry map.
+  /// @return Result of the operation.
   inline GeometryMap &G() { return G_; }
 
   /// @brief Returns a constant reference to the spline
-  /// representation of the solution
+  /// representation of the solution.
+  /// @return Result of the operation.
   inline const Variable &u() const { return u_; }
 
   /// @brief Returns a non-constant reference to the spline
-  /// representation of the solution
+  /// representation of the solution.
+  /// @return Result of the operation.
   inline Variable &u() { return u_; }
 
 private:
-  /// @brief Returns the geometry map collocation points
+  /// @brief Returns the geometry map collocation points.
   ///
   /// In the default implementation the collocation points are the Greville
   /// abscissae in the interior of the domain and on the boundary
@@ -294,7 +320,7 @@ private:
     return collPts;
   }
 
-  /// @brief Returns the variable collocation points
+  /// @brief Returns the variable collocation points.
   ///
   /// In the default implementation the collocation points are the Greville
   /// abscissae in the interior of the domain and on the boundary
@@ -423,12 +449,14 @@ private:
   }
 
 public:
-  /// @brief Returns the geometry map collocation points
+  /// @brief Returns the geometry map collocation points.
   ///
   /// In the default implementation the collocation points are the Greville
   /// abscissae in the interior of the domain and on the boundary
   /// faces. This behavior can be changed by overriding this virtual
   /// function in a derived class.
+  /// @param collPts Value of `collPts`.
+  /// @return Result of the operation.
   virtual geometryMap_collPts_type
   geometryMap_collPts(enum collPts collPts) const {
     if constexpr (GeometryMap::nspaces() == 1)
@@ -482,12 +510,14 @@ public:
           collPts, std::make_index_sequence<GeometryMap::nspaces()>{});
   }
 
-  /// @brief Returns the variable collocation points
+  /// @brief Returns the variable collocation points.
   ///
   /// In the default implementation the collocation points are the Greville
   /// abscissae in the interior of the domain and on the boundary
   /// faces. This behavior can be changed by overriding this virtual
   /// function in a derived class.
+  /// @param collPts Value of `collPts`.
+  /// @return Result of the operation.
   virtual variable_collPts_type variable_collPts(enum collPts collPts) const {
     if constexpr (Variable::nspaces() == 1)
 
@@ -541,47 +571,47 @@ public:
   }
 };
 
-/// @brief IgA base class
+/// @brief IgA base class.
 ///
-/// This class implements the base functionality of IgANets
+/// This class implements the base functionality of IgANets.
 template <typename GeometryMap, typename Variable>
   requires FunctionSpaceType<GeometryMap> && FunctionSpaceType<Variable>
 class [[deprecated("Use novel IgANet implementation")]] IgABase : public IgABaseNoRefData<GeometryMap, Variable> {
 public:
-  /// @brief Base type
+  /// @brief Base type.
   using Base = IgABaseNoRefData<GeometryMap, Variable>;
 
-  /// @brief Value type
+  /// @brief Value type.
   using value_type = Base::value_type;
 
-  /// @brief Type of the geometry map function space(s)
+  /// @brief Type of the geometry map function space(s).
   using geometryMap_type = GeometryMap;
 
-  /// @brief Type of the variable function space(s)
+  /// @brief Type of the variable function space(s).
   using variable_type = Variable;
 
-  /// @brief Type of the geometry map collocation points
+  /// @brief Type of the geometry map collocation points.
   using geometryMap_collPts_type = Base::geometryMap_collPts_type;
 
-  /// @brief Type of the variable collocation points
+  /// @brief Type of the variable collocation points.
   using variable_collPts_type = Base::variable_collPts_type;
 
-  /// @brief Indicates whether this class provides a geometry map
+  /// @brief Indicates whether this class provides a geometry map.
   bool static constexpr has_GeometryMap = true;
 
-  /// @brief Indicates whether this class provides a reference solution
+  /// @brief Indicates whether this class provides a reference solution.
   bool static constexpr has_RefData = true;
 
-  /// @brief Indicates whether this class provides a solution
+  /// @brief Indicates whether this class provides a solution.
   bool static constexpr has_Solution = true;
 
 protected:
-  /// @brief Spline representation of the reference data
+  /// @brief Spline representation of the reference data.
   Variable f_;
 
 private:
   /// @brief Constructor: number of spline coefficients (different for Geometry
-  /// and Variable types)
+  /// and Variable types).
   template <std::size_t... GeometryMapNumCoeffs, std::size_t... Is,
             std::size_t... VariableNumCoeffs, std::size_t... Js>
   IgABase(
@@ -596,7 +626,8 @@ private:
         f_(std::get<Js>(variableNumCoeffs)..., init::zeros, options) {}
 
 public:
-  /// @brief Default constructor
+  /// @brief Default constructor.
+  /// @param options Configuration options.
   explicit IgABase(
       iganet::Options<value_type> options = iganet::Options<value_type>{})
       : Base(), f_() {}
@@ -604,12 +635,19 @@ public:
   /// @brief Constructor: number of spline coefficients (same for geometry map
   /// and variables)
   /// @{
+  /// @tparam NumCoeffs Template parameter `NumCoeffs`.
+  /// @param numCoeffs Value of `numCoeffs`.
+  /// @param options Configuration options.
   template <std::size_t NumCoeffs>
   explicit IgABase(
       std::array<int64_t, NumCoeffs> numCoeffs,
       iganet::Options<value_type> options = iganet::Options<value_type>{})
       : IgABase(std::tuple{numCoeffs}, std::tuple{numCoeffs}, options) {}
 
+  /// @brief Provides the `IgABase` operation.
+  /// @tparam NumCoeffs Template parameter `NumCoeffs`.
+  /// @param numCoeffs Value of `numCoeffs`.
+  /// @param options Configuration options.
   template <std::size_t... NumCoeffs>
   explicit IgABase(
       std::tuple<std::array<int64_t, NumCoeffs>...> numCoeffs,
@@ -620,6 +658,11 @@ public:
   /// @brief Constructor: number of spline coefficients (different for
   /// geometry map and variables)
   /// @{
+  /// @tparam GeometryMapNumCoeffs Template parameter `GeometryMapNumCoeffs`.
+  /// @tparam VariableNumCoeffs Template parameter `VariableNumCoeffs`.
+  /// @param geometryMapNumCoeffs Value of `geometryMapNumCoeffs`.
+  /// @param variableNumCoeffs Value of `variableNumCoeffs`.
+  /// @param options Configuration options.
   template <std::size_t GeometryMapNumCoeffs, std::size_t VariableNumCoeffs>
   IgABase(std::array<int64_t, GeometryMapNumCoeffs> geometryMapNumCoeffs,
           std::array<int64_t, VariableNumCoeffs> variableNumCoeffs,
@@ -627,6 +670,10 @@ public:
       : IgABase(std::tuple{geometryMapNumCoeffs}, std::tuple{variableNumCoeffs},
                 options) {}
 
+  /// @brief Provides the `IgABase` operation.
+  /// @param geometryMapNumCoeffs Value of `geometryMapNumCoeffs`.
+  /// @param variableNumCoeffs Value of `variableNumCoeffs`.
+  /// @param options Configuration options.
   template <std::size_t... GeometryMapNumCoeffs,
             std::size_t... VariableNumCoeffs>
   IgABase(
@@ -642,17 +689,19 @@ public:
   /// @}
 
   /// @brief Returns a constant reference to the spline
-  /// representation of the reference data
+  /// representation of the reference data.
+  /// @return Result of the operation.
   inline const Variable &f() const { return f_; }
 
   /// @brief Returns a non-constant reference to the spline
-  /// representation of the reference data
+  /// representation of the reference data.
+  /// @return Result of the operation.
   inline Variable &f() { return f_; }
 };
   
-  /// @brief IgANet
+  /// @brief IgANet.
 ///
-/// This class implements the core functionality of IgANets
+/// This class implements the core functionality of IgANets.
 template <typename Optimizer, typename GeometryMap, typename Variable,
           template <typename, typename> typename IgABase = IgABase>
   requires OptimizerType<Optimizer> && FunctionSpaceType<GeometryMap> &&
@@ -661,27 +710,29 @@ class [[deprecated("Use novel IgANet implementation")]] IgANet : public IgABase<
                utils::Serializable,
                private utils::FullQualifiedName {
 public:
-  /// @brief Base type
+  /// @brief Base type.
   using Base = IgABase<GeometryMap, Variable>;
 
-  /// @brief Type of the optimizer
+  /// @brief Type of the optimizer.
   using optimizer_type = Optimizer;
 
-  /// @brief Type of the optimizer options
+  /// @brief Type of the optimizer options.
   using optimizer_options_type = optimizer_options_type<Optimizer>::type;
 
 protected:
-  /// @brief IgANet generator
+  /// @brief IgANet generator.
   IgANetGenerator<typename Base::value_type> net_;
 
-  /// @brief Optimizer
+  /// @brief Optimizer.
   std::unique_ptr<optimizer_type> opt_;
 
-  /// @brief Options
+  /// @brief Options.
   IgANetOptions options_;
 
 public:
-  /// @brief Default constructor
+  /// @brief Default constructor.
+  /// @param defaults Value of `defaults`.
+  /// @param options Configuration options.
   explicit IgANet(const IgANetOptions &defaults = {},
                   iganet::Options<typename Base::value_type> options =
                       iganet::Options<typename Base::value_type>{})
@@ -696,6 +747,12 @@ public:
   /// number of spline coefficients (same for geometry map and
   /// variables)
   /// @{
+  /// @tparam NumCoeffs Template parameter `NumCoeffs`.
+  /// @param layers Value of `layers`.
+  /// @param activations Value of `activations`.
+  /// @param numCoeffs Value of `numCoeffs`.
+  /// @param defaults Value of `defaults`.
+  /// @param options Configuration options.
   template <std::size_t NumCoeffs>
   IgANet(const std::vector<int64_t> &layers,
          const std::vector<std::vector<std::any>> &activations,
@@ -705,6 +762,13 @@ public:
       : IgANet(layers, activations, std::tuple{numCoeffs},
                std::tuple{numCoeffs}, defaults, options) {}
 
+  /// @brief Provides the `IgANet` operation.
+  /// @tparam NumCoeffs Template parameter `NumCoeffs`.
+  /// @param layers Value of `layers`.
+  /// @param activations Value of `activations`.
+  /// @param numCoeffs Value of `numCoeffs`.
+  /// @param defaults Value of `defaults`.
+  /// @param options Configuration options.
   template <std::size_t... NumCoeffs>
   IgANet(const std::vector<int64_t> &layers,
          const std::vector<std::vector<std::any>> &activations,
@@ -719,6 +783,14 @@ public:
   /// number of spline coefficients (different for geometry map and
   /// variables)
   /// @{
+  /// @tparam GeometryMapNumCoeffs Template parameter `GeometryMapNumCoeffs`.
+  /// @tparam VariableNumCoeffs Template parameter `VariableNumCoeffs`.
+  /// @param layers Value of `layers`.
+  /// @param activations Value of `activations`.
+  /// @param geometryMapNumCoeffs Value of `geometryMapNumCoeffs`.
+  /// @param variableNumCoeffs Value of `variableNumCoeffs`.
+  /// @param defaults Value of `defaults`.
+  /// @param options Configuration options.
   template <std::size_t GeometryMapNumCoeffs, std::size_t VariableNumCoeffs>
   IgANet(const std::vector<int64_t> &layers,
          const std::vector<std::vector<std::any>> &activations,
@@ -730,6 +802,13 @@ public:
       : IgANet(layers, activations, std::tuple{geometryMapNumCoeffs},
                std::tuple{variableNumCoeffs}, defaults, options) {}
 
+  /// @brief Provides the `IgANet` operation.
+  /// @param layers Value of `layers`.
+  /// @param activations Value of `activations`.
+  /// @param geometryMapNumCoeffs Value of `geometryMapNumCoeffs`.
+  /// @param variableNumCoeffs Value of `variableNumCoeffs`.
+  /// @param defaults Value of `defaults`.
+  /// @param options Configuration options.
   template <std::size_t... GeometryMapNumCoeffs,
             std::size_t... VariableNumCoeffs>
   IgANet(
@@ -755,24 +834,28 @@ public:
         // Set options
         options_(defaults) {}
 
-  /// @brief Returns a constant reference to the IgANet generator
+  /// @brief Returns a constant reference to the IgANet generator.
+  /// @return Result of the operation.
   inline const IgANetGenerator<typename Base::value_type> &net() const {
     return net_;
   }
 
-  /// @brief Returns a non-constant reference to the IgANet generator
+  /// @brief Returns a non-constant reference to the IgANet generator.
+  /// @return Result of the operation.
   inline IgANetGenerator<typename Base::value_type> &net() { return net_; }
 
-  /// @brief Returns a constant reference to the optimizer
+  /// @brief Returns a constant reference to the optimizer.
+  /// @return Result of the operation.
   inline const optimizer_type &optimizer() const { return *opt_; }
 
-  /// @brief Returns a non-constant reference to the optimizer
+  /// @brief Returns a non-constant reference to the optimizer.
+  /// @return Result of the operation.
   inline optimizer_type &optimizer() { return *opt_; }
 
-  /// @brief Resets the optimizer
+  /// @brief Resets the optimizer.
   ///
   /// @param[in] resetOptions Flag to indicate whether the optimizer options
-  /// should be resetted
+  /// should be resetted.
   inline void optimizerReset(bool resetOptions = true) {
     if (resetOptions)
       opt_ = std::make_unique<optimizer_type>(net_->parameters());
@@ -787,13 +870,16 @@ public:
     }
   }
 
-  /// @brief Resets the optimizer
+  /// @brief Resets the optimizer.
+  /// @param optimizerOptions Value of `optimizerOptions`.
   inline void optimizerReset(const optimizer_options_type &optimizerOptions) {
     opt_ =
         std::make_unique<optimizer_type>(net_->parameters(), optimizerOptions);
   }
 
-  /// @brief Returns a non-constant reference to the optimizer options
+  /// @brief Returns a non-constant reference to the optimizer options.
+  /// @param param_group Value of `param_group`.
+  /// @return Result of the operation.
   inline optimizer_options_type &optimizerOptions(std::size_t param_group = 0) {
     if (param_group < opt_->param_groups().size())
       return static_cast<optimizer_options_type &>(
@@ -802,7 +888,9 @@ public:
       throw std::runtime_error("Index exceeds number of parameter groups");
   }
 
-  /// @brief Returns a constant reference to the optimizer options
+  /// @brief Returns a constant reference to the optimizer options.
+  /// @param param_group Value of `param_group`.
+  /// @return Result of the operation.
   inline const optimizer_options_type &
   optimizerOptions(std::size_t param_group = 0) const {
     if (param_group < opt_->param_groups().size())
@@ -812,19 +900,23 @@ public:
       throw std::runtime_error("Index exceeds number of parameter groups");
   }
 
-  /// @brief Resets the optimizer options
+  /// @brief Resets the optimizer options.
+  /// @param options Configuration options.
   inline void optimizerOptionsReset(const optimizer_options_type &options) {
     for (auto &group : opt_->param_groups())
       static_cast<optimizer_options_type &>(group.options()) = options;
   }
 
-  /// @brief Resets the optimizer options
+  /// @brief Resets the optimizer options.
+  /// @param options Configuration options.
   inline void optimizerOptionsReset(optimizer_options_type &&options) {
     for (auto &group : opt_->param_groups())
       static_cast<optimizer_options_type &>(group.options()) = options;
   }
 
-  /// @brief Resets the optimizer options
+  /// @brief Resets the optimizer options.
+  /// @param options Configuration options.
+  /// @param param_group Value of `param_group`.
   inline void optimizerOptionsReset(const optimizer_options_type &options,
                                     std::size_t param_group) {
     if (param_group < opt_->param_groups().size())
@@ -834,7 +926,9 @@ public:
       throw std::runtime_error("Index exceeds number of parameter groups");
   }
 
-  /// @brief Resets the optimizer options
+  /// @brief Resets the optimizer options.
+  /// @param options Configuration options.
+  /// @param param_group Value of `param_group`.
   inline void optimizerOptionsReset(optimizer_options_type &&options,
                                     std::size_t param_group) {
     if (param_group < opt_->param_groups().size())
@@ -844,18 +938,22 @@ public:
       throw std::runtime_error("Index exceeds number of parameter groups");
   }
 
-  /// @brief Returns a constant reference to the options structure
+  /// @brief Returns a constant reference to the options structure.
+  /// @return Result of the operation.
   inline const auto &options() const { return options_; }
 
-  /// @brief Returns a non-constant reference to the options structure
+  /// @brief Returns a non-constant reference to the options structure.
+  /// @return Result of the operation.
   inline auto &options() { return options_; }
 
-  /// @brief Returns the network inputs
+  /// @brief Returns the network inputs.
   ///
   /// In the default implementation the inputs are the controll
   /// points of the geometry and the reference spline objects. This
   /// behavior can be changed by overriding this virtual function in
   /// a derived class.
+  /// @param epoch Value of `epoch`.
+  /// @return Result of the operation.
   virtual torch::Tensor inputs(int64_t epoch) const {
     if constexpr (Base::has_GeometryMap && Base::has_RefData)
       return torch::cat({Base::G_.as_tensor(), Base::f_.as_tensor()});
@@ -867,13 +965,15 @@ public:
       return torch::empty({0});
   }
 
-  /// @brief Initializes epoch
+  /// @brief Initializes epoch.
+  /// @return Result of the operation.
   virtual bool epoch(int64_t) = 0;
 
-  /// @brief Computes the loss function
+  /// @brief Computes the loss function.
+  /// @return Result of the operation.
   virtual torch::Tensor loss(const torch::Tensor &, int64_t) = 0;
 
-  /// @brief Trains the IgANet
+  /// @brief Trains the IgANet.
   virtual void train(
 #ifdef IGANET_WITH_MPI
       c10::intrusive_ptr<c10d::ProcessGroupMPI> pg =
@@ -949,7 +1049,12 @@ public:
                    << ", loss: " << previous_loss << std::endl;
   }
 
-  /// @brief Trains the IgANet
+  /// @brief Trains the IgANet.
+  /// @tparam DataLoader Template parameter `DataLoader`.
+  /// @param loader Training data loader.
+#ifdef IGANET_WITH_MPI
+  /// @param pg MPI process group.
+#endif
   template <typename DataLoader>
   void train(DataLoader &loader
 #ifdef IGANET_WITH_MPI
@@ -1043,31 +1148,35 @@ public:
                    << ", loss: " << previous_loss << std::endl;
   }
 
-  /// @brief Evaluate IgANet
+  /// @brief Evaluate IgANet.
   void eval() {
     torch::Tensor inputs = this->inputs(0);
     torch::Tensor outputs = net_->forward(inputs);
     Base::u_.from_tensor(outputs);
   }
 
-  /// @brief Returns the IgANet object as JSON object
+  /// @brief Returns the IgANet object as JSON object.
+  /// @return Result of the operation.
   inline nlohmann::json to_json() const override {
     return "Not implemented yet";
   }
 
-  /// @brief Returns a constant reference to the parameters of the IgANet object
+  /// @brief Returns a constant reference to the parameters of the IgANet object.
+  /// @return Result of the operation.
   inline std::vector<torch::Tensor> parameters() const noexcept {
     return net_->parameters();
   }
 
   /// @brief Returns a constant reference to the named parameters of the IgANet
-  /// object
+  /// object.
+  /// @return Result of the operation.
   inline torch::OrderedDict<std::string, torch::Tensor>
   named_parameters() const noexcept {
     return net_->named_parameters();
   }
 
-  /// @brief Returns the total number of parameters of the IgANet object
+  /// @brief Returns the total number of parameters of the IgANet object.
+  /// @return Result of the operation.
   inline std::size_t nparameters() const noexcept {
     std::size_t result = 0;
     for (const auto &param : this->parameters()) {
@@ -1076,12 +1185,17 @@ public:
     return result;
   }
 
-  /// @brief Registers a parameter
+  /// @brief Registers a parameter.
+  /// @param name Value of `name`.
+  /// @param tensor Tensor to process.
+  /// @param requires_grad Value of `requires_grad`.
+  /// @return Result of the operation.
   torch::Tensor& register_parameter(std::string name, torch::Tensor tensor, bool requires_grad = true) {
     return net_->register_parameter(name, tensor, requires_grad);
   }
 
-  /// @brief Returns a string representation of the IgANet object
+  /// @brief Returns a string representation of the IgANet object.
+  /// @param os Output stream.
   inline void pretty_print(std::ostream &os) const noexcept override {
     os << name() << "(\n"
        << "net = " << net_ << "\n";
@@ -1093,14 +1207,18 @@ public:
       os << "u = " << Base::u_ << "\n)";
   }
 
-  /// @brief Saves the IgANet to file
+  /// @brief Saves the IgANet to file.
+  /// @param filename Path of the file to process.
+  /// @param key Serialization key.
   inline void save(const std::string &filename,
                    const std::string &key = "iganet") const {
     torch::serialize::OutputArchive archive;
     write(archive, key).save_to(filename);
   }
 
-  /// @brief Loads the IgANet from file
+  /// @brief Loads the IgANet from file.
+  /// @param filename Path of the file to process.
+  /// @param key Serialization key.
   inline void load(const std::string &filename,
                    const std::string &key = "iganet") {
     torch::serialize::InputArchive archive;
@@ -1108,7 +1226,10 @@ public:
     read(archive, key);
   }
 
-  /// @brief Writes the IgANet into a torch::serialize::OutputArchive object
+  /// @brief Writes the IgANet into a torch::serialize::OutputArchive object.
+  /// @param archive Serialization archive.
+  /// @param key Serialization key.
+  /// @return Result of the operation.
   inline torch::serialize::OutputArchive &
   write(torch::serialize::OutputArchive &archive,
         const std::string &key = "iganet") const {
@@ -1131,7 +1252,10 @@ public:
     return archive;
   }
 
-  /// @brief Loads the IgANet from a torch::serialize::InputArchive object
+  /// @brief Loads the IgANet from a torch::serialize::InputArchive object.
+  /// @param archive Serialization archive.
+  /// @param key Serialization key.
+  /// @return Result of the operation.
   inline torch::serialize::InputArchive &
   read(torch::serialize::InputArchive &archive,
        const std::string &key = "iganet") {
@@ -1155,7 +1279,9 @@ public:
     return archive;
   }
 
-  /// @brief Returns true if both IgANet objects are the same
+  /// @brief Returns true if both IgANet objects are the same.
+  /// @param other Second input value.
+  /// @return Result of the operation.
   bool operator==(const IgANet &other) const {
     bool result(true);
 
@@ -1169,12 +1295,14 @@ public:
     return result;
   }
 
-  /// @brief Returns true if both IgANet objects are different
+  /// @brief Returns true if both IgANet objects are different.
+  /// @param other Second input value.
+  /// @return Result of the operation.
   bool operator!=(const IgANet &other) const { return *this != other; }
 
 #ifdef IGANET_WITH_MPI
 private:
-  /// @brief Waits for all work processes
+  /// @brief Waits for all work processes.
   static void waitWork(c10::intrusive_ptr<c10d::ProcessGroupMPI> pg,
                        std::vector<c10::intrusive_ptr<c10d::Work>> works) {
     for (auto &work : works) {
@@ -1190,7 +1318,13 @@ private:
 #endif
 };
 
-/// @brief Prints an IgANet object
+/// @brief Prints an IgANet object.
+/// @tparam Optimizer Template parameter `Optimizer`.
+/// @tparam GeometryMap Template parameter `GeometryMap`.
+/// @tparam Variable Template parameter `Variable`.
+/// @param os Output stream.
+/// @param obj Object to process.
+/// @return Result of the operation.
 template <typename Optimizer, typename GeometryMap, typename Variable>
   requires OptimizerType<Optimizer> && FunctionSpaceType<GeometryMap> &&
            FunctionSpaceType<Variable>
@@ -1201,60 +1335,60 @@ operator<<(std::ostream &os,
   return os;
 }
 
-/// @brief IgANetCustomizable
+/// @brief IgANetCustomizable.
 ///
 /// This class implements a customizable variant of IgANets that
 /// provides types and attributes for precomputing indices and basis
-/// functions
+/// functions.
 template <typename GeometryMap, typename Variable>
   requires FunctionSpaceType<GeometryMap> && FunctionSpaceType<Variable>
 class [[deprecated("Use novel IgANetCustomizable implementation")]] IgANetCustomizable {
 public:
-  /// @brief Type of the knot indices of the geometry map in the interior
+  /// @brief Type of the knot indices of the geometry map in the interior.
   using geometryMap_interior_knot_indices_type =
       decltype(std::declval<GeometryMap>()
                    .template find_knot_indices<functionspace::interior>(
                        std::declval<typename GeometryMap::eval_type>()));
 
-  /// @brief Type of the knot indices of the geometry map at the boundary
+  /// @brief Type of the knot indices of the geometry map at the boundary.
   using geometryMap_boundary_knot_indices_type =
       decltype(std::declval<GeometryMap>()
                    .template find_knot_indices<functionspace::boundary>(
                        std::declval<
                            typename GeometryMap::boundary_eval_type>()));
 
-  /// @brief Type of the knot indices of the variables in the interior
+  /// @brief Type of the knot indices of the variables in the interior.
   using variable_interior_knot_indices_type =
       decltype(std::declval<Variable>()
                    .template find_knot_indices<functionspace::interior>(
                        std::declval<typename Variable::eval_type>()));
 
-  /// @brief Type of the knot indices of boundary_eval_type type at the boundary
+  /// @brief Type of the knot indices of boundary_eval_type type at the boundary.
   using variable_boundary_knot_indices_type =
       decltype(std::declval<Variable>()
                    .template find_knot_indices<functionspace::boundary>(
                        std::declval<typename Variable::boundary_eval_type>()));
 
-  /// @brief Type of the coefficient indices of geometry type in the interior
+  /// @brief Type of the coefficient indices of geometry type in the interior.
   using geometryMap_interior_coeff_indices_type =
       decltype(std::declval<GeometryMap>()
                    .template find_coeff_indices<functionspace::interior>(
                        std::declval<typename GeometryMap::eval_type>()));
 
-  /// @brief Type of the coefficient indices of geometry type at the boundary
+  /// @brief Type of the coefficient indices of geometry type at the boundary.
   using geometryMap_boundary_coeff_indices_type =
       decltype(std::declval<GeometryMap>()
                    .template find_coeff_indices<functionspace::boundary>(
                        std::declval<
                            typename GeometryMap::boundary_eval_type>()));
 
-  /// @brief Type of the coefficient indices of variable type in the interior
+  /// @brief Type of the coefficient indices of variable type in the interior.
   using variable_interior_coeff_indices_type =
       decltype(std::declval<Variable>()
                    .template find_coeff_indices<functionspace::interior>(
                        std::declval<typename Variable::eval_type>()));
 
-  /// @brief Type of the coefficient indices of variable type at the boundary
+  /// @brief Type of the coefficient indices of variable type at the boundary.
   using variable_boundary_coeff_indices_type =
       decltype(std::declval<Variable>()
                    .template find_coeff_indices<functionspace::boundary>(

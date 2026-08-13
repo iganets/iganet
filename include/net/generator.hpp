@@ -1,11 +1,11 @@
 /**
    @file net/generator.hpp
 
-   @brief Network generator
+   @brief Network generator.
 
-   @author Matthias Moller
+   @author Matthias Moller.
 
-   @copyright This file is part of the IgANet project
+   @copyright This file is part of the IgANet project.
 
    This Source Code Form is subject to the terms of the Mozilla Public
    License, v. 2.0. If a copy of the MPL was not distributed with this
@@ -26,34 +26,37 @@
 namespace iganet {
 
 //  clang-format off
-/// @brief Enumerator for specifying the initialization of network weights
+/// @brief Enumerator for specifying the initialization of network weights.
 enum class nn_init : short_t {
-  constant = 0,        /*!< initialize weights to constant value                                                               */
-  normal = 1,          /*!< initialize weights with values drawn from a normal distribution parameterized by 'mean' and 'std'  */
-  uniform = 2,         /*!< initialize weights with values drawn from a uniform distribution parameterized by 'low' and 'high' */
-  kaiming_normal = 3,  /*!< initialize weights as proposed by Kaiming He using a normal distribution                           */
-  kaiming_uniform = 4, /*!< initialize weights as proposed by Kaiming He using a uniform distribution                          */
-  xavier_normal = 5,   /*!< initialize weights as proposed by Xavier Glorot using a normal distribution                        */
-  xavier_uniform = 6,  /*!< initialize weights as proposed by Xavier Glorot using a uniform distribution                       */    
+  constant = 0,        /*!< initialize weights to constant value. */
+  normal = 1,          /*!< initialize weights with values drawn from a normal distribution parameterized by 'mean' and 'std'. */
+  uniform = 2,         /*!< initialize weights with values drawn from a uniform distribution parameterized by 'low' and 'high'. */
+  kaiming_normal = 3,  /*!< initialize weights as proposed by Kaiming He using a normal distribution. */
+  kaiming_uniform = 4, /*!< initialize weights as proposed by Kaiming He using a uniform distribution. */
+  xavier_normal = 5,   /*!< initialize weights as proposed by Xavier Glorot using a normal distribution. */
+  xavier_uniform = 6,  /*!< initialize weights as proposed by Xavier Glorot using a uniform distribution. */
 };
 //  clang-format on
   
-/// @brief IgANetGeneratorImpl
+/// @brief IgANetGeneratorImpl.
 ///
-/// @note Following the discussion of module overship here
+/// @note Following the discussion of module overship here.
 ///
-/// https://pytorch.org/tutorials/advanced/cpp_frontend.html#module-ownership
+/// https://pytorch.org/tutorials/advanced/cpp_frontend.html#module-ownership.
 ///
-/// we implement a generator implementation class following
+/// we implement a generator implementation class following.
 ///
-/// https://pytorch.org/tutorials/advanced/cpp_frontend.html#the-generator-module
+/// https://pytorch.org/tutorials/advanced/cpp_frontend.html#the-generator-module.
 template <typename real_t>
 class IgANetGeneratorImpl : public torch::nn::Module {
 public:
-  /// @brief Default constructor
+  /// @brief Default constructor.
   IgANetGeneratorImpl() = default;
 
-  /// @brief Constructor
+  /// @brief Constructor.
+  /// @param layers Value of `layers`.
+  /// @param activations Value of `activations`.
+  /// @param options Configuration options.
   explicit IgANetGeneratorImpl(
       const std::vector<int64_t> &layers,
       const std::vector<std::vector<std::any>> &activations,
@@ -723,7 +726,9 @@ public:
       }
   }
 
-  /// @brief Forward evaluation
+  /// @brief Forward evaluation.
+  /// @param x Value of `x`.
+  /// @return Result of the operation.
   torch::Tensor forward(torch::Tensor x) {
     torch::Tensor x_in = x.clone();
 
@@ -734,7 +739,10 @@ public:
     return x;
   }
 
-  /// @brief Writes the IgANet into a torch::serialize::OutputArchive object
+  /// @brief Writes the IgANet into a torch::serialize::OutputArchive object.
+  /// @param archive Serialization archive.
+  /// @param key Serialization key.
+  /// @return Result of the operation.
   inline torch::serialize::OutputArchive &
   write(torch::serialize::OutputArchive &archive,
         const std::string &key = "iganet") const {
@@ -759,7 +767,10 @@ public:
     return archive;
   }
 
-  /// @brief Reads the IgANet from a torch::serialize::InputArchive object
+  /// @brief Reads the IgANet from a torch::serialize::InputArchive object.
+  /// @param archive Serialization archive.
+  /// @param key Serialization key.
+  /// @return Result of the operation.
   inline torch::serialize::InputArchive &
   read(torch::serialize::InputArchive &archive,
        const std::string &key = "iganet") {
@@ -900,6 +911,8 @@ public:
     return archive;
   }
 
+  /// @brief Provides the `pretty_print` operation.
+  /// @param os Output stream.
   inline void pretty_print(std::ostream &os) const noexcept override {
     os << "(\n";
 
@@ -910,18 +923,18 @@ public:
   }
 
 private:
-  /// @brief Vector of linear layers
+  /// @brief Vector of linear layers.
   std::vector<torch::nn::Linear> layers_;
 
-  /// @brief Vector of activation functions
+  /// @brief Vector of activation functions.
   std::vector<std::unique_ptr<iganet::ActivationFunction>> activations_;
 };
 
-/// @brief IgANetGenerator
+/// @brief IgANetGenerator.
 ///
 /// @note: This class is normally generated by the TORCH_MODULE
 /// macro. Since the latter cannot handle templated classes
-/// correctly, we give the implementation explicitly
+/// correctly, we give the implementation explicitly.
 template <typename real_t>
 class IgANetGenerator
     : public torch::nn::ModuleHolder<IgANetGeneratorImpl<real_t>> {

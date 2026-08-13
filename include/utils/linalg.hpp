@@ -1,11 +1,11 @@
 /**
    @file utils/linalg.hpp
 
-   @brief Linear algebra utility functions
+   @brief Linear algebra utility functions.
 
-   @author Matthias Moller
+   @author Matthias Moller.
 
-   @copyright This file is part of the IgANet project
+   @copyright This file is part of the IgANet project.
 
    This Source Code Form is subject to the terms of the Mozilla Public
    License, v. 2.0. If a copy of the MPL was not distributed with this
@@ -19,38 +19,38 @@
 namespace iganet::utils {
 
 /// @brief Computes the directional dot-product between two tensors
-/// with summation along the given dimension
+/// with summation along the given dimension.
 ///
-/// @tparam dim Dimension along which the sum is computed
+/// @tparam dim Dimension along which the sum is computed.
 ///
-/// @tparam T0 Type of the first argument
+/// @tparam T0 Type of the first argument.
 ///
-/// @tparam T1 Type of the second argument
+/// @tparam T1 Type of the second argument.
 ///
-/// @param[in] t0  First argument
+/// @param[in] t0  First argument.
 ///
-/// @param[in] t1  Second argument
+/// @param[in] t1  Second argument.
 ///
-/// @result Tensor containing the directional dot-product
+/// @result Tensor containing the directional dot-product.
 template <short_t dim = 0, typename T0, typename T1>
 inline auto dotproduct(T0 &&t0, T1 &&t1) {
   return torch::sum(torch::mul(t0, t1), dim);
 }
 
 /// @brief Computes the directional Kronecker-product between two
-/// tensors along the given dimension
+/// tensors along the given dimension.
 ///
-/// @tparam dim Dimension along which the Kronecker-product is computed
+/// @tparam dim Dimension along which the Kronecker-product is computed.
 ///
-/// @tparam T0 Type of the first argument
+/// @tparam T0 Type of the first argument.
 ///
-/// @tparam T1 Type of the second argument
+/// @tparam T1 Type of the second argument.
 ///
-/// @param[in] t0  First argument
+/// @param[in] t0  First argument.
 ///
-/// @param[in] t1  Second argument
+/// @param[in] t1  Second argument.
 ///
-/// @result Tensor containing the dimensional Kronecker-product
+/// @result Tensor containing the dimensional Kronecker-product.
 ///
 /// @note This is not the regular Kronecker-product but a
 /// directional variant, that is, the Kronecker-product is computed
@@ -180,19 +180,19 @@ inline auto kronproduct(T0 &&t0, T1 &&t1) {
 }
 
 /// @brief Computes the directional Kronecker-product between two or more
-/// tensors along the given dimension
+/// tensors along the given dimension.
 ///
-/// @tparam dim Dimension along which the Kronecker-product is computed
+/// @tparam dim Dimension along which the Kronecker-product is computed.
 ///
-/// @tparam T Type of the first argument
+/// @tparam T Type of the first argument.
 ///
-/// @tparam Ts Types of the variadic arguments
+/// @tparam Ts Types of the variadic arguments.
 ///
-/// @param[in] t  First argument
+/// @param[in] t  First argument.
 ///
-/// @param[in] ts  Variadic arguments
+/// @param[in] ts  Variadic arguments.
 ///
-/// @result Tensor containing the dimensional Kronecker-product
+/// @result Tensor containing the dimensional Kronecker-product.
 ///
 /// @note This is not the regular Kronecker-product but a
 /// directional variant, that is, the Kronecker-product is computed
@@ -206,16 +206,35 @@ inline auto kronproduct(T &&t, Ts &&...ts) {
 
 /// @brief Computes the Kronecker-product between two or more tensors
 /// @{
+/// @tparam T0 Template parameter `T0`.
+/// @tparam T1 Template parameter `T1`.
+/// @param t0 Value of `t0`.
+/// @param t1 Value of `t1`.
+/// @return Result of the operation.
 template <typename T0, typename T1> inline auto kron(T0 &&t0, T1 &&t1) {
   return torch::kron(std::forward<T0>(t0), std::forward<T1>(t1));
 }
 
+/// @brief Provides the `kron` operation.
+/// @tparam T0 Template parameter `T0`.
+/// @tparam T1 Template parameter `T1`.
+/// @tparam T Template parameter `T`.
+/// @tparam Ts Template parameter `Ts`.
+/// @param t Value of `t`.
+/// @param ts Value of `ts`.
+/// @return Result of the operation.
 template <typename T, typename... Ts> inline auto kron(T &&t, Ts &&...ts) {
   return kron(std::forward<T>(t), kron(std::forward<Ts>(ts)...));
 }
 /// @}
 
-/// @brief Computes the (partial) product of all std::array entries
+/// @brief Computes the (partial) product of all std::array entries.
+/// @tparam T Template parameter `T`.
+/// @tparam N Template parameter `N`.
+/// @param array Value of `array`.
+/// @param start_index Value of `start_index`.
+/// @param stop_index Value of `stop_index`.
+/// @return Result of the operation.
 template <typename T, std::size_t N>
 inline T prod(std::array<T, N> array, std::size_t start_index = 0,
               std::size_t stop_index = N - 1) {
@@ -227,7 +246,13 @@ inline T prod(std::array<T, N> array, std::size_t start_index = 0,
   return result;
 }
 
-/// @brief Computes the (partial) sum of all std::array entries
+/// @brief Computes the (partial) sum of all std::array entries.
+/// @tparam T Template parameter `T`.
+/// @tparam N Template parameter `N`.
+/// @param array Value of `array`.
+/// @param start_index Value of `start_index`.
+/// @param stop_index Value of `stop_index`.
+/// @return Result of the operation.
 template <typename T, std::size_t N>
 inline T sum(std::array<T, N> array, std::size_t start_index = 0,
              std::size_t stop_index = N - 1) {

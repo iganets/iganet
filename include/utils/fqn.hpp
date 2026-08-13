@@ -1,11 +1,11 @@
 /**
    @file utils/fqn.hpp
 
-   @brief Full qualified name utility functions
+   @brief Full qualified name utility functions.
 
-   @author Matthias Moller
+   @author Matthias Moller.
 
-   @copyright This file is part of the IgANet project
+   @copyright This file is part of the IgANet project.
 
    This Source Code Form is subject to the terms of the Mozilla Public
    License, v. 2.0. If a copy of the MPL was not distributed with this
@@ -18,13 +18,13 @@
 
 namespace iganet::utils {
 
-/// @brief Full qualified name descriptor
+/// @brief Full qualified name descriptor.
 class FullQualifiedName {
 public:
   virtual ~FullQualifiedName() = default;
-  /// @brief Returns the full qualified name of the object
+  /// @brief Returns the full qualified name of the object.
   ///
-  /// @result Full qualified name of the object as string
+  /// @result Full qualified name of the object as string.
   inline const virtual std::string &name() const noexcept {
     // If the name optional is empty at this point, we grab the name of the
     // dynamic type via RTTI. Note that we cannot do this in the constructor,
@@ -50,12 +50,13 @@ public:
     return *name_;
   }
 
-  /// @brief Returns a string representation
+  /// @brief Returns a string representation.
+  /// @param os Output stream.
   inline virtual void
   pretty_print(std::ostream &os = Log(log::info)) const noexcept = 0;
 
 protected:
-  /// @brief String storing the full qualified name of the object
+  /// @brief String storing the full qualified name of the object.
   mutable at::optional<std::string> name_;
 };
 

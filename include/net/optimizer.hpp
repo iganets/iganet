@@ -1,11 +1,11 @@
 /**
-   @file net/optimizier.hpp
+   @file net/optimizer.hpp
 
-   @brief Optimizier type traits
+   @brief Optimizier type traits.
 
-   @author Matthias Moller
+   @author Matthias Moller.
 
-   @copyright This file is part of the IgANet project
+   @copyright This file is part of the IgANet project.
 
    This Source Code Form is subject to the terms of the Mozilla Public
    License, v. 2.0. If a copy of the MPL was not distributed with this
@@ -21,7 +21,7 @@
 namespace iganet {
 
 /// @brief Concept to identify template parameters that are derived from
-/// torch::optim::Optimizer
+/// torch::optim::Optimizer.
 template <typename T>
 concept OptimizerType = std::is_base_of_v<torch::optim::Optimizer, T>;
 
@@ -61,7 +61,7 @@ template <> struct optimizer_options_type<torch::optim::RMSprop> {
 namespace torch {
 namespace optim {
 
-/// Print (as string) a torch::optim::AdagradOptions object
+/// @brief Print (as string) a torch::optim::AdagradOptions object.
 inline std::ostream &operator<<(std::ostream &os,
                                 const torch::optim::AdagradOptions &obj) {
   at::optional<std::string> name_ = c10::demangle(typeid(obj).name());
@@ -83,7 +83,7 @@ inline std::ostream &operator<<(std::ostream &os,
   return os;
 }
 
-/// Print (as string) a torch::optim::AdamOptions object
+/// @brief Print (as string) a torch::optim::AdamOptions object.
 inline std::ostream &operator<<(std::ostream &os,
                                 const torch::optim::AdamOptions &obj) {
   at::optional<std::string> name_ = c10::demangle(typeid(obj).name());
@@ -105,7 +105,7 @@ inline std::ostream &operator<<(std::ostream &os,
   return os;
 }
 
-/// Print (as string) a torch::optim::AdamWOptions object
+/// @brief Print (as string) a torch::optim::AdamWOptions object.
 inline std::ostream &operator<<(std::ostream &os,
                                 const torch::optim::AdamWOptions &obj) {
   at::optional<std::string> name_ = c10::demangle(typeid(obj).name());
@@ -127,7 +127,7 @@ inline std::ostream &operator<<(std::ostream &os,
   return os;
 }
 
-/// Print (as string) a torch::optim::LBFGSOptions object
+/// @brief Print (as string) a torch::optim::LBFGSOptions object.
 inline std::ostream &operator<<(std::ostream &os,
                                 const torch::optim::LBFGSOptions &obj) {
   at::optional<std::string> name_ = c10::demangle(typeid(obj).name());
@@ -154,7 +154,7 @@ inline std::ostream &operator<<(std::ostream &os,
   return os;
 }
 
-/// Print (as string) a torch::optim::RMSpropOptions object
+/// @brief Print (as string) a torch::optim::RMSpropOptions object.
 inline std::ostream &operator<<(std::ostream &os,
                                 const torch::optim::RMSpropOptions &obj) {
   at::optional<std::string> name_ = c10::demangle(typeid(obj).name());
@@ -176,7 +176,7 @@ inline std::ostream &operator<<(std::ostream &os,
   return os;
 }
 
-/// Print (as string) a torch::optim::SGDOptions object
+/// @brief Print (as string) a torch::optim::SGDOptions object.
 inline std::ostream &operator<<(std::ostream &os,
                                 const torch::optim::SGDOptions &obj) {
   at::optional<std::string> name_ = c10::demangle(typeid(obj).name());

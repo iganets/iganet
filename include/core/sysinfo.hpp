@@ -1,11 +1,11 @@
 /**
    @file core/sysinfo.hpp
 
-   @brief System information
+   @brief System information.
 
-   @author Matthias Moller
+   @author Matthias Moller.
 
-   @copyright This file is part of the IgANet project
+   @copyright This file is part of the IgANet project.
 
    This Source Code Form is subject to the terms of the Mozilla Public
    License, v. 2.0. If a copy of the MPL was not distributed with this
@@ -38,18 +38,22 @@
 
 namespace iganet {
 
-/// @brief Returns the IgANet version
+/// @brief Returns the IgANet version.
+/// @return Version string configured when IgANet was built.
 inline constexpr std::string_view getIgANetVersion() noexcept {
   return IGANET_VERSION;
 }
 
-/// @brief Returns the version of the compiler
+/// @brief Returns the version of the compiler.
+/// @return Compiler name and version, or an unknown-compiler marker when the
+/// compiler cannot be identified.
 inline std::string getCompilerVersion() {
   // This code is copied from the CMakeCXXCompilerId.cpp file that was
   // automatically generated with CMake 3.21.4
 
   // The following two macros have been modified as we do not want to
   // return the compiler version in the specific CMake format
+/// @cond INTERNAL
 #define DEC(n) n
 #define HEX(n) n
 
@@ -423,6 +427,7 @@ inline std::string getCompilerVersion() {
 #define COMPILER_ID "Unknown-Compiler"
 #endif
 
+/// @endcond
   return std::string(COMPILER_ID)
 #ifdef COMPILER_VERSION
          + " " + std::to_string(COMPILER_VERSION);
@@ -454,7 +459,8 @@ inline std::string getCompilerVersion() {
 #undef SIMULATE_VERSION_TWEAK
 }
 
-/// @brief Returns the version of the C++ standard
+/// @brief Returns the version of the C++ standard.
+/// @return A string containing the active C++ language-standard value.
 inline std::string getCppVersion() {
 #if defined(_MSC_VER) && _MSC_VER < 1600
   return "C++ 199711L";
@@ -467,7 +473,9 @@ inline std::string getCppVersion() {
 #endif
 }
 
-/// @brief Returns the version of the standard library
+/// @brief Returns the version of the standard library.
+/// @return Standard-library implementation and version, or `Unknown-STD` when
+/// it cannot be identified.
 inline std::string getStdLibVersion() {
 #ifdef _LIBCPP_VERSION
   return "libc++ " + std::to_string(_LIBCPP_VERSION);
@@ -494,7 +502,9 @@ inline std::string getStdLibVersion() {
 #endif
 }
 
-/// @brief Returns the version of extra libraries
+/// @brief Returns the version of extra libraries.
+/// @return A comma-separated list of enabled third-party libraries and their
+/// versions; the string is empty if none are detected.
 inline std::string getExtraLibsVersion() {
   std::string s;
 
@@ -538,7 +548,8 @@ inline std::string getExtraLibsVersion() {
   return s;
 }
 
-/// @brief Returns CPU information
+/// @brief Returns CPU information.
+/// @return CPU brand information, or an unknown-CPU marker when unavailable.
 inline std::string getCpuInfo() {
 #if defined(_WIN32) || defined(_WIN64)
 
@@ -620,7 +631,8 @@ inline std::string getCpuInfo() {
   return "Unknown-CPU";
 }
 
-/// @brief Returns total system memory in bytes
+/// @brief Returns total system memory in bytes.
+/// @return Total physical system memory, or zero when it cannot be determined.
 inline uint64_t getMemoryInBytes() {
 #if defined(_WIN32) || defined(_WIN64)
 
@@ -649,7 +661,9 @@ inline uint64_t getMemoryInBytes() {
   return 0;
 }
 
-/// @brief Returns memory information
+/// @brief Returns memory information.
+/// @return Total physical memory formatted with a binary unit, or
+/// `Unknown-Memory` when unavailable.
 inline std::string getMemoryInfo() {
   uint64_t memsize = getMemoryInBytes();
   if (memsize > 0) {
@@ -665,7 +679,9 @@ inline std::string getMemoryInfo() {
     return "Unknown-Memory";
 }
 
-/// @brief Returns version information
+/// @brief Returns version information.
+/// @return A multi-line summary of IgANet, compiler, system, threading, and
+/// available device information.
 inline std::string getVersion() {
   return std::string("IgANets - Isogeometric Analysis Networks") +
          " (version " + std::string(getIgANetVersion()) + ")\n" +
@@ -681,7 +697,12 @@ inline std::string getVersion() {
          (torch::xpu::is_available() ? ", XPU" : "") + ")\n";
 }
 
-/// @brief Returns the path of the executable
+/// @brief Returns the path of the executable.
+/// @return Directory containing the running executable.
+/// @throws std::runtime_error On Windows or macOS when the executable path
+/// cannot be queried with the available buffer.
+/// @throws std::filesystem::filesystem_error If canonicalizing the executable
+/// path fails.
 inline std::filesystem::path getExecutablePath()
 {
 #if defined(_WIN32)

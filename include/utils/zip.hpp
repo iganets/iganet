@@ -1,11 +1,11 @@
 /**
    @file utils/zip.hpp
 
-   @brief Zip utility function
+   @brief Zip utility function.
 
-   @author Matthias Moller
+   @author Matthias Moller.
 
-   @copyright This file is part of the IgANet project
+   @copyright This file is part of the IgANet project.
 
    This Source Code Form is subject to the terms of the Mozilla Public
    License, v. 2.0. If a copy of the MPL was not distributed with this
@@ -46,27 +46,41 @@ public:
     }
 
   public:
+    /// @brief Provides the `iterator` operation.
+    /// @tparam I Template parameter `I`.
+    /// @param iterators Value of `iterators`.
     explicit iterator(decltype(_iterators) iterators)
         : _iterators{std::move(iterators)} {}
 
+    /// @brief Provides the `operator++` operation.
+    /// @return Result of the operation.
     iterator &operator++() {
       increment(std::index_sequence_for<T...>{});
       return *this;
     }
 
+    /// @brief Provides the `operator++` operation.
+    /// @return Result of the operation.
     iterator operator++(int) {
       auto saved{*this};
       increment(std::index_sequence_for<T...>{});
       return saved;
     }
 
+    /// @brief Provides the `operator!=` operation.
+    /// @param other Second input value.
+    /// @return Result of the operation.
     bool operator!=(const iterator &other) const {
       return _iterators != other._iterators;
     }
 
+    /// @brief Provides the `operator*` operation.
+    /// @return Result of the operation.
     auto operator*() const { return deref(std::index_sequence_for<T...>{}); }
   };
 
+  /// @brief Provides the `zip_helper` operation.
+  /// @param seqs Value of `seqs`.
   zip_helper(T &&...seqs)
       : _seqs(seqs...),
         _begin{make_tuple_begin(_seqs,
@@ -76,7 +90,11 @@ public:
     validate_lengths(std::make_index_sequence<sizeof...(seqs)>{});
   }
 
+  /// @brief Provides the `begin` operation.
+  /// @return Result of the operation.
   iterator begin() const { return _begin; }
+  /// @brief Provides the `end` operation.
+  /// @return Result of the operation.
   iterator end() const { return _end; }
 
 private:
@@ -110,6 +128,9 @@ private:
 
 } // namespace detail
 
+/// @brief Provides the `zip` operation.
+/// @param seqs Value of `seqs`.
+/// @return Result of the operation.
 // Sequences must be the same length.
 template <typename... T> auto zip(T &&...seqs) {
   return iganet::utils::detail::zip_helper<T...>(std::forward<T>(seqs)...);

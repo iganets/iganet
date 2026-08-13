@@ -1,11 +1,11 @@
 /**
    @file splines/functionspace.hpp
 
-   @brief Function spaces
+   @brief Function spaces.
 
-   @author Matthias Moller
+   @author Matthias Moller.
 
-   @copyright This file is part of the IgANet project
+   @copyright This file is part of the IgANet project.
 
    This Source Code Form is subject to the terms of the Mozilla Public
    License, v. 2.0. If a copy of the MPL was not distributed with this
@@ -27,13 +27,13 @@ namespace iganet {
 using namespace literals;
 using utils::operator+;
 
-/// @brief Enumerator for the function space component
+/// @brief Enumerator for the function space component.
 enum class functionspace : short_t {
-  interior = 0, /*!< interior component */
-  boundary = 1  /*!< boundary component */
+  interior = 0, /*!< interior component. */
+  boundary = 1  /*!< boundary component. */
 };
 
-/// @brief Macro: Implements the default methods of a function space
+/// @brief Macro: Implements the default methods of a function space.
 #define IGANET_FUNCTIONSPACE_DEFAULT_OPS(FunctionSpace)                        \
   FunctionSpace() = default;                                                   \
   FunctionSpace(FunctionSpace &&) = default;                                   \
@@ -55,13 +55,13 @@ concept HasTemplatedFindCoeffIndices = requires(T t, typename T::eval_type x) {
   { t.template find_coeff_indices<functionspace::interior>(x) };
 };  
   
-/// @brief FunctionSpace base class
+/// @brief FunctionSpace base class.
 class FunctionSpaceType {};
 
 // Forward declaration
 template <typename, typename> class FunctionSpace;
 
-/// @brief Tensor-product function space
+/// @brief Tensor-product function space.
 ///
 /// @note This class is not meant for direct use in
 /// applications. Instead, use S, TH, NE, or RT.
@@ -73,29 +73,33 @@ class FunctionSpace<std::tuple<Splines...>, std::tuple<Boundaries...>>
       private utils::FullQualifiedName {
 
 public:
-  /// @brief Value type
+  /// @brief Value type.
   using value_type = std::common_type_t<typename Splines::value_type...>;
 
-  /// @brief Spline type
+  /// @brief Spline type.
   using spline_type = std::tuple<Splines...>;
 
-  /// @brief Spline evaluation type
+  /// @brief Spline evaluation type.
   using eval_type = std::tuple<utils::TensorArray<Splines::parDim()>...>;
 
-  /// @brief Boundary type
+  /// @brief Boundary type.
   using boundary_type = std::tuple<Boundaries...>;
 
-  /// @brief Boundary evaluation type
+  /// @brief Boundary evaluation type.
   using boundary_eval_type = std::tuple<typename Boundaries::eval_type...>;
 
-  /// @brief Returns the geometric dimensions of the index-th space
+  /// @brief Returns the geometric dimensions of the index-th space.
+  /// @tparam index Template parameter `index`.
+  /// @return Result of the operation.
   template <std::size_t index> 
   inline static constexpr short_t geoDim() noexcept {
     static_assert(index < nspaces());
     return std::tuple_element_t<index, spline_type>::geoDim();
   }
 
-  /// @brief Returns the parametric dimensions of the index-th space
+  /// @brief Returns the parametric dimensions of the index-th space.
+  /// @tparam index Template parameter `index`.
+  /// @return Result of the operation.
   template <std::size_t index> 
   inline static constexpr short_t parDim() noexcept {
     static_assert(index < nspaces());
@@ -103,15 +107,20 @@ public:
   }
 
   /// @brief Returns a constant reference to the array of degrees of
-  /// the index-th space
+  /// the index-th space.
+  /// @tparam index Template parameter `index`.
+  /// @return Result of the operation.
   template <std::size_t index> 
   inline static constexpr const auto& degrees() noexcept {
     static_assert(index < nspaces());
     return std::tuple_element_t<index, spline_type>::degrees();
   }
 
-  /// @brief Returns a constant reference to the degree in the
+  /// @brief Returns a constant reference to the degree in the.
   /// \f$i\f$-th dimension of the index-th space
+  /// @tparam index Template parameter `index`.
+  /// @param i Value of `i`.
+  /// @return Result of the operation.
   template <std::size_t index> 
   inline static constexpr short_t degree(short_t i) noexcept {
     static_assert(index < nspaces());
@@ -119,24 +128,27 @@ public:
   }
 
 protected:
-  /// @brief Splines
+  /// @brief Splines.
   spline_type spline_;
 
-  /// @brief Boundaries
+  /// @brief Boundaries.
   boundary_type boundary_;
 
 public:
-  /// @brief Default constructor
+  /// @brief Default constructor.
   FunctionSpace() = default;
 
-  /// @brief Copy constructor
+  /// @brief Copy constructor.
   FunctionSpace(const FunctionSpace &) = default;
 
-  /// @brief Move constructor
+  /// @brief Move constructor.
   FunctionSpace(FunctionSpace &&) = default;
 
   /// @brief Constructor
   /// @{
+  /// @param ncoeffs Value of `ncoeffs`.
+  /// @param init Value of `init`.
+  /// @param options Configuration options.
   explicit FunctionSpace(
       const std::array<int64_t, Splines::parDim()> &...ncoeffs,
       enum init init = init::greville,
@@ -146,6 +158,10 @@ public:
     boundary_from_full_tensor(this->as_tensor());
   }
 
+  /// @brief Provides the `FunctionSpace` operation.
+  /// @param kv Value of `kv`.
+  /// @param init Value of `init`.
+  /// @param options Configuration options.
   explicit FunctionSpace(
       const std::array<std::vector<typename Splines::value_type>,
                        Splines::parDim()> &...kv,
@@ -159,75 +175,102 @@ public:
     boundary_from_full_tensor(this->as_tensor());
   }
 
+  /// @brief Provides the `FunctionSpace` operation.
+  /// @param spline Value of `spline`.
   explicit FunctionSpace(const std::tuple<Splines...> &spline)
       : spline_(spline) {
     boundary_from_full_tensor(this->as_tensor());
   }
 
+  /// @brief Provides the `FunctionSpace` operation.
+  /// @param spline Value of `spline`.
   explicit FunctionSpace(std::tuple<Splines...> &&spline) : spline_(spline) {
     boundary_from_full_tensor(this->as_tensor());
   }
 
+  /// @brief Provides the `FunctionSpace` operation.
+  /// @param spline Value of `spline`.
+  /// @param boundary Value of `boundary`.
   explicit FunctionSpace(const std::tuple<Splines...> &spline,
                          const std::tuple<Boundaries...> &boundary)
       : spline_(spline), boundary_(boundary) {}
 
+  /// @brief Provides the `FunctionSpace` operation.
+  /// @param spline Value of `spline`.
+  /// @param boundary Value of `boundary`.
   explicit FunctionSpace(std::tuple<Splines...> &&spline,
                          std::tuple<Boundaries...> &&boundary)
       : spline_(spline), boundary_(boundary) {}
   /// @}
 
-  /// @brief Returns the number of function spaces
+  /// @brief Returns the number of function spaces.
+  /// @return Result of the operation.
   inline static constexpr std::size_t nspaces() noexcept {
     return sizeof...(Splines);
   }
 
-  /// @brief Returns the number of boundaries
+  /// @brief Returns the number of boundaries.
+  /// @return Result of the operation.
   inline static constexpr std::size_t nboundaries() noexcept {
     return sizeof...(Boundaries);
   }
 
-  /// @brief Returns a constant reference to the tuple of function spaces
+  /// @brief Returns a constant reference to the tuple of function spaces.
+  /// @return Result of the operation.
   inline constexpr const auto &spaces() const noexcept { return spline_; }
 
-  /// @brief Returns a non-constant reference to the tuple of function spaces
+  /// @brief Returns a non-constant reference to the tuple of function spaces.
+  /// @return Result of the operation.
   inline constexpr auto &spaces() noexcept { return spline_; }
 
-  /// @brief Returns a constant reference to the tuple of boundary object
+  /// @brief Returns a constant reference to the tuple of boundary object.
+  /// @return Result of the operation.
   inline constexpr const auto &boundaries() const noexcept { return boundary_; }
 
-  /// @brief Returns a non-constant reference to the tuple of boundary object
+  /// @brief Returns a non-constant reference to the tuple of boundary object.
+  /// @return Result of the operation.
   inline constexpr auto &boundaries() noexcept { return boundary_; }
 
-  /// @brief Returns a constant reference to the index-th function space
+  /// @brief Returns a constant reference to the index-th function space.
+  /// @tparam index Template parameter `index`.
+  /// @return Result of the operation.
   template <std::size_t index> inline const auto &space() const noexcept {
     static_assert(index < nspaces());
     return std::get<index>(spline_);
   }
 
-  /// @brief Returns a non-constant reference to the index-th space
+  /// @brief Returns a non-constant reference to the index-th space.
+  /// @tparam index Template parameter `index`.
+  /// @return Result of the operation.
   template <std::size_t index> inline auto &space() noexcept {
     static_assert(index < nspaces());
     return std::get<index>(spline_);
   }
 
-  /// @brief Returns a constant reference to the index-th boundary object
+  /// @brief Returns a constant reference to the index-th boundary object.
+  /// @tparam index Template parameter `index`.
+  /// @return Result of the operation.
   template <std::size_t index> inline const auto &boundary() const noexcept {
     static_assert(index < nboundaries());
     return std::get<index>(boundary_);
   }
 
   /// @brief Returns a non-constant reference to the index-th
-  /// boundary object
+  /// boundary object.
+  /// @tparam index Template parameter `index`.
+  /// @return Result of the operation.
   template <std::size_t index> inline auto &boundary() noexcept {
     static_assert(index < nboundaries());
     return std::get<index>(boundary_);
   }
 
-  /// @brief Returns a clone of the function space
+  /// @brief Returns a clone of the function space.
+  /// @return Result of the operation.
   inline FunctionSpace clone() const noexcept { return FunctionSpace(*this); }
 
-  /// @brief Returns a clone of a subset of the function space
+  /// @brief Returns a clone of a subset of the function space.
+  /// @tparam index Template parameter `index`.
+  /// @return Result of the operation.
   template <std::size_t... index> inline auto clone() const noexcept {
 
     static_assert(((index < nspaces()) && ... && true));
@@ -241,7 +284,7 @@ public:
 
 private:
   /// @brief Returns a single-tensor representation of the
-  /// tuple of spaces
+  /// tuple of spaces.
   template <std::size_t... Is>
   inline torch::Tensor
   spaces_as_tensor_(std::index_sequence<Is...>) const noexcept {
@@ -250,7 +293,8 @@ private:
 
 public:
   /// @brief Returns a single-tensor representation of the
-  /// tuple of spaces
+  /// tuple of spaces.
+  /// @return Result of the operation.
   virtual inline torch::Tensor spaces_as_tensor() const noexcept {
     return spaces_as_tensor_(
         std::make_index_sequence<FunctionSpace::nspaces()>{});
@@ -258,7 +302,7 @@ public:
 
 private:
   /// @brief Returns a single-tensor representation of the
-  /// tuple of boundaries
+  /// tuple of boundaries.
   template <std::size_t... Is>
   inline torch::Tensor
   boundary_as_tensor_(std::index_sequence<Is...>) const noexcept {
@@ -267,24 +311,26 @@ private:
 
 public:
   /// @brief Returns a single-tensor representation of the
-  /// tuple of boundaries
+  /// tuple of boundaries.
+  /// @return Result of the operation.
   virtual inline torch::Tensor boundary_as_tensor() const noexcept {
     return boundary_as_tensor_(
         std::make_index_sequence<FunctionSpace::nboundaries()>{});
   }
 
   /// @brief Returns a single-tensor representation of the
-  /// function space object
+  /// function space object.
   ///
   /// @note The default implementation behaves identical to
-  /// spaces_as_tensor() but can be overridden in a derived class
+  /// spaces_as_tensor() but can be overridden in a derived class.
+  /// @return Result of the operation.
   virtual inline torch::Tensor as_tensor() const noexcept {
     return spaces_as_tensor();
   }
 
 private:
   /// @brief Returns the size of the single-tensor representation of
-  /// the tuple of function spaces
+  /// the tuple of function spaces.
   template <std::size_t... Is>
   inline int64_t
   spaces_as_tensor_size_(std::index_sequence<Is...>) const noexcept {
@@ -295,7 +341,8 @@ private:
 
 public:
   /// @brief Returns the size of the single-tensor representation of
-  /// the tuple of function spaces
+  /// the tuple of function spaces.
+  /// @return Result of the operation.
   virtual inline int64_t spaces_as_tensor_size() const noexcept {
     return spaces_as_tensor_size_(
         std::make_index_sequence<FunctionSpace::nspaces()>{});
@@ -303,7 +350,7 @@ public:
 
 private:
   /// @brief Returns the size of the single-tensor representation of
-  /// the tuple of boundaries
+  /// the tuple of boundaries.
   template <std::size_t... Is>
   inline int64_t
   boundary_as_tensor_size_(std::index_sequence<Is...>) const noexcept {
@@ -314,23 +361,25 @@ private:
 
 public:
   /// @brief Returns the size of the single-tensor representation of
-  /// the tuple of boundaries
+  /// the tuple of boundaries.
+  /// @return Result of the operation.
   virtual inline int64_t boundary_as_tensor_size() const noexcept {
     return boundary_as_tensor_size_(
         std::make_index_sequence<FunctionSpace::nboundaries()>{});
   }
 
   /// @brief Returns the size of the single-tensor representation of
-  /// the function space object
+  /// the function space object.
   ///
   /// @note The default implementation behaves identical to
-  /// spaces_as_tensor_size() but can be overridden in a derived class
+  /// spaces_as_tensor_size() but can be overridden in a derived class.
+  /// @return Result of the operation.
   virtual inline int64_t as_tensor_size() const noexcept {
     return spaces_as_tensor_size();
   }
 
 private:
-  /// @brief Sets the tuple of spaces from a single-tensor representation
+  /// @brief Sets the tuple of spaces from a single-tensor representation.
   template <std::size_t... Is>
   inline FunctionSpace &spaces_from_tensor_(std::index_sequence<Is...>,
                                             const torch::Tensor &tensor) {
@@ -357,7 +406,9 @@ private:
   }
 
 public:
-  /// @brief Sets the tuple of spaces from a single-tensor representation
+  /// @brief Sets the tuple of spaces from a single-tensor representation.
+  /// @param tensor Tensor to process.
+  /// @return Result of the operation.
   virtual inline FunctionSpace &
   spaces_from_tensor(const torch::Tensor &tensor) {
     return spaces_from_tensor_(
@@ -366,7 +417,7 @@ public:
 
 private:
   /// @brief Sets the tuple of boundaries from a single-tensor representation of
-  /// the boundaries only
+  /// the boundaries only.
   template <std::size_t... Is>
   inline FunctionSpace &boundary_from_tensor_(std::index_sequence<Is...>,
                                               const torch::Tensor &tensor) {
@@ -378,7 +429,9 @@ private:
 
 public:
   /// @brief Sets the tuple of boundaries from a single-tensor representation of
-  /// the boundaries only
+  /// the boundaries only.
+  /// @param tensor Tensor to process.
+  /// @return Result of the operation.
   virtual inline FunctionSpace &
   boundary_from_tensor(const torch::Tensor &tensor) {
     return boundary_from_tensor_(
@@ -386,7 +439,7 @@ public:
   }
 
 private:
-  /// @brief Sets the tuple of boundaries from a single-tensor representation
+  /// @brief Sets the tuple of boundaries from a single-tensor representation.
   template <std::size_t... Is>
   inline FunctionSpace &
   boundary_from_full_tensor_(std::index_sequence<Is...>,
@@ -399,14 +452,18 @@ private:
   }
 
 public:
-  /// @brief Sets the tuple of boundaries from a single-tensor representation
+  /// @brief Sets the tuple of boundaries from a single-tensor representation.
+  /// @param tensor Tensor to process.
+  /// @return Result of the operation.
   virtual inline FunctionSpace &
   boundary_from_full_tensor(const torch::Tensor &tensor) {
     return boundary_from_full_tensor_(
         std::make_index_sequence<FunctionSpace::nboundaries()>{}, tensor);
   }
 
-  /// @brief Sets the function space object from a single-tensor representation
+  /// @brief Sets the function space object from a single-tensor representation.
+  /// @param tensor Tensor to process.
+  /// @return Result of the operation.
   virtual inline FunctionSpace &from_tensor(const torch::Tensor &tensor) {
     spaces_from_tensor_(std::make_index_sequence<FunctionSpace::nspaces()>{},
                         tensor);
@@ -416,7 +473,7 @@ public:
   }
 
 private:
-  /// @brief Returns the function space object as XML node
+  /// @brief Returns the function space object as XML node.
   template <std::size_t... Is>
   inline pugi::xml_node &to_xml_(std::index_sequence<Is...>,
                                  pugi::xml_node &root, int id = 0,
@@ -427,7 +484,10 @@ private:
   }
 
 public:
-  /// @brief Returns the function space object as XML object
+  /// @brief Returns the function space object as XML object.
+  /// @param id Object identifier.
+  /// @param label Object label.
+  /// @return Result of the operation.
   inline pugi::xml_document to_xml(int id = 0,
                                    const std::string &label = "") const {
     pugi::xml_document doc;
@@ -437,7 +497,11 @@ public:
     return doc;
   }
 
-  /// @brief Returns the function space object as XML node
+  /// @brief Returns the function space object as XML node.
+  /// @param root Root XML node.
+  /// @param id Object identifier.
+  /// @param label Object label.
+  /// @return Result of the operation.
   inline pugi::xml_node &to_xml(pugi::xml_node &root, int id = 0,
                                 const std::string &label = "") const {
     return to_xml_(std::make_index_sequence<FunctionSpace::nspaces()>{}, root,
@@ -445,7 +509,7 @@ public:
   }
 
 private:
-  /// @brief Updates the function space object from XML object
+  /// @brief Updates the function space object from XML object.
   template <std::size_t... Is>
   inline FunctionSpace &from_xml_(std::index_sequence<Is...>,
                                   const pugi::xml_node &root, int id = 0,
@@ -456,13 +520,21 @@ private:
   }
 
 public:
-  /// @brief Updates the function space object from XML object
+  /// @brief Updates the function space object from XML object.
+  /// @param doc Value of `doc`.
+  /// @param id Object identifier.
+  /// @param label Object label.
+  /// @return Result of the operation.
   inline FunctionSpace &from_xml(const pugi::xml_document &doc, int id = 0,
                                  const std::string &label = "") {
     return from_xml(doc.child("xml"), id, label);
   }
 
-  /// @brief Updates the function space object from XML node
+  /// @brief Updates the function space object from XML node.
+  /// @param root Root XML node.
+  /// @param id Object identifier.
+  /// @param label Object label.
+  /// @return Result of the operation.
   inline FunctionSpace &from_xml(const pugi::xml_node &root, int id = 0,
                                  const std::string &label = "") {
     return from_xml_(std::make_index_sequence<FunctionSpace::nspaces()>{}, root,
@@ -470,7 +542,7 @@ public:
   }
 
 private:
-  /// @brief Serialization to JSON
+  /// @brief Serialization to JSON.
   template <std::size_t... Is>
   nlohmann::json to_json_(std::index_sequence<Is...>) const {
     auto json_this = nlohmann::json::array();
@@ -490,12 +562,17 @@ private:
   }
 
 public:
-  /// @brief Serialization to JSON
+  /// @brief Serialization to JSON.
+  /// @return Result of the operation.
   nlohmann::json to_json() const override {
     return to_json_(std::make_index_sequence<FunctionSpace::nspaces()>{});
   }
 
-  /// @brief Returns true if both function space objects are the same
+  /// @brief Returns true if both function space objects are the same.
+  /// @tparam SplinesOther Template parameter `SplinesOther`.
+  /// @tparam BoundariesOther Template parameter `BoundariesOther`.
+  /// @param other Second input value.
+  /// @return Result of the operation.
   template <typename SplinesOther, typename BoundariesOther>
   bool
   operator==(const FunctionSpace<SplinesOther, BoundariesOther> &other) const {
@@ -569,6 +646,8 @@ private:
 public:
   /// @brief Returns the values of the spline objects in the points `xi`
   /// @{
+  /// @param xi Parametric coordinates.
+  /// @return Result of the operation.
   template <functionspace comp = functionspace::interior,
             deriv deriv = deriv::func, bool memory_optimized = false,
             typename... Xi>
@@ -579,6 +658,10 @@ public:
         std::make_index_sequence<FunctionSpace::nspaces()>{}, xi);
   }
 
+  /// @brief Provides the `eval` operation.
+  /// @param xi Parametric coordinates.
+  /// @param knot_indices Value of `knot_indices`.
+  /// @return Result of the operation.
   template <functionspace comp = functionspace::interior,
             deriv deriv = deriv::func, bool memory_optimized = false,
             typename... Xi, typename... Knot_Indices>
@@ -592,6 +675,11 @@ public:
         std::make_index_sequence<FunctionSpace::nspaces()>{}, xi, knot_indices);
   }
 
+  /// @brief Provides the `eval` operation.
+  /// @param xi Parametric coordinates.
+  /// @param knot_indices Value of `knot_indices`.
+  /// @param coeff_indices Value of `coeff_indices`.
+  /// @return Result of the operation.
   template <functionspace comp = functionspace::interior,
             deriv deriv = deriv::func, bool memory_optimized = false,
             typename... Xi, typename... Knot_Indices, typename... Coeff_Indices>
@@ -654,6 +742,11 @@ public:
   /// @brief Returns the value of the spline objects from
   /// precomputed basis function
   /// @{
+  /// @param basfunc Value of `basfunc`.
+  /// @param coeff_indices Value of `coeff_indices`.
+  /// @param numeval Value of `numeval`.
+  /// @param sizes Value of `sizes`.
+  /// @return Result of the operation.
   template <functionspace comp = functionspace::interior, typename... Basfunc,
             typename... Coeff_Indices, typename... Numeval, typename... Sizes>
   inline auto
@@ -666,6 +759,11 @@ public:
         coeff_indices, numeval, sizes);
   }
 
+  /// @brief Provides the `eval_from_precomputed` operation.
+  /// @param basfunc Value of `basfunc`.
+  /// @param coeff_indices Value of `coeff_indices`.
+  /// @param xi Parametric coordinates.
+  /// @return Result of the operation.
   template <functionspace comp = functionspace::interior, typename... Basfunc,
             typename... Coeff_Indices, typename... Xi>
   inline auto
@@ -707,12 +805,20 @@ private:
 public:
   /// @brief Returns the knot indices of knot spans containing `xi`
   /// @{
+  /// @tparam comp Template parameter `comp`.
+  /// @param xi Parametric coordinates.
+  /// @return Result of the operation.
   template <functionspace comp = functionspace::interior>
   inline auto find_knot_indices(const utils::TensorArray<nspaces()> &xi) const {
     return find_knot_indices_<comp>(
         std::make_index_sequence<FunctionSpace::nspaces()>{}, xi);
   }
 
+  /// @brief Provides the `find_knot_indices` operation.
+  /// @tparam comp Template parameter `comp`.
+  /// @tparam Xi Template parameter `Xi`.
+  /// @param xi Parametric coordinates.
+  /// @return Result of the operation.
   template <functionspace comp = functionspace::interior, typename... Xi>
   inline auto find_knot_indices(const std::tuple<Xi...> &xi) const {
     return find_knot_indices_<comp>(
@@ -760,6 +866,8 @@ private:
 public:
   /// @brief Returns the values of the spline objects' basis
   /// functions in the points `xi` @{
+  /// @param xi Parametric coordinates.
+  /// @return Result of the operation.
   template <functionspace comp = functionspace::interior,
             deriv deriv = deriv::func, bool memory_optimized = false,
             typename... Xi>
@@ -768,6 +876,10 @@ public:
         std::make_index_sequence<FunctionSpace::nspaces()>{}, xi);
   }
 
+  /// @brief Provides the `eval_basfunc` operation.
+  /// @param xi Parametric coordinates.
+  /// @param knot_indices Value of `knot_indices`.
+  /// @return Result of the operation.
   template <functionspace comp = functionspace::interior,
             deriv deriv = deriv::func, bool memory_optimized = false,
             typename... Xi, typename... Knot_Indices>
@@ -781,7 +893,7 @@ public:
 
 private:
   /// @brief Returns the indices of the spline objects'
-  /// coefficients corresponding to the knot indices `indices`
+  /// coefficients corresponding to the knot indices `indices`.
   template <functionspace comp = functionspace::interior,
             bool memory_optimized = false, std::size_t... Is,
             typename... Knot_Indices>
@@ -800,7 +912,9 @@ private:
 
 public:
   /// @brief Returns the indices of the spline objects'
-  /// coefficients corresponding to the knot indices `indices`
+  /// coefficients corresponding to the knot indices `indices`.
+  /// @param knot_indices Value of `knot_indices`.
+  /// @return Result of the operation.
   template <functionspace comp = functionspace::interior,
             bool memory_optimized = false, typename... Knot_Indices>
   inline auto
@@ -811,7 +925,7 @@ public:
 
 private:
   /// @brief Returns the spline objects with uniformly refined
-  /// knot and coefficient vectors
+  /// knot and coefficient vectors.
   template <std::size_t... Is, std::size_t... Js>
   inline auto &uniform_refine_(std::index_sequence<Is...>,
                                std::index_sequence<Js...>, int numRefine = 1,
@@ -823,7 +937,10 @@ private:
 
 public:
   /// @brief Returns the spline objects with uniformly refined
-  /// knot and coefficient vectors
+  /// knot and coefficient vectors.
+  /// @param numRefine Value of `numRefine`.
+  /// @param dimRefine Value of `dimRefine`.
+  /// @return Result of the operation.
   inline auto &uniform_refine(int numRefine = 1, int dimRefine = -1) {
     return uniform_refine_(
         std::make_index_sequence<FunctionSpace::nspaces()>{},
@@ -833,7 +950,7 @@ public:
 
 private:
   /// @brief Returns a copy of the function space object with settings from
-  /// options
+  /// options.
   template <typename real_t, std::size_t... Is, std::size_t... Js>
   inline auto to_(std::index_sequence<Is...>, std::index_sequence<Js...>,
                   Options<real_t> options) const {
@@ -846,7 +963,10 @@ private:
 
 public:
   /// @brief Returns a copy of the function space object with settings from
-  /// options
+  /// options.
+  /// @tparam real_t Template parameter `real_t`.
+  /// @param options Configuration options.
+  /// @return Result of the operation.
   template <typename real_t> inline auto to(Options<real_t> options) const {
     return to_(std::make_index_sequence<FunctionSpace::nspaces()>{},
                std::make_index_sequence<FunctionSpace::nboundaries()>{},
@@ -855,7 +975,7 @@ public:
 
 private:
   /// @brief Returns a copy of the function space object with settings from
-  /// device
+  /// device.
   template <std::size_t... Is, std::size_t... Js>
   inline auto to_(std::index_sequence<Is...>, std::index_sequence<Js...>,
                   torch::Device device) const {
@@ -865,7 +985,9 @@ private:
 
 public:
   /// @brief Returns a copy of the function space object with settings from
-  /// device
+  /// device.
+  /// @param device Target device.
+  /// @return Result of the operation.
   inline auto to(torch::Device device) const {
     return to_(std::make_index_sequence<FunctionSpace::nspaces()>{},
                std::make_index_sequence<FunctionSpace::nboundaries()>{},
@@ -873,7 +995,7 @@ public:
   }
 
 private:
-  /// @brief Returns a copy of the function space object with real_t type
+  /// @brief Returns a copy of the function space object with real_t type.
   template <typename real_t, std::size_t... Is, std::size_t... Js>
   inline auto to_(std::index_sequence<Is...>,
                   std::index_sequence<Js...>) const {
@@ -885,7 +1007,9 @@ private:
   }
 
 public:
-  /// @brief Returns a copy of the function space object with real_t type
+  /// @brief Returns a copy of the function space object with real_t type.
+  /// @tparam real_t Template parameter `real_t`.
+  /// @return Result of the operation.
   template <typename real_t> inline auto to() const {
     return to_<real_t>(
         std::make_index_sequence<FunctionSpace::nspaces()>{},
@@ -893,7 +1017,7 @@ public:
   }
 
 private:
-  /// @brief Scales the function space object by a scalar
+  /// @brief Scales the function space object by a scalar.
   template <std::size_t... Is>
   inline auto scale_(std::index_sequence<Is...>, value_type s, int dim = -1) {
     (std::get<Is>(spline_).scale(s, dim), ...);
@@ -902,13 +1026,16 @@ private:
   }
 
 public:
-  /// @brief Scales the function space object by a scalar
+  /// @brief Scales the function space object by a scalar.
+  /// @param s Value of `s`.
+  /// @param dim Value of `dim`.
+  /// @return Result of the operation.
   inline auto scale(value_type s, int dim = -1) {
     return scale_(std::make_index_sequence<FunctionSpace::nspaces()>{}, s, dim);
   }
 
 private:
-  /// @brief Scales the function space object by a vector
+  /// @brief Scales the function space object by a vector.
   template <std::size_t N, std::size_t... Is>
   inline auto scale_(std::index_sequence<Is...>, std::array<value_type, N> v) {
     (std::get<Is>(spline_).scale(v), ...);
@@ -919,13 +1046,16 @@ private:
   }
 
 public:
-  /// @brief Scales the function space object by a vector
+  /// @brief Scales the function space object by a vector.
+  /// @tparam N Template parameter `N`.
+  /// @param v Value of `v`.
+  /// @return Result of the operation.
   template <std::size_t N> inline auto scale(std::array<value_type, N> v) {
     return scale_(std::make_index_sequence<FunctionSpace::nspaces()>{}, v);
   }
 
 private:
-  /// @brief Translates the function space object by a vector
+  /// @brief Translates the function space object by a vector.
   template <std::size_t N, std::size_t... Is>
   inline auto translate_(std::index_sequence<Is...>,
                          std::array<value_type, N> v) {
@@ -937,13 +1067,16 @@ private:
   }
 
 public:
-  /// @brief Translates the function space object by a vector
+  /// @brief Translates the function space object by a vector.
+  /// @tparam N Template parameter `N`.
+  /// @param v Value of `v`.
+  /// @return Result of the operation.
   template <std::size_t N> inline auto translate(std::array<value_type, N> v) {
     return translate_(std::make_index_sequence<FunctionSpace::nspaces()>{}, v);
   }
 
 private:
-  /// @brief Rotates the function space object by an angle in 2d
+  /// @brief Rotates the function space object by an angle in 2d.
   template <std::size_t... Is>
   inline auto rotate_(std::index_sequence<Is...>, value_type angle) {
     (std::get<Is>(spline_).rotate(angle), ...);
@@ -954,13 +1087,15 @@ private:
   }
 
 public:
-  /// @brief Rotates the function space object by an angle in 2d
+  /// @brief Rotates the function space object by an angle in 2d.
+  /// @param angle Value of `angle`.
+  /// @return Result of the operation.
   inline auto rotate(value_type angle) {
     return rotate_(std::make_index_sequence<FunctionSpace::nspaces()>{}, angle);
   }
 
 private:
-  /// @brief Rotates the function space object by three angles in 3d
+  /// @brief Rotates the function space object by three angles in 3d.
   template <std::size_t... Is>
   inline auto rotate_(std::index_sequence<Is...>,
                       std::array<value_type, 3> angle) {
@@ -972,27 +1107,30 @@ private:
   }
 
 public:
-  /// @brief Rotates the function space object by three angles in 3d
+  /// @brief Rotates the function space object by three angles in 3d.
+  /// @param angle Value of `angle`.
+  /// @return Result of the operation.
   inline auto rotate(std::array<value_type, 3> angle) {
     return rotate_(std::make_index_sequence<FunctionSpace::nspaces()>{}, angle);
   }
 
 private:
-  /// @brief Computes the bounding boxes of the function space object
+  /// @brief Computes the bounding boxes of the function space object.
   template <std::size_t... Is>
   inline auto boundingBox_(std::index_sequence<Is...>) const {
     return std::tuple(std::get<Is>(spline_).boundingBox()...);
   }
 
 public:
-  /// @brief Computes the bounding boxes of the function space object
+  /// @brief Computes the bounding boxes of the function space object.
+  /// @return Result of the operation.
   inline auto boundingBox() const {
     return boundingBox_(std::make_index_sequence<FunctionSpace::nspaces()>{});
   }
 
 private:
   /// @brief Writes the function space object into a
-  /// torch::serialize::OutputArchive object
+  /// torch::serialize::OutputArchive object.
   template <std::size_t... Is>
   inline torch::serialize::OutputArchive &
   write_(std::index_sequence<Is...>, torch::serialize::OutputArchive &archive,
@@ -1008,7 +1146,10 @@ private:
 
 public:
   /// @brief Writes the function space object into a
-  /// torch::serialize::OutputArchive object
+  /// torch::serialize::OutputArchive object.
+  /// @param archive Serialization archive.
+  /// @param key Serialization key.
+  /// @return Result of the operation.
   inline torch::serialize::OutputArchive &
   write(torch::serialize::OutputArchive &archive,
         const std::string &key = "functionspace") const {
@@ -1018,7 +1159,7 @@ public:
 
 private:
   /// @brief Loads the function space object from a
-  /// torch::serialize::InputArchive object
+  /// torch::serialize::InputArchive object.
   template <std::size_t... Is>
   inline torch::serialize::InputArchive &
   read_(std::index_sequence<Is...>, torch::serialize::InputArchive &archive,
@@ -1034,7 +1175,10 @@ private:
 
 public:
   /// @brief Loads the function space object from a
-  /// torch::serialize::InputArchive object
+  /// torch::serialize::InputArchive object.
+  /// @param archive Serialization archive.
+  /// @param key Serialization key.
+  /// @return Result of the operation.
   inline torch::serialize::InputArchive &
   read(torch::serialize::InputArchive &archive,
        const std::string &key = "functionspace") {
@@ -1042,7 +1186,8 @@ public:
     return archive;
   }
 
-  /// @brief Returns a string representation of the function space object
+  /// @brief Returns a string representation of the function space object.
+  /// @param os Output stream.
   inline void pretty_print(std::ostream &os) const noexcept override {
 
     auto pretty_print_ = [this,
@@ -1057,12 +1202,12 @@ public:
 
   //  clang-format off
   /// @brief Returns a block-tensor with the curl of the
-  /// function space object with respect to the parametric variables
+  /// function space object with respect to the parametric variables.
   ///
-  /// @param[in] xi Point(s) where to evaluate the curl
+  /// @param[in] xi Point(s) where to evaluate the curl.
   ///
   /// @result Block-tensor with the curl with respect to the
-  /// parametric variables `xi`
+  /// parametric variables `xi`.
   /// \f[
   ///     \nabla_{\boldsymbol{\xi}} \times \mathbf{u}
   ///        =
@@ -1082,6 +1227,10 @@ public:
     return curl<comp, memory_optimized>(xi, find_knot_indices<comp>(xi));
   }
 
+  /// @brief Provides the `curl` operation.
+  /// @param xi Parametric coordinates.
+  /// @param knot_indices Value of `knot_indices`.
+  /// @return Result of the operation.
   template <functionspace comp = functionspace::interior,
             bool memory_optimized = false, typename... TensorArrays>
   inline auto curl(const utils::TensorArray<nspaces()> &xi,
@@ -1090,6 +1239,11 @@ public:
                                         find_coeff_indices<comp>(knot_indices));
   }
 
+  /// @brief Provides the `curl` operation.
+  /// @param xi Parametric coordinates.
+  /// @param knot_indices Value of `knot_indices`.
+  /// @param coeff_indices Value of `coeff_indices`.
+  /// @return Result of the operation.
   template <functionspace comp = functionspace::interior,
             bool memory_optimized = false>
   inline auto curl(const utils::TensorArray1 &xi,
@@ -1114,11 +1268,11 @@ public:
            xi[1].sizes() == std::get<1>(knot_indices)[0].sizes() &&
            xi[0].sizes() == xi[1].sizes());
 
-    /// curl = 0,
+    /// @brief curl = 0,
     ///        0,
-    ///        du_y / dx - du_x / dy
+    ///        du_y / dx - du_x / dy.
     ///
-    /// Only the third component is returned
+    /// Only the third component is returned.
     return utils::BlockTensor<torch::Tensor, 1, 1>(
         *std::get<1>(spline_).template eval<deriv::dx, memory_optimized>(
             xi, std::get<1>(knot_indices), std::get<1>(coeff_indices))[0] -
@@ -1139,9 +1293,9 @@ public:
            xi[2].sizes() == std::get<2>(knot_indices)[0].sizes() &&
            xi[0].sizes() == xi[1].sizes() && xi[1].sizes() == xi[2].sizes());
 
-    /// curl = du_z / dy - du_y / dz,
+    /// @brief curl = du_z / dy - du_y / dz,
     ///        du_x / dz - du_z / dx,
-    ///        du_y / dx - du_x / dy
+    ///        du_y / dx - du_x / dy.
     return utils::BlockTensor<torch::Tensor, 1, 3>(
         *std::get<2>(spline_).template eval<deriv::dy, memory_optimized>(
             xi, std::get<2>(knot_indices), std::get<2>(coeff_indices))[0] -
@@ -1157,6 +1311,11 @@ public:
                 xi, std::get<0>(knot_indices), std::get<0>(coeff_indices))[0]);
   }
 
+  /// @brief Provides the `curl` operation.
+  /// @param xi Parametric coordinates.
+  /// @param knot_indices Value of `knot_indices`.
+  /// @param coeff_indices Value of `coeff_indices`.
+  /// @return Result of the operation.
   template <functionspace comp = functionspace::interior,
             bool memory_optimized = false>
   inline auto
@@ -1180,17 +1339,12 @@ public:
   /// @}
 
   /// @brief Returns a block-tensor with the divergence of the
-  /// function space object with respect to the parametric variables
+  /// function space object with respect to the parametric variables.
   ///
-  /// @param[in] xi Point(s) where to evaluate the divergence
-  ///
-  /// @param[in] knot_indices Knot indices where to evaluate the divergence
-  ///
-  /// @param[in] coeff_indices Coefficient indices where to evaluate the
-  /// divergence
+  /// @param[in] xi Point(s) where to evaluate the divergence.
   ///
   /// @result Block-tensor with the divergence of the function space with
-  /// respect to the parametric variables
+  /// respect to the parametric variables.
   /// \f[
   ///     \nabla_{\boldsymbol{\xi}} \cdot \mathbf{u}
   ///        =
@@ -1209,6 +1363,10 @@ public:
     return div<comp, memory_optimized>(xi, find_knot_indices<comp>(xi));
   }
 
+  /// @brief Provides the `div` operation.
+  /// @param xi Parametric coordinates.
+  /// @param knot_indices Value of `knot_indices`.
+  /// @return Result of the operation.
   template <functionspace comp = functionspace::interior,
             bool memory_optimized = false, typename... TensorArrays>
   inline auto div(const utils::TensorArray<nspaces()> &xi,
@@ -1217,6 +1375,11 @@ public:
                                        find_coeff_indices<comp>(knot_indices));
   }
 
+  /// @brief Provides the `div` operation.
+  /// @param xi Parametric coordinates.
+  /// @param knot_indices Value of `knot_indices`.
+  /// @param coeff_indices Value of `coeff_indices`.
+  /// @return Result of the operation.
   template <functionspace comp = functionspace::interior,
             bool memory_optimized = false>
   inline auto div(const utils::TensorArray1 &xi,
@@ -1235,6 +1398,11 @@ public:
     }
   }
 
+  /// @brief Provides the `div` operation.
+  /// @param xi Parametric coordinates.
+  /// @param knot_indices Value of `knot_indices`.
+  /// @param coeff_indices Value of `coeff_indices`.
+  /// @return Result of the operation.
   template <functionspace comp = functionspace::interior,
             bool memory_optimized = false>
   inline auto
@@ -1259,6 +1427,11 @@ public:
     }
   }
 
+  /// @brief Provides the `div` operation.
+  /// @param xi Parametric coordinates.
+  /// @param knot_indices Value of `knot_indices`.
+  /// @param coeff_indices Value of `coeff_indices`.
+  /// @return Result of the operation.
   template <functionspace comp = functionspace::interior,
             bool memory_optimized = false>
   inline auto div(const utils::TensorArray3 &xi,
@@ -1288,6 +1461,11 @@ public:
     }
   }
 
+  /// @brief Provides the `div` operation.
+  /// @param xi Parametric coordinates.
+  /// @param knot_indices Value of `knot_indices`.
+  /// @param coeff_indices Value of `coeff_indices`.
+  /// @return Result of the operation.
   template <functionspace comp = functionspace::interior,
             bool memory_optimized = false>
   inline auto
@@ -1325,12 +1503,12 @@ public:
   /// @}
 
   /// @brief Returns a block-tensor with the gradient of the function space
-  /// object in the points `xi` with respect to the parametric variables
+  /// object in the points `xi` with respect to the parametric variables.
   ///
-  /// @param[in] xi Point(s) where to evaluate the gradient
+  /// @param[in] xi Point(s) where to evaluate the gradient.
   ///
   /// @result Block-tensor with the gradient with respect to the
-  /// parametric variables `xi`
+  /// parametric variables `xi`.
   /// \f[
   ///     \nabla_{\boldsymbol{\xi}}u
   ///        =
@@ -1347,6 +1525,10 @@ public:
     return grad<comp, memory_optimized>(xi, find_knot_indices<comp>(xi));
   }
 
+  /// @brief Provides the `grad` operation.
+  /// @param xi Parametric coordinates.
+  /// @param knot_indices Value of `knot_indices`.
+  /// @return Result of the operation.
   template <functionspace comp = functionspace::interior,
             bool memory_optimized = false, typename... TensorArrays>
   inline auto grad(const utils::TensorArray<nspaces()> &xi,
@@ -1355,6 +1537,11 @@ public:
                                         find_coeff_indices<comp>(knot_indices));
   }
 
+  /// @brief Provides the `grad` operation.
+  /// @param xi Parametric coordinates.
+  /// @param knot_indices Value of `knot_indices`.
+  /// @param coeff_indices Value of `coeff_indices`.
+  /// @return Result of the operation.
   template <functionspace comp = functionspace::interior,
             bool memory_optimized = false>
   inline auto grad(const utils::TensorArray1 &xi,
@@ -1373,6 +1560,11 @@ public:
     }
   }
 
+  /// @brief Provides the `grad` operation.
+  /// @param xi Parametric coordinates.
+  /// @param knot_indices Value of `knot_indices`.
+  /// @param coeff_indices Value of `coeff_indices`.
+  /// @return Result of the operation.
   template <functionspace comp = functionspace::interior,
             bool memory_optimized = false>
   inline auto
@@ -1397,6 +1589,11 @@ public:
     }
   }
 
+  /// @brief Provides the `grad` operation.
+  /// @param xi Parametric coordinates.
+  /// @param knot_indices Value of `knot_indices`.
+  /// @param coeff_indices Value of `coeff_indices`.
+  /// @return Result of the operation.
   template <functionspace comp = functionspace::interior,
             bool memory_optimized = false>
   inline auto grad(const utils::TensorArray3 &xi,
@@ -1426,6 +1623,11 @@ public:
     }
   }
 
+  /// @brief Provides the `grad` operation.
+  /// @param xi Parametric coordinates.
+  /// @param knot_indices Value of `knot_indices`.
+  /// @param coeff_indices Value of `coeff_indices`.
+  /// @return Result of the operation.
   template <functionspace comp = functionspace::interior,
             bool memory_optimized = false>
   inline auto
@@ -1465,12 +1667,12 @@ public:
   //  clang-format off
   /// @brief Returns a block-tensor with the Hessian of the function space
   /// object in the points `xi` with respect to the parametric
-  /// variables
+  /// variables.
   ///
-  /// @param[in] xi Point(s) where to evaluate the Hessian
+  /// @param[in] xi Point(s) where to evaluate the Hessian.
   ///
   /// @result Block-tensor with the Hessian with respect to the
-  /// parametric variables `xi`
+  /// parametric variables `xi`.
   /// \f[
   ///     H_{\boldsymbol{\xi}}(u)
   ///        =
@@ -1504,6 +1706,10 @@ public:
     return hess<comp, memory_optimized>(xi, find_knot_indices<comp>(xi));
   }
 
+  /// @brief Provides the `hess` operation.
+  /// @param xi Parametric coordinates.
+  /// @param knot_indices Value of `knot_indices`.
+  /// @return Result of the operation.
   template <functionspace comp = functionspace::interior,
             bool memory_optimized = false, typename... TensorArrays>
   inline auto hess(const utils::TensorArray<nspaces()> &xi,
@@ -1512,6 +1718,11 @@ public:
                                         find_coeff_indices<comp>(knot_indices));
   }
 
+  /// @brief Provides the `hess` operation.
+  /// @param xi Parametric coordinates.
+  /// @param knot_indices Value of `knot_indices`.
+  /// @param coeff_indices Value of `coeff_indices`.
+  /// @return Result of the operation.
   template <functionspace comp = functionspace::interior,
             bool memory_optimized = false>
   inline auto hess(const utils::TensorArray1 &xi,
@@ -1530,6 +1741,11 @@ public:
     }
   }
 
+  /// @brief Provides the `hess` operation.
+  /// @param xi Parametric coordinates.
+  /// @param knot_indices Value of `knot_indices`.
+  /// @param coeff_indices Value of `coeff_indices`.
+  /// @return Result of the operation.
   template <functionspace comp = functionspace::interior,
             bool memory_optimized = false>
   inline auto
@@ -1571,6 +1787,11 @@ public:
     }
   }
 
+  /// @brief Provides the `hess` operation.
+  /// @param xi Parametric coordinates.
+  /// @param knot_indices Value of `knot_indices`.
+  /// @param coeff_indices Value of `coeff_indices`.
+  /// @return Result of the operation.
   template <functionspace comp = functionspace::interior,
             bool memory_optimized = false>
   inline auto hess(const utils::TensorArray3 &xi,
@@ -1668,6 +1889,11 @@ public:
     }
   }
 
+  /// @brief Provides the `hess` operation.
+  /// @param xi Parametric coordinates.
+  /// @param knot_indices Value of `knot_indices`.
+  /// @param coeff_indices Value of `coeff_indices`.
+  /// @return Result of the operation.
   template <functionspace comp = functionspace::interior,
             bool memory_optimized = false>
   inline auto
@@ -1878,17 +2104,12 @@ public:
   //  clang-format off
   /// @brief Returns a block-tensor with the Jacobian of the function
   /// space object in the points `xi` with respect to the parametric
-  /// variables
+  /// variables.
   ///
-  /// @param[in] xi Point(s) where to evaluate the Jacobian
-  ///
-  /// @param[in] knot_indices Knot indices where to evaluate the Jacobian
-  ///
-  /// @param[in] coeff_indices Coefficient indices where to evaluate the
-  /// Jacobian
+  /// @param[in] xi Point(s) where to evaluate the Jacobian.
   ///
   /// @result Block-tensor with the Jacobian with respect to the
-  /// parametric variables
+  /// parametric variables.
   /// \f[
   ///     J_{\boldsymbol{\xi}}(u)
   ///        =
@@ -1917,6 +2138,10 @@ public:
     return jac<comp, memory_optimized>(xi, find_knot_indices<comp>(xi));
   }
 
+  /// @brief Provides the `jac` operation.
+  /// @param xi Parametric coordinates.
+  /// @param knot_indices Value of `knot_indices`.
+  /// @return Result of the operation.
   template <functionspace comp = functionspace::interior,
             bool memory_optimized = false, typename... TensorArrays>
   inline auto jac(const utils::TensorArray<nspaces()> &xi,
@@ -1925,6 +2150,11 @@ public:
                                        find_coeff_indices<comp>(knot_indices));
   }
 
+  /// @brief Provides the `jac` operation.
+  /// @param xi Parametric coordinates.
+  /// @param knot_indices Value of `knot_indices`.
+  /// @param coeff_indices Value of `coeff_indices`.
+  /// @return Result of the operation.
   template <functionspace comp = functionspace::interior,
             bool memory_optimized = false>
   inline auto jac(const utils::TensorArray1 &xi,
@@ -1943,6 +2173,11 @@ public:
     }
   }
 
+  /// @brief Provides the `jac` operation.
+  /// @param xi Parametric coordinates.
+  /// @param knot_indices Value of `knot_indices`.
+  /// @param coeff_indices Value of `coeff_indices`.
+  /// @return Result of the operation.
   template <functionspace comp = functionspace::interior,
             bool memory_optimized = false>
   inline auto
@@ -1972,6 +2207,11 @@ public:
     }
   }
 
+  /// @brief Provides the `jac` operation.
+  /// @param xi Parametric coordinates.
+  /// @param knot_indices Value of `knot_indices`.
+  /// @param coeff_indices Value of `coeff_indices`.
+  /// @return Result of the operation.
   template <functionspace comp = functionspace::interior,
             bool memory_optimized = false>
   inline auto jac(const utils::TensorArray3 &xi,
@@ -2015,6 +2255,11 @@ public:
     }
   }
 
+  /// @brief Provides the `jac` operation.
+  /// @param xi Parametric coordinates.
+  /// @param knot_indices Value of `knot_indices`.
+  /// @param coeff_indices Value of `coeff_indices`.
+  /// @return Result of the operation.
   template <functionspace comp = functionspace::interior,
             bool memory_optimized = false>
   inline auto
@@ -2079,12 +2324,12 @@ public:
 
   //  clang-format off
   /// @brief Returns a block-tensor with the Laplacian of the function space
-  /// object in the points `xi` with respect to the parametric variables
+  /// object in the points `xi` with respect to the parametric variables.
   ///
-  /// @param[in] xi Point(s) where to evaluate the Laplacian
+  /// @param[in] xi Point(s) where to evaluate the Laplacian.
   ///
   /// @result Block-tensor with the Laplacian with respect to the
-  /// parametric variables `xi`
+  /// parametric variables `xi`.
   /// \f[
   ///     L_{\boldsymbol{\xi}}(u)
   ///        =
@@ -2103,6 +2348,10 @@ public:
     return lapl<comp, memory_optimized>(xi, find_knot_indices<comp>(xi));
   }
 
+  /// @brief Provides the `lapl` operation.
+  /// @param xi Parametric coordinates.
+  /// @param knot_indices Value of `knot_indices`.
+  /// @return Result of the operation.
   template <functionspace comp = functionspace::interior,
             bool memory_optimized = false, typename... TensorArrays>
   inline auto lapl(const utils::TensorArray<nspaces()> &xi,
@@ -2111,6 +2360,11 @@ public:
                                         find_coeff_indices<comp>(knot_indices));
   }
 
+  /// @brief Provides the `lapl` operation.
+  /// @param xi Parametric coordinates.
+  /// @param knot_indices Value of `knot_indices`.
+  /// @param coeff_indices Value of `coeff_indices`.
+  /// @return Result of the operation.
   template <functionspace comp = functionspace::interior,
             bool memory_optimized = false>
   inline auto lapl(const utils::TensorArray1 &xi,
@@ -2129,6 +2383,11 @@ public:
     }
   }
 
+  /// @brief Provides the `lapl` operation.
+  /// @param xi Parametric coordinates.
+  /// @param knot_indices Value of `knot_indices`.
+  /// @param coeff_indices Value of `coeff_indices`.
+  /// @return Result of the operation.
   template <functionspace comp = functionspace::interior,
             bool memory_optimized = false>
   inline auto
@@ -2153,6 +2412,11 @@ public:
     }
   }
 
+  /// @brief Provides the `lapl` operation.
+  /// @param xi Parametric coordinates.
+  /// @param knot_indices Value of `knot_indices`.
+  /// @param coeff_indices Value of `coeff_indices`.
+  /// @return Result of the operation.
   template <functionspace comp = functionspace::interior,
             bool memory_optimized = false>
   inline auto lapl(const utils::TensorArray3 &xi,
@@ -2182,6 +2446,11 @@ public:
     }
   }
 
+  /// @brief Provides the `lapl` operation.
+  /// @param xi Parametric coordinates.
+  /// @param knot_indices Value of `knot_indices`.
+  /// @param coeff_indices Value of `coeff_indices`.
+  /// @return Result of the operation.
   template <functionspace comp = functionspace::interior,
             bool memory_optimized = false>
   inline auto
@@ -2459,7 +2728,11 @@ public:                                                                        \
 #undef GENERATE_IEXPR_MACRO
 };
 
-/// @brief Print (as string) a function space object
+/// @brief Print (as string) a function space object.
+/// @tparam Splines Template parameter `Splines`.
+/// @param os Output stream.
+/// @param obj Object to process.
+/// @return Result of the operation.
 template <typename... Splines>
 inline std::ostream &operator<<(std::ostream &os,
                                 const FunctionSpace<Splines...> &obj) {
@@ -2467,7 +2740,7 @@ inline std::ostream &operator<<(std::ostream &os,
   return os;
 }
 
-/// @brief Function space
+/// @brief Function space.
 ///
 /// @note This class is not meant for direct use in
 /// applications. Instead, use S, TH, NE, or RT.
@@ -2478,29 +2751,33 @@ class FunctionSpace : public FunctionSpaceType,
                       private utils::FullQualifiedName {
 
 public:
-  /// @brief Value type
+  /// @brief Value type.
   using value_type = Spline::value_type;
 
-  /// @brief Spline type
+  /// @brief Spline type.
   using spline_type = Spline;
 
-  /// @brief Spline evaluation type
+  /// @brief Spline evaluation type.
   using eval_type = utils::TensorArray<Spline::parDim()>;
 
-  /// @brief Boundary type
+  /// @brief Boundary type.
   using boundary_type = Boundary;
 
-  /// @brief Boundary evaluation type
+  /// @brief Boundary evaluation type.
   using boundary_eval_type = Boundary::eval_type;
 
-  /// @brief Returns the geometric dimensions of the index-th space
+  /// @brief Returns the geometric dimensions of the index-th space.
+  /// @tparam index Template parameter `index`.
+  /// @return Result of the operation.
   template <std::size_t index=0> 
   inline static constexpr short_t geoDim() noexcept {
     static_assert(index < nspaces());
     return spline_type::geoDim();
   }
 
-  /// @brief Returns the parametric dimensions of the index-th space
+  /// @brief Returns the parametric dimensions of the index-th space.
+  /// @tparam index Template parameter `index`.
+  /// @return Result of the operation.
   template <std::size_t index=0> 
   inline static constexpr short_t parDim() noexcept {
     static_assert(index < nspaces());
@@ -2508,15 +2785,20 @@ public:
   }
 
   /// @brief Returns a constant reference to the array of degrees of
-  /// the index-th space
+  /// the index-th space.
+  /// @tparam index Template parameter `index`.
+  /// @return Result of the operation.
   template <std::size_t index=0> 
   inline static constexpr const auto& degrees() noexcept {
     static_assert(index < nspaces());
     return spline_type::degrees();
   }
 
-  /// @brief Returns a constant reference to the degree in the
+  /// @brief Returns a constant reference to the degree in the.
   /// \f$i\f$-th dimension of the index-th space
+  /// @tparam index Template parameter `index`.
+  /// @param i Value of `i`.
+  /// @return Result of the operation.
   template <std::size_t index=0> 
   inline static constexpr short_t degree(short_t i) noexcept {
     static_assert(index < nspaces());
@@ -2524,24 +2806,27 @@ public:
   }
   
 protected:
-  /// @brief Spline
+  /// @brief Spline.
   spline_type spline_;
 
-  /// @brief Boundary
+  /// @brief Boundary.
   boundary_type boundary_;
 
 public:
-  /// @brief Default constructor
+  /// @brief Default constructor.
   FunctionSpace() = default;
 
-  /// @brief Copy constructor
+  /// @brief Copy constructor.
   FunctionSpace(const FunctionSpace &) = default;
 
-  /// @brief Move constructor
+  /// @brief Move constructor.
   FunctionSpace(FunctionSpace &&) = default;
 
   /// @brief Constructor
   /// @{
+  /// @param ncoeffs Value of `ncoeffs`.
+  /// @param init Value of `init`.
+  /// @param options Configuration options.
   explicit FunctionSpace(
       const std::array<int64_t, Spline::parDim()> &ncoeffs,
       enum init init = init::greville,
@@ -2551,6 +2836,10 @@ public:
     boundary_.from_full_tensor(spline_.as_tensor());
   }
 
+  /// @brief Provides the `FunctionSpace` operation.
+  /// @param kv Value of `kv`.
+  /// @param init Value of `init`.
+  /// @param options Configuration options.
   explicit FunctionSpace(
       std::array<std::vector<value_type>, Spline::parDim()> kv,
       enum init init = init::greville,
@@ -2561,12 +2850,16 @@ public:
     boundary_.from_full_tensor(spline_.as_tensor());
   }
 
+  /// @brief Provides the `FunctionSpace` operation.
+  /// @param spline Value of `spline`.
   explicit FunctionSpace(const Spline &spline)
       : spline_(spline),
         boundary_(spline.ncoeffs(), init::none, spline.options()) {
     boundary_.from_full_tensor(spline_.as_tensor());
   }
 
+  /// @brief Provides the `FunctionSpace` operation.
+  /// @param spline Value of `spline`.
   explicit FunctionSpace(Spline &&spline)
       : spline_(spline),
         boundary_(spline.ncoeffs(), init::none, spline.options()) {
@@ -2574,59 +2867,76 @@ public:
   }
   /// @}
 
-  /// @brief Returns the number of function spaces
+  /// @brief Returns the number of function spaces.
+  /// @return Result of the operation.
   inline static constexpr std::size_t nspaces() noexcept { return 1; }
 
-  /// @brief Returns the number of boundaries
+  /// @brief Returns the number of boundaries.
+  /// @return Result of the operation.
   inline static constexpr std::size_t nboundaries() noexcept { return 1; }
 
-  /// @brief Returns a constant reference to the tuple of function spaces
+  /// @brief Returns a constant reference to the tuple of function spaces.
+  /// @return Result of the operation.
   inline constexpr const auto &spaces() const noexcept { return spline_; }
 
-  /// @brief Returns a non-constant reference to the tuple of function spaces
+  /// @brief Returns a non-constant reference to the tuple of function spaces.
+  /// @return Result of the operation.
   inline constexpr auto &spaces() noexcept { return spline_; }
 
-  /// @brief Returns a constant reference to the tuple of boundary object
+  /// @brief Returns a constant reference to the tuple of boundary object.
+  /// @return Result of the operation.
   inline constexpr const auto &boundaries() const noexcept { return boundary_; }
 
-  /// @brief Returns a non-constant reference to the tuple of boundary object
+  /// @brief Returns a non-constant reference to the tuple of boundary object.
+  /// @return Result of the operation.
   inline constexpr auto &boundaries() noexcept { return boundary_; }
 
-  /// @brief Returns a constant reference to the index-th function space
+  /// @brief Returns a constant reference to the index-th function space.
+  /// @tparam index Template parameter `index`.
+  /// @return Result of the operation.
   template <std::size_t index = 0>
   inline constexpr const spline_type &space() const noexcept {
     static_assert(index < nspaces());
     return spline_;
   }
 
-  /// @brief Returns a non-constant reference to the index-th function space
+  /// @brief Returns a non-constant reference to the index-th function space.
+  /// @tparam index Template parameter `index`.
+  /// @return Result of the operation.
   template <std::size_t index = 0>
   inline constexpr spline_type &space() noexcept {
     static_assert(index < nspaces());
     return spline_;
   }
 
-  /// @brief Returns a constant reference to the index-th boundary object
+  /// @brief Returns a constant reference to the index-th boundary object.
+  /// @tparam index Template parameter `index`.
+  /// @return Result of the operation.
   template <std::size_t index = 0>
   inline constexpr const boundary_type &boundary() const noexcept {
     static_assert(index < nboundaries());
     return boundary_;
   }
 
-  /// @brief Returns a non-constant reference to the index-th boundary object
+  /// @brief Returns a non-constant reference to the index-th boundary object.
   ///
+  /// @tparam index Template parameter `index`.
+  /// @return Result of the operation.
   template <std::size_t index = 0>
   inline constexpr boundary_type &boundary() noexcept {
     static_assert(index < nboundaries());
     return boundary_;
   }
 
-  /// @brief Returns a clone of the function space
+  /// @brief Returns a clone of the function space.
+  /// @return Result of the operation.
   inline constexpr FunctionSpace clone() const noexcept {
     return FunctionSpace(*this);
   }
 
-  /// @brief Returns a subset of the tuple of function spaces
+  /// @brief Returns a subset of the tuple of function spaces.
+  /// @tparam index Template parameter `index`.
+  /// @return Result of the operation.
   template <std::size_t... index> inline constexpr auto clone() const noexcept {
 
     static_assert(((index < nspaces()) && ... && true));
@@ -2642,47 +2952,55 @@ public:
           std::get<index>(std::make_tuple(boundary_))...);
   }
 
-  /// @brief Returns a single-tensor representation of the space
+  /// @brief Returns a single-tensor representation of the space.
+  /// @return Result of the operation.
   virtual inline torch::Tensor spaces_as_tensor() const noexcept {
     return spline_.as_tensor();
   }
 
-  /// @brief Returns a single-tensor representation of the boundary
+  /// @brief Returns a single-tensor representation of the boundary.
+  /// @return Result of the operation.
   virtual inline torch::Tensor boundary_as_tensor() const noexcept {
     return boundary_.as_tensor();
   }
 
   /// @brief Returns a single-tensor representation of the
-  /// function space object
+  /// function space object.
   ///
   /// @note The default implementation behaves identical to
-  /// spaces_as_tensor() but can be overridden in a derived class
+  /// spaces_as_tensor() but can be overridden in a derived class.
+  /// @return Result of the operation.
   virtual inline torch::Tensor as_tensor() const noexcept {
     return spaces_as_tensor();
   }
 
   /// @brief Returns the size of the single-tensor representation of
-  /// the space
+  /// the space.
+  /// @return Result of the operation.
   virtual inline int64_t spaces_as_tensor_size() const noexcept {
     return spline_.as_tensor_size();
   }
 
   /// @brief Returns the size of the single-tensor representation of
-  /// the boundary
+  /// the boundary.
+  /// @return Result of the operation.
   virtual inline int64_t boundary_as_tensor_size() const noexcept {
     return boundary_.as_tensor_size();
   }
 
   /// @brief Returns the size of the single-tensor representation of
-  /// the function space object
+  /// the function space object.
   ///
   /// @note The default implementation behaves identical to
-  /// spaces_as_tensor_size() but can be overridden in a derived class
+  /// spaces_as_tensor_size() but can be overridden in a derived class.
+  /// @return Result of the operation.
   virtual inline int64_t as_tensor_size() const noexcept {
     return spaces_as_tensor_size();
   }
 
-  /// @brief Sets the space from a single-tensor representation
+  /// @brief Sets the space from a single-tensor representation.
+  /// @param coeffs Value of `coeffs`.
+  /// @return Result of the operation.
   virtual inline FunctionSpace &
   spaces_from_tensor(const torch::Tensor &coeffs) noexcept {
     spline_.from_tensor(coeffs);
@@ -2690,28 +3008,37 @@ public:
   }
 
   /// @brief Sets the boundary from a single-tensor representation of the
-  /// boundary only
+  /// boundary only.
+  /// @param coeffs Value of `coeffs`.
+  /// @return Result of the operation.
   virtual inline FunctionSpace &
   boundary_from_tensor(const torch::Tensor &coeffs) noexcept {
     boundary_.from_tensor(coeffs);
     return *this;
   }
 
-  /// @brief Sets the boundary from a single-tensor representation
+  /// @brief Sets the boundary from a single-tensor representation.
+  /// @param coeffs Value of `coeffs`.
+  /// @return Result of the operation.
   virtual inline FunctionSpace &
   boundary_from_full_tensor(const torch::Tensor &coeffs) noexcept {
     boundary_.from_full_tensor(coeffs);
     return *this;
   }
 
-  /// @brief Sets the function space object from a single-tensor representation
+  /// @brief Sets the function space object from a single-tensor representation.
+  /// @param coeffs Value of `coeffs`.
+  /// @return Result of the operation.
   inline FunctionSpace &from_tensor(const torch::Tensor &coeffs) noexcept {
     spline_.from_tensor(coeffs);
     boundary_.from_full_tensor(coeffs);
     return *this;
   }
 
-  /// @brief Returns the function space object as XML object
+  /// @brief Returns the function space object as XML object.
+  /// @param id Object identifier.
+  /// @param label Object label.
+  /// @return Result of the operation.
   inline pugi::xml_document to_xml(int id = 0,
                                    const std::string &label = "") const {
     pugi::xml_document doc;
@@ -2721,26 +3048,39 @@ public:
     return doc;
   }
 
-  /// @brief Returns the function space object as XML node
+  /// @brief Returns the function space object as XML node.
+  /// @param root Root XML node.
+  /// @param id Object identifier.
+  /// @param label Object label.
+  /// @return Result of the operation.
   inline pugi::xml_node &to_xml(pugi::xml_node &root, int id = 0,
                                 const std::string &label = "") const {
     return spline_.to_xml(root, id, label);
   }
 
-  /// @brief Updates the function space object from XML object
+  /// @brief Updates the function space object from XML object.
+  /// @param doc Value of `doc`.
+  /// @param id Object identifier.
+  /// @param label Object label.
+  /// @return Result of the operation.
   inline FunctionSpace &from_xml(const pugi::xml_document &doc, int id = 0,
                                  const std::string &label = "") {
     return from_xml(doc.child("xml"), id, label);
   }
 
-  /// @brief Updates the function space object from XML node
+  /// @brief Updates the function space object from XML node.
+  /// @param root Root XML node.
+  /// @param id Object identifier.
+  /// @param label Object label.
+  /// @return Result of the operation.
   inline FunctionSpace &from_xml(const pugi::xml_node &root, int id = 0,
                                  const std::string &label = "") {
     spline_.from_xml(root, id, label);
     return *this;
   }
 
-  /// @brief Serialization to JSON
+  /// @brief Serialization to JSON.
+  /// @return Result of the operation.
   nlohmann::json to_json() const override {
     auto json = nlohmann::json::array();
     json.push_back(spline_.to_json());
@@ -2748,7 +3088,11 @@ public:
     return json;
   }
 
-  /// @brief Returns true if both function space objects are the same
+  /// @brief Returns true if both function space objects are the same.
+  /// @tparam SplinesOther Template parameter `SplinesOther`.
+  /// @tparam BoundariesOther Template parameter `BoundariesOther`.
+  /// @param other Second input value.
+  /// @return Result of the operation.
   template <typename SplinesOther, typename BoundariesOther>
   bool
   operator==(const FunctionSpace<SplinesOther, BoundariesOther> &other) const {
@@ -2766,7 +3110,9 @@ public:
     return result;
   }
 
-  /// @brief Transforms the coefficients based on the given mapping
+  /// @brief Transforms the coefficients based on the given mapping.
+  /// @param mapping Value of `mapping`.
+  /// @return Result of the operation.
   inline FunctionSpace &transform(
       const std::function<std::array<typename Spline::value_type,
                                      Spline::geoDim()>(
@@ -2824,7 +3170,10 @@ private:
   /// @}
 
 public:
-  /// @brief Returns the values of the spline object in the points `xi`
+  /// @brief Returns the values of the spline object in the points `xi`.
+  /// @param arg Value of `arg`.
+  /// @param args Value of `args`.
+  /// @return Result of the operation.
   template <functionspace comp = functionspace::interior,
             deriv deriv = deriv::func, bool memory_optimized = false,
             typename Arg, typename... Args>
@@ -2845,7 +3194,11 @@ public:
   }
 
   /// @brief Returns the value of the spline object from
-  /// precomputed basis function
+  /// precomputed basis function.
+  /// @tparam comp Template parameter `comp`.
+  /// @tparam Args Template parameter `Args`.
+  /// @param args Value of `args`.
+  /// @return Result of the operation.
   template <functionspace comp = functionspace::interior, typename... Args>
   inline auto eval_from_precomputed(const Args &...args) const {
     if constexpr (comp == functionspace::interior)
@@ -2855,7 +3208,7 @@ public:
   }
 
 private:
-  /// @brief Returns the knot indices of knot spans containing `xi`
+  /// @brief Returns the knot indices of knot spans containing `xi`.
   template <functionspace comp = functionspace::interior, std::size_t... Is,
             typename Xi>
   inline auto find_knot_indices_(std::index_sequence<Is...>,
@@ -2867,7 +3220,11 @@ private:
   }
 
 public:
-  /// @brief Returns the knot indices of knot spans containing `xi`
+  /// @brief Returns the knot indices of knot spans containing `xi`.
+  /// @tparam comp Template parameter `comp`.
+  /// @tparam Xi Template parameter `Xi`.
+  /// @param xi Parametric coordinates.
+  /// @return Result of the operation.
   template <functionspace comp = functionspace::interior, typename Xi>
   inline auto find_knot_indices(const Xi &xi) const {
     if constexpr (comp == functionspace::interior)
@@ -2886,7 +3243,9 @@ public:
   }
 
   /// @brief Returns the values of the spline objects' basis
-  /// functions in the points `xi`
+  /// functions in the points `xi`.
+  /// @param args Value of `args`.
+  /// @return Result of the operation.
   template <functionspace comp = functionspace::interior,
             deriv deriv = deriv::func, bool memory_optimized = false,
             typename... Args>
@@ -2899,7 +3258,7 @@ public:
 
 private:
   /// @brief Returns the indices of the spline objects'
-  /// coefficients corresponding to the knot indices `indices`
+  /// coefficients corresponding to the knot indices `indices`.
   template <functionspace comp = functionspace::interior,
             bool memory_optimized = false, std::size_t... Is,
             typename Knot_Indices>
@@ -2915,7 +3274,9 @@ private:
 
 public:
   /// @brief Returns the indices of the spline objects'
-  /// coefficients corresponding to the knot indices `indices`
+  /// coefficients corresponding to the knot indices `indices`.
+  /// @param knot_indices Value of `knot_indices`.
+  /// @return Result of the operation.
   template <functionspace comp = functionspace::interior,
             bool memory_optimized = false, typename Knot_Indices>
   inline auto find_coeff_indices(const Knot_Indices &knot_indices) const {
@@ -2939,7 +3300,10 @@ public:
   }
 
   /// @brief Returns the spline objects with uniformly refined
-  /// knot and coefficient vectors
+  /// knot and coefficient vectors.
+  /// @param numRefine Value of `numRefine`.
+  /// @param dimRefine Value of `dimRefine`.
+  /// @return Result of the operation.
   inline auto &uniform_refine(int numRefine = 1, int dimRefine = -1) {
     spline_.uniform_refine(numRefine, dimRefine);
     boundary_.uniform_refine(numRefine, dimRefine);
@@ -2947,7 +3311,10 @@ public:
   }
 
   /// @brief Returns a copy of the function space object with settings from
-  /// options
+  /// options.
+  /// @tparam real_t Template parameter `real_t`.
+  /// @param options Configuration options.
+  /// @return Result of the operation.
   template <typename real_t> inline auto to(Options<real_t> options) const {
     return FunctionSpace<
         typename spline_type::template real_derived_self_type<real_t>,
@@ -2956,12 +3323,16 @@ public:
   }
 
   /// @brief Returns a copy of the function space object with settings from
-  /// device
+  /// device.
+  /// @param device Target device.
+  /// @return Result of the operation.
   inline auto to(torch::Device device) const {
     return FunctionSpace(spline_.to(device), boundary_.to(device));
   }
 
-  /// @brief Returns a copy of the function space object with real_t type
+  /// @brief Returns a copy of the function space object with real_t type.
+  /// @tparam real_t Template parameter `real_t`.
+  /// @return Result of the operation.
   template <typename real_t> inline auto to() const {
     return FunctionSpace<
         typename spline_type::template real_derived_self_type<real_t>,
@@ -2969,35 +3340,48 @@ public:
         spline_.template to<real_t>(), boundary_.template to<real_t>());
   }
 
-  /// @brief Scales the function space object by a scalar
+  /// @brief Scales the function space object by a scalar.
+  /// @param s Value of `s`.
+  /// @param dim Value of `dim`.
+  /// @return Result of the operation.
   inline auto scale(value_type s, int dim = -1) {
     spline_.scale(s, dim);
     boundary_.from_full_tensor(spline_.as_tensor());
     return *this;
   }
 
-  /// @brief Scales the function space object by a vector
+  /// @brief Scales the function space object by a vector.
+  /// @tparam N Template parameter `N`.
+  /// @param v Value of `v`.
+  /// @return Result of the operation.
   template <std::size_t N> inline auto scale(std::array<value_type, N> v) {
     spline_.scale(v);
     boundary_.from_full_tensor(spline_.as_tensor());
     return *this;
   }
 
-  /// @brief Translates the function space object by a vector
+  /// @brief Translates the function space object by a vector.
+  /// @tparam N Template parameter `N`.
+  /// @param v Value of `v`.
+  /// @return Result of the operation.
   template <std::size_t N> inline auto translate(std::array<value_type, N> v) {
     spline_.translate(v);
     boundary_.from_full_tensor(spline_.as_tensor());
     return *this;
   }
 
-  /// @brief Rotates the function space object by an angle in 2d
+  /// @brief Rotates the function space object by an angle in 2d.
+  /// @param angle Value of `angle`.
+  /// @return Result of the operation.
   inline auto rotate(value_type angle) {
     spline_.rotate(angle);
     boundary_.from_full_tensor(spline_.as_tensor());
     return *this;
   }
 
-  /// @brief Rotates the function space object by three angles in 3d
+  /// @brief Rotates the function space object by three angles in 3d.
+  /// @param angle Value of `angle`.
+  /// @return Result of the operation.
   inline auto rotate(std::array<value_type, 3> angle) {
     spline_.rotate(angle);
     boundary_.from_full_tensor(spline_.as_tensor());
@@ -3005,7 +3389,10 @@ public:
   }
 
   /// @brief Writes the function space object into a
-  /// torch::serialize::OutputArchive object
+  /// torch::serialize::OutputArchive object.
+  /// @param archive Serialization archive.
+  /// @param key Serialization key.
+  /// @return Result of the operation.
   inline torch::serialize::OutputArchive &
   write(torch::serialize::OutputArchive &archive,
         const std::string &key = "functionspace") const {
@@ -3015,7 +3402,10 @@ public:
   }
 
   /// @brief Loads the function space object from a
-  /// torch::serialize::InputArchive object
+  /// torch::serialize::InputArchive object.
+  /// @param archive Serialization archive.
+  /// @param key Serialization key.
+  /// @return Result of the operation.
   inline torch::serialize::InputArchive &
   read(torch::serialize::InputArchive &archive,
        const std::string &key = "functionspace") {
@@ -3024,7 +3414,8 @@ public:
     return archive;
   }
 
-  /// @brief Returns a string representation of the function space object
+  /// @brief Returns a string representation of the function space object.
+  /// @param os Output stream.
   inline void pretty_print(std::ostream &os) const noexcept override {
     os << name() << "(\nspline = ";
     spline_.pretty_print(os);
@@ -3202,45 +3593,45 @@ public:                                                                        \
 #undef GENERATE_IEXPR_MACRO
 };
 
-/// Forward declaration
+/// @brief Forward declaration.
 template <typename... Args> struct FunctionSpace_trait;
 
-/// Function space with default boundary
+/// @brief Function space with default boundary.
 template <typename Spline> struct FunctionSpace_trait<Spline> {
   using type = FunctionSpace<Spline, Boundary<Spline>>;
 };
 
-/// Function space with non-default boundary
+/// @brief Function space with non-default boundary.
 template <typename Spline, typename Boundary>
 struct FunctionSpace_trait<Spline, Boundary> {
   using type = FunctionSpace<Spline, Boundary>;
 };
 
-/// Tensor-product function space with default boundary
+/// @brief Tensor-product function space with default boundary.
 template <typename... Splines>
 struct FunctionSpace_trait<std::tuple<Splines...>> {
   using type = FunctionSpace<utils::tuple_cat_t<Splines...>,
                              utils::tuple_cat_t<Boundary<Splines>...>>;
 };
 
-/// Tensor-product function space with non-default boundary
+/// @brief Tensor-product function space with non-default boundary.
 template <typename... Splines, typename... Boundaries>
 struct FunctionSpace_trait<std::tuple<Splines...>, std::tuple<Boundaries...>> {
   using type = FunctionSpace<utils::tuple_cat_t<Splines...>,
                              utils::tuple_cat_t<Boundaries...>>;
 };
 
-/// Function space
+/// @brief Function space.
 ///
-/// This type trait strips away a doubly wrapped function space
+/// This type trait strips away a doubly wrapped function space.
 template <typename Spline, typename Boundary>
 struct FunctionSpace_trait<FunctionSpace<Spline, Boundary>> {
   using type = FunctionSpace_trait<Spline, Boundary>::type;
 };
 
-/// Tensor-product function
+/// @brief Tensor-product function.
 ///
-/// This type trait strips away doubly wrapped function spaces
+/// This type trait strips away doubly wrapped function spaces.
 template <typename... Splines, typename... Boundaries>
 struct FunctionSpace_trait<std::tuple<FunctionSpace<Splines, Boundaries>...>> {
   using type = FunctionSpace_trait<utils::tuple_cat_t<Splines...>,
@@ -3250,15 +3641,21 @@ struct FunctionSpace_trait<std::tuple<FunctionSpace<Splines, Boundaries>...>> {
 } // namespace detail
 
 /// @brief Concept to identify template parameters that are derived from
-/// iganet::details::FunctionSpaceType
+/// iganet::details::FunctionSpaceType.
 template <typename T>
 concept FunctionSpaceType = std::is_base_of_v<detail::FunctionSpaceType, T>;
 
-/// @brief Function space alias
+/// @brief Function space alias.
 template <typename... Args>
 using FunctionSpace = detail::FunctionSpace_trait<Args...>::type;
 
-/// @brief Print (as string) a function space object
+/// @brief Print (as string) a function space object.
+/// @tparam Args Template parameter `Args`.
+/// @tparam Splines Template parameter `Splines`.
+/// @tparam Boundaries Template parameter `Boundaries`.
+/// @param os Output stream.
+/// @param obj Object to process.
+/// @return Result of the operation.
 template <typename Splines, typename Boundaries>
 inline std::ostream &operator<<(std::ostream &os,
                                 const FunctionSpace<Splines, Boundaries> &obj) {
@@ -3266,10 +3663,10 @@ inline std::ostream &operator<<(std::ostream &os,
   return os;
 }
 
-/// @brief Spline function space \f$ S^{\mathbf{p}}_{\mathbf{p}-1}
+/// @brief Spline function space \f$ S^{\mathbf{p}}_{\mathbf{p}-1}.
 /// \f$
 ///
-/// This class implements the function space
+/// This class implements the function space.
 ///
 /// \f[
 /// S^{\mathbf{p}}_{\mathbf{p}-1}
@@ -3278,19 +3675,19 @@ inline std::ostream &operator<<(std::ostream &os,
 /// \f]
 ///
 /// where the superscript \f$ \mathbf{p} \f$ denotes the degrees of
-/// the B-spline basis functions and the subscript \f$ \mathbf{p-1}
+/// the B-spline basis functions and the subscript \f$ \mathbf{p-1}.
 /// \f$ the regularity assuming that the knot vector does not contain
 /// any repeated knots.
 ///
-/// @tparam Spline Type of the spline objects
+/// @tparam Spline Type of the spline objects.
 template <typename Spline> using S = FunctionSpace<Spline>;
 
-/// @brief Taylor-Hood like function space
+/// @brief Taylor-Hood like function space.
 template <typename Spline, short_t = Spline::parDim()> class TH;
 
-/// @brief Taylor-Hood like function space
+/// @brief Taylor-Hood like function space.
 ///
-/// This class implements the Taylor-Hood like function space
+/// This class implements the Taylor-Hood like function space.
 ///
 /// \f[
 /// S^{p_1+1}_{p_1-1} \otimes S^{p_1}_{p_1-1}
@@ -3307,7 +3704,7 @@ class TH<Spline, 1>
                          typename Spline::value_type, Spline::geoDim(),
                          Spline::degree(0)>>> {
 public:
-  /// @brief Base type
+  /// @brief Base type.
   using Base = FunctionSpace<std::tuple<
       typename Spline::template derived_self_type<
           typename Spline::value_type, Spline::geoDim(), Spline::degree(0) + 1>,
@@ -3316,6 +3713,9 @@ public:
 
   /// @brief Constructor
   /// @{
+  /// @param ncoeffs Value of `ncoeffs`.
+  /// @param init Value of `init`.
+  /// @param options Configuration options.
   explicit TH(const std::array<int64_t, 1> &ncoeffs,
               enum init init = init::greville,
               Options<typename Spline::value_type> options =
@@ -3326,6 +3726,10 @@ public:
     Base::template space<0>().reduce_continuity();
   }
 
+  /// @brief Provides the `TH` operation.
+  /// @param kv Value of `kv`.
+  /// @param init Value of `init`.
+  /// @param options Configuration options.
   explicit TH(const std::array<std::vector<typename Spline::value_type>, 1> &kv,
               enum init init = init::greville,
               Options<typename Spline::value_type> options =
@@ -3337,12 +3741,13 @@ public:
   }
   /// @}
 
+  /// @brief Provides the `IGANET_FUNCTIONSPACE_DEFAULT_OPS` operation.
   IGANET_FUNCTIONSPACE_DEFAULT_OPS(TH);
 };
 
-/// @brief Taylor-Hood like function space
+/// @brief Taylor-Hood like function space.
 ///
-/// This class implements the Taylor-Hood like function space
+/// This class implements the Taylor-Hood like function space.
 ///
 /// \f[
 /// S^{p_1+1,p_2+1}_{p_1-1,p_2-1} \otimes
@@ -3364,7 +3769,7 @@ class TH<Spline, 2>
                          typename Spline::value_type, Spline::geoDim(),
                          Spline::degree(0), Spline::degree(1)>>> {
 public:
-  /// @brief Base type
+  /// @brief Base type.
   using Base = FunctionSpace<
       std::tuple<typename Spline::template derived_self_type<
                      typename Spline::value_type, Spline::geoDim(),
@@ -3378,6 +3783,9 @@ public:
 
   /// @brief Constructor
   /// @{
+  /// @param ncoeffs Value of `ncoeffs`.
+  /// @param init Value of `init`.
+  /// @param options Configuration options.
   explicit TH(const std::array<int64_t, 2> &ncoeffs,
               enum init init = init::greville,
               Options<typename Spline::value_type> options =
@@ -3390,6 +3798,10 @@ public:
     Base::template space<1>().reduce_continuity();
   }
 
+  /// @brief Provides the `TH` operation.
+  /// @param kv Value of `kv`.
+  /// @param init Value of `init`.
+  /// @param options Configuration options.
   explicit TH(const std::array<std::vector<typename Spline::value_type>, 2> &kv,
               enum init init = init::greville,
               Options<typename Spline::value_type> options =
@@ -3406,12 +3818,13 @@ public:
   }
   /// @}
 
+  /// @brief Provides the `IGANET_FUNCTIONSPACE_DEFAULT_OPS` operation.
   IGANET_FUNCTIONSPACE_DEFAULT_OPS(TH);
 };
 
-/// @brief Taylor-Hood like function space
+/// @brief Taylor-Hood like function space.
 ///
-/// This class implements the Taylor-Hood like function space
+/// This class implements the Taylor-Hood like function space.
 ///
 /// \f[
 /// S^{p_1+1,p_2+1,p_3+1}_{p_1-1,p_2-1,p_3-1} \otimes
@@ -3440,7 +3853,7 @@ class TH<Spline, 3>
               typename Spline::value_type, Spline::geoDim(), Spline::degree(0),
               Spline::degree(1), Spline::degree(2)>>> {
 public:
-  /// @brief Base type
+  /// @brief Base type.
   using Base = FunctionSpace<std::tuple<
       typename Spline::template derived_self_type<
           typename Spline::value_type, Spline::geoDim(), Spline::degree(0) + 1,
@@ -3457,6 +3870,9 @@ public:
 
   /// @brief Constructor
   /// @{
+  /// @param ncoeffs Value of `ncoeffs`.
+  /// @param init Value of `init`.
+  /// @param options Configuration options.
   explicit TH(const std::array<int64_t, 3> &ncoeffs,
               enum init init = init::greville,
               Options<typename Spline::value_type> options =
@@ -3472,6 +3888,10 @@ public:
     Base::template space<2>().reduce_continuity();
   }
 
+  /// @brief Provides the `TH` operation.
+  /// @param kv Value of `kv`.
+  /// @param init Value of `init`.
+  /// @param options Configuration options.
   explicit TH(const std::array<std::vector<typename Spline::value_type>, 3> &kv,
               enum init init = init::greville,
               Options<typename Spline::value_type> options =
@@ -3494,12 +3914,13 @@ public:
   }
   /// @}
 
+  /// @brief Provides the `IGANET_FUNCTIONSPACE_DEFAULT_OPS` operation.
   IGANET_FUNCTIONSPACE_DEFAULT_OPS(TH);
 };
 
-/// @brief Taylor-Hood like function space
+/// @brief Taylor-Hood like function space.
 ///
-/// This class implements the Taylor-Hood like function space
+/// This class implements the Taylor-Hood like function space.
 ///
 /// \f[
 /// S^{p_1+1,p_2+1,p_3+1,p_4+1}_{p_1-1,p_2-1,p_3-1,p_4-1} \otimes
@@ -3533,7 +3954,7 @@ class TH<Spline, 4>
               typename Spline::value_type, Spline::geoDim(), Spline::degree(0),
               Spline::degree(1), Spline::degree(2), Spline::degree(3)>>> {
 public:
-  /// @brief Base type
+  /// @brief Base type.
   using Base = FunctionSpace<std::tuple<
       typename Spline::template derived_self_type<
           typename Spline::value_type, Spline::geoDim(), Spline::degree(0) + 1,
@@ -3553,6 +3974,9 @@ public:
 
   /// @brief Constructor
   /// @{
+  /// @param ncoeffs Value of `ncoeffs`.
+  /// @param init Value of `init`.
+  /// @param options Configuration options.
   explicit TH(const std::array<int64_t, 4> &ncoeffs,
               enum init init = init::greville,
               Options<typename Spline::value_type> options =
@@ -3570,6 +3994,10 @@ public:
     Base::template space<3>().reduce_continuity();
   }
 
+  /// @brief Provides the `TH` operation.
+  /// @param kv Value of `kv`.
+  /// @param init Value of `init`.
+  /// @param options Configuration options.
   explicit TH(const std::array<std::vector<typename Spline::value_type>, 4> &kv,
               enum init init = init::greville,
               Options<typename Spline::value_type> options =
@@ -3600,15 +4028,16 @@ public:
   }
   /// @}
 
+  /// @brief Provides the `IGANET_FUNCTIONSPACE_DEFAULT_OPS` operation.
   IGANET_FUNCTIONSPACE_DEFAULT_OPS(TH);
 };
 
-/// @brief Nedelec like function space
+/// @brief Nedelec like function space.
 template <typename Spline, short_t = Spline::parDim()> class NE;
 
-/// @brief Nedelec like function space
+/// @brief Nedelec like function space.
 ///
-/// This class implements the Nedelec like function space
+/// This class implements the Nedelec like function space.
 ///
 /// \f[
 /// S^{p_1+1}_{p_1} \otimes S^{p_1}_{p_1-1}
@@ -3625,7 +4054,7 @@ class NE<Spline, 1>
                          typename Spline::value_type, Spline::geoDim(),
                          Spline::degree(0)>>> {
 public:
-  /// @brief Base type
+  /// @brief Base type.
   using Base = FunctionSpace<std::tuple<
       typename Spline::template derived_self_type<
           typename Spline::value_type, Spline::geoDim(), Spline::degree(0) + 1>,
@@ -3634,12 +4063,19 @@ public:
 
   /// @brief Constructor
   /// @{
+  /// @param ncoeffs Value of `ncoeffs`.
+  /// @param init Value of `init`.
+  /// @param options Configuration options.
   explicit NE(const std::array<int64_t, 1> &ncoeffs,
               enum init init = init::greville,
               Options<typename Spline::value_type> options =
                   iganet::Options<typename Spline::value_type>{})
       : Base(ncoeffs + utils::to_array(1_i64), ncoeffs, init, options) {}
 
+  /// @brief Provides the `NE` operation.
+  /// @param kv Value of `kv`.
+  /// @param init Value of `init`.
+  /// @param options Configuration options.
   explicit NE(const std::array<std::vector<typename Spline::value_type>, 1> &kv,
               enum init init = init::greville,
               Options<typename Spline::value_type> options =
@@ -3650,12 +4086,13 @@ public:
   }
   /// @}
 
+  /// @brief Provides the `IGANET_FUNCTIONSPACE_DEFAULT_OPS` operation.
   IGANET_FUNCTIONSPACE_DEFAULT_OPS(NE);
 };
 
-/// @brief Nedelec like function space
+/// @brief Nedelec like function space.
 ///
-/// This class implements the Nedelec like function space
+/// This class implements the Nedelec like function space.
 /// \f[
 /// S^{p_1+1,p_2+1}_{p_1,p_2-1} \otimes
 /// S^{p_1+1,p_2+1}_{p_1-1,p_2} \otimes
@@ -3676,7 +4113,7 @@ class NE<Spline, 2>
                          typename Spline::value_type, Spline::geoDim(),
                          Spline::degree(0), Spline::degree(1)>>> {
 public:
-  /// @brief Base type
+  /// @brief Base type.
   using Base = FunctionSpace<
       std::tuple<typename Spline::template derived_self_type<
                      typename Spline::value_type, Spline::geoDim(),
@@ -3690,6 +4127,9 @@ public:
 
   /// @brief Constructor
   /// @{
+  /// @param ncoeffs Value of `ncoeffs`.
+  /// @param init Value of `init`.
+  /// @param options Configuration options.
   explicit NE(const std::array<int64_t, 2> &ncoeffs,
               enum init init = init::greville,
               Options<typename Spline::value_type> options =
@@ -3702,6 +4142,10 @@ public:
     Base::template space<1>().reduce_continuity(1, 0);
   }
 
+  /// @brief Provides the `NE` operation.
+  /// @param kv Value of `kv`.
+  /// @param init Value of `init`.
+  /// @param options Configuration options.
   explicit NE(const std::array<std::vector<typename Spline::value_type>, 2> &kv,
               enum init init = init::greville,
               Options<typename Spline::value_type> options =
@@ -3714,12 +4158,13 @@ public:
   }
   /// @}
 
+  /// @brief Provides the `IGANET_FUNCTIONSPACE_DEFAULT_OPS` operation.
   IGANET_FUNCTIONSPACE_DEFAULT_OPS(NE);
 };
 
-/// @brief Nedelec like function space
+/// @brief Nedelec like function space.
 ///
-/// This class implements the Nedelec like function space
+/// This class implements the Nedelec like function space.
 ///
 /// \f[
 /// S^{p_1+1,p_2+1,p_3+1}_{p_1,p_2-1,p_3-1} \otimes
@@ -3748,7 +4193,7 @@ class NE<Spline, 3>
               typename Spline::value_type, Spline::geoDim(), Spline::degree(0),
               Spline::degree(1), Spline::degree(2)>>> {
 public:
-  /// @brief Base type
+  /// @brief Base type.
   using Base = FunctionSpace<std::tuple<
       typename Spline::template derived_self_type<
           typename Spline::value_type, Spline::geoDim(), Spline::degree(0) + 1,
@@ -3765,6 +4210,9 @@ public:
 
   /// @brief Constructor
   /// @{
+  /// @param ncoeffs Value of `ncoeffs`.
+  /// @param init Value of `init`.
+  /// @param options Configuration options.
   explicit NE(const std::array<int64_t, 3> &ncoeffs,
               enum init init = init::greville,
               Options<typename Spline::value_type> options =
@@ -3780,6 +4228,10 @@ public:
     Base::template space<2>().reduce_continuity(1, 0).reduce_continuity(1, 1);
   }
 
+  /// @brief Provides the `NE` operation.
+  /// @param kv Value of `kv`.
+  /// @param init Value of `init`.
+  /// @param options Configuration options.
   explicit NE(const std::array<std::vector<typename Spline::value_type>, 3> &kv,
               enum init init = init::greville,
               Options<typename Spline::value_type> options =
@@ -3793,12 +4245,13 @@ public:
   }
   /// @}
 
+  /// @brief Provides the `IGANET_FUNCTIONSPACE_DEFAULT_OPS` operation.
   IGANET_FUNCTIONSPACE_DEFAULT_OPS(NE);
 };
 
-/// @brief Nedelec like function space
+/// @brief Nedelec like function space.
 ///
-/// This class implements the Nedelec like function space
+/// This class implements the Nedelec like function space.
 ///
 /// \f[
 /// S^{p_1+1,p_2+1,p_3+1,p_4+1}_{p_1,p_2-1,p_3-1,p_4-1} \otimes
@@ -3832,7 +4285,7 @@ class NE<Spline, 4>
               typename Spline::value_type, Spline::geoDim(), Spline::degree(0),
               Spline::degree(1), Spline::degree(2), Spline::degree(3)>>> {
 public:
-  /// @brief Base type
+  /// @brief Base type.
   using Base = FunctionSpace<std::tuple<
       typename Spline::template derived_self_type<
           typename Spline::value_type, Spline::geoDim(), Spline::degree(0) + 1,
@@ -3852,6 +4305,9 @@ public:
 
   /// @brief Constructor
   /// @{
+  /// @param ncoeffs Value of `ncoeffs`.
+  /// @param init Value of `init`.
+  /// @param options Configuration options.
   explicit NE(const std::array<int64_t, 4> &ncoeffs,
               enum init init = init::greville,
               Options<typename Spline::value_type> options =
@@ -3881,6 +4337,10 @@ public:
         .reduce_continuity(1, 2);
   }
 
+  /// @brief Provides the `NE` operation.
+  /// @param kv Value of `kv`.
+  /// @param init Value of `init`.
+  /// @param options Configuration options.
   explicit NE(const std::array<std::vector<typename Spline::value_type>,
                                Spline::parDim()> &kv,
               enum init init = init::greville,
@@ -3908,15 +4368,16 @@ public:
   }
   /// @}
 
+  /// @brief Provides the `IGANET_FUNCTIONSPACE_DEFAULT_OPS` operation.
   IGANET_FUNCTIONSPACE_DEFAULT_OPS(NE);
 };
 
-/// @brief Raviart-Thomas like function space
+/// @brief Raviart-Thomas like function space.
 template <typename Spline, short_t = Spline::parDim()> class RT;
 
-/// @brief Raviart-Thomas like function space
+/// @brief Raviart-Thomas like function space.
 ///
-/// This class implements the Raviart-Thomas like function space
+/// This class implements the Raviart-Thomas like function space.
 ///
 /// \f[
 /// S^{p_1+1}_{p_1} \otimes S^{p_1}_{p_1-1}
@@ -3933,7 +4394,7 @@ class RT<Spline, 1>
                          typename Spline::value_type, Spline::geoDim(),
                          Spline::degree(0)>>> {
 public:
-  /// @brief Base type
+  /// @brief Base type.
   using Base = FunctionSpace<std::tuple<
       typename Spline::template derived_self_type<
           typename Spline::value_type, Spline::geoDim(), Spline::degree(0) + 1>,
@@ -3942,12 +4403,19 @@ public:
 
   /// @brief Constructor
   /// @{
+  /// @param ncoeffs Value of `ncoeffs`.
+  /// @param init Value of `init`.
+  /// @param options Configuration options.
   explicit RT(const std::array<int64_t, 1> &ncoeffs,
               enum init init = init::greville,
               Options<typename Spline::value_type> options =
                   iganet::Options<typename Spline::value_type>{})
       : Base(ncoeffs + utils::to_array(1_i64), ncoeffs, init, options) {}
 
+  /// @brief Provides the `RT` operation.
+  /// @param kv Value of `kv`.
+  /// @param init Value of `init`.
+  /// @param options Configuration options.
   explicit RT(const std::array<std::vector<typename Spline::value_type>, 1> &kv,
               enum init init = init::greville,
               Options<typename Spline::value_type> options =
@@ -3959,12 +4427,13 @@ public:
   }
   /// @}
 
+  /// @brief Provides the `IGANET_FUNCTIONSPACE_DEFAULT_OPS` operation.
   IGANET_FUNCTIONSPACE_DEFAULT_OPS(RT);
 };
 
-/// @brief Raviart-Thomas like function space
+/// @brief Raviart-Thomas like function space.
 ///
-/// This class implements the Raviart-Thomas like function space
+/// This class implements the Raviart-Thomas like function space.
 ///
 /// \f[
 /// S^{p_1+1,p_2}_{p_1,p_2-1} \otimes
@@ -3999,6 +4468,9 @@ public:
 
   /// @brief Constructor
   /// @{
+  /// @param ncoeffs Value of `ncoeffs`.
+  /// @param init Value of `init`.
+  /// @param options Configuration options.
   explicit RT(const std::array<int64_t, 2> &ncoeffs,
               enum init init = init::greville,
               Options<typename Spline::value_type> options =
@@ -4006,6 +4478,10 @@ public:
       : Base(ncoeffs + utils::to_array(1_i64, 0_i64),
              ncoeffs + utils::to_array(0_i64, 1_i64), ncoeffs, init, options) {}
 
+  /// @brief Provides the `RT` operation.
+  /// @param kv Value of `kv`.
+  /// @param init Value of `init`.
+  /// @param options Configuration options.
   explicit RT(const std::array<std::vector<typename Spline::value_type>, 2> &kv,
               enum init init = init::greville,
               Options<typename Spline::value_type> options =
@@ -4018,12 +4494,13 @@ public:
   }
   /// @}
 
+  /// @brief Provides the `IGANET_FUNCTIONSPACE_DEFAULT_OPS` operation.
   IGANET_FUNCTIONSPACE_DEFAULT_OPS(RT);
 };
 
-/// @brief Raviart-Thomas like function space
+/// @brief Raviart-Thomas like function space.
 ///
-/// This class implements the Raviart-Thomas like function space
+/// This class implements the Raviart-Thomas like function space.
 ///
 /// \f[
 /// S^{p_1+1,p_2,p_3}_{p_1,p_2-1,p_3-1} \otimes
@@ -4048,7 +4525,7 @@ class RT<Spline, 3>
               typename Spline::value_type, Spline::geoDim(), Spline::degree(0),
               Spline::degree(1), Spline::degree(2)>>> {
 public:
-  /// @brief Base type
+  /// @brief Base type.
   using Base = FunctionSpace<std::tuple<
       typename Spline::template derived_self_type<
           typename Spline::value_type, Spline::geoDim(), Spline::degree(0) + 1,
@@ -4065,6 +4542,9 @@ public:
 
   /// @brief Constructor
   /// @{
+  /// @param ncoeffs Value of `ncoeffs`.
+  /// @param init Value of `init`.
+  /// @param options Configuration options.
   explicit RT(const std::array<int64_t, 3> &ncoeffs,
               enum init init = init::greville,
               Options<typename Spline::value_type> options =
@@ -4074,6 +4554,10 @@ public:
              ncoeffs + utils::to_array(0_i64, 0_i64, 1_i64), ncoeffs, init,
              options) {}
 
+  /// @brief Provides the `RT` operation.
+  /// @param kv Value of `kv`.
+  /// @param init Value of `init`.
+  /// @param options Configuration options.
   explicit RT(const std::array<std::vector<typename Spline::value_type>, 3> &kv,
               enum init init = init::greville,
               Options<typename Spline::value_type> options =
@@ -4087,12 +4571,13 @@ public:
   }
   /// @}
 
+  /// @brief Provides the `IGANET_FUNCTIONSPACE_DEFAULT_OPS` operation.
   IGANET_FUNCTIONSPACE_DEFAULT_OPS(RT);
 };
 
-/// @brief Raviart-Thomas like function space
+/// @brief Raviart-Thomas like function space.
 ///
-/// This class implements the Raviart-Thomas like function space
+/// This class implements the Raviart-Thomas like function space.
 ///
 /// \f[
 /// S^{p_1+1,p_2,p_3,p_4}_{p_1,p_2-1,p_3-1,p_4-1} \otimes
@@ -4123,7 +4608,7 @@ class RT<Spline, 4>
               typename Spline::value_type, Spline::geoDim(), Spline::degree(0),
               Spline::degree(1), Spline::degree(2), Spline::degree(3)>>> {
 public:
-  /// @brief Base type
+  /// @brief Base type.
   using Base = FunctionSpace<std::tuple<
       typename Spline::template derived_self_type<
           typename Spline::value_type, Spline::geoDim(), Spline::degree(0) + 1,
@@ -4143,6 +4628,9 @@ public:
 
   /// @brief Constructor
   /// @{
+  /// @param ncoeffs Value of `ncoeffs`.
+  /// @param init Value of `init`.
+  /// @param options Configuration options.
   explicit RT(const std::array<int64_t, 4> &ncoeffs,
               enum init init = init::greville,
               Options<typename Spline::value_type> options =
@@ -4153,6 +4641,10 @@ public:
              ncoeffs + utils::to_array(0_i64, 0_i64, 0_i64, 1_i64), ncoeffs,
              init, options) {}
 
+  /// @brief Provides the `RT` operation.
+  /// @param kv Value of `kv`.
+  /// @param init Value of `init`.
+  /// @param options Configuration options.
   explicit RT(const std::array<std::vector<typename Spline::value_type>, 4> &kv,
               enum init init = init::greville,
               Options<typename Spline::value_type> options =
@@ -4167,15 +4659,16 @@ public:
   }
   /// @}
 
+  /// @brief Provides the `IGANET_FUNCTIONSPACE_DEFAULT_OPS` operation.
   IGANET_FUNCTIONSPACE_DEFAULT_OPS(RT);
 };
 
-/// @brief H(curl) function space
+/// @brief H(curl) function space.
 template <typename Spline, short_t = Spline::parDim()> class Hcurl;
 
-/// @brief H(curl) function space
+/// @brief H(curl) function space.
 ///
-/// This class implements the H(curl) function space
+/// This class implements the H(curl) function space.
 ///
 /// \f[
 /// S_{p, p+1, p+1} \otimes
@@ -4183,7 +4676,7 @@ template <typename Spline, short_t = Spline::parDim()> class Hcurl;
 /// S_{p+1, p+1, p}
 /// \f]
 ///
-/// in three spatial dimensions
+/// in three spatial dimensions.
 template <typename Spline>
 class Hcurl<Spline, 3>
     : public FunctionSpace<std::tuple<
@@ -4199,7 +4692,7 @@ class Hcurl<Spline, 3>
               Spline::degree(2)>>> {
 
 public:
-  /// @brief Base type
+  /// @brief Base type.
   using Base = FunctionSpace<std::tuple<
       typename Spline::template derived_self_type<
           typename Spline::value_type, Spline::geoDim(), Spline::degree(0),
@@ -4213,6 +4706,9 @@ public:
 
   /// @brief Constructor
   /// @{
+  /// @param ncoeffs Value of `ncoeffs`.
+  /// @param init Value of `init`.
+  /// @param options Configuration options.
   explicit Hcurl(const std::array<int64_t, 3> &ncoeffs,
                  enum init init = init::greville,
                  Options<typename Spline::value_type> options =
@@ -4221,6 +4717,10 @@ public:
              ncoeffs + utils::to_array(0_i64, 1_i64, 0_i64),
              ncoeffs + utils::to_array(0_i64, 0_i64, 1_i64), init, options) {}
 
+  /// @brief Provides the `Hcurl` operation.
+  /// @param kv Value of `kv`.
+  /// @param init Value of `init`.
+  /// @param options Configuration options.
   explicit Hcurl(
       const std::array<std::vector<typename Spline::value_type>, 3> &kv,
       enum init init = init::greville,
@@ -4237,15 +4737,15 @@ public:
   IGANET_FUNCTIONSPACE_DEFAULT_OPS(Hcurl);
 };
 
-/// @brief Nedelec-Raviart-Thomas-$P$ triple function space
+/// @brief Nedelec-Raviart-Thomas-$P$ triple function space.
 template <typename Spline, short_t = Spline::parDim()> class NE_RT_DG;
 
-/// @brief Nedelec-Raviart-Thomas-$P$ triple function space
+/// @brief Nedelec-Raviart-Thomas-$P$ triple function space.
 ///
 /// This class implements the Nedelec-Raviart-Thomas-$P$ triple
 /// function space, which is a de Rham-compatible function space for
 /// the vorticity-velocity-pressure formulation of the Navier-Stokes
-/// equations
+/// equations.
 ///
 /// \f[
 /// S^{p_1+1,p_2+1}_{p_1,p_2} \otimes
@@ -4254,7 +4754,7 @@ template <typename Spline, short_t = Spline::parDim()> class NE_RT_DG;
 /// S^{p_1,p_2}_{p_1-1,p_2-1}
 /// \f]
 ///
-/// in three spatial dimensions
+/// in three spatial dimensions.
 template <typename Spline>
 class NE_RT_DG<Spline, 2>
     : public FunctionSpace<std::tuple<
@@ -4275,7 +4775,7 @@ class NE_RT_DG<Spline, 2>
               Spline::degree(1)>>> {
 
 public:
-  /// @brief Base type
+  /// @brief Base type.
   using Base = FunctionSpace<std::tuple<
       // Vector potential field \f$ H^1(\Omega) \f$
       typename Spline::template derived_self_type<
@@ -4295,6 +4795,9 @@ public:
 
   /// @brief Constructor
   /// @{
+  /// @param ncoeffs Value of `ncoeffs`.
+  /// @param init Value of `init`.
+  /// @param options Configuration options.
   explicit NE_RT_DG(const std::array<int64_t, 2> &ncoeffs,
                     enum init init = init::greville,
                     Options<typename Spline::value_type> options =
@@ -4303,6 +4806,10 @@ public:
              ncoeffs + utils::to_array(1_i64, 0_i64),
              ncoeffs + utils::to_array(0_i64, 1_i64), ncoeffs, init, options) {}
 
+  /// @brief Provides the `NE_RT_DG` operation.
+  /// @param kv Value of `kv`.
+  /// @param init Value of `init`.
+  /// @param options Configuration options.
   explicit NE_RT_DG(
       const std::array<std::vector<typename Spline::value_type>, 2> &kv,
       enum init init = init::greville,
@@ -4320,12 +4827,12 @@ public:
   IGANET_FUNCTIONSPACE_DEFAULT_OPS(NE_RT_DG);
 };
 
-/// @brief Nedelec-Raviart-Thomas-$P$ triple function space
+/// @brief Nedelec-Raviart-Thomas-$P$ triple function space.
 ///
 /// This class implements the Nedelec-Raviart-Thomas-$P$ triple
 /// function space, which is a de Rham-compatible function space for
 /// the vorticity-velocity-pressure formulation of the Navier-Stokes
-/// equations
+/// equations.
 ///
 /// \f[
 /// S^{p_1+1,p_2+1,p_3+1}_{p_1,p_2,p_2} \otimes
@@ -4335,7 +4842,7 @@ public:
 /// S^{p_1,p_2,p_3}_{p_1-1,p_2-1,p_3-1}
 /// \f]
 ///
-/// in three spatial dimensions
+/// in three spatial dimensions.
 template <typename Spline>
 class NE_RT_DG<Spline, 3>
     : public FunctionSpace<std::tuple<
@@ -4360,7 +4867,7 @@ class NE_RT_DG<Spline, 3>
               Spline::degree(1), Spline::degree(2)>>> {
 
 public:
-  /// @brief Base type
+  /// @brief Base type.
   using Base = FunctionSpace<std::tuple<
       // Vector potential field \f$ H^1(\Omega) \f$
       typename Spline::template derived_self_type<
@@ -4383,6 +4890,9 @@ public:
 
   /// @brief Constructor
   /// @{
+  /// @param ncoeffs Value of `ncoeffs`.
+  /// @param init Value of `init`.
+  /// @param options Configuration options.
   explicit NE_RT_DG(const std::array<int64_t, 3> &ncoeffs,
                     enum init init = init::greville,
                     Options<typename Spline::value_type> options =
@@ -4393,6 +4903,10 @@ public:
              ncoeffs + utils::to_array(0_i64, 0_i64, 1_i64), ncoeffs, init,
              options) {}
 
+  /// @brief Provides the `NE_RT_DG` operation.
+  /// @param kv Value of `kv`.
+  /// @param init Value of `init`.
+  /// @param options Configuration options.
   explicit NE_RT_DG(
       const std::array<std::vector<typename Spline::value_type>, 3> &kv,
       enum init init = init::greville,

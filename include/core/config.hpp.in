@@ -1,11 +1,11 @@
 /**
    @file unittests/unittest_config.hpp
 
-   @brief Unit tests compile-time configuration
+   @brief Unit tests compile-time configuration.
 
-   @author Matthias Moller
+   @author Matthias Moller.
 
-   @copyright This file is part of the IgANet project
+   @copyright This file is part of the IgANet project.
 
    This Source Code Form is subject to the terms of the Mozilla Public
    License, v. 2.0. If a copy of the MPL was not distributed with this
@@ -14,26 +14,29 @@
 
 #pragma once
 
-/// @brief IgANet version
+/// @brief IgANet version.
 #define IGANET_VERSION    "@iganet_VERSION@"
+/// @brief Major component of the IgANet version.
 #define IGANET_MAJOR      @iganet_VERSION_MAJOR@
+/// @brief Minor component of the IgANet version.
 #define IGANET_MINOR      @iganet_VERSION_MINOR@
+/// @brief Patch component of the IgANet version.
 #define IGANET_PATCH      @iganet_VERSION_PATCH@
 
-/// @brief Compile with G+Smo enabled
+/// @brief Compile with G+Smo enabled.
 #cmakedefine IGANET_WITH_GISMO
 
-/// @brief Compile with Matplotlib enabled
+/// @brief Compile with Matplotlib enabled.
 #cmakedefine IGANET_WITH_MATPLOT
 
-/// @brief Compile with OpenMP enabled
+/// @brief Compile with OpenMP enabled.
 #cmakedefine IGANET_WITH_OPENMP
 
-/// @brief Compile with MPI enabled
+/// @brief Compile with MPI enabled.
 #cmakedefine IGANET_WITH_MPI
 
-/// @brief Compile with CUDA enabled
+/// @brief Compile with CUDA enabled.
 #cmakedefine IGANET_WITH_CUDA @CUDA_VERSION@
 
-/// @brief Compile with HIP enabled
+/// @brief Compile with HIP enabled.
 #cmakedefine IGANET_WITH_HIP @HIP_VERSION@

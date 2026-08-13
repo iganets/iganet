@@ -1,11 +1,11 @@
 /**
    @file utils/vslice.hpp
 
-   @brief VSlice utility functions
+   @brief VSlice utility functions.
 
-   @author Matthias Moller
+   @author Matthias Moller.
 
-   @copyright This file is part of the IgANet project
+   @copyright This file is part of the IgANet project.
 
    This Source Code Form is subject to the terms of the Mozilla Public
    License, v. 2.0. If a copy of the MPL was not distributed with this
@@ -24,11 +24,11 @@
 namespace iganet::utils {
 
 /// @brief Vectorized version of `torch::indexing::Slice` (see
-/// https://pytorch.org/cppdocs/notes/tensor_indexing.html)
+/// https://pytorch.org/cppdocs/notes/tensor_indexing.html).
 ///
 /// Creates a one-dimensional `torch::Tensor` object of
 /// size `index.numel() * (stop_offset-start_offset)` with the
-/// following content
+/// following content.
 ///
 /// \code
 /// [ index[0]+start_offset,   ..., index[N-1]+start_offset,
@@ -37,11 +37,13 @@ namespace iganet::utils {
 ///   index[0]+stop_offset-1,  ...  index[N-1]+stop_offset-1 ]
 /// \endcode
 ///
-/// @param[in] index        Tensor of indices
+/// @param[in] index        Tensor of indices.
 ///
-/// @param[in] start_offset Starting value of the offset
+/// @param[in] start_offset Starting value of the offset.
 ///
-/// @param[in] stop_offset  Stopping value of the offset
+/// @param[in] stop_offset  Stopping value of the offset.
+/// @tparam transpose Template parameter `transpose`.
+/// @return Result of the operation.
 template <bool transpose = false>
 inline auto VSlice(torch::Tensor index, int64_t start_offset,
                    int64_t stop_offset) {
@@ -62,15 +64,18 @@ inline auto VSlice(torch::Tensor index, int64_t start_offset,
 }
 
 /// @brief Vectorized version of `torch::indexing::Slice` (see
-/// https://pytorch.org/cppdocs/notes/tensor_indexing.html)
+/// https://pytorch.org/cppdocs/notes/tensor_indexing.html).
 ///
-/// @param[in] index        array of tensors of indices
+/// @param[in] index        array of tensors of indices.
 ///
-/// @param[in] start_offset array of starting value of the offset
+/// @param[in] start_offset array of starting value of the offset.
 ///
-/// @param[in] stop_offset  array of stopping value of the offset
+/// @param[in] stop_offset  array of stopping value of the offset.
 ///
-/// @param[in] leading_dim  array of leading dimension
+/// @param[in] leading_dim  array of leading dimension.
+/// @tparam transpose Template parameter `transpose`.
+/// @tparam N Template parameter `N`.
+/// @return Result of the operation.
 template <bool transpose = false, std::size_t N>
 inline auto VSlice(const utils::TensorArray<N> &index,
                    const std::array<int64_t, N> &start_offset,

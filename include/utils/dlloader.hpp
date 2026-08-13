@@ -1,11 +1,11 @@
 /**
    @file utils/dlloader.hpp
 
-   @brief Dynamic library loader
+   @brief Dynamic library loader.
 
-   @author Matthias Moller
+   @author Matthias Moller.
 
-   @copyright This file is part of the IgANet project
+   @copyright This file is part of the IgANet project.
 
    This Source Code Form is subject to the terms of the Mozilla Public
    License, v. 2.0. If a copy of the MPL was not distributed with this
@@ -28,18 +28,20 @@
 
 namespace iganet {
 
-/// @brief Dynamic library handler
+/// @brief Dynamic library handler.
 ///
-/// This class implements the dynamic library handler
+/// This class implements the dynamic library handler.
 class DLHandler {
 public:
-  /// @brief Default constructor deleted
+  /// @brief Default constructor deleted.
   DLHandler() = delete;
   DLHandler(DLHandler &&) = delete;
   DLHandler(const DLHandler &) = delete;
 
   /// @brief Constructor from file
   /// @{
+  /// @param filename Path of the file to process.
+  /// @param flags Value of `flags`.
   explicit DLHandler(const char *filename, int flags = RTLD_NOW) {
 #if defined(_WIN32)
     static_cast<void>(flags);
@@ -57,15 +59,23 @@ public:
 #endif
   }
 
+  /// @brief Provides the `DLHandler` operation.
+  /// @param filename Path of the file to process.
+  /// @param flags Value of `flags`.
   explicit DLHandler(const std::string &filename, int flags = RTLD_NOW)
       : DLHandler(filename.c_str(), flags) {}
 
+  /// @brief Provides the `DLHandler` operation.
+  /// @param filename Path of the file to process.
+  /// @param flags Value of `flags`.
   explicit DLHandler(const std::filesystem::path &filename,
                      int flags = RTLD_NOW)
       : DLHandler(filename.string(), flags) {}
   /// @}
 
-  /// @brief Gets symbol from dynamic library
+  /// @brief Gets symbol from dynamic library.
+  /// @param name Value of `name`.
+  /// @return Result of the operation.
   void *getSymbol(const char *name) const {
     if (!handle)
       throw std::runtime_error(
@@ -84,11 +94,11 @@ public:
     return symbol;
   }
 
-  /// @brief Checks if handle is assigned
+  /// @brief Checks if handle is assigned.
   operator bool() const { return (bool)handle; }
 
 private:
-  /// @brief Handle to dynamic library object
+  /// @brief Handle to dynamic library object.
 #if defined(_WIN32)
   std::shared_ptr<std::remove_pointer<HMODULE>::type> handle;
 #elif defined(__APPLE__) || defined(__linux__) || defined(__unix)
@@ -96,12 +106,12 @@ private:
 #endif
 };
 
-/// @brief Dynamic library loader
+/// @brief Dynamic library loader.
 ///
-/// This class implements the dynamic library loader
+/// This class implements the dynamic library loader.
 class DLLoader : protected utils::FullQualifiedName {
 private:
-  /// @brief List of dynamic libraries
+  /// @brief List of dynamic libraries.
   std::map<std::string, std::shared_ptr<DLHandler>> libraries;
 
 public:

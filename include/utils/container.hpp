@@ -1,11 +1,11 @@
 /**
    @file utils/container.hpp
 
-   @brief Container utility functions
+   @brief Container utility functions.
 
-   @author Matthias Moller
+   @author Matthias Moller.
 
-   @copyright This file is part of the IgANet project
+   @copyright This file is part of the IgANet project.
 
    This Source Code Form is subject to the terms of the Mozilla Public
    License, v. 2.0. If a copy of the MPL was not distributed with this
@@ -22,7 +22,11 @@
 
 namespace iganet::utils {
 
-/// @brief Converts a std::vector object into std::array
+/// @brief Converts a std::vector object into std::array.
+/// @tparam N Template parameter `N`.
+/// @tparam T Template parameter `T`.
+/// @param vector Value of `vector`.
+/// @return Result of the operation.
 template <std::size_t N, typename T>
 inline std::array<T, N> to_array(std::vector<T> &&vector) {
   if (vector.size() != N)
@@ -33,7 +37,11 @@ inline std::array<T, N> to_array(std::vector<T> &&vector) {
   return array;
 }
 
-/// @brief Converts a std::array object into std::vector
+/// @brief Converts a std::array object into std::vector.
+/// @tparam T Template parameter `T`.
+/// @tparam N Template parameter `N`.
+/// @param array Value of `array`.
+/// @return Result of the operation.
 template <typename T, std::size_t N>
 inline std::vector<T> to_vector(std::array<T, N> &&array) {
   std::vector<T> vector(N);
@@ -41,19 +49,31 @@ inline std::vector<T> to_vector(std::array<T, N> &&array) {
   return vector;
 }
 
-/// @brief Converts a list of arguments into std::array
+/// @brief Converts a list of arguments into std::array.
+/// @tparam Args Template parameter `Args`.
+/// @param args Value of `args`.
+/// @return Result of the operation.
 template <typename... Args> inline auto to_array(Args &&...args) {
   return std::array<std::common_type_t<Args...>, sizeof...(Args)>{
       std::move(args)...};
 }
 
-/// @brief Converts a list of arguments into std::vector
+/// @brief Converts a list of arguments into std::vector.
+/// @tparam Args Template parameter `Args`.
+/// @param args Value of `args`.
+/// @return Result of the operation.
 template <typename... Args> inline auto to_vector(Args &&...args) {
   return std::vector<std::common_type_t<Args...>>{std::move(args)...};
 }
 
 /// @brief Converts a std::array to torch::Tensor
 /// @{
+/// @tparam T Template parameter `T`.
+/// @tparam N Template parameter `N`.
+/// @param array Value of `array`.
+/// @param sizes Value of `sizes`.
+/// @param options Configuration options.
+/// @return Result of the operation.
 template <typename T, std::size_t N>
 inline auto
 to_tensor(const std::array<T, N> &array,
@@ -78,6 +98,12 @@ to_tensor(const std::array<T, N> &array,
         .requires_grad_(options.requires_grad());
 }
 
+/// @brief Provides the `to_tensor` operation.
+/// @tparam T Template parameter `T`.
+/// @tparam N Template parameter `N`.
+/// @param array Value of `array`.
+/// @param options Configuration options.
+/// @return Result of the operation.
 template <typename T, std::size_t N>
 inline auto to_tensor(const std::array<T, N> &array,
                       const iganet::Options<T> &options) {
@@ -99,6 +125,11 @@ inline auto to_tensor(const std::array<T, N> &array,
 
 /// @brief Converts a std::initializer_list to torch::Tensor
 /// @{
+/// @tparam T Template parameter `T`.
+/// @param list Value of `list`.
+/// @param sizes Value of `sizes`.
+/// @param options Configuration options.
+/// @return Result of the operation.
 template <typename T>
 inline auto
 to_tensor(std::initializer_list<T> list,
@@ -122,6 +153,11 @@ to_tensor(std::initializer_list<T> list,
         .requires_grad_(options.requires_grad());
 }
 
+/// @brief Provides the `to_tensor` operation.
+/// @tparam T Template parameter `T`.
+/// @param list Value of `list`.
+/// @param options Configuration options.
+/// @return Result of the operation.
 template <typename T>
 inline auto to_tensor(std::initializer_list<T> &list,
                       const iganet::Options<T> &options) {
@@ -143,6 +179,11 @@ inline auto to_tensor(std::initializer_list<T> &list,
 
 /// @brief Converts a std::vector to torch::Tensor
 /// @{
+/// @tparam T Template parameter `T`.
+/// @param vector Value of `vector`.
+/// @param sizes Value of `sizes`.
+/// @param options Configuration options.
+/// @return Result of the operation.
 template <typename T>
 inline auto
 to_tensor(const std::vector<T> &vector,
@@ -167,6 +208,11 @@ to_tensor(const std::vector<T> &vector,
         .requires_grad_(options.requires_grad());
 }
 
+/// @brief Provides the `to_tensor` operation.
+/// @tparam T Template parameter `T`.
+/// @param vector Value of `vector`.
+/// @param options Configuration options.
+/// @return Result of the operation.
 template <typename T>
 inline auto to_tensor(const std::vector<T> &vector,
                       const iganet::Options<T> &options) {
@@ -186,7 +232,11 @@ inline auto to_tensor(const std::vector<T> &vector,
 }
 /// @}
 
-/// @brief Converts a std::array<int64_t, N> to an at::IntArrayRef object
+/// @brief Converts a std::array<int64_t, N> to an at::IntArrayRef object.
+/// @tparam T Template parameter `T`.
+/// @tparam N Template parameter `N`.
+/// @param array Value of `array`.
+/// @return Result of the operation.
 template <typename T, std::size_t N>
 inline auto to_ArrayRef(const std::array<T, N> &array) {
   return at::ArrayRef<T>{array};
@@ -194,6 +244,10 @@ inline auto to_ArrayRef(const std::array<T, N> &array) {
 
 /// @brief Concatenates multiple std::array objects
 /// @{
+/// @tparam T Template parameter `T`.
+/// @tparam N Template parameter `N`.
+/// @param arrays Value of `arrays`.
+/// @return Result of the operation.
 template <typename T, std::size_t... N>
 inline auto concat(const std::array<T, N> &...arrays) {
   std::array<T, (N + ...)> result;
@@ -204,6 +258,11 @@ inline auto concat(const std::array<T, N> &...arrays) {
   return result;
 }
 
+/// @brief Provides the `concat` operation.
+/// @tparam T Template parameter `T`.
+/// @tparam N Template parameter `N`.
+/// @param arrays Value of `arrays`.
+/// @return Result of the operation.
 template <typename T, std::size_t... N>
 inline auto concat(std::array<T, N> &&...arrays) {
   std::array<T, (N + ...)> result;
@@ -220,6 +279,9 @@ inline auto concat(std::array<T, N> &&...arrays) {
 
 /// @brief Concatenates multiple std::vector objects
 /// @{
+/// @tparam Ts Template parameter `Ts`.
+/// @param vectors Value of `vectors`.
+/// @return Result of the operation.
 template <typename... Ts>
 inline auto concat(const std::vector<Ts> &...vectors) {
   std::vector<std::common_type_t<Ts...>> result;
@@ -229,6 +291,10 @@ inline auto concat(const std::vector<Ts> &...vectors) {
   return result;
 }
 
+/// @brief Provides the `concat` operation.
+/// @tparam Ts Template parameter `Ts`.
+/// @param vectors Value of `vectors`.
+/// @return Result of the operation.
 template <typename... Ts> inline auto concat(std::vector<Ts> &&...vectors) {
   std::vector<std::common_type_t<Ts...>> result;
 
@@ -240,7 +306,11 @@ template <typename... Ts> inline auto concat(std::vector<Ts> &&...vectors) {
 }
 /// @}
 
-/// @brief Appends data to a torch::ArrayRef object
+/// @brief Appends data to a torch::ArrayRef object.
+/// @tparam T Template parameter `T`.
+/// @param array Value of `array`.
+/// @param data Value of `data`.
+/// @return Result of the operation.
 template <typename T>
 inline constexpr auto operator+(torch::ArrayRef<T> array, T data) {
   std::vector<T> result{array.vec()};
@@ -248,7 +318,12 @@ inline constexpr auto operator+(torch::ArrayRef<T> array, T data) {
   return result;
 }
 
-/// @brief Appends data to a std::array object
+/// @brief Appends data to a std::array object.
+/// @tparam T Template parameter `T`.
+/// @tparam N Template parameter `N`.
+/// @param array Value of `array`.
+/// @param data Value of `data`.
+/// @return Result of the operation.
 template <typename T, std::size_t N>
 inline constexpr auto operator+(std::array<T, N> array, T data) {
   std::array<T, N + 1> result;
@@ -258,7 +333,11 @@ inline constexpr auto operator+(std::array<T, N> array, T data) {
   return result;
 }
 
-/// @brief Appends data to a std::vector object
+/// @brief Appends data to a std::vector object.
+/// @tparam T Template parameter `T`.
+/// @param vector Value of `vector`.
+/// @param data Value of `data`.
+/// @return Result of the operation.
 template <typename T>
 inline constexpr auto operator+(std::vector<T> vector, T data) {
   std::vector<T> result{vector};
@@ -266,7 +345,11 @@ inline constexpr auto operator+(std::vector<T> vector, T data) {
   return result;
 }
 
-/// @brief Prepends data to a torch::ArrayRef object
+/// @brief Prepends data to a torch::ArrayRef object.
+/// @tparam T Template parameter `T`.
+/// @param data Value of `data`.
+/// @param array Value of `array`.
+/// @return Result of the operation.
 template <typename T>
 inline constexpr auto operator+(T data, torch::ArrayRef<T> array) {
   std::vector<T> result{array.vec()};
@@ -274,7 +357,12 @@ inline constexpr auto operator+(T data, torch::ArrayRef<T> array) {
   return result;
 }
 
-/// @brief Prepends data to a std::array object
+/// @brief Prepends data to a std::array object.
+/// @tparam T Template parameter `T`.
+/// @tparam N Template parameter `N`.
+/// @param data Value of `data`.
+/// @param array Value of `array`.
+/// @return Result of the operation.
 template <typename T, std::size_t N>
 inline constexpr auto operator+(T data, std::array<T, N> array) {
   std::array<T, N + 1> result;
@@ -284,7 +372,11 @@ inline constexpr auto operator+(T data, std::array<T, N> array) {
   return result;
 }
 
-/// @brief Prepends data to a std::vector object
+/// @brief Prepends data to a std::vector object.
+/// @tparam T Template parameter `T`.
+/// @param data Value of `data`.
+/// @param vector Value of `vector`.
+/// @return Result of the operation.
 template <typename T>
 inline constexpr auto operator+(T data, std::vector<T> vector) {
   std::vector<T> result{vector};
@@ -292,14 +384,23 @@ inline constexpr auto operator+(T data, std::vector<T> vector) {
   return result;
 }
 
-/// @brief Creates a std::array object filled with a constant
+/// @brief Creates a std::array object filled with a constant.
+/// @tparam T Template parameter `T`.
+/// @tparam N Template parameter `N`.
+/// @param value Value to process.
+/// @return Result of the operation.
 template <typename T, std::size_t N> inline constexpr auto make_array(T value) {
   std::array<T, N> result;
   result.fill(value);
   return result;
 }
 
-/// @brief Creates a std::array object from another std::array object
+/// @brief Creates a std::array object from another std::array object.
+/// @tparam T Template parameter `T`.
+/// @tparam U Template parameter `U`.
+/// @tparam N Template parameter `N`.
+/// @param array Value of `array`.
+/// @return Result of the operation.
 template <typename T, typename U, std::size_t N>
 inline constexpr std::array<T, N> make_array(std::array<U, N> array) {
   std::array<T, N> result;
@@ -308,7 +409,11 @@ inline constexpr std::array<T, N> make_array(std::array<U, N> array) {
   return result;
 }
 
-/// @brief Negates all entries of a std::array
+/// @brief Negates all entries of a std::array.
+/// @tparam T Template parameter `T`.
+/// @tparam N Template parameter `N`.
+/// @param array Value of `array`.
+/// @return Result of the operation.
 template <typename T, std::size_t N>
 inline constexpr std::array<T, N> operator-(std::array<T, N> array) {
   std::array<T, N> result;
@@ -317,7 +422,12 @@ inline constexpr std::array<T, N> operator-(std::array<T, N> array) {
   return result;
 }
 
-/// @brief Adds two std::arrays
+/// @brief Adds two std::arrays.
+/// @tparam T Template parameter `T`.
+/// @tparam N Template parameter `N`.
+/// @param lhs Left-hand operand.
+/// @param rhs Right-hand operand.
+/// @return Result of the operation.
 template <typename T, std::size_t N>
 inline constexpr std::array<T, N> operator+(std::array<T, N> lhs,
                                             std::array<T, N> rhs) {
@@ -327,7 +437,12 @@ inline constexpr std::array<T, N> operator+(std::array<T, N> lhs,
   return result;
 }
 
-/// @brief Subtracts one std::array from another std::array
+/// @brief Subtracts one std::array from another std::array.
+/// @tparam T Template parameter `T`.
+/// @tparam N Template parameter `N`.
+/// @param lhs Left-hand operand.
+/// @param rhs Right-hand operand.
+/// @return Result of the operation.
 template <typename T, std::size_t N>
 inline constexpr std::array<T, N> operator-(std::array<T, N> lhs,
                                             std::array<T, N> rhs) {
@@ -337,7 +452,12 @@ inline constexpr std::array<T, N> operator-(std::array<T, N> lhs,
   return result;
 }
 
-/// @brief Multiplies two std::arrays
+/// @brief Multiplies two std::arrays.
+/// @tparam T Template parameter `T`.
+/// @tparam N Template parameter `N`.
+/// @param lhs Left-hand operand.
+/// @param rhs Right-hand operand.
+/// @return Result of the operation.
 template <typename T, std::size_t N>
 inline constexpr std::array<T, N> operator*(std::array<T, N> lhs,
                                             std::array<T, N> rhs) {
@@ -347,7 +467,12 @@ inline constexpr std::array<T, N> operator*(std::array<T, N> lhs,
   return result;
 }
 
-/// @brief Divides one std::array by another std::array
+/// @brief Divides one std::array by another std::array.
+/// @tparam T Template parameter `T`.
+/// @tparam N Template parameter `N`.
+/// @param lhs Left-hand operand.
+/// @param rhs Right-hand operand.
+/// @return Result of the operation.
 template <typename T, std::size_t N>
 inline constexpr std::array<T, N> operator/(std::array<T, N> lhs,
                                             std::array<T, N> rhs) {
@@ -358,7 +483,12 @@ inline constexpr std::array<T, N> operator/(std::array<T, N> lhs,
 }
 
 /// @brief Derives a std::array object from a given std::array object dropping
-/// the first M entries
+/// the first M entries.
+/// @tparam T Template parameter `T`.
+/// @tparam N Template parameter `N`.
+/// @tparam M Template parameter `M`.
+/// @param array Value of `array`.
+/// @return Result of the operation.
 template <typename T, std::size_t N, std::size_t M = 1>
 inline constexpr std::array<T, N - M>
 remove_from_front(std::array<T, N> array) {
@@ -370,7 +500,12 @@ remove_from_front(std::array<T, N> array) {
 }
 
 /// @brief Derives a std::array object from a given std::array object dropping
-/// the last M entries
+/// the last M entries.
+/// @tparam T Template parameter `T`.
+/// @tparam N Template parameter `N`.
+/// @tparam M Template parameter `M`.
+/// @param array Value of `array`.
+/// @return Result of the operation.
 template <typename T, std::size_t N, std::size_t M = 1>
 inline constexpr std::array<T, N - M> remove_from_back(std::array<T, N> array) {
 

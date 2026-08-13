@@ -1,11 +1,11 @@
 /**
    @file net/activation.hpp
 
-   @brief Activation functions
+   @brief Activation functions.
 
-   @author Matthias Moller
+   @author Matthias Moller.
 
-   @copyright This file is part of the IgANet project
+   @copyright This file is part of the IgANet project.
 
    This Source Code Form is subject to the terms of the Mozilla Public
    License, v. 2.0. If a copy of the MPL was not distributed with this
@@ -22,7 +22,7 @@
 
 namespace iganet {
 
-/// @brief Enumerator for nonlinear activation functions
+/// @brief Enumerator for nonlinear activation functions.
 enum class activation : short_t {
   none = 0,
   batch_norm = 1,
@@ -61,51 +61,69 @@ enum class activation : short_t {
   threshold = 34
 };
 
-/// @brief Abstract activation function structure
+/// @brief Abstract activation function structure.
 class ActivationFunction : protected utils::FullQualifiedName {
 public:
   ~ActivationFunction() override = default;
 
-  /// @brief Applies the activation function to the given input
-  virtual torch::Tensor apply(const torch::Tensor &) const = 0;
+  /// @brief Applies the activation function to the given input.
+  /// @param input Tensor to which the activation function is applied.
+  /// @return The activated tensor.
+  virtual torch::Tensor apply(const torch::Tensor &input) const = 0;
 
-  /// @brief Returns a string representation of the activation function
+  /// @brief Returns a string representation of the activation function.
+  /// @param os Stream that receives the representation.
   void pretty_print(std::ostream &os) const noexcept override = 0;
 
   /// @brief Writes the activation function into a
-  /// torch::serialize::OutputArchive object
+  /// torch::serialize::OutputArchive object.
+  /// @param archive Output archive that receives the activation state.
+  /// @param key Key prefix under which the state is stored.
+  /// @return A reference to `archive`.
   virtual torch::serialize::OutputArchive &
   write(torch::serialize::OutputArchive &archive,
         const std::string &key) const = 0;
 
   /// @brief Reads the activation function from a torch::serialize::InputArchive
-  /// object
+  /// object.
+  /// @param archive Input archive from which the activation state is read.
+  /// @param key Key prefix under which the state is stored.
+  /// @return A reference to `archive`.
   virtual torch::serialize::InputArchive &
   read(torch::serialize::InputArchive &archive, const std::string &key) = 0;
 };
 
-/// @brief Print (as string) an ActivationFunction object
+/// @brief Print (as string) an ActivationFunction object.
+/// @param os Output stream.
+/// @param obj Object to process.
+/// @return Result of the operation.
 inline std::ostream &operator<<(std::ostream &os,
                                 const ActivationFunction &obj) {
   obj.pretty_print(os);
   return os;
 }
 
-/// @brief No-op activation function
+/// @brief No-op activation function.
 class None : public ActivationFunction {
 public:
-  /// @brief Applies the activation function to the given input
+  /// @brief Applies the activation function to the given input.
+  /// @param input Tensor to which the activation function is applied.
+  /// @return The activated tensor.
   inline torch::Tensor apply(const torch::Tensor &input) const override {
     return input;
   }
 
-  /// @brief Returns a string representation of the activation function
+  /// @brief Returns a string representation of the activation function.
+  /// @param os Stream that receives the representation.
   inline void pretty_print(std::ostream &os) const noexcept override {
     os << utils::FullQualifiedName::name();
   }
 
   /// @brief Writes the activation function into a
-  /// torch::serialize::OutputArchive object
+  /// torch::serialize::OutputArchive object.
+  /// @param archive Output archive that receives the activation state.
+  /// @param key Key prefix under which the state is stored.
+  /// @return A reference to `archive`.
   inline torch::serialize::OutputArchive &
   write(torch::serialize::OutputArchive &archive,
         const std::string &key = "none") const override {
@@ -116,7 +134,10 @@ public:
   }
 
   /// @brief Reads the activation function from a torch::serialize::InputArchive
-  /// object
+  /// object.
+  /// @param archive Input archive from which the activation state is read.
+  /// @param key Key prefix under which the state is stored.
+  /// @return A reference to `archive`.
   inline torch::serialize::InputArchive &
   read(torch::serialize::InputArchive &archive,
        const std::string &key = "none") override {
@@ -130,18 +151,30 @@ public:
   }
 };
 
-/// @brief Batch Normalization as described in the paper
+/// @brief Batch Normalization as described in the paper.
 ///
 /// Batch Normalization: Accelerating Deep Network Training by
 /// Reducing Internal Covariate Shift,
-/// https://arxiv.org/abs/1502.03167
+/// https://arxiv.org/abs/1502.03167.
 class BatchNorm : public ActivationFunction {
 public:
+  /// @brief Provides the `BatchNorm` operation.
+  /// @param running_mean Value of `running_mean`.
+  /// @param running_var Value of `running_var`.
+  /// @param options Configuration options.
   explicit BatchNorm(torch::Tensor running_mean, torch::Tensor running_var,
                      torch::nn::functional::BatchNormFuncOptions options = {})
       : options_(std::move(options)), running_mean_(std::move(running_mean)),
         running_var_(std::move(running_var)) {}
 
+  /// @brief Provides the `BatchNorm` operation.
+  /// @param running_mean Value of `running_mean`.
+  /// @param running_var Value of `running_var`.
+  /// @param weight Value of `weight`.
+  /// @param bias Value of `bias`.
+  /// @param eps Value of `eps`.
+  /// @param momentum Value of `momentum`.
+  /// @param training Value of `training`.
   explicit BatchNorm(torch::Tensor running_mean, torch::Tensor running_var,
                      const torch::Tensor &weight, const torch::Tensor &bias,
                      double eps, double momentum, bool training = false)
@@ -156,35 +189,44 @@ public:
 
   ~BatchNorm() override = default;
 
-  /// @brief Applies the activation function to the given input
+  /// @brief Applies the activation function to the given input.
+  /// @param input Tensor to which the activation function is applied.
+  /// @return The activated tensor.
   inline torch::Tensor apply(const torch::Tensor &input) const override {
     return torch::nn::functional::batch_norm(input, running_mean_, running_var_,
                                              options_);
   }
 
-  /// @brief Returns constant reference to running mean
+  /// @brief Returns constant reference to running mean.
+  /// @return Result of the operation.
   inline const torch::Tensor &running_mean() const { return running_mean_; }
 
-  /// @brief Returns non-constant reference to running mean
+  /// @brief Returns non-constant reference to running mean.
+  /// @return Result of the operation.
   inline torch::Tensor &running_mean() { return running_mean_; }
 
-  /// @brief Returns constant reference to running variance
+  /// @brief Returns constant reference to running variance.
+  /// @return Result of the operation.
   inline const torch::Tensor &running_var() const { return running_var_; }
 
-  /// @brief Returns non-constant reference to running var
+  /// @brief Returns non-constant reference to running var.
+  /// @return Result of the operation.
   inline torch::Tensor &running_var() { return running_var_; }
 
-  /// @brief Returns constant reference to options
+  /// @brief Returns constant reference to options.
+  /// @return Constant reference to the activation options.
   inline const torch::nn::functional::BatchNormFuncOptions &options() const {
     return options_;
   }
 
-  /// @brief Returns non-constant reference to options
+  /// @brief Returns non-constant reference to options.
+  /// @return Mutable reference to the activation options.
   inline torch::nn::functional::BatchNormFuncOptions &options() {
     return options_;
   }
 
-  /// @brief Returns a string representation of the activation function
+  /// @brief Returns a string representation of the activation function.
+  /// @param os Stream that receives the representation.
   inline void pretty_print(std::ostream &os) const noexcept override {
     os << utils::FullQualifiedName::name() << "(\n  eps=" << options_.eps()
        << ", momentum="
@@ -206,7 +248,10 @@ public:
   }
 
   /// @brief Writes the activation function into a
-  /// torch::serialize::OutputArchive object
+  /// torch::serialize::OutputArchive object.
+  /// @param archive Output archive that receives the activation state.
+  /// @param key Key prefix under which the state is stored.
+  /// @return A reference to `archive`.
   inline torch::serialize::OutputArchive &
   write(torch::serialize::OutputArchive &archive,
         const std::string &key = "batch_norm") const override {
@@ -230,7 +275,10 @@ public:
   }
 
   /// @brief Reads the activation function from a torch::serialize::InputArchive
-  /// object
+  /// object.
+  /// @param archive Input archive from which the activation state is read.
+  /// @param key Key prefix under which the state is stored.
+  /// @return A reference to `archive`.
   inline torch::serialize::InputArchive &
   read(torch::serialize::InputArchive &archive,
        const std::string &key = "batch_norm") override {
@@ -260,43 +308,56 @@ private:
 };
 
 /// @brief Continuously Differentiable Exponential Linear Units activation
-/// function
+/// function.
 ///
 /// \f[
 ///     \text{CELU}(x) = \max(0,x) + \min(0, \alpha * (\exp(x/\alpha)-1))
 /// \f]
 class CELU : public ActivationFunction {
 public:
+  /// @brief Provides the `CELU` operation.
+  /// @param options Configuration options.
   explicit CELU(torch::nn::functional::CELUFuncOptions options = {})
       : options_(options) {}
 
+  /// @brief Provides the `CELU` operation.
+  /// @param alpha Scaling factor.
+  /// @param inplace Value of `inplace`.
   explicit CELU(double alpha, bool inplace = false)
       : options_(torch::nn::functional::CELUFuncOptions().alpha(alpha).inplace(
             inplace)) {}
 
   ~CELU() override = default;
 
-  /// @brief Applies the activation function to the given input
+  /// @brief Applies the activation function to the given input.
+  /// @param input Tensor to which the activation function is applied.
+  /// @return The activated tensor.
   inline torch::Tensor apply(const torch::Tensor &input) const override {
     return torch::nn::functional::celu(input, options_);
   }
 
-  /// @brief Returns constant reference to options
+  /// @brief Returns constant reference to options.
+  /// @return Constant reference to the activation options.
   inline const torch::nn::functional::CELUFuncOptions &options() const {
     return options_;
   }
 
-  /// @brief Returns non-constant reference to options
+  /// @brief Returns non-constant reference to options.
+  /// @return Mutable reference to the activation options.
   inline torch::nn::functional::CELUFuncOptions &options() { return options_; }
 
-  /// @brief Returns a string representation of the activation function
+  /// @brief Returns a string representation of the activation function.
+  /// @param os Stream that receives the representation.
   inline void pretty_print(std::ostream &os) const noexcept override {
     os << utils::FullQualifiedName::name() << "(\n  alpha=" << options_.alpha()
        << ", inplace=" << options_.inplace() << "\n)";
   }
 
   /// @brief Writes the activation function into a
-  /// torch::serialize::OutputArchive object
+  /// torch::serialize::OutputArchive object.
+  /// @param archive Output archive that receives the activation state.
+  /// @param key Key prefix under which the state is stored.
+  /// @return A reference to `archive`.
   inline torch::serialize::OutputArchive &
   write(torch::serialize::OutputArchive &archive,
         const std::string &key = "celu") const override {
@@ -311,7 +372,10 @@ public:
   }
 
   /// @brief Reads the activation function from a torch::serialize::InputArchive
-  /// object
+  /// object.
+  /// @param archive Input archive from which the activation state is read.
+  /// @param key Key prefix under which the state is stored.
+  /// @return A reference to `archive`.
   inline torch::serialize::InputArchive &
   read(torch::serialize::InputArchive &archive,
        const std::string &key = "celu") override {
@@ -333,7 +397,7 @@ private:
   torch::nn::functional::CELUFuncOptions options_;
 };
 
-/// @brief Exponential Linear Units activation function
+/// @brief Exponential Linear Units activation function.
 ///
 /// \f[
 ///     \text{ELU}(x) =
@@ -344,29 +408,39 @@ private:
 /// \f]
 class ELU : public ActivationFunction {
 public:
+  /// @brief Provides the `ELU` operation.
+  /// @param options Configuration options.
   explicit ELU(torch::nn::functional::ELUFuncOptions options = {})
       : options_(options) {}
 
+  /// @brief Provides the `ELU` operation.
+  /// @param alpha Scaling factor.
+  /// @param inplace Value of `inplace`.
   explicit ELU(double alpha, bool inplace = false)
       : options_(torch::nn::functional::ELUFuncOptions().alpha(alpha).inplace(
             inplace)) {}
 
   ~ELU() override = default;
 
-  /// @brief Applies the activation function to the given input
+  /// @brief Applies the activation function to the given input.
+  /// @param input Tensor to which the activation function is applied.
+  /// @return The activated tensor.
   inline torch::Tensor apply(const torch::Tensor &input) const override {
     return torch::nn::functional::elu(input, options_);
   }
 
-  /// @brief Returns constant reference to options
+  /// @brief Returns constant reference to options.
+  /// @return Constant reference to the activation options.
   inline const torch::nn::functional::ELUFuncOptions &options() const {
     return options_;
   }
 
-  /// @brief Returns non-constant reference to options
+  /// @brief Returns non-constant reference to options.
+  /// @return Mutable reference to the activation options.
   inline torch::nn::functional::ELUFuncOptions &options() { return options_; }
 
-  /// @brief Returns a string representation of the activation function
+  /// @brief Returns a string representation of the activation function.
+  /// @param os Stream that receives the representation.
   inline void
   pretty_print(std::ostream &os = Log(log::info)) const noexcept override {
     os << utils::FullQualifiedName::name() << "(\n  alpha=" << options_.alpha()
@@ -374,7 +448,10 @@ public:
   }
 
   /// @brief Writes the activation function into a
-  /// torch::serialize::OutputArchive object
+  /// torch::serialize::OutputArchive object.
+  /// @param archive Output archive that receives the activation state.
+  /// @param key Key prefix under which the state is stored.
+  /// @return A reference to `archive`.
   inline torch::serialize::OutputArchive &
   write(torch::serialize::OutputArchive &archive,
         const std::string &key = "elu") const override {
@@ -389,7 +466,10 @@ public:
   }
 
   /// @brief Reads the activation function from a torch::serialize::InputArchive
-  /// object
+  /// object.
+  /// @param archive Input archive from which the activation state is read.
+  /// @param key Key prefix under which the state is stored.
+  /// @return A reference to `archive`.
   inline torch::serialize::InputArchive &
   read(torch::serialize::InputArchive &archive,
        const std::string &key = "elu") override {
@@ -411,32 +491,38 @@ private:
   torch::nn::functional::ELUFuncOptions options_;
 };
 
-/// @brief Gaussian Error Linear Units activation function
+/// @brief Gaussian Error Linear Units activation function.
 ///
 /// \f[
 ///     \text{GELU}(x) = x * \Psi(x),
 /// \f]
 ///
 /// where \f$\Psi(x)\f$ is the Cumulative Distribution Function for
-/// Gaussian Distribution
+/// Gaussian Distribution.
 class GELU : public ActivationFunction {
 public:
   explicit GELU() = default;
 
   ~GELU() override = default;
 
-  /// @brief Applies the activation function to the given input
+  /// @brief Applies the activation function to the given input.
+  /// @param input Tensor to which the activation function is applied.
+  /// @return The activated tensor.
   inline torch::Tensor apply(const torch::Tensor &input) const override {
     return torch::gelu(input);
   }
 
-  /// @brief Returns a string representation of the activation function
+  /// @brief Returns a string representation of the activation function.
+  /// @param os Stream that receives the representation.
   inline void pretty_print(std::ostream &os) const noexcept override {
     os << utils::FullQualifiedName::name();
   }
 
   /// @brief Writes the activation function into a
-  /// torch::serialize::OutputArchive object
+  /// torch::serialize::OutputArchive object.
+  /// @param archive Output archive that receives the activation state.
+  /// @param key Key prefix under which the state is stored.
+  /// @return A reference to `archive`.
   inline torch::serialize::OutputArchive &
   write(torch::serialize::OutputArchive &archive,
         const std::string &key = "gelu") const override {
@@ -447,7 +533,10 @@ public:
   }
 
   /// @brief Reads the activation function from a torch::serialize::InputArchive
-  /// object
+  /// object.
+  /// @param archive Input archive from which the activation state is read.
+  /// @param key Key prefix under which the state is stored.
+  /// @return A reference to `archive`.
   inline torch::serialize::InputArchive &
   read(torch::serialize::InputArchive &archive,
        const std::string &key = "gelu") override {
@@ -461,46 +550,58 @@ public:
   }
 };
 
-/// @brief Grated Linear Units activation function
+/// @brief Grated Linear Units activation function.
 ///
 /// \f[
 ///     \text{GLU}(a,b) = a \otimes \sigma(b),
 /// \f]
 ///
-/// where input is split in half along dim to form \f$ a \f$ and \f$ b \f$,
+/// where input is split in half along dim to form \f$ a \f$ and \f$ b \f$,.
 /// \f$ \sigma \f$ is the sigmoid function and \f$ \otimes \f$
 /// is the element-wise product between matrices.
 class GLU : public ActivationFunction {
 public:
+  /// @brief Provides the `GLU` operation.
+  /// @param options Configuration options.
   explicit GLU(torch::nn::functional::GLUFuncOptions options = {})
       : options_(options) {}
 
+  /// @brief Provides the `GLU` operation.
+  /// @param dim Value of `dim`.
   explicit GLU(int64_t dim)
       : options_(torch::nn::functional::GLUFuncOptions().dim(dim)) {}
 
   ~GLU() override = default;
 
-  /// @brief Applies the activation function to the given input
+  /// @brief Applies the activation function to the given input.
+  /// @param input Tensor to which the activation function is applied.
+  /// @return The activated tensor.
   inline torch::Tensor apply(const torch::Tensor &input) const override {
     return torch::nn::functional::glu(input, options_);
   }
 
-  /// @brief Returns constant reference to options
+  /// @brief Returns constant reference to options.
+  /// @return Constant reference to the activation options.
   inline const torch::nn::functional::GLUFuncOptions &options() const {
     return options_;
   }
 
-  /// @brief Returns non-constant reference to options
+  /// @brief Returns non-constant reference to options.
+  /// @return Mutable reference to the activation options.
   inline torch::nn::functional::GLUFuncOptions &options() { return options_; }
 
-  /// @brief Returns a string representation of the activation function
+  /// @brief Returns a string representation of the activation function.
+  /// @param os Stream that receives the representation.
   inline void pretty_print(std::ostream &os) const noexcept override {
     os << utils::FullQualifiedName::name() << "(\n  dim=" << options_.dim()
        << "\n)";
   }
 
   /// @brief Writes the activation function into a
-  /// torch::serialize::OutputArchive object
+  /// torch::serialize::OutputArchive object.
+  /// @param archive Output archive that receives the activation state.
+  /// @param key Key prefix under which the state is stored.
+  /// @return A reference to `archive`.
   inline torch::serialize::OutputArchive &
   write(torch::serialize::OutputArchive &archive,
         const std::string &key = "glu") const override {
@@ -513,7 +614,10 @@ public:
   }
 
   /// @brief Reads the activation function from a torch::serialize::InputArchive
-  /// object
+  /// object.
+  /// @param archive Input archive from which the activation state is read.
+  /// @param key Key prefix under which the state is stored.
+  /// @return A reference to `archive`.
   inline torch::serialize::InputArchive &
   read(torch::serialize::InputArchive &archive,
        const std::string &key = "glu") override {
@@ -534,15 +638,24 @@ private:
 };
 
 /// @brief Group Normalization over a mini-batch of inputs as described in
-/// the paper Group Normalization, https://arxiv.org/abs/1803.08494
+/// the paper Group Normalization, https://arxiv.org/abs/1803.08494.
 class GroupNorm : public ActivationFunction {
 public:
+  /// @brief Provides the `GroupNorm` operation.
+  /// @param num_groups Value of `num_groups`.
   explicit GroupNorm(int64_t num_groups)
       : options_(torch::nn::functional::GroupNormFuncOptions(num_groups)) {}
 
+  /// @brief Provides the `GroupNorm` operation.
+  /// @param options Configuration options.
   explicit GroupNorm(torch::nn::functional::GroupNormFuncOptions options)
       : options_(std::move(options)) {}
 
+  /// @brief Provides the `GroupNorm` operation.
+  /// @param num_groups Value of `num_groups`.
+  /// @param weight Value of `weight`.
+  /// @param bias Value of `bias`.
+  /// @param eps Value of `eps`.
   explicit GroupNorm(int64_t num_groups, const torch::Tensor &weight,
                      const torch::Tensor &bias, double eps)
       : options_(torch::nn::functional::GroupNormFuncOptions(num_groups)
@@ -552,22 +665,27 @@ public:
 
   ~GroupNorm() override = default;
 
-  /// @brief Applies the activation function to the given input
+  /// @brief Applies the activation function to the given input.
+  /// @param input Tensor to which the activation function is applied.
+  /// @return The activated tensor.
   inline torch::Tensor apply(const torch::Tensor &input) const override {
     return torch::nn::functional::group_norm(input, options_);
   }
 
-  /// @brief Returns constant reference to options
+  /// @brief Returns constant reference to options.
+  /// @return Constant reference to the activation options.
   inline const torch::nn::functional::GroupNormFuncOptions &options() const {
     return options_;
   }
 
-  /// @brief Returns non-constant reference to options
+  /// @brief Returns non-constant reference to options.
+  /// @return Mutable reference to the activation options.
   inline torch::nn::functional::GroupNormFuncOptions &options() {
     return options_;
   }
 
-  /// @brief Returns a string representation of the activation function
+  /// @brief Returns a string representation of the activation function.
+  /// @param os Stream that receives the representation.
   inline void
   pretty_print(std::ostream &os = Log(log::info)) const noexcept override {
     os << utils::FullQualifiedName::name() << "(\n  eps=" << options_.eps();
@@ -581,7 +699,10 @@ public:
   }
 
   /// @brief Writes the activation function into a
-  /// torch::serialize::OutputArchive object
+  /// torch::serialize::OutputArchive object.
+  /// @param archive Output archive that receives the activation state.
+  /// @param key Key prefix under which the state is stored.
+  /// @return A reference to `archive`.
   inline torch::serialize::OutputArchive &
   write(torch::serialize::OutputArchive &archive,
         const std::string &key = "group_norm") const override {
@@ -595,7 +716,10 @@ public:
   }
 
   /// @brief Reads the activation function from a torch::serialize::InputArchive
-  /// object
+  /// object.
+  /// @param archive Input archive from which the activation state is read.
+  /// @param key Key prefix under which the state is stored.
+  /// @return A reference to `archive`.
   inline torch::serialize::InputArchive &
   read(torch::serialize::InputArchive &archive,
        const std::string &key = "group_norm") override {
@@ -617,13 +741,19 @@ private:
   torch::nn::functional::GroupNormFuncOptions options_;
 };
 
-/// @brief Gumbel-Softmax distribution activation function
+/// @brief Gumbel-Softmax distribution activation function.
 class GumbelSoftmax : public ActivationFunction {
 public:
+  /// @brief Provides the `GumbelSoftmax` operation.
+  /// @param options Configuration options.
   explicit GumbelSoftmax(
       torch::nn::functional::GumbelSoftmaxFuncOptions options = {})
       : options_(options) {}
 
+  /// @brief Provides the `GumbelSoftmax` operation.
+  /// @param tau Value of `tau`.
+  /// @param dim Value of `dim`.
+  /// @param hard Value of `hard`.
   explicit GumbelSoftmax(double tau, int dim, bool hard)
       : options_(torch::nn::functional::GumbelSoftmaxFuncOptions()
                      .tau(tau)
@@ -632,23 +762,28 @@ public:
 
   ~GumbelSoftmax() override = default;
 
-  /// @brief Applies the activation function to the given input
+  /// @brief Applies the activation function to the given input.
+  /// @param input Tensor to which the activation function is applied.
+  /// @return The activated tensor.
   inline torch::Tensor apply(const torch::Tensor &input) const override {
     return torch::nn::functional::gumbel_softmax(input, options_);
   }
 
-  /// @brief Returns constant reference to options
+  /// @brief Returns constant reference to options.
+  /// @return Constant reference to the activation options.
   inline const torch::nn::functional::GumbelSoftmaxFuncOptions &
   options() const {
     return options_;
   }
 
-  /// @brief Returns non-constant reference to options
+  /// @brief Returns non-constant reference to options.
+  /// @return Mutable reference to the activation options.
   inline torch::nn::functional::GumbelSoftmaxFuncOptions &options() {
     return options_;
   }
 
-  /// @brief Returns a string representation of the activation function
+  /// @brief Returns a string representation of the activation function.
+  /// @param os Stream that receives the representation.
   inline void
   pretty_print(std::ostream &os = Log(log::info)) const noexcept override {
     os << utils::FullQualifiedName::name() << "(\n  tau=" << options_.tau()
@@ -656,7 +791,10 @@ public:
   }
 
   /// @brief Writes the activation function into a
-  /// torch::serialize::OutputArchive object
+  /// torch::serialize::OutputArchive object.
+  /// @param archive Output archive that receives the activation state.
+  /// @param key Key prefix under which the state is stored.
+  /// @return A reference to `archive`.
   inline torch::serialize::OutputArchive &
   write(torch::serialize::OutputArchive &archive,
         const std::string &key = "gumbel_softmax") const override {
@@ -671,7 +809,10 @@ public:
   }
 
   /// @brief Reads the activation function from a torch::serialize::InputArchive
-  /// object
+  /// object.
+  /// @param archive Input archive from which the activation state is read.
+  /// @param key Key prefix under which the state is stored.
+  /// @return A reference to `archive`.
   inline torch::serialize::InputArchive &
   read(torch::serialize::InputArchive &archive,
        const std::string &key = "gumbel_softmax") override {
@@ -696,34 +837,43 @@ private:
   torch::nn::functional::GumbelSoftmaxFuncOptions options_;
 };
 
-/// @brief Hard shrinkish activation function
+/// @brief Hard shrinkish activation function.
 class Hardshrink : public ActivationFunction {
 public:
+  /// @brief Provides the `Hardshrink` operation.
+  /// @param options Configuration options.
   explicit Hardshrink(torch::nn::functional::HardshrinkFuncOptions options = {})
       : options_(options) {}
 
+  /// @brief Provides the `Hardshrink` operation.
+  /// @param lambda Value of `lambda`.
   explicit Hardshrink(double lambda)
       : options_(
             torch::nn::functional::HardshrinkFuncOptions().lambda(lambda)) {}
 
   ~Hardshrink() override = default;
 
-  /// @brief Applies the activation function to the given input
+  /// @brief Applies the activation function to the given input.
+  /// @param input Tensor to which the activation function is applied.
+  /// @return The activated tensor.
   inline torch::Tensor apply(const torch::Tensor &input) const override {
     return torch::nn::functional::hardshrink(input, options_);
   }
 
-  /// @brief Returns constant reference to options
+  /// @brief Returns constant reference to options.
+  /// @return Constant reference to the activation options.
   inline const torch::nn::functional::HardshrinkFuncOptions &options() const {
     return options_;
   }
 
-  /// @brief Returns non-constant reference to options
+  /// @brief Returns non-constant reference to options.
+  /// @return Mutable reference to the activation options.
   inline torch::nn::functional::HardshrinkFuncOptions &options() {
     return options_;
   }
 
-  /// @brief Returns a string representation of the activation function
+  /// @brief Returns a string representation of the activation function.
+  /// @param os Stream that receives the representation.
   inline void
   pretty_print(std::ostream &os = Log(log::info)) const noexcept override {
     os << utils::FullQualifiedName::name()
@@ -731,7 +881,10 @@ public:
   }
 
   /// @brief Writes the activation function into a
-  /// torch::serialize::OutputArchive object
+  /// torch::serialize::OutputArchive object.
+  /// @param archive Output archive that receives the activation state.
+  /// @param key Key prefix under which the state is stored.
+  /// @return A reference to `archive`.
   inline torch::serialize::OutputArchive &
   write(torch::serialize::OutputArchive &archive,
         const std::string &key = "hardshrink") const override {
@@ -744,7 +897,10 @@ public:
   }
 
   /// @brief Reads the activation function from a torch::serialize::InputArchive
-  /// object
+  /// object.
+  /// @param archive Input archive from which the activation state is read.
+  /// @param key Key prefix under which the state is stored.
+  /// @return A reference to `archive`.
   inline torch::serialize::InputArchive &
   read(torch::serialize::InputArchive &archive,
        const std::string &key = "hardshrink") override {
@@ -764,7 +920,7 @@ private:
   torch::nn::functional::HardshrinkFuncOptions options_;
 };
 
-/// @brief Hardsigmoid activation function
+/// @brief Hardsigmoid activation function.
 ///
 /// \f[
 ///     \text{Hardsigmoid}(x) =
@@ -780,19 +936,25 @@ public:
 
   ~Hardsigmoid() override = default;
 
-  /// @brief Applies the activation function to the given input
+  /// @brief Applies the activation function to the given input.
+  /// @param input Tensor to which the activation function is applied.
+  /// @return The activated tensor.
   inline torch::Tensor apply(const torch::Tensor &input) const override {
     return torch::hardsigmoid(input);
   }
 
-  /// @brief Returns a string representation of the activation function
+  /// @brief Returns a string representation of the activation function.
+  /// @param os Stream that receives the representation.
   inline void
   pretty_print(std::ostream &os = Log(log::info)) const noexcept override {
     os << utils::FullQualifiedName::name();
   }
 
   /// @brief Writes the activation function into a
-  /// torch::serialize::OutputArchive object
+  /// torch::serialize::OutputArchive object.
+  /// @param archive Output archive that receives the activation state.
+  /// @param key Key prefix under which the state is stored.
+  /// @return A reference to `archive`.
   inline torch::serialize::OutputArchive &
   write(torch::serialize::OutputArchive &archive,
         const std::string &key = "hardsigmoid") const override {
@@ -804,7 +966,10 @@ public:
   }
 
   /// @brief Reads the activation function from a torch::serialize::InputArchive
-  /// object
+  /// object.
+  /// @param archive Input archive from which the activation state is read.
+  /// @param key Key prefix under which the state is stored.
+  /// @return A reference to `archive`.
   inline torch::serialize::InputArchive &
   read(torch::serialize::InputArchive &archive,
        const std::string &key = "hardsigmoid") override {
@@ -818,7 +983,7 @@ public:
   }
 };
 
-/// @brief Hardswish activation function
+/// @brief Hardswish activation function.
 ///
 /// \f[
 ///     \text{Hardswish}(x) =
@@ -834,19 +999,25 @@ public:
 
   ~Hardswish() override = default;
 
-  /// @brief Applies the activation function to the given input
+  /// @brief Applies the activation function to the given input.
+  /// @param input Tensor to which the activation function is applied.
+  /// @return The activated tensor.
   inline torch::Tensor apply(const torch::Tensor &input) const override {
     return torch::hardswish(input);
   }
 
-  /// @brief Returns a string representation of the activation function
+  /// @brief Returns a string representation of the activation function.
+  /// @param os Stream that receives the representation.
   inline void
   pretty_print(std::ostream &os = Log(log::info)) const noexcept override {
     os << utils::FullQualifiedName::name();
   }
 
   /// @brief Writes the activation function into a
-  /// torch::serialize::OutputArchive object
+  /// torch::serialize::OutputArchive object.
+  /// @param archive Output archive that receives the activation state.
+  /// @param key Key prefix under which the state is stored.
+  /// @return A reference to `archive`.
   inline torch::serialize::OutputArchive &
   write(torch::serialize::OutputArchive &archive,
         const std::string &key = "hardswish") const override {
@@ -857,7 +1028,10 @@ public:
   }
 
   /// @brief Reads the activation function from a torch::serialize::InputArchive
-  /// object
+  /// object.
+  /// @param archive Input archive from which the activation state is read.
+  /// @param key Key prefix under which the state is stored.
+  /// @return A reference to `archive`.
   inline torch::serialize::InputArchive &
   read(torch::serialize::InputArchive &archive,
        const std::string &key = "hardswish") override {
@@ -871,7 +1045,7 @@ public:
   }
 };
 
-/// @brief Hardtanh activation function
+/// @brief Hardtanh activation function.
 ///
 /// \f[
 ///     \text{Hardtanh}(x) =
@@ -883,10 +1057,16 @@ public:
 /// \f]
 class Hardtanh : public ActivationFunction {
 public:
+  /// @brief Provides the `Hardtanh` operation.
+  /// @param options Configuration options.
   explicit Hardtanh(
       const torch::nn::functional::HardtanhFuncOptions &options = {})
       : options_(options) {}
 
+  /// @brief Provides the `Hardtanh` operation.
+  /// @param min_val Value of `min_val`.
+  /// @param max_val Value of `max_val`.
+  /// @param inplace Value of `inplace`.
   explicit Hardtanh(double min_val, double max_val, bool inplace = false)
       : options_(torch::nn::functional::HardtanhFuncOptions()
                      .min_val(min_val)
@@ -895,22 +1075,27 @@ public:
 
   ~Hardtanh() override = default;
 
-  /// @brief Applies the activation function to the given input
+  /// @brief Applies the activation function to the given input.
+  /// @param input Tensor to which the activation function is applied.
+  /// @return The activated tensor.
   inline torch::Tensor apply(const torch::Tensor &input) const override {
     return torch::nn::functional::hardtanh(input, options_);
   }
 
-  /// @brief Returns constant reference to options
+  /// @brief Returns constant reference to options.
+  /// @return Constant reference to the activation options.
   inline const torch::nn::functional::HardtanhFuncOptions &options() const {
     return options_;
   }
 
-  /// @brief Returns non-constant reference to options
+  /// @brief Returns non-constant reference to options.
+  /// @return Mutable reference to the activation options.
   inline torch::nn::functional::HardtanhFuncOptions &options() {
     return options_;
   }
 
-  /// @brief Returns a string representation of the activation function
+  /// @brief Returns a string representation of the activation function.
+  /// @param os Stream that receives the representation.
   inline void
   pretty_print(std::ostream &os = Log(log::info)) const noexcept override {
     os << utils::FullQualifiedName::name()
@@ -920,7 +1105,10 @@ public:
   }
 
   /// @brief Writes the activation function into a
-  /// torch::serialize::OutputArchive object
+  /// torch::serialize::OutputArchive object.
+  /// @param archive Output archive that receives the activation state.
+  /// @param key Key prefix under which the state is stored.
+  /// @return A reference to `archive`.
   inline torch::serialize::OutputArchive &
   write(torch::serialize::OutputArchive &archive,
         const std::string &key = "hardtanh") const override {
@@ -937,7 +1125,10 @@ public:
   }
 
   /// @brief Reads the activation function from a torch::serialize::InputArchive
-  /// object
+  /// object.
+  /// @param archive Input archive from which the activation state is read.
+  /// @param key Key prefix under which the state is stored.
+  /// @return A reference to `archive`.
   inline torch::serialize::InputArchive &
   read(torch::serialize::InputArchive &archive,
        const std::string &key = "hardtanh") override {
@@ -961,16 +1152,26 @@ private:
   torch::nn::functional::HardtanhFuncOptions options_;
 };
 
-/// @brief Instance Normalization as described in the paper
+/// @brief Instance Normalization as described in the paper.
 ///
 /// Instance Normalization: The Missing Ingredient for Fast
-/// Stylization, https://arxiv.org/abs/1607.08022
+/// Stylization, https://arxiv.org/abs/1607.08022.
 class InstanceNorm : public ActivationFunction {
 public:
+  /// @brief Provides the `InstanceNorm` operation.
+  /// @param options Configuration options.
   explicit InstanceNorm(
       torch::nn::functional::InstanceNormFuncOptions options = {})
       : options_(std::move(options)) {}
 
+  /// @brief Provides the `InstanceNorm` operation.
+  /// @param running_mean Value of `running_mean`.
+  /// @param running_var Value of `running_var`.
+  /// @param weight Value of `weight`.
+  /// @param bias Value of `bias`.
+  /// @param eps Value of `eps`.
+  /// @param momentum Value of `momentum`.
+  /// @param use_input_stats Value of `use_input_stats`.
   explicit InstanceNorm(const torch::Tensor &running_mean,
                         const torch::Tensor &running_var,
                         const torch::Tensor &weight, const torch::Tensor &bias,
@@ -987,22 +1188,27 @@ public:
 
   ~InstanceNorm() override = default;
 
-  /// @brief Applies the activation function to the given input
+  /// @brief Applies the activation function to the given input.
+  /// @param input Tensor to which the activation function is applied.
+  /// @return The activated tensor.
   inline torch::Tensor apply(const torch::Tensor &input) const override {
     return torch::nn::functional::instance_norm(input, options_);
   }
 
-  /// @brief Returns constant reference to options
+  /// @brief Returns constant reference to options.
+  /// @return Constant reference to the activation options.
   inline const torch::nn::functional::InstanceNormFuncOptions &options() const {
     return options_;
   }
 
-  /// @brief Returns non-constant reference to options
+  /// @brief Returns non-constant reference to options.
+  /// @return Mutable reference to the activation options.
   inline torch::nn::functional::InstanceNormFuncOptions &options() {
     return options_;
   }
 
-  /// @brief Returns a string representation of the activation function
+  /// @brief Returns a string representation of the activation function.
+  /// @param os Stream that receives the representation.
   inline void
   pretty_print(std::ostream &os = Log(log::info)) const noexcept override {
     os << utils::FullQualifiedName::name() << "(\n  eps=" << options_.eps()
@@ -1020,7 +1226,10 @@ public:
   }
 
   /// @brief Writes the activation function into a
-  /// torch::serialize::OutputArchive object
+  /// torch::serialize::OutputArchive object.
+  /// @param archive Output archive that receives the activation state.
+  /// @param key Key prefix under which the state is stored.
+  /// @return A reference to `archive`.
   inline torch::serialize::OutputArchive &
   write(torch::serialize::OutputArchive &archive,
         const std::string &key = "instance_norm") const override {
@@ -1041,7 +1250,10 @@ public:
   }
 
   /// @brief Reads the activation function from a torch::serialize::InputArchive
-  /// object
+  /// object.
+  /// @param archive Input archive from which the activation state is read.
+  /// @param key Key prefix under which the state is stored.
+  /// @return A reference to `archive`.
   inline torch::serialize::InputArchive &
   read(torch::serialize::InputArchive &archive,
        const std::string &key = "instance_norm") override {
@@ -1070,18 +1282,27 @@ private:
   torch::nn::functional::InstanceNormFuncOptions options_;
 };
 
-/// @brief Layer Normalization as described in the paper
+/// @brief Layer Normalization as described in the paper.
 ///
-/// Layer Normalization, https://arxiv.org/abs/1607.06450
+/// Layer Normalization, https://arxiv.org/abs/1607.06450.
 class LayerNorm : public ActivationFunction {
 public:
+  /// @brief Provides the `LayerNorm` operation.
+  /// @param normalized_shape Value of `normalized_shape`.
   explicit LayerNorm(std::vector<int64_t> normalized_shape)
       : options_(torch::nn::functional::LayerNormFuncOptions(
             std::move(normalized_shape))) {}
 
+  /// @brief Provides the `LayerNorm` operation.
+  /// @param options Configuration options.
   explicit LayerNorm(torch::nn::functional::LayerNormFuncOptions options)
       : options_(std::move(options)) {}
 
+  /// @brief Provides the `LayerNorm` operation.
+  /// @param normalized_shape Value of `normalized_shape`.
+  /// @param weight Value of `weight`.
+  /// @param bias Value of `bias`.
+  /// @param eps Value of `eps`.
   explicit LayerNorm(std::vector<int64_t> normalized_shape,
                      const torch::Tensor &weight, const torch::Tensor &bias,
                      double eps)
@@ -1093,22 +1314,27 @@ public:
 
   ~LayerNorm() override = default;
 
-  /// @brief Applies the activation function to the given input
+  /// @brief Applies the activation function to the given input.
+  /// @param input Tensor to which the activation function is applied.
+  /// @return The activated tensor.
   inline torch::Tensor apply(const torch::Tensor &input) const override {
     return torch::nn::functional::layer_norm(input, options_);
   }
 
-  /// @brief Returns constant reference to options
+  /// @brief Returns constant reference to options.
+  /// @return Constant reference to the activation options.
   inline const torch::nn::functional::LayerNormFuncOptions &options() const {
     return options_;
   }
 
-  /// @brief Returns non-constant reference to options
+  /// @brief Returns non-constant reference to options.
+  /// @return Mutable reference to the activation options.
   inline torch::nn::functional::LayerNormFuncOptions &options() {
     return options_;
   }
 
-  /// @brief Returns a string representation of the activation function
+  /// @brief Returns a string representation of the activation function.
+  /// @param os Stream that receives the representation.
   inline void pretty_print(std::ostream &os) const noexcept override {
     os << utils::FullQualifiedName::name() << "(\n  eps=" << options_.eps();
 
@@ -1122,7 +1348,10 @@ public:
   }
 
   /// @brief Writes the activation function into a
-  /// torch::serialize::OutputArchive object
+  /// torch::serialize::OutputArchive object.
+  /// @param archive Output archive that receives the activation state.
+  /// @param key Key prefix under which the state is stored.
+  /// @return A reference to `archive`.
   inline torch::serialize::OutputArchive &
   write(torch::serialize::OutputArchive &archive,
         const std::string &key = "layer_norm") const override {
@@ -1136,7 +1365,10 @@ public:
   }
 
   /// @brief Reads the activation function from a torch::serialize::InputArchive
-  /// object
+  /// object.
+  /// @param archive Input archive from which the activation state is read.
+  /// @param key Key prefix under which the state is stored.
+  /// @return A reference to `archive`.
   inline torch::serialize::InputArchive &
   read(torch::serialize::InputArchive &archive,
        const std::string &key = "layer_norm") override {
@@ -1158,7 +1390,7 @@ private:
   torch::nn::functional::LayerNormFuncOptions options_;
 };
 
-/// @brief Leaky ReLU activation function
+/// @brief Leaky ReLU activation function.
 ///
 /// \f[
 ///     \text{LeakyReLU}(x) =
@@ -1169,9 +1401,14 @@ private:
 /// \f]
 class LeakyReLU : public ActivationFunction {
 public:
+  /// @brief Provides the `LeakyReLU` operation.
+  /// @param options Configuration options.
   explicit LeakyReLU(torch::nn::functional::LeakyReLUFuncOptions options = {})
       : options_(options) {}
 
+  /// @brief Provides the `LeakyReLU` operation.
+  /// @param negative_slope Value of `negative_slope`.
+  /// @param inplace Value of `inplace`.
   explicit LeakyReLU(double negative_slope, bool inplace = false)
       : options_(torch::nn::functional::LeakyReLUFuncOptions()
                      .negative_slope(negative_slope)
@@ -1179,22 +1416,27 @@ public:
 
   ~LeakyReLU() override = default;
 
-  /// @brief Applies the activation function to the given input
+  /// @brief Applies the activation function to the given input.
+  /// @param input Tensor to which the activation function is applied.
+  /// @return The activated tensor.
   inline torch::Tensor apply(const torch::Tensor &input) const override {
     return torch::nn::functional::leaky_relu(input, options_);
   }
 
-  /// @brief Returns constant reference to options
+  /// @brief Returns constant reference to options.
+  /// @return Constant reference to the activation options.
   inline const torch::nn::functional::LeakyReLUFuncOptions &options() const {
     return options_;
   }
 
-  /// @brief Returns non-constant reference to options
+  /// @brief Returns non-constant reference to options.
+  /// @return Mutable reference to the activation options.
   inline torch::nn::functional::LeakyReLUFuncOptions &options() {
     return options_;
   }
 
-  /// @brief Returns a string representation of the activation function
+  /// @brief Returns a string representation of the activation function.
+  /// @param os Stream that receives the representation.
   inline void pretty_print(std::ostream &os) const noexcept override {
     os << utils::FullQualifiedName::name()
        << "(\n  negative_slope=" << options_.negative_slope()
@@ -1202,7 +1444,10 @@ public:
   }
 
   /// @brief Writes the activation function into a
-  /// torch::serialize::OutputArchive object
+  /// torch::serialize::OutputArchive object.
+  /// @param archive Output archive that receives the activation state.
+  /// @param key Key prefix under which the state is stored.
+  /// @return A reference to `archive`.
   inline torch::serialize::OutputArchive &
   write(torch::serialize::OutputArchive &archive,
         const std::string &key = "leaky_relu") const override {
@@ -1218,7 +1463,10 @@ public:
   }
 
   /// @brief Reads the activation function from a torch::serialize::InputArchive
-  /// object
+  /// object.
+  /// @param archive Input archive from which the activation state is read.
+  /// @param key Key prefix under which the state is stored.
+  /// @return A reference to `archive`.
   inline torch::serialize::InputArchive &
   read(torch::serialize::InputArchive &archive,
        const std::string &key = "leaky_relu") override {
@@ -1240,16 +1488,25 @@ private:
   torch::nn::functional::LeakyReLUFuncOptions options_;
 };
 
-/// @brief Local response Normalization
+/// @brief Local response Normalization.
 class LocalResponseNorm : public ActivationFunction {
 public:
+  /// @brief Provides the `LocalResponseNorm` operation.
+  /// @param size Value of `size`.
   explicit LocalResponseNorm(int64_t size)
       : options_(torch::nn::functional::LocalResponseNormFuncOptions(size)) {}
 
+  /// @brief Provides the `LocalResponseNorm` operation.
+  /// @param options Configuration options.
   explicit LocalResponseNorm(
       const torch::nn::functional::LocalResponseNormFuncOptions &options)
       : options_(options) {}
 
+  /// @brief Provides the `LocalResponseNorm` operation.
+  /// @param size Value of `size`.
+  /// @param alpha Scaling factor.
+  /// @param beta Value of `beta`.
+  /// @param k Value of `k`.
   explicit LocalResponseNorm(int64_t size, double alpha, double beta, double k)
       : options_(torch::nn::functional::LocalResponseNormFuncOptions(size)
                      .alpha(alpha)
@@ -1258,23 +1515,28 @@ public:
 
   ~LocalResponseNorm() override = default;
 
-  /// @brief Applies the activation function to the given input
+  /// @brief Applies the activation function to the given input.
+  /// @param input Tensor to which the activation function is applied.
+  /// @return The activated tensor.
   inline torch::Tensor apply(const torch::Tensor &input) const override {
     return torch::nn::functional::local_response_norm(input, options_);
   }
 
-  /// @brief Returns constant reference to options
+  /// @brief Returns constant reference to options.
+  /// @return Constant reference to the activation options.
   inline const torch::nn::functional::LocalResponseNormFuncOptions &
   options() const {
     return options_;
   }
 
-  /// @brief Returns non-constant reference to options
+  /// @brief Returns non-constant reference to options.
+  /// @return Mutable reference to the activation options.
   inline torch::nn::functional::LocalResponseNormFuncOptions &options() {
     return options_;
   }
 
-  /// @brief Returns a string representation of the activation function
+  /// @brief Returns a string representation of the activation function.
+  /// @param os Stream that receives the representation.
   inline void pretty_print(std::ostream &os) const noexcept override {
     os << utils::FullQualifiedName::name() << "(\n  size=" << options_.size()
        << ", alpha=" << options_.alpha() << ", beta=" << options_.beta()
@@ -1282,7 +1544,10 @@ public:
   }
 
   /// @brief Writes the activation function into a
-  /// torch::serialize::OutputArchive object
+  /// torch::serialize::OutputArchive object.
+  /// @param archive Output archive that receives the activation state.
+  /// @param key Key prefix under which the state is stored.
+  /// @return A reference to `archive`.
   inline torch::serialize::OutputArchive &
   write(torch::serialize::OutputArchive &archive,
         const std::string &key = "local_response_norm") const override {
@@ -1302,7 +1567,10 @@ public:
   }
 
   /// @brief Reads the activation function from a torch::serialize::InputArchive
-  /// object
+  /// object.
+  /// @param archive Input archive from which the activation state is read.
+  /// @param key Key prefix under which the state is stored.
+  /// @return A reference to `archive`.
   inline torch::serialize::InputArchive &
   read(torch::serialize::InputArchive &archive,
        const std::string &key = "local_response_norm") override {
@@ -1329,7 +1597,7 @@ private:
   torch::nn::functional::LocalResponseNormFuncOptions options_;
 };
 
-/// @brief LogSigmoid activation function
+/// @brief LogSigmoid activation function.
 ///
 /// \f[
 ///     \text{LogSigmoid}(x) = \log \left( \frac{1}{1+\exp(-x)} \right)
@@ -1340,18 +1608,24 @@ public:
 
   ~LogSigmoid() override = default;
 
-  /// @brief Applies the activation function to the given input
+  /// @brief Applies the activation function to the given input.
+  /// @param input Tensor to which the activation function is applied.
+  /// @return The activated tensor.
   inline torch::Tensor apply(const torch::Tensor &input) const override {
     return torch::log_sigmoid(input);
   }
 
-  /// @brief Returns a string representation of the activation function
+  /// @brief Returns a string representation of the activation function.
+  /// @param os Stream that receives the representation.
   inline void pretty_print(std::ostream &os) const noexcept override {
     os << utils::FullQualifiedName::name();
   }
 
   /// @brief Writes the activation function into a
-  /// torch::serialize::OutputArchive object
+  /// torch::serialize::OutputArchive object.
+  /// @param archive Output archive that receives the activation state.
+  /// @param key Key prefix under which the state is stored.
+  /// @return A reference to `archive`.
   inline torch::serialize::OutputArchive &
   write(torch::serialize::OutputArchive &archive,
         const std::string &key = "logsigmoid") const override {
@@ -1362,7 +1636,10 @@ public:
   }
 
   /// @brief Reads the activation function from a torch::serialize::InputArchive
-  /// object
+  /// object.
+  /// @param archive Input archive from which the activation state is read.
+  /// @param key Key prefix under which the state is stored.
+  /// @return A reference to `archive`.
   inline torch::serialize::InputArchive &
   read(torch::serialize::InputArchive &archive,
        const std::string &key = "logsigmoid") override {
@@ -1376,48 +1653,60 @@ public:
   }
 };
 
-/// @brief LogSoftmax activation function
+/// @brief LogSoftmax activation function.
 ///
 /// \f[
 ///     \text{LogSigmoid}(x_i) = \log \left( \frac{\exp(x_i)}{\sum_j \exp(x_j)}
 ///     \right)
 /// \f]
 ///
-/// where \f$ x \f$ is an \f$n\f$-dimensional input tensor
+/// where \f$ x \f$ is an \f$n\f$-dimensional input tensor.
 class LogSoftmax : public ActivationFunction {
 public:
+  /// @brief Provides the `LogSoftmax` operation.
+  /// @param dim Value of `dim`.
   explicit LogSoftmax(int64_t dim)
       : options_(torch::nn::functional::LogSoftmaxFuncOptions(dim)) {}
 
+  /// @brief Provides the `LogSoftmax` operation.
+  /// @param options Configuration options.
   explicit LogSoftmax(
       const torch::nn::functional::LogSoftmaxFuncOptions &options)
       : options_(options) {}
 
   ~LogSoftmax() override = default;
 
-  /// @brief Applies the activation function to the given input
+  /// @brief Applies the activation function to the given input.
+  /// @param input Tensor to which the activation function is applied.
+  /// @return The activated tensor.
   inline torch::Tensor apply(const torch::Tensor &input) const override {
     return torch::nn::functional::log_softmax(input, options_);
   }
 
-  /// @brief Returns constant reference to options
+  /// @brief Returns constant reference to options.
+  /// @return Constant reference to the activation options.
   inline const torch::nn::functional::LogSoftmaxFuncOptions &options() const {
     return options_;
   }
 
-  /// @brief Returns non-constant reference to options
+  /// @brief Returns non-constant reference to options.
+  /// @return Mutable reference to the activation options.
   inline torch::nn::functional::LogSoftmaxFuncOptions &options() {
     return options_;
   }
 
-  /// @brief Returns a string representation of the activation function
+  /// @brief Returns a string representation of the activation function.
+  /// @param os Stream that receives the representation.
   inline void pretty_print(std::ostream &os) const noexcept override {
     os << utils::FullQualifiedName::name() << "(\n  dim=" << options_.dim()
        << "\n)";
   }
 
   /// @brief Writes the activation function into a
-  /// torch::serialize::OutputArchive object
+  /// torch::serialize::OutputArchive object.
+  /// @param archive Output archive that receives the activation state.
+  /// @param key Key prefix under which the state is stored.
+  /// @return A reference to `archive`.
   inline torch::serialize::OutputArchive &
   write(torch::serialize::OutputArchive &archive,
         const std::string &key = "logsoftmax") const override {
@@ -1428,7 +1717,10 @@ public:
   }
 
   /// @brief Reads the activation function from a torch::serialize::InputArchive
-  /// object
+  /// object.
+  /// @param archive Input archive from which the activation state is read.
+  /// @param key Key prefix under which the state is stored.
+  /// @return A reference to `archive`.
   inline torch::serialize::InputArchive &
   read(torch::serialize::InputArchive &archive,
        const std::string &key = "logsoftmax") override {
@@ -1445,7 +1737,7 @@ private:
   torch::nn::functional::LogSoftmaxFuncOptions options_;
 };
 
-/// @brief Mish activation function
+/// @brief Mish activation function.
 ///
 /// \f[
 ///     \text{Mish}(x) = x * \tanh(\text{Softplus}(x))
@@ -1456,18 +1748,24 @@ public:
 
   ~Mish() override = default;
 
-  /// @brief Applies the activation function to the given input
+  /// @brief Applies the activation function to the given input.
+  /// @param input Tensor to which the activation function is applied.
+  /// @return The activated tensor.
   inline torch::Tensor apply(const torch::Tensor &input) const override {
     return torch::mish(input);
   }
 
-  /// @brief Returns a string representation of the activation function
+  /// @brief Returns a string representation of the activation function.
+  /// @param os Stream that receives the representation.
   inline void pretty_print(std::ostream &os) const noexcept override {
     os << utils::FullQualifiedName::name();
   }
 
   /// @brief Writes the activation function into a
-  /// torch::serialize::OutputArchive object
+  /// torch::serialize::OutputArchive object.
+  /// @param archive Output archive that receives the activation state.
+  /// @param key Key prefix under which the state is stored.
+  /// @return A reference to `archive`.
   inline torch::serialize::OutputArchive &
   write(torch::serialize::OutputArchive &archive,
         const std::string &key = "mish") const override {
@@ -1478,7 +1776,10 @@ public:
   }
 
   /// @brief Reads the activation function from a torch::serialize::InputArchive
-  /// object
+  /// object.
+  /// @param archive Input archive from which the activation state is read.
+  /// @param key Key prefix under which the state is stored.
+  /// @return A reference to `archive`.
   inline torch::serialize::InputArchive &
   read(torch::serialize::InputArchive &archive,
        const std::string &key = "mish") override {
@@ -1492,12 +1793,18 @@ public:
   }
 };
 
-/// @brief Lp Normalization
+/// @brief Lp Normalization.
 class Normalize : public ActivationFunction {
 public:
+  /// @brief Provides the `Normalize` operation.
+  /// @param options Configuration options.
   explicit Normalize(torch::nn::functional::NormalizeFuncOptions options = {})
       : options_(std::move(options)) {}
 
+  /// @brief Provides the `Normalize` operation.
+  /// @param p Value of `p`.
+  /// @param eps Value of `eps`.
+  /// @param dim Value of `dim`.
   explicit Normalize(double p, double eps, int64_t dim)
       : options_(
             torch::nn::functional::NormalizeFuncOptions().p(p).eps(eps).dim(
@@ -1505,29 +1812,37 @@ public:
 
   ~Normalize() override = default;
 
-  /// @brief Applies the activation function to the given input
+  /// @brief Applies the activation function to the given input.
+  /// @param input Tensor to which the activation function is applied.
+  /// @return The activated tensor.
   inline torch::Tensor apply(const torch::Tensor &input) const override {
     return torch::nn::functional::normalize(input, options_);
   }
 
-  /// @brief Returns constant reference to options
+  /// @brief Returns constant reference to options.
+  /// @return Constant reference to the activation options.
   inline const torch::nn::functional::NormalizeFuncOptions &options() const {
     return options_;
   }
 
-  /// @brief Returns non-constant reference to options
+  /// @brief Returns non-constant reference to options.
+  /// @return Mutable reference to the activation options.
   inline torch::nn::functional::NormalizeFuncOptions &options() {
     return options_;
   }
 
-  /// @brief Returns a string representation of the activation function
+  /// @brief Returns a string representation of the activation function.
+  /// @param os Stream that receives the representation.
   inline void pretty_print(std::ostream &os) const noexcept override {
     os << utils::FullQualifiedName::name() << "(\n  eps=" << options_.eps()
        << "(\n  p=" << options_.p() << "(\n  dim=" << options_.dim() << "\n)";
   }
 
   /// @brief Writes the activation function into a
-  /// torch::serialize::OutputArchive object
+  /// torch::serialize::OutputArchive object.
+  /// @param archive Output archive that receives the activation state.
+  /// @param key Key prefix under which the state is stored.
+  /// @return A reference to `archive`.
   inline torch::serialize::OutputArchive &
   write(torch::serialize::OutputArchive &archive,
         const std::string &key = "normalize") const override {
@@ -1542,7 +1857,10 @@ public:
   }
 
   /// @brief Reads the activation function from a torch::serialize::InputArchive
-  /// object
+  /// object.
+  /// @param archive Input archive from which the activation state is read.
+  /// @param key Key prefix under which the state is stored.
+  /// @return A reference to `archive`.
   inline torch::serialize::InputArchive &
   read(torch::serialize::InputArchive &archive,
        const std::string &key = "normalize") override {
@@ -1566,25 +1884,32 @@ private:
   torch::nn::functional::NormalizeFuncOptions options_;
 };
 
-/// @brief PReLU activation function
+/// @brief PReLU activation function.
 class PReLU : public ActivationFunction {
 public:
+  /// @brief Provides the `PReLU` operation.
+  /// @param weight Value of `weight`.
   explicit PReLU(torch::Tensor weight) : weight_(std::move(weight)) {}
 
   ~PReLU() override = default;
 
-  /// @brief Returns constant reference to weights
+  /// @brief Returns constant reference to weights.
+  /// @return Result of the operation.
   const torch::Tensor &weight() const { return weight_; }
 
-  /// @brief Returns non-constant reference to weights
+  /// @brief Returns non-constant reference to weights.
+  /// @return Result of the operation.
   torch::Tensor &weight() { return weight_; }
 
-  /// @brief Applies the activation function to the given input
+  /// @brief Applies the activation function to the given input.
+  /// @param input Tensor to which the activation function is applied.
+  /// @return The activated tensor.
   inline torch::Tensor apply(const torch::Tensor &input) const override {
     return torch::nn::functional::prelu(input, weight());
   }
 
-  /// @brief Returns a string representation of the activation function
+  /// @brief Returns a string representation of the activation function.
+  /// @param os Stream that receives the representation.
   inline void pretty_print(std::ostream &os) const noexcept override {
     os << utils::FullQualifiedName::name();
 
@@ -1593,7 +1918,10 @@ public:
   }
 
   /// @brief Writes the activation function into a
-  /// torch::serialize::OutputArchive object
+  /// torch::serialize::OutputArchive object.
+  /// @param archive Output archive that receives the activation state.
+  /// @param key Key prefix under which the state is stored.
+  /// @return A reference to `archive`.
   inline torch::serialize::OutputArchive &
   write(torch::serialize::OutputArchive &archive,
         const std::string &key = "prelu") const override {
@@ -1605,7 +1933,10 @@ public:
   }
 
   /// @brief Reads the activation function from a torch::serialize::InputArchive
-  /// object
+  /// object.
+  /// @param archive Input archive from which the activation state is read.
+  /// @param key Key prefix under which the state is stored.
+  /// @return A reference to `archive`.
   inline torch::serialize::InputArchive &
   read(torch::serialize::InputArchive &archive,
        const std::string &key = "prelu") override {
@@ -1624,42 +1955,54 @@ private:
   torch::Tensor weight_;
 };
 
-/// @brief ReLU activation function
+/// @brief ReLU activation function.
 ///
 /// \f[
 ///     \text{ReLU}(x) = \max(0,x)
 /// \f]
 class ReLU : public ActivationFunction {
 public:
+  /// @brief Provides the `ReLU` operation.
+  /// @param options Configuration options.
   explicit ReLU(torch::nn::functional::ReLUFuncOptions options = {})
       : options_(options) {}
 
+  /// @brief Provides the `ReLU` operation.
+  /// @param inplace Value of `inplace`.
   explicit ReLU(bool inplace)
       : options_(torch::nn::functional::ReLUFuncOptions().inplace(inplace)) {}
 
   ~ReLU() override = default;
 
-  /// @brief Applies the activation function to the given input
+  /// @brief Applies the activation function to the given input.
+  /// @param input Tensor to which the activation function is applied.
+  /// @return The activated tensor.
   inline torch::Tensor apply(const torch::Tensor &input) const override {
     return torch::nn::functional::relu(input, options_);
   }
 
-  /// @brief Returns constant reference to options
+  /// @brief Returns constant reference to options.
+  /// @return Constant reference to the activation options.
   inline const torch::nn::functional::ReLUFuncOptions &options() const {
     return options_;
   }
 
-  /// @brief Returns non-constant reference to options
+  /// @brief Returns non-constant reference to options.
+  /// @return Mutable reference to the activation options.
   inline torch::nn::functional::ReLUFuncOptions &options() { return options_; }
 
-  /// @brief Returns a string representation of the activation function
+  /// @brief Returns a string representation of the activation function.
+  /// @param os Stream that receives the representation.
   inline void pretty_print(std::ostream &os) const noexcept override {
     os << utils::FullQualifiedName::name()
        << "(\n  inplace=" << options_.inplace() << "\n)";
   }
 
   /// @brief Writes the activation function into a
-  /// torch::serialize::OutputArchive object
+  /// torch::serialize::OutputArchive object.
+  /// @param archive Output archive that receives the activation state.
+  /// @param key Key prefix under which the state is stored.
+  /// @return A reference to `archive`.
   inline torch::serialize::OutputArchive &
   write(torch::serialize::OutputArchive &archive,
         const std::string &key = "relu") const override {
@@ -1672,7 +2015,10 @@ public:
   }
 
   /// @brief Reads the activation function from a torch::serialize::InputArchive
-  /// object
+  /// object.
+  /// @param archive Input archive from which the activation state is read.
+  /// @param key Key prefix under which the state is stored.
+  /// @return A reference to `archive`.
   inline torch::serialize::InputArchive &
   read(torch::serialize::InputArchive &archive,
        const std::string &key = "relu") override {
@@ -1692,42 +2038,54 @@ private:
   torch::nn::functional::ReLUFuncOptions options_;
 };
 
-/// @brief ReLU6 activation function
+/// @brief ReLU6 activation function.
 ///
 /// \f[
 ///     \text{ReLU6}(x) = \min(\max(0,x),6)
 /// \f]
 class ReLU6 : public ActivationFunction {
 public:
+  /// @brief Provides the `ReLU6` operation.
+  /// @param options Configuration options.
   explicit ReLU6(torch::nn::functional::ReLU6FuncOptions options = {})
       : options_(options) {}
 
+  /// @brief Provides the `ReLU6` operation.
+  /// @param inplace Value of `inplace`.
   explicit ReLU6(bool inplace)
       : options_(torch::nn::functional::ReLU6FuncOptions().inplace(inplace)) {}
 
   ~ReLU6() override = default;
 
-  /// @brief Applies the activation function to the given input
+  /// @brief Applies the activation function to the given input.
+  /// @param input Tensor to which the activation function is applied.
+  /// @return The activated tensor.
   inline torch::Tensor apply(const torch::Tensor &input) const override {
     return torch::nn::functional::relu6(input, options_);
   }
 
-  /// @brief Returns constant reference to options
+  /// @brief Returns constant reference to options.
+  /// @return Constant reference to the activation options.
   inline const torch::nn::functional::ReLU6FuncOptions &options() const {
     return options_;
   }
 
-  /// @brief Returns non-constant reference to options
+  /// @brief Returns non-constant reference to options.
+  /// @return Mutable reference to the activation options.
   inline torch::nn::functional::ReLU6FuncOptions &options() { return options_; }
 
-  /// @brief Returns a string representation of the activation function
+  /// @brief Returns a string representation of the activation function.
+  /// @param os Stream that receives the representation.
   inline void pretty_print(std::ostream &os) const noexcept override {
     os << utils::FullQualifiedName::name()
        << "(\n  inplace=" << options_.inplace() << "\n)";
   }
 
   /// @brief Writes the activation function into a
-  /// torch::serialize::OutputArchive object
+  /// torch::serialize::OutputArchive object.
+  /// @param archive Output archive that receives the activation state.
+  /// @param key Key prefix under which the state is stored.
+  /// @return A reference to `archive`.
   inline torch::serialize::OutputArchive &
   write(torch::serialize::OutputArchive &archive,
         const std::string &key = "relu6") const override {
@@ -1740,7 +2098,10 @@ public:
   }
 
   /// @brief Reads the activation function from a torch::serialize::InputArchive
-  /// object
+  /// object.
+  /// @param archive Input archive from which the activation state is read.
+  /// @param key Key prefix under which the state is stored.
+  /// @return A reference to `archive`.
   inline torch::serialize::InputArchive &
   read(torch::serialize::InputArchive &archive,
        const std::string &key = "relu6") override {
@@ -1760,7 +2121,7 @@ private:
   torch::nn::functional::ReLU6FuncOptions options_;
 };
 
-/// @brief Randomized ReLU activation function
+/// @brief Randomized ReLU activation function.
 ///
 /// \f[
 ///     \text{RReLU}(x) =
@@ -1771,9 +2132,15 @@ private:
 /// \f]
 class RReLU : public ActivationFunction {
 public:
+  /// @brief Provides the `RReLU` operation.
+  /// @param options Configuration options.
   explicit RReLU(const torch::nn::functional::RReLUFuncOptions &options = {})
       : options_(options) {}
 
+  /// @brief Provides the `RReLU` operation.
+  /// @param lower Value of `lower`.
+  /// @param upper Value of `upper`.
+  /// @param inplace Value of `inplace`.
   explicit RReLU(double lower, double upper, bool inplace = false)
       : options_(torch::nn::functional::RReLUFuncOptions()
                      .lower(lower)
@@ -1782,20 +2149,25 @@ public:
 
   ~RReLU() override = default;
 
-  /// @brief Applies the activation function to the given input
+  /// @brief Applies the activation function to the given input.
+  /// @param input Tensor to which the activation function is applied.
+  /// @return The activated tensor.
   inline torch::Tensor apply(const torch::Tensor &input) const override {
     return torch::nn::functional::rrelu(input, options_);
   }
 
-  /// @brief Returns constant reference to options
+  /// @brief Returns constant reference to options.
+  /// @return Constant reference to the activation options.
   inline const torch::nn::functional::RReLUFuncOptions &options() const {
     return options_;
   }
 
-  /// @brief Returns non-constant reference to options
+  /// @brief Returns non-constant reference to options.
+  /// @return Mutable reference to the activation options.
   inline torch::nn::functional::RReLUFuncOptions &options() { return options_; }
 
-  /// @brief Returns a string representation of the activation function
+  /// @brief Returns a string representation of the activation function.
+  /// @param os Stream that receives the representation.
   inline void pretty_print(std::ostream &os) const noexcept override {
     os << utils::FullQualifiedName::name() << "(\n  lower=" << options_.lower()
        << ",  upper=" << options_.upper() << ",  inplace=" << options_.inplace()
@@ -1803,7 +2175,10 @@ public:
   }
 
   /// @brief Writes the activation function into a
-  /// torch::serialize::OutputArchive object
+  /// torch::serialize::OutputArchive object.
+  /// @param archive Output archive that receives the activation state.
+  /// @param key Key prefix under which the state is stored.
+  /// @return A reference to `archive`.
   inline torch::serialize::OutputArchive &
   write(torch::serialize::OutputArchive &archive,
         const std::string &key = "rrelu") const override {
@@ -1820,7 +2195,10 @@ public:
   }
 
   /// @brief Reads the activation function from a torch::serialize::InputArchive
-  /// object
+  /// object.
+  /// @param archive Input archive from which the activation state is read.
+  /// @param key Key prefix under which the state is stored.
+  /// @return A reference to `archive`.
   inline torch::serialize::InputArchive &
   read(torch::serialize::InputArchive &archive,
        const std::string &key = "rrelu") override {
@@ -1844,45 +2222,57 @@ private:
   torch::nn::functional::RReLUFuncOptions options_;
 };
 
-/// @brief SELU activation function
+/// @brief SELU activation function.
 ///
 /// \f[
 ///     \text{SELU}(x) = s * ( \max(0,x) + \min(0, \alpha*(\exp(x)-1 ) ) )
 /// \f]
 ///
-/// with \f$ s = 1.0507009873554804934193349852946 \f$ and
+/// with \f$ s = 1.0507009873554804934193349852946 \f$ and.
 /// \f$ \alpha = 1.6732632423543772848170429916717 \f$.
 class SELU : public ActivationFunction {
 public:
+  /// @brief Provides the `SELU` operation.
+  /// @param options Configuration options.
   explicit SELU(torch::nn::functional::SELUFuncOptions options = {})
       : options_(options) {}
 
+  /// @brief Provides the `SELU` operation.
+  /// @param inplace Value of `inplace`.
   explicit SELU(bool inplace)
       : options_(torch::nn::functional::SELUFuncOptions().inplace(inplace)) {}
 
   ~SELU() override = default;
 
-  /// @brief Applies the activation function to the given input
+  /// @brief Applies the activation function to the given input.
+  /// @param input Tensor to which the activation function is applied.
+  /// @return The activated tensor.
   inline torch::Tensor apply(const torch::Tensor &input) const override {
     return torch::nn::functional::selu(input, options_);
   }
 
-  /// @brief Returns constant reference to options
+  /// @brief Returns constant reference to options.
+  /// @return Constant reference to the activation options.
   inline const torch::nn::functional::SELUFuncOptions &options() const {
     return options_;
   }
 
-  /// @brief Returns non-constant reference to options
+  /// @brief Returns non-constant reference to options.
+  /// @return Mutable reference to the activation options.
   inline torch::nn::functional::SELUFuncOptions &options() { return options_; }
 
-  /// @brief Returns a string representation of the activation function
+  /// @brief Returns a string representation of the activation function.
+  /// @param os Stream that receives the representation.
   inline void pretty_print(std::ostream &os) const noexcept override {
     os << utils::FullQualifiedName::name()
        << "(\n  inplace=" << options_.inplace() << "\n)";
   }
 
   /// @brief Writes the activation function into a
-  /// torch::serialize::OutputArchive object
+  /// torch::serialize::OutputArchive object.
+  /// @param archive Output archive that receives the activation state.
+  /// @param key Key prefix under which the state is stored.
+  /// @return A reference to `archive`.
   inline torch::serialize::OutputArchive &
   write(torch::serialize::OutputArchive &archive,
         const std::string &key = "selu") const override {
@@ -1895,7 +2285,10 @@ public:
   }
 
   /// @brief Reads the activation function from a torch::serialize::InputArchive
-  /// object
+  /// object.
+  /// @param archive Input archive from which the activation state is read.
+  /// @param key Key prefix under which the state is stored.
+  /// @return A reference to `archive`.
   inline torch::serialize::InputArchive &
   read(torch::serialize::InputArchive &archive,
        const std::string &key = "selu") override {
@@ -1915,25 +2308,31 @@ private:
   torch::nn::functional::SELUFuncOptions options_;
 };
 
-/// @brief Sigmoid activation function
+/// @brief Sigmoid activation function.
 ///
 /// \f[
 ///    \text{Sigmoid}(x) = \sigma(x) = \frac{1}{1+\exp(-x)}
 /// \f]
 class Sigmoid : public ActivationFunction {
 public:
-  /// @brief Applies the activation function to the given input
+  /// @brief Applies the activation function to the given input.
+  /// @param input Tensor to which the activation function is applied.
+  /// @return The activated tensor.
   inline torch::Tensor apply(const torch::Tensor &input) const override {
     return torch::sigmoid(input);
   }
 
-  /// @brief Returns a string representation of the activation function
+  /// @brief Returns a string representation of the activation function.
+  /// @param os Stream that receives the representation.
   inline void pretty_print(std::ostream &os) const noexcept override {
     os << utils::FullQualifiedName::name();
   }
 
   /// @brief Writes the activation function into a
-  /// torch::serialize::OutputArchive object
+  /// torch::serialize::OutputArchive object.
+  /// @param archive Output archive that receives the activation state.
+  /// @param key Key prefix under which the state is stored.
+  /// @return A reference to `archive`.
   inline torch::serialize::OutputArchive &
   write(torch::serialize::OutputArchive &archive,
         const std::string &key = "sigmoid") const override {
@@ -1944,7 +2343,10 @@ public:
   }
 
   /// @brief Reads the activation function from a torch::serialize::InputArchive
-  /// object
+  /// object.
+  /// @param archive Input archive from which the activation state is read.
+  /// @param key Key prefix under which the state is stored.
+  /// @return A reference to `archive`.
   inline torch::serialize::InputArchive &
   read(torch::serialize::InputArchive &archive,
        const std::string &key = "sigmoid") override {
@@ -1958,25 +2360,31 @@ public:
   }
 };
 
-/// @brief Sigmoid Linear Unit activation function
+/// @brief Sigmoid Linear Unit activation function.
 ///
 /// \f[
 ///    \text{SiLU}(x) = x * \sigma(x)
 /// \f]
 class SiLU : public ActivationFunction {
 public:
-  /// @brief Applies the activation function to the given input
+  /// @brief Applies the activation function to the given input.
+  /// @param input Tensor to which the activation function is applied.
+  /// @return The activated tensor.
   inline torch::Tensor apply(const torch::Tensor &input) const override {
     return torch::silu(input);
   }
 
-  /// @brief Returns a string representation of the activation function
+  /// @brief Returns a string representation of the activation function.
+  /// @param os Stream that receives the representation.
   inline void pretty_print(std::ostream &os) const noexcept override {
     os << utils::FullQualifiedName::name();
   }
 
   /// @brief Writes the activation function into a
-  /// torch::serialize::OutputArchive object
+  /// torch::serialize::OutputArchive object.
+  /// @param archive Output archive that receives the activation state.
+  /// @param key Key prefix under which the state is stored.
+  /// @return A reference to `archive`.
   inline torch::serialize::OutputArchive &
   write(torch::serialize::OutputArchive &archive,
         const std::string &key = "silu") const override {
@@ -1987,7 +2395,10 @@ public:
   }
 
   /// @brief Reads the activation function from a torch::serialize::InputArchive
-  /// object
+  /// object.
+  /// @param archive Input archive from which the activation state is read.
+  /// @param key Key prefix under which the state is stored.
+  /// @return A reference to `archive`.
   inline torch::serialize::InputArchive &
   read(torch::serialize::InputArchive &archive,
        const std::string &key = "silu") override {
@@ -2001,46 +2412,58 @@ public:
   }
 };
 
-/// @brief Softmax activation function
+/// @brief Softmax activation function.
 ///
 /// \f[
 ///     \text{Softmax}(x_i) = \frac{\exp(x_i)}{\sum_j \exp(x_j)}
 /// \f]
 ///
-/// where \f$ x \f$ is an \f$n\f$-dimensional input tensor
+/// where \f$ x \f$ is an \f$n\f$-dimensional input tensor.
 class Softmax : public ActivationFunction {
 public:
+  /// @brief Provides the `Softmax` operation.
+  /// @param dim Value of `dim`.
   explicit Softmax(int64_t dim)
       : options_(torch::nn::functional::SoftmaxFuncOptions(dim)) {}
 
+  /// @brief Provides the `Softmax` operation.
+  /// @param options Configuration options.
   explicit Softmax(const torch::nn::functional::SoftmaxFuncOptions &options)
       : options_(options) {}
 
   ~Softmax() override = default;
 
-  /// @brief Applies the activation function to the given input
+  /// @brief Applies the activation function to the given input.
+  /// @param input Tensor to which the activation function is applied.
+  /// @return The activated tensor.
   inline torch::Tensor apply(const torch::Tensor &input) const override {
     return torch::nn::functional::softmax(input, options_);
   }
 
-  /// @brief Returns constant reference to options
+  /// @brief Returns constant reference to options.
+  /// @return Constant reference to the activation options.
   inline const torch::nn::functional::SoftmaxFuncOptions &options() const {
     return options_;
   }
 
-  /// @brief Returns non-constant reference to options
+  /// @brief Returns non-constant reference to options.
+  /// @return Mutable reference to the activation options.
   inline torch::nn::functional::SoftmaxFuncOptions &options() {
     return options_;
   }
 
-  /// @brief Returns a string representation of the activation function
+  /// @brief Returns a string representation of the activation function.
+  /// @param os Stream that receives the representation.
   inline void pretty_print(std::ostream &os) const noexcept override {
     os << utils::FullQualifiedName::name() << "(\n  dim=" << options_.dim()
        << "\n)";
   }
 
   /// @brief Writes the activation function into a
-  /// torch::serialize::OutputArchive object
+  /// torch::serialize::OutputArchive object.
+  /// @param archive Output archive that receives the activation state.
+  /// @param key Key prefix under which the state is stored.
+  /// @return A reference to `archive`.
   inline torch::serialize::OutputArchive &
   write(torch::serialize::OutputArchive &archive,
         const std::string &key = "softmax") const override {
@@ -2053,7 +2476,10 @@ public:
   }
 
   /// @brief Reads the activation function from a torch::serialize::InputArchive
-  /// object
+  /// object.
+  /// @param archive Input archive from which the activation state is read.
+  /// @param key Key prefix under which the state is stored.
+  /// @return A reference to `archive`.
   inline torch::serialize::InputArchive &
   read(torch::serialize::InputArchive &archive,
        const std::string &key = "softmax") override {
@@ -2073,44 +2499,56 @@ private:
   torch::nn::functional::SoftmaxFuncOptions options_;
 };
 
-/// @brief Softmin activation function
+/// @brief Softmin activation function.
 ///
 /// \f[
 ///     \text{Softmin}(x) = \text{Softmax}(-x)
 /// \f]
 class Softmin : public ActivationFunction {
 public:
+  /// @brief Provides the `Softmin` operation.
+  /// @param dim Value of `dim`.
   explicit Softmin(int64_t dim)
       : options_(torch::nn::functional::SoftminFuncOptions(dim)) {}
 
+  /// @brief Provides the `Softmin` operation.
+  /// @param options Configuration options.
   explicit Softmin(const torch::nn::functional::SoftminFuncOptions &options)
       : options_(options) {}
 
   ~Softmin() override = default;
 
-  /// @brief Applies the activation function to the given input
+  /// @brief Applies the activation function to the given input.
+  /// @param input Tensor to which the activation function is applied.
+  /// @return The activated tensor.
   inline torch::Tensor apply(const torch::Tensor &input) const override {
     return torch::nn::functional::softmin(input, options_);
   }
 
-  /// @brief Returns constant reference to options
+  /// @brief Returns constant reference to options.
+  /// @return Constant reference to the activation options.
   inline const torch::nn::functional::SoftminFuncOptions &options() const {
     return options_;
   }
 
-  /// @brief Returns non-constant reference to options
+  /// @brief Returns non-constant reference to options.
+  /// @return Mutable reference to the activation options.
   inline torch::nn::functional::SoftminFuncOptions &options() {
     return options_;
   }
 
-  /// @brief Returns a string representation of the activation function
+  /// @brief Returns a string representation of the activation function.
+  /// @param os Stream that receives the representation.
   inline void pretty_print(std::ostream &os) const noexcept override {
     os << utils::FullQualifiedName::name() << "(\n  dim=" << options_.dim()
        << "\n)";
   }
 
   /// @brief Writes the activation function into a
-  /// torch::serialize::OutputArchive object
+  /// torch::serialize::OutputArchive object.
+  /// @param archive Output archive that receives the activation state.
+  /// @param key Key prefix under which the state is stored.
+  /// @return A reference to `archive`.
   inline torch::serialize::OutputArchive &
   write(torch::serialize::OutputArchive &archive,
         const std::string &key = "softmin") const override {
@@ -2123,7 +2561,10 @@ public:
   }
 
   /// @brief Reads the activation function from a torch::serialize::InputArchive
-  /// object
+  /// object.
+  /// @param archive Input archive from which the activation state is read.
+  /// @param key Key prefix under which the state is stored.
+  /// @return A reference to `archive`.
   inline torch::serialize::InputArchive &
   read(torch::serialize::InputArchive &archive,
        const std::string &key = "softmin") override {
@@ -2143,16 +2584,21 @@ private:
   torch::nn::functional::SoftminFuncOptions options_;
 };
 
-/// @brief Softplus activation function
+/// @brief Softplus activation function.
 ///
 /// \f[
 ///     \text{Softplus}(x) = \frac{1}{\beta} * \log( 1+\exp(\beta * x) )
 /// \f]
 class Softplus : public ActivationFunction {
 public:
+  /// @brief Provides the `Softplus` operation.
+  /// @param options Configuration options.
   explicit Softplus(torch::nn::functional::SoftplusFuncOptions options = {})
       : options_(options) {}
 
+  /// @brief Provides the `Softplus` operation.
+  /// @param beta Value of `beta`.
+  /// @param threshold Value of `threshold`.
   explicit Softplus(double beta, double threshold)
       : options_(
             torch::nn::functional::SoftplusFuncOptions().beta(beta).threshold(
@@ -2160,29 +2606,37 @@ public:
 
   ~Softplus() override = default;
 
-  /// @brief Applies the activation function to the given input
+  /// @brief Applies the activation function to the given input.
+  /// @param input Tensor to which the activation function is applied.
+  /// @return The activated tensor.
   inline torch::Tensor apply(const torch::Tensor &input) const override {
     return torch::nn::functional::softplus(input, options_);
   }
 
-  /// @brief Returns constant reference to options
+  /// @brief Returns constant reference to options.
+  /// @return Constant reference to the activation options.
   inline const torch::nn::functional::SoftplusFuncOptions &options() const {
     return options_;
   }
 
-  /// @brief Returns non-constant reference to options
+  /// @brief Returns non-constant reference to options.
+  /// @return Mutable reference to the activation options.
   inline torch::nn::functional::SoftplusFuncOptions &options() {
     return options_;
   }
 
-  /// @brief Returns a string representation of the activation function
+  /// @brief Returns a string representation of the activation function.
+  /// @param os Stream that receives the representation.
   inline void pretty_print(std::ostream &os) const noexcept override {
     os << utils::FullQualifiedName::name() << "(\n  beta=" << options_.beta()
        << ",  theshold=" << options_.threshold() << "\n)";
   }
 
   /// @brief Writes the activation function into a
-  /// torch::serialize::OutputArchive object
+  /// torch::serialize::OutputArchive object.
+  /// @param archive Output archive that receives the activation state.
+  /// @param key Key prefix under which the state is stored.
+  /// @return A reference to `archive`.
   inline torch::serialize::OutputArchive &
   write(torch::serialize::OutputArchive &archive,
         const std::string &key = "softplus") const override {
@@ -2197,7 +2651,10 @@ public:
   }
 
   /// @brief Reads the activation function from a torch::serialize::InputArchive
-  /// object
+  /// object.
+  /// @param archive Input archive from which the activation state is read.
+  /// @param key Key prefix under which the state is stored.
+  /// @return A reference to `archive`.
   inline torch::serialize::InputArchive &
   read(torch::serialize::InputArchive &archive,
        const std::string &key = "softplus") override {
@@ -2219,7 +2676,7 @@ private:
   torch::nn::functional::SoftplusFuncOptions options_;
 };
 
-/// @brief Softshrink activation function
+/// @brief Softshrink activation function.
 ///
 /// \f[
 ///     \text{Softshrink}(x) =
@@ -2231,38 +2688,50 @@ private:
 /// \f]
 class Softshrink : public ActivationFunction {
 public:
+  /// @brief Provides the `Softshrink` operation.
+  /// @param options Configuration options.
   explicit Softshrink(torch::nn::functional::SoftshrinkFuncOptions options = {})
       : options_(options) {}
 
+  /// @brief Provides the `Softshrink` operation.
+  /// @param lambda Value of `lambda`.
   explicit Softshrink(double lambda)
       : options_(
             torch::nn::functional::SoftshrinkFuncOptions().lambda(lambda)) {}
 
   ~Softshrink() override = default;
 
-  /// @brief Applies the activation function to the given input
+  /// @brief Applies the activation function to the given input.
+  /// @param input Tensor to which the activation function is applied.
+  /// @return The activated tensor.
   inline torch::Tensor apply(const torch::Tensor &input) const override {
     return torch::nn::functional::softshrink(input, options_);
   }
 
-  /// @brief Returns constant reference to options
+  /// @brief Returns constant reference to options.
+  /// @return Constant reference to the activation options.
   inline const torch::nn::functional::SoftshrinkFuncOptions &options() const {
     return options_;
   }
 
-  /// @brief Returns non-constant reference to options
+  /// @brief Returns non-constant reference to options.
+  /// @return Mutable reference to the activation options.
   inline torch::nn::functional::SoftshrinkFuncOptions &options() {
     return options_;
   }
 
-  /// @brief Returns a string representation of the activation function
+  /// @brief Returns a string representation of the activation function.
+  /// @param os Stream that receives the representation.
   inline void pretty_print(std::ostream &os) const noexcept override {
     os << utils::FullQualifiedName::name()
        << "(\n  lambda=" << options_.lambda() << "\n)";
   }
 
   /// @brief Writes the activation function into a
-  /// torch::serialize::OutputArchive object
+  /// torch::serialize::OutputArchive object.
+  /// @param archive Output archive that receives the activation state.
+  /// @param key Key prefix under which the state is stored.
+  /// @return A reference to `archive`.
   inline torch::serialize::OutputArchive &
   write(torch::serialize::OutputArchive &archive,
         const std::string &key = "softshrink") const override {
@@ -2275,7 +2744,10 @@ public:
   }
 
   /// @brief Reads the activation function from a torch::serialize::InputArchive
-  /// object
+  /// object.
+  /// @param archive Input archive from which the activation state is read.
+  /// @param key Key prefix under which the state is stored.
+  /// @return A reference to `archive`.
   inline torch::serialize::InputArchive &
   read(torch::serialize::InputArchive &archive,
        const std::string &key = "softshrink") override {
@@ -2295,25 +2767,31 @@ private:
   torch::nn::functional::SoftshrinkFuncOptions options_;
 };
 
-/// @brief Softsign activation function
+/// @brief Softsign activation function.
 ///
 /// \f[
 ///    \text{Softsign}(x) = \frac{x}{1+\abs{x}}
 /// \f]
 class Softsign : public ActivationFunction {
 public:
-  /// @brief Applies the activation function to the given input
+  /// @brief Applies the activation function to the given input.
+  /// @param input Tensor to which the activation function is applied.
+  /// @return The activated tensor.
   inline torch::Tensor apply(const torch::Tensor &input) const override {
     return torch::nn::functional::softsign(input);
   }
 
-  /// @brief Returns a string representation of the activation function
+  /// @brief Returns a string representation of the activation function.
+  /// @param os Stream that receives the representation.
   inline void pretty_print(std::ostream &os) const noexcept override {
     os << utils::FullQualifiedName::name();
   }
 
   /// @brief Writes the activation function into a
-  /// torch::serialize::OutputArchive object
+  /// torch::serialize::OutputArchive object.
+  /// @param archive Output archive that receives the activation state.
+  /// @param key Key prefix under which the state is stored.
+  /// @return A reference to `archive`.
   inline torch::serialize::OutputArchive &
   write(torch::serialize::OutputArchive &archive,
         const std::string &key = "softsign") const override {
@@ -2324,7 +2802,10 @@ public:
   }
 
   /// @brief Reads the activation function from a torch::serialize::InputArchive
-  /// object
+  /// object.
+  /// @param archive Input archive from which the activation state is read.
+  /// @param key Key prefix under which the state is stored.
+  /// @return A reference to `archive`.
   inline torch::serialize::InputArchive &
   read(torch::serialize::InputArchive &archive,
        const std::string &key = "softsign") override {
@@ -2338,25 +2819,31 @@ public:
   }
 };
 
-/// @brief Tanh activation function
+/// @brief Tanh activation function.
 ///
 /// \f[
 ///    \text{Tanh}(x) = \frac{\exp(x)-\exp(-x)}{\exp(x)+\exp(-x)}
 /// \f]
 class Tanh : public ActivationFunction {
 public:
-  /// @brief Applies the activation function to the given input
+  /// @brief Applies the activation function to the given input.
+  /// @param input Tensor to which the activation function is applied.
+  /// @return The activated tensor.
   inline torch::Tensor apply(const torch::Tensor &input) const override {
     return torch::tanh(input);
   }
 
-  /// @brief Returns a string representation of the activation function
+  /// @brief Returns a string representation of the activation function.
+  /// @param os Stream that receives the representation.
   inline void pretty_print(std::ostream &os) const noexcept override {
     os << utils::FullQualifiedName::name();
   }
 
   /// @brief Writes the activation function into a
-  /// torch::serialize::OutputArchive object
+  /// torch::serialize::OutputArchive object.
+  /// @param archive Output archive that receives the activation state.
+  /// @param key Key prefix under which the state is stored.
+  /// @return A reference to `archive`.
   inline torch::serialize::OutputArchive &
   write(torch::serialize::OutputArchive &archive,
         const std::string &key = "tanh") const override {
@@ -2367,7 +2854,10 @@ public:
   }
 
   /// @brief Reads the activation function from a torch::serialize::InputArchive
-  /// object
+  /// object.
+  /// @param archive Input archive from which the activation state is read.
+  /// @param key Key prefix under which the state is stored.
+  /// @return A reference to `archive`.
   inline torch::serialize::InputArchive &
   read(torch::serialize::InputArchive &archive,
        const std::string &key = "tanh") override {
@@ -2381,25 +2871,31 @@ public:
   }
 };
 
-/// @brief Tanhshrink activation function
+/// @brief Tanhshrink activation function.
 ///
 /// \f[
 ///    \text{Tanhshrink}(x) = x - \text{Tanh}(x)
 /// \f]
 class Tanhshrink : public ActivationFunction {
 public:
-  /// @brief Applies the activation function to the given input
+  /// @brief Applies the activation function to the given input.
+  /// @param input Tensor to which the activation function is applied.
+  /// @return The activated tensor.
   inline torch::Tensor apply(const torch::Tensor &input) const override {
     return torch::nn::functional::tanhshrink(input);
   }
 
-  /// @brief Returns a string representation of the activation function
+  /// @brief Returns a string representation of the activation function.
+  /// @param os Stream that receives the representation.
   inline void pretty_print(std::ostream &os) const noexcept override {
     os << utils::FullQualifiedName::name();
   }
 
   /// @brief Writes the activation function into a
-  /// torch::serialize::OutputArchive object
+  /// torch::serialize::OutputArchive object.
+  /// @param archive Output archive that receives the activation state.
+  /// @param key Key prefix under which the state is stored.
+  /// @return A reference to `archive`.
   inline torch::serialize::OutputArchive &
   write(torch::serialize::OutputArchive &archive,
         const std::string &key = "tanhshrink") const override {
@@ -2410,7 +2906,10 @@ public:
   }
 
   /// @brief Reads the activation function from a torch::serialize::InputArchive
-  /// object
+  /// object.
+  /// @param archive Input archive from which the activation state is read.
+  /// @param key Key prefix under which the state is stored.
+  /// @return A reference to `archive`.
   inline torch::serialize::InputArchive &
   read(torch::serialize::InputArchive &archive,
        const std::string &key = "tanhshrink") override {
@@ -2424,7 +2923,7 @@ public:
   }
 };
 
-/// @brief Threshold activation function
+/// @brief Threshold activation function.
 ///
 /// \f[
 ///     \text{Threshold}(x) =
@@ -2435,31 +2934,42 @@ public:
 /// \f]
 class Threshold : public ActivationFunction {
 public:
+  /// @brief Provides the `Threshold` operation.
+  /// @param options Configuration options.
   explicit Threshold(const torch::nn::functional::ThresholdFuncOptions &options)
       : options_(options) {}
 
+  /// @brief Provides the `Threshold` operation.
+  /// @param threshold Value of `threshold`.
+  /// @param value Value to process.
+  /// @param inplace Value of `inplace`.
   explicit Threshold(double threshold, double value, bool inplace = false)
       : options_(torch::nn::functional::ThresholdFuncOptions(threshold, value)
                      .inplace(inplace)) {}
 
   ~Threshold() override = default;
 
-  /// @brief Applies the activation function to the given input
+  /// @brief Applies the activation function to the given input.
+  /// @param input Tensor to which the activation function is applied.
+  /// @return The activated tensor.
   inline torch::Tensor apply(const torch::Tensor &input) const override {
     return torch::nn::functional::threshold(input, options_);
   }
 
-  /// @brief Returns constant reference to options
+  /// @brief Returns constant reference to options.
+  /// @return Constant reference to the activation options.
   inline const torch::nn::functional::ThresholdFuncOptions &options() const {
     return options_;
   }
 
-  /// @brief Returns non-constant reference to options
+  /// @brief Returns non-constant reference to options.
+  /// @return Mutable reference to the activation options.
   inline torch::nn::functional::ThresholdFuncOptions &options() {
     return options_;
   }
 
-  /// @brief Returns a string representation of the activation function
+  /// @brief Returns a string representation of the activation function.
+  /// @param os Stream that receives the representation.
   inline void pretty_print(std::ostream &os) const noexcept override {
     os << utils::FullQualifiedName::name()
        << "(\n  threshold=" << options_.threshold()
@@ -2468,7 +2978,10 @@ public:
   }
 
   /// @brief Writes the activation function into a
-  /// torch::serialize::OutputArchive object
+  /// torch::serialize::OutputArchive object.
+  /// @param archive Output archive that receives the activation state.
+  /// @param key Key prefix under which the state is stored.
+  /// @return A reference to `archive`.
   inline torch::serialize::OutputArchive &
   write(torch::serialize::OutputArchive &archive,
         const std::string &key = "threshold") const override {
@@ -2483,7 +2996,10 @@ public:
   }
 
   /// @brief Reads the activation function from a torch::serialize::InputArchive
-  /// object
+  /// object.
+  /// @param archive Input archive from which the activation state is read.
+  /// @param key Key prefix under which the state is stored.
+  /// @return A reference to `archive`.
   inline torch::serialize::InputArchive &
   read(torch::serialize::InputArchive &archive,
        const std::string &key = "threshold") override {

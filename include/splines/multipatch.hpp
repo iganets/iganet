@@ -1,11 +1,11 @@
 /**
    @file splines/multipatch.hpp
 
-   @brief Multi-patch container class
+   @brief Multi-patch container class.
 
-   @author Matthias Moller
+   @author Matthias Moller.
 
-   @copyright This file is part of the IgANet project
+   @copyright This file is part of the IgANet project.
 
    This Source Code Form is subject to the terms of the Mozilla Public
    License, v. 2.0. If a copy of the MPL was not distributed with this
@@ -20,10 +20,15 @@
 
 namespace iganet {
 
-/// @brief Connection between two patch sides
+/// @brief Connection between two patch sides.
 template <typename Patch> class PatchInterface {
 public:
-  /// @brief Constructor
+  /// @brief Constructor.
+  /// @tparam Patch Template parameter `Patch`.
+  /// @param firstPatch Value of `firstPatch`.
+  /// @param firstSide Value of `firstSide`.
+  /// @param secondPatch Value of `secondPatch`.
+  /// @param secondSide Value of `secondSide`.
   PatchInterface(std::shared_ptr<Patch> firstPatch, enum side firstSide,
                  std::shared_ptr<Patch> secondPatch, enum side secondSide)
       : patches_{std::move(firstPatch), std::move(secondPatch)},
@@ -34,25 +39,33 @@ public:
       throw std::invalid_argument("An interface requires two valid sides");
   }
 
-  /// @brief Returns one of the two patches
+  /// @brief Returns one of the two patches.
+  /// @param endpoint Value of `endpoint`.
+  /// @return Result of the operation.
   Patch &patch(std::size_t endpoint) {
     assert(endpoint < patches_.size());
     return *patches_[endpoint];
   }
 
-  /// @brief Returns one of the two patches
+  /// @brief Returns one of the two patches.
+  /// @param endpoint Value of `endpoint`.
+  /// @return Result of the operation.
   const Patch &patch(std::size_t endpoint) const {
     assert(endpoint < patches_.size());
     return *patches_[endpoint];
   }
 
-  /// @brief Returns the shared pointer to one of the two patches
+  /// @brief Returns the shared pointer to one of the two patches.
+  /// @param endpoint Value of `endpoint`.
+  /// @return Result of the operation.
   const std::shared_ptr<Patch> &patchPtr(std::size_t endpoint) const {
     assert(endpoint < patches_.size());
     return patches_[endpoint];
   }
 
-  /// @brief Returns the side of one of the two patches
+  /// @brief Returns the side of one of the two patches.
+  /// @param endpoint Value of `endpoint`.
+  /// @return Result of the operation.
   enum side side(std::size_t endpoint) const {
     assert(endpoint < sides_.size());
     return sides_[endpoint];
@@ -60,11 +73,22 @@ public:
 
   /// @brief Named endpoint accessors
   /// @{
+  /// @return Result of the operation.
   Patch &firstPatch() { return patch(0); }
+  /// @brief Provides the `firstPatch` operation.
+  /// @return Result of the operation.
   const Patch &firstPatch() const { return patch(0); }
+  /// @brief Provides the `secondPatch` operation.
+  /// @return Result of the operation.
   Patch &secondPatch() { return patch(1); }
+  /// @brief Provides the `secondPatch` operation.
+  /// @return Result of the operation.
   const Patch &secondPatch() const { return patch(1); }
+  /// @brief Provides the `firstSide` operation.
+  /// @return Result of the operation.
   enum side firstSide() const { return side(0); }
+  /// @brief Provides the `secondSide` operation.
+  /// @return Result of the operation.
   enum side secondSide() const { return side(1); }
   /// @}
 
@@ -73,7 +97,7 @@ private:
   std::array<enum side, 2> sides_;
 };
 
-/// @brief Multi-patch container class
+/// @brief Multi-patch container class.
 ///
 /// This class implements a container for a set of patches and their
 /// topology, that is, the interface connections and outer boundary
@@ -81,78 +105,104 @@ private:
 template <typename Patch> class MultiPatch {
 
 public:
-  /// @brief Interface type
+  /// @brief Interface type.
   using interface_type = PatchInterface<Patch>;
 
-  /// @brief Default constructor
+  /// @brief Default constructor.
   MultiPatch() = default;
 
-  /// @brief Copy constructor
+  /// @brief Copy constructor.
+  /// @param other Second input value.
   MultiPatch(const MultiPatch &other)
       : patches_(other.patches_), interfaces_(other.interfaces_) {}
 
-  /// @brief Move constructor
+  /// @brief Move constructor.
+  /// @param other Second input value.
   MultiPatch(MultiPatch &&other) noexcept {
     patches_.swap(other.patches_);
     interfaces_.swap(other.interfaces_);
   }
 
 public:
-  /// @brief Returns an iterator to the patches
+  /// @brief Returns an iterator to the patches.
+  /// @return Result of the operation.
   auto begin() { return patches_.begin(); }
 
   /// @brief Returns a const-iterator to the patches
   /// @{
+  /// @return Result of the operation.
   auto begin() const { return patches_.begin(); }
+  /// @brief Provides the `cbegin` operation.
+  /// @return Result of the operation.
   auto cbegin() const noexcept { return patches_.cbegin(); }
   /// @}
 
-  /// @brief Returns an iterator to the end of the patches
+  /// @brief Returns an iterator to the end of the patches.
+  /// @return Result of the operation.
   auto end() { return patches_.end(); }
 
   /// @brief Returns a const-iterator to the end of the patches
   /// @{
+  /// @return Result of the operation.
   auto end() const { return patches_.end(); }
+  /// @brief Provides the `cend` operation.
+  /// @return Result of the operation.
   auto cend() const noexcept { return patches_.cend(); }
   /// @}
 
-  /// @brief Returns a reverse iterator to the patches
+  /// @brief Returns a reverse iterator to the patches.
+  /// @return Result of the operation.
   auto rbegin() { return patches_.rbegin(); }
 
   /// @brief Returns a reverse const-iterator to the patches
   /// @{
+  /// @return Result of the operation.
   auto rbegin() const { return patches_.rbegin(); }
+  /// @brief Provides the `crbegin` operation.
+  /// @return Result of the operation.
   auto crbegin() const noexcept { return patches_.crbegin(); }
   /// @}
 
-  /// @brief Returns a reverse iterator to the end of the patches
+  /// @brief Returns a reverse iterator to the end of the patches.
+  /// @return Result of the operation.
   auto rend() { return patches_.rend(); }
 
   /// @brief Returns a reverse const-iterator to the end of the patches
   /// @{
+  /// @return Result of the operation.
   auto rend() const { return patches_.rend(); }
+  /// @brief Provides the `crend` operation.
+  /// @return Result of the operation.
   auto crend() const noexcept { return patches_.crend(); }
   /// @}
 
 public:
-  /// @brief Returns the number of patches
+  /// @brief Returns the number of patches.
+  /// @return Result of the operation.
   [[nodiscard]] std::size_t npatches() const { return patches_.size(); }
 
-  /// @brief Returns the number of interfaces
+  /// @brief Returns the number of interfaces.
+  /// @return Result of the operation.
   [[nodiscard]] std::size_t ninterfaces() const { return interfaces_.size(); }
 
-  /// @brief Returns the number of outer boundaries
+  /// @brief Returns the number of outer boundaries.
+  /// @return Result of the operation.
   [[nodiscard]] std::size_t nboundaries() const { return patches_.size(); }
 
 public:
   /// @brief Adds a single patch
   /// @{
+  /// @param patch Patch to process.
+  /// @return Result of the operation.
   std::size_t addPatch(std::shared_ptr<Patch> patch) {
     std::size_t index = patches_.size();
     patches_.push_back(patch);
     return index;
   }
 
+  /// @brief Provides the `addPatch` operation.
+  /// @param patch Patch to process.
+  /// @return Result of the operation.
   std::size_t addPatch(std::unique_ptr<Patch> patch) {
     std::size_t index = patches_.size();
     patches_.push_back(std::shared_ptr<Patch>(std::move(patch)));
@@ -160,7 +210,12 @@ public:
   }
   /// @}
 
-  /// @brief Adds an interface between two patches identified by index
+  /// @brief Adds an interface between two patches identified by index.
+  /// @param firstPatch Value of `firstPatch`.
+  /// @param firstSide Value of `firstSide`.
+  /// @param secondPatch Value of `secondPatch`.
+  /// @param secondSide Value of `secondSide`.
+  /// @return Result of the operation.
   std::size_t addInterface(std::size_t firstPatch, enum side firstSide,
                            std::size_t secondPatch, enum side secondSide) {
     assert(firstPatch < patches_.size());
@@ -169,7 +224,12 @@ public:
                         secondSide);
   }
 
-  /// @brief Adds an interface between two patches
+  /// @brief Adds an interface between two patches.
+  /// @param firstPatch Value of `firstPatch`.
+  /// @param firstSide Value of `firstSide`.
+  /// @param secondPatch Value of `secondPatch`.
+  /// @param secondSide Value of `secondSide`.
+  /// @return Result of the operation.
   std::size_t addInterface(std::shared_ptr<Patch> firstPatch,
                            enum side firstSide,
                            std::shared_ptr<Patch> secondPatch,
@@ -187,31 +247,38 @@ public:
     return index;
   }
 
-  /// @brief Adds an interface object
+  /// @brief Adds an interface object.
+  /// @param patchInterface Value of `patchInterface`.
+  /// @return Result of the operation.
   std::size_t addInterface(interface_type patchInterface) {
     return addInterface(patchInterface.patchPtr(0), patchInterface.side(0),
                         patchInterface.patchPtr(1), patchInterface.side(1));
   }
 
-  /// @brief Removes a single interface
+  /// @brief Removes a single interface.
+  /// @param index Object index.
   void removeInterface(std::size_t index) {
     assert(index < interfaces_.size());
     interfaces_.erase(interfaces_.begin() + index);
   }
 
-  /// @brief Removes all patches
+  /// @brief Removes all patches.
   void clear() {
     interfaces_.clear();
     patches_.clear();
   }
 
-  /// @brief Returns a non-constant reference to a single patch
+  /// @brief Returns a non-constant reference to a single patch.
+  /// @param index Object index.
+  /// @return Result of the operation.
   Patch &patch(std::size_t index) {
     assert(index < patches_.size());
     return *patches_[index];
   }
 
-  /// @brief Returns a constant reference to a single patch
+  /// @brief Returns a constant reference to a single patch.
+  /// @param index Object index.
+  /// @return Result of the operation.
   const Patch &patch(std::size_t index) const {
     assert(index < patches_.size());
     return *patches_[index];
@@ -219,19 +286,26 @@ public:
 
   /// @brief Returns a reference to the vector of patches
   /// @{
+  /// @return Result of the operation.
   std::vector<std::shared_ptr<Patch>> &patches() { return patches_; }
+  /// @brief Provides the `patches` operation.
+  /// @return Result of the operation.
   const std::vector<std::shared_ptr<Patch>> &patches() const {
     return patches_;
   }
   /// @}
 
-  /// @brief Returns a non-constant reference to a single interface
+  /// @brief Returns a non-constant reference to a single interface.
+  /// @param index Object index.
+  /// @return Result of the operation.
   interface_type &interface(std::size_t index) {
     assert(index < interfaces_.size());
     return interfaces_[index];
   }
 
-  /// @brief Returns a constant reference to a single interface
+  /// @brief Returns a constant reference to a single interface.
+  /// @param index Object index.
+  /// @return Result of the operation.
   const interface_type &interface(std::size_t index) const {
     assert(index < interfaces_.size());
     return interfaces_[index];
@@ -239,16 +313,24 @@ public:
 
   /// @brief Returns the interfaces for range-based iteration
   /// @{
+  /// @return Result of the operation.
   std::vector<interface_type> &interfaces() { return interfaces_; }
+  /// @brief Provides the `interfaces` operation.
+  /// @return Result of the operation.
   const std::vector<interface_type> &interfaces() const { return interfaces_; }
   /// @}
 
   /// @brief Returns the index of a given single patch
   /// @{
+  /// @param patch Patch to process.
+  /// @return Result of the operation.
   std::size_t findPatchIndex(const Patch &patch) const {
     return findPatchIndex(&patch);
   }
 
+  /// @brief Provides the `findPatchIndex` operation.
+  /// @param patch Patch to process.
+  /// @return Result of the operation.
   std::size_t findPatchIndex(const Patch *patch) const {
     auto it = std::find_if(
         patches_.begin(), patches_.end(),
@@ -262,10 +344,15 @@ public:
 
   /// @brief Returns the index of a given patch interface
   /// @{
+  /// @param patchInterface Value of `patchInterface`.
+  /// @return Result of the operation.
   std::size_t findInterfaceIndex(const interface_type &patchInterface) const {
     return findInterfaceIndex(&patchInterface);
   }
 
+  /// @brief Provides the `findInterfaceIndex` operation.
+  /// @param patchInterface Value of `patchInterface`.
+  /// @return Result of the operation.
   std::size_t findInterfaceIndex(const interface_type *patchInterface) const {
     auto it = std::find_if(interfaces_.begin(), interfaces_.end(),
                            [patchInterface](const auto &candidate) {
@@ -278,7 +365,11 @@ public:
   }
   /// @}
 
-  /// @brief Loads the multi-patch object from a Torch archive file
+  /// @brief Loads the multi-patch object from a Torch archive file.
+  /// @tparam P Template parameter `P`.
+  /// @param filename Path of the file to process.
+  /// @param key Serialization key.
+  /// @param options Configuration options.
   template <typename P = Patch>
     requires requires { typename P::value_type; }
   void load(const std::string &filename, const std::string &key = "multipatch",
@@ -289,7 +380,12 @@ public:
     read(archive, key, options);
   }
 
-  /// @brief Reads the multi-patch object from a Torch input archive
+  /// @brief Reads the multi-patch object from a Torch input archive.
+  /// @tparam P Template parameter `P`.
+  /// @param archive Serialization archive.
+  /// @param key Serialization key.
+  /// @param options Configuration options.
+  /// @return Result of the operation.
   template <typename P = Patch>
     requires requires { typename P::value_type; }
   torch::serialize::InputArchive &read(torch::serialize::InputArchive &archive,
@@ -306,14 +402,19 @@ public:
     return archive;
   }
 
-  /// @brief Saves the multi-patch object to a Torch archive file
+  /// @brief Saves the multi-patch object to a Torch archive file.
+  /// @param filename Path of the file to process.
+  /// @param key Serialization key.
   void save(const std::string &filename,
             const std::string &key = "multipatch") const {
     torch::serialize::OutputArchive archive;
     write(archive, key).save_to(filename);
   }
 
-  /// @brief Writes the multi-patch object into a Torch output archive
+  /// @brief Writes the multi-patch object into a Torch output archive.
+  /// @param archive Serialization archive.
+  /// @param key Serialization key.
+  /// @return Result of the operation.
   torch::serialize::OutputArchive &
   write(torch::serialize::OutputArchive &archive,
         const std::string &key = "multipatch") const {
@@ -327,7 +428,12 @@ public:
     return archive;
   }
 
-  /// @brief Returns true if patches and topology are close up to tolerances
+  /// @brief Returns true if patches and topology are close up to tolerances.
+  /// @tparam P Template parameter `P`.
+  /// @param other Second input value.
+  /// @param rtol Value of `rtol`.
+  /// @param atol Value of `atol`.
+  /// @return Result of the operation.
   template <typename P = Patch>
     requires requires { typename P::value_type; }
   bool
@@ -337,15 +443,20 @@ public:
     return jsonIsClose(to_json(), other.to_json(), rtol, atol);
   }
 
-  /// @brief Returns true if patches and topology are exactly equal
+  /// @brief Returns true if patches and topology are exactly equal.
+  /// @param other Second input value.
+  /// @return Result of the operation.
   bool operator==(const MultiPatch &other) const {
     return to_json() == other.to_json();
   }
 
-  /// @brief Returns true if patches or topology differ
+  /// @brief Returns true if patches or topology differ.
+  /// @param other Second input value.
+  /// @return Result of the operation.
   bool operator!=(const MultiPatch &other) const { return !(*this == other); }
 
-  /// @brief Prints a human-readable representation of the multi-patch object
+  /// @brief Prints a human-readable representation of the multi-patch object.
+  /// @param os Output stream.
   void pretty_print(std::ostream &os) const noexcept {
     os << "MultiPatch(\nparDim = " << Patch::parDim()
        << ", npatches = " << npatches() << ", ninterfaces = " << ninterfaces()
@@ -368,7 +479,8 @@ public:
     os << ")";
   }
 
-  /// @brief Returns the multi-patch object as a JSON object
+  /// @brief Returns the multi-patch object as a JSON object.
+  /// @return Result of the operation.
   [[nodiscard]] nlohmann::json to_json() const {
     nlohmann::json json;
     json["parDim"] = Patch::parDim();
@@ -427,7 +539,11 @@ public:
     return json;
   }
 
-  /// @brief Updates the multi-patch object from a JSON object
+  /// @brief Updates the multi-patch object from a JSON object.
+  /// @tparam P Template parameter `P`.
+  /// @param json JSON value to process.
+  /// @param options Configuration options.
+  /// @return Result of the operation.
   template <typename P = Patch>
     requires requires { typename P::value_type; }
   MultiPatch &from_json(const nlohmann::json &json,
@@ -498,7 +614,11 @@ public:
     return *this;
   }
 
-  /// @brief Returns the multi-patch object as an XML document
+  /// @brief Returns the multi-patch object as an XML document.
+  /// @param id Object identifier.
+  /// @param label Object label.
+  /// @param index Object index.
+  /// @return Result of the operation.
   [[nodiscard]] pugi::xml_document
   to_xml(int id = 0, const std::string &label = "", int index = -1) const {
     pugi::xml_document doc;
@@ -507,7 +627,12 @@ public:
     return doc;
   }
 
-  /// @brief Appends the multi-patch object to an XML node
+  /// @brief Appends the multi-patch object to an XML node.
+  /// @param root Root XML node.
+  /// @param id Object identifier.
+  /// @param label Object label.
+  /// @param index Object index.
+  /// @return Result of the operation.
   pugi::xml_node &to_xml(pugi::xml_node &root, int id = 0,
                          const std::string &label = "", int index = -1) const {
     for (std::size_t patchIndex = 0; patchIndex < patches_.size(); ++patchIndex)
@@ -589,7 +714,14 @@ public:
     return root;
   }
 
-  /// @brief Updates the multi-patch object from an XML document
+  /// @brief Updates the multi-patch object from an XML document.
+  /// @tparam P Template parameter `P`.
+  /// @param doc Value of `doc`.
+  /// @param id Object identifier.
+  /// @param label Object label.
+  /// @param index Object index.
+  /// @param options Configuration options.
+  /// @return Result of the operation.
   template <typename P = Patch>
     requires requires { typename P::value_type; }
   MultiPatch &from_xml(const pugi::xml_document &doc, int id = 0,
@@ -599,7 +731,14 @@ public:
     return from_xml(doc.child("xml"), id, label, index, options);
   }
 
-  /// @brief Updates the multi-patch object from an XML node
+  /// @brief Updates the multi-patch object from an XML node.
+  /// @tparam P Template parameter `P`.
+  /// @param root Root XML node.
+  /// @param id Object identifier.
+  /// @param label Object label.
+  /// @param index Object index.
+  /// @param options Configuration options.
+  /// @return Result of the operation.
   template <typename P = Patch>
     requires requires { typename P::value_type; }
   MultiPatch &from_xml(const pugi::xml_node &root, int id = 0,
@@ -740,21 +879,29 @@ private:
     return first == second;
   }
 
-  /// @brief Vector of single-patch objects
+  /// @brief Vector of single-patch objects.
   std::vector<std::shared_ptr<Patch>> patches_;
 
-  /// @brief Vector of patch-interface objects
+  /// @brief Vector of patch-interface objects.
   std::vector<interface_type> interfaces_;
 };
 
-/// @brief Writes a human-readable multi-patch representation to a stream
+/// @brief Writes a human-readable multi-patch representation to a stream.
+/// @tparam Patch Template parameter `Patch`.
+/// @param os Output stream.
+/// @param obj Object to process.
+/// @return Result of the operation.
 template <typename Patch>
 std::ostream &operator<<(std::ostream &os, const MultiPatch<Patch> &obj) {
   obj.pretty_print(os);
   return os;
 }
 
-/// @brief Serializes a multi-patch object
+/// @brief Serializes a multi-patch object.
+/// @tparam Patch Template parameter `Patch`.
+/// @param archive Serialization archive.
+/// @param obj Object to process.
+/// @return Result of the operation.
 template <typename Patch>
 torch::serialize::OutputArchive &
 operator<<(torch::serialize::OutputArchive &archive,
@@ -762,7 +909,11 @@ operator<<(torch::serialize::OutputArchive &archive,
   return obj.write(archive);
 }
 
-/// @brief Deserializes a multi-patch object
+/// @brief Deserializes a multi-patch object.
+/// @tparam Patch Template parameter `Patch`.
+/// @param archive Serialization archive.
+/// @param obj Object to process.
+/// @return Result of the operation.
 template <typename Patch>
 torch::serialize::InputArchive &
 operator>>(torch::serialize::InputArchive &archive, MultiPatch<Patch> &obj) {

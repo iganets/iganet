@@ -1,11 +1,11 @@
 /**
    @file utils/jit.hpp
 
-   @brief Just-in-time compiler
+   @brief Just-in-time compiler.
 
-   @author Matthias Moller
+   @author Matthias Moller.
 
-   @copyright This file is part of the IgANet project
+   @copyright This file is part of the IgANet project.
 
    This Source Code Form is subject to the terms of the Mozilla Public
    License, v. 2.0. If a copy of the MPL was not distributed with this
@@ -34,7 +34,7 @@ namespace iganet {
 
 class jit : protected utils::FullQualifiedName {
 public:
-  /// @brief Default constructor
+  /// @brief Default constructor.
   jit()
       : temp(getTempPath()), libdir(), cmd("@JIT_CXX_COMPILER@"),
         flags("@JIT_CXX_FLAGS@ @JIT_INCLUDE_DIRECTORIES@ @JIT_LIBRARIES@"),
@@ -68,7 +68,7 @@ public:
     }
   }
 
-  /// @brief Compile dynamical library
+  /// @brief Compile dynamical library.
   inline std::string compile(const std::string &includes,
                              const std::string &src,
                              const std::string &name) const {
@@ -161,7 +161,7 @@ public:
     return libname;
   }
 
-  /// @brief Prints the object as a string
+  /// @brief Prints the object as a string.
   inline void
   pretty_print(std::ostream &os = std::cout) const noexcept override {
     os << name() << "(\ncmd = " << cmd << ", flags = " << flags
@@ -170,7 +170,7 @@ public:
   }
 
 private:
-  /// @brief Returns the native TEMP directory path
+  /// @brief Returns the native TEMP directory path.
   inline static std::string getTempPath() {
 #if defined(_WIN32)
     TCHAR temp[MAXPATH];
@@ -216,7 +216,7 @@ private:
 #endif
   }
 
-  /// @brief Sets last character to the native path separator
+  /// @brief Sets last character to the native path separator.
   inline static void makePath(std::string &str) {
     if (str.length() == 0)
       str.push_back('.');
@@ -225,7 +225,7 @@ private:
   }
 
   /// @brief Returns an integer specifying the status if the given directory
-  /// path exists
+  /// path exists.
   inline static int fileExists(const char *path) {
     struct stat info;
 
@@ -237,7 +237,7 @@ private:
       return 2; // is file
   }
 
-  /// @brief  Returns all valid path separators
+  /// @brief  Returns all valid path separators.
   inline static constexpr std::string_view getValidPathSeparators() noexcept {
 #if defined _WIN32 || defined __CYGWIN__
     return "\\/";
@@ -246,17 +246,17 @@ private:
 #endif
   }
 
-  /// @brief Returns the native path separator
+  /// @brief Returns the native path separator.
   inline static char getNativePathSeparator() {
     return getValidPathSeparators()[0];
   }
 
 private:
-  /// Strings
+  /// @brief Strings.
   std::string temp, libdir, cmd, flags, out;
 };
 
-/// Print (as string) a jit object
+/// @brief Print (as string) a jit object.
 std::ostream &operator<<(std::ostream &os, const jit &obj) {
   obj.pretty_print(os);
   return os;

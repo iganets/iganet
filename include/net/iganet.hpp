@@ -1,11 +1,11 @@
 /**
    @file net/iganet.hpp
 
-   @brief Isogeometric analysis network
+   @brief Isogeometric analysis network.
 
-   @author Matthias Moller
+   @author Matthias Moller.
 
-   @copyright This file is part of the IgANet project
+   @copyright This file is part of the IgANet project.
 
    This Source Code Form is subject to the terms of the Mozilla Public
    License, v. 2.0. If a copy of the MPL was not distributed with this
@@ -30,16 +30,21 @@ namespace iganet {
 
 
   
-/// @brief IgANetOptions
+/// @brief IgANetOptions.
 struct IgANetOptions {
+  /// @brief Provides the `TORCH_ARG` operation.
   TORCH_ARG(int64_t, max_epoch) = 100;
+  /// @brief Provides the `TORCH_ARG` operation.
   TORCH_ARG(int64_t, batch_size) = 1000;
+  /// @brief Provides the `TORCH_ARG` operation.
   TORCH_ARG(double, min_loss) = 1e-4;
+  /// @brief Provides the `TORCH_ARG` operation.
   TORCH_ARG(double, min_loss_change) = 0;
+  /// @brief Provides the `TORCH_ARG` operation.
   TORCH_ARG(double, min_loss_rel_change) = 1e-3;
 };
 
-/// @brief IgA base class
+/// @brief IgA base class.
 ///
 /// This class implements the base functionality of IgANets
 /// @{
@@ -50,31 +55,31 @@ template <detail::HasAsTensor... Inputs, detail::HasAsTensor... Outputs,
 class IgABase<std::tuple<Inputs...>, std::tuple<Outputs...>,
                std::tuple<CollPts...>> {
 public:
-  /// @brief Value type
+  /// @brief Value type.
   using value_type = std::common_type_t<typename Inputs::value_type...,
                                         typename Outputs::value_type...>;
 
-  /// @brief Type of the inputs
+  /// @brief Type of the inputs.
   using inputs_type = std::tuple<Inputs...>;
 
-  /// @brief Type of the outputs
+  /// @brief Type of the outputs.
   using outputs_type = std::tuple<Outputs...>;
 
-  /// @brief Type of the collocation points
+  /// @brief Type of the collocation points.
   using collPts_type = std::tuple<typename CollPtsHelper<CollPts...>::type>;
 
 protected:
-  /// @brief Inputs
+  /// @brief Inputs.
   inputs_type inputs_;
 
-  /// @brief Outputs
+  /// @brief Outputs.
   outputs_type outputs_;
 
-  /// @brief Outputs
+  /// @brief Outputs.
   collPts_type collPts_;
 
 private:
-  /// @brief Constructs a tuple from arrays
+  /// @brief Constructs a tuple from arrays.
   ///
   /// @{
   template <typename... Objs, std::size_t... NumCoeffs, std::size_t... Is>
@@ -99,7 +104,7 @@ private:
   }
   /// @}
 
-  /// @brief Constructs a tuple from tuples
+  /// @brief Constructs a tuple from tuples.
   ///
   /// @{
   template <typename... Objs, typename... NumCoeffsTuples, std::size_t... Is>
@@ -125,15 +130,20 @@ private:
   /// @}
 
 public:
-  /// @brief Default constructor
+  /// @brief Default constructor.
+  /// @param options Configuration options.
   explicit IgABase(
       iganet::Options<value_type> options = iganet::Options<value_type>{})
       : inputs_(), outputs_(), collPts_() {}
 
-  /// @brief Constructor
+  /// @brief Constructor.
   ///
   /// Number of spline coefficients is the same for all spaces in the
-  /// input, output and collocation points objects
+  /// input, output and collocation points objects.
+  /// @tparam NumCoeffs Template parameter `NumCoeffs`.
+  /// @param ncoeffs Value of `ncoeffs`.
+  /// @param init Value of `init`.
+  /// @param options Configuration options.
   template <std::size_t NumCoeffs>
   explicit IgABase(
       const std::array<int64_t, NumCoeffs> &ncoeffs,
@@ -142,10 +152,15 @@ public:
       : IgABase(std::tuple{ncoeffs}, std::tuple{ncoeffs}, std::tuple{ncoeffs},
                  init, options) {}
 
-  /// @brief Constructor
+  /// @brief Constructor.
   ///
   /// Number of spline coefficients is the same for all spaces in the
-  /// input, output and collocation points objects, respectively
+  /// input, output and collocation points objects, respectively.
+  /// @param ncoeffsInputs Value of `ncoeffsInputs`.
+  /// @param ncoeffsOutputs Value of `ncoeffsOutputs`.
+  /// @param ncoeffsCollPts Value of `ncoeffsCollPts`.
+  /// @param init Value of `init`.
+  /// @param options Configuration options.
   template <std::size_t NumCoeffsInputs, std::size_t NumCoeffsOutputs,
             std::size_t NumCoeffsCollPts>
   IgABase(const std::array<int64_t, NumCoeffsInputs> &ncoeffsInputs,
@@ -156,11 +171,15 @@ public:
       : IgABase(std::tuple{ncoeffsInputs}, std::tuple{ncoeffsOutputs},
                  std::tuple{ncoeffsCollPts}, init, options) {}
 
-  /// @brief Constructor
+  /// @brief Constructor.
   ///
   /// Number of spline coefficients is different for the different
   /// spaces of the inputs, outputs, and collocation points,
-  /// but the same for inputs, outputs and collocation points objects
+  /// but the same for inputs, outputs and collocation points objects.
+  /// @tparam NumCoeffs Template parameter `NumCoeffs`.
+  /// @param ncoeffs Value of `ncoeffs`.
+  /// @param init Value of `init`.
+  /// @param options Configuration options.
   template <std::size_t... NumCoeffs>
   explicit IgABase(
       const std::tuple<std::array<int64_t, NumCoeffs>...> &ncoeffs,
@@ -168,10 +187,15 @@ public:
       iganet::Options<value_type> options = iganet::Options<value_type>{})
       : IgABase(ncoeffs, ncoeffs, ncoeffs, init, options) {}
 
-  /// @brief Constructor
+  /// @brief Constructor.
   ///
   /// Number of spline coefficients is different all inputs, outputs,
-  /// and collocation points objects
+  /// and collocation points objects.
+  /// @param ncoeffsInputs Value of `ncoeffsInputs`.
+  /// @param ncoeffsOutputs Value of `ncoeffsOutputs`.
+  /// @param ncoeffsCollPts Value of `ncoeffsCollPts`.
+  /// @param init Value of `init`.
+  /// @param options Configuration options.
   template <std::size_t... NumCoeffsInputs, std::size_t... NumCoeffsOutputs,
             std::size_t... NumCoeffsCollPts>
   IgABase(
@@ -189,11 +213,16 @@ public:
         collPts_(construct_tuple_from_arrays<Outputs...>(ncoeffsCollPts, init,
                                                          options)) {}
 
-  /// @brief Constructor
+  /// @brief Constructor.
   ///
   /// Number of coefficients is different for all inputs, outputs, and
   /// collocation points objects and passed as a tuple of tuples of
-  /// arrays of different sizes
+  /// arrays of different sizes.
+  /// @param coeffsInputs Value of `coeffsInputs`.
+  /// @param coeffsOutputs Value of `coeffsOutputs`.
+  /// @param coeffsCollPts Value of `coeffsCollPts`.
+  /// @param init Value of `init`.
+  /// @param options Configuration options.
   template <typename... CoeffsInputs, typename... CoeffsOutputs,
             typename... CoeffsCollPts>
   IgABase(const std::tuple<CoeffsInputs...> &coeffsInputs,
@@ -208,72 +237,92 @@ public:
         collPts_(construct_tuple_from_tuples<CollPts...>(coeffsCollPts, init,
                                                          options)) {}
 
-  /// @brief Returns the number of elements in the tuple of input objects
+  /// @brief Returns the number of elements in the tuple of input objects.
+  /// @return Result of the operation.
   inline static constexpr std::size_t ninputs() noexcept {
     return sizeof...(Inputs);
   }
 
-  /// @brief Returns a constant reference to the tuple of input objects
+  /// @brief Returns a constant reference to the tuple of input objects.
+  /// @return Result of the operation.
   inline constexpr const auto &inputs() const { return inputs_; }
 
-  /// @brief Returns a non-constant reference to the tuple of input objects
+  /// @brief Returns a non-constant reference to the tuple of input objects.
+  /// @return Result of the operation.
   inline constexpr auto &inputs() { return inputs_; }
 
-  /// @brief Returns a constant reference to the index-th input object
+  /// @brief Returns a constant reference to the index-th input object.
+  /// @tparam index Template parameter `index`.
+  /// @return Result of the operation.
   template <std::size_t index> inline constexpr const auto &input() const {
     static_assert(index < sizeof...(Inputs));
     return std::get<index>(inputs_);
   }
 
-  /// @brief Returns a non-constant reference to the index-th input object
+  /// @brief Returns a non-constant reference to the index-th input object.
+  /// @tparam index Template parameter `index`.
+  /// @return Result of the operation.
   template <std::size_t index> inline constexpr auto &input() {
     static_assert(index < sizeof...(Inputs));
     return std::get<index>(inputs_);
   }
 
-  /// @brief Returns the number of elements in the tuple of output objects
+  /// @brief Returns the number of elements in the tuple of output objects.
+  /// @return Result of the operation.
   inline static constexpr std::size_t noutputs() noexcept {
     return sizeof...(Outputs);
   }
 
-  /// @brief Returns a constant reference to the tuple of output objects
+  /// @brief Returns a constant reference to the tuple of output objects.
+  /// @return Result of the operation.
   inline constexpr const auto &outputs() const { return outputs_; }
 
-  /// @brief Returns a non-constant reference to the tuple of output objects
+  /// @brief Returns a non-constant reference to the tuple of output objects.
+  /// @return Result of the operation.
   inline constexpr auto &outputs() { return outputs_; }
 
-  /// @brief Returns a constant reference to the index-th output object
+  /// @brief Returns a constant reference to the index-th output object.
+  /// @tparam index Template parameter `index`.
+  /// @return Result of the operation.
   template <std::size_t index> inline constexpr const auto &output() const {
     static_assert(index < sizeof...(Outputs));
     return std::get<index>(outputs_);
   }
 
-  /// @brief Returns a non-constant reference to the index-th output object
+  /// @brief Returns a non-constant reference to the index-th output object.
+  /// @tparam index Template parameter `index`.
+  /// @return Result of the operation.
   template <std::size_t index> inline constexpr auto &output() {
     static_assert(index < sizeof...(Outputs));
     return std::get<index>(outputs_);
   }
 
   /// @brief Returns the number of elements in the tuple of collocation points
-  /// objects
+  /// objects.
+  /// @return Result of the operation.
   inline static constexpr std::size_t ncollPts() noexcept {
     return sizeof...(CollPts);
   }
 
   /// @brief Returns a constant reference to the tuple of collocation points
-  /// objects
+  /// objects.
+  /// @return Result of the operation.
   inline constexpr const auto &collPts() const { return collPts_; }
 
   /// @brief Returns a non-constant reference to the tuple of collocation points
-  /// objects
+  /// objects.
+  /// @return Result of the operation.
   inline constexpr auto &collPts() { return collPts_; }
 
-  /// @brief Returns the collocation points of the index-th function spaces
+  /// @brief Returns the collocation points of the index-th function spaces.
   ///
   /// In the default implementation the collocation points are the Greville
   /// abscissae in the interior of the domain and on the boundary
   /// faces. This behavior can be changed by overriding this virtual
   /// function in a derived class.
+  /// @tparam index Template parameter `index`.
+  /// @param collPts Value of `collPts`.
+  /// @return Result of the operation.
   template <std::size_t index>
   std::tuple_element_t<index, collPts_type>
   collPts(enum collPts collPts) const {
@@ -284,40 +333,40 @@ public:
 template <detail::HasAsTensor... Inputs, detail::HasAsTensor... Outputs>
 class IgABase<std::tuple<Inputs...>, std::tuple<Outputs...>, void> {
 public:
-  /// @brief Value type
+  /// @brief Value type.
   using value_type = std::common_type_t<typename Inputs::value_type...,
                                         typename Outputs::value_type...>;
 
-  /// @brief Type of the inputs
+  /// @brief Type of the inputs.
   using inputs_type = std::tuple<Inputs...>;
 
-  /// @brief Type alias for the type of the index-th inputs object
+  /// @brief Type alias for the type of the index-th inputs object.
   template <std::size_t index>
   using input_t = std::tuple_element_t<index, inputs_type>;
 
-  /// @brief Type of the outputs
+  /// @brief Type of the outputs.
   using outputs_type = std::tuple<Outputs...>;
 
-  /// @brief Type alias for the type of the index-th outputs object
+  /// @brief Type alias for the type of the index-th outputs object.
   template <std::size_t index>
   using output_t = std::tuple_element_t<index, outputs_type>;
 
-  /// @brief Type of the collocation points
+  /// @brief Type of the collocation points.
   using collPts_type = std::tuple<typename CollPtsHelper<Outputs...>::type>;
 
-  /// @brief Type alias for the type of the index-th collocation points object
+  /// @brief Type alias for the type of the index-th collocation points object.
   template <std::size_t index>
   using collPts_t = std::tuple_element_t<index, collPts_type>;
 
 protected:
-  /// @brief Inputs
+  /// @brief Inputs.
   inputs_type inputs_;
 
-  /// @brief Outputs
+  /// @brief Outputs.
   outputs_type outputs_;
 
 private:
-  /// @brief Constructs a tuple from arrays
+  /// @brief Constructs a tuple from arrays.
   ///
   /// @{
   template <typename... Objs, std::size_t... NumCoeffs, std::size_t... Is>
@@ -338,7 +387,7 @@ private:
   }
   /// @}
 
-  /// @brief Constructs a tuple from tuples
+  /// @brief Constructs a tuple from tuples.
   ///
   /// @{
   template <typename... Objs, typename... NumCoeffs, std::size_t... Is>
@@ -364,15 +413,20 @@ private:
   /// @}
 
 public:
-  /// @brief Default constructor
+  /// @brief Default constructor.
+  /// @param options Configuration options.
   explicit IgABase(
       iganet::Options<value_type> options = iganet::Options<value_type>{})
       : inputs_(), outputs_() {}
 
-  /// @brief Constructor
+  /// @brief Constructor.
   ///
   /// Number of spline coefficients is the same for all spaces in the
-  /// input and output objects
+  /// input and output objects.
+  /// @tparam NumCoeffs Template parameter `NumCoeffs`.
+  /// @param ncoeffs Value of `ncoeffs`.
+  /// @param init Value of `init`.
+  /// @param options Configuration options.
   template <std::size_t NumCoeffs>
   explicit IgABase(
       const std::array<int64_t, NumCoeffs> &ncoeffs,
@@ -380,10 +434,16 @@ public:
       iganet::Options<value_type> options = iganet::Options<value_type>{})
       : IgABase(std::tuple{ncoeffs}, std::tuple{ncoeffs}, init, options) {}
 
-  /// @brief Constructor
+  /// @brief Constructor.
   ///
   /// Number of spline coefficients is the same for all spaces in the
-  /// input and output objects, respectively
+  /// input and output objects, respectively.
+  /// @tparam NumCoeffsInputs Template parameter `NumCoeffsInputs`.
+  /// @tparam NumCoeffsOutputs Template parameter `NumCoeffsOutputs`.
+  /// @param ncoeffsInputs Value of `ncoeffsInputs`.
+  /// @param ncoeffsOutputs Value of `ncoeffsOutputs`.
+  /// @param init Value of `init`.
+  /// @param options Configuration options.
   template <std::size_t NumCoeffsInputs, std::size_t NumCoeffsOutputs>
   IgABase(const std::array<int64_t, NumCoeffsInputs> &ncoeffsInputs,
            const std::array<int64_t, NumCoeffsOutputs> &ncoeffsOutputs,
@@ -392,11 +452,15 @@ public:
       : IgABase(std::tuple{ncoeffsInputs}, std::tuple{ncoeffsOutputs}, init,
                  options) {}
 
-  /// @brief Constructor
+  /// @brief Constructor.
   ///
   /// Number of spline coefficients is different for the different
   /// spaces of the inputs and outputs, but the same for input and
-  /// output objects
+  /// output objects.
+  /// @tparam NumCoeffs Template parameter `NumCoeffs`.
+  /// @param ncoeffs Value of `ncoeffs`.
+  /// @param init Value of `init`.
+  /// @param options Configuration options.
   template <std::size_t... NumCoeffs>
   explicit IgABase(
       const std::tuple<std::array<int64_t, NumCoeffs>...> &ncoeffs,
@@ -404,10 +468,16 @@ public:
       iganet::Options<value_type> options = iganet::Options<value_type>{})
       : IgABase(ncoeffs, ncoeffs, init, options) {}
 
-  /// @brief Constructor
+  /// @brief Constructor.
   ///
   /// Number of spline coefficients is different all inputs and
-  /// outputs, respectively
+  /// outputs, respectively.
+  /// @tparam NumCoeffsInputs Template parameter `NumCoeffsInputs`.
+  /// @tparam NumCoeffsOutputs Template parameter `NumCoeffsOutputs`.
+  /// @param ncoeffsInputs Value of `ncoeffsInputs`.
+  /// @param ncoeffsOutputs Value of `ncoeffsOutputs`.
+  /// @param init Value of `init`.
+  /// @param options Configuration options.
   template <std::size_t... NumCoeffsInputs, std::size_t... NumCoeffsOutputs>
   IgABase(
       const std::tuple<std::array<int64_t, NumCoeffsInputs>...> &ncoeffsInputs,
@@ -420,10 +490,16 @@ public:
         outputs_(construct_tuple_from_arrays<Outputs...>(ncoeffsOutputs, init,
                                                          options)) {}
 
-  /// @brief Constructor
+  /// @brief Constructor.
   ///
   /// Number of coefficients is different for all inputs and outputs
-  /// and passed as a tuple of tuples of arrays of different sizes
+  /// and passed as a tuple of tuples of arrays of different sizes.
+  /// @tparam CoeffsInputs Template parameter `CoeffsInputs`.
+  /// @tparam CoeffsOutputs Template parameter `CoeffsOutputs`.
+  /// @param coeffsInputs Value of `coeffsInputs`.
+  /// @param coeffsOutputs Value of `coeffsOutputs`.
+  /// @param init Value of `init`.
+  /// @param options Configuration options.
   template <typename... CoeffsInputs, typename... CoeffsOutputs>
   IgABase(const std::tuple<CoeffsInputs...> &coeffsInputs,
            const std::tuple<CoeffsOutputs...> &coeffsOutputs,
@@ -434,72 +510,92 @@ public:
         outputs_(construct_tuple_from_tuples<Outputs...>(coeffsOutputs, init,
                                                          options)) {}
 
-  /// @brief Returns the number of elements in the tuple of input objects
+  /// @brief Returns the number of elements in the tuple of input objects.
+  /// @return Result of the operation.
   inline static constexpr std::size_t ninputs() noexcept {
     return sizeof...(Inputs);
   }
 
-  /// @brief Returns a constant reference to the tuple of input objects
+  /// @brief Returns a constant reference to the tuple of input objects.
+  /// @return Result of the operation.
   inline constexpr const auto &inputs() const { return inputs_; }
 
-  /// @brief Returns a non-constant reference to the tuple of input objects
+  /// @brief Returns a non-constant reference to the tuple of input objects.
+  /// @return Result of the operation.
   inline constexpr auto &inputs() { return inputs_; }
 
-  /// @brief Returns a constant reference to the index-th input object
+  /// @brief Returns a constant reference to the index-th input object.
+  /// @tparam index Template parameter `index`.
+  /// @return Result of the operation.
   template <std::size_t index> inline constexpr const auto &input() const {
     static_assert(index < sizeof...(Inputs));
     return std::get<index>(inputs_);
   }
 
-  /// @brief Returns a non-constant reference to the index-th input object
+  /// @brief Returns a non-constant reference to the index-th input object.
+  /// @tparam index Template parameter `index`.
+  /// @return Result of the operation.
   template <std::size_t index> inline constexpr auto &input() {
     static_assert(index < sizeof...(Inputs));
     return std::get<index>(inputs_);
   }
 
-  /// @brief Returns the number of elements in the tuple of output objects
+  /// @brief Returns the number of elements in the tuple of output objects.
+  /// @return Result of the operation.
   inline static constexpr std::size_t noutputs() noexcept {
     return sizeof...(Outputs);
   }
 
-  /// @brief Returns a constant reference to the tuple of output objects
+  /// @brief Returns a constant reference to the tuple of output objects.
+  /// @return Result of the operation.
   inline constexpr const auto &outputs() const { return outputs_; }
 
-  /// @brief Returns a non-constant reference to the tuple of output objects
+  /// @brief Returns a non-constant reference to the tuple of output objects.
+  /// @return Result of the operation.
   inline constexpr auto &outputs() { return outputs_; }
 
-  /// @brief Returns a constant reference to the index-th output object
+  /// @brief Returns a constant reference to the index-th output object.
+  /// @tparam index Template parameter `index`.
+  /// @return Result of the operation.
   template <std::size_t index> inline constexpr const auto &output() const {
     static_assert(index < sizeof...(Outputs));
     return std::get<index>(outputs_);
   }
 
-  /// @brief Returns a non-constant reference to the index-th output object
+  /// @brief Returns a non-constant reference to the index-th output object.
+  /// @tparam index Template parameter `index`.
+  /// @return Result of the operation.
   template <std::size_t index> inline constexpr auto &output() {
     static_assert(index < sizeof...(Outputs));
     return std::get<index>(outputs_);
   }
 
   /// @brief Returns the number of elements in the tuple of collocation points
-  /// objects
+  /// objects.
+  /// @return Result of the operation.
   inline static constexpr std::size_t ncollPts() noexcept {
     return sizeof...(Outputs);
   }
 
   /// @brief Returns a constant reference to the tuple of collocation points
-  /// objects
+  /// objects.
+  /// @return Result of the operation.
   inline constexpr const auto &collPts() const { return outputs_; }
 
   /// @brief Returns a non-constant reference to the tuple of collocation points
-  /// objects
+  /// objects.
+  /// @return Result of the operation.
   inline constexpr auto &collPts() { return outputs_; }
 
-  /// @brief Returns the collocation points of the index-th function spaces
+  /// @brief Returns the collocation points of the index-th function spaces.
   ///
   /// In the default implementation the collocation points are the Greville
   /// abscissae in the interior of the domain and on the boundary
   /// faces. This behavior can be changed by overriding this virtual
   /// function in a derived class.
+  /// @tparam index Template parameter `index`.
+  /// @param collPts Value of `collPts`.
+  /// @return Result of the operation.
   template <std::size_t index>
   std::tuple_element_t<index, collPts_type>
   collPts(enum collPts collPts) const {
@@ -508,9 +604,9 @@ public:
 };
 /// @}
   
-/// @brief IgANet
+/// @brief IgANet.
 ///
-/// This class implements the core functionality of IgANets
+/// This class implements the core functionality of IgANets.
 template <typename Optimizer, typename Inputs, typename Outputs,
           typename CollPts = void>
   requires OptimizerType<Optimizer>
@@ -518,30 +614,32 @@ class IgANet : public IgABase<Inputs, Outputs, CollPts>,
                 utils::Serializable,
                 private utils::FullQualifiedName {
 public:
-  /// @brief Base type
+  /// @brief Base type.
   using Base = IgABase<Inputs, Outputs, CollPts>;
 
-  /// @brief Value type
+  /// @brief Value type.
   using value_type = Base::value_type;
 
-  /// @brief Type of the optimizer
+  /// @brief Type of the optimizer.
   using optimizer_type = Optimizer;
 
-  /// @brief Type of the optimizer options
+  /// @brief Type of the optimizer options.
   using optimizer_options_type = optimizer_options_type<Optimizer>::type;
 
 protected:
-  /// @brief IgANet generator
+  /// @brief IgANet generator.
   IgANetGenerator<typename Base::value_type> net_;
 
-  /// @brief Optimizer
+  /// @brief Optimizer.
   std::unique_ptr<optimizer_type> opt_;
 
-  /// @brief Options
+  /// @brief Options.
   IgANetOptions options_;
 
 public:
-  /// @brief Default constructor
+  /// @brief Default constructor.
+  /// @param defaults Value of `defaults`.
+  /// @param options Configuration options.
   explicit IgANet(const IgANetOptions &defaults = {},
                    iganet::Options<typename Base::value_type> options =
                        iganet::Options<typename Base::value_type>{})
@@ -553,7 +651,14 @@ public:
         options_(defaults) {}
 
   /// @brief Constructor: number of layers, activation functions, and
-  /// number of spline coefficients (same for all inputs and outputs)
+  /// number of spline coefficients (same for all inputs and outputs).
+  /// @tparam NumCoeffs Template parameter `NumCoeffs`.
+  /// @param layers Value of `layers`.
+  /// @param activations Value of `activations`.
+  /// @param numCoeffs Value of `numCoeffs`.
+  /// @param init Value of `init`.
+  /// @param defaults Value of `defaults`.
+  /// @param options Configuration options.
   template <typename NumCoeffs>
   IgANet(const std::vector<int64_t> &layers,
           const std::vector<std::vector<std::any>> &activations,
@@ -565,7 +670,16 @@ public:
                 options) {}
 
   /// @brief Constructor: number of layers, activation functions, and
-  /// number of spline coefficients (same for all inputs and outputs)
+  /// number of spline coefficients (same for all inputs and outputs).
+  /// @tparam NumCoeffsInputs Template parameter `NumCoeffsInputs`.
+  /// @tparam NumCoeffsOutputs Template parameter `NumCoeffsOutputs`.
+  /// @param layers Value of `layers`.
+  /// @param activations Value of `activations`.
+  /// @param numCoeffsInputs Value of `numCoeffsInputs`.
+  /// @param numCoeffsOutputs Value of `numCoeffsOutputs`.
+  /// @param init Value of `init`.
+  /// @param defaults Value of `defaults`.
+  /// @param options Configuration options.
   template <typename NumCoeffsInputs, typename NumCoeffsOutputs>
   IgANet(const std::vector<int64_t> &layers,
           const std::vector<std::vector<std::any>> &activations,
@@ -588,24 +702,28 @@ public:
         // Set options
         options_(defaults) {}
 
-  /// @brief Returns a constant reference to the IgANet generator
+  /// @brief Returns a constant reference to the IgANet generator.
+  /// @return Result of the operation.
   inline const IgANetGenerator<typename Base::value_type> &net() const {
     return net_;
   }
 
-  /// @brief Returns a non-constant reference to the IgANet generator
+  /// @brief Returns a non-constant reference to the IgANet generator.
+  /// @return Result of the operation.
   inline IgANetGenerator<typename Base::value_type> &net() { return net_; }
 
-  /// @brief Returns a constant reference to the optimizer
+  /// @brief Returns a constant reference to the optimizer.
+  /// @return Result of the operation.
   inline const optimizer_type &optimizer() const { return *opt_; }
 
-  /// @brief Returns a non-constant reference to the optimizer
+  /// @brief Returns a non-constant reference to the optimizer.
+  /// @return Result of the operation.
   inline optimizer_type &optimizer() { return *opt_; }
 
-  /// @brief Resets the optimizer
+  /// @brief Resets the optimizer.
   ///
   /// @param[in] resetOptions Flag to indicate whether the optimizer options
-  /// should be resetted
+  /// should be resetted.
   inline void optimizerReset(bool resetOptions = true) {
     if (resetOptions)
       opt_ = std::make_unique<optimizer_type>(net_->parameters());
@@ -620,13 +738,16 @@ public:
     }
   }
 
-  /// @brief Resets the optimizer
+  /// @brief Resets the optimizer.
+  /// @param optimizerOptions Value of `optimizerOptions`.
   inline void optimizerReset(const optimizer_options_type &optimizerOptions) {
     opt_ =
         std::make_unique<optimizer_type>(net_->parameters(), optimizerOptions);
   }
 
-  /// @brief Returns a non-constant reference to the optimizer options
+  /// @brief Returns a non-constant reference to the optimizer options.
+  /// @param param_group Value of `param_group`.
+  /// @return Result of the operation.
   inline optimizer_options_type &optimizerOptions(std::size_t param_group = 0) {
     if (param_group < opt_->param_groups().size())
       return static_cast<optimizer_options_type &>(
@@ -635,7 +756,9 @@ public:
       throw std::runtime_error("Index exceeds number of parameter groups");
   }
 
-  /// @brief Returns a constant reference to the optimizer options
+  /// @brief Returns a constant reference to the optimizer options.
+  /// @param param_group Value of `param_group`.
+  /// @return Result of the operation.
   inline const optimizer_options_type &
   optimizerOptions(std::size_t param_group = 0) const {
     if (param_group < opt_->param_groups().size())
@@ -645,19 +768,23 @@ public:
       throw std::runtime_error("Index exceeds number of parameter groups");
   }
 
-  /// @brief Resets the optimizer options
+  /// @brief Resets the optimizer options.
+  /// @param options Configuration options.
   inline void optimizerOptionsReset(const optimizer_options_type &options) {
     for (auto &group : opt_->param_groups())
       static_cast<optimizer_options_type &>(group.options()) = options;
   }
 
-  /// @brief Resets the optimizer options
+  /// @brief Resets the optimizer options.
+  /// @param options Configuration options.
   inline void optimizerOptionsReset(optimizer_options_type &&options) {
     for (auto &group : opt_->param_groups())
       static_cast<optimizer_options_type &>(group.options()) = options;
   }
 
-  /// @brief Resets the optimizer options
+  /// @brief Resets the optimizer options.
+  /// @param options Configuration options.
+  /// @param param_group Value of `param_group`.
   inline void optimizerOptionsReset(const optimizer_options_type &options,
                                     std::size_t param_group) {
     if (param_group < opt_->param_groups().size())
@@ -667,7 +794,9 @@ public:
       throw std::runtime_error("Index exceeds number of parameter groups");
   }
 
-  /// @brief Resets the optimizer options
+  /// @brief Resets the optimizer options.
+  /// @param options Configuration options.
+  /// @param param_group Value of `param_group`.
   inline void optimizerOptionsReset(optimizer_options_type &&options,
                                     std::size_t param_group) {
     if (param_group < opt_->param_groups().size())
@@ -677,37 +806,48 @@ public:
       throw std::runtime_error("Index exceeds number of parameter groups");
   }
 
-  /// @brief Returns a constant reference to the options structure
+  /// @brief Returns a constant reference to the options structure.
+  /// @return Result of the operation.
   inline const auto &options() const { return options_; }
 
-  /// @brief Returns a non-constant reference to the options structure
+  /// @brief Returns a non-constant reference to the options structure.
+  /// @return Result of the operation.
   inline auto &options() { return options_; }
 
-  /// @brief Returns a constant reference to the tuple of input objects
+  /// @brief Returns a constant reference to the tuple of input objects.
+  /// @return Result of the operation.
   inline constexpr const auto &inputs() const { return Base::inputs(); }
 
-  /// @brief Returns a non-constant reference to the tuple of input objects
+  /// @brief Returns a non-constant reference to the tuple of input objects.
+  /// @return Result of the operation.
   inline constexpr auto &inputs() { return Base::inputs(); }
 
-  /// @brief Returns a constant reference to the tuple of output objects
+  /// @brief Returns a constant reference to the tuple of output objects.
+  /// @return Result of the operation.
   inline constexpr const auto &outputs() const { return Base::outputs(); }
 
-  /// @brief Returns a non-constant reference to the tuple of output objects
+  /// @brief Returns a non-constant reference to the tuple of output objects.
+  /// @return Result of the operation.
   inline constexpr auto &outputs() { return Base::outputs(); }
 
-  /// @brief Returns the network inputs as tensor
+  /// @brief Returns the network inputs as tensor.
+  /// @param epoch Value of `epoch`.
+  /// @return Result of the operation.
   virtual torch::Tensor inputs(int64_t epoch) const {
     return utils::cat_tuple_into_tensor(
         Base::inputs_, [](const auto &obj) { return obj.as_tensor(); });
   }
 
-  /// @brief Returns the network outputs as tensor
+  /// @brief Returns the network outputs as tensor.
+  /// @param epoch Value of `epoch`.
+  /// @return Result of the operation.
   virtual torch::Tensor outputs(int64_t epoch) const {
     return utils::cat_tuple_into_tensor(
         Base::outputs_, [](const auto &obj) { return obj.as_tensor(); });
   }
 
-  /// @brief Attaches the given tensor to the inputs
+  /// @brief Attaches the given tensor to the inputs.
+  /// @param tensor Tensor to process.
   virtual void inputs(const torch::Tensor &tensor) {
     utils::slice_tensor_into_tuple(
         Base::inputs_, tensor,
@@ -715,7 +855,8 @@ public:
         [](auto &obj, const auto &tensor) { return obj.from_tensor(tensor); });
   }
 
-  /// @brief Attaches the given tensor to the outputs
+  /// @brief Attaches the given tensor to the outputs.
+  /// @param tensor Tensor to process.
   virtual void outputs(const torch::Tensor &tensor) {
     utils::slice_tensor_into_tuple(
         Base::outputs_, tensor,
@@ -723,13 +864,15 @@ public:
         [](auto &obj, const auto &tensor) { return obj.from_tensor(tensor); });
   }
 
-  /// @brief Initializes epoch
+  /// @brief Initializes epoch.
+  /// @return Result of the operation.
   virtual bool epoch(int64_t) = 0;
 
-  /// @brief Computes the loss function
+  /// @brief Computes the loss function.
+  /// @return Result of the operation.
   virtual torch::Tensor loss(const torch::Tensor &, int64_t) = 0;
 
-  /// @brief Trains the IgANet
+  /// @brief Trains the IgANet.
   virtual void train(
 #ifdef IGANET_WITH_MPI
       c10::intrusive_ptr<c10d::ProcessGroupMPI> pg =
@@ -805,7 +948,12 @@ public:
                    << ", loss: " << previous_loss << std::endl;
   }
 
-  /// @brief Trains the IgANet
+  /// @brief Trains the IgANet.
+  /// @tparam DataLoader Template parameter `DataLoader`.
+  /// @param loader Training data loader.
+#ifdef IGANET_WITH_MPI
+  /// @param pg MPI process group.
+#endif
   template <typename DataLoader>
   void train(DataLoader &loader
 #ifdef IGANET_WITH_MPI
@@ -899,31 +1047,35 @@ public:
                    << ", loss: " << previous_loss << std::endl;
   }
 
-  /// @brief Evaluate IgANet
+  /// @brief Evaluate IgANet.
   void eval() {
     torch::Tensor inputs = this->inputs(0);
     torch::Tensor outputs = net_->forward(inputs);
     this->outputs(outputs);
   }
 
-  /// @brief Returns the IgANet object as JSON object
+  /// @brief Returns the IgANet object as JSON object.
+  /// @return Result of the operation.
   inline nlohmann::json to_json() const override {
     return "Not implemented yet";
   }
 
-  /// @brief Returns a constant reference to the parameters of the IgANet object
+  /// @brief Returns a constant reference to the parameters of the IgANet object.
+  /// @return Result of the operation.
   inline std::vector<torch::Tensor> parameters() const noexcept {
     return net_->parameters();
   }
 
   /// @brief Returns a constant reference to the named parameters of the IgANet
-  /// object
+  /// object.
+  /// @return Result of the operation.
   inline torch::OrderedDict<std::string, torch::Tensor>
   named_parameters() const noexcept {
     return net_->named_parameters();
   }
 
-  /// @brief Returns the total number of parameters of the IgANet object
+  /// @brief Returns the total number of parameters of the IgANet object.
+  /// @return Result of the operation.
   inline std::size_t nparameters() const noexcept {
     std::size_t result = 0;
     for (const auto &param : this->parameters()) {
@@ -932,12 +1084,17 @@ public:
     return result;
   }
 
-  /// @brief Registers a parameter
+  /// @brief Registers a parameter.
+  /// @param name Value of `name`.
+  /// @param tensor Tensor to process.
+  /// @param requires_grad Value of `requires_grad`.
+  /// @return Result of the operation.
   torch::Tensor& register_parameter(std::string name, torch::Tensor tensor, bool requires_grad = true) {
     return net_->register_parameter(name, tensor, requires_grad);
   }
   
-  /// @brief Returns a string representation of the IgANet object
+  /// @brief Returns a string representation of the IgANet object.
+  /// @param os Output stream.
   inline void pretty_print(std::ostream &os) const noexcept override {
     os << name() << "(\n"
        << "net = " << net_ << "\n";
@@ -958,14 +1115,18 @@ public:
     os << ")";
   }
 
-  /// @brief Saves the IgANet to file
+  /// @brief Saves the IgANet to file.
+  /// @param filename Path of the file to process.
+  /// @param key Serialization key.
   inline void save(const std::string &filename,
                    const std::string &key = "iganet") const {
     torch::serialize::OutputArchive archive;
     write(archive, key).save_to(filename);
   }
 
-  /// @brief Loads the IgANet from file
+  /// @brief Loads the IgANet from file.
+  /// @param filename Path of the file to process.
+  /// @param key Serialization key.
   inline void load(const std::string &filename,
                    const std::string &key = "iganet") {
     torch::serialize::InputArchive archive;
@@ -973,7 +1134,10 @@ public:
     read(archive, key);
   }
 
-  /// @brief Writes the IgANet into a torch::serialize::OutputArchive object
+  /// @brief Writes the IgANet into a torch::serialize::OutputArchive object.
+  /// @param archive Serialization archive.
+  /// @param key Serialization key.
+  /// @return Result of the operation.
   inline torch::serialize::OutputArchive &
   write(torch::serialize::OutputArchive &archive,
         const std::string &key = "iganet") const {
@@ -1019,7 +1183,10 @@ public:
     return archive;
   }
 
-  /// @brief Loads the IgANet from a torch::serialize::InputArchive object
+  /// @brief Loads the IgANet from a torch::serialize::InputArchive object.
+  /// @param archive Serialization archive.
+  /// @param key Serialization key.
+  /// @return Result of the operation.
   inline torch::serialize::InputArchive &
   read(torch::serialize::InputArchive &archive,
        const std::string &key = "iganet") {
@@ -1066,7 +1233,9 @@ public:
     return archive;
   }
 
-  /// @brief Returns true if both IgANet objects are the same
+  /// @brief Returns true if both IgANet objects are the same.
+  /// @param other Second input value.
+  /// @return Result of the operation.
   bool operator==(const IgANet &other) const {
     bool result(true);
 
@@ -1083,12 +1252,14 @@ public:
     return result;
   }
 
-  /// @brief Returns true if both IgANet objects are different
+  /// @brief Returns true if both IgANet objects are different.
+  /// @param other Second input value.
+  /// @return Result of the operation.
   bool operator!=(const IgANet &other) const { return *this != other; }
 
 #ifdef IGANET_WITH_MPI
 private:
-  /// @brief Waits for all work processes
+  /// @brief Waits for all work processes.
   static void waitWork(c10::intrusive_ptr<c10d::ProcessGroupMPI> pg,
                        std::vector<c10::intrusive_ptr<c10d::Work>> works) {
     for (auto &work : works) {
@@ -1104,7 +1275,10 @@ private:
 #endif
 };
 
-/// @brief Prints an IgANet object
+/// @brief Prints an IgANet object.
+/// @param os Output stream.
+/// @param obj Object to process.
+/// @return Result of the operation.
 template <typename Optimizer, typename Inputs, typename Outputs,
           typename CollPts>
   requires OptimizerType<Optimizer>
@@ -1115,11 +1289,11 @@ operator<<(std::ostream &os,
   return os;
 }
 
-/// @brief IgANetCustomizable
+/// @brief IgANetCustomizable.
 ///
 /// This class implements a customizable variant of IgANets that
 /// provides types and attributes for precomputing indices and basis
-/// functions
+/// functions.
 ///
 /// @{
 template <typename, typename, typename = void> class IgANetCustomizable;
@@ -1127,7 +1301,7 @@ template <typename, typename, typename = void> class IgANetCustomizable;
 template <detail::HasAsTensor... Inputs, detail::HasAsTensor... Outputs>
 class IgANetCustomizable<std::tuple<Inputs...>, std::tuple<Outputs...>, void> {
 private:
-  /// @brief Returns the interior knot indices of all tuple elements
+  /// @brief Returns the interior knot indices of all tuple elements.
   static auto find_interior_knot_indices(auto &&tuple) {
     return std::apply(
         []<typename... Elems>(Elems &&...elems) {
@@ -1144,7 +1318,7 @@ private:
         tuple);
   }
 
-  /// @brief Returns the boundary knot indices of all tuple elements
+  /// @brief Returns the boundary knot indices of all tuple elements.
   static auto find_boundary_knot_indices(auto &&tuple) {
     return std::apply(
         []<typename... Elems>(Elems &&...elems) {
@@ -1161,7 +1335,7 @@ private:
         tuple);
   }
 
-  /// @brief Returns the interior coeff indices of all tuple elements
+  /// @brief Returns the interior coeff indices of all tuple elements.
   static auto find_interior_coeff_indices(auto &&tuple) {
     return std::apply(
         []<typename... Elems>(Elems &&...elems) {
@@ -1178,7 +1352,7 @@ private:
         tuple);
   }
 
-  /// @brief Returns the boundary coeff indices of all tuple elements
+  /// @brief Returns the boundary coeff indices of all tuple elements.
   static auto find_boundary_coeff_indices(auto &&tuple) {
     return std::apply(
         []<typename... Elems>(Elems &&...elems) {
@@ -1196,88 +1370,88 @@ private:
   }
 
 public:
-  /// @brief Type of the knot indices of the inputs in the interior
+  /// @brief Type of the knot indices of the inputs in the interior.
   using inputs_interior_knot_indices_type = decltype(find_interior_knot_indices(
       std::declval<std::tuple<Inputs...>>()));
 
   /// @brief Type alias for the type of the index-th knot indices of the inputs
-  /// in the interior
+  /// in the interior.
   template <std::size_t index>
   using input_interior_knot_indices_t =
       std::tuple_element_t<index, inputs_interior_knot_indices_type>;
 
-  /// @brief Type of the knot indices of the inputs at the boundary
+  /// @brief Type of the knot indices of the inputs at the boundary.
   using inputs_boundary_knot_indices_type = decltype(find_boundary_knot_indices(
       std::declval<std::tuple<Inputs...>>()));
 
   /// @brief Type alias for the type of the index-th knot indices of the inputs
-  /// at the boundary
+  /// at the boundary.
   template <std::size_t index>
   using input_boundary_knot_indices_t =
       std::tuple_element_t<index, inputs_boundary_knot_indices_type>;
 
-  /// @brief Type of the knot indices of the outputs in the interior
+  /// @brief Type of the knot indices of the outputs in the interior.
   using outputs_interior_knot_indices_type =
       decltype(find_interior_knot_indices(
           std::declval<std::tuple<Outputs...>>()));
 
   /// @brief Type alias for the type of the index-th knot indices of the outputs
-  /// in the interior
+  /// in the interior.
   template <std::size_t index>
   using output_interior_knot_indices_t =
       std::tuple_element_t<index, outputs_interior_knot_indices_type>;
 
-  /// @brief Type of the knot indices of the outputs at the boundary
+  /// @brief Type of the knot indices of the outputs at the boundary.
   using outputs_boundary_knot_indices_type =
       decltype(find_boundary_knot_indices(
           std::declval<std::tuple<Outputs...>>()));
 
   /// @brief Type alias for the type of the index-th knot indices of the outputs
-  /// at the boundary
+  /// at the boundary.
   template <std::size_t index>
   using output_boundary_knot_indices_t =
       std::tuple_element_t<index, outputs_boundary_knot_indices_type>;
 
-  /// @brief Type of the coefficient indices of the inputs in the interior
+  /// @brief Type of the coefficient indices of the inputs in the interior.
   using inputs_interior_coeff_indices_type =
       decltype(find_interior_coeff_indices(
           std::declval<std::tuple<Inputs...>>()));
 
   /// @brief Type alias for the type of the index-th coefficient indices of the
-  /// inputs in the interior
+  /// inputs in the interior.
   template <std::size_t index>
   using input_interior_coeff_indices_t =
       std::tuple_element_t<index, inputs_interior_coeff_indices_type>;
 
-  /// @brief Type of the coefficient indices of the inputs at the boundary
+  /// @brief Type of the coefficient indices of the inputs at the boundary.
   using inputs_boundary_coeff_indices_type =
       decltype(find_boundary_coeff_indices(
           std::declval<std::tuple<Inputs...>>()));
 
   /// @brief Type alias for the type of the index-th coefficient indices of the
-  /// inputs at the boundary
+  /// inputs at the boundary.
   template <std::size_t index>
   using input_boundary_coeff_indices_t =
       std::tuple_element_t<index, inputs_boundary_coeff_indices_type>;
 
-  /// @brief Type of the coefficient indices of the outputs in the interior
+  /// @brief Type of the coefficient indices of the outputs in the interior.
   using outputs_interior_coeff_indices_type =
       decltype(find_interior_coeff_indices(
           std::declval<std::tuple<Outputs...>>()));
 
   /// @brief Type alias for the type of the index-th coefficient indices of the
-  /// outputs in the interior
+  /// outputs in the interior.
   template <std::size_t index>
   using output_interior_coeff_indices_t =
       std::tuple_element_t<index, outputs_interior_coeff_indices_type>;
 
-  /// @brief Type of the coefficient indices of the outputs at the boundary
+  /// @brief Type of the coefficient indices of the outputs at the boundary.
   using outputs_boundary_coeff_indices_type =
       decltype(find_boundary_coeff_indices(
           std::declval<std::tuple<Outputs...>>()));
 
   /// @brief Type alias for the type of the index-th coefficient indices of the
-  /// outputs at the boundary
+  /// outputs at the boundary.
   template <std::size_t index>
   using output_boundary_coeff_indices_t =
       std::tuple_element_t<index, outputs_boundary_coeff_indices_type>;
@@ -1291,14 +1465,14 @@ class IgANetCustomizable<std::tuple<Inputs...>, std::tuple<Outputs...>,
                                  void> {
 public:
   /// @brief Type of the knot indices of the collocation points objects in the
-  /// interior
+  /// interior.
   using collPts_interior_knot_indices_type = std::tuple<
       decltype(std::declval<CollPts>()
                    .template find_knot_indices<functionspace::interior>(
                        std::declval<typename CollPts::eval_type>()))...>;
 
   /// @brief Type of the knot indices of the collocation points objects at the
-  /// boundary
+  /// boundary.
   using collPts_boundary_knot_indices_type = std::tuple<
       decltype(std::declval<CollPts>()
                    .template find_knot_indices<functionspace::boundary>(
@@ -1306,14 +1480,14 @@ public:
                            typename CollPts::boundary_eval_type>()))...>;
 
   /// @brief Type of the coefficient indices of the collocation points objects
-  /// in the interior
+  /// in the interior.
   using collPts_interior_coeff_indices_type = std::tuple<
       decltype(std::declval<CollPts>()
                    .template find_coeff_indices<functionspace::interior>(
                        std::declval<typename CollPts::eval_type>()))...>;
 
   /// @brief Type of the coefficient indices of the collocation points objects
-  /// at the boundary
+  /// at the boundary.
   using collPts_boundary_coeff_indices_type = std::tuple<
       decltype(std::declval<CollPts>()
                    .template find_coeff_indices<functionspace::boundary>(

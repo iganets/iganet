@@ -1,11 +1,11 @@
 /**
-   @file net/v1/dataset.hpp
+   @file net/igabase.hpp
 
-   @brief Dataset class
+   @brief IgANet base
 
-   @author Matthias Moller
+   @author Matthias Moller.
 
-   @copyright This file is part of the IgANet project
+   @copyright This file is part of the IgANet project.
 
    This Source Code Form is subject to the terms of the Mozilla Public
    License, v. 2.0. If a copy of the MPL was not distributed with this
@@ -21,13 +21,17 @@
 
 namespace iganet {
     
-/// @brief IgA dataset base class
+/// @brief IgA dataset base class.
 ///
 /// This class implements the specialization of the torch dataset
-/// class for IgA solvers and nets
+/// class for IgA solvers and nets.
 class IgADatasetBase {
 protected:
-  /// @brief Reads a function space from file
+  /// @brief Reads a function space from file.
+  /// @tparam T Template parameter `T`.
+  /// @param location Value of `location`.
+  /// @param obj Object to process.
+  /// @param v Value of `v`.
   template <typename T>
   inline void read_from_xml(const std::string &location, T &obj,
                             std::vector<torch::Tensor> &v) {
@@ -61,7 +65,7 @@ protected:
   }
 };
   
-/// @brief IgA dataset class
+/// @brief IgA dataset class.
 ///
 /// This class implements the specialization of the torch dataset
 /// class for IgA solvers and nets
@@ -75,23 +79,31 @@ class IgADataset<false>
           IgADataset<false>,
           torch::data::Example<torch::Tensor, torch::data::example::NoTarget>> {
 private:
-  /// @brief Vector of tensors representing the geometry maps
+  /// @brief Vector of tensors representing the geometry maps.
   std::vector<torch::Tensor> G_;
 
-  /// @brief Vector of tensors representing the reference data
+  /// @brief Vector of tensors representing the reference data.
   std::vector<torch::Tensor> f_;
 
 public:
-  /// @brief Example type
+  /// @brief Example type.
   using example_type =
       torch::data::Example<torch::Tensor, torch::data::example::NoTarget>;
 
   /// @brief Adds a geometry map from file
   /// @{
+  /// @tparam T Template parameter `T`.
+  /// @param obj Object to process.
+  /// @param location Value of `location`.
   template <typename T> void add_geometryMap(T &obj, std::string location) {
     read_from_xml(location, obj, G_);
   }
 
+  /// @brief Provides the `add_geometryMap` operation.
+  /// @tparam T Template parameter `T`.
+  /// @tparam T Template parameter `T`.
+  /// @param obj Object to process.
+  /// @param location Value of `location`.
   template <typename T> void add_geometryMap(T &&obj, std::string location) {
     read_from_xml(location, obj, G_);
   }
@@ -99,12 +111,23 @@ public:
 
   /// @brief Adds a geometry map from XML object
   /// @{
+  /// @tparam T Template parameter `T`.
+  /// @param obj Object to process.
+  /// @param doc Value of `doc`.
+  /// @param id Object identifier.
+  /// @param label Object label.
   template <typename T>
   void add_geometryMap(T &obj, const pugi::xml_document &doc, int id = 0,
                        const std::string &label = "") {
     G_.emplace_back(obj.from_xml(doc.child("xml"), id, label).as_tensor());
   }
 
+  /// @brief Provides the `add_geometryMap` operation.
+  /// @tparam T Template parameter `T`.
+  /// @param obj Object to process.
+  /// @param doc Value of `doc`.
+  /// @param id Object identifier.
+  /// @param label Object label.
   template <typename T>
   void add_geometryMap(T &&obj, const pugi::xml_document &doc, int id = 0,
                        const std::string &label = "") {
@@ -114,12 +137,23 @@ public:
 
   /// @brief Adds a geometry map from XML node
   /// @{
+  /// @tparam T Template parameter `T`.
+  /// @param obj Object to process.
+  /// @param root Root XML node.
+  /// @param id Object identifier.
+  /// @param label Object label.
   template <typename T>
   void add_geometryMap(T &obj, const pugi::xml_node &root, int id = 0,
                        const std::string &label = "") {
     G_.emplace_back(obj.from_xml(root, id, label).as_tensor());
   }
 
+  /// @brief Provides the `add_geometryMap` operation.
+  /// @tparam T Template parameter `T`.
+  /// @param obj Object to process.
+  /// @param root Root XML node.
+  /// @param id Object identifier.
+  /// @param label Object label.
   template <typename T>
   void add_geometryMap(T &&obj, const pugi::xml_node &root, int id = 0,
                        const std::string &label = "") {
@@ -129,10 +163,18 @@ public:
 
   /// @brief Adds a reference data set from file
   /// @{
+  /// @tparam T Template parameter `T`.
+  /// @param obj Object to process.
+  /// @param location Value of `location`.
   template <typename T> void add_referenceData(T &obj, std::string location) {
     read_from_xml(location, obj, f_);
   }
 
+  /// @brief Provides the `add_referenceData` operation.
+  /// @tparam T Template parameter `T`.
+  /// @tparam T Template parameter `T`.
+  /// @param obj Object to process.
+  /// @param location Value of `location`.
   template <typename T> void add_referenceData(T &&obj, std::string location) {
     read_from_xml(location, obj, f_);
   }
@@ -140,27 +182,49 @@ public:
 
   /// @brief Adds a reference data set from XML object
   /// @{
+  /// @tparam T Template parameter `T`.
+  /// @param obj Object to process.
+  /// @param doc Value of `doc`.
+  /// @param id Object identifier.
+  /// @param label Object label.
   template <typename T>
   void add_referenceData(T &obj, const pugi::xml_document &doc, int id = 0,
                          const std::string &label = "") {
     f_.emplace_back(obj.from_xml(doc.child("xml"), id, label).as_tensor());
   }
 
+  /// @brief Provides the `add_referenceData` operation.
+  /// @tparam T Template parameter `T`.
+  /// @param obj Object to process.
+  /// @param doc Value of `doc`.
+  /// @param id Object identifier.
+  /// @param label Object label.
   template <typename T>
   void add_referenceData(T &&obj, const pugi::xml_document &doc, int id = 0,
                          const std::string &label = "") {
     f_.emplace_back(obj.from_xml(doc.child("xml"), id, label).as_tensor());
   }
-  ///@}
+  /// @}
 
   /// @brief Adds a reference data set from XML node
   /// @{
+  /// @tparam T Template parameter `T`.
+  /// @param obj Object to process.
+  /// @param root Root XML node.
+  /// @param id Object identifier.
+  /// @param label Object label.
   template <typename T>
   void add_referenceData(T &obj, const pugi::xml_node &root, int id = 0,
                          const std::string &label = "") {
     f_.emplace_back(obj.from_xml(root, id, label).as_tensor());
   }
 
+  /// @brief Provides the `add_referenceData` operation.
+  /// @tparam T Template parameter `T`.
+  /// @param obj Object to process.
+  /// @param root Root XML node.
+  /// @param id Object identifier.
+  /// @param label Object label.
   template <typename T>
   void add_referenceData(T &&obj, const pugi::xml_node &root, int id = 0,
                          const std::string &label = "") {
@@ -170,18 +234,31 @@ public:
 
   /// @brief Adds a reference data set from XML node
   /// @{
+  /// @tparam T Template parameter `T`.
+  /// @tparam Func Template parameter `Func`.
+  /// @param obj Object to process.
+  /// @param func Value of `func`.
   template <typename T, typename Func>
   void add_referenceData(T &obj, Func func) {
     f_.emplace_back(obj.transform(func).as_tensor());
   }
 
+  /// @brief Provides the `add_referenceData` operation.
+  /// @tparam T Template parameter `T`.
+  /// @tparam Func Template parameter `Func`.
+  /// @tparam T Template parameter `T`.
+  /// @tparam Func Template parameter `Func`.
+  /// @param obj Object to process.
+  /// @param func Value of `func`.
   template <typename T, typename Func>
   void add_referenceData(T &&obj, Func func) {
     f_.emplace_back(obj.transform(func).as_tensor());
   }
   /// @}
 
-  /// @brief Returns the data set at location index
+  /// @brief Returns the data set at location index.
+  /// @param index Object index.
+  /// @return Result of the operation.
   inline example_type get(std::size_t index) override {
 
     std::size_t geo_index = index / (f_.empty() ? 1 : f_.size());
@@ -199,7 +276,11 @@ public:
         throw std::runtime_error("No geometry maps and reference data");
     }
   };
+/// @brief Provides the `size` operation.
+/// @return Result of the operation.
 
+  /// @brief Provides the `size` operation.
+  /// @return Result of the operation.
   // @brief Return the total size of the data set
   [[nodiscard]] inline torch::optional<std::size_t> size() const override {
     return (G_.empty() ? 1 : G_.size()) * (f_.empty() ? 1 : f_.size());
@@ -211,22 +292,30 @@ class IgADataset<true>
     : public IgADatasetBase,
       public torch::data::Dataset<IgADataset<true>, torch::data::Example<>> {
 private:
-  /// @brief Vector of tensors representing the geometry maps
+  /// @brief Vector of tensors representing the geometry maps.
   std::vector<torch::Tensor> G_;
 
-  /// @brief Vector of tensors representing the reference data
+  /// @brief Vector of tensors representing the reference data.
   std::vector<torch::Tensor> f_;
 
-  /// @brief Vector of tensors representing the solution data
+  /// @brief Vector of tensors representing the solution data.
   std::vector<torch::Tensor> u_;
 
 public:
   /// @brief Adds a geometry map from file
   /// @{
+  /// @tparam T Template parameter `T`.
+  /// @param obj Object to process.
+  /// @param location Value of `location`.
   template <typename T> void add_geometryMap(T &obj, std::string location) {
     read_from_xml(location, obj, G_);
   }
 
+  /// @brief Provides the `add_geometryMap` operation.
+  /// @tparam T Template parameter `T`.
+  /// @tparam T Template parameter `T`.
+  /// @param obj Object to process.
+  /// @param location Value of `location`.
   template <typename T> void add_geometryMap(T &&obj, std::string location) {
     read_from_xml(location, obj, G_);
   }
@@ -234,12 +323,23 @@ public:
 
   /// @brief Adds a geometry map from XML object
   /// @{
+  /// @tparam T Template parameter `T`.
+  /// @param obj Object to process.
+  /// @param doc Value of `doc`.
+  /// @param id Object identifier.
+  /// @param label Object label.
   template <typename T>
   void add_geometryMap(T &obj, const pugi::xml_document &doc, int id = 0,
                        const std::string &label = "") {
     G_.emplace_back(obj.from_xml(doc.child("xml"), id, label).as_tensor());
   }
 
+  /// @brief Provides the `add_geometryMap` operation.
+  /// @tparam T Template parameter `T`.
+  /// @param obj Object to process.
+  /// @param doc Value of `doc`.
+  /// @param id Object identifier.
+  /// @param label Object label.
   template <typename T>
   void add_geometryMap(T &&obj, const pugi::xml_document &doc, int id = 0,
                        const std::string &label = "") {
@@ -249,12 +349,23 @@ public:
 
   /// @brief Adds a geometry map from XML node
   /// @{
+  /// @tparam T Template parameter `T`.
+  /// @param obj Object to process.
+  /// @param root Root XML node.
+  /// @param id Object identifier.
+  /// @param label Object label.
   template <typename T>
   void add_geometryMap(T &obj, const pugi::xml_node &root, int id = 0,
                        const std::string &label = "") {
     G_.emplace_back(obj.from_xml(root, id, label).as_tensor());
   }
 
+  /// @brief Provides the `add_geometryMap` operation.
+  /// @tparam T Template parameter `T`.
+  /// @param obj Object to process.
+  /// @param root Root XML node.
+  /// @param id Object identifier.
+  /// @param label Object label.
   template <typename T>
   void add_geometryMap(T &&obj, const pugi::xml_node &root, int id = 0,
                        const std::string &label = "") {
@@ -264,10 +375,18 @@ public:
 
   /// @brief Adds a reference data set from file
   /// @{
+  /// @tparam T Template parameter `T`.
+  /// @param obj Object to process.
+  /// @param location Value of `location`.
   template <typename T> void add_referenceData(T &obj, std::string location) {
     read_from_xml(location, obj, f_);
   }
 
+  /// @brief Provides the `add_referenceData` operation.
+  /// @tparam T Template parameter `T`.
+  /// @tparam T Template parameter `T`.
+  /// @param obj Object to process.
+  /// @param location Value of `location`.
   template <typename T> void add_referenceData(T &&obj, std::string location) {
     read_from_xml(location, obj, f_);
   }
@@ -275,27 +394,49 @@ public:
 
   /// @brief Adds a reference data set from XML object
   /// @{
+  /// @tparam T Template parameter `T`.
+  /// @param obj Object to process.
+  /// @param doc Value of `doc`.
+  /// @param id Object identifier.
+  /// @param label Object label.
   template <typename T>
   void add_referenceData(T &obj, const pugi::xml_document &doc, int id = 0,
                          const std::string &label = "") {
     f_.emplace_back(obj.from_xml(doc.child("xml"), id, label).as_tensor());
   }
 
+  /// @brief Provides the `add_referenceData` operation.
+  /// @tparam T Template parameter `T`.
+  /// @param obj Object to process.
+  /// @param doc Value of `doc`.
+  /// @param id Object identifier.
+  /// @param label Object label.
   template <typename T>
   void add_referenceData(T &&obj, const pugi::xml_document &doc, int id = 0,
                          const std::string &label = "") {
     f_.emplace_back(obj.from_xml(doc.child("xml"), id, label).as_tensor());
   }
-  ///@}
+  /// @}
 
   /// @brief Adds a reference data set from XML node
   /// @{
+  /// @tparam T Template parameter `T`.
+  /// @param obj Object to process.
+  /// @param root Root XML node.
+  /// @param id Object identifier.
+  /// @param label Object label.
   template <typename T>
   void add_referenceData(T &obj, const pugi::xml_node &root, int id = 0,
                          const std::string &label = "") {
     f_.emplace_back(obj.from_xml(root, id, label).as_tensor());
   }
 
+  /// @brief Provides the `add_referenceData` operation.
+  /// @tparam T Template parameter `T`.
+  /// @param obj Object to process.
+  /// @param root Root XML node.
+  /// @param id Object identifier.
+  /// @param label Object label.
   template <typename T>
   void add_referenceData(T &&obj, const pugi::xml_node &root, int id = 0,
                          const std::string &label = "") {
@@ -305,11 +446,22 @@ public:
 
   /// @brief Adds a reference data set from XML node
   /// @{
+  /// @tparam T Template parameter `T`.
+  /// @tparam Func Template parameter `Func`.
+  /// @param obj Object to process.
+  /// @param func Value of `func`.
   template <typename T, typename Func>
   void add_referenceData(T &obj, Func func) {
     f_.emplace_back(obj.transform(func).as_tensor());
   }
 
+  /// @brief Provides the `add_referenceData` operation.
+  /// @tparam T Template parameter `T`.
+  /// @tparam Func Template parameter `Func`.
+  /// @tparam T Template parameter `T`.
+  /// @tparam Func Template parameter `Func`.
+  /// @param obj Object to process.
+  /// @param func Value of `func`.
   template <typename T, typename Func>
   void add_referenceData(T &&obj, Func func) {
     f_.emplace_back(obj.transform(func).as_tensor());
@@ -318,10 +470,18 @@ public:
 
   /// @brief Adds a solution from file
   /// @{
+  /// @tparam T Template parameter `T`.
+  /// @param obj Object to process.
+  /// @param location Value of `location`.
   template <typename T> void add_solution(T &obj, std::string location) {
     read_from_xml(location, obj, u_);
   }
 
+  /// @brief Provides the `add_solution` operation.
+  /// @tparam T Template parameter `T`.
+  /// @tparam T Template parameter `T`.
+  /// @param obj Object to process.
+  /// @param location Value of `location`.
   template <typename T> void add_solution(T &&obj, std::string location) {
     read_from_xml(location, obj, u_);
   }
@@ -329,12 +489,23 @@ public:
 
   /// @brief Adds a solution from XML object
   /// @{
+  /// @tparam T Template parameter `T`.
+  /// @param obj Object to process.
+  /// @param doc Value of `doc`.
+  /// @param id Object identifier.
+  /// @param label Object label.
   template <typename T>
   void add_solution(T &obj, const pugi::xml_document &doc, int id = 0,
                     const std::string &label = "") {
     u_.emplace_back(obj.from_xml(doc.child("xml"), id, label).as_tensor());
   }
 
+  /// @brief Provides the `add_solution` operation.
+  /// @tparam T Template parameter `T`.
+  /// @param obj Object to process.
+  /// @param doc Value of `doc`.
+  /// @param id Object identifier.
+  /// @param label Object label.
   template <typename T>
   void add_solution(T &&obj, const pugi::xml_document &doc, int id = 0,
                     const std::string &label = "") {
@@ -344,12 +515,23 @@ public:
 
   /// @brief Adds a solution from XML node
   /// @{
+  /// @tparam T Template parameter `T`.
+  /// @param obj Object to process.
+  /// @param root Root XML node.
+  /// @param id Object identifier.
+  /// @param label Object label.
   template <typename T>
   void add_solution(T &obj, const pugi::xml_node &root, int id = 0,
                     const std::string &label = "") {
     u_.emplace_back(obj.from_xml(root, id, label).as_tensor());
   }
 
+  /// @brief Provides the `add_solution` operation.
+  /// @tparam T Template parameter `T`.
+  /// @param obj Object to process.
+  /// @param root Root XML node.
+  /// @param id Object identifier.
+  /// @param label Object label.
   template <typename T>
   void add_solution(T &&obj, const pugi::xml_node &root, int id = 0,
                     const std::string &label = "") {
@@ -357,7 +539,9 @@ public:
   }
   /// @}
 
-  /// @brief Returns the data set at location index
+  /// @brief Returns the data set at location index.
+  /// @param index Object index.
+  /// @return Result of the operation.
   inline torch::data::Example<> get(std::size_t index) override {
 
     std::size_t geo_index = index / (f_.empty() ? 1 : f_.size());
@@ -376,6 +560,8 @@ public:
     }
   };
 
+  /// @brief Provides the `size` operation.
+  /// @return Result of the operation.
   // @brief Return the total size of the data set
   [[nodiscard]] inline torch::optional<std::size_t> size() const override {
     return (G_.empty() ? 1 : G_.size()) * (f_.empty() ? 1 : f_.size());

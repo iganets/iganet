@@ -1,11 +1,11 @@
 /**
    @file geometry/creator.hpp
 
-   @brief Geometry creator
+   @brief Geometry creator.
 
-   @author Matthias Moller
+   @author Matthias Moller.
 
-   @copyright This file is part of the IgANet project
+   @copyright This file is part of the IgANet project.
 
    This Source Code Form is subject to the terms of the Mozilla Public
    License, v. 2.0. If a copy of the MPL was not distributed with this
@@ -22,39 +22,59 @@
 
 namespace iganet {
 
-/// @brief Abstract creator class
+/// @brief Abstract creator class.
+/// @tparam T Scalar type used for geometry coordinates and bounds.
 template <typename T>
 class CreatorCore : protected iganet::utils::FullQualifiedName {
 public:
-  /// Returns a string representation of the CreatorCore object
+  /// @brief Returns a string representation of the CreatorCore object.
+  /// @param os Stream that receives the representation.
   void pretty_print(std::ostream &os) const noexcept override = 0;
 };
 
-/// Print (as string) a CreatorCore object
+/// @brief Prints a CreatorCore object.
+/// @tparam T Scalar type used by the creator.
+/// @param os Output stream.
+/// @param obj Creator object to print.
+/// @return `os` after the representation has been written.
 template <typename T>
 inline std::ostream &operator<<(std::ostream &os, const CreatorCore<T> &obj) {
   obj.pretty_print(os);
   return os;
 }
 
-/// @brief Interval creator class
+/// @brief Interval creator class.
 ///
 /// This geometry creator generates a sequence of intervals in the
-/// specified bounds [xmin, xmax]
+/// specified bounds [xmin, xmax].
+///
+/// @tparam T Scalar type used for interval coordinates and bounds.
 template <typename T> class IntervalCreator : public CreatorCore<T> {
 public:
-  /// Default constructor
+  /// @brief Default constructor.
+  ///
+  /// Initializes the two endpoint sampling ranges to `[0.0, 0.1]` and
+  /// `[0.9, 1.0]`, respectively, and seeds the random-number generator.
   IntervalCreator() : x0min_(0.0), x0max_(0.1), x1min_(0.9), x1max_(1.0) {
     std::srand(std::time(0));
   }
 
-  /// Bounds constructor
+  /// @brief Bounds constructor.
+  /// @param x0min Lower bound of the first endpoint's sampling range.
+  /// @param x0max Upper bound of the first endpoint's sampling range.
+  /// @param x1min Lower bound of the second endpoint's sampling range.
+  /// @param x1max Upper bound of the second endpoint's sampling range.
   IntervalCreator(const T &x0min, const T &x0max, const T &x1min,
                   const T &x1max)
       : x0min_(x0min), x0max_(x0max), x1min_(x1min), x1max_(x1max) {
     std::srand(std::time(0));
   }
 
+  /// @brief Transforms a spline into the next randomly generated interval.
+  /// @tparam Spline One-dimensional spline type to transform.
+  /// @param obj Spline object modified in place.
+  /// @return A reference to `obj` after applying the interval transformation.
+  /// @note `Spline` must have both parametric and geometric dimension one.
   template <typename Spline>
     requires SplineType<Spline>
   auto &next(Spline &obj) const {
@@ -74,7 +94,8 @@ public:
     return obj;
   }
 
-  /// Returns a string representation of the IntervalCreator object
+  /// @brief Returns a string representation of the IntervalCreator object.
+  /// @param os Stream that receives the representation.
   void pretty_print(std::ostream &os) const noexcept override {
     os << CreatorCore<T>::name() << "\n"
        << "(x0min = " << x0min_ << ", x0max = " << x0max_
@@ -82,23 +103,38 @@ public:
   }
 
 private:
+  /// @brief Bounds of the two endpoint sampling ranges.
   T x0min_, x0max_, x1min_, x1max_;
 };
 
-/// @brief Rectangle creator class
+/// @brief Rectangle creator class.
 ///
 /// This geometry creator generates a sequence of rectangles in the
-/// specified bounds [xmin, xmax] x [ymin, ymax]
+/// specified bounds [xmin, xmax] x [ymin, ymax].
+///
+/// @tparam T Scalar type used for rectangle coordinates and bounds.
 template <typename T> class RectangleCreator : public CreatorCore<T> {
 public:
-  /// Default constructor
+  /// @brief Default constructor.
+  ///
+  /// Initializes each coordinate's two endpoint sampling ranges to
+  /// `[0.0, 0.1]` and `[0.9, 1.0]`, respectively, and seeds the random-number
+  /// generator.
   RectangleCreator()
       : x0min_(0.0), x0max_(0.1), x1min_(0.9), x1max_(1.0), y0min_(0.0),
         y0max_(0.1), y1min_(0.9), y1max_(1.0) {
     std::srand(std::time(0));
   }
 
-  /// Bounds constructor
+  /// @brief Bounds constructor.
+  /// @param x0min Lower bound of the first x-coordinate sampling range.
+  /// @param x0max Upper bound of the first x-coordinate sampling range.
+  /// @param x1min Lower bound of the second x-coordinate sampling range.
+  /// @param x1max Upper bound of the second x-coordinate sampling range.
+  /// @param y0min Lower bound of the first y-coordinate sampling range.
+  /// @param y0max Upper bound of the first y-coordinate sampling range.
+  /// @param y1min Lower bound of the second y-coordinate sampling range.
+  /// @param y1max Upper bound of the second y-coordinate sampling range.
   RectangleCreator(const T &x0min, const T &x0max, const T &x1min,
                    const T &x1max, const T &y0min, const T &y0max,
                    const T &y1min, const T &y1max)
@@ -107,6 +143,11 @@ public:
     std::srand(std::time(0));
   }
 
+  /// @brief Transforms a spline into the next randomly generated rectangle.
+  /// @tparam Spline Two-dimensional spline type to transform.
+  /// @param obj Spline object modified in place.
+  /// @return A reference to `obj` after applying the rectangle transformation.
+  /// @note `Spline` must have both parametric and geometric dimension two.
   template <typename Spline>
     requires SplineType<Spline>
   auto &next(Spline &obj) const {
@@ -132,7 +173,8 @@ public:
     return obj;
   }
 
-  /// Returns a string representation of the RectangleCreator object
+  /// @brief Returns a string representation of the RectangleCreator object.
+  /// @param os Stream that receives the representation.
   void pretty_print(std::ostream &os) const noexcept override {
     os << CreatorCore<T>::name() << "\n"
        << "(x0min = " << x0min_ << ", x0max = " << x0max_
@@ -142,16 +184,23 @@ public:
   }
 
 private:
+  /// @brief Bounds of the x- and y-coordinate sampling ranges.
   T x0min_, x0max_, x1min_, x1max_, y0min_, y0max_, y1min_, y1max_;
 };
 
-/// @brief Cuboid creator class
+/// @brief Cuboid creator class.
 ///
 /// This geometry creator generates a sequence of cuboids in the
-/// specified bounds [xmin, xmax] x [ymin, ymax] x [zmin, zmax]
+/// specified bounds [xmin, xmax] x [ymin, ymax] x [zmin, zmax].
+///
+/// @tparam T Scalar type used for cuboid coordinates and bounds.
 template <typename T> class CuboidCreator : public CreatorCore<T> {
 public:
-  /// Default constructor
+  /// @brief Default constructor.
+  ///
+  /// Initializes each coordinate's two endpoint sampling ranges to
+  /// `[0.0, 0.1]` and `[0.9, 1.0]`, respectively, and seeds the random-number
+  /// generator.
   CuboidCreator()
       : x0min_(0.0), x0max_(0.1), x1min_(0.9), x1max_(1.0), y0min_(0.0),
         y0max_(0.1), y1min_(0.9), y1max_(1.0), z0min_(0.0), z0max_(0.1),
@@ -159,7 +208,19 @@ public:
     std::srand(std::time(0));
   }
 
-  /// Bounds constructor
+  /// @brief Bounds constructor.
+  /// @param x0min Lower bound of the first x-coordinate sampling range.
+  /// @param x0max Upper bound of the first x-coordinate sampling range.
+  /// @param x1min Lower bound of the second x-coordinate sampling range.
+  /// @param x1max Upper bound of the second x-coordinate sampling range.
+  /// @param y0min Lower bound of the first y-coordinate sampling range.
+  /// @param y0max Upper bound of the first y-coordinate sampling range.
+  /// @param y1min Lower bound of the second y-coordinate sampling range.
+  /// @param y1max Upper bound of the second y-coordinate sampling range.
+  /// @param z0min Lower bound of the first z-coordinate sampling range.
+  /// @param z0max Upper bound of the first z-coordinate sampling range.
+  /// @param z1min Lower bound of the second z-coordinate sampling range.
+  /// @param z1max Upper bound of the second z-coordinate sampling range.
   CuboidCreator(const T &x0min, const T &x0max, const T &x1min, const T &x1max,
                 const T &y0min, const T &y0max, const T &y1min, const T &y1max,
                 const T &z0min, const T &z0max, const T &z1min, const T &z1max)
@@ -169,6 +230,11 @@ public:
     std::srand(std::time(0));
   }
 
+  /// @brief Transforms a spline into the next randomly generated cuboid.
+  /// @tparam Spline Three-dimensional spline type to transform.
+  /// @param obj Spline object modified in place.
+  /// @return A reference to `obj` after applying the cuboid transformation.
+  /// @note `Spline` must have both parametric and geometric dimension three.
   template <typename Spline>
     requires SplineType<Spline>
   auto &next(Spline &obj) const {
@@ -201,7 +267,9 @@ public:
     return obj;
   }
 
-  /// Returns a string representation of the RectangleCreator object
+  /// @brief Returns a string representation of the RectangleCreator object.
+  /// @note For this class, the represented object is a CuboidCreator object.
+  /// @param os Stream that receives the representation.
   void pretty_print(std::ostream &os) const noexcept override {
     os << CreatorCore<T>::name() << "\n"
        << "(x0min = " << x0min_ << ", x0max = " << x0max_
@@ -213,6 +281,7 @@ public:
   }
 
 private:
+  /// @brief Bounds of the x-, y-, and z-coordinate sampling ranges.
   T x0min_, x0max_, x1min_, x1max_, y0min_, y0max_, y1min_, y1max_, z0min_,
       z0max_, z1min_, z1max_;
 };

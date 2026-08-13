@@ -1,11 +1,11 @@
 /**
    @file utils/getenv.hpp
 
-   @brief Environment utility function
+   @brief Environment utility function.
 
-   @author Matthias Moller
+   @author Matthias Moller.
 
-   @copyright This file is part of the IgANet project
+   @copyright This file is part of the IgANet project.
 
    This Source Code Form is subject to the terms of the Mozilla Public
    License, v. 2.0. If a copy of the MPL was not distributed with this
@@ -20,7 +20,11 @@
 
 namespace iganet::utils {
 
-/// @brief Returns the value from an environment variable
+/// @brief Returns the value from an environment variable.
+/// @tparam T Template parameter `T`.
+/// @param variable Value of `variable`.
+/// @param default_value Value of `default_value`.
+/// @return Result of the operation.
 template <typename T> T getenv(std::string variable, const T &default_value) {
 
   char *env_value = std::getenv(variable.c_str());
@@ -35,7 +39,11 @@ template <typename T> T getenv(std::string variable, const T &default_value) {
     return default_value;
 }
 
-/// @brief Returns the value from an environment variable
+/// @brief Returns the value from an environment variable.
+/// @tparam T Template parameter `T`.
+/// @param variable Value of `variable`.
+/// @param default_value Value of `default_value`.
+/// @return Result of the operation.
 template <typename T>
 std::vector<T> getenv(std::string variable,
                       std::initializer_list<T> default_value) {

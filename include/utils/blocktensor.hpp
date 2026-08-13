@@ -1,11 +1,11 @@
 /**
    @file utils/blocktensor.hpp
 
-   @brief Compile-time block tensor
+   @brief Compile-time block tensor.
 
-   @author Matthias Moller
+   @author Matthias Moller.
 
-   @copyright This file is part of the IgANet project
+   @copyright This file is part of the IgANet project.
 
    This Source Code Form is subject to the terms of the Mozilla Public
    License, v. 2.0. If a copy of the MPL was not distributed with this
@@ -31,7 +31,11 @@ template <typename T>
 struct is_shared_ptr<std::shared_ptr<T>> : std::true_type {};
 /// @}
 
-/// @brief Returns a std::shared_ptr<T> object from arg
+/// @brief Returns a std::shared_ptr<T> object from arg.
+/// @tparam T Template parameter `T`.
+/// @tparam T Template parameter `T`.
+/// @param arg Value of `arg`.
+/// @return Result of the operation.
 template <typename T> inline auto make_shared(T &&arg) {
   if constexpr (is_shared_ptr<std::decay_t<T>>::value)
     return std::forward<std::decay_t<T>>(arg);
@@ -39,22 +43,25 @@ template <typename T> inline auto make_shared(T &&arg) {
     return std::make_shared<std::decay_t<T>>(std::forward<T>(arg));
 }
 
-/// @brief Forward declaration of BlockTensor
+/// @brief Forward declaration of BlockTensor.
 template <typename T, std::size_t... Dims> class BlockTensor;
 
-/// @brief Compile-time block tensor core
+/// @brief Compile-time block tensor core.
 template <typename T, std::size_t... Dims>
 class BlockTensorCore : protected iganet::utils::FullQualifiedName {
 
 protected:
-  /// @brief Array storing the data
+  /// @brief Array storing the data.
   std::array<std::shared_ptr<T>, (Dims * ...)> data_;
 
 public:
-  /// @brief Default constructor
+  /// @brief Default constructor.
   BlockTensorCore() = default;
 
-  /// @brief Constructor from BlockTensorCore objects
+  /// @brief Constructor from BlockTensorCore objects.
+  /// @tparam Ts Template parameter `Ts`.
+  /// @tparam dims Template parameter `dims`.
+  /// @param other Second input value.
   template <typename... Ts, std::size_t... dims>
   explicit BlockTensorCore(BlockTensorCore<Ts, dims...> &&...other) {
     auto it = data_.begin();
@@ -66,7 +73,10 @@ public:
      ...);
   }
 
-  /// @brief Constructor from BlockTensor objects
+  /// @brief Constructor from BlockTensor objects.
+  /// @tparam Ts Template parameter `Ts`.
+  /// @tparam dims Template parameter `dims`.
+  /// @param other Second input value.
   template <typename... Ts, std::size_t... dims>
   explicit BlockTensorCore(BlockTensor<Ts, dims...> &&...other) {
     auto it = data_.begin();
@@ -78,17 +88,23 @@ public:
      ...);
   }
 
-  /// @brief Constructor from variadic templates
+  /// @brief Constructor from variadic templates.
+  /// @tparam Ts Template parameter `Ts`.
+  /// @param data Value of `data`.
   template <typename... Ts>
   explicit BlockTensorCore(Ts &&...data)
       : data_({make_shared<Ts>(std::forward<Ts>(data))...}) {}
 
-  /// @brief Returns all dimensions as array
+  /// @brief Returns all dimensions as array.
+  /// @tparam Ts Template parameter `Ts`.
+  /// @return Result of the operation.
   inline static constexpr auto dims() {
     return std::array<std::size_t, sizeof...(Dims)>({Dims...});
   }
 
-  /// @brief Returns the i-th dimension
+  /// @brief Returns the i-th dimension.
+  /// @tparam i Template parameter `i`.
+  /// @return Result of the operation.
   template <std::size_t i> inline static constexpr std::size_t dim() {
     if constexpr (i < sizeof...(Dims))
       return std::get<i>(std::forward_as_tuple(Dims...));
@@ -96,56 +112,76 @@ public:
       return 0;
   }
 
-  /// @brief Returns the number of dimensions
+  /// @brief Returns the number of dimensions.
+  /// @return Result of the operation.
   inline static constexpr std::size_t size() { return sizeof...(Dims); }
 
-  /// @brief Returns the total number of entries
+  /// @brief Returns the total number of entries.
+  /// @return Result of the operation.
   inline static constexpr std::size_t entries() { return (Dims * ...); }
 
-  /// @brief Returns a constant reference to the data array
+  /// @brief Returns a constant reference to the data array.
+  /// @return Result of the operation.
   inline const std::array<std::shared_ptr<T>, (Dims * ...)> &data() const {
     return data_;
   }
 
-  /// @brief Returns a non-constant reference to the data array
+  /// @brief Returns a non-constant reference to the data array.
+  /// @return Result of the operation.
   inline std::array<std::shared_ptr<T>, (Dims * ...)> &data() { return data_; }
 
-  /// @brief Returns a constant shared pointer to entry (idx)
+  /// @brief Returns a constant shared pointer to entry (idx).
+  /// @param idx Value of `idx`.
+  /// @return Result of the operation.
   inline const std::shared_ptr<T> &operator[](std::size_t idx) const {
     assert(idx < (Dims * ...));
     return data_[idx];
   }
 
-  /// @brief Returns a non-constant shared pointer to entry (idx)
+  /// @brief Returns a non-constant shared pointer to entry (idx).
+  /// @param idx Value of `idx`.
+  /// @return Result of the operation.
   inline std::shared_ptr<T> &operator[](std::size_t idx) {
     assert(idx < (Dims * ...));
     return data_[idx];
   }
 
-  /// @brief Returns a constant reference to entry (idx)
+  /// @brief Returns a constant reference to entry (idx).
+  /// @return Result of the operation.
   inline const T &operator()(std::size_t idx) const {
     assert(idx < (Dims * ...));
     return *data_[idx];
   }
 
-  /// @brief Returns a non-constant reference to entry (idx)
+  /// @brief Returns a non-constant reference to entry (idx).
+  /// @return Result of the operation.
   inline T &operator()(std::size_t idx) {
     assert(idx < (Dims * ...));
     return *data_[idx];
   }
 
-  /// @brief Stores the given data object at the given index
+  /// @brief Stores the given data object at the given index.
+  /// @tparam Data Template parameter `Data`.
+  /// @param idx Value of `idx`.
+  /// @param data Value of `data`.
+  /// @return Result of the operation.
   template <typename Data> inline T &set(std::size_t idx, Data &&data) {
     assert(idx < (Dims * ...));
     data_[idx] = make_shared<Data>(std::forward<Data>(data));
     return *data_[idx];
   }
 
-  /// @brief Returns a string representation of the BlockTensorCore object
+  /// @brief Returns a string representation of the BlockTensorCore object.
+  /// @param os Output stream.
   inline void pretty_print(std::ostream &os) const noexcept override = 0;
 };
 
-/// Prints (as string) a compile-time block tensor object
+/// @brief Prints (as string) a compile-time block tensor object.
+/// @tparam T Template parameter `T`.
+/// @tparam Dims Template parameter `Dims`.
+/// @param os Output stream.
+/// @param obj Object to process.
+/// @return Result of the operation.
 template <typename T, std::size_t... Dims>
 inline std::ostream &operator<<(std::ostream &os,
                                 const BlockTensorCore<T, Dims...> &obj) {
@@ -153,7 +189,7 @@ inline std::ostream &operator<<(std::ostream &os,
   return os;
 }
 
-/// @brief Compile-time rank-1 block tensor (row vector)
+/// @brief Compile-time rank-1 block tensor (row vector).
 template <typename T, std::size_t Rows>
 class BlockTensor<T, Rows> : public BlockTensorCore<T, Rows> {
 private:
@@ -162,10 +198,12 @@ private:
 public:
   using BlockTensorCore<T, Rows>::BlockTensorCore;
 
-  /// @brief Returns the number of rows
+  /// @brief Returns the number of rows.
+  /// @return Result of the operation.
   inline static constexpr std::size_t rows() { return Rows; }
 
-  /// @brief Returns a string representation of the BlockTensor object
+  /// @brief Returns a string representation of the BlockTensor object.
+  /// @param os Output stream.
   inline void pretty_print(std::ostream &os) const noexcept override {
     os << Base::name() << "\n";
     for (std::size_t row = 0; row < Rows; ++row)
@@ -173,11 +211,11 @@ public:
   }
 };
 
-/// @brief Compile-time rank-2 block tensor (matrix)
+/// @brief Compile-time rank-2 block tensor (matrix).
 ///
 /// Data is store in row-major order, i.e. all entries of a row are
 /// stored contiguously in memory and the entries of the next row
-/// are stored with an offset of Cols
+/// are stored with an offset of Cols.
 template <typename T, std::size_t Rows, std::size_t Cols>
 class BlockTensor<T, Rows, Cols> : public BlockTensorCore<T, Rows, Cols> {
 private:
@@ -186,21 +224,25 @@ private:
 public:
   using BlockTensorCore<T, Rows, Cols>::BlockTensorCore;
 
-  /// @brief Returns the number of rows
+  /// @brief Returns the number of rows.
+  /// @return Result of the operation.
   inline static constexpr std::size_t rows() { return Rows; }
 
-  /// @brief Returns the number of columns
+  /// @brief Returns the number of columns.
+  /// @return Result of the operation.
   inline static constexpr std::size_t cols() { return Cols; }
 
   using Base::operator();
 
-  /// @brief Returns a constant reference to entry (row, col)
+  /// @brief Returns a constant reference to entry (row, col).
+  /// @return Result of the operation.
   inline const T &operator()(std::size_t row, std::size_t col) const {
     assert(row < Rows && col < Cols);
     return *Base::data_[Cols * row + col];
   }
 
-  /// @brief Returns a non-constant reference to entry (row, col)
+  /// @brief Returns a non-constant reference to entry (row, col).
+  /// @return Result of the operation.
   inline T &operator()(std::size_t row, std::size_t col) {
     assert(row < Rows && col < Cols);
     return *Base::data_[Cols * row + col];
@@ -208,7 +250,12 @@ public:
 
   using Base::set;
 
-  /// @brief Stores the given data object at the given position
+  /// @brief Stores the given data object at the given position.
+  /// @tparam D Template parameter `D`.
+  /// @param row Value of `row`.
+  /// @param col Value of `col`.
+  /// @param data Value of `data`.
+  /// @return Result of the operation.
   template <typename D>
   inline T &set(std::size_t row, std::size_t col, D &&data) {
     assert(row < Rows && col < Cols);
@@ -216,7 +263,8 @@ public:
     return *Base::data_[Cols * row + col];
   }
 
-  /// @brief Returns the transpose of the block tensor
+  /// @brief Returns the transpose of the block tensor.
+  /// @return Result of the operation.
   inline auto tr() const {
     BlockTensor<T, Cols, Rows> result;
     for (std::size_t row = 0; row < Rows; ++row)
@@ -225,10 +273,12 @@ public:
     return result;
   }
 
-  /// @brief Returns the determinant of a square block tensor
+  /// @brief Returns the determinant of a square block tensor.
   ///
-  /// This function computes the determinant of a square block tensor
+  /// This function computes the determinant of a square block tensor.
 
+  /// @brief Provides the `det` operation.
+  /// @return Result of the operation.
   inline auto det() const {
     if constexpr (Rows == 1 && Cols == 1) {
       auto result = *Base::data_[0];
@@ -301,9 +351,10 @@ public:
     }
   }
 
-  /// @brief Returns the inverse of the block tensor
+  /// @brief Returns the inverse of the block tensor.
   ///
   /// This function computes the inverse of the block tensor.
+  /// @return Result of the operation.
   inline auto inv() const {
 
     auto det_ = this->det();
@@ -536,13 +587,14 @@ public:
     }
   }
 
-  /// @brief Returns the (generalized) inverse of the block tensor
+  /// @brief Returns the (generalized) inverse of the block tensor.
   ///
   /// This function computes the (generalized) inverse of the
   /// block tensor. For square matrices it computes the regular
   /// inverse matrix based on explicit iversion formulas assuming
   /// that the matrix is invertible. For rectangular matrices it
   /// computes the generalized inverse i.e. \f$(A^T A)^{-1} A^T\f$.
+  /// @return Result of the operation.
   inline auto ginv() const {
     if constexpr (Rows == Cols)
       return this->inv();
@@ -552,10 +604,11 @@ public:
   }
 
   /// @brief Returns the transpose of the inverse of the block
-  /// tensor
+  /// tensor.
   ///
   /// This function computes the transpose of the (generalized)
   /// inverse of the block tensor.
+  /// @return Result of the operation.
   inline auto invtr() const {
 
     auto det_ = this->det();
@@ -791,7 +844,7 @@ public:
   }
 
   /// @brief Returns the transpose of the (generalized) inverse of
-  /// the block tensor
+  /// the block tensor.
   ///
   /// This function computes the transpose of the (generalized)
   /// inverse of the block tensor. For square matrices it computes
@@ -799,6 +852,7 @@ public:
   /// assuming that the matrix is invertible and transposed it
   /// afterward. For rectangular matrices it computes the
   /// generalized inverse i.e. \f$((A^T A)^{-1} A^T)^T = A (A^T A)^{-T}\f$.
+  /// @return Result of the operation.
   inline auto ginvtr() const {
     if constexpr (Rows == Cols)
       return this->invtr();
@@ -807,7 +861,8 @@ public:
       return (*this) * (this->tr() * (*this)).invtr();
   }
 
-  /// @brief Returns the trace of the block tensor
+  /// @brief Returns the trace of the block tensor.
+  /// @return Result of the operation.
   inline auto trace() const {
     static_assert(Rows == Cols, "trace(.) requires square block tensor");
 
@@ -830,7 +885,7 @@ public:
   }
 
 private:
-  /// @brief Returns the norm of the BlockTensor object
+  /// @brief Returns the norm of the BlockTensor object.
   template <std::size_t... Is>
   inline auto norm_(std::index_sequence<Is...>) const {
     return torch::sqrt(
@@ -839,14 +894,15 @@ private:
   }
 
 public:
-  /// @brief Returns the norm of the BlockTensor object
+  /// @brief Returns the norm of the BlockTensor object.
+  /// @return Result of the operation.
   inline auto norm() const {
     return BlockTensor<T, 1, 1>(
         std::make_shared<T>(norm_(std::make_index_sequence<Rows * Cols>{})));
   }
 
 private:
-  /// @brief Returns the normalized BlockTensor object
+  /// @brief Returns the normalized BlockTensor object.
   template <std::size_t... Is>
   inline auto normalize_(std::index_sequence<Is...> is) const {
     auto n_ = norm_(is);
@@ -855,13 +911,14 @@ private:
   }
 
 public:
-  /// @brief Returns the normalized BlockTensor object
+  /// @brief Returns the normalized BlockTensor object.
+  /// @return Result of the operation.
   inline auto normalize() const {
     return normalize_(std::make_index_sequence<Rows * Cols>{});
   }
 
 private:
-  /// @brief Returns the dot product of two BlockTensor objects
+  /// @brief Returns the dot product of two BlockTensor objects.
   template <std::size_t... Is>
   inline auto dot_(std::index_sequence<Is...>,
                    const BlockTensor<T, Rows, Cols> &other) const {
@@ -872,13 +929,16 @@ private:
   }
 
 public:
-  /// @brief Returns the dot product of two BlockTensor objects
+  /// @brief Returns the dot product of two BlockTensor objects.
+  /// @param other Second input value.
+  /// @return Result of the operation.
   inline auto dot(const BlockTensor<T, Rows, Cols> &other) const {
     return BlockTensor<T, 1, 1>(std::make_shared<T>(
         dot_(std::make_index_sequence<Rows * Cols>{}, other)));
   }
 
-  /// @brief Returns a string representation of the BlockTensor object
+  /// @brief Returns a string representation of the BlockTensor object.
+  /// @param os Output stream.
   inline void pretty_print(std::ostream &os) const noexcept override {
     os << Base::name() << "\n";
     for (std::size_t row = 0; row < Rows; ++row)
@@ -889,7 +949,10 @@ public:
 };
 
 /// @brief Multiplies one compile-time rank-2 block tensor with
-/// another compile-time rank-2 block tensor
+/// another compile-time rank-2 block tensor.
+/// @param lhs Left-hand operand.
+/// @param rhs Right-hand operand.
+/// @return Result of the operation.
 template <typename T, typename U, std::size_t Rows, std::size_t Common,
           std::size_t Cols>
 inline auto operator*(const BlockTensor<T, Rows, Common> &lhs,
@@ -917,7 +980,7 @@ inline auto operator*(const BlockTensor<T, Rows, Common> &lhs,
   return result;
 }
 
-/// @brief Compile-time rank-3 block tensor (tensor)
+/// @brief Compile-time rank-3 block tensor (tensor).
 ///
 /// Data is store in row-major order, i.e. all entries of a row are
 /// stored contiguously in memory and the entries of the next row
@@ -932,25 +995,30 @@ private:
 public:
   using BlockTensorCore<T, Rows, Cols, Slices>::BlockTensorCore;
 
-  /// @brief Returns the number of rows
+  /// @brief Returns the number of rows.
+  /// @return Result of the operation.
   inline static constexpr std::size_t rows() { return Rows; }
 
-  /// @brief Returns the number of columns
+  /// @brief Returns the number of columns.
+  /// @return Result of the operation.
   inline static constexpr std::size_t cols() { return Cols; }
 
-  /// @brief Returns the number of slices
+  /// @brief Returns the number of slices.
+  /// @return Result of the operation.
   inline static constexpr std::size_t slices() { return Slices; }
 
   using Base::operator();
 
-  /// @brief Returns a constant reference to entry (row, col, slice)
+  /// @brief Returns a constant reference to entry (row, col, slice).
+  /// @return Result of the operation.
   inline const T &operator()(std::size_t row, std::size_t col,
                              std::size_t slice) const {
     assert(row < Rows && col < Cols && slice < Slices);
     return *Base::data_[Rows * Cols * slice + Cols * row + col];
   }
 
-  /// @brief Returns a non-constant reference to entry (row, col, slice)
+  /// @brief Returns a non-constant reference to entry (row, col, slice).
+  /// @return Result of the operation.
   inline T &operator()(std::size_t row, std::size_t col, std::size_t slice) {
     assert(row < Rows && col < Cols && slice < Slices);
     return *Base::data_[Rows * Cols * slice + Cols * row + col];
@@ -958,7 +1026,13 @@ public:
 
   using Base::set;
 
-  /// @brief Stores the given data object at the given position
+  /// @brief Stores the given data object at the given position.
+  /// @tparam D Template parameter `D`.
+  /// @param row Value of `row`.
+  /// @param col Value of `col`.
+  /// @param slice Value of `slice`.
+  /// @param data Value of `data`.
+  /// @return Result of the operation.
   template <typename D>
   inline T &set(std::size_t row, std::size_t col, std::size_t slice, D &&data) {
     assert(row < Rows && col < Cols && slice < Slices);
@@ -967,7 +1041,9 @@ public:
     return *Base::data_[Rows * Cols * slice + Cols * row + col];
   }
 
-  /// @brief Returns a rank-2 tensor of the k-th slice
+  /// @brief Returns a rank-2 tensor of the k-th slice.
+  /// @param slice Value of `slice`.
+  /// @return Result of the operation.
   inline auto slice(std::size_t slice) const {
     assert(slice < Slices);
     BlockTensor<T, Rows, Cols> result;
@@ -979,7 +1055,8 @@ public:
   }
 
   /// @brief Returns a new block tensor with rows, columns, and
-  ///  slices permuted according to (i,j,k) -> (i,k,j)
+  ///  slices permuted according to (i,j,k) -> (i,k,j).
+  /// @return Result of the operation.
   inline auto reorder_ikj() const {
     BlockTensor<T, Rows, Slices, Cols> result;
     for (std::size_t slice = 0; slice < Slices; ++slice)
@@ -993,6 +1070,7 @@ public:
   /// @brief Returns a new block tensor with rows and columns
   /// transposed and slices remaining fixed. This is equivalent to
   /// looping through all slices and transposing each rank-2 tensor.
+  /// @return Result of the operation.
   inline auto reorder_jik() const {
     BlockTensor<T, Cols, Rows, Slices> result;
     for (std::size_t slice = 0; slice < Slices; ++slice)
@@ -1004,7 +1082,8 @@ public:
   }
 
   /// @brief Returns a new block tensor with rows, columns, and
-  ///  slices permuted according to (i,j,k) -> (k,j,i)
+  ///  slices permuted according to (i,j,k) -> (k,j,i).
+  /// @return Result of the operation.
   inline auto reorder_kji() const {
     BlockTensor<T, Slices, Cols, Rows> result;
     for (std::size_t slice = 0; slice < Slices; ++slice)
@@ -1016,7 +1095,8 @@ public:
   }
 
   /// @brief Returns a new block tensor with rows, columns, and
-  ///  slices permuted according to (i,j,k) -> (k,i,j)
+  ///  slices permuted according to (i,j,k) -> (k,i,j).
+  /// @return Result of the operation.
   inline auto reorder_kij() const {
     BlockTensor<T, Slices, Rows, Cols> result;
     for (std::size_t slice = 0; slice < Slices; ++slice)
@@ -1027,7 +1107,8 @@ public:
     return result;
   }
 
-  /// @brief Returns a string representation of the BSplineCommon object
+  /// @brief Returns a string representation of the BSplineCommon object.
+  /// @param os Output stream.
   inline void pretty_print(std::ostream &os) const noexcept override {
     os << Base::name() << "\n";
     for (std::size_t slice = 0; slice < Slices; ++slice)
@@ -1039,7 +1120,10 @@ public:
 };
 
 /// @brief Multiplies one compile-time rank-2 block tensor from the
-/// left with a compile-time rank-3 block tensor slice-by-slice
+/// left with a compile-time rank-3 block tensor slice-by-slice.
+/// @param lhs Left-hand operand.
+/// @param rhs Right-hand operand.
+/// @return Result of the operation.
 template <typename T, typename U, std::size_t Rows, std::size_t Common,
           std::size_t Cols, std::size_t Slices>
 inline auto operator*(const BlockTensor<T, Rows, Common> &lhs,
@@ -1080,7 +1164,10 @@ inline auto operator*(const BlockTensor<T, Rows, Common> &lhs,
 }
 
 /// @brief Multiplies one compile-time rank-3 block tensor from the
-/// left with a compile-time rank-2 block tensor slice-by-slice
+/// left with a compile-time rank-2 block tensor slice-by-slice.
+/// @param lhs Left-hand operand.
+/// @param rhs Right-hand operand.
+/// @return Result of the operation.
 template <typename T, typename U, std::size_t Rows, std::size_t Common,
           std::size_t Cols, std::size_t Slices>
 inline auto operator*(const BlockTensor<T, Rows, Common, Slices> &lhs,
@@ -1106,7 +1193,13 @@ inline auto operator*(const BlockTensor<T, Rows, Common, Slices> &lhs,
   return result;
 }
 
+/// @brief Defines an element-wise unary block-tensor operation.
+/// @param name Name of the corresponding LibTorch operation.
 #define blocktensor_unary_op(name)                                             \
+  /** @tparam T Block element type.                                            \
+   *  @tparam Dims Compile-time block dimensions.                             \
+   *  @param input Block tensor whose elements are transformed.               \
+   *  @return A block tensor containing the transformed elements. */          \
   template <typename T, std::size_t... Dims>                                   \
   inline auto name(const BlockTensor<T, Dims...> &input) {                     \
     BlockTensor<T, Dims...> result;                                            \
@@ -1115,7 +1208,13 @@ inline auto operator*(const BlockTensor<T, Rows, Common, Slices> &lhs,
     return result;                                                             \
   }
 
+/// @brief Defines an element-wise unary special-function operation.
+/// @param name Name of the corresponding LibTorch special operation.
 #define blocktensor_unary_special_op(name)                                     \
+  /** @tparam T Block element type.                                            \
+   *  @tparam Dims Compile-time block dimensions.                             \
+   *  @param input Block tensor whose elements are transformed.               \
+   *  @return A block tensor containing the transformed elements. */          \
   template <typename T, std::size_t... Dims>                                   \
   inline auto name(const BlockTensor<T, Dims...> &input) {                     \
     BlockTensor<T, Dims...> result;                                            \
@@ -1124,7 +1223,15 @@ inline auto operator*(const BlockTensor<T, Rows, Common, Slices> &lhs,
     return result;                                                             \
   }
 
+/// @brief Defines an element-wise binary block-tensor operation.
+/// @param name Name of the corresponding LibTorch operation.
 #define blocktensor_binary_op(name)                                            \
+  /** @tparam T Left block element type.                                       \
+   *  @tparam U Right block element type.                                     \
+   *  @tparam Dims Compile-time block dimensions.                             \
+   *  @param input Left block tensor.                                         \
+   *  @param other Right block tensor.                                        \
+   *  @return A block tensor containing the element-wise results. */          \
   template <typename T, typename U, std::size_t... Dims>                       \
   inline auto name(const BlockTensor<T, Dims...> &input,                       \
                    const BlockTensor<U, Dims...> &other) {                     \
@@ -1135,7 +1242,15 @@ inline auto operator*(const BlockTensor<T, Rows, Common, Slices> &lhs,
     return result;                                                             \
   }
 
+/// @brief Defines an element-wise binary special-function operation.
+/// @param name Name of the corresponding LibTorch special operation.
 #define blocktensor_binary_special_op(name)                                    \
+  /** @tparam T Left block element type.                                       \
+   *  @tparam U Right block element type.                                     \
+   *  @tparam Dims Compile-time block dimensions.                             \
+   *  @param input Left block tensor.                                         \
+   *  @param other Right block tensor.                                        \
+   *  @return A block tensor containing the element-wise results. */          \
   template <typename T, typename U, std::size_t... Dims>                       \
   inline auto name(const BlockTensor<T, Dims...> &input,                       \
                    const BlockTensor<U, Dims...> &other) {                     \
@@ -1147,32 +1262,41 @@ inline auto operator*(const BlockTensor<T, Rows, Common, Slices> &lhs,
   }
 
 /// @brief Returns a new block tensor with the absolute value of the
-/// elements of `input`
+/// elements of `input`.
 blocktensor_unary_op(abs);
 
-/// @brief Alias for `abs()`
+/// @brief Alias for `abs()`.
+/// @return Result of the operation.
 blocktensor_unary_op(absolute);
 
 /// @brief Returns a new block tensor with the inverse cosine of the
-/// elements of `input`
+/// elements of `input`.
 blocktensor_unary_op(acos);
 
-/// @brief Alias for `acos()`
+/// @brief Alias for `acos()`.
 blocktensor_unary_op(arccos);
 
 /// @brief Returns a new block tensor with the inverse hyperbolic
-/// cosine of the elements of `input`
+/// cosine of the elements of `input`.
 blocktensor_unary_op(acosh);
+/// @brief Provides the `acosh` operation.
+/// @return Result of the operation.
 
-/// @brief Alias for acosh()`
+/// @brief Alias for acosh()`.
 blocktensor_unary_op(arccosh);
 
 /// @brief Returns a new block tensor with the elements of `other`,
-/// scaled by `alpha`, added to the elements of `input`
+/// scaled by `alpha`, added to the elements of `input`.
 template <typename T, typename U, typename V, std::size_t... Dims>
 inline auto add(const BlockTensor<T, Dims...> &input,
                 const BlockTensor<U, Dims...> &other, V alpha = 1.0) {
   BlockTensor<std::common_type_t<T, U>, Dims...> result;
+  /// @brief Provides the `for` operation.
+  /// @tparam T Template parameter `T`.
+  /// @tparam U Template parameter `U`.
+  /// @tparam V Template parameter `V`.
+  /// @tparam Dims Template parameter `Dims`.
+  /// @return Result of the operation.
   for (std::size_t idx = 0; idx < (Dims * ...); ++idx)
     result[idx] =
         std::make_shared<T>(torch::add(*input[idx], *other[idx], alpha));
@@ -1180,7 +1304,7 @@ inline auto add(const BlockTensor<T, Dims...> &input,
 }
 
 /// @brief Returns a new block tensor with the elements of `other`,
-/// scaled by `alpha`, added to the elements of `input`
+/// scaled by `alpha`, added to the elements of `input`.
 template <typename T, typename U, typename V, std::size_t... Dims>
 inline auto add(const BlockTensor<T, Dims...> &input, U other, V alpha = 1.0) {
   BlockTensor<T, Dims...> result;
@@ -1190,7 +1314,15 @@ inline auto add(const BlockTensor<T, Dims...> &input, U other, V alpha = 1.0) {
 }
 
 /// @brief Returns a new block tensor with the elements of `other`,
-/// scaled by `alpha`, added to the elements of `input`
+/// scaled by `alpha`, added to the elements of `input`.
+/// @tparam T Template parameter `T`.
+/// @tparam U Template parameter `U`.
+/// @tparam V Template parameter `V`.
+/// @tparam Dims Template parameter `Dims`.
+/// @param input Input value.
+/// @param other Second input value.
+/// @param alpha Scaling factor.
+/// @return Result of the operation.
 template <typename T, typename U, typename V, std::size_t... Dims>
 inline auto add(T input, const BlockTensor<U, Dims...> &other, V alpha = 1.0) {
   BlockTensor<U, Dims...> result;
@@ -1201,7 +1333,7 @@ inline auto add(T input, const BlockTensor<U, Dims...> &other, V alpha = 1.0) {
 
 /// @brief Returns a new block tensor with the elements of `tensor1`
 /// divided by the elements of `tensor2`, with the result multiplied
-/// by the scalar `value` and added to the elements of `input`
+/// by the scalar `value` and added to the elements of `input`.
 template <typename T, typename U, typename V, typename W, std::size_t... Dims>
 inline auto addcdiv(const BlockTensor<T, Dims...> &input,
                     const BlockTensor<U, Dims...> &tensor1,
@@ -1216,7 +1348,7 @@ inline auto addcdiv(const BlockTensor<T, Dims...> &input,
 /// @brief Returns a new block tensor with the elements of `tensor1`
 /// multiplied by the elements of `tensor2`, with the result
 /// multiplied by the scalar `value` and added to the elements of
-/// `input`
+/// `input`.
 template <typename T, typename U, typename V, typename W, std::size_t... Dims>
 inline auto addcmul(const BlockTensor<T, Dims...> &input,
                     const BlockTensor<U, Dims...> &tensor1,
@@ -1229,79 +1361,80 @@ inline auto addcmul(const BlockTensor<T, Dims...> &input,
 }
 
 /// @brief Returns a new block tensor with the angle (in radians) of
-/// the elements of `input`
+/// the elements of `input`.
 blocktensor_unary_op(angle);
 
 /// @brief Returns a new block tensor with the arcsine of the
-/// elements of `input`
+/// elements of `input`.
 blocktensor_unary_op(asin);
 
-/// @brief Alias for asin()
+/// @brief Alias for asin().
 blocktensor_unary_op(arcsin);
 
 /// @brief Returns a new block tensor with the inverse hyperbolic
-/// sine of the elements of `input`
+/// sine of the elements of `input`.
 blocktensor_unary_op(asinh);
 
-/// @brief Alias for asinh()
+/// @brief Alias for asinh().
 blocktensor_unary_op(arcsinh);
 
 /// @brief Returns a new block tensor with the arctangent of the
-/// elements of `input`
+/// elements of `input`.
 blocktensor_unary_op(atan);
 
-/// @brief Alias for atan()
+/// @brief Alias for atan().
 blocktensor_unary_op(arctan);
 
 /// @brief Returns a new block tensor with the inverse hyperbolic
-/// tangent of the elements of `input`
+/// tangent of the elements of `input`.
 blocktensor_unary_op(atanh)
 
-    /// @brief Alias for atanh()
+    /// @brief Alias for atanh().
     blocktensor_unary_op(arctanh);
 
 /// @brief Returns a new block tensor with the arctangent of the
 /// elements in `input` and `other` with consideration of the
-/// quadrant
+/// quadrant.
 blocktensor_binary_op(atan2);
 
 #if TORCH_VERSION_MAJOR >= 1 && TORCH_VERSION_MINOR >= 11 ||                   \
     TORCH_VERSION_MAJOR >= 2
-/// @brief Alias for atan2()
+/// @brief Alias for atan2().
 blocktensor_binary_op(arctan2);
 #endif
 
 /// @brief Returns a new block tensor with the bitwise NOT of the
-/// elements of `input`
+/// elements of `input`.
 blocktensor_unary_op(bitwise_not);
 
 /// @brief Returns a new block tensor with the bitwise AND of the
-/// elements of `input` and `other`
+/// elements of `input` and `other`.
 blocktensor_binary_op(bitwise_and);
 
 /// @brief Returns a new block tensor with the bitwise OR of the
-/// elements of `input` and `other`
+/// elements of `input` and `other`.
 blocktensor_binary_op(bitwise_or);
 
 /// @brief Returns a new block tensor with the bitwise XOR of the
-/// elements of `input` and `other`
+/// elements of `input` and `other`.
+/// @return Result of the operation.
 blocktensor_binary_op(bitwise_xor);
 
 /// @brief Returns a new block tensor with the left arithmetic shift
-/// of the elements of `input` by `other` bits
+/// of the elements of `input` by `other` bits.
 blocktensor_binary_op(bitwise_left_shift);
 
 /// @brief Returns a new block tensor with the right arithmetic
-/// shift of the element of `input` by `other` bits
+/// shift of the element of `input` by `other` bits.
 blocktensor_binary_op(bitwise_right_shift);
 
 /// @brief Returns a new block tensor with the ceil of the elements of
 /// input, the smallest integer greater than or equal to each
-/// element
+/// element.
 blocktensor_unary_op(ceil);
 
 /// @brief Returns a new block tensor with the elements of `input`
-/// clamped into the range [ min, max ]
+/// clamped into the range [ min, max ].
 template <typename T, typename U, std::size_t... Dims>
 inline auto clamp(const BlockTensor<T, Dims...> &input, U min, U max) {
   BlockTensor<T, Dims...> result;
@@ -1310,7 +1443,7 @@ inline auto clamp(const BlockTensor<T, Dims...> &input, U min, U max) {
   return result;
 }
 
-/// @brief Alias for clamp()
+/// @brief Alias for clamp().
 template <typename T, typename U, std::size_t... Dims>
 inline auto clip(const BlockTensor<T, Dims...> &input, U min, U max) {
   BlockTensor<T, Dims...> result;
@@ -1320,38 +1453,38 @@ inline auto clip(const BlockTensor<T, Dims...> &input, U min, U max) {
 }
 
 /// @brief Returns a new block tensor with the conjugate of the
-/// elements of `input` tensor
+/// elements of `input` tensor.
 blocktensor_unary_op(conj_physical);
 
 /// @brief Returns a new block tensor with the magnitude of the
-/// elements of `input` and the sign of the elements of `other`
+/// elements of `input` and the sign of the elements of `other`.
 blocktensor_binary_op(copysign);
 
 /// @brief Returns a new block tensor with the cosine of the
-/// elements of `input`
+/// elements of `input`.
 blocktensor_unary_op(cos);
 
 /// @brief Returns a new block tensor with the hyperbolic cosine of
-/// the elements of `input`
+/// the elements of `input`.
 blocktensor_unary_op(cosh);
 
 /// @brief Returns a new block tensor with the elements of `input`
-/// converted from angles in degrees to radians
+/// converted from angles in degrees to radians.
 blocktensor_unary_op(deg2rad)
 
     /// @brief Returns a new block tensor with the elements of `input`
-    /// divided by the elements of `other`
+    /// divided by the elements of `other`.
     blocktensor_binary_op(div);
 
-/// @brief Alias for div()
+/// @brief Alias for div().
 blocktensor_binary_op(divide);
 
 /// @brief Returns a new block tensor with the logarithmic
-/// derivative of the gamma function of the elements of `input`
+/// derivative of the gamma function of the elements of `input`.
 blocktensor_unary_op(digamma);
 
 /// @brief Returns a new block tensor with the dot product of the two
-/// input block tensors
+/// input block tensors.
 template <typename T, std::size_t Rows, std::size_t Cols>
 inline auto dot(const BlockTensor<T, Rows, Cols> &input,
                 const BlockTensor<T, Rows, Cols> &tensor) {
@@ -1359,219 +1492,219 @@ inline auto dot(const BlockTensor<T, Rows, Cols> &input,
 }
 
 /// @brief Returns a new block tensor with the error function of the
-/// elements of `input`
+/// elements of `input`.
 blocktensor_unary_op(erf);
 
 /// @brief Returns a new block tensor with the complementary error
-/// function of the elements of `input`
+/// function of the elements of `input`.
 blocktensor_unary_op(erfc);
 
 /// @brief Returns a new block tensor with the inverse error
-/// function of the elements of `input`
+/// function of the elements of `input`.
 blocktensor_unary_op(erfinv);
 
 /// @brief Returns a new block tensor with the exponential of the
-/// elements of `input`
+/// elements of `input`.
 blocktensor_unary_op(exp);
 
 /// @brief Returns a new block tensor with the base-2 exponential of
-/// the elements of `input`
+/// the elements of `input`.
 blocktensor_unary_op(exp2);
 
 /// @brief Returns a new block tensor with the exponential minus 1
-/// of the elements of `input`
+/// of the elements of `input`.
 blocktensor_unary_op(expm1);
 
-/// @brief Alias for trunc()
+/// @brief Alias for trunc().
 blocktensor_unary_op(fix);
 
 /// @brief Returns a new block tensor with the elements of `input`
 /// raised to the power of `exponent`, elementwise, in double
-/// precision
+/// precision.
 blocktensor_binary_op(float_power);
 
 /// @brief Returns a new block tensor with the floor of the elements
-/// of `input`, the largest integer less than or equal to each element
+/// of `input`, the largest integer less than or equal to each element.
 blocktensor_unary_op(floor);
 
 /// @brief Returns a new block tensor with the fmod of the elements
-/// of `input` and `other`
+/// of `input` and `other`.
 blocktensor_binary_op(fmod);
 
 /// @brief Returns a new block tensor with the fractional portion of
-/// the elements of `input`
+/// the elements of `input`.
 blocktensor_unary_op(frac);
 
 /// @brief Returns a new block tensor with the decomposition of the
-/// elements of `input` into mantissae and exponents
+/// elements of `input` into mantissae and exponents.
 blocktensor_unary_op(frexp);
 
 /// @brief Returns a new block tensor with the imaginary values of
-/// the elements of `input`
+/// the elements of `input`.
 blocktensor_unary_op(imag);
 
 /// @brief Returns a new block tensor with the elements of `input`
-/// multiplied by 2**other
+/// multiplied by 2**other.
 blocktensor_binary_op(ldexp);
 
 /// @brief Returns a new block tensor with the natural logarithm of
 /// the absolute value of the gamma function of the elements of
-/// `input`
+/// `input`.
 blocktensor_unary_op(lgamma);
 
 /// @brief Returns a new block tensor with the natural logarithm of
-/// the elements of `input`
+/// the elements of `input`.
 blocktensor_unary_op(log);
 
 /// @brief Returns a new block tensor with the logarithm to the
-/// base-10 of the elements of `input`
+/// base-10 of the elements of `input`.
 blocktensor_unary_op(log10);
 
 /// @brief Returns a new block tensor with the natural logarithm of
-/// (1 + the elements of `input`)
+/// (1 + the elements of `input`).
 blocktensor_unary_op(log1p);
 
 /// @brief Returns a new block tensor with the logarithm to the
-/// base-2 of the elements of `input`
+/// base-2 of the elements of `input`.
 blocktensor_unary_op(log2);
 
 /// @brief Returns a new block-vector with the logarithm of the sum
-/// of exponentiations of the elements of `input`
+/// of exponentiations of the elements of `input`.
 blocktensor_binary_op(logaddexp);
 
 /// @brief Returns a new block-vector with the logarithm of the sum
-/// of exponentiations of the elements of `input` in base-2
+/// of exponentiations of the elements of `input` in base-2.
 blocktensor_binary_op(logaddexp2);
 
 /// @brief Returns a new block tensor with the element-wise logical
-/// AND of the elements of `input` and `other`
+/// AND of the elements of `input` and `other`.
 blocktensor_binary_op(logical_and)
 
     /// @brief Returns a new block tensor with the element-wise logical
-    /// NOT of the elements of `input`
+    /// NOT of the elements of `input`.
     blocktensor_unary_op(logical_not)
 
     /// @brief Returns a new block tensor with the element-wise logical
-    /// OR of the elements of `input` and `other`
+    /// OR of the elements of `input` and `other`.
     blocktensor_binary_op(logical_or)
 
     /// @brief Returns a new block tensor with the element-wise logical
-    /// XOR of the elements of `input` and `other`
+    /// XOR of the elements of `input` and `other`.
     blocktensor_binary_op(logical_xor);
 
-/// logit
+/// @brief logit.
 
-/// @brief Given the legs of a right triangle, return its hypotenuse
+/// @brief Given the legs of a right triangle, return its hypotenuse.
 blocktensor_binary_op(hypot);
 
 /// @brief Returns a new block tensor with the element-wise zeroth
 /// order modified Bessel function of the first kind for each
-/// element of `input`
+/// element of `input`.
 blocktensor_unary_op(i0);
 
 /// @brief Returns a new block tensor with the regularized lower
-/// incomplete gamma function of each element of `input`
+/// incomplete gamma function of each element of `input`.
 blocktensor_binary_special_op(gammainc);
 
-/// @brief Alias for gammainc()
+/// @brief Alias for gammainc().
 blocktensor_binary_op(igamma);
 
 /// @brief Returns a new block tensor with the regularized upper
-/// incomplete gamma function of each element of `input`
+/// incomplete gamma function of each element of `input`.
 blocktensor_binary_special_op(gammaincc);
 
-/// @brief Alias for gammainc()
+/// @brief Alias for gammainc().
 blocktensor_binary_op(igammac);
 
 /// @brief Returns a new block tensor with the product of each
-/// element of `input` and `other`
+/// element of `input` and `other`.
 blocktensor_binary_op(mul);
 
-/// @brief Alias for mul()
+/// @brief Alias for mul().
 blocktensor_binary_op(multiply);
 
 /// @brief Returns a new block tensor with the negative of the
-/// elements of `input`
+/// elements of `input`.
 blocktensor_unary_op(neg);
 
-/// @brief Alias for neg()
+/// @brief Alias for neg().
 blocktensor_unary_op(negative);
 
 /// @brief Return a new block tensor with the next elementwise
-/// floating-point value after `input` towards `other`
+/// floating-point value after `input` towards `other`.
 blocktensor_binary_op(nextafter);
 
-/// @brief Returns a new block tensor with the `input`
+/// @brief Returns a new block tensor with the `input`.
 blocktensor_unary_op(positive);
 
 /// @brief Returns a new block tensor with the power of each element
-/// in `input` with exponent `other`
+/// in `input` with exponent `other`.
 blocktensor_binary_op(pow);
 
 /// @brief Returns a new block tensor with each of the elements of
-/// `input` converted from angles in radians to degrees
+/// `input` converted from angles in radians to degrees.
 blocktensor_unary_op(rad2deg);
 
 /// @brief Returns a new block tensor with the real values of the
-/// elements of `input`
+/// elements of `input`.
 blocktensor_unary_op(real);
 
 /// @brief Returns a new block tensor with the reciprocal of the
-/// elements of `input`
+/// elements of `input`.
 blocktensor_unary_op(reciprocal);
 
 /// @brief Returns a new block tensor with the modulus of the
-/// elements of `input`
+/// elements of `input`.
 blocktensor_binary_op(remainder);
 
 /// @brief Returns a new block tensor with the elements of `input`
-/// rounded to the nearest integer
+/// rounded to the nearest integer.
 blocktensor_unary_op(round);
 
 /// @brief Returns a new block tensor with the reciprocal of the
-/// square-root of the elements of `input`
+/// square-root of the elements of `input`.
 blocktensor_unary_op(rsqrt);
 
 /// @brief Returns a new block tensor with the expit (also known as
-/// the logistic sigmoid function) of the elements of `input`
+/// the logistic sigmoid function) of the elements of `input`.
 blocktensor_unary_special_op(expit);
 
-/// @brief Alias for expit()
+/// @brief Alias for expit().
 blocktensor_unary_op(sigmoid);
 
 /// @brief Returns a new block tensor with the signs of the elements
-/// of `input`
+/// of `input`.
 blocktensor_unary_op(sign);
 
 /// @brief Returns a new block tensor with the signs of the elements
-/// of `input`, extension to complex value
+/// of `input`, extension to complex value.
 blocktensor_unary_op(sgn);
 
 /// @brief Tests if each element of `input` has its sign bit set
-/// (is less than zero) or not
+/// (is less than zero) or not.
 blocktensor_unary_op(signbit);
 
 /// @brief Returns a new block tensor with the sine of the elements
-/// of `input`
+/// of `input`.
 blocktensor_unary_op(sin);
 
 /// @brief Returns a new block tensor with the normalized sinc of
-/// the elements of `input`
+/// the elements of `input`.
 blocktensor_unary_op(sinc);
 
 /// @brief Returns a new block tensor with the hyperbolic sine of
-/// the elements of `input`
+/// the elements of `input`.
 blocktensor_unary_op(sinh);
 
 /// @brief Returns a new block tensor with the square-root of the
-/// elements of `input`
+/// elements of `input`.
 blocktensor_unary_op(sqrt);
 
 /// @brief Returns a new block tensor with the square of the
-/// elements of `input`
+/// elements of `input`.
 blocktensor_unary_op(square);
 
-/// @brief Subtracts other, scaled by alpha, from input
+/// @brief Subtracts other, scaled by alpha, from input.
 template <typename T, typename U, typename V, std::size_t... Dims>
 inline auto sub(const BlockTensor<T, Dims...> &input,
                 const BlockTensor<U, Dims...> &other, V alpha = 1.0) {
@@ -1582,7 +1715,7 @@ inline auto sub(const BlockTensor<T, Dims...> &input,
   return result;
 }
 
-/// @brief Alias for sub()
+/// @brief Alias for sub().
 template <typename T, typename U, typename V, std::size_t... Dims>
 inline auto subtract(const BlockTensor<T, Dims...> &input,
                      const BlockTensor<U, Dims...> &other, V alpha = 1.0) {
@@ -1592,27 +1725,37 @@ inline auto subtract(const BlockTensor<T, Dims...> &input,
         std::make_shared<T>(torch::sub(*input[idx], *other[idx], alpha));
   return result;
 }
-
 /// @brief Returns a new tensor with the tangent of the elements of
-/// input
+/// input.
 blocktensor_unary_op(tan);
 
 /// @brief Returns a new tensor with the hyperbolic tangent of the
-/// elements of input
+/// elements of input.
 blocktensor_unary_op(tanh);
 
 /// @brief Returns a new tensor with the truncated integer values of
-/// the elements of input
+/// the elements of input.
+/// @return Result of the operation.
 blocktensor_unary_op(trunc)
 
-    /// @brief Computes input * log(other)
+    /// @brief Computes input * log(other).
     blocktensor_binary_op(xlogy);
 
 /// @brief Adds one compile-time block tensor to another and returns
-/// a new compile-time block tensor
+/// a new compile-time block tensor.
+/// @tparam T Template parameter `T`.
+/// @tparam U Template parameter `U`.
+/// @tparam Dims Template parameter `Dims`.
+/// @param lhs Left-hand operand.
+/// @param rhs Right-hand operand.
 template <typename T, typename U, std::size_t... Dims>
 inline auto operator+(const BlockTensor<T, Dims...> &lhs,
                       const BlockTensor<U, Dims...> &rhs) {
+  /// @brief Provides the `for` operation.
+  /// @tparam T Template parameter `T`.
+  /// @tparam U Template parameter `U`.
+  /// @tparam Dims Template parameter `Dims`.
+  /// @return Result of the operation.
   BlockTensor<std::common_type_t<T, U>, Dims...> result;
   for (std::size_t idx = 0; idx < (Dims * ...); ++idx)
     result[idx] = std::make_shared<T>(*lhs[idx] + *rhs[idx]);
@@ -1620,9 +1763,14 @@ inline auto operator+(const BlockTensor<T, Dims...> &lhs,
 }
 
 /// @brief Adds a compile-time block tensor to a scalar and returns
-/// a new compile-time block tensor
+/// a new compile-time block tensor.
 template <typename T, typename U, std::size_t... Dims>
 inline auto operator+(const BlockTensor<T, Dims...> &lhs, const U &rhs) {
+  /// @brief Provides the `for` operation.
+  /// @tparam T Template parameter `T`.
+  /// @tparam U Template parameter `U`.
+  /// @tparam Dims Template parameter `Dims`.
+  /// @return Result of the operation.
   BlockTensor<T, Dims...> result;
   for (std::size_t idx = 0; idx < (Dims * ...); ++idx)
     result[idx] = std::make_shared<T>(*lhs[idx] + rhs);
@@ -1630,7 +1778,13 @@ inline auto operator+(const BlockTensor<T, Dims...> &lhs, const U &rhs) {
 }
 
 /// @brief Adds a scalar to a compile-time block tensor and returns
-/// a new compile-time block tensor
+/// a new compile-time block tensor.
+/// @tparam T Template parameter `T`.
+/// @tparam U Template parameter `U`.
+/// @tparam Dims Template parameter `Dims`.
+/// @param lhs Left-hand operand.
+/// @param rhs Right-hand operand.
+/// @return Result of the operation.
 template <typename T, typename U, std::size_t... Dims>
 inline auto operator+(const T &lhs, const BlockTensor<U, Dims...> &rhs) {
   BlockTensor<U, Dims...> result;
@@ -1638,8 +1792,13 @@ inline auto operator+(const T &lhs, const BlockTensor<U, Dims...> &rhs) {
     result[idx] = std::make_shared<U>(lhs + *rhs[idx]);
   return result;
 }
-
-/// @brief Increments one compile-time block tensor by another
+/// @brief Increments one compile-time block tensor by another.
+/// @tparam T Template parameter `T`.
+/// @tparam U Template parameter `U`.
+/// @tparam Dims Template parameter `Dims`.
+/// @param lhs Left-hand operand.
+/// @param rhs Right-hand operand.
+/// @return Result of the operation.
 template <typename T, typename U, std::size_t... Dims>
 inline auto operator+=(BlockTensor<T, Dims...> &lhs,
                        const BlockTensor<U, Dims...> &rhs) {
@@ -1648,19 +1807,29 @@ inline auto operator+=(BlockTensor<T, Dims...> &lhs,
   return lhs;
 }
 
-/// @brief Increments a compile-time block tensor by a scalar
+/// @brief Increments a compile-time block tensor by a scalar.
 template <typename T, typename U, std::size_t... Dims>
 inline auto operator+=(BlockTensor<T, Dims...> &lhs, const U &rhs) {
+  /// @brief Provides the `for` operation.
+  /// @tparam T Template parameter `T`.
+  /// @tparam U Template parameter `U`.
+  /// @tparam Dims Template parameter `Dims`.
+  /// @return Result of the operation.
   for (std::size_t idx = 0; idx < (Dims * ...); ++idx)
     lhs[idx] = std::make_shared<T>(*lhs[idx] + rhs);
   return lhs;
 }
 
 /// @brief Subtracts one compile-time block tensor from another and
-/// returns a new compile-time block tensor
+/// returns a new compile-time block tensor.
 template <typename T, typename U, std::size_t... Dims>
 inline auto operator-(const BlockTensor<T, Dims...> &lhs,
                       const BlockTensor<U, Dims...> &rhs) {
+  /// @brief Provides the `for` operation.
+  /// @tparam T Template parameter `T`.
+  /// @tparam U Template parameter `U`.
+  /// @tparam Dims Template parameter `Dims`.
+  /// @return Result of the operation.
   BlockTensor<std::common_type_t<T, U>, Dims...> result;
   for (std::size_t idx = 0; idx < (Dims * ...); ++idx)
     result[idx] = std::make_shared<T>(*lhs[idx] - *rhs[idx]);
@@ -1668,7 +1837,7 @@ inline auto operator-(const BlockTensor<T, Dims...> &lhs,
 }
 
 /// @brief Subtracts a scalar from a compile-time block tensor and returns
-/// a new compile-time block tensor
+/// a new compile-time block tensor.
 template <typename T, typename U, std::size_t... Dims>
 inline auto operator-(const BlockTensor<T, Dims...> &lhs, const U &rhs) {
   BlockTensor<T, Dims...> result;
@@ -1678,7 +1847,13 @@ inline auto operator-(const BlockTensor<T, Dims...> &lhs, const U &rhs) {
 }
 
 /// @brief Subtracts a compile-time block tensor from a scalar and
-/// returns a new compile-time block tensor
+/// returns a new compile-time block tensor.
+/// @tparam T Template parameter `T`.
+/// @tparam U Template parameter `U`.
+/// @tparam Dims Template parameter `Dims`.
+/// @param lhs Left-hand operand.
+/// @param rhs Right-hand operand.
+/// @return Result of the operation.
 template <typename T, typename U, std::size_t... Dims>
 inline auto operator-(const T &lhs, const BlockTensor<U, Dims...> &rhs) {
   BlockTensor<U, Dims...> result;
@@ -1686,8 +1861,13 @@ inline auto operator-(const T &lhs, const BlockTensor<U, Dims...> &rhs) {
     result[idx] = std::make_shared<U>(lhs - *rhs[idx]);
   return result;
 }
-
-/// @brief Decrements one compile-time block tensor by another
+/// @brief Decrements one compile-time block tensor by another.
+/// @tparam T Template parameter `T`.
+/// @tparam U Template parameter `U`.
+/// @tparam Dims Template parameter `Dims`.
+/// @param lhs Left-hand operand.
+/// @param rhs Right-hand operand.
+/// @return Result of the operation.
 template <typename T, typename U, std::size_t... Dims>
 inline auto operator-=(BlockTensor<T, Dims...> &lhs,
                        const BlockTensor<U, Dims...> &rhs) {
@@ -1696,7 +1876,7 @@ inline auto operator-=(BlockTensor<T, Dims...> &lhs,
   return lhs;
 }
 
-/// @brief Decrements a compile-time block tensor by a scalar
+/// @brief Decrements a compile-time block tensor by a scalar.
 template <typename T, typename U, std::size_t... Dims>
 inline auto operator-=(BlockTensor<T, Dims...> &lhs, const U &rhs) {
   for (std::size_t idx = 0; idx < (Dims * ...); ++idx)
@@ -1705,7 +1885,13 @@ inline auto operator-=(BlockTensor<T, Dims...> &lhs, const U &rhs) {
 }
 
 /// @brief Multiplies a compile-time block tensor with a scalar and
-/// returns a new compile-time block tensor
+/// returns a new compile-time block tensor.
+/// @tparam T Template parameter `T`.
+/// @tparam U Template parameter `U`.
+/// @tparam Dims Template parameter `Dims`.
+/// @param lhs Left-hand operand.
+/// @param rhs Right-hand operand.
+/// @return Result of the operation.
 template <typename T, typename U, std::size_t... Dims>
 inline auto operator*(const BlockTensor<T, Dims...> &lhs, const U &rhs) {
   BlockTensor<T, Dims...> result;
@@ -1724,7 +1910,13 @@ inline auto operator*(const BlockTensor<T, Dims...> &lhs, const U &rhs) {
 }
 
 /// @brief Multiplies a scalar with a compile-time block tensor and
-/// returns a new compile-time block tensor
+/// returns a new compile-time block tensor.
+/// @tparam T Template parameter `T`.
+/// @tparam U Template parameter `U`.
+/// @tparam Dims Template parameter `Dims`.
+/// @param lhs Left-hand operand.
+/// @param rhs Right-hand operand.
+/// @return Result of the operation.
 template <typename T, typename U, std::size_t... Dims>
 inline auto operator*(const T &lhs, const BlockTensor<U, Dims...> &rhs) {
   BlockTensor<U, Dims...> result;
@@ -1741,8 +1933,12 @@ inline auto operator*(const T &lhs, const BlockTensor<U, Dims...> &rhs) {
   }
   return result;
 }
+/// @brief Provides the `operator==` operation.
+/// @param lhs Left-hand operand.
+/// @param rhs Right-hand operand.
+/// @return Result of the operation.
 
-/// @brief Returns true if both compile-time block tensors are equal
+/// @brief Returns true if both compile-time block tensors are equal.
 template <typename T, typename U, std::size_t... TDims, std::size_t... UDims>
 inline bool operator==(const BlockTensor<T, TDims...> &lhs,
                        const BlockTensor<U, UDims...> &rhs) {
@@ -1757,7 +1953,7 @@ inline bool operator==(const BlockTensor<T, TDims...> &lhs,
   return result;
 }
 
-/// @brief Returns true if both compile-time block tensors are not equal
+/// @brief Returns true if both compile-time block tensors are not equal.
 template <typename T, typename U, std::size_t... TDims, std::size_t... UDims>
 inline bool operator!=(const BlockTensor<T, TDims...> &lhs,
                        const BlockTensor<U, UDims...> &rhs) {

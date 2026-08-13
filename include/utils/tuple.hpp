@@ -1,11 +1,11 @@
 /**
    @file utils/tuple.hpp
 
-   @brief Tuple utility functions
+   @brief Tuple utility functions.
 
-   @author Matthias Moller
+   @author Matthias Moller.
 
-   @copyright This file is part of the IgANet project
+   @copyright This file is part of the IgANet project.
 
    This Source Code Form is subject to the terms of the Mozilla Public
    License, v. 2.0. If a copy of the MPL was not distributed with this
@@ -40,10 +40,10 @@ struct is_tuple_of_tuples<std::tuple<Ts...>>
     : std::conjunction<is_tuple<Ts>...> {};
 /// @}
 
-/// @brief Alias for is_tuple_of_tuples::type
+/// @brief Alias for is_tuple_of_tuples::type.
 template <class T> using is_tuple_of_tuples_t = is_tuple_of_tuples<T>::type;
 
-/// @brief Alias for is_tuple_of_tuples::value
+/// @brief Alias for is_tuple_of_tuples::value.
 template <class T>
 inline constexpr auto is_tuple_of_tuples_v = is_tuple_of_tuples<T>::value;
 
@@ -69,15 +69,20 @@ template <typename T, typename... Tuples> struct tuple_cat<T, Tuples...> {
 };
 /// @}
 
-/// @brief Alias for tuple_cat::type
+/// @brief Alias for tuple_cat::type.
 template <typename... Tuples> using tuple_cat_t = tuple_cat<Tuples...>::type;
 
-/// @brief Alias for tuple_cat::value
+/// @brief Alias for tuple_cat::value.
 template <typename... Tuples>
 inline constexpr auto tuple_cat_v = tuple_cat<Tuples...>::value;
   
 /// @brief Concatenates the entries of a std::tuple object into a
-/// single Torch tensor along the given dimension
+/// single Torch tensor along the given dimension.
+/// @tparam Tuples Template parameter `Tuples`.
+/// @tparam Tensors Template parameter `Tensors`.
+/// @param tensors Value of `tensors`.
+/// @param dim Value of `dim`.
+/// @return Result of the operation.
 template <typename... Tensors>
 torch::Tensor cat_tuple_into_tensor(const std::tuple<Tensors...> &tensors,
                                     int64_t dim = 0) {
@@ -91,7 +96,10 @@ torch::Tensor cat_tuple_into_tensor(const std::tuple<Tensors...> &tensors,
 
 /// @brief Concatenates the entries of a std::tuple object into a
 /// single Torch tensor along the given dimension after applying the
-/// callback function
+/// callback function.
+/// @tparam Tensors Template parameter `Tensors`.
+/// @tparam Func Template parameter `Func`.
+/// @return Result of the operation.
 template <typename... Tensors, typename Func>
   requires(std::invocable<Func, const Tensors &> && ...)
 torch::Tensor cat_tuple_into_tensor(const std::tuple<Tensors...> &tensors,
@@ -107,7 +115,11 @@ torch::Tensor cat_tuple_into_tensor(const std::tuple<Tensors...> &tensors,
   return torch::cat(vec, dim);
 }
 
-/// @brief Returns a std::tuple object with N replications of the given value
+/// @brief Returns a std::tuple object with N replications of the given value.
+/// @tparam N Template parameter `N`.
+/// @tparam T Template parameter `T`.
+/// @param value Value to process.
+/// @return Result of the operation.
 template <std::size_t N, typename T>
 constexpr auto repeat_tuple(const T &value) {
   return [&]<std::size_t... Is>(std::index_sequence<Is...>) {
@@ -117,6 +129,12 @@ constexpr auto repeat_tuple(const T &value) {
 
 /// @brief Slices the given tensor into the objects of the std::tuple
 /// @{
+/// @param tuple Value of `tuple`.
+/// @param tensor Tensor to process.
+/// @param funcSize Value of `funcSize`.
+/// @param funcAssign Value of `funcAssign`.
+/// @param offset Value of `offset`.
+/// @param dim Value of `dim`.
 template <std::size_t I = 0, typename... Tensors, typename FuncSize,
           typename FuncAssign>
 void slice_tensor_into_tuple(std::tuple<Tensors...> &tuple,
@@ -134,6 +152,15 @@ void slice_tensor_into_tuple(std::tuple<Tensors...> &tuple,
   }
 }
 
+/// @brief Provides the `slice_tensor_into_tuple` operation.
+/// @tparam Tensors Template parameter `Tensors`.
+/// @tparam FuncSize Template parameter `FuncSize`.
+/// @tparam FuncAssign Template parameter `FuncAssign`.
+/// @param tuple Value of `tuple`.
+/// @param tensor Tensor to process.
+/// @param funcSize Value of `funcSize`.
+/// @param funcAssign Value of `funcAssign`.
+/// @param dim Value of `dim`.
 template <typename... Tensors, typename FuncSize, typename FuncAssign>
 void slice_tensor_into_tuple(std::tuple<Tensors...> &tuple,
                              const torch::Tensor &tensor, FuncSize &&funcSize,

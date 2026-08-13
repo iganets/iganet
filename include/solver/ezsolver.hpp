@@ -1,11 +1,11 @@
 /**
-   @file solver/ezinterp.hpp
+   @file solver/ezsolver.hpp
 
-   @brief Isogeometric analysis solver
+   @brief Isogeometric analysis solver.
 
-   @author Matthias Moller
+   @author Matthias Moller.
 
-   @copyright This file is part of the IgANet project
+   @copyright This file is part of the IgANet project.
 
    This Source Code Form is subject to the terms of the Mozilla Public
    License, v. 2.0. If a copy of the MPL was not distributed with this
@@ -21,7 +21,7 @@
 
 namespace iganet {
 
-/// @brief Easy-to-use solver base class
+/// @brief Easy-to-use solver base class.
 ///
 /// This abstract class implements an easy-to-use solver that takes a
 /// geometry map and a variable function space as inputs. Note that
@@ -32,52 +32,61 @@ class EZSolverBase : public iganet::IgASolver<std::tuple<GeometryMap>, std::tupl
                      public iganet::IgANetCustomizable<std::tuple<GeometryMap>, std::tuple<Variable>> {
   
 protected:
-  /// @brief Type of the base class
+  /// @brief Type of the base class.
   using Base = iganet::IgASolver<std::tuple<GeometryMap>, std::tuple<Variable>>;
   
-  /// @brief Collocation points
+  /// @brief Collocation points.
   Base::template collPts_t<0> collPts_;
 
-  /// @brief Type of the customizable class
+  /// @brief Type of the customizable class.
   using Customizable = iganet::IgANetCustomizable<std::tuple<GeometryMap>, std::tuple<Variable>>;
 
-  /// @brief Knot indices of the geometry map
+  /// @brief Knot indices of the geometry map.
   Customizable::template input_interior_knot_indices_t<0> G_knot_indices_;
 
-  /// @brief Knot indices of the geometry map at the boundary
+  /// @brief Knot indices of the geometry map at the boundary.
   Customizable::template input_boundary_knot_indices_t<0> G_knot_indices_boundary_;
 
-  /// @brief Knot indices of variables
+  /// @brief Knot indices of variables.
   Customizable::template output_interior_knot_indices_t<0> var_knot_indices_;
 
-  /// @brief Knot indices of variables at the boundary
+  /// @brief Knot indices of variables at the boundary.
   Customizable::template output_boundary_knot_indices_t<0> var_knot_indices_boundary_;
 
 public:
-  /// @brief Constructor
+  /// @brief Constructor.
+  /// @tparam GeometryMapNumCoeffs Template parameter `GeometryMapNumCoeffs`.
+  /// @tparam VariableNumCoeffs Template parameter `VariableNumCoeffs`.
+  /// @param geometryMapNumCoeffs Value of `geometryMapNumCoeffs`.
+  /// @param variableNumCoeffs Value of `variableNumCoeffs`.
   template <std::size_t GeometryMapNumCoeffs, std::size_t VariableNumCoeffs>
   EZSolverBase(const std::array<int64_t, GeometryMapNumCoeffs> &geometryMapNumCoeffs,
                const std::array<int64_t, VariableNumCoeffs> &variableNumCoeffs)
     : Base(std::make_tuple(geometryMapNumCoeffs),
            std::make_tuple(variableNumCoeffs)) {}
   
-  /// @brief Returns a constant reference to the collocation points
+  /// @brief Returns a constant reference to the collocation points.
+  /// @return Result of the operation.
   auto const &collPts() const { return collPts_; }
   
   
-  /// @brief Returns a constant reference to the geometry
+  /// @brief Returns a constant reference to the geometry.
+  /// @return Result of the operation.
   auto const &G() const { return Base::template input<0>(); }
   
-  /// @brief Returns a non-constant reference to the geometry
+  /// @brief Returns a non-constant reference to the geometry.
+  /// @return Result of the operation.
   auto &G() { return Base::template input<0>(); }
   
-  /// @brief Returns a constant reference to the variable
+  /// @brief Returns a constant reference to the variable.
+  /// @return Result of the operation.
   auto const &u() const { return Base::template output<0>(); }
   
-  /// @brief Returns a non-constant reference to the variable
+  /// @brief Returns a non-constant reference to the variable.
+  /// @return Result of the operation.
   auto &u() { return Base::template output<0>(); }
   
-  /// @brief Initializes the solver
+  /// @brief Initializes the solver.
   void init() override {
     collPts_ =
       Base::template collPts<0>(iganet::collPts::greville);
@@ -92,17 +101,17 @@ public:
   }
 };
 
-/// @brief Easy-to-use solver class
+/// @brief Easy-to-use solver class.
 ///
 /// This class implements an easy-to-use solver that takes a
 /// geometry map and a variable function space as inputs.
 template <FunctionSpaceType GeometryMap, FunctionSpaceType Variable>  
 class EZSolver : public EZSolverBase<GeometryMap, Variable> {
 private:
-  /// @brief Base class
+  /// @brief Base class.
   using Base = EZSolverBase<GeometryMap, Variable>;
   
-  /// @brief Right-hand side function
+  /// @brief Right-hand side function.
   std::function<
     std::array<torch::Tensor, Variable::template geoDim<0>()>(
                                                               const std::array<torch::Tensor, Variable::template parDim<0>()>&
@@ -110,7 +119,10 @@ private:
     > rhs_;
 
 public:
-  /// @brief Constructor
+  /// @brief Constructor.
+  /// @param geometryMap Value of `geometryMap`.
+  /// @param variable Value of `variable`.
+  /// @param rhs Right-hand operand.
   EZSolver(const GeometryMap& geometryMap, const Variable& variable,
            const std::function<
            std::array<torch::Tensor, Variable::template geoDim<0>()>(
@@ -120,7 +132,7 @@ public:
     : EZSolverBase<GeometryMap, Variable>(geometryMap.template space<0>().ncoeffs(), variable.template space<0>().ncoeffs()),
       rhs_(rhs) {}
   
-  /// @brief Assembles the left-hand side as the mass matrix
+  /// @brief Assembles the left-hand side as the mass matrix.
   void assembleLhs() override {
 
     auto S_xx = this->u().template eval_basfunc<functionspace::interior,
@@ -144,23 +156,23 @@ public:
                                                       this->u().template space<0>().ncumcoeffs() });          
   }
   
-  /// @brief Assembles the right-hand side from the given function
+  /// @brief Assembles the right-hand side from the given function.
   void assembleRhs() override {
     Base::rhs_ = rhs_(Base::collPts().first)[0];     
   }
 };
   
-/// @brief Easy-to-use interpolation class
+/// @brief Easy-to-use interpolation class.
 ///
 /// This class implements an easy-to-use interpolation that takes a
 /// geometry map and a variable function space as inputs.
 template <FunctionSpaceType GeometryMap, FunctionSpaceType Variable>  
 class EZInterpolation : public EZSolverBase<GeometryMap, Variable> {
 private:
-  /// @brief Base class
+  /// @brief Base class.
   using Base = EZSolverBase<GeometryMap, Variable>;
   
-  /// @brief Right-hand side function
+  /// @brief Right-hand side function.
   std::function<
     std::array<torch::Tensor, Variable::template geoDim<0>()>(
                                                               const std::array<torch::Tensor, Variable::template parDim<0>()>&
@@ -168,7 +180,10 @@ private:
     > rhs_;
   
 public:
-  /// @brief Constructor
+  /// @brief Constructor.
+  /// @param geometryMap Value of `geometryMap`.
+  /// @param variable Value of `variable`.
+  /// @param rhs Right-hand operand.
   EZInterpolation(const GeometryMap& geometryMap, const Variable& variable,
                   const std::function<
                   std::array<torch::Tensor, Variable::template geoDim<0>()>(
@@ -177,7 +192,7 @@ public:
                   >& rhs)
     : EZSolverBase<GeometryMap, Variable>(geometryMap.template space<0>().ncoeffs(), variable.template space<0>().ncoeffs()), rhs_(rhs) {}
   
-  /// @brief Assembles the left-hand side as the mass matrix
+  /// @brief Assembles the left-hand side as the mass matrix.
   void assembleLhs() override {    
     Base::lhs_ = iganet::utils::to_sparseCsrTensor(Base::var_knot_indices_,
                                                    this->u().template space<0>().degrees(),
@@ -187,16 +202,16 @@ public:
                                                       this->u().template space<0>().ncumcoeffs() });
   }
   
-  /// @brief Assembles the right-hand side from the given function
+  /// @brief Assembles the right-hand side from the given function.
   void assembleRhs() override {
     Base::rhs_ = rhs_(Base::collPts().first)[0];     
   }
 };
   
-/// @brief Easy-to-use interpolation function
+/// @brief Easy-to-use interpolation function.
 ///
 /// This function interpolates the given mapping functions in the
-/// Greville points of the variable function space
+/// Greville points of the variable function space.
 template <FunctionSpaceType GeometryMap, FunctionSpaceType Variable>
 auto ezinterp(const GeometryMap& geometryMap,
               const Variable& variable,
@@ -209,7 +224,7 @@ auto ezinterp(const GeometryMap& geometryMap,
   return interp.solve().clone();
 }
 
-/// @brief Easy-to-use Poisson solver function
+/// @brief Easy-to-use Poisson solver function.
 template <FunctionSpaceType GeometryMap, FunctionSpaceType Variable>
 auto ezpoisson(const GeometryMap& geometryMap,
                const Variable& variable,

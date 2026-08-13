@@ -1,11 +1,11 @@
 /**
    @file utils/matrix.hpp
 
-   @brief Matrix utility functions
+   @brief Matrix utility functions.
 
-   @author Matthias Moller
+   @author Matthias Moller.
 
-   @copyright This file is part of the IgANet project
+   @copyright This file is part of the IgANet project.
 
    This Source Code Form is subject to the terms of the Mozilla Public
    License, v. 2.0. If a copy of the MPL was not distributed with this
@@ -20,13 +20,14 @@
 namespace iganet::utils {
 
   /// @brief Constructs a sparse-CSR matrix from the column indices,
-  /// matrix values and the matrix size
+  /// matrix values and the matrix size.
   ///
-  /// @param[in] indices Column indices in row-major order
-  ///  ///
-  /// @param[in] values Matrix values in row-major order
+  /// @param[in] col_indices Column indices in row-major order.
+  ///  ///.
+  /// @param[in] values Matrix values in row-major order.
   ///
-  /// @param[in] size Matrix size  
+  /// @param[in] size Matrix size.
+  /// @return Result of the operation.
   inline torch::Tensor to_sparseCsrTensor(const torch::Tensor& col_indices,
                                           const torch::Tensor& values,
                                           const torch::IntArrayRef& size) {
@@ -81,15 +82,17 @@ namespace iganet::utils {
   }
 
   /// @brief Constructs a sparse-CSR matrix from the column indices,
-  /// matrix values and the matrix size
+  /// matrix values and the matrix size.
   ///
-  /// @tparam N Size of the column index array
+  /// @tparam N Size of the column index array.
   ///
-  /// @param[in] indices Array of column indices in row-major order
-  ///  ///
-  /// @param[in] values Matrix values in row-major order
+  /// @param[in] col_indices Array of column indices in row-major order.
+  ///  ///.
+  /// @param[in] values Matrix values in row-major order.
   ///
-  /// @param[in] size Matrix size  
+  /// @param[in] size Matrix size.
+  /// @param nbasfuncs Value of `nbasfuncs`.
+  /// @return Result of the operation.
   template<std::size_t N>
   inline torch::Tensor to_sparseCsrTensor(const utils::TensorArray<N>& col_indices,
                                           const std::array<int64_t, N>& nbasfuncs,
@@ -119,16 +122,19 @@ namespace iganet::utils {
   /// function values evaluated at discrete points (e.g., the Greville
   /// abscissae), the corresponding knot_indices (i.e. the list of
   /// knot indices that mark the start of the knot span the discrete
-  /// points fall into), the B-spline degrees and the matrix size
+  /// points fall into), the B-spline degrees and the matrix size.
   ///
-  /// @tparam N Size of the knot index and degree arrays
+  /// @tparam N Size of the knot index and degree arrays.
   ///
-  /// @param[in] indices List of knot indices marking the start
-  /// of the knot span the discrete evaluation points fall into
+  /// @param[in] knot_indices List of knot indices marking the start
+  /// of the knot span the discrete evaluation points fall into.
   ///
-  /// @param[in] values Matrix values in row-major order
+  /// @param[in] values Matrix values in row-major order.
   ///
-  /// @param[in] size Matrix size  
+  /// @param[in] size Matrix size.
+  /// @param degrees Value of `degrees`.
+  /// @param nbasfuncs Value of `nbasfuncs`.
+  /// @return Result of the operation.
   template<std::size_t N>
   inline torch::Tensor to_sparseCsrTensor(const utils::TensorArray<N>& knot_indices,
                                           const std::array<short, N>& degrees,
