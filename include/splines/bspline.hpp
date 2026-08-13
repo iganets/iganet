@@ -7385,97 +7385,118 @@ createNonUniformBSpline(
       });
 }
 
-/// @brief Creates a tensor-product non-uniform B-spline from an XML node
+namespace detail {
+
+template <iganet::short_t ParDim> struct BSplineMetadata {
+  std::array<iganet::short_t, ParDim> degrees{};
+  std::array<int64_t, ParDim> ncoeffs{};
+};
+
+enum class SerializationFormat { xml, json };
+
 template <typename real_t, iganet::short_t GeoDim, iganet::short_t ParDim>
-std::shared_ptr<iganet::BSplinePatch<real_t, GeoDim, ParDim>>
-createNonUniformBSpline(
-    const pugi::xml_node &root, int id = 0, const std::string &label = "",
-    int index = -1,
-    iganet::Options<real_t> options = iganet::Options<real_t>{}) {
+BSplineMetadata<ParDim> parseBSplineMetadata(const pugi::xml_node &root, int id,
+                                             const std::string &label,
+                                             int index) {
   pugi::xml_node geometry;
   const std::string geometryType =
       ParDim == 0 ? "Point"
       : ParDim == 1
           ? "BSpline"
           : std::string("TensorBSpline").append(std::to_string(ParDim));
-
-  for (const auto &candidate : root.children("Geometry")) {
+  for (const auto &candidate : root.children("Geometry"))
     if (std::string_view{candidate.attribute("type").value()} == geometryType &&
-        (id >= 0 ? candidate.attribute("id").as_int() == id : true) &&
-        (index >= 0 ? candidate.attribute("index").as_int() == index : true) &&
-        (!label.empty() ? candidate.attribute("label").value() == label
-                        : true)) {
+        (id < 0 || candidate.attribute("id").as_int() == id) &&
+        (index < 0 || candidate.attribute("index").as_int() == index) &&
+        (label.empty() || candidate.attribute("label").value() == label)) {
       geometry = candidate;
       break;
     }
-  }
   if (!geometry)
     throw std::runtime_error(
         "XML object does not provide geometry with given attributes");
-
   const auto coefs = geometry.child("coefs");
   if (!coefs || coefs.attribute("geoDim").as_int() != GeoDim)
     throw std::runtime_error(
         "XML object provides an incompatible geometric dimension");
 
-  std::array<iganet::short_t, ParDim> degrees{};
-  std::array<int64_t, ParDim> ncoeffs{};
-
-  if constexpr (ParDim == 1) {
-    const auto basis = geometry.child("Basis");
+  BSplineMetadata<ParDim> metadata;
+  const auto readBasis = [&](const pugi::xml_node &basis, int direction) {
     const auto knots = basis.child("KnotVector");
     if (std::string_view{basis.attribute("type").value()} != "BSplineBasis" ||
         !knots || !knots.attribute("degree"))
       throw std::runtime_error("XML object does not provide a valid basis");
-
-    degrees[0] = knots.attribute("degree").as_int();
+    metadata.degrees[direction] = knots.attribute("degree").as_int();
     std::stringstream values(knots.child_value());
     real_t value;
     int64_t nknots = 0;
     while (values >> value)
       ++nknots;
-    ncoeffs[0] = nknots - degrees[0] - 1;
-    if (ncoeffs[0] <= 0)
+    metadata.ncoeffs[direction] = nknots - metadata.degrees[direction] - 1;
+    if (metadata.ncoeffs[direction] <= 0)
       throw std::runtime_error("XML object provides an invalid knot vector");
-  } else if constexpr (ParDim > 1) {
+  };
+  if constexpr (ParDim == 1)
+    readBasis(geometry.child("Basis"), 0);
+  else if constexpr (ParDim > 1) {
     const auto bases = geometry.child("Basis");
     const std::string basisType =
         std::string("TensorBSplineBasis").append(std::to_string(ParDim));
     if (std::string_view{bases.attribute("type").value()} != basisType)
       throw std::runtime_error("XML object does not provide a valid basis");
-
     std::array<bool, ParDim> found{};
     for (const auto &basis : bases.children("Basis")) {
       const int direction = basis.attribute("index").as_int(-1);
-      const auto knots = basis.child("KnotVector");
-      if (direction < 0 || direction >= ParDim || found[direction] ||
-          std::string_view{basis.attribute("type").value()} != "BSplineBasis" ||
-          !knots || !knots.attribute("degree"))
+      if (direction < 0 || direction >= ParDim || found[direction])
         throw std::runtime_error("XML object does not provide a valid basis");
-
-      degrees[direction] = knots.attribute("degree").as_int();
-      std::stringstream values(knots.child_value());
-      real_t value;
-      int64_t nknots = 0;
-      while (values >> value)
-        ++nknots;
-      ncoeffs[direction] = nknots - degrees[direction] - 1;
-      if (ncoeffs[direction] <= 0)
-        throw std::runtime_error("XML object provides an invalid knot vector");
+      readBasis(basis, direction);
       found[direction] = true;
     }
     if (std::any_of(found.begin(), found.end(),
                     [](bool value) { return !value; }))
       throw std::runtime_error("XML object does not provide all bases");
   }
+  return metadata;
+}
+
+template <typename real_t, iganet::short_t GeoDim, iganet::short_t ParDim>
+BSplineMetadata<ParDim> parseBSplineMetadata(const nlohmann::json &json) {
+  if (json.at("geoDim").get<iganet::short_t>() != GeoDim)
+    throw std::runtime_error(
+        "JSON object provides an incompatible geometric dimension");
+  if (json.at("parDim").get<iganet::short_t>() != ParDim)
+    throw std::runtime_error(
+        "JSON object provides an incompatible parametric dimension");
+  BSplineMetadata<ParDim> metadata{
+      json.at("degrees").template get<std::array<iganet::short_t, ParDim>>(),
+      json.at("ncoeffs").template get<std::array<int64_t, ParDim>>()};
+  if (std::any_of(metadata.ncoeffs.begin(), metadata.ncoeffs.end(),
+                  [](int64_t count) { return count <= 0; }))
+    throw std::runtime_error("JSON object provides invalid coefficient counts");
+  return metadata;
+}
+
+} // namespace detail
+
+/// @brief Creates a tensor-product non-uniform B-spline from an XML node
+/// @throws std::runtime_error if parsing or spline validation fails.
+template <typename real_t, iganet::short_t GeoDim, iganet::short_t ParDim>
+std::shared_ptr<iganet::BSplinePatch<real_t, GeoDim, ParDim>>
+createNonUniformBSpline(
+    const pugi::xml_node &root, int id = 0, const std::string &label = "",
+    int index = -1,
+    iganet::Options<real_t> options = iganet::Options<real_t>{}) {
+  const auto metadata = detail::parseBSplineMetadata<real_t, GeoDim, ParDim>(
+      root, id, label, index);
 
   auto patch = createNonUniformBSpline<real_t, GeoDim, ParDim>(
-      degrees, ncoeffs, iganet::init::none, options);
+      metadata.degrees, metadata.ncoeffs, iganet::init::none, options);
   patch->from_xml(root, id, label, index);
   return patch;
 }
 
 /// @brief Creates a tensor-product non-uniform B-spline from an XML document
+/// @throws std::runtime_error if parsing or spline validation fails.
 template <typename real_t, iganet::short_t GeoDim, iganet::short_t ParDim>
 std::shared_ptr<iganet::BSplinePatch<real_t, GeoDim, ParDim>>
 createNonUniformBSpline(
@@ -7487,28 +7508,17 @@ createNonUniformBSpline(
 }
 
 /// @brief Creates a tensor-product non-uniform B-spline from a JSON object
+/// @throws std::runtime_error if parsing or spline validation fails.
 template <typename real_t, iganet::short_t GeoDim, iganet::short_t ParDim>
 std::shared_ptr<iganet::BSplinePatch<real_t, GeoDim, ParDim>>
 createNonUniformBSpline(
     const nlohmann::json &json,
     iganet::Options<real_t> options = iganet::Options<real_t>{}) {
-  if (json.at("geoDim").get<iganet::short_t>() != GeoDim)
-    throw std::runtime_error(
-        "JSON object provides an incompatible geometric dimension");
-  if (json.at("parDim").get<iganet::short_t>() != ParDim)
-    throw std::runtime_error(
-        "JSON object provides an incompatible parametric dimension");
-
-  const auto degrees =
-      json.at("degrees").template get<std::array<iganet::short_t, ParDim>>();
-  const auto ncoeffs =
-      json.at("ncoeffs").template get<std::array<int64_t, ParDim>>();
-  if (std::any_of(ncoeffs.begin(), ncoeffs.end(),
-                  [](int64_t count) { return count <= 0; }))
-    throw std::runtime_error("JSON object provides invalid coefficient counts");
+  const auto metadata =
+      detail::parseBSplineMetadata<real_t, GeoDim, ParDim>(json);
 
   auto patch = createNonUniformBSpline<real_t, GeoDim, ParDim>(
-      degrees, ncoeffs, iganet::init::none, options);
+      metadata.degrees, metadata.ncoeffs, iganet::init::none, options);
   patch->from_json(json);
   return patch;
 }
@@ -7521,8 +7531,8 @@ template <typename real_t, iganet::short_t GeoDim, iganet::short_t ParDim>
 std::shared_ptr<iganet::BSplinePatch<real_t, GeoDim, ParDim>>
 createUniformBSplineFromSerialized(
     const std::array<iganet::short_t, ParDim> &degrees,
-    const std::string &serialized, bool isXml, int id, const std::string &label,
-    int index, iganet::Options<real_t> options) {
+    const std::string &serialized, SerializationFormat format, int id,
+    const std::string &label, int index, iganet::Options<real_t> options) {
   using patch_t = iganet::BSplinePatch<real_t, GeoDim, ParDim>;
 
   const std::string includes = R"(
@@ -7570,7 +7580,7 @@ createUniformBSplineFromSerialized(
       includes, src.str(), "CreateUniformBSplineFromSerialized");
   auto handler = std::make_shared<iganet::DLHandler>(libname);
   std::shared_ptr<patch_t> patch;
-  if (isXml) {
+  if (format == SerializationFormat::xml) {
     using create_fn = std::shared_ptr<patch_t> (*)(const std::string &, int,
                                                    const std::string &, int,
                                                    iganet::Options<real_t>);
@@ -7597,79 +7607,29 @@ createUniformBSplineFromSerialized(
 } // namespace detail
 
 /// @brief Creates a tensor-product uniform B-spline from an XML node
+///
+/// Parsing and conversion exceptions raised inside the JIT library propagate
+/// unchanged to the caller.
+/// @throws std::runtime_error if parsing, spline validation, or conversion to
+/// a canonical uniform B-spline fails.
 template <typename real_t, iganet::short_t GeoDim, iganet::short_t ParDim>
 std::shared_ptr<iganet::BSplinePatch<real_t, GeoDim, ParDim>>
 createUniformBSpline(
     const pugi::xml_node &root, int id = 0, const std::string &label = "",
     int index = -1,
     iganet::Options<real_t> options = iganet::Options<real_t>{}) {
-  pugi::xml_node geometry;
-  const std::string geometryType =
-      ParDim == 0 ? "Point"
-      : ParDim == 1
-          ? "BSpline"
-          : std::string("TensorBSpline").append(std::to_string(ParDim));
-  for (const auto &candidate : root.children("Geometry"))
-    if (std::string_view{candidate.attribute("type").value()} == geometryType &&
-        (id < 0 || candidate.attribute("id").as_int() == id) &&
-        (index < 0 || candidate.attribute("index").as_int() == index) &&
-        (label.empty() || candidate.attribute("label").value() == label)) {
-      geometry = candidate;
-      break;
-    }
-  if (!geometry)
-    throw std::runtime_error(
-        "XML object does not provide geometry with given attributes");
-  const auto coefs = geometry.child("coefs");
-  if (!coefs || coefs.attribute("geoDim").as_int() != GeoDim)
-    throw std::runtime_error(
-        "XML object provides an incompatible geometric dimension");
-
-  std::array<iganet::short_t, ParDim> degrees{};
-  std::array<int64_t, ParDim> ncoeffs{};
-  const auto readBasis = [&](const pugi::xml_node &basis, int direction) {
-    const auto knots = basis.child("KnotVector");
-    if (std::string_view{basis.attribute("type").value()} != "BSplineBasis" ||
-        !knots || !knots.attribute("degree"))
-      throw std::runtime_error("XML object does not provide a valid basis");
-    degrees[direction] = knots.attribute("degree").as_int();
-    std::stringstream values(knots.child_value());
-    real_t value;
-    int64_t nknots = 0;
-    while (values >> value)
-      ++nknots;
-    ncoeffs[direction] = nknots - degrees[direction] - 1;
-    if (ncoeffs[direction] <= 0)
-      throw std::runtime_error("XML object provides an invalid knot vector");
-  };
-  if constexpr (ParDim == 1)
-    readBasis(geometry.child("Basis"), 0);
-  else if constexpr (ParDim > 1) {
-    const auto bases = geometry.child("Basis");
-    const std::string basisType =
-        std::string("TensorBSplineBasis").append(std::to_string(ParDim));
-    if (std::string_view{bases.attribute("type").value()} != basisType)
-      throw std::runtime_error("XML object does not provide a valid basis");
-    std::array<bool, ParDim> found{};
-    for (const auto &basis : bases.children("Basis")) {
-      const int direction = basis.attribute("index").as_int(-1);
-      if (direction < 0 || direction >= ParDim || found[direction])
-        throw std::runtime_error("XML object does not provide a valid basis");
-      readBasis(basis, direction);
-      found[direction] = true;
-    }
-    if (std::any_of(found.begin(), found.end(),
-                    [](bool value) { return !value; }))
-      throw std::runtime_error("XML object does not provide all bases");
-  }
+  const auto metadata = detail::parseBSplineMetadata<real_t, GeoDim, ParDim>(
+      root, id, label, index);
 
   std::ostringstream serialized;
   root.print(serialized);
   return detail::createUniformBSplineFromSerialized<real_t, GeoDim, ParDim>(
-      degrees, serialized.str(), true, id, label, index, options);
+      metadata.degrees, serialized.str(), detail::SerializationFormat::xml, id,
+      label, index, options);
 }
 
 /// @brief Creates a tensor-product uniform B-spline from an XML document
+/// @throws std::runtime_error if parsing, validation, or conversion fails.
 template <typename real_t, iganet::short_t GeoDim, iganet::short_t ParDim>
 std::shared_ptr<iganet::BSplinePatch<real_t, GeoDim, ParDim>>
 createUniformBSpline(
@@ -7681,26 +7641,21 @@ createUniformBSpline(
 }
 
 /// @brief Creates a tensor-product uniform B-spline from a JSON object
+///
+/// Parsing and conversion exceptions raised inside the JIT library propagate
+/// unchanged to the caller.
+/// @throws std::runtime_error if parsing, spline validation, or conversion to
+/// a canonical uniform B-spline fails.
 template <typename real_t, iganet::short_t GeoDim, iganet::short_t ParDim>
 std::shared_ptr<iganet::BSplinePatch<real_t, GeoDim, ParDim>>
 createUniformBSpline(
     const nlohmann::json &json,
     iganet::Options<real_t> options = iganet::Options<real_t>{}) {
-  if (json.at("geoDim").get<iganet::short_t>() != GeoDim)
-    throw std::runtime_error(
-        "JSON object provides an incompatible geometric dimension");
-  if (json.at("parDim").get<iganet::short_t>() != ParDim)
-    throw std::runtime_error(
-        "JSON object provides an incompatible parametric dimension");
-  const auto degrees =
-      json.at("degrees").template get<std::array<iganet::short_t, ParDim>>();
-  const auto ncoeffs =
-      json.at("ncoeffs").template get<std::array<int64_t, ParDim>>();
-  if (std::any_of(ncoeffs.begin(), ncoeffs.end(),
-                  [](int64_t count) { return count <= 0; }))
-    throw std::runtime_error("JSON object provides invalid coefficient counts");
+  const auto metadata =
+      detail::parseBSplineMetadata<real_t, GeoDim, ParDim>(json);
 
   return detail::createUniformBSplineFromSerialized<real_t, GeoDim, ParDim>(
-      degrees, json.dump(), false, 0, "", -1, options);
+      metadata.degrees, json.dump(), detail::SerializationFormat::json, 0, "",
+      -1, options);
 }
 } // namespace iganet
