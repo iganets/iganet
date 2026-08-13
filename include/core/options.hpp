@@ -14,73 +14,11 @@
 
 #pragma once
 
-#include <core/core.hpp>
+#include <core/dtype.hpp>
 #include <utils/fqn.hpp>
 #include <utils/getenv.hpp>
 
 namespace iganet {
-
-struct half {};
-
-/// @brief Concept to identify template parameters that are acceptable as DTypes
-template <typename T>
-concept DType =
-    std::is_same_v<T, bool> || std::is_same_v<T, char> ||
-    std::is_same_v<T, short> || std::is_same_v<T, int> ||
-    std::is_same_v<T, long> || std::is_same_v<T, long long> ||
-    std::is_same_v<T, half> || std::is_same_v<T, float> ||
-    std::is_same_v<T, double> || std::is_same_v<T, std::complex<half>> ||
-    std::is_same_v<T, std::complex<float>> ||
-    std::is_same_v<T, std::complex<double>>;
-
-/// Determines the LibTorch dtype from template parameter
-///
-/// @tparam T C++ type
-///
-/// @result Torch type corresponding to the C++ type
-/// @{
-template <typename T>
-  requires DType<T>
-inline constexpr torch::Dtype dtype();
-
-template <> inline constexpr torch::Dtype dtype<bool>() { return torch::kBool; }
-
-template <> inline constexpr torch::Dtype dtype<char>() { return torch::kChar; }
-
-template <> inline constexpr torch::Dtype dtype<short>() {
-  return torch::kShort;
-}
-
-template <> inline constexpr torch::Dtype dtype<int>() { return torch::kInt; }
-
-template <> inline constexpr torch::Dtype dtype<long>() { return torch::kLong; }
-
-template <> inline constexpr torch::Dtype dtype<long long>() {
-  return torch::kLong;
-}
-
-template <> inline constexpr torch::Dtype dtype<half>() { return torch::kHalf; }
-
-template <> inline constexpr torch::Dtype dtype<float>() {
-  return torch::kFloat;
-}
-
-template <> inline constexpr torch::Dtype dtype<double>() {
-  return torch::kDouble;
-}
-
-template <> inline constexpr torch::Dtype dtype<std::complex<half>>() {
-  return at::kComplexHalf;
-}
-
-template <> inline constexpr torch::Dtype dtype<std::complex<float>>() {
-  return at::kComplexFloat;
-}
-
-template <> inline constexpr torch::Dtype dtype<std::complex<double>>() {
-  return at::kComplexDouble;
-}
-/// @}
 
 inline int guess_device_index() {
 #ifdef IGANET_WITH_MPI
@@ -107,7 +45,7 @@ public:
   Options()
       : options_(
             torch::TensorOptions()
-                .dtype(::iganet::dtype<real_t>())
+                .dtype(::iganet::dtype_v<real_t>)
                 .device_index(utils::getenv("IGANET_DEVICE_INDEX",
                                             iganet::guess_device_index()))
                 .device(
@@ -131,7 +69,7 @@ public:
 
   /// Constructor from torch::TensorOptions
   explicit Options(torch::TensorOptions &&options)
-      : options_(options.dtype(::iganet::dtype<real_t>())) {}
+      : options_(options.dtype(::iganet::dtype_v<real_t>)) {}
 
   /// @brief Implicit conversion operator
   ///
@@ -150,7 +88,7 @@ public:
 
   /// @brief Returns the `dtype` property
   static inline torch::Dtype dtype() noexcept {
-    return ::iganet::dtype<real_t>();
+    return ::iganet::dtype_v<real_t>;
   }
 
   /// @brief Returns the `layout` property
@@ -182,7 +120,7 @@ public:
 
   /// @brief Returns a new Options object with the `dtype` property as given
   template <typename other_t> inline Options<other_t> dtype() const noexcept {
-    return Options<other_t>(options_.dtype(::iganet::dtype<other_t>()));
+    return Options<other_t>(options_.dtype(::iganet::dtype_v<other_t>));
   }
 
   /// @brief Returns a new Options object with the `layout` property as given
