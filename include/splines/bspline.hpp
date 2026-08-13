@@ -3071,7 +3071,7 @@ operator<<(torch::serialize::OutputArchive &archive,
   return obj.write(archive);
 }
 
-/// @brief De-serializes a B-spline object
+/// @brief Deserializes a B-spline object
 template <typename real_t, short_t GeoDim, short_t... Degrees>
 inline torch::serialize::InputArchive &
 operator>>(torch::serialize::InputArchive &archive,
@@ -3629,7 +3629,7 @@ concept NonUniformSplineType = std::is_base_of_v<Spline_, T> &&
 /// This class implements some high-level common functionality of
 /// all B-spline classes, e.g., plotting which rely on low-level
 /// functionality that is implemented differently for uniform and
-/// non-uniform B-spline. C++ suggests to use virtual methods for
+/// non-uniform B-splines. C++ would normally use virtual methods for
 /// this purpose and implement the common functionality in a base
 /// class. However, this is not performant for low-level
 /// functionality, e.g., point-wise function evaluation which is
@@ -7244,7 +7244,7 @@ template <typename real_t, short_t GeoDim, short_t... Degrees>
 using UniformBSpline =
     BSplineCommon<UniformBSplineCore<real_t, GeoDim, Degrees...>>;
 
-/// @brief Print (as string) a UniformBSpline object
+/// @brief Prints a UniformBSpline object
 template <typename real_t, short_t GeoDim, short_t... Degrees>
 inline std::ostream &
 operator<<(std::ostream &os,
@@ -7317,7 +7317,7 @@ template <typename real_t, short_t GeoDim, short_t... Degrees>
 using NonUniformBSpline =
     BSplineCommon<NonUniformBSplineCore<real_t, GeoDim, Degrees...>>;
 
-/// @brief Print (as string) a UniformBSpline object
+/// @brief Prints a NonUniformBSpline object
 template <typename real_t, short_t GeoDim, short_t... Degrees>
 inline std::ostream &
 operator<<(std::ostream &os,

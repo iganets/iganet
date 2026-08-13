@@ -96,7 +96,7 @@ public:
   }  
 };
   
-/// @brief Print (as string) a IgASolver object
+/// @brief Prints an IgASolver object
 template <typename Inputs, typename Outputs, typename CollPts>
 inline std::ostream &
 operator<<(std::ostream &os,

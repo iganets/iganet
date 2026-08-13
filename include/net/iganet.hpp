@@ -1104,7 +1104,7 @@ private:
 #endif
 };
 
-/// @brief Print (as string) a IgANet object
+/// @brief Prints an IgANet object
 template <typename Optimizer, typename Inputs, typename Outputs,
           typename CollPts>
   requires OptimizerType<Optimizer>

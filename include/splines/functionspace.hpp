@@ -679,7 +679,7 @@ public:
   /// @}
 
 private:
-  /// @brief Returns the knot indicies of knot spans containing `xi`
+  /// @brief Returns the knot indices of knot spans containing `xi`
   /// @{
   template <functionspace comp = functionspace::interior, std::size_t... Is>
   inline auto
@@ -705,7 +705,7 @@ private:
   /// @}
 
 public:
-  /// @brief Returns the knot indicies of knot spans containing `xi`
+  /// @brief Returns the knot indices of knot spans containing `xi`
   /// @{
   template <functionspace comp = functionspace::interior>
   inline auto find_knot_indices(const utils::TensorArray<nspaces()> &xi) const {
@@ -2855,7 +2855,7 @@ public:
   }
 
 private:
-  /// @brief Returns the knot indicies of knot spans containing `xi`
+  /// @brief Returns the knot indices of knot spans containing `xi`
   template <functionspace comp = functionspace::interior, std::size_t... Is,
             typename Xi>
   inline auto find_knot_indices_(std::index_sequence<Is...>,
@@ -2867,7 +2867,7 @@ private:
   }
 
 public:
-  /// @brief Returns the knot indicies of knot spans containing `xi`
+  /// @brief Returns the knot indices of knot spans containing `xi`
   template <functionspace comp = functionspace::interior, typename Xi>
   inline auto find_knot_indices(const Xi &xi) const {
     if constexpr (comp == functionspace::interior)

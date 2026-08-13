@@ -105,11 +105,11 @@ public:
 #if defined(_WIN32)
         if (mkdir(libdir.c_str()) != 0)
           throw std::runtime_error(
-              "An error occured while creating the output directory");
+              "An error occurred while creating the output directory");
 #else
         if (mkdir(libdir.c_str(), S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH) == -1)
           throw std::runtime_error(
-              "An error occured while creating the output directory");
+              "An error occurred while creating the output directory");
 #endif
         break;
       case (2): // exists as a file
@@ -151,7 +151,7 @@ public:
 
       if (status != 0)
         throw std::runtime_error(
-            "An error occured while compiling the source code");
+            "An error occurred while compiling the source code");
 
       if (cleanup_error)
         throw std::runtime_error("Unable to remove temporary source file " +

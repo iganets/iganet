@@ -240,7 +240,7 @@ template <typename real_t, short_t GeoDim, short_t... Degrees>
 using UniformNurbs =
     BSplineCommon<UniformNurbsCore<real_t, GeoDim, Degrees...>>;
 
-/// @brief Print (as string) a UniformNurbs object
+/// @brief Prints a UniformNurbs object
 template <typename real_t, short_t GeoDim, short_t... Degrees>
 inline std::ostream &
 operator<<(std::ostream &os,
@@ -254,7 +254,7 @@ template <typename real_t, short_t GeoDim, short_t... Degrees>
 using NonUniformNurbs =
     BSplineCommon<NonUniformNurbsCore<real_t, GeoDim, Degrees...>>;
 
-/// @brief Print (as string) a NonUniformNurbs object
+/// @brief Prints a NonUniformNurbs object
 template <typename real_t, short_t GeoDim, short_t... Degrees>
 inline std::ostream &
 operator<<(std::ostream &os,

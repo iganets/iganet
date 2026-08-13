@@ -69,7 +69,7 @@ public:
   void *getSymbol(const char *name) const {
     if (!handle)
       throw std::runtime_error(
-          "An error occured while accessing the dynamic library");
+          "An error occurred while accessing the dynamic library");
 
     void *symbol = NULL;
 #if defined(_WIN32)
@@ -79,7 +79,7 @@ public:
 #endif
     if (!symbol)
       throw std::runtime_error(
-          "An error occured while getting the symbol from the dynamic library");
+          "An error occurred while getting the symbol from the dynamic library");
 
     return symbol;
   }

@@ -19,7 +19,7 @@ through its 6 control points \f$ x_k \in \mathbb{R}^1, k=0, \dots, 5
 \f$, i.e.
 
 \f[
-  C(\xi) = \sum_{i=0}^5 = x_k B_{i,2}(\xi)
+  C(\xi) = \sum_{i=0}^5 x_i B_{i,2}(\xi)
 \f]
 
 Here, univariate refers to the single variable \f$ \xi \f$ and uniform
@@ -30,7 +30,7 @@ By default, the control points are initialized to the so-called
 *Greville abscissae*
 
 \f[
-  x_k^* = \frac{1}{p-1}\left(\xi_{i+1} + \cdots + \xi_{i+p-1} \right), \quad k=0, \dots, 5
+  x_i^* = \frac{1}{p}\left(\xi_{i+1} + \cdots + \xi_{i+p} \right), \quad i=0, \dots, 5
 \f]
 
 which can be obtained using the `greville()` function
@@ -57,7 +57,7 @@ std::__1::array<at::Tensor, 1ul>(
 
 </details>
 
-All IGAnets object have the member function `pretty_print(std::ostream
+All IGAnets objects have the member function `pretty_print(std::ostream
 &os)` and an overload of the `operator<<` so that the curve \f$ C \f$
 can be printed as follows
 
@@ -171,7 +171,7 @@ std::__1::array<at::Tensor, 1ul>(
 
 </details>
 
-Note that IGAnets has overload of the `operator<<` for the standard
+Note that IGAnets has overloads of `operator<<` for the standard
 containers `std::array` and `std::vector`. If you want to address
 individual properties restricted to a single parametric or geometric
 dimension type
@@ -201,7 +201,7 @@ Knot vector in 0-th dimension
 
 </details>
 
-The following properties of the B-spline function object can be access
+The following properties of the B-spline function object can be accessed
 individually
 
 - `coeffs()` returns the array of control points for all dimensions as flat tensor
@@ -213,10 +213,10 @@ individually
 - `geoDim()` returns the geometric dimension
 - `knots()` returns the array of knot vectors for all dimensions
 - `knots(i)` returns the knot vector of the `i`-th dimension
-- `ncoeffs()` returns the numer of control points for all dimensions
+- `ncoeffs()` returns the number of control points for all dimensions
 - `ncoeffs(i)` returns the number of control points of the `i`-th dimension
 - `ncumcoeffs()` returns the total number of control points
-- `nknots()` returns the number of knots for all dimension
+- `nknots()` returns the number of knots for all dimensions
 - `nknots(i)` returns the number of knots of the `i`-th dimension
 - `parDim()` returns the parametric dimension
 
@@ -227,7 +227,7 @@ object is created by specifying the geometric dimension in the first
 template parameter followed by a sequence of integers specifying the
 individual degrees from which the parametric dimension is deduced.
 
-As an example, the following code snipped creates
+As an example, the following code snippet creates
 
 - a *bivariate B-spline surface* \f$ S : [0,1]^2 \to \mathbb{R}^3 \f$
 with \f$ 6 \times 8 \f$ control points and

@@ -508,7 +508,7 @@ inline pugi::xml_node &to_xml(const utils::TensorArray<M> &tensors,
   return root;
 }
 
-/// @brief Converts an XML documentobject to a torch::TensorAccessor object
+/// @brief Converts an XML document object to a torch::TensorAccessor object
 template <typename T, std::size_t N>
 inline torch::TensorAccessor<T, N> &
 from_xml(const pugi::xml_document &doc, torch::TensorAccessor<T, N> &accessor,

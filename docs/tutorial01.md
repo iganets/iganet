@@ -10,7 +10,7 @@ how to write your first program.
 The source code can be obtained from https://github.com/IGAnets/IgaNet
 as well as https://gitlab.com/iganets/iganet.
 
-It contains the following sub-folders:
+It contains the following subdirectories:
 
 -   `docs` contains the documentation
 
@@ -94,7 +94,7 @@ The following device types are supported depending on your system
 | `IGANET_DEVICE` | description |
 |:---:|:---|
 | `CUDA` | NVIDIA GPUs, requires CUDA-enabled LibTorch library |
-| `HIP`  | AMD GPUs, requires ROCM-enabled LibTorch library    |
+| `HIP`  | AMD GPUs, requires ROCm-enabled LibTorch library    |
 | `MPS`  | Apple Silicon Metal Performance Shaders             |
 | `XLA`  | XLA devices such as Google's TPUs, requires XLA-enabled LibTorch library, see [documentation](https://github.com/pytorch/xla) |
 | `XPU`  | Intel GPUs, see [documentation](https://pytorch.org/docs/stable/notes/get_start_xpu.html) |
@@ -146,7 +146,7 @@ options = TensorOptions(dtype=float, device=mps, layout=Strided (default), requi
 ### The logging mechanism
 
 IGAnets has its own logging mechanism. Instead of writing output to
-`std::cout` and `std:cerr` it is recommended to write ouput to
+`std::cout` and `std::cerr`, it is recommended to write output to
 `iganet::Log(...)` and specify the log level as follows
 
 | log level | description |
@@ -175,8 +175,8 @@ will print
 By default, `iganet::Log()` prints the output as `iganet::log::info`.
 
 The log level can be set by calling `iganet::Log.setLogLevel(...)`
-with the requested log level. Once set, only log levels of the set
-type and below, i.e. more severe will be printed, e.g.,
+with the requested log level. Once set, only messages at that level or
+a more severe level will be printed, e.g.,
 
 \snippet tutorial01.cxx Log levels
 
@@ -187,7 +187,7 @@ will only print
 [ERROR] Error
 ```
 
-Finally, it is possible to write the output into a logfile by calling
+Finally, it is possible to write the output to a log file by calling
 
 \snippet tutorial01.cxx Logging to file
 

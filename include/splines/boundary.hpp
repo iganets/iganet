@@ -1354,7 +1354,7 @@ public:
   /// @}
 
 private:
-  /// @brief Returns the knot indicies of boundary spline object's
+  /// @brief Returns the knot indices of the boundary spline object
   /// knot spans containing `xi`
   template <size_t... Is, typename... Xi>
   inline auto find_knot_indices_(std::index_sequence<Is...>,
@@ -1364,7 +1364,7 @@ private:
   }
 
 public:
-  /// @brief Returns the knot indicies of knot spans containing `xi`
+  /// @brief Returns the knot indices of knot spans containing `xi`
   template <typename... Xi>
   inline auto find_knot_indices(const std::tuple<Xi...> &xi) const {
     return find_knot_indices_(
@@ -1898,7 +1898,7 @@ public:                                                                        \
         BoundaryCore::bdr_);
   }
 
-  /// @brief Returns if the layout is sparse of all splines
+  /// @brief Returns whether the layout of each spline is sparse
   auto is_sparse() const noexcept {
     return std::apply(
         [](const auto &...bspline) {
@@ -1907,7 +1907,7 @@ public:                                                                        \
         BoundaryCore::bdr_);
   }
 
-  /// @brief Returns true if the B-spline is uniform of all splines
+  /// @brief Returns whether each B-spline is uniform
   auto is_uniform() const noexcept {
     return std::apply(
         [](const auto &...bspline) {
@@ -1916,7 +1916,7 @@ public:                                                                        \
         BoundaryCore::bdr_);
   }
 
-  /// @brief Returns true if the B-spline is non-uniform if all splines
+  /// @brief Returns whether each B-spline is non-uniform
   auto is_nonuniform() const noexcept {
     return std::apply(
         [](const auto &...bspline) {

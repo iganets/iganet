@@ -160,7 +160,7 @@ private:
   const torch::TensorOptions options_;
 };
 
-/// @brief Print (as string) an Options object
+/// @brief Prints an Options object
 template <typename real_t>
 inline std::ostream &operator<<(std::ostream &os, const Options<real_t> &obj) {
   obj.pretty_print(os);

@@ -12,13 +12,13 @@ IGAnets is a novel approach to combine the concept of deep operator learning wit
 
 ## Installation instructions
 
-IGAnets require a C++20 compiler, CMake and LibTorch (the C++ API of PyTorch).
+IGAnets requires a C++20 compiler, CMake, and LibTorch (the C++ API of PyTorch).
 
 **Supported CMake flags**:
 
 - `-DIGANET_BUILD_CPUONLY=ON` builds IGAnets in CPU mode even if CUDA, ROCm, etc. is found (default `OFF`).
 
-- `-DIGANET_BUILD_DOCS=ON` builds the documentation (default `OFF`). To build the documentation you need [Doxygen](https://www.doxygen.nl) and [Sphinx](https://www.sphinx-doc.org/en/master/) installed on you system.
+- `-DIGANET_BUILD_DOCS=ON` builds the documentation (default `OFF`). To build the documentation you need [Doxygen](https://www.doxygen.nl) and [Sphinx](https://www.sphinx-doc.org/en/master/) installed on your system.
 
 - `-DIGANET_BUILD_PCH=ON` builds IGAnets with precompiled headers (default `ON`).
 
@@ -63,7 +63,7 @@ IGAnets require a C++20 compiler, CMake and LibTorch (the C++ API of PyTorch).
     ```bash
     wget https://download.pytorch.org/libtorch/cpu/libtorch-shared-with-deps-2.13.0%2Bcpu.zip -O libtorch.zip
     unzip libtorch.zip -d $HOME/
-    rm -f libtorch
+    rm -f libtorch.zip
     export TORCH_DIR=${HOME}/libtorch/share/cmake/Torch
     ```
 
@@ -99,14 +99,14 @@ IGAnets require a C++20 compiler, CMake and LibTorch (the C++ API of PyTorch).
     brew install cmake pytorch
     ```
 
-3.  Configure
+2.  Configure
     ```bash
     cmake .. -DTorch_DIR=/opt/homebrew/Cellar/pytorch/2.13.0/share/cmake/Torch
     ```
 
     Note that the specific version of PyTorch might be different on your system.
 
-4.  Compile
+3.  Compile
     ```bash
     make -j 8
     ```
@@ -119,7 +119,7 @@ IGAnets require a C++20 compiler, CMake and LibTorch (the C++ API of PyTorch).
     ```bash
     wget https://download.pytorch.org/libtorch/cu126/libtorch-shared-with-deps-2.13.0%2Bcu126.zip -O libtorch.zip
     unzip libtorch.zip -d $HOME/
-    rm -f libtorch
+    rm -f libtorch.zip
     export TORCH_DIR=${HOME}/libtorch/share/cmake/Torch
     ```
     or from PyPI
@@ -143,7 +143,7 @@ IGAnets require a C++20 compiler, CMake and LibTorch (the C++ API of PyTorch).
     ```bash
     wget https://download.pytorch.org/libtorch/rocm7.2/libtorch-shared-with-deps-2.13.0%2Brocm7.2.zip -O libtorch.zip
     unzip libtorch.zip -d $HOME/
-    rm -f libtorch
+    rm -f libtorch.zip
     export TORCH_DIR=${HOME}/libtorch/share/cmake/Torch
     ```
     or from PyPI
@@ -157,17 +157,17 @@ IGAnets require a C++20 compiler, CMake and LibTorch (the C++ API of PyTorch).
 
     Note that the version must be compatible with the ROCm version installed on your system.
 
-2.  Configure and compiled
+2.  Configure and compile
 
     All further steps are the same as described above (Linux)
 
 ## Compilation with Intel GPU support (only Linux)
 
-1. Install the Intel GPU drivers and PyTorch version as decribed
+1. Install the Intel GPU drivers and PyTorch version as described
    [here](https://docs.pytorch.org/docs/stable/notes/get_start_xpu.html). If
    you do not own an Intel GPU, you can create a free account at the
    [Intel Tiber AI Cloud](https://console.cloud.intel.com), which
-   provides a free access to Intel datacenter GPU for testing
+   provides free access to Intel data-center GPUs for testing
    purposes.
 
 2. Install the XPU-enabled version of PyTorch in a virtual python environment

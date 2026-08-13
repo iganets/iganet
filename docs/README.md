@@ -8,11 +8,11 @@ online</a>.
 **IGAnets** (Isogeometric Analysis Networks) is a C++ library that
 combines Isogeometric Analysis with deep operator learning. It builds
 upon the C++ API of the Torch library and is written in C++20. The
-library aims to provide an easy to use, user-friendly and yet
+library aims to provide an easy-to-use, user-friendly, yet
 computationally efficient framework for implementing IGAnet
 applications.
 
-The library is licenced under the [Mozilla Public License Version 2.0](https://www.mozilla.org/MPL/2.0).
+The library is licensed under the [Mozilla Public License Version 2.0](https://www.mozilla.org/MPL/2.0).
 
 ## Getting started
 
@@ -26,16 +26,16 @@ IGAnets adopts the following mathematical symbols and notation conventions.
 ### B-Spline basis functions
 
 - \f$ \xi_d \f$ is the value of the parametric coordinate in the \f$ d \f$-th parametric dimension
-- \f$ \boldsymbol{\xi} = \left( \xi_1, \dots, \xi_{d_\text{par}} \right)^\top \f$ is the vector of parametric coordinates in all parametric dimension
+- \f$ \boldsymbol{\xi} = \left( \xi_1, \dots, \xi_{d_\text{par}} \right)^\top \f$ is the vector of parametric coordinates in all parametric dimensions
 - \f$ B_{i_d,p_d}(\xi_d) \f$ is the \f$ i_d \f$-th univariate B-spline basis function in the \f$ d \f$-th parametric dimension evaluated at \f$ \xi_d \f$
 - \f$ B_I(\boldsymbol{\xi}) = \bigotimes_{d=1}^{d_\text{par}} B_{i_d,p_d}(\xi_d) \f$ is the \f$ I \f$-th multivariate B-spline basis function
-- \f$ d_\text{geo} \f$ is the total number of geometric dimension
-- \f$ d_\text{par} \f$ is the total number of parametric dimension
-- \f$ i_d \f$ is local index refering to the \f$ d \f$-th dimension
+- \f$ d_\text{geo} \f$ is the number of geometric dimensions
+- \f$ d_\text{par} \f$ is the number of parametric dimensions
+- \f$ i_d \f$ is a local index referring to the \f$ d \f$-th dimension
 - \f$ \mathbf{i} = \left(i_1, \dots, i_d \right) \f$ is a local multi-index
 - \f$ I \f$ is a global index
 - \f$ n_d \f$ is the number of univariate B-spline basis functions in the \f$ d \f$-th dimension
-- \f$ N = n_1\cdot \dots \cdot n_{d_\text{par}} \f$ is the total number of multivariable B-splines basis functions
+- \f$ N = n_1\cdot \dots \cdot n_{d_\text{par}} \f$ is the total number of multivariate B-spline basis functions
 
 ### B-Spline function spaces
 

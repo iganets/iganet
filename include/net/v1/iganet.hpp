@@ -1190,7 +1190,7 @@ private:
 #endif
 };
 
-/// @brief Print (as string) a IgANet object
+/// @brief Prints an IgANet object
 template <typename Optimizer, typename GeometryMap, typename Variable>
   requires OptimizerType<Optimizer> && FunctionSpaceType<GeometryMap> &&
            FunctionSpaceType<Variable>

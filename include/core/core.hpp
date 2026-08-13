@@ -788,8 +788,8 @@ inline void init(std::ostream &os = Log(log::info)) {
   MPI_Initialized(&flag);
 
   if (flag == 0)
-    if (MPI_Init(NULL, NULL) != MPI_SUCESS)
-      throw std::runtime_error("An error occured during MPI initialization");
+    if (MPI_Init(NULL, NULL) != MPI_SUCCESS)
+      throw std::runtime_error("An error occurred during MPI initialization");
 
   int rank;
   MPI_Comm_rank(MPI_COMM_WORLD, &rank);
@@ -808,7 +808,7 @@ inline void finalize(std::ostream &os = Log(log::info)) {
 
 #ifdef IGANET_WITH_MPI
   if (MPI_Finalize() != MPI_SUCCESS)
-    throw std::runtime_error("An error occured during MPI finalization");
+    throw std::runtime_error("An error occurred during MPI finalization");
 #endif
 
   os << "Succeeded\n";
