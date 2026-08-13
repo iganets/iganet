@@ -278,6 +278,96 @@ public:
   }
   /// @}
 
+  /// @brief Loads the multi-patch object from a Torch archive file
+  template <typename P = Patch>
+    requires requires { typename P::value_type; }
+  void load(const std::string &filename, const std::string &key = "multipatch",
+            Options<typename P::value_type> options =
+                Options<typename P::value_type>{}) {
+    torch::serialize::InputArchive archive;
+    archive.load_from(filename);
+    read(archive, key, options);
+  }
+
+  /// @brief Reads the multi-patch object from a Torch input archive
+  template <typename P = Patch>
+    requires requires { typename P::value_type; }
+  torch::serialize::InputArchive &read(torch::serialize::InputArchive &archive,
+                                       const std::string &key = "multipatch",
+                                       Options<typename P::value_type> options =
+                                           Options<typename P::value_type>{}) {
+    torch::Tensor data;
+    archive.read(key + ".json", data);
+    data = data.to(torch::kCPU, torch::kUInt8).contiguous();
+    const auto *begin =
+        reinterpret_cast<const char *>(data.data_ptr<uint8_t>());
+    from_json(nlohmann::json::parse(std::string(begin, begin + data.numel())),
+              options);
+    return archive;
+  }
+
+  /// @brief Saves the multi-patch object to a Torch archive file
+  void save(const std::string &filename,
+            const std::string &key = "multipatch") const {
+    torch::serialize::OutputArchive archive;
+    write(archive, key).save_to(filename);
+  }
+
+  /// @brief Writes the multi-patch object into a Torch output archive
+  torch::serialize::OutputArchive &
+  write(torch::serialize::OutputArchive &archive,
+        const std::string &key = "multipatch") const {
+    const std::string serialized = to_json().dump();
+    const auto data =
+        torch::from_blob(const_cast<char *>(serialized.data()),
+                         {static_cast<int64_t>(serialized.size())},
+                         torch::TensorOptions{}.dtype(torch::kUInt8))
+            .clone();
+    archive.write(key + ".json", data);
+    return archive;
+  }
+
+  /// @brief Returns true if patches and topology are close up to tolerances
+  template <typename P = Patch>
+    requires requires { typename P::value_type; }
+  bool
+  isclose(const MultiPatch &other,
+          typename P::value_type rtol = typename P::value_type{1e-5},
+          typename P::value_type atol = typename P::value_type{1e-8}) const {
+    return jsonIsClose(to_json(), other.to_json(), rtol, atol);
+  }
+
+  /// @brief Returns true if patches and topology are exactly equal
+  bool operator==(const MultiPatch &other) const {
+    return to_json() == other.to_json();
+  }
+
+  /// @brief Returns true if patches or topology differ
+  bool operator!=(const MultiPatch &other) const { return !(*this == other); }
+
+  /// @brief Prints a human-readable representation of the multi-patch object
+  void pretty_print(std::ostream &os) const noexcept {
+    os << "MultiPatch(\nparDim = " << Patch::parDim()
+       << ", npatches = " << npatches() << ", ninterfaces = " << ninterfaces()
+       << "\n";
+    for (std::size_t patchIndex = 0; patchIndex < patches_.size();
+         ++patchIndex) {
+      const auto json = patches_[patchIndex]->to_json();
+      os << "patch[" << patchIndex << "] = {geoDim = " << json["geoDim"]
+         << ", degrees = " << json["degrees"] << "}\n";
+    }
+    for (std::size_t interfaceIndex = 0; interfaceIndex < interfaces_.size();
+         ++interfaceIndex) {
+      const auto &patchInterface = interfaces_[interfaceIndex];
+      os << "interface[" << interfaceIndex << "] = {patch "
+         << findPatchIndex(patchInterface.patchPtr(0).get()) << ", side "
+         << static_cast<short_t>(patchInterface.side(0)) << " <-> patch "
+         << findPatchIndex(patchInterface.patchPtr(1).get()) << ", side "
+         << static_cast<short_t>(patchInterface.side(1)) << "}\n";
+    }
+    os << ")";
+  }
+
   /// @brief Returns the multi-patch object as a JSON object
   [[nodiscard]] nlohmann::json to_json() const {
     nlohmann::json json;
@@ -338,15 +428,38 @@ public:
   }
 
   /// @brief Updates the multi-patch object from a JSON object
-  MultiPatch &from_json(const nlohmann::json &json) {
+  template <typename P = Patch>
+    requires requires { typename P::value_type; }
+  MultiPatch &from_json(const nlohmann::json &json,
+                        Options<typename P::value_type> options =
+                            Options<typename P::value_type>{}) {
     if (json.at("parDim").get<short_t>() != Patch::parDim())
       throw std::runtime_error(
           "MultiPatch JSON provides an incompatible parametric dimension");
 
     const auto &patchJson = json.at("patches");
-    if (!patchJson.is_array() || patchJson.size() != patches_.size())
+    if (!patchJson.is_array() ||
+        (!patches_.empty() && patchJson.size() != patches_.size()))
       throw std::runtime_error(
           "MultiPatch JSON patch count does not match the patch container");
+
+    auto parsedPatches = patches_;
+    const bool createPatches = parsedPatches.empty();
+    if (createPatches) {
+      parsedPatches.reserve(patchJson.size());
+      for (const auto &item : patchJson) {
+        try {
+          parsedPatches.push_back(
+              createUniformBSpline<typename Patch::value_type, Patch::geoDim(),
+                                   Patch::parDim()>(item, options));
+        } catch (const std::runtime_error &) {
+          parsedPatches.push_back(
+              createNonUniformBSpline<typename Patch::value_type,
+                                      Patch::geoDim(), Patch::parDim()>(
+                  item, options));
+        }
+      }
+    }
 
     const auto &interfaceJson = json.at("interfaces");
     if (!interfaceJson.is_array())
@@ -357,8 +470,8 @@ public:
     for (const auto &item : interfaceJson) {
       const auto patchIndices = item.at("patches").get<std::array<size_t, 2>>();
       const auto sides = item.at("sides").get<std::array<short_t, 2>>();
-      if (patchIndices[0] >= patches_.size() ||
-          patchIndices[1] >= patches_.size() || sides[0] <= none ||
+      if (patchIndices[0] >= parsedPatches.size() ||
+          patchIndices[1] >= parsedPatches.size() || sides[0] <= none ||
           sides[0] > 2 * Patch::parDim() || sides[1] <= none ||
           sides[1] > 2 * Patch::parDim())
         throw std::runtime_error("MultiPatch JSON has an invalid interface");
@@ -371,13 +484,16 @@ public:
             "MultiPatch JSON has invalid interface orientation data");
 
       parsedInterfaces.emplace_back(
-          patches_[patchIndices[0]], static_cast<enum side>(sides[0]),
-          patches_[patchIndices[1]], static_cast<enum side>(sides[1]));
+          parsedPatches[patchIndices[0]], static_cast<enum side>(sides[0]),
+          parsedPatches[patchIndices[1]], static_cast<enum side>(sides[1]));
     }
 
-    for (std::size_t patchIndex = 0; patchIndex < patches_.size(); ++patchIndex)
-      patches_[patchIndex]->from_json(patchJson[patchIndex]);
+    if (!createPatches)
+      for (std::size_t patchIndex = 0; patchIndex < parsedPatches.size();
+           ++patchIndex)
+        parsedPatches[patchIndex]->from_json(patchJson[patchIndex]);
 
+    patches_ = std::move(parsedPatches);
     interfaces_ = std::move(parsedInterfaces);
     return *this;
   }
@@ -474,14 +590,22 @@ public:
   }
 
   /// @brief Updates the multi-patch object from an XML document
+  template <typename P = Patch>
+    requires requires { typename P::value_type; }
   MultiPatch &from_xml(const pugi::xml_document &doc, int id = 0,
-                       const std::string &label = "", int index = -1) {
-    return from_xml(doc.child("xml"), id, label, index);
+                       const std::string &label = "", int index = -1,
+                       Options<typename P::value_type> options =
+                           Options<typename P::value_type>{}) {
+    return from_xml(doc.child("xml"), id, label, index, options);
   }
 
   /// @brief Updates the multi-patch object from an XML node
+  template <typename P = Patch>
+    requires requires { typename P::value_type; }
   MultiPatch &from_xml(const pugi::xml_node &root, int id = 0,
-                       const std::string &label = "", int index = -1) {
+                       const std::string &label = "", int index = -1,
+                       Options<typename P::value_type> options =
+                           Options<typename P::value_type>{}) {
     pugi::xml_node multiPatch;
     for (const auto &candidate : root.children("MultiPatch")) {
       if ((id >= 0 ? candidate.attribute("id").as_int() == id : true) &&
@@ -501,17 +625,37 @@ public:
           "MultiPatch XML provides an incompatible parametric dimension");
 
     const pugi::xml_node patchRange = multiPatch.child("patches");
-    if (!patchRange || std::string_view{patchRange.attribute("type").value()} !=
-                           "id_range")
+    if (!patchRange ||
+        std::string_view{patchRange.attribute("type").value()} != "id_range")
       throw std::runtime_error("MultiPatch XML has no valid patch ID range");
 
     std::stringstream rangeData(patchRange.child_value());
     int64_t firstPatch = 0;
     int64_t lastPatch = -1;
     if (!(rangeData >> firstPatch >> lastPatch) || firstPatch != 0 ||
-        lastPatch + 1 != static_cast<int64_t>(patches_.size()))
+        (!patches_.empty() &&
+         lastPatch + 1 != static_cast<int64_t>(patches_.size())))
       throw std::runtime_error(
           "MultiPatch XML patch range does not match the patch container");
+
+    auto parsedPatches = patches_;
+    const bool createPatches = parsedPatches.empty();
+    if (createPatches) {
+      parsedPatches.reserve(static_cast<std::size_t>(lastPatch + 1));
+      for (int64_t patchIndex = 0; patchIndex <= lastPatch; ++patchIndex) {
+        try {
+          parsedPatches.push_back(
+              createUniformBSpline<typename Patch::value_type, Patch::geoDim(),
+                                   Patch::parDim()>(root, patchIndex, "", -1,
+                                                    options));
+        } catch (const std::runtime_error &) {
+          parsedPatches.push_back(
+              createNonUniformBSpline<typename Patch::value_type,
+                                      Patch::geoDim(), Patch::parDim()>(
+                  root, patchIndex, "", -1, options));
+        }
+      }
+    }
 
     std::vector<interface_type> parsedInterfaces;
     const pugi::xml_node interfaceNode = multiPatch.child("interfaces");
@@ -530,8 +674,8 @@ public:
             secondSide))
         continue;
 
-      if (firstPatchIndex >= patches_.size() ||
-          secondPatchIndex >= patches_.size() || firstSide <= none ||
+      if (firstPatchIndex >= parsedPatches.size() ||
+          secondPatchIndex >= parsedPatches.size() || firstSide <= none ||
           firstSide > 2 * Patch::parDim() || secondSide <= none ||
           secondSide > 2 * Patch::parDim())
         throw std::runtime_error("MultiPatch XML has an invalid interface");
@@ -547,23 +691,82 @@ public:
             "MultiPatch XML has excess interface orientation data");
 
       parsedInterfaces.emplace_back(
-          patches_[firstPatchIndex], static_cast<enum side>(firstSide),
-          patches_[secondPatchIndex], static_cast<enum side>(secondSide));
+          parsedPatches[firstPatchIndex], static_cast<enum side>(firstSide),
+          parsedPatches[secondPatchIndex], static_cast<enum side>(secondSide));
     }
 
-    for (std::size_t patchIndex = 0; patchIndex < patches_.size(); ++patchIndex)
-      patches_[patchIndex]->from_xml(root, static_cast<int>(patchIndex));
+    if (!createPatches)
+      for (std::size_t patchIndex = 0; patchIndex < parsedPatches.size();
+           ++patchIndex)
+        parsedPatches[patchIndex]->from_xml(root, static_cast<int>(patchIndex));
 
+    patches_ = std::move(parsedPatches);
     interfaces_ = std::move(parsedInterfaces);
     return *this;
   }
 
 private:
+  template <typename real_t>
+  static bool jsonIsClose(const nlohmann::json &first,
+                          const nlohmann::json &second, real_t rtol,
+                          real_t atol) {
+    if (first.type() != second.type())
+      return first.is_number() && second.is_number() &&
+             std::abs(first.template get<real_t>() -
+                      second.template get<real_t>()) <=
+                 atol + rtol * std::abs(second.template get<real_t>());
+    if (first.is_number())
+      return std::abs(first.template get<real_t>() -
+                      second.template get<real_t>()) <=
+             atol + rtol * std::abs(second.template get<real_t>());
+    if (first.is_array()) {
+      if (first.size() != second.size())
+        return false;
+      for (std::size_t i = 0; i < first.size(); ++i)
+        if (!jsonIsClose(first[i], second[i], rtol, atol))
+          return false;
+      return true;
+    }
+    if (first.is_object()) {
+      if (first.size() != second.size())
+        return false;
+      for (const auto &[key, value] : first.items()) {
+        const auto it = second.find(key);
+        if (it == second.end() || !jsonIsClose(value, *it, rtol, atol))
+          return false;
+      }
+      return true;
+    }
+    return first == second;
+  }
+
   /// @brief Vector of single-patch objects
   std::vector<std::shared_ptr<Patch>> patches_;
 
   /// @brief Vector of patch-interface objects
   std::vector<interface_type> interfaces_;
 };
+
+/// @brief Writes a human-readable multi-patch representation to a stream
+template <typename Patch>
+std::ostream &operator<<(std::ostream &os, const MultiPatch<Patch> &obj) {
+  obj.pretty_print(os);
+  return os;
+}
+
+/// @brief Serializes a multi-patch object
+template <typename Patch>
+torch::serialize::OutputArchive &
+operator<<(torch::serialize::OutputArchive &archive,
+           const MultiPatch<Patch> &obj) {
+  return obj.write(archive);
+}
+
+/// @brief Deserializes a multi-patch object
+template <typename Patch>
+torch::serialize::InputArchive &
+operator>>(torch::serialize::InputArchive &archive, MultiPatch<Patch> &obj) {
+  return obj.read(archive);
+}
 
 } // namespace iganet
