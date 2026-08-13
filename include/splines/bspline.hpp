@@ -7513,6 +7513,89 @@ createNonUniformBSpline(
   return patch;
 }
 
+namespace detail {
+
+/// @brief Loads a non-uniform B-spline and converts it to a uniform B-spline
+/// inside one JIT-generated dynamic library.
+template <typename real_t, iganet::short_t GeoDim, iganet::short_t ParDim>
+std::shared_ptr<iganet::BSplinePatch<real_t, GeoDim, ParDim>>
+createUniformBSplineFromSerialized(
+    const std::array<iganet::short_t, ParDim> &degrees,
+    const std::string &serialized, bool isXml, int id, const std::string &label,
+    int index, iganet::Options<real_t> options) {
+  using patch_t = iganet::BSplinePatch<real_t, GeoDim, ParDim>;
+
+  const std::string includes = R"(
+#include <splines/bspline.hpp>
+
+#ifdef __clang__
+#pragma clang diagnostic ignored "-Wreturn-type-c-linkage"
+#endif
+)";
+
+  std::ostringstream src;
+  src << "using real_t = " << iganet::type_name_v<real_t> << ";\n"
+      << "using patch_t = iganet::BSplinePatch<real_t, " << GeoDim << ", "
+      << ParDim << ">;\n"
+      << "using nonuniform_t = iganet::NonUniformBSpline<real_t, " << GeoDim;
+  for (const auto degree : degrees)
+    src << ", " << degree;
+  src << ">;\n"
+      << "using uniform_t = iganet::UniformBSpline<real_t, " << GeoDim;
+  for (const auto degree : degrees)
+    src << ", " << degree;
+  src << ">;\n\n"
+      << "EXPORT std::shared_ptr<patch_t> create_patch_from_xml(\n"
+      << "    const std::string &serialized, int id,\n"
+      << "    const std::string &label, int index,\n"
+      << "    iganet::Options<real_t> options) {\n"
+      << "  pugi::xml_document doc;\n"
+      << "  if (!doc.load_string(serialized.c_str()))\n"
+      << "    throw std::runtime_error(\"Unable to parse XML object\");\n"
+      << "  nonuniform_t spline(options);\n"
+      << "  spline.from_xml(doc, id, label, index);\n"
+      << "  return std::make_shared<uniform_t>(\n"
+      << "      std::move(spline).to_uniform());\n"
+      << "}\n\n"
+      << "EXPORT std::shared_ptr<patch_t> create_patch_from_json(\n"
+      << "    const std::string &serialized,\n"
+      << "    iganet::Options<real_t> options) {\n"
+      << "  nonuniform_t spline(options);\n"
+      << "  spline.from_json(nlohmann::json::parse(serialized));\n"
+      << "  return std::make_shared<uniform_t>(\n"
+      << "      std::move(spline).to_uniform());\n"
+      << "}\n";
+
+  const auto libname = iganet::jit{}.compile(
+      includes, src.str(), "CreateUniformBSplineFromSerialized");
+  auto handler = std::make_shared<iganet::DLHandler>(libname);
+  std::shared_ptr<patch_t> patch;
+  if (isXml) {
+    using create_fn = std::shared_ptr<patch_t> (*)(const std::string &, int,
+                                                   const std::string &, int,
+                                                   iganet::Options<real_t>);
+    const auto create = reinterpret_cast<create_fn>(
+        handler->getSymbol("create_patch_from_xml"));
+    patch = create(serialized, id, label, index, options);
+  } else {
+    using create_fn = std::shared_ptr<patch_t> (*)(const std::string &,
+                                                   iganet::Options<real_t>);
+    const auto create = reinterpret_cast<create_fn>(
+        handler->getSymbol("create_patch_from_json"));
+    patch = create(serialized, options);
+  }
+
+  auto *patch_ptr = patch.get();
+  return std::shared_ptr<patch_t>(
+      patch_ptr, [patch = std::move(patch),
+                  handler = std::move(handler)](patch_t *) mutable {
+        patch.reset();
+        handler.reset();
+      });
+}
+
+} // namespace detail
+
 /// @brief Creates a tensor-product uniform B-spline from an XML node
 template <typename real_t, iganet::short_t GeoDim, iganet::short_t ParDim>
 std::shared_ptr<iganet::BSplinePatch<real_t, GeoDim, ParDim>>
@@ -7580,14 +7663,10 @@ createUniformBSpline(
       throw std::runtime_error("XML object does not provide all bases");
   }
 
-  auto uniform = createUniformBSpline<real_t, GeoDim, ParDim>(
-      degrees, ncoeffs, iganet::init::zeros, options);
-  const auto canonicalKnots = uniform->to_json()["knots"];
-  uniform->from_xml(root, id, label, index);
-  if (uniform->to_json()["knots"] != canonicalKnots)
-    throw std::runtime_error(
-        "Cannot convert a non-uniform B-spline to a uniform B-spline");
-  return uniform;
+  std::ostringstream serialized;
+  root.print(serialized);
+  return detail::createUniformBSplineFromSerialized<real_t, GeoDim, ParDim>(
+      degrees, serialized.str(), true, id, label, index, options);
 }
 
 /// @brief Creates a tensor-product uniform B-spline from an XML document
@@ -7617,14 +7696,11 @@ createUniformBSpline(
       json.at("degrees").template get<std::array<iganet::short_t, ParDim>>();
   const auto ncoeffs =
       json.at("ncoeffs").template get<std::array<int64_t, ParDim>>();
+  if (std::any_of(ncoeffs.begin(), ncoeffs.end(),
+                  [](int64_t count) { return count <= 0; }))
+    throw std::runtime_error("JSON object provides invalid coefficient counts");
 
-  auto uniform = createUniformBSpline<real_t, GeoDim, ParDim>(
-      degrees, ncoeffs, iganet::init::zeros, options);
-  const auto canonicalKnots = uniform->to_json()["knots"];
-  uniform->from_json(json);
-  if (uniform->to_json()["knots"] != canonicalKnots)
-    throw std::runtime_error(
-        "Cannot convert a non-uniform B-spline to a uniform B-spline");
-  return uniform;
+  return detail::createUniformBSplineFromSerialized<real_t, GeoDim, ParDim>(
+      degrees, json.dump(), false, 0, "", -1, options);
 }
 } // namespace iganet
