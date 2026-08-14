@@ -372,6 +372,17 @@ function(genJITCompiler SOURCE_FILES SOURCE_TARGET)
 
   # ====================================================================
 
+  set(JIT_CONFIGURED_FLAGS
+    "${JIT_CXX_FLAGS} ${JIT_INCLUDE_DIRECTORIES} ${JIT_LIBRARIES}")
+  set(JIT_ALTERNATE_FLAGS "")
+  if(JIT_INSTALL_TREE)
+    set(JIT_RUNTIME_INSTALL_FLAGS "${JIT_CONFIGURED_FLAGS}" PARENT_SCOPE)
+  elseif(JIT_RUNTIME_INSTALL_FLAGS)
+    set(JIT_ALTERNATE_FLAGS "${JIT_RUNTIME_INSTALL_FLAGS}")
+  endif()
+
+  # ====================================================================
+
   # Generate source files
   foreach (input_file IN LISTS SOURCE_FILES)
     if (IS_ABSOLUTE "${input_file}")

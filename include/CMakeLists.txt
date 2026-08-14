@@ -51,15 +51,14 @@ endforeach()
 string(SHA256 JIT_CACHE_FINGERPRINT "${JIT_CACHE_FINGERPRINT_INPUT}")
 
 include("${PROJECT_SOURCE_DIR}/cmake/genJIT.cmake")
-genJITCompiler("${CMAKE_CURRENT_SOURCE_DIR}/iganet/utils/jit.hpp.in" iganet::core
-  OUTPUT_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/iganet/utils")
-
-# Generate a second header for installation.  It has the same compiler and
-# external dependency settings, but all IgANet-owned paths refer to the
-# install tree instead of the source/build trees.
+# Generate the install configuration first so source-built executables can
+# embed it as their runtime alternative.
 genJITCompiler("${CMAKE_CURRENT_SOURCE_DIR}/iganet/utils/jit.hpp.in" iganet::core
   INSTALL_TREE
   OUTPUT_DIRECTORY "${PROJECT_BINARY_DIR}/install/include/iganet/utils")
+
+genJITCompiler("${CMAKE_CURRENT_SOURCE_DIR}/iganet/utils/jit.hpp.in" iganet::core
+  OUTPUT_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/iganet/utils")
 
 ########################################################################
 # Precompiled headers

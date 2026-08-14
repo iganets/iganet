@@ -25,6 +25,9 @@
 #include <dlfcn.h>
 #include <fstream>
 #include <sys/stat.h>
+#if defined(__APPLE__)
+#include <mach-o/dyld.h>
+#endif
 #endif
 
 #include <iganet/utils/fqn.hpp>
@@ -37,7 +40,8 @@ public:
   /// @brief Default constructor.
   jit()
       : temp(getTempPath()), libdir(), cmd("@JIT_CXX_COMPILER@"),
-        flags("@JIT_CXX_FLAGS@ @JIT_INCLUDE_DIRECTORIES@ @JIT_LIBRARIES@"),
+        flags("@JIT_CONFIGURED_FLAGS@"),
+        installFlags("@JIT_ALTERNATE_FLAGS@"),
         out("@JIT_CXX_OUTPUT_FLAG@") {
     char *env = std::getenv("JIT_CXX_COMPILER");
     if (env != NULL)
@@ -47,7 +51,7 @@ public:
     if (env != NULL)
       flags = env;
     else
-      replaceInstallPrefix(flags);
+      selectRuntimeFlags();
 
     env = std::getenv("JIT_CXX_OUTPUT_FLAG");
     if (env != NULL)
@@ -172,22 +176,102 @@ public:
   }
 
 private:
+  /// @brief Select install-tree flags for an installed source-built binary.
+  inline void selectRuntimeFlags() {
+    std::filesystem::path prefix;
+
+    if (const char *root = std::getenv("IGANET_ROOT"); root != NULL) {
+      prefix = root;
+      if (!isInstallPrefix(prefix))
+        throw std::runtime_error(
+            "IGANET_ROOT does not refer to an IgANet installation: " +
+            prefix.string());
+    }
+
+    // An installed header carries marker-based flags directly.
+    if (flags.find(installPrefixMarker()) != std::string::npos) {
+      if (prefix.empty())
+        prefix = headerInstallPrefix();
+      replaceInstallPrefix(flags, prefix);
+      return;
+    }
+
+    // A source-built executable embeds installFlags. Search upward from the
+    // executable, covering conventional bin and nested libexec layouts.
+    if (prefix.empty() && !installFlags.empty())
+      prefix = executableInstallPrefix();
+
+    if (!prefix.empty() && !installFlags.empty()) {
+      flags = installFlags;
+      replaceInstallPrefix(flags, prefix);
+    }
+  }
+
+  inline static constexpr std::string_view installPrefixMarker() {
+    return "__IGANET_INSTALL_PREFIX__";
+  }
+
+  inline static bool isInstallPrefix(const std::filesystem::path &prefix) {
+    return std::filesystem::exists(
+        prefix / "@IGANET_INSTALL_INCLUDEDIR@" / "iganet.h");
+  }
+
+  inline static std::filesystem::path headerInstallPrefix() {
+    const std::filesystem::path headerPath(__FILE__);
+    if (!headerPath.is_absolute())
+      return "@JIT_INSTALL_FALLBACK_PREFIX@";
+
+    auto prefix = headerPath;
+    for (std::size_t level = 0; level < @JIT_INSTALL_PREFIX_DEPTH@; ++level)
+      prefix = prefix.parent_path();
+    return prefix;
+  }
+
+  inline static std::filesystem::path executablePath() {
+#if defined(_WIN32)
+    std::wstring buffer(MAX_PATH, L'\0');
+    const DWORD length = GetModuleFileNameW(
+        NULL, buffer.data(), static_cast<DWORD>(buffer.size()));
+    if (length == 0)
+      return {};
+    buffer.resize(length);
+    return buffer;
+#elif defined(__APPLE__)
+    uint32_t size = 0;
+    (void)_NSGetExecutablePath(NULL, &size);
+    std::string buffer(size, '\0');
+    if (_NSGetExecutablePath(buffer.data(), &size) != 0)
+      return {};
+    return std::filesystem::weakly_canonical(buffer.c_str());
+#elif defined(__linux__)
+    std::error_code error;
+    const auto path = std::filesystem::read_symlink("/proc/self/exe", error);
+    return error ? std::filesystem::path{} : path;
+#else
+    return {};
+#endif
+  }
+
+  inline static std::filesystem::path executableInstallPrefix() {
+    auto candidate = executablePath().parent_path();
+    for (std::size_t level = 0; level < 6 && !candidate.empty(); ++level) {
+      if (isInstallPrefix(candidate))
+        return candidate;
+      const auto parent = candidate.parent_path();
+      if (parent == candidate)
+        break;
+      candidate = parent;
+    }
+    return {};
+  }
+
   /// @brief Replace the install-prefix marker in an install-tree JIT command.
-  inline static void replaceInstallPrefix(std::string &value) {
-    constexpr std::string_view marker = "__IGANET_INSTALL_PREFIX__";
+  inline static void replaceInstallPrefix(
+      std::string &value, const std::filesystem::path &prefix) {
+    constexpr std::string_view marker = installPrefixMarker();
     const auto markerPos = value.find(marker);
     if (markerPos == std::string::npos)
       return;
-
-    std::filesystem::path prefix;
-    const std::filesystem::path headerPath(__FILE__);
-    if (headerPath.is_absolute()) {
-      prefix = headerPath;
-      for (std::size_t level = 0; level < @JIT_INSTALL_PREFIX_DEPTH@; ++level)
-        prefix = prefix.parent_path();
-    } else {
-      prefix = "@JIT_INSTALL_FALLBACK_PREFIX@";
-    }
 
     const std::string replacement = prefix.string();
     std::size_t pos = 0;
@@ -280,7 +364,7 @@ private:
 
 private:
   /// @brief Strings.
-  std::string temp, libdir, cmd, flags, out;
+  std::string temp, libdir, cmd, flags, installFlags, out;
 };
 
 /// @brief Print (as string) a jit object.
