@@ -89,8 +89,11 @@ include(CMakePackageConfigHelpers)
 set(IGANET_INSTALL_CMAKEDIR
   "${CMAKE_INSTALL_LIBDIR}/cmake/IgANet"
   CACHE STRING "Directory for the IgANet CMake package")
+set(IGANET_INSTALL_INCLUDEDIR
+  "${CMAKE_INSTALL_INCLUDEDIR}/iganet"
+  CACHE STRING "Directory for public IgANet headers")
 set(IGANET_INSTALL_THIRD_PARTY_INCLUDEDIR
-  "${CMAKE_INSTALL_INCLUDEDIR}/iganet/third_party"
+  "${IGANET_INSTALL_INCLUDEDIR}/third_party"
   CACHE STRING "Directory for private third-party headers")
 
 add_library(iganet_core INTERFACE)

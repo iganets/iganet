@@ -1,7 +1,7 @@
 /**
-   @file ".iganet_pch.cxx"
+   @file net.h
 
-   @brief Isogeometric analysis network precompiled header generator
+   @brief Network header file
 
    @author Matthias Moller
 
@@ -12,6 +12,10 @@
    file, You can obtain one at http://mozilla.org/MPL/2.0/.
 */
 
-#include <iganet/iganet.h>
+#pragma once
 
-int main() { return 0; }
+#include <iganet/net/activation.hpp>
+#include <iganet/net/igabase.hpp>
+#include <iganet/net/iganet.hpp>
+#include <iganet/net/optimizer.hpp>
+#include <iganet/net/v1/iganet.hpp>

@@ -1,7 +1,7 @@
 /**
-   @file ".iganet_pch.cxx"
+   @file core.h
 
-   @brief Isogeometric analysis network precompiled header generator
+   @brief Core header file
 
    @author Matthias Moller
 
@@ -12,6 +12,8 @@
    file, You can obtain one at http://mozilla.org/MPL/2.0/.
 */
 
-#include <iganet/iganet.h>
+#pragma once
 
-int main() { return 0; }
+#include <iganet/core/core.hpp>
+#include <iganet/core/memory.hpp>
+#include <iganet/core/options.hpp>

@@ -31,8 +31,8 @@ endif()
 ########################################################################
 # Config file
 ########################################################################
-configure_file(${CMAKE_CURRENT_SOURCE_DIR}/core/config.hpp.in
-  "${CMAKE_CURRENT_BINARY_DIR}/core/config.hpp" @ONLY)
+configure_file(${CMAKE_CURRENT_SOURCE_DIR}/iganet/core/config.hpp.in
+  "${CMAKE_CURRENT_BINARY_DIR}/iganet/core/config.hpp" @ONLY)
 
 ########################################################################
 # JIT compiler
@@ -40,9 +40,9 @@ configure_file(${CMAKE_CURRENT_SOURCE_DIR}/core/config.hpp.in
 # Reconfigure when a public header changes and fingerprint their contents so
 # cached JIT libraries cannot outlive the header implementation they use.
 file(GLOB_RECURSE IGANET_JIT_CACHE_HEADERS CONFIGURE_DEPENDS
-  "${PROJECT_SOURCE_DIR}/include/*.h"
-  "${PROJECT_SOURCE_DIR}/include/*.hpp"
-  "${PROJECT_SOURCE_DIR}/include/*.hpp.in")
+  "${PROJECT_SOURCE_DIR}/include/iganet/*.h"
+  "${PROJECT_SOURCE_DIR}/include/iganet/*.hpp"
+  "${PROJECT_SOURCE_DIR}/include/iganet/*.hpp.in")
 set(JIT_CACHE_FINGERPRINT_INPUT "")
 foreach(JIT_CACHE_HEADER IN LISTS IGANET_JIT_CACHE_HEADERS)
   file(SHA256 "${JIT_CACHE_HEADER}" JIT_CACHE_HEADER_HASH)
@@ -51,15 +51,15 @@ endforeach()
 string(SHA256 JIT_CACHE_FINGERPRINT "${JIT_CACHE_FINGERPRINT_INPUT}")
 
 include("${PROJECT_SOURCE_DIR}/cmake/genJIT.cmake")
-genJITCompiler("${CMAKE_CURRENT_SOURCE_DIR}/utils/jit.hpp.in" iganet::core
-  OUTPUT_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/utils")
+genJITCompiler("${CMAKE_CURRENT_SOURCE_DIR}/iganet/utils/jit.hpp.in" iganet::core
+  OUTPUT_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/iganet/utils")
 
 # Generate a second header for installation.  It has the same compiler and
 # external dependency settings, but all IgANet-owned paths refer to the
 # install tree instead of the source/build trees.
-genJITCompiler("${CMAKE_CURRENT_SOURCE_DIR}/utils/jit.hpp.in" iganet::core
+genJITCompiler("${CMAKE_CURRENT_SOURCE_DIR}/iganet/utils/jit.hpp.in" iganet::core
   INSTALL_TREE
-  OUTPUT_DIRECTORY "${PROJECT_BINARY_DIR}/install/include/utils")
+  OUTPUT_DIRECTORY "${PROJECT_BINARY_DIR}/install/include/iganet/utils")
 
 ########################################################################
 # Precompiled headers
@@ -67,16 +67,16 @@ genJITCompiler("${CMAKE_CURRENT_SOURCE_DIR}/utils/jit.hpp.in" iganet::core
 if(IGANET_BUILD_PCH AND NOT WIN32 AND NOT ${CMAKE_VERSION} VERSION_LESS "3.16.0")
   file(GLOB HEADERS ${CMAKE_CURRENT_SOURCE_DIR}/*.hpp ${CMAKE_CURRENT_BINARY_DIR}/*.hpp)
 
-  add_executable(iganet_pch .iganet_pch.cxx iganet.h ${HEADERS})
+  add_executable(iganet_pch .iganet_pch.cxx iganet/iganet.h ${HEADERS})
   target_link_libraries(iganet_pch PRIVATE iganet::core)
-  target_precompile_headers(iganet_pch PRIVATE iganet.h PRIVATE ${HEADERS})
+  target_precompile_headers(iganet_pch PRIVATE iganet/iganet.h PRIVATE ${HEADERS})
 endif()
 
 ########################################################################
 # Install header files
 ########################################################################
-install(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/
-  DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
+install(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/iganet/
+  DESTINATION ${IGANET_INSTALL_INCLUDEDIR}
   FILES_MATCHING
   PATTERN "*.h"
   PATTERN "*.hpp"
@@ -85,8 +85,8 @@ install(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/
 # Generated headers are not present in the source tree and must be installed
 # explicitly.  Keep this list selective so CMake's build metadata is excluded.
 install(FILES
-  "${CMAKE_CURRENT_BINARY_DIR}/core/config.hpp"
-  DESTINATION "${CMAKE_INSTALL_INCLUDEDIR}/core")
+  "${CMAKE_CURRENT_BINARY_DIR}/iganet/core/config.hpp"
+  DESTINATION "${IGANET_INSTALL_INCLUDEDIR}/core")
 install(FILES
-  "${PROJECT_BINARY_DIR}/install/include/utils/jit.hpp"
-  DESTINATION "${CMAKE_INSTALL_INCLUDEDIR}/utils")
+  "${PROJECT_BINARY_DIR}/install/include/iganet/utils/jit.hpp"
+  DESTINATION "${IGANET_INSTALL_INCLUDEDIR}/utils")

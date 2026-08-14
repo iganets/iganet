@@ -29,7 +29,7 @@ In order to utilize IGAnets in your application you need to
 The following toy application
 
 ```cpp
-#include <iganet.h>
+#include <iganet/iganet.h>
 
 // Include the IGAnet namespace
 using namespace iganet;

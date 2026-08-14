@@ -1,5 +1,5 @@
 //! [Include namespace]
-#include <iganet.h>
+#include <iganet/iganet.h>
 
 using namespace iganet;
 //! [Include namespace]

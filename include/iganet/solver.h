@@ -1,7 +1,7 @@
 /**
-   @file ".iganet_pch.cxx"
+   @file solver.h
 
-   @brief Isogeometric analysis network precompiled header generator
+   @brief Solver header file
 
    @author Matthias Moller
 
@@ -12,6 +12,7 @@
    file, You can obtain one at http://mozilla.org/MPL/2.0/.
 */
 
-#include <iganet/iganet.h>
+#pragma once
 
-int main() { return 0; }
+#include <iganet/solver/ezsolver.hpp>
+#include <iganet/solver/igasolver.hpp>
