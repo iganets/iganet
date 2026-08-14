@@ -1,7 +1,7 @@
 /**
-   @file unittests/unittest_config.hpp
+   @file core/config.hpp
 
-   @brief Unit tests compile-time configuration.
+   @brief Compile-time configuration.
 
    @author Matthias Moller.
 
