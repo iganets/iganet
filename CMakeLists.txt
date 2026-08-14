@@ -160,8 +160,12 @@ target_link_libraries(iganet_core INTERFACE
 
 if(IGANET_WITH_GISMO)
   include(gismo)
-  target_include_directories(iganet_core INTERFACE ${GISMO_INCLUDE_DIRS})
-  target_link_libraries(iganet_core INTERFACE gismo_static)
+  target_include_directories(iganet_core INTERFACE
+    "$<BUILD_INTERFACE:${GISMO_INCLUDE_DIRS}>"
+    $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}/gismo>)
+  target_link_libraries(iganet_core INTERFACE
+    $<BUILD_INTERFACE:gismo_static>
+    $<INSTALL_INTERFACE:iganet::gismo_static>)
 endif()
 
 if(IGANET_WITH_MATPLOT)
@@ -357,7 +361,16 @@ set_target_properties(${IGANET_PUGIXML_TARGET} PROPERTIES EXPORT_NAME pugixml)
 target_include_directories(${IGANET_PUGIXML_TARGET} PUBLIC
   $<INSTALL_INTERFACE:${IGANET_INSTALL_THIRD_PARTY_INCLUDEDIR}>)
 
-install(TARGETS iganet_core ${IGANET_PUGIXML_TARGET}
+set(IGANET_EXPORT_TARGETS iganet_core ${IGANET_PUGIXML_TARGET})
+if(IGANET_WITH_GISMO)
+  # G+Smo does not install its generated gismoTargets export. Export the
+  # selected static library with IgANet so the installed core target retains
+  # the same public G+Smo API as the build-tree target.
+  set_target_properties(gismo_static PROPERTIES EXPORT_NAME gismo_static)
+  list(APPEND IGANET_EXPORT_TARGETS gismo_static)
+endif()
+
+install(TARGETS ${IGANET_EXPORT_TARGETS}
   EXPORT IgANetTargets
   RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
   LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}/iganet
