@@ -43,6 +43,13 @@ include("${PROJECT_SOURCE_DIR}/cmake/genJIT.cmake")
 genJITCompiler("${CMAKE_CURRENT_SOURCE_DIR}/utils/jit.hpp.in" iganet::core
   OUTPUT_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/utils")
 
+# Generate a second header for installation.  It has the same compiler and
+# external dependency settings, but all IgANet-owned paths refer to the
+# install tree instead of the source/build trees.
+genJITCompiler("${CMAKE_CURRENT_SOURCE_DIR}/utils/jit.hpp.in" iganet::core
+  INSTALL_TREE
+  OUTPUT_DIRECTORY "${PROJECT_BINARY_DIR}/install/include/utils")
+
 ########################################################################
 # Precompiled headers
 ########################################################################
@@ -70,5 +77,5 @@ install(FILES
   "${CMAKE_CURRENT_BINARY_DIR}/core/config.hpp"
   DESTINATION "${CMAKE_INSTALL_INCLUDEDIR}/core")
 install(FILES
-  "${CMAKE_CURRENT_BINARY_DIR}/utils/jit.hpp"
+  "${PROJECT_BINARY_DIR}/install/include/utils/jit.hpp"
   DESTINATION "${CMAKE_INSTALL_INCLUDEDIR}/utils")

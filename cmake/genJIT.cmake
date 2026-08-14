@@ -22,8 +22,14 @@
 #
 function(genJITCompiler SOURCE_FILES SOURCE_TARGET)
 
+  set(options INSTALL_TREE)
   set(oneValueArgs OUTPUT OUTPUT_DIRECTORY)
-  cmake_parse_arguments(JIT "" "${oneValueArgs}" "" ${ARGN})
+  cmake_parse_arguments(JIT "${options}" "${oneValueArgs}" "" ${ARGN})
+
+  # Valid defaults for the build-tree header; its flags contain no marker, so
+  # the replacement helper returns before these values are used.
+  set(JIT_INSTALL_PREFIX_DEPTH 0)
+  set(JIT_INSTALL_FALLBACK_PREFIX "")
 
   if (JIT_UNPARSED_ARGUMENTS)
     message(FATAL_ERROR
@@ -159,22 +165,47 @@ function(genJITCompiler SOURCE_FILES SOURCE_TARGET)
 
   # ====================================================================
 
-  # Generate list of global include directories
-  get_property(IGANET_INCLUDE_DIRECTORIES DIRECTORY PROPERTY INCLUDE_DIRECTORIES)
-  if(IGANET_INCLUDE_DIRECTORIES)
-    string(REPLACE ";" " ${JIT_CXX_INCLUDE_FLAG}"
-      JIT_INCLUDE_DIRECTORIES
-      "${JIT_CXX_INCLUDE_FLAG}${IGANET_INCLUDE_DIRECTORIES}")
-  endif()
+  if(JIT_INSTALL_TREE)
+    # The install-tree header must never retain source, build, or _deps paths.
+    # Keep IgANet-owned paths relocatable.  The generated header replaces this
+    # marker with the prefix derived from its own installed location.
+    set(JIT_INSTALL_PREFIX_MARKER "__IGANET_INSTALL_PREFIX__")
+    set(JIT_INSTALL_INCLUDE_DIRECTORIES
+      "${JIT_INSTALL_PREFIX_MARKER}/${CMAKE_INSTALL_INCLUDEDIR}"
+      "${JIT_INSTALL_PREFIX_MARKER}/${IGANET_INSTALL_THIRD_PARTY_INCLUDEDIR}")
+    file(TO_CMAKE_PATH "${CMAKE_INSTALL_INCLUDEDIR}" JIT_INSTALL_INCLUDEDIR_NORMALIZED)
+    string(REPLACE "/" ";" JIT_INSTALL_INCLUDEDIR_PARTS
+      "${JIT_INSTALL_INCLUDEDIR_NORMALIZED}")
+    list(LENGTH JIT_INSTALL_INCLUDEDIR_PARTS JIT_INSTALL_PREFIX_DEPTH)
+    math(EXPR JIT_INSTALL_PREFIX_DEPTH "${JIT_INSTALL_PREFIX_DEPTH} + 2")
+    set(JIT_INSTALL_FALLBACK_PREFIX "${CMAKE_INSTALL_PREFIX}")
+    foreach(dir IN LISTS JIT_INSTALL_INCLUDE_DIRECTORIES)
+      set(JIT_INCLUDE_DIRECTORIES
+        "${JIT_INCLUDE_DIRECTORIES} ${JIT_CXX_INCLUDE_FLAG}${dir}")
+    endforeach()
+  else()
+    # Generate list of global include directories
+    get_property(IGANET_INCLUDE_DIRECTORIES DIRECTORY PROPERTY INCLUDE_DIRECTORIES)
+    if(IGANET_INCLUDE_DIRECTORIES)
+      string(REPLACE ";" " ${JIT_CXX_INCLUDE_FLAG}"
+        JIT_INCLUDE_DIRECTORIES
+        "${JIT_CXX_INCLUDE_FLAG}${IGANET_INCLUDE_DIRECTORIES}")
+    endif()
 
-  # Generate list of target-specific include directories (if available)
-  if (TARGET ${SOURCE_TARGET})
-    get_target_property(IGANET_INCLUDE_DIRECTORIES ${SOURCE_TARGET} INTERFACE_INCLUDE_DIRECTORIES)
-    if (IGANET_INCLUDE_DIRECTORIES)
-      foreach (dir ${IGANET_INCLUDE_DIRECTORIES})
-        set (JIT_INCLUDE_DIRECTORIES
-          "${JIT_INCLUDE_DIRECTORIES} ${JIT_CXX_INCLUDE_FLAG}${dir}")
-      endforeach()
+    # Generate list of target-specific build-tree include directories.
+    if (TARGET ${SOURCE_TARGET})
+      get_target_property(IGANET_INCLUDE_DIRECTORIES ${SOURCE_TARGET} INTERFACE_INCLUDE_DIRECTORIES)
+      if (IGANET_INCLUDE_DIRECTORIES)
+        foreach (dir ${IGANET_INCLUDE_DIRECTORIES})
+          if(dir MATCHES "^\\$<BUILD_INTERFACE:(.*)>$")
+            set(dir "${CMAKE_MATCH_1}")
+          elseif(dir MATCHES "^\\$<INSTALL_INTERFACE:.*>$")
+            continue()
+          endif()
+          set(JIT_INCLUDE_DIRECTORIES
+            "${JIT_INCLUDE_DIRECTORIES} ${JIT_CXX_INCLUDE_FLAG}${dir}")
+        endforeach()
+      endif()
     endif()
   endif()
 
@@ -196,6 +227,11 @@ function(genJITCompiler SOURCE_FILES SOURCE_TARGET)
       "${JIT_CXX_LINKER_SEARCH_FLAG}${IGANET_LINK_DIRECTORIES}")
   endif()
 
+  if(JIT_INSTALL_TREE)
+    set(JIT_LIBRARIES
+      "${JIT_LIBRARIES} ${JIT_CXX_LINKER_SEARCH_FLAG}${JIT_INSTALL_PREFIX_MARKER}/${CMAKE_INSTALL_LIBDIR}/iganet")
+  endif()
+
   # Generate list of target-specific external libraries
   if (TARGET ${SOURCE_TARGET})
     get_target_property(IGANET_LINK_LIBRARIES ${SOURCE_TARGET} INTERFACE_LINK_DIRECTORIES)
@@ -215,15 +251,32 @@ function(genJITCompiler SOURCE_FILES SOURCE_TARGET)
       # Generate include and link directories
       foreach (lib ${IGANET_LINK_LIBRARIES})
 
+        # Select the usage requirement for the tree being generated.  This is
+        # intentionally done here because configure_file cannot evaluate
+        # BUILD_INTERFACE/INSTALL_INTERFACE generator expressions.
+        if(lib MATCHES "^\\$<BUILD_INTERFACE:(.*)>$")
+          if(JIT_INSTALL_TREE)
+            continue()
+          endif()
+          set(lib "${CMAKE_MATCH_1}")
+        elseif(lib MATCHES "^\\$<INSTALL_INTERFACE:(.*)>$")
+          if(NOT JIT_INSTALL_TREE)
+            continue()
+          endif()
+          set(lib "${CMAKE_MATCH_1}")
+        endif()
+
         if(lib STREQUAL "gismo_static")
           set(JIT_LIBRARIES
             "${JIT_LIBRARIES} ${JIT_CXX_LINKER_SEARCH_FLAG}${PROJECT_BINARY_DIR}/lib")
 
           list(APPEND LIBS gismo)
 
-        elseif(lib STREQUAL "pugixml")
-          set(JIT_LIBRARIES
-            "${JIT_LIBRARIES} ${JIT_CXX_LINKER_SEARCH_FLAG}${pugixml_BINARY_DIR}")
+        elseif(lib STREQUAL "pugixml" OR lib STREQUAL "iganet::pugixml")
+          if(NOT JIT_INSTALL_TREE)
+            set(JIT_LIBRARIES
+              "${JIT_LIBRARIES} ${JIT_CXX_LINKER_SEARCH_FLAG}${pugixml_BINARY_DIR}")
+          endif()
 
           list(APPEND LIBS pugixml)
 
