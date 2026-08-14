@@ -206,37 +206,11 @@ if(IGANET_BUILD_DOCS)
 endif()
 
 ########################################################################
-# Sphinx
-########################################################################
-if(IGANET_BUILD_DOCS)
-  find_package(Sphinx QUIET)
-  if(Sphinx_FOUND)
-    set(SPHINX_SOURCE ${PROJECT_SOURCE_DIR}/docs)
-    set(SPHINX_BUILD ${PROJECT_BINARY_DIR}/docs/sphinx)
-    set(SPHINX_INDEX_FILE ${SPHINX_BUILD}/index.html)
-    add_custom_target(Sphinx
-      COMMAND
-      ${SPHINX_EXECUTABLE} -b html
-      -Dbreathe_projects.LibKet=${PROJECT_BINARY_DIR}/docs/doxygen/xml
-      ${SPHINX_SOURCE} ${SPHINX_BUILD}
-      WORKING_DIRECTORY ${PROJECT_BINARY_DIR}
-      COMMENT "Generating documentation with Sphinx"
-      )
-    add_dependencies(Sphinx Doxygen)
-  else()
-    add_custom_target(Sphinx
-      ${CMAKE_COMMAND} -E cmake_echo_color --cyan "Please install sphinx, and run cmake . \\&\\& make Sphinx to generate the Sphinx documentation."
-      )
-  endif()
-endif()
-
-########################################################################
 # Documentation
 ########################################################################
 if(IGANET_BUILD_DOCS)
   add_custom_target(docs
-    DEPENDS Doxygen
-    DEPENDS Sphinx)
+    DEPENDS Doxygen)
 endif()
 
 ########################################################################
@@ -285,11 +259,6 @@ if(DOXYGEN_FOUND)
   if(DOXYGEN_DOT_FOUND)
     message("Dot................................: ${DOXYGEN_DOT_EXECUTABLE}")
   endif()
-endif()
-
-if(SPHINX_FOUND)
-  message("")
-  message("Sphinx.............................: ${SPHINX_EXECUTABLE}")
 endif()
 
 message("")
