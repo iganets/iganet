@@ -15,6 +15,17 @@
 target_include_directories(iganet_core INTERFACE ${CMAKE_CURRENT_SOURCE_DIR})
 target_include_directories(iganet_core INTERFACE ${CMAKE_CURRENT_BINARY_DIR})
 
+set(IGANET_WITH_CUDA OFF)
+set(IGANET_WITH_HIP OFF)
+
+if(DEFINED CUDA_VERSION AND NOT "${CUDA_VERSION}" STREQUAL "")
+  set(IGANET_WITH_CUDA ON)
+endif()
+
+if(DEFINED HIP_VERSION AND NOT "${HIP_VERSION}" STREQUAL "")
+  set(IGANET_WITH_HIP ON)
+endif()  
+
 ########################################################################
 # Config file
 ########################################################################

@@ -36,7 +36,7 @@
 #cmakedefine IGANET_WITH_MPI
 
 /// @brief Compile with CUDA enabled.
-#cmakedefine IGANET_WITH_CUDA @CUDA_VERSION@
+#cmakedefine IGANET_WITH_CUDA
 
 /// @brief Compile with HIP enabled.
-#cmakedefine IGANET_WITH_HIP @HIP_VERSION@
+#cmakedefine IGANET_WITH_HIP
