@@ -368,6 +368,15 @@ if(IGANET_WITH_GISMO)
   # the same public G+Smo API as the build-tree target.
   set_target_properties(gismo_static PROPERTIES EXPORT_NAME gismo_static)
   list(APPEND IGANET_EXPORT_TARGETS gismo_static)
+
+  # gsHLBFGS installs its wrapper header but omits the external headers that
+  # wrapper includes. Keep the G+Smo-enabled installation self-contained.
+  install(DIRECTORY "${gismo_SOURCE_DIR}/external/HLBFGS/"
+    DESTINATION "${CMAKE_INSTALL_INCLUDEDIR}/gismo/HLBFGS"
+    FILES_MATCHING PATTERN "*.h")
+  install(DIRECTORY "${gismo_SOURCE_DIR}/optional/gsElasticity/"
+    DESTINATION "${CMAKE_INSTALL_INCLUDEDIR}/gismo/gsElasticity"
+    FILES_MATCHING PATTERN "*.h" PATTERN "*.hpp")
 endif()
 
 install(TARGETS ${IGANET_EXPORT_TARGETS}

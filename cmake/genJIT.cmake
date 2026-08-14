@@ -179,6 +179,26 @@ function(genJITCompiler SOURCE_FILES SOURCE_TARGET)
     list(LENGTH JIT_INSTALL_INCLUDEDIR_PARTS JIT_INSTALL_PREFIX_DEPTH)
     math(EXPR JIT_INSTALL_PREFIX_DEPTH "${JIT_INSTALL_PREFIX_DEPTH} + 2")
     set(JIT_INSTALL_FALLBACK_PREFIX "${CMAKE_INSTALL_PREFIX}")
+    # Preserve additional public include directories advertised specifically
+    # for installed consumers (for example G+Smo's include/gismo directory).
+    # Relative INSTALL_INTERFACE paths are relative to the install prefix.
+    if(TARGET ${SOURCE_TARGET})
+      get_target_property(IGANET_INCLUDE_DIRECTORIES ${SOURCE_TARGET}
+        INTERFACE_INCLUDE_DIRECTORIES)
+      if(IGANET_INCLUDE_DIRECTORIES)
+        foreach(dir IN LISTS IGANET_INCLUDE_DIRECTORIES)
+          if(NOT dir MATCHES "^\\$<INSTALL_INTERFACE:(.*)>$")
+            continue()
+          endif()
+          set(dir "${CMAKE_MATCH_1}")
+          if(NOT IS_ABSOLUTE "${dir}")
+            set(dir "${JIT_INSTALL_PREFIX_MARKER}/${dir}")
+          endif()
+          list(APPEND JIT_INSTALL_INCLUDE_DIRECTORIES "${dir}")
+        endforeach()
+      endif()
+    endif()
+    list(REMOVE_DUPLICATES JIT_INSTALL_INCLUDE_DIRECTORIES)
     foreach(dir IN LISTS JIT_INSTALL_INCLUDE_DIRECTORIES)
       set(JIT_INCLUDE_DIRECTORIES
         "${JIT_INCLUDE_DIRECTORIES} ${JIT_CXX_INCLUDE_FLAG}${dir}")
@@ -266,9 +286,11 @@ function(genJITCompiler SOURCE_FILES SOURCE_TARGET)
           set(lib "${CMAKE_MATCH_1}")
         endif()
 
-        if(lib STREQUAL "gismo_static")
-          set(JIT_LIBRARIES
-            "${JIT_LIBRARIES} ${JIT_CXX_LINKER_SEARCH_FLAG}${PROJECT_BINARY_DIR}/lib")
+        if(lib STREQUAL "gismo_static" OR lib STREQUAL "iganet::gismo_static")
+          if(NOT JIT_INSTALL_TREE)
+            set(JIT_LIBRARIES
+              "${JIT_LIBRARIES} ${JIT_CXX_LINKER_SEARCH_FLAG}${PROJECT_BINARY_DIR}/lib")
+          endif()
 
           list(APPEND LIBS gismo)
 
