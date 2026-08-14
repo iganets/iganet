@@ -17,6 +17,9 @@
 ########################################################################
 
 include(FetchContent)
+# IgANet installs the headers into its private third-party include tree.  Do
+# not let the dependency create a second, globally visible package install.
+set(JSON_Install OFF CACHE INTERNAL "Disable nlohmann_json install rules" FORCE)
 FetchContent_Declare(nlohmann_json
   URL https://github.com/nlohmann/json/archive/refs/tags/v3.12.0.zip
   )

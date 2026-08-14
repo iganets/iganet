@@ -46,6 +46,8 @@ public:
     env = std::getenv("JIT_CXX_FLAGS");
     if (env != NULL)
       flags = env;
+    else
+      replaceInstallPrefix(flags);
 
     env = std::getenv("JIT_CXX_OUTPUT_FLAG");
     if (env != NULL)
@@ -170,6 +172,31 @@ public:
   }
 
 private:
+  /// @brief Replace the install-prefix marker in an install-tree JIT command.
+  inline static void replaceInstallPrefix(std::string &value) {
+    constexpr std::string_view marker = "__IGANET_INSTALL_PREFIX__";
+    const auto markerPos = value.find(marker);
+    if (markerPos == std::string::npos)
+      return;
+
+    std::filesystem::path prefix;
+    const std::filesystem::path headerPath(__FILE__);
+    if (headerPath.is_absolute()) {
+      prefix = headerPath;
+      for (std::size_t level = 0; level < @JIT_INSTALL_PREFIX_DEPTH@; ++level)
+        prefix = prefix.parent_path();
+    } else {
+      prefix = "@JIT_INSTALL_FALLBACK_PREFIX@";
+    }
+
+    const std::string replacement = prefix.string();
+    std::size_t pos = 0;
+    while ((pos = value.find(marker, pos)) != std::string::npos) {
+      value.replace(pos, marker.size(), replacement);
+      pos += replacement.size();
+    }
+  }
+
   /// @brief Returns the native TEMP directory path.
   inline static std::string getTempPath() {
 #if defined(_WIN32)

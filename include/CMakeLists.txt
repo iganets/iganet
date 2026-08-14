@@ -12,8 +12,10 @@
 #
 ########################################################################
 
-target_include_directories(iganet_core INTERFACE ${CMAKE_CURRENT_SOURCE_DIR})
-target_include_directories(iganet_core INTERFACE ${CMAKE_CURRENT_BINARY_DIR})
+target_include_directories(iganet_core INTERFACE
+  $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>
+  $<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}>
+  $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>)
 
 set(IGANET_WITH_CUDA OFF)
 set(IGANET_WITH_HIP OFF)
@@ -52,6 +54,13 @@ include("${PROJECT_SOURCE_DIR}/cmake/genJIT.cmake")
 genJITCompiler("${CMAKE_CURRENT_SOURCE_DIR}/utils/jit.hpp.in" iganet::core
   OUTPUT_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/utils")
 
+# Generate a second header for installation.  It has the same compiler and
+# external dependency settings, but all IgANet-owned paths refer to the
+# install tree instead of the source/build trees.
+genJITCompiler("${CMAKE_CURRENT_SOURCE_DIR}/utils/jit.hpp.in" iganet::core
+  INSTALL_TREE
+  OUTPUT_DIRECTORY "${PROJECT_BINARY_DIR}/install/include/utils")
+
 ########################################################################
 # Precompiled headers
 ########################################################################
@@ -66,18 +75,18 @@ endif()
 ########################################################################
 # Install header files
 ########################################################################
-include(GNUInstallDirs)
-
-install(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+install(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/
   DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
   FILES_MATCHING
   PATTERN "*.h"
   PATTERN "*.hpp"
 )
 
-install(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
-  DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
-  FILES_MATCHING
-  PATTERN "*.h"
-  PATTERN "*.hpp"
-)
+# Generated headers are not present in the source tree and must be installed
+# explicitly.  Keep this list selective so CMake's build metadata is excluded.
+install(FILES
+  "${CMAKE_CURRENT_BINARY_DIR}/core/config.hpp"
+  DESTINATION "${CMAKE_INSTALL_INCLUDEDIR}/core")
+install(FILES
+  "${PROJECT_BINARY_DIR}/install/include/utils/jit.hpp"
+  DESTINATION "${CMAKE_INSTALL_INCLUDEDIR}/utils")
