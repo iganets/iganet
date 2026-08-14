@@ -83,8 +83,20 @@ endif()
 ########################################################################
 project(IgANet)
 
+include(GNUInstallDirs)
+include(CMakePackageConfigHelpers)
+
+set(IGANET_INSTALL_CMAKEDIR
+  "${CMAKE_INSTALL_LIBDIR}/cmake/IgANet"
+  CACHE STRING "Directory for the IgANet CMake package")
+set(IGANET_INSTALL_THIRD_PARTY_INCLUDEDIR
+  "${CMAKE_INSTALL_INCLUDEDIR}/iganet/third_party"
+  CACHE STRING "Directory for private third-party headers")
+
 add_library(iganet_core INTERFACE)
 add_library(iganet::core ALIAS iganet_core)
+set_target_properties(iganet_core PROPERTIES EXPORT_NAME core)
+target_compile_features(iganet_core INTERFACE cxx_std_20)
 
 if(${CMAKE_VERSION} VERSION_GREATER_EQUAL 3.24)
   cmake_policy(SET CMP0135 NEW)
@@ -125,15 +137,23 @@ if(NOT WIN32)
 endif()
 
 include(boost_preprocessor)
-target_include_directories(iganet_core INTERFACE ${boost_preprocessor_SOURCE_DIR}/include)
+target_include_directories(iganet_core INTERFACE
+  $<BUILD_INTERFACE:${boost_preprocessor_SOURCE_DIR}/include>
+  $<INSTALL_INTERFACE:${IGANET_INSTALL_THIRD_PARTY_INCLUDEDIR}>)
 
 include(nlohmann_json)
-target_include_directories(iganet_core INTERFACE ${nlohmann_json_SOURCE_DIR}/single_include)
+target_include_directories(iganet_core INTERFACE
+  $<BUILD_INTERFACE:${nlohmann_json_SOURCE_DIR}/single_include>
+  $<INSTALL_INTERFACE:${IGANET_INSTALL_THIRD_PARTY_INCLUDEDIR}>)
 target_compile_definitions(iganet_core INTERFACE JSON_HAS_RANGES=0)
 
 include(pugixml)
-target_include_directories(iganet_core INTERFACE ${pugixml_SOURCE_DIR}/src)
-target_link_libraries(iganet_core INTERFACE pugixml)
+target_include_directories(iganet_core INTERFACE
+  $<BUILD_INTERFACE:${pugixml_SOURCE_DIR}/src>
+  $<INSTALL_INTERFACE:${IGANET_INSTALL_THIRD_PARTY_INCLUDEDIR}>)
+target_link_libraries(iganet_core INTERFACE
+  $<BUILD_INTERFACE:pugixml>
+  $<INSTALL_INTERFACE:iganet::pugixml>)
 
 if(IGANET_WITH_GISMO)
   include(gismo)
@@ -318,3 +338,53 @@ foreach(entry IN LISTS IGANET_OPTIONAL)
       URL https://github.com/iganets/iganet-${module}/archive/refs/heads/${branch}.zip)
   endif()
 endforeach()
+
+########################################################################
+# Install and export the self-contained core package
+########################################################################
+if(BUILD_SHARED_LIBS)
+  set(IGANET_PUGIXML_TARGET pugixml-shared)
+else()
+  set(IGANET_PUGIXML_TARGET pugixml-static)
+endif()
+
+# Export the selected implementation under IgANet's namespace and private
+# layout rather than exposing pugixml as a separately installed package.
+set_target_properties(${IGANET_PUGIXML_TARGET} PROPERTIES EXPORT_NAME pugixml)
+target_include_directories(${IGANET_PUGIXML_TARGET} PUBLIC
+  $<INSTALL_INTERFACE:${IGANET_INSTALL_THIRD_PARTY_INCLUDEDIR}>)
+
+install(TARGETS iganet_core ${IGANET_PUGIXML_TARGET}
+  EXPORT IgANetTargets
+  RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
+  LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}/iganet
+  ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}/iganet
+  INCLUDES DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
+)
+
+install(DIRECTORY "${boost_preprocessor_SOURCE_DIR}/include/boost"
+  DESTINATION "${IGANET_INSTALL_THIRD_PARTY_INCLUDEDIR}")
+install(DIRECTORY "${nlohmann_json_SOURCE_DIR}/single_include/nlohmann"
+  DESTINATION "${IGANET_INSTALL_THIRD_PARTY_INCLUDEDIR}")
+install(FILES
+  "${pugixml_SOURCE_DIR}/src/pugiconfig.hpp"
+  "${pugixml_SOURCE_DIR}/src/pugixml.hpp"
+  DESTINATION "${IGANET_INSTALL_THIRD_PARTY_INCLUDEDIR}")
+
+configure_package_config_file(
+  "${PROJECT_SOURCE_DIR}/cmake/IgANetConfig.cmake.in"
+  "${PROJECT_BINARY_DIR}/IgANetConfig.cmake"
+  INSTALL_DESTINATION "${IGANET_INSTALL_CMAKEDIR}")
+write_basic_package_version_file(
+  "${PROJECT_BINARY_DIR}/IgANetConfigVersion.cmake"
+  VERSION "${iganet_VERSION}"
+  COMPATIBILITY SameMajorVersion)
+
+install(EXPORT IgANetTargets
+  FILE IgANetTargets.cmake
+  NAMESPACE iganet::
+  DESTINATION "${IGANET_INSTALL_CMAKEDIR}")
+install(FILES
+  "${PROJECT_BINARY_DIR}/IgANetConfig.cmake"
+  "${PROJECT_BINARY_DIR}/IgANetConfigVersion.cmake"
+  DESTINATION "${IGANET_INSTALL_CMAKEDIR}")

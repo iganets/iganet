@@ -12,8 +12,10 @@
 #
 ########################################################################
 
-target_include_directories(iganet_core INTERFACE ${CMAKE_CURRENT_SOURCE_DIR})
-target_include_directories(iganet_core INTERFACE ${CMAKE_CURRENT_BINARY_DIR})
+target_include_directories(iganet_core INTERFACE
+  $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>
+  $<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}>
+  $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>)
 
 ########################################################################
 # Config file
@@ -55,18 +57,18 @@ endif()
 ########################################################################
 # Install header files
 ########################################################################
-include(GNUInstallDirs)
-
-install(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+install(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/
   DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
   FILES_MATCHING
   PATTERN "*.h"
   PATTERN "*.hpp"
 )
 
-install(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
-  DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
-  FILES_MATCHING
-  PATTERN "*.h"
-  PATTERN "*.hpp"
-)
+# Generated headers are not present in the source tree and must be installed
+# explicitly.  Keep this list selective so CMake's build metadata is excluded.
+install(FILES
+  "${CMAKE_CURRENT_BINARY_DIR}/core/config.hpp"
+  DESTINATION "${CMAKE_INSTALL_INCLUDEDIR}/core")
+install(FILES
+  "${CMAKE_CURRENT_BINARY_DIR}/utils/jit.hpp"
+  DESTINATION "${CMAKE_INSTALL_INCLUDEDIR}/utils")

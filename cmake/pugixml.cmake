@@ -17,6 +17,8 @@
 ########################################################################
 
 include(FetchContent)
+# IgANet owns the installed layout and export set for its private copy.
+set(PUGIXML_INSTALL OFF CACHE BOOL "Disable pugixml install rules" FORCE)
 FetchContent_Declare(pugixml
   URL https://github.com/zeux/pugixml/releases/download/v1.15/pugixml-1.15.zip
   )
