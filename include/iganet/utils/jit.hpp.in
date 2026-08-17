@@ -212,8 +212,13 @@ private:
   }
 
   inline static bool isInstallPrefix(const std::filesystem::path &prefix) {
-    return std::filesystem::exists(
-        prefix / "@IGANET_INSTALL_INCLUDEDIR@" / "iganet.h");
+    const auto includeDir = prefix / "@IGANET_INSTALL_INCLUDEDIR@";
+    // iganet.h also exists in a source checkout.  Requiring config.hpp, which
+    // is generated and copied only into the build/install trees, prevents an
+    // executable below the source directory from mistaking that checkout for
+    // an installation and replacing its valid build-tree JIT flags.
+    return std::filesystem::exists(includeDir / "iganet.h") &&
+           std::filesystem::exists(includeDir / "core" / "config.hpp");
   }
 
   inline static std::filesystem::path headerInstallPrefix() {
