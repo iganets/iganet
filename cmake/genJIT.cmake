@@ -287,12 +287,18 @@ function(genJITCompiler SOURCE_FILES SOURCE_TARGET)
         endif()
 
         if(lib STREQUAL "gismo_static" OR lib STREQUAL "iganet::gismo_static")
-          if(NOT JIT_INSTALL_TREE)
-            set(JIT_LIBRARIES
-              "${JIT_LIBRARIES} ${JIT_CXX_LINKER_SEARCH_FLAG}${PROJECT_BINARY_DIR}/lib")
+          # Link the static target explicitly.  Using -lgismo is ambiguous
+          # when G+Smo also builds a shared library and can leave a JIT library
+          # with an unresolved runtime dependency on libgismo.
+          if(JIT_INSTALL_TREE)
+            set(JIT_GISMO_LIBRARY
+              "${JIT_INSTALL_PREFIX_MARKER}/${CMAKE_INSTALL_LIBDIR}/iganet/${CMAKE_STATIC_LIBRARY_PREFIX}gismo${CMAKE_STATIC_LIBRARY_SUFFIX}")
+          else()
+            set(JIT_GISMO_LIBRARY
+              "${PROJECT_BINARY_DIR}/lib/${CMAKE_STATIC_LIBRARY_PREFIX}gismo${CMAKE_STATIC_LIBRARY_SUFFIX}")
           endif()
-
-          list(APPEND LIBS gismo)
+          set(JIT_LIBRARIES
+            "${JIT_LIBRARIES} ${JIT_GISMO_LIBRARY}")
 
         elseif(lib STREQUAL "pugixml" OR lib STREQUAL "iganet::pugixml")
           if(NOT JIT_INSTALL_TREE)

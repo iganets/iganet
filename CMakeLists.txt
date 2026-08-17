@@ -160,8 +160,11 @@ target_link_libraries(iganet_core INTERFACE
 
 if(IGANET_WITH_GISMO)
   include(gismo)
+  foreach(GISMO_INCLUDE_DIR IN LISTS GISMO_INCLUDE_DIRS)
+    target_include_directories(iganet_core INTERFACE
+      $<BUILD_INTERFACE:${GISMO_INCLUDE_DIR}>)
+  endforeach()
   target_include_directories(iganet_core INTERFACE
-    "$<BUILD_INTERFACE:${GISMO_INCLUDE_DIRS}>"
     $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}/gismo>)
   target_link_libraries(iganet_core INTERFACE
     $<BUILD_INTERFACE:gismo_static>
