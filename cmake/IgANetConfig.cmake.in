@@ -3,6 +3,8 @@
 include(CMakeFindDependencyMacro)
 
 find_dependency(Torch)
+include("${CMAKE_CURRENT_LIST_DIR}/IgANetTorchHIP.cmake")
+iganet_configure_torch_hip()
 
 if(@IGANET_WITH_OPENMP@)
   # AppleClang does not advertise Homebrew/MacPorts libomp automatically.

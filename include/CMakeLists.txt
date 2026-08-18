@@ -18,15 +18,16 @@ target_include_directories(iganet_core INTERFACE
   $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>)
 
 set(IGANET_WITH_CUDA OFF)
-set(IGANET_WITH_HIP OFF)
+set(IGANET_WITH_HIP  OFF)
+set(IGANET_WITH_XPU  OFF)
 
-if(DEFINED CUDA_VERSION AND NOT "${CUDA_VERSION}" STREQUAL "")
-  set(IGANET_WITH_CUDA ON)
-endif()
-
-if(DEFINED HIP_VERSION AND NOT "${HIP_VERSION}" STREQUAL "")
+if(PYTORCH_FOUND_HIP OR TARGET torch_hip)
   set(IGANET_WITH_HIP ON)
-endif()  
+elseif(TARGET torch_cuda)
+  set(IGANET_WITH_CUDA ON)
+elseif(TARGET torch_xpu)
+  set(IGANET_WITH_XPU ON)
+endif()
 
 ########################################################################
 # Config file

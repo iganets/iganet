@@ -137,6 +137,8 @@ endif()
 # Prerequisites
 ########################################################################
 find_package(Torch REQUIRED)
+include(cmake/IgANetTorchHIP.cmake)
+iganet_configure_torch_hip()
 list(APPEND CMAKE_CXX_FLAGS ${TORCH_CXX_FLAGS})
 target_link_libraries(iganet_core INTERFACE ${TORCH_LIBRARIES})
 
@@ -466,4 +468,5 @@ install(EXPORT IgANetTargets
 install(FILES
   "${PROJECT_BINARY_DIR}/IgANetConfig.cmake"
   "${PROJECT_BINARY_DIR}/IgANetConfigVersion.cmake"
+  "${PROJECT_SOURCE_DIR}/cmake/IgANetTorchHIP.cmake"
   DESTINATION "${IGANET_INSTALL_CMAKEDIR}")

@@ -40,3 +40,6 @@
 
 /// @brief Compile with HIP enabled.
 #cmakedefine IGANET_WITH_HIP
+
+/// @brief Compile with XPU enabled.
+#cmakedefine IGANET_WITH_XPU
