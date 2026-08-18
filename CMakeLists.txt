@@ -86,6 +86,14 @@ project(IgANet)
 include(GNUInstallDirs)
 include(CMakePackageConfigHelpers)
 
+# Executables installed beside IgANet's private libraries must remain
+# relocatable and find those libraries without environment-variable hints.
+if(APPLE)
+  list(APPEND CMAKE_INSTALL_RPATH "@loader_path/../${CMAKE_INSTALL_LIBDIR}/iganet")
+elseif(UNIX)
+  list(APPEND CMAKE_INSTALL_RPATH "$ORIGIN/../${CMAKE_INSTALL_LIBDIR}/iganet")
+endif()
+
 set(IGANET_INSTALL_CMAKEDIR
   "${CMAKE_INSTALL_LIBDIR}/cmake/IgANet"
   CACHE STRING "Directory for the IgANet CMake package")
@@ -165,7 +173,7 @@ if(IGANET_WITH_GISMO)
       $<BUILD_INTERFACE:${GISMO_INCLUDE_DIR}>)
   endforeach()
   target_include_directories(iganet_core INTERFACE
-    $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}/gismo>)
+    $<INSTALL_INTERFACE:${IGANET_INSTALL_THIRD_PARTY_INCLUDEDIR}/gismo>)
   target_link_libraries(iganet_core INTERFACE
     $<BUILD_INTERFACE:gismo_static>
     $<INSTALL_INTERFACE:iganet::gismo_static>)
@@ -173,7 +181,9 @@ endif()
 
 if(IGANET_WITH_MATPLOT)
   include(Matplot++)
-  target_link_libraries(iganet_core INTERFACE Matplot++::matplot)
+  target_link_libraries(iganet_core INTERFACE
+    $<BUILD_INTERFACE:Matplot++::matplot>
+    $<INSTALL_INTERFACE:iganet::matplot>)
 endif()
 
 ########################################################################
@@ -352,10 +362,12 @@ endforeach()
 ########################################################################
 # Install and export the self-contained core package
 ########################################################################
-if(BUILD_SHARED_LIBS)
+if(TARGET pugixml-shared)
   set(IGANET_PUGIXML_TARGET pugixml-shared)
-else()
+elseif(TARGET pugixml-static)
   set(IGANET_PUGIXML_TARGET pugixml-static)
+else()
+  message(FATAL_ERROR "No pugixml library target is available for installation")
 endif()
 
 # Export the selected implementation under IgANet's namespace and private
@@ -364,30 +376,69 @@ set_target_properties(${IGANET_PUGIXML_TARGET} PROPERTIES EXPORT_NAME pugixml)
 target_include_directories(${IGANET_PUGIXML_TARGET} PUBLIC
   $<INSTALL_INTERFACE:${IGANET_INSTALL_THIRD_PARTY_INCLUDEDIR}>)
 
-set(IGANET_EXPORT_TARGETS iganet_core ${IGANET_PUGIXML_TARGET})
+set(IGANET_PRIVATE_EXPORT_TARGETS ${IGANET_PUGIXML_TARGET})
 if(IGANET_WITH_GISMO)
   # G+Smo does not install its generated gismoTargets export. Export the
   # selected static library with IgANet so the installed core target retains
   # the same public G+Smo API as the build-tree target.
   set_target_properties(gismo_static PROPERTIES EXPORT_NAME gismo_static)
-  list(APPEND IGANET_EXPORT_TARGETS gismo_static)
+  set_target_properties(gismo_static PROPERTIES POSITION_INDEPENDENT_CODE ON)
+  target_include_directories(gismo_static INTERFACE
+    $<INSTALL_INTERFACE:${IGANET_INSTALL_THIRD_PARTY_INCLUDEDIR}/gismo>)
+  list(APPEND IGANET_PRIVATE_EXPORT_TARGETS gismo_static)
 
-  # gsHLBFGS installs its wrapper header but omits the external headers that
-  # wrapper includes. Keep the G+Smo-enabled installation self-contained.
-  install(DIRECTORY "${gismo_SOURCE_DIR}/external/HLBFGS/"
-    DESTINATION "${CMAKE_INSTALL_INCLUDEDIR}/gismo/HLBFGS"
-    FILES_MATCHING PATTERN "*.h")
-  install(DIRECTORY "${gismo_SOURCE_DIR}/optional/gsElasticity/"
-    DESTINATION "${CMAKE_INSTALL_INCLUDEDIR}/gismo/gsElasticity"
+  install(DIRECTORY "${gismo_SOURCE_DIR}/src/"
+    DESTINATION "${IGANET_INSTALL_THIRD_PARTY_INCLUDEDIR}/gismo"
     FILES_MATCHING PATTERN "*.h" PATTERN "*.hpp")
+  install(DIRECTORY "${gismo_SOURCE_DIR}/external/"
+    DESTINATION "${IGANET_INSTALL_THIRD_PARTY_INCLUDEDIR}/gismo"
+    FILES_MATCHING PATTERN "*.h" PATTERN "*.hpp")
+  # Eigen deliberately uses extensionless public headers such as
+  # gsEigen/Core, so it cannot be covered by the header suffix filter above.
+  install(DIRECTORY "${gismo_SOURCE_DIR}/external/gsEigen"
+    DESTINATION "${IGANET_INSTALL_THIRD_PARTY_INCLUDEDIR}/gismo"
+    PATTERN "*.txt" EXCLUDE)
+  foreach(GISMO_OPTIONAL_MODULE IN ITEMS gsElasticity gsHLBFGS gsKLShell)
+    install(DIRECTORY "${gismo_SOURCE_DIR}/optional/${GISMO_OPTIONAL_MODULE}/"
+      DESTINATION "${IGANET_INSTALL_THIRD_PARTY_INCLUDEDIR}/gismo/${GISMO_OPTIONAL_MODULE}"
+      FILES_MATCHING PATTERN "*.h" PATTERN "*.hpp")
+  endforeach()
+  install(FILES
+    "${gismo_BINARY_DIR}/gsCore/gsExport.h"
+    "${gismo_BINARY_DIR}/gsCore/gsConfigExt.h"
+    DESTINATION "${IGANET_INSTALL_THIRD_PARTY_INCLUDEDIR}/gismo/gsCore")
+  install(FILES "${gismo_BINARY_DIR}/gsCore/gsConfig.h"
+    DESTINATION "${IGANET_INSTALL_THIRD_PARTY_INCLUDEDIR}/gismo/gsCore")
 endif()
 
-install(TARGETS ${IGANET_EXPORT_TARGETS}
+if(IGANET_WITH_MATPLOT)
+  set_target_properties(matplot PROPERTIES EXPORT_NAME matplot)
+  # Replace Matplot++'s public install include root with IgANet's private one
+  # while preserving all of its build-tree include requirements.
+  get_target_property(MATPLOT_INTERFACE_INCLUDE_DIRECTORIES matplot
+    INTERFACE_INCLUDE_DIRECTORIES)
+  list(FILTER MATPLOT_INTERFACE_INCLUDE_DIRECTORIES EXCLUDE
+    REGEX "^\\$<INSTALL_INTERFACE:")
+  set_target_properties(matplot PROPERTIES INTERFACE_INCLUDE_DIRECTORIES
+    "${MATPLOT_INTERFACE_INCLUDE_DIRECTORIES};$<INSTALL_INTERFACE:${IGANET_INSTALL_THIRD_PARTY_INCLUDEDIR}>")
+  list(APPEND IGANET_PRIVATE_EXPORT_TARGETS matplot)
+  install(DIRECTORY "${matplotplusplus_SOURCE_DIR}/source/matplot/"
+    DESTINATION "${IGANET_INSTALL_THIRD_PARTY_INCLUDEDIR}/matplot"
+    FILES_MATCHING PATTERN "*.h" PATTERN "*.hpp")
+  install(FILES
+    "${matplotplusplus_BINARY_DIR}/source/matplot/matplot/detail/exports.h"
+    DESTINATION "${IGANET_INSTALL_THIRD_PARTY_INCLUDEDIR}/matplot/detail")
+endif()
+
+install(TARGETS iganet_core
+  EXPORT IgANetTargets
+  INCLUDES DESTINATION ${CMAKE_INSTALL_INCLUDEDIR})
+install(TARGETS ${IGANET_PRIVATE_EXPORT_TARGETS}
   EXPORT IgANetTargets
   RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
   LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}/iganet
   ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}/iganet
-  INCLUDES DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
+  INCLUDES DESTINATION ${IGANET_INSTALL_THIRD_PARTY_INCLUDEDIR}
 )
 
 install(DIRECTORY "${boost_preprocessor_SOURCE_DIR}/include/boost"

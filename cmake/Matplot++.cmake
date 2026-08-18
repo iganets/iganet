@@ -25,4 +25,8 @@ set(BUILD_EXAMPLES    0 CACHE INTERNAL "")
 set(BUILD_SHARED_LIBS 1 CACHE INTERNAL "")
 set(BUILD_TESTING     0 CACHE INTERNAL "")
 set(BUILD_TESTS       0 CACHE INTERNAL "")
+set(MATPLOTPP_BUILD_INSTALLER OFF CACHE BOOL
+  "IgANet provides its own private dependency installation" FORCE)
 FetchContent_MakeAvailable(matplotplusplus)
+# IgANet installs Matplot++ into its private dependency layout.
+set_property(DIRECTORY "${matplotplusplus_SOURCE_DIR}" PROPERTY EXCLUDE_FROM_ALL TRUE)

@@ -229,6 +229,14 @@ function(genJITCompiler SOURCE_FILES SOURCE_TARGET)
     endif()
   endif()
 
+  # Matplot++ is a transitive dependency of the core interface. Its generated
+  # export header lives in the binary tree, so both roots are needed by JIT
+  # compilations performed from a build-tree executable.
+  if(IGANET_WITH_MATPLOT AND NOT JIT_INSTALL_TREE)
+    set(JIT_INCLUDE_DIRECTORIES
+      "${JIT_INCLUDE_DIRECTORIES} ${JIT_CXX_INCLUDE_FLAG}${matplotplusplus_SOURCE_DIR}/source ${JIT_CXX_INCLUDE_FLAG}${matplotplusplus_BINARY_DIR}/source/matplot")
+  endif()
+
   # Add Torch-specific include directories
   if (TORCH_INCLUDE_DIRS)
     foreach (dir ${TORCH_INCLUDE_DIRS})
@@ -345,11 +353,19 @@ function(genJITCompiler SOURCE_FILES SOURCE_TARGET)
             list(APPEND LIBS torch_cpu)
           endif()
 
-        elseif(lib STREQUAL "Matplot++::matplot")
+        elseif(lib STREQUAL "Matplot++::matplot" OR
+               lib STREQUAL "iganet::matplot")
+          if(JIT_INSTALL_TREE)
+            set(JIT_MATPLOT_LIBRARY_DIR
+              "${JIT_INSTALL_PREFIX_MARKER}/${CMAKE_INSTALL_LIBDIR}/iganet")
+          else()
+            set(JIT_MATPLOT_LIBRARY_DIR
+              "${matplotplusplus_BINARY_DIR}/source/matplot")
+          endif()
+          set(JIT_MATPLOT_LIBRARY
+            "${JIT_MATPLOT_LIBRARY_DIR}/${CMAKE_SHARED_LIBRARY_PREFIX}matplot${CMAKE_SHARED_LIBRARY_SUFFIX}")
           set(JIT_LIBRARIES
-            "${JIT_LIBRARIES} ${JIT_CXX_LINKER_SEARCH_FLAG}${matplotplusplus_BINARY_DIR}/source/matplot")
-
-          list(APPEND LIBS matplot)
+            "${JIT_LIBRARIES} ${JIT_MATPLOT_LIBRARY} ${CMAKE_SHARED_LIBRARY_RUNTIME_CXX_FLAG}${JIT_MATPLOT_LIBRARY_DIR}")
 
         elseif(lib STREQUAL "OpenMP::OpenMP_CXX")
 
