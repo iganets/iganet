@@ -261,13 +261,16 @@ public:
     archive.write(key + ".running_var", this->running_var());
     archive.write(key + ".weight", this->options_.weight());
     archive.write(key + ".bias", this->options_.bias());
-    archive.write(key + ".eps", torch::full({1}, (double)this->options_.eps()));
-    archive.write(key + ".momentum", torch::full({1}, (double)this->options_
-                                                          .momentum()
+    archive.write(key + ".eps", torch::full({1}, (double)this->options_.eps(),
+                                            torch::kFloat64));
+    archive.write(key + ".momentum", torch::full({1},
+                                                 (double)this->options_
+                                                     .momentum()
 #if TORCH_VERSION_MAJOR >= 2 && TORCH_VERSION_MINOR < 7
-                                                          .value()
+                                                     .value()
 #endif
-                                                     ));
+                                                     ,
+                                                 torch::kFloat64));
     archive.write(key + ".training",
                   torch::full({1}, (bool)this->options_.training()));
 
@@ -363,8 +366,9 @@ public:
         const std::string &key = "celu") const override {
     archive.write(key + ".type",
                   torch::full({1}, static_cast<int64_t>(activation::celu)));
-    archive.write(key + ".alpha",
-                  torch::full({1}, (double)this->options_.alpha()));
+    archive.write(
+        key + ".alpha",
+        torch::full({1}, (double)this->options_.alpha(), torch::kFloat64));
     archive.write(key + ".inplace",
                   torch::full({1}, (bool)this->options_.inplace()));
 
@@ -457,8 +461,9 @@ public:
         const std::string &key = "elu") const override {
     archive.write(key + ".type",
                   torch::full({1}, static_cast<int64_t>(activation::elu)));
-    archive.write(key + ".alpha",
-                  torch::full({1}, (double)this->options_.alpha()));
+    archive.write(
+        key + ".alpha",
+        torch::full({1}, (double)this->options_.alpha(), torch::kFloat64));
     archive.write(key + ".inplace",
                   torch::full({1}, (bool)this->options_.inplace()));
 
@@ -710,7 +715,8 @@ public:
                                                       activation::group_norm)));
     archive.write(key + ".weight", this->options_.weight());
     archive.write(key + ".bias", this->options_.bias());
-    archive.write(key + ".eps", torch::full({1}, (double)this->options_.eps()));
+    archive.write(key + ".eps", torch::full({1}, (double)this->options_.eps(),
+                                            torch::kFloat64));
 
     return archive;
   }
@@ -801,7 +807,8 @@ public:
     archive.write(
         key + ".type",
         torch::full({1}, static_cast<int64_t>(activation::gumbel_softmax)));
-    archive.write(key + ".tau", torch::full({1}, (double)this->options_.tau()));
+    archive.write(key + ".tau", torch::full({1}, (double)this->options_.tau(),
+                                            torch::kFloat64));
     archive.write(key + ".dim", torch::full({1}, (int)this->options_.dim()));
     archive.write(key + ".hard", torch::full({1}, (bool)this->options_.hard()));
 
@@ -890,8 +897,9 @@ public:
         const std::string &key = "hardshrink") const override {
     archive.write(key + ".type", torch::full({1}, static_cast<int64_t>(
                                                       activation::hardshrink)));
-    archive.write(key + ".lambda",
-                  torch::full({1}, (double)this->options_.lambda()));
+    archive.write(
+        key + ".lambda",
+        torch::full({1}, (double)this->options_.lambda(), torch::kFloat64));
 
     return archive;
   }
@@ -1114,10 +1122,12 @@ public:
         const std::string &key = "hardtanh") const override {
     archive.write(key + ".type",
                   torch::full({1}, static_cast<int64_t>(activation::hardtanh)));
-    archive.write(key + ".min_val",
-                  torch::full({1}, (double)this->options_.min_val()));
-    archive.write(key + ".max_val",
-                  torch::full({1}, (double)this->options_.max_val()));
+    archive.write(
+        key + ".min_val",
+        torch::full({1}, (double)this->options_.min_val(), torch::kFloat64));
+    archive.write(
+        key + ".max_val",
+        torch::full({1}, (double)this->options_.max_val(), torch::kFloat64));
     archive.write(key + ".inplace",
                   torch::full({1}, (bool)this->options_.inplace()));
 
@@ -1240,9 +1250,11 @@ public:
     archive.write(key + ".var", this->options_.running_var());
     archive.write(key + ".weight", this->options_.weight());
     archive.write(key + ".bias", this->options_.bias());
-    archive.write(key + ".eps", torch::full({1}, (double)this->options_.eps()));
-    archive.write(key + ".momentum",
-                  torch::full({1}, (double)this->options_.momentum()));
+    archive.write(key + ".eps", torch::full({1}, (double)this->options_.eps(),
+                                            torch::kFloat64));
+    archive.write(
+        key + ".momentum",
+        torch::full({1}, (double)this->options_.momentum(), torch::kFloat64));
     archive.write(key + ".use_input_stats",
                   torch::full({1}, (bool)this->options_.use_input_stats()));
 
@@ -1359,7 +1371,8 @@ public:
                                                       activation::layer_norm)));
     archive.write(key + ".weight", this->options_.weight());
     archive.write(key + ".bias", this->options_.bias());
-    archive.write(key + ".eps", torch::full({1}, (double)this->options_.eps()));
+    archive.write(key + ".eps", torch::full({1}, (double)this->options_.eps(),
+                                            torch::kFloat64));
 
     return archive;
   }
@@ -1455,7 +1468,8 @@ public:
                                                       activation::leaky_relu)));
 
     archive.write(key + ".negative_slope",
-                  torch::full({1}, (double)this->options_.negative_slope()));
+                  torch::full({1}, (double)this->options_.negative_slope(),
+                              torch::kFloat64));
     archive.write(key + ".inplace",
                   torch::full({1}, (bool)this->options_.inplace()));
 
@@ -1557,11 +1571,13 @@ public:
 
     archive.write(key + ".size",
                   torch::full({1}, (int64_t)this->options_.size()));
-    archive.write(key + ".alpha",
-                  torch::full({1}, (double)this->options_.alpha()));
-    archive.write(key + ".beta",
-                  torch::full({1}, (double)this->options_.beta()));
-    archive.write(key + ".k", torch::full({1}, (double)this->options_.k()));
+    archive.write(
+        key + ".alpha",
+        torch::full({1}, (double)this->options_.alpha(), torch::kFloat64));
+    archive.write(key + ".beta", torch::full({1}, (double)this->options_.beta(),
+                                             torch::kFloat64));
+    archive.write(key + ".k", torch::full({1}, (double)this->options_.k(),
+                                          torch::kFloat64));
 
     return archive;
   }
@@ -1848,8 +1864,10 @@ public:
         const std::string &key = "normalize") const override {
     archive.write(key + ".type", torch::full({1}, static_cast<int64_t>(
                                                       activation::normalize)));
-    archive.write(key + ".p", torch::full({1}, (double)this->options_.p()));
-    archive.write(key + ".eps", torch::full({1}, (double)this->options_.eps()));
+    archive.write(key + ".p", torch::full({1}, (double)this->options_.p(),
+                                          torch::kFloat64));
+    archive.write(key + ".eps", torch::full({1}, (double)this->options_.eps(),
+                                            torch::kFloat64));
     archive.write(key + ".dim",
                   torch::full({1}, (int64_t)this->options_.dim()));
 
@@ -2184,10 +2202,12 @@ public:
         const std::string &key = "rrelu") const override {
     archive.write(key + ".type",
                   torch::full({1}, static_cast<int64_t>(activation::rrelu)));
-    archive.write(key + ".lower",
-                  torch::full({1}, (double)this->options_.lower()));
-    archive.write(key + ".upper",
-                  torch::full({1}, (double)this->options_.upper()));
+    archive.write(
+        key + ".lower",
+        torch::full({1}, (double)this->options_.lower(), torch::kFloat64));
+    archive.write(
+        key + ".upper",
+        torch::full({1}, (double)this->options_.upper(), torch::kFloat64));
     archive.write(key + ".inplace",
                   torch::full({1}, (bool)this->options_.inplace()));
 
@@ -2642,10 +2662,11 @@ public:
         const std::string &key = "softplus") const override {
     archive.write(key + ".type",
                   torch::full({1}, static_cast<int64_t>(activation::softplus)));
-    archive.write(key + ".beta",
-                  torch::full({1}, (double)this->options_.beta()));
-    archive.write(key + ".threshold",
-                  torch::full({1}, (double)this->options_.threshold()));
+    archive.write(key + ".beta", torch::full({1}, (double)this->options_.beta(),
+                                             torch::kFloat64));
+    archive.write(
+        key + ".threshold",
+        torch::full({1}, (double)this->options_.threshold(), torch::kFloat64));
 
     return archive;
   }
@@ -2737,8 +2758,9 @@ public:
         const std::string &key = "softshrink") const override {
     archive.write(key + ".type", torch::full({1}, static_cast<int64_t>(
                                                       activation::softshrink)));
-    archive.write(key + ".lambda",
-                  torch::full({1}, (double)this->options_.lambda()));
+    archive.write(
+        key + ".lambda",
+        torch::full({1}, (double)this->options_.lambda(), torch::kFloat64));
 
     return archive;
   }
@@ -2987,9 +3009,11 @@ public:
         const std::string &key = "threshold") const override {
     archive.write(key + ".type", torch::full({1}, static_cast<int64_t>(
                                                       activation::threshold)));
-    archive.write(key + ".threshold",
-                  torch::full({1}, this->options_.threshold()));
-    archive.write(key + ".value", torch::full({1}, this->options_.value()));
+    archive.write(
+        key + ".threshold",
+        torch::full({1}, this->options_.threshold(), torch::kFloat64));
+    archive.write(key + ".value",
+                  torch::full({1}, this->options_.value(), torch::kFloat64));
     archive.write(key + ".inplace", torch::full({1}, this->options_.inplace()));
 
     return archive;
