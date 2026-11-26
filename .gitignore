@@ -18,3 +18,9 @@ optional
 .idea
 .vscode
 __pycache__
+
+# Meson subproject downloads
+/subprojects/*/
+!/subprojects/packagefiles/
+/subprojects/packagecache/
+/subprojects/.wraplock

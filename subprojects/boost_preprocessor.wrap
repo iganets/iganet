@@ -1,0 +1,10 @@
+[wrap-file]
+directory = preprocessor-boost-1.88.0
+source_url = https://github.com/boostorg/preprocessor/archive/refs/tags/boost-1.88.0.zip
+source_filename = boost-preprocessor-1.88.0.zip
+source_hash = a4866311417fd28e1f7b13a87cbbda86e2111ed79ec4b135705365967adc0387
+patch_directory = boost_preprocessor
+
+[provide]
+dependency_names = boost_preprocessor
+boost_preprocessor = boost_preprocessor_dep
