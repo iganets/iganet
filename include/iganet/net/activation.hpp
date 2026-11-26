@@ -1237,7 +1237,7 @@ public:
         key + ".type",
         torch::full({1}, static_cast<int64_t>(activation::instance_norm)));
     archive.write(key + ".running_mean", this->options_.running_mean());
-    archive.write(key + ".var", this->options_.running_var());
+    archive.write(key + ".running_var", this->options_.running_var());
     archive.write(key + ".weight", this->options_.weight());
     archive.write(key + ".bias", this->options_.bias());
     archive.write(key + ".eps", torch::full({1}, (double)this->options_.eps()));
