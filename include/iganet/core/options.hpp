@@ -32,7 +32,7 @@ inline int guess_device_index() {
   return rank %
          utils::getenv("IGANET_DEVICE_COUNT", (torch::cuda::is_available()
                                                   ? torch::cuda::device_count()
-                                                  : (torch::xpu::is_available() ? torch::xpu::device_count() ? 1)));
+                                                  : (torch::xpu::is_available() ? torch::xpu::device_count() : 1)));
 #else
   return 0;
 #endif
