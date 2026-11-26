@@ -139,7 +139,7 @@ endif()
 find_package(Torch REQUIRED)
 include(cmake/IgANetTorchHIP.cmake)
 iganet_configure_torch_hip()
-list(APPEND CMAKE_CXX_FLAGS ${TORCH_CXX_FLAGS})
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${TORCH_CXX_FLAGS}")
 target_link_libraries(iganet_core INTERFACE ${TORCH_LIBRARIES})
 
 find_package(IPEX QUIET)
