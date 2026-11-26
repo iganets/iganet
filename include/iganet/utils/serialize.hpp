@@ -15,6 +15,7 @@
 #pragma once
 
 #include <iganet/core/core.hpp>
+#include <iganet/utils/charconv.hpp>
 #include <iganet/utils/tensorarray.hpp>
 
 #include <nlohmann/json.hpp>
@@ -398,50 +399,61 @@ inline pugi::xml_node &to_xml(const torch::TensorAccessor<T, N> &accessor,
       node.append_attribute("rows") = sizes[0];
       node.append_attribute("cols") = 1;
 
-      std::stringstream ss;
-      for (std::size_t i = 0; i < sizes[0]; ++i)
-        ss << std::to_string(accessor[i]) << (i < sizes[0] - 1 ? " " : "");
-      node.append_child(pugi::node_pcdata).set_value(ss.str().c_str());
+      std::string text;
+      for (std::size_t i = 0; i < sizes[0]; ++i) {
+        if (i > 0)
+          text += ' ';
+        append_number(text, accessor[i]);
+      }
+      node.append_child(pugi::node_pcdata).set_value(text.c_str());
     } else if constexpr (N == 2) {
       node.append_attribute("rows") = sizes[0];
       node.append_attribute("cols") = sizes[1];
 
-      std::stringstream ss;
+      std::string text;
       for (std::size_t i = 0; i < sizes[0]; ++i)
-        for (std::size_t j = 0; j < sizes[1]; ++j)
-          ss << std::to_string(accessor[i][j])
-             << (j < sizes[1] - 1 ? " " : (i < sizes[0] - 1 ? " " : ""));
-      node.append_child(pugi::node_pcdata).set_value(ss.str().c_str());
+        for (std::size_t j = 0; j < sizes[1]; ++j) {
+          if (!text.empty())
+            text += ' ';
+          append_number(text, accessor[i][j]);
+        }
+      node.append_child(pugi::node_pcdata).set_value(text.c_str());
     } else
       throw std::runtime_error(
           "Tag \"Matrix\" only supports 1- and 2-dimensional tensors");
   } else {
-    std::stringstream ss;
-    for (const auto &size : sizes)
-      ss << std::to_string(size) << " ";
+    std::string text;
+    for (const auto &size : sizes) {
+      append_number(text, size);
+      text += ' ';
+    }
 
     pugi::xml_node dims = node.append_child("Dimensions");
-    dims.append_child(pugi::node_pcdata).set_value(ss.str().c_str());
+    dims.append_child(pugi::node_pcdata).set_value(text.c_str());
 
-    ss.str("");
+    text.clear();
+    const auto put = [&text](auto value) {
+      append_number(text, value);
+      text += ' ';
+    };
     if constexpr (N == 1) {
       for (std::size_t i = 0; i < sizes[0]; ++i)
-        ss << std::to_string(accessor[i]) << " ";
+        put(accessor[i]);
     } else if constexpr (N == 2) {
       for (std::size_t i = 0; i < sizes[0]; ++i)
         for (std::size_t j = 0; j < sizes[1]; ++j)
-          ss << std::to_string(accessor[i][j]) << " ";
+          put(accessor[i][j]);
     } else if constexpr (N == 3) {
       for (std::size_t i = 0; i < sizes[0]; ++i)
         for (std::size_t j = 0; j < sizes[1]; ++j)
           for (std::size_t k = 0; k < sizes[2]; ++k)
-            ss << std::to_string(accessor[i][j][k]) << " ";
+            put(accessor[i][j][k]);
     } else if constexpr (N == 4) {
       for (std::size_t i = 0; i < sizes[0]; ++i)
         for (std::size_t j = 0; j < sizes[1]; ++j)
           for (std::size_t k = 0; k < sizes[2]; ++k)
             for (std::size_t l = 0; l < sizes[3]; ++l)
-              ss << std::to_string(accessor[i][j][k][l]) << " ";
+              put(accessor[i][j][k][l]);
 
     } else if constexpr (N == 5) {
       for (std::size_t i = 0; i < sizes[0]; ++i)
@@ -449,7 +461,7 @@ inline pugi::xml_node &to_xml(const torch::TensorAccessor<T, N> &accessor,
           for (std::size_t k = 0; k < sizes[2]; ++k)
             for (std::size_t l = 0; l < sizes[3]; ++l)
               for (std::size_t m = 0; m < sizes[4]; ++m)
-                ss << std::to_string(accessor[i][j][k][l][m]) << " ";
+                put(accessor[i][j][k][l][m]);
     } else if constexpr (N == 6) {
       for (std::size_t i = 0; i < sizes[0]; ++i)
         for (std::size_t j = 0; j < sizes[1]; ++j)
@@ -457,13 +469,13 @@ inline pugi::xml_node &to_xml(const torch::TensorAccessor<T, N> &accessor,
             for (std::size_t l = 0; l < sizes[3]; ++l)
               for (std::size_t m = 0; m < sizes[4]; ++m)
                 for (std::size_t n = 0; n < sizes[5]; ++n)
-                  ss << std::to_string(accessor[i][j][k][l][m][n]) << " ";
+                  put(accessor[i][j][k][l][m][n]);
     } else
       throw std::runtime_error(
           "Dimensions higher than 6 are not implemented yet");
 
     pugi::xml_node data = node.append_child("Data");
-    data.append_child(pugi::node_pcdata).set_value(ss.str().c_str());
+    data.append_child(pugi::node_pcdata).set_value(text.c_str());
   }
 
   return root;
@@ -694,34 +706,19 @@ from_xml(const pugi::xml_node &root, torch::Tensor &tensor,
               "Tag \"Matrix\" only supports 1- and 2-dimensional tensors");
         }
 
-        std::string values = std::regex_replace(
-            node.text().get(), std::regex("[\t\r\n\a]+| +"), " ");
-
-        auto [tensor_cpu, accessor] =
-            to_tensorAccessor<T, N>(tensor, torch::kCPU);
-        auto value = strtok(&values[0], " ");
-
-        if constexpr (N == 1) {
-          for (int64_t i = 0; i < rows; ++i) {
-            if (value == nullptr)
-              throw std::runtime_error(
-                  "XML object does not provide enough coefficients");
-            accessor[i] = static_cast<T>(std::stod(value));
-            value = strtok(nullptr, " ");
-          }
-        } else if constexpr (N == 2) {
-          for (int64_t i = 0; i < rows; ++i)
-            for (int64_t j = 0; j < cols; ++j) {
-              if (value == nullptr)
-                throw std::runtime_error(
-                    "XML object does not provide enough coefficients");
-              accessor[i][j] = static_cast<T>(std::stod(value));
-              value = strtok(nullptr, " ");
-            }
-        }
-
-        if (value != nullptr)
+        std::vector<T> values;
+        parse_numbers<T>(node.text().get(), std::back_inserter(values));
+        if (values.size() < static_cast<std::size_t>(tensor.numel()))
+          throw std::runtime_error(
+              "XML object does not provide enough coefficients");
+        if (values.size() > static_cast<std::size_t>(tensor.numel()))
           throw std::runtime_error("XML object provides too many coefficients");
+
+        [[maybe_unused]] auto [tensor_cpu, accessor] =
+            to_tensorAccessor<T, N>(tensor, torch::kCPU);
+        tensor_cpu.copy_(torch::from_blob(
+            values.data(), tensor_cpu.sizes(),
+            torch::TensorOptions().dtype(c10::CppTypeToScalarType<T>::value)));
 
         if (tensor.device().type() != torch::kCPU)
           tensor = std::move(tensor_cpu);
@@ -734,11 +731,7 @@ from_xml(const pugi::xml_node &root, torch::Tensor &tensor,
         if (pugi::xml_node dims = node.child("Dimensions")) {
           std::vector<int64_t> sizes;
 
-          std::string values = std::regex_replace(
-              dims.text().get(), std::regex("[\t\r\n\a]+| +"), " ");
-          for (auto value = strtok(&values[0], " "); value != nullptr;
-               value = strtok(nullptr, " "))
-            sizes.push_back(static_cast<std::size_t>(std::stoi(value)));
+          parse_numbers<int64_t>(dims.text().get(), std::back_inserter(sizes));
 
           if (!alloc && (tensor.sizes() != sizes))
             throw std::runtime_error("Invalid tensor dimensions");
@@ -751,91 +744,21 @@ from_xml(const pugi::xml_node &root, torch::Tensor &tensor,
 
           // Check for "Data"
           if (pugi::xml_node data = node.child("Data")) {
-            std::string values = std::regex_replace(
-                data.text().get(), std::regex("[\t\r\n\a]+| +"), " ");
-
-            auto [tensor_cpu, accessor] =
-                to_tensorAccessor<T, N>(tensor, torch::kCPU);
-            auto value = strtok(&values[0], " ");
-
-            if constexpr (N == 1) {
-              for (int64_t i = 0; i < sizes[0]; ++i) {
-                if (value == nullptr)
-                  throw std::runtime_error(
-                      "XML object does not provide enough coefficients");
-
-                accessor[i] = static_cast<T>(std::stod(value));
-                value = strtok(nullptr, " ");
-              }
-            } else if constexpr (N == 2) {
-              for (int64_t i = 0; i < sizes[0]; ++i)
-                for (int64_t j = 0; j < sizes[1]; ++j) {
-                  if (value == nullptr)
-                    throw std::runtime_error(
-                        "XML object does not provide enough coefficients");
-
-                  accessor[i][j] = static_cast<T>(std::stod(value));
-                  value = strtok(nullptr, " ");
-                }
-            } else if constexpr (N == 3) {
-              for (int64_t i = 0; i < sizes[0]; ++i)
-                for (int64_t j = 0; j < sizes[1]; ++j)
-                  for (int64_t k = 0; k < sizes[2]; ++k) {
-                    if (value == nullptr)
-                      throw std::runtime_error(
-                          "XML object does not provide enough coefficients");
-
-                    accessor[i][j][k] = static_cast<T>(std::stod(value));
-                    value = strtok(nullptr, " ");
-                  }
-            } else if constexpr (N == 4) {
-              for (int64_t i = 0; i < sizes[0]; ++i)
-                for (int64_t j = 0; j < sizes[1]; ++j)
-                  for (int64_t k = 0; k < sizes[2]; ++k)
-                    for (int64_t l = 0; l < sizes[3]; ++l) {
-                      if (value == nullptr)
-                        throw std::runtime_error(
-                            "XML object does not provide enough coefficients");
-
-                      accessor[i][j][k][l] = static_cast<T>(std::stod(value));
-                      value = strtok(nullptr, " ");
-                    }
-            } else if constexpr (N == 5) {
-              for (int64_t i = 0; i < sizes[0]; ++i)
-                for (int64_t j = 0; j < sizes[1]; ++j)
-                  for (int64_t k = 0; k < sizes[2]; ++k)
-                    for (int64_t l = 0; l < sizes[3]; ++l)
-                      for (int64_t m = 0; m < sizes[4]; ++m) {
-                        if (value == nullptr)
-                          throw std::runtime_error(
-                              "XML object does not provide enough "
-                              "coefficients");
-
-                        accessor[i][j][k][l][m] =
-                            static_cast<T>(std::stod(value));
-                        value = strtok(nullptr, " ");
-                      }
-            } else if constexpr (N == 6) {
-              for (int64_t i = 0; i < sizes[0]; ++i)
-                for (int64_t j = 0; j < sizes[1]; ++j)
-                  for (int64_t k = 0; k < sizes[2]; ++k)
-                    for (int64_t l = 0; l < sizes[3]; ++l)
-                      for (int64_t m = 0; m < sizes[4]; ++m)
-                        for (int64_t n = 0; n < sizes[5]; ++n) {
-                          if (value == nullptr)
-                            throw std::runtime_error(
-                                "XML object does not provide enough "
-                                "coefficients");
-
-                          accessor[i][j][k][l][m][n] =
-                              static_cast<T>(std::stod(value));
-                          value = strtok(nullptr, " ");
-                        }
-            }
-
-            if (value != nullptr)
+            std::vector<T> values;
+            parse_numbers<T>(data.text().get(), std::back_inserter(values));
+            if (values.size() < static_cast<std::size_t>(tensor.numel()))
+              throw std::runtime_error(
+                  "XML object does not provide enough coefficients");
+            if (values.size() > static_cast<std::size_t>(tensor.numel()))
               throw std::runtime_error(
                   "XML object provides too many coefficients");
+
+            [[maybe_unused]] auto [tensor_cpu, accessor] =
+                to_tensorAccessor<T, N>(tensor, torch::kCPU);
+            tensor_cpu.copy_(torch::from_blob(
+                values.data(), tensor_cpu.sizes(),
+                torch::TensorOptions().dtype(
+                    c10::CppTypeToScalarType<T>::value)));
 
             if (tensor.device().type() != torch::kCPU)
               tensor = std::move(tensor_cpu);
