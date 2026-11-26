@@ -646,7 +646,7 @@ public:
       : // Construct the base class
         Base(),
         // Construct the optimizer
-        opt_(std::make_unique<optimizer_type>(net_->parameters())),
+        opt_(make_optimizer<optimizer_type>(net_->parameters())),
         // Set options
         options_(defaults) {}
 
@@ -697,7 +697,7 @@ public:
              activations, options),
 
         // Construct the optimizer
-        opt_(std::make_unique<optimizer_type>(net_->parameters())),
+        opt_(make_optimizer<optimizer_type>(net_->parameters())),
 
         // Set options
         options_(defaults) {}
@@ -726,13 +726,13 @@ public:
   /// should be resetted.
   inline void optimizerReset(bool resetOptions = true) {
     if (resetOptions)
-      opt_ = std::make_unique<optimizer_type>(net_->parameters());
+      opt_ = make_optimizer<optimizer_type>(net_->parameters());
     else {
       std::vector<optimizer_options_type> options;
       for (auto &group : opt_->param_groups())
         options.push_back(
             static_cast<optimizer_options_type &>(group.options()));
-      opt_ = std::make_unique<optimizer_type>(net_->parameters());
+      opt_ = make_optimizer<optimizer_type>(net_->parameters());
       for (auto [group, options] : utils::zip(opt_->param_groups(), options))
         static_cast<optimizer_options_type &>(group.options()) = options;
     }
