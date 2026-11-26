@@ -4730,11 +4730,11 @@ public:
               *BSplineCore::template eval<deriv::dz, memory_optimized>(
                   xi, knot_indices, coeff_indices)[1],
           *BSplineCore::template eval<deriv::dz, memory_optimized>(
-              xi, knot_indices, coeff_indices)[0] +
+              xi, knot_indices, coeff_indices)[0] -
               *BSplineCore::template eval<deriv::dx, memory_optimized>(
                   xi, knot_indices, coeff_indices)[2],
           *BSplineCore::template eval<deriv::dx, memory_optimized>(
-              xi, knot_indices, coeff_indices)[1] +
+              xi, knot_indices, coeff_indices)[1] -
               *BSplineCore::template eval<deriv::dy, memory_optimized>(
                   xi, knot_indices, coeff_indices)[0]);
 

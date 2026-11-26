@@ -1276,7 +1276,7 @@ public:
     return utils::BlockTensor<torch::Tensor, 1, 1>(
         *std::get<1>(spline_).template eval<deriv::dx, memory_optimized>(
             xi, std::get<1>(knot_indices), std::get<1>(coeff_indices))[0] -
-        *std::get<0>(spline_).template eval<deriv::dx, memory_optimized>(
+        *std::get<0>(spline_).template eval<deriv::dy, memory_optimized>(
             xi, std::get<0>(knot_indices), std::get<0>(coeff_indices))[0]);
   }
 
