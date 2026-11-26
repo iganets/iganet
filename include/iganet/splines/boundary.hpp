@@ -1150,7 +1150,7 @@ public:
 
   /// @brief Returns a non-constant reference to the tuple of boundary sides.
   /// @return Result of the operation.
-  inline constexpr auto &ides() { return bdr_; }
+  inline constexpr auto &sides() { return bdr_; }
 
   /// @brief Returns the total number of coefficients.
   /// @return Result of the operation.
