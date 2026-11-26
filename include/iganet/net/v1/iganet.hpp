@@ -15,6 +15,7 @@
 #pragma once
 
 #include <iganet/core/options.hpp>
+#include <iganet/net/dataparallel.hpp>
 #include <iganet/net/generator.hpp>
 #include <iganet/net/collocation.hpp>
 #include <iganet/net/optimizer.hpp>
@@ -39,6 +40,14 @@ namespace iganet::v1 {
   TORCH_ARG(double, min_loss_change) = 0;
   /// @brief Provides the `TORCH_ARG` operation.
   TORCH_ARG(double, min_loss_rel_change) = 1e-3;
+  /// @brief Combine gradients and loss over all MPI processes.
+  TORCH_ARG(bool, mpi_data_parallel) = true;
+  /// @brief Number of steps between checks that the parameters agree on all
+  /// MPI processes, zero disables the check.
+  TORCH_ARG(int64_t, mpi_check_interval) = 0;
+  /// @brief Reduce the gradients in one packed buffer instead of tensor by
+  /// tensor.
+  TORCH_ARG(bool, mpi_pack_gradients) = true;
   };
 
 /// @brief IgA base class (no reference data).
@@ -1003,7 +1012,7 @@ public:
 
 #ifdef IGANET_WITH_MPI
       // Averaging the gradients of the parameters in all the processors
-      {
+      if (options_.mpi_data_parallel()) {
         int size;
         MPI_Comm_size(MPI_COMM_WORLD, &size);
         for (auto &param : net_->named_parameters()) {
