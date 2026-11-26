@@ -194,6 +194,23 @@ endif()
 if(IGANET_WITH_MPI)
   find_package(MPI REQUIRED)
   target_link_libraries(iganet_core INTERFACE MPI::MPI_CXX)
+
+  # Probe the MPI extension header that reports CUDA-aware support
+  include(CheckCXXSourceCompiles)
+  set(CMAKE_REQUIRED_LIBRARIES MPI::MPI_CXX)
+  check_cxx_source_compiles("
+    #include <mpi.h>
+    #include <mpi-ext.h>
+    int main(int argc, char **argv) {
+      MPI_Init(&argc, &argv);
+    #if defined(MPIX_CUDA_AWARE_SUPPORT) && MPIX_CUDA_AWARE_SUPPORT
+      int flag = MPIX_Query_cuda_support();
+      (void)flag;
+    #endif
+      MPI_Finalize();
+      return 0;
+    }" IGANET_MPI_HAVE_EXT)
+  unset(CMAKE_REQUIRED_LIBRARIES)
 endif()
 
 ########################################################################
@@ -316,6 +333,7 @@ message("Features:")
 message("IGANET_WITH_GISMO..................: ${IGANET_WITH_GISMO}")
 message("IGANET_WITH_MATPLOT................: ${IGANET_WITH_MATPLOT}")
 message("IGANET_WITH_MPI....................: ${IGANET_WITH_MPI}")
+message("IGANET_MPI_HAVE_EXT................: ${IGANET_MPI_HAVE_EXT}")
 message("IGANET_WITH_OPENMP.................: ${IGANET_WITH_OPENMP}")
 message("")
 

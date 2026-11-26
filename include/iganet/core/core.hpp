@@ -29,10 +29,7 @@
 #endif
 
 #ifdef IGANET_WITH_MPI
-#ifndef USE_C10D_MPI
-#error "Torch must be compiled with USE_DISTRIBUTED=1, USE_MPI=1, USE_C10_MPI=1"
-#endif
-#include <torch/csrc/distributed/c10d/ProcessGroupMPI.hpp>
+#include <mpi.h>
 #endif
 
 #include <torch/csrc/api/include/torch/types.h>

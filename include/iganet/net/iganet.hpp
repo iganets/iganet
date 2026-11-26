@@ -873,12 +873,7 @@ public:
   virtual torch::Tensor loss(const torch::Tensor &, int64_t) = 0;
 
   /// @brief Trains the IgANet.
-  virtual void train(
-#ifdef IGANET_WITH_MPI
-      c10::intrusive_ptr<c10d::ProcessGroupMPI> pg =
-          c10d::ProcessGroupMPI::createProcessGroupMPI()
-#endif
-  ) {
+  virtual void train() {
     torch::Tensor inputs, outputs, loss;
     typename Base::value_type previous_loss(-1.0);
 
@@ -907,21 +902,21 @@ public:
 
 #ifdef IGANET_WITH_MPI
       // Averaging the gradients of the parameters in all the processors
-      // Note: This may lag behind DistributedDataParallel (DDP) in performance
-      // since this synchronizes parameters after backward pass while DDP
-      // overlaps synchronizing parameters and computing gradients in backward
-      // pass
-      std::vector<c10::intrusive_ptr<::c10d::Work>> works;
-      for (auto &param : net_->named_parameters()) {
-        std::vector<torch::Tensor> tmp = {param.value().grad()};
-        works.emplace_back(pg->allreduce(tmp));
-      }
-
-      waitWork(pg, works);
-
-      for (auto &param : net_->named_parameters()) {
-        param.value().grad().data() =
-            param.value().grad().data() / pg->getSize();
+      {
+        int size;
+        MPI_Comm_size(MPI_COMM_WORLD, &size);
+        for (auto &param : net_->named_parameters()) {
+          auto grad = param.value().grad();
+          if (grad.defined()) {
+            grad = grad.contiguous();
+            MPI_Allreduce(MPI_IN_PLACE, grad.data_ptr(), grad.numel(),
+                          std::is_same_v<typename Base::value_type, float>
+                              ? MPI_FLOAT
+                              : MPI_DOUBLE,
+                          MPI_SUM, MPI_COMM_WORLD);
+            param.value().grad().data() = grad / size;
+          }
+        }
       }
 #endif
 
@@ -951,17 +946,7 @@ public:
   /// @brief Trains the IgANet.
   /// @tparam DataLoader Template parameter `DataLoader`.
   /// @param loader Training data loader.
-#ifdef IGANET_WITH_MPI
-  /// @param pg MPI process group.
-#endif
-  template <typename DataLoader>
-  void train(DataLoader &loader
-#ifdef IGANET_WITH_MPI
-             ,
-             c10::intrusive_ptr<c10d::ProcessGroupMPI> pg =
-                 c10d::ProcessGroupMPI::createProcessGroupMPI()
-#endif
-  ) {
+  template <typename DataLoader> void train(DataLoader &loader) {
     torch::Tensor inputs, outputs, loss;
     typename Base::value_type previous_loss(-1.0);
 
@@ -1257,22 +1242,6 @@ public:
   /// @return Result of the operation.
   bool operator!=(const IgANet &other) const { return *this != other; }
 
-#ifdef IGANET_WITH_MPI
-private:
-  /// @brief Waits for all work processes.
-  static void waitWork(c10::intrusive_ptr<c10d::ProcessGroupMPI> pg,
-                       std::vector<c10::intrusive_ptr<c10d::Work>> works) {
-    for (auto &work : works) {
-      try {
-        work->wait();
-      } catch (const std::exception &ex) {
-        Log(log::error) << "Exception received during waitWork: " << ex.what()
-                        << std::endl;
-        pg->abort();
-      }
-    }
-  }
-#endif
 };
 
 /// @brief Prints an IgANet object.
