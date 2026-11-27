@@ -113,6 +113,63 @@ IGAnets requires a C++20 compiler, CMake, and LibTorch (the C++ API of PyTorch).
 
     Depending on the number of cores of your CPU you may want to change 8 to a different number.
 
+## Building with Meson
+
+IGAnets can also be built with [Meson](https://mesonbuild.com) (1.3.0 or newer) and Ninja. The Meson build sits beside the CMake build and does not replace it. The core library is header-only, so `meson setup` generates `iganet/core/config.hpp` and `iganet/utils/jit.hpp` and defines the dependency `iganet`.
+
+LibTorch ships CMake package files and no pkg-config file. Meson finds it through its CMake backend; point `cmake_prefix_path` at the unpacked LibTorch directory (the one that contains `include`, `lib` and `share`):
+
+```bash
+meson setup build -Dcmake_prefix_path=/path/to/libtorch
+meson compile -C build
+meson install -C build
+```
+
+This path adds the include directories, the libraries `torch`, `torch_cpu` and `c10`, the library run path and the `_GLIBCXX_USE_CXX11_ABI` definition that LibTorch's `TorchConfig.cmake` states. If Meson's CMake backend cannot read a LibTorch build, give the directory explicitly; the C++ ABI is then read from `TorchConfig.cmake` in the archive:
+
+```bash
+meson setup build -Dtorch_method=prefix -Dtorch_prefix=/path/to/libtorch
+```
+
+pugixml and nlohmann_json come from the system or from the WrapDB wraps in `subprojects/`; Boost.Preprocessor comes from `subprojects/boost_preprocessor.wrap`. Meson downloads a wrap only when the system does not provide the dependency.
+
+**Supported Meson options** (CMake equivalent in brackets):
+
+- `-Dcpuonly=true` configures for CPU even if the LibTorch found has CUDA, ROCm or XPU libraries `[IGANET_BUILD_CPUONLY]`. The Meson build links the CPU libraries only and stops with an error for a GPU LibTorch unless this option is set.
+
+- `-Dwith_openmp=false` disables OpenMP (default `true`) `[IGANET_WITH_OPENMP]`.
+
+- `-Dwith_mpi=true` enables MPI (default `false`) `[IGANET_WITH_MPI]`.
+
+- `-Dwith_gismo=true` enables [G+Smo](https://github.com/gismo/gismo) (default `false`); a `gismo` dependency has to be provided through pkg-config, CMake or a subproject `[IGANET_WITH_GISMO]`.
+
+- `-Dwith_matplot=true` enables Matplot++ (default `false`); found through its CMake package `[IGANET_WITH_MATPLOT]`.
+
+- `-Djit_extra_flags="..."` appends compiler and linker flags to the command line of the just-in-time compiler.
+
+### Using IGAnets as a Meson subproject
+
+Place the following file at `subprojects/iganet.wrap` of the consuming project:
+
+```ini
+[wrap-git]
+url = https://github.com/iganets/iganet.git
+revision = main
+depth = 1
+
+[provide]
+dependency_names = iganet, iganet-core
+```
+
+and use the dependency in its `meson.build`:
+
+```meson
+iganet_dep = dependency('iganet', fallback: ['iganet', 'iganet_dep'])
+executable('app', 'main.cpp', dependencies: iganet_dep)
+```
+
+Configure the consuming project with `-Dcmake_prefix_path=/path/to/libtorch`.
+
 ## Compilation with CUDA support (only Linux)
 
 1.  Install the CUDA-enabled version of LibTorch either through PyTorch.org 

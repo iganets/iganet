@@ -1,0 +1,49 @@
+option(
+  'cpuonly',
+  type: 'boolean',
+  value: false,
+  description: 'Build CPU-only code even if the LibTorch found provides CUDA, ROCm or XPU (CMake: IGANET_BUILD_CPUONLY).',
+)
+option(
+  'with_gismo',
+  type: 'boolean',
+  value: false,
+  description: 'Compile with G+Smo support; the gismo dependency must be provided by pkg-config, CMake or a subproject (CMake: IGANET_WITH_GISMO).',
+)
+option(
+  'with_matplot',
+  type: 'boolean',
+  value: false,
+  description: 'Compile with Matplot++ support (CMake: IGANET_WITH_MATPLOT).',
+)
+option(
+  'with_mpi',
+  type: 'boolean',
+  value: false,
+  description: 'Compile with MPI support (CMake: IGANET_WITH_MPI).',
+)
+option(
+  'with_openmp',
+  type: 'boolean',
+  value: true,
+  description: 'Compile with OpenMP support (CMake: IGANET_WITH_OPENMP).',
+)
+option(
+  'torch_method',
+  type: 'combo',
+  choices: ['cmake', 'prefix'],
+  value: 'cmake',
+  description: 'How LibTorch is found: cmake runs find_package(Torch) through Meson (give -Dcmake_prefix_path=<libtorch dir>), prefix builds the dependency by hand from torch_prefix.',
+)
+option(
+  'torch_prefix',
+  type: 'string',
+  value: '',
+  description: 'LibTorch directory (the one holding include, lib and share) for torch_method=prefix.',
+)
+option(
+  'jit_extra_flags',
+  type: 'string',
+  value: '',
+  description: 'Extra compiler and linker flags appended to the command line of the just-in-time compiler (include and library paths of third-party dependencies).',
+)
