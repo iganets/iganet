@@ -122,7 +122,9 @@ iganet_defs = ['-DJSON_HAS_RANGES=0']
 # ---------------------------------------------------------------------
 # Just-in-time compiler configuration (utils/jit.hpp)
 # ---------------------------------------------------------------------
-_jit_parts = ['-std=' + get_option('cpp_std'), '-fPIC', torch_abi]
+# -shared: the JIT builds a shared library per kernel, as the CMake build's
+# CMAKE_SHARED_LIBRARY_CREATE_CXX_FLAGS does
+_jit_parts = ['-std=' + get_option('cpp_std'), '-shared', '-fPIC', torch_abi]
 # buildtype plain has optimization 'plain', which is no -O level
 if get_option('optimization') != 'plain'
   _jit_parts += '-O' + get_option('optimization')
