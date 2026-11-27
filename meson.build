@@ -122,12 +122,11 @@ iganet_defs = ['-DJSON_HAS_RANGES=0']
 # ---------------------------------------------------------------------
 # Just-in-time compiler configuration (utils/jit.hpp)
 # ---------------------------------------------------------------------
-_jit_parts = [
-  '-std=' + get_option('cpp_std'),
-  '-O' + get_option('optimization'),
-  '-fPIC',
-  torch_abi,
-]
+_jit_parts = ['-std=' + get_option('cpp_std'), '-fPIC', torch_abi]
+# buildtype plain has optimization 'plain', which is no -O level
+if get_option('optimization') != 'plain'
+  _jit_parts += '-O' + get_option('optimization')
+endif
 _jit_parts += torch_def_args
 _jit_parts += iganet_defs
 _jit_parts += ['-I' + meson.current_source_dir() / 'include']
@@ -137,6 +136,25 @@ foreach inc : torch_includes
   torch_include_args += '-I' + inc
 endforeach
 _jit_parts += torch_include_args
+# The just-in-time compiled code includes pugixml, nlohmann_json and
+# Boost.Preprocessor headers too. A system dependency names its include
+# directory through pkg-config; a subproject fallback has its sources in the
+# directory its wrap names (subprojects/*.wrap, key `directory`).
+_jit_dep_dirs = [
+  [pugixml_dep, 'pugixml-1.15' / 'src'],
+  [json_dep, 'nlohmann_json-3.12.0' / 'include'],
+  [boost_pp_dep, 'preprocessor-boost-1.88.0' / 'include'],
+]
+foreach d : _jit_dep_dirs
+  if d[0].type_name() == 'internal'
+    _jit_parts += '-I' + (meson.global_source_root() / 'subprojects' / d[1])
+  elif d[0].type_name() == 'pkgconfig'
+    _inc = d[0].get_variable(pkgconfig: 'includedir', default_value: '')
+    if _inc != ''
+      _jit_parts += '-I' + _inc
+    endif
+  endif
+endforeach
 _jit_parts += iganet_jit_flags_extra
 _jit_parts += [
   '-L' + torch_libdir,
