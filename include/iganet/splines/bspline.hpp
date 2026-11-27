@@ -18,13 +18,15 @@
 #include <exception>
 #include <filesystem>
 #include <functional>
-#include <regex>
+#include <iomanip>
+#include <limits>
 #include <string_view>
 
 #include <iganet/core/core.hpp>
 #include <iganet/core/options.hpp>
 #include <iganet/splines/patch.hpp>
 #include <iganet/utils/blocktensor.hpp>
+#include <iganet/utils/charconv.hpp>
 #include <iganet/utils/container.hpp>
 #include <iganet/utils/dlloader.hpp>
 #include <iganet/utils/fqn.hpp>
@@ -1912,13 +1914,15 @@ public:
       pugi::xml_node knots = basis.append_child("KnotVector");
       knots.append_attribute("degree") = degrees_[0];
 
-      std::stringstream ss;
+      std::string text;
       auto [knots_cpu, knots_accessor] =
           utils::to_tensorAccessor<real_t, 1>(knots_[0], torch::kCPU);
-      for (int64_t i = 0; i < nknots_[0]; ++i)
-        ss << std::to_string(knots_accessor[i])
-           << (i < nknots_[0] - 1 ? " " : "");
-      knots.append_child(pugi::node_pcdata).set_value(ss.str().c_str());
+      for (int64_t i = 0; i < nknots_[0]; ++i) {
+        if (i > 0)
+          text += ' ';
+        utils::append_number(text, knots_accessor[i]);
+      }
+      knots.append_child(pugi::node_pcdata).set_value(text.c_str());
     }
 
     // >1D parametric dimension
@@ -1950,13 +1954,15 @@ public:
         pugi::xml_node knots = basis.append_child("KnotVector");
         knots.append_attribute("degree") = degrees_[index];
 
-        std::stringstream ss;
+        std::string text;
         auto [knots_cpu, knots_accessor] =
             utils::to_tensorAccessor<real_t, 1>(knots_[index], torch::kCPU);
-        for (int64_t i = 0; i < nknots_[index]; ++i)
-          ss << std::to_string(knots_accessor[i])
-             << (i < nknots_[index] - 1 ? " " : "");
-        knots.append_child(pugi::node_pcdata).set_value(ss.str().c_str());
+        for (int64_t i = 0; i < nknots_[index]; ++i) {
+          if (i > 0)
+            text += ' ';
+          utils::append_number(text, knots_accessor[i]);
+        }
+        knots.append_child(pugi::node_pcdata).set_value(text.c_str());
       }
 
     } // parametric dimension
@@ -1967,19 +1973,26 @@ public:
 
     auto [coeffs_cpu, coeffs_accessors] =
         utils::to_tensorAccessor<real_t, 1>(coeffs_, torch::kCPU);
-    std::stringstream ss;
+    std::string text;
 
     if constexpr (parDim_ == 0) {
-      for (short_t g = 0; g < geoDim_; ++g)
-        ss << std::to_string(coeffs_accessors[g][0]) << " ";
+      for (short_t g = 0; g < geoDim_; ++g) {
+        utils::append_number(text, coeffs_accessors[g][0]);
+        text += ' ';
+      }
 
     } else {
+      // A value and its separator take about 20 characters.
+      text.reserve(static_cast<std::size_t>(utils::prod(ncoeffs_) * geoDim_) *
+                   20);
       for (int64_t i = 0; i < utils::prod(ncoeffs_); ++i)
-        for (short_t g = 0; g < geoDim_; ++g)
-          ss << std::to_string(coeffs_accessors[g][i]) << " ";
+        for (short_t g = 0; g < geoDim_; ++g) {
+          utils::append_number(text, coeffs_accessors[g][i]);
+          text += ' ';
+        }
     }
 
-    coefs.append_child(pugi::node_pcdata).set_value(ss.str().c_str());
+    coefs.append_child(pugi::node_pcdata).set_value(text.c_str());
 
     return root;
   }
@@ -2047,11 +2060,8 @@ public:
                 knots.attribute("degree").as_int() == degrees_[0]) {
 
               std::vector<real_t> kv;
-              std::string values = std::regex_replace(
-                  knots.text().get(), std::regex("[\t\r\n\a]+| +"), " ");
-              for (auto value = strtok(&values[0], " "); value != nullptr;
-                   value = strtok(nullptr, " "))
-                kv.push_back(static_cast<real_t>(std::stod(value)));
+              utils::parse_numbers<real_t>(knots.text().get(),
+                                           std::back_inserter(kv));
 
               knots_[0] = utils::to_tensor(kv, options_);
               nknots_[0] = kv.size();
@@ -2099,12 +2109,8 @@ public:
                     knots.attribute("degree").as_int() == degrees_[index]) {
 
                   std::vector<real_t> kv;
-                  std::string values = std::regex_replace(
-                      knots.text().get(), std::regex("[\t\r\n\a]+| +"), " ");
-
-                  for (auto value = strtok(&values[0], " "); value != nullptr;
-                       value = strtok(nullptr, " "))
-                    kv.push_back(static_cast<real_t>(std::stod(value)));
+                  utils::parse_numbers<real_t>(knots.text().get(),
+                                               std::back_inserter(kv));
 
                   knots_[index] = utils::to_tensor(kv, options_);
                   nknots_[index] = kv.size();
@@ -2144,43 +2150,27 @@ public:
       // Check for "coefs"
       if (pugi::xml_node coefs = geo.child("coefs")) {
 
-        std::string values = std::regex_replace(
-            coefs.text().get(), std::regex("[\t\r\n\a]+| +"), " ");
         auto coeffs_accessors = utils::to_tensorAccessor<real_t, 1>(coeffs_);
 
-        if constexpr (parDim_ == 0) {
-          auto value = strtok(&values[0], " ");
+        // Every coefficient has geoDim_ components.
+        const std::size_t expected =
+            static_cast<std::size_t>(
+                parDim_ == 0 ? int64_t{1} : utils::prod(ncoeffs_)) *
+            geoDim_;
+        std::vector<real_t> values;
+        values.reserve(expected);
+        utils::parse_numbers<real_t>(coefs.text().get(),
+                                     std::back_inserter(values));
 
-          for (short_t g = 0; g < geoDim_; ++g) {
-            if (value == nullptr)
-              throw std::runtime_error(
-                  "XML object does not provide enough coefficients");
+        if (values.size() < expected)
+          throw std::runtime_error(
+              "XML object does not provide enough coefficients");
+        if (values.size() > expected)
+          throw std::runtime_error("XML object provides too many coefficients");
 
-            coeffs_accessors[g][0] = static_cast<real_t>(std::stod(value));
-            value = strtok(nullptr, " ");
-          }
-
-          if (value != nullptr)
-            throw std::runtime_error(
-                "XML object provides too many coefficients");
-
-        } else {
-          auto value = strtok(&values[0], " ");
-
-          for (int64_t i = 0; i < utils::prod(ncoeffs_); ++i)
-            for (short_t g = 0; g < geoDim_; ++g) {
-              if (value == nullptr)
-                throw std::runtime_error(
-                    "XML object does not provide enough coefficients");
-
-              coeffs_accessors[g][i] = static_cast<real_t>(std::stod(value));
-              value = strtok(nullptr, " ");
-            }
-
-          if (value != nullptr)
-            throw std::runtime_error(
-                "XML object provides too many coefficients");
-        }
+        for (std::size_t i = 0; i < expected / geoDim_; ++i)
+          for (short_t g = 0; g < geoDim_; ++g)
+            coeffs_accessors[g][i] = values[i * geoDim_ + g];
 
         // Copy coefficients to device (if needed)
         for (short_t i = 0; i < geoDim_; ++i)
@@ -7927,11 +7917,10 @@ BSplineMetadata<ParDim> parseBSplineMetadata(const pugi::xml_node &root, int id,
         !knots || !knots.attribute("degree"))
       throw std::runtime_error("XML object does not provide a valid basis");
     metadata.degrees[direction] = knots.attribute("degree").as_int();
-    std::stringstream values(knots.child_value());
-    real_t value;
-    int64_t nknots = 0;
-    while (values >> value)
-      ++nknots;
+    std::vector<real_t> knotValues;
+    utils::parse_numbers<real_t>(knots.child_value(),
+                                 std::back_inserter(knotValues));
+    const int64_t nknots = static_cast<int64_t>(knotValues.size());
     metadata.ncoeffs[direction] = nknots - metadata.degrees[direction] - 1;
     if (metadata.ncoeffs[direction] <= 0)
       throw std::runtime_error("XML object provides an invalid knot vector");
