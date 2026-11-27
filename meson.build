@@ -176,6 +176,17 @@ _jit_parts += [
   '-ltorch_cpu',
   '-lc10',
 ]
+# The just-in-time compiled libraries call into pugixml, as the CMake build's
+# JIT link line provides through the pugixml target.
+if pugixml_dep.type_name() == 'internal'
+  _pugixml_lib = subproject('pugixml').get_variable('pugixml_lib')
+  _jit_parts += [
+    _pugixml_lib.full_path(),
+    '-Wl,-rpath,' + fs.parent(_pugixml_lib.full_path()),
+  ]
+elif pugixml_dep.type_name() == 'pkgconfig'
+  _jit_parts += ['-L' + pugixml_dep.get_variable(pkgconfig: 'libdir'), '-lpugixml']
+endif
 if get_option('jit_extra_flags') != ''
   _jit_parts += get_option('jit_extra_flags')
 endif
