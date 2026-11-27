@@ -147,7 +147,20 @@ _jit_dep_dirs = [
 ]
 foreach d : _jit_dep_dirs
   if d[0].type_name() == 'internal'
-    _jit_parts += '-I' + (meson.global_source_root() / 'subprojects' / d[1])
+    # Unpacked below this project's subprojects/ or, when the wrap is
+    # promoted, below the top project's; the subproject ran already, so the
+    # directory exists in one of them.
+    _found = false
+    foreach _root : [meson.current_source_dir(), meson.global_source_root()]
+      _dir = _root / 'subprojects' / d[1]
+      if not _found and fs.is_dir(_dir)
+        _jit_parts += '-I' + _dir
+        _found = true
+      endif
+    endforeach
+    if not _found
+      error('JIT include directory of a subproject not found: subprojects/' + d[1])
+    endif
   elif d[0].type_name() == 'pkgconfig'
     _inc = d[0].get_variable(pkgconfig: 'includedir', default_value: '')
     if _inc != ''
