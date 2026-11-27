@@ -7525,7 +7525,7 @@ public:
   /// @return Result of the operation.
   BSplineCommon operator+(const BSplineCommon &other) const {
 
-    BSplineCommon result{*this};
+    BSplineCommon result(*this, true);
 
     for (short_t i = 0; i < BSplineCore::geoDim(); ++i)
       result.coeffs(i) += other.coeffs(i);
@@ -7545,7 +7545,7 @@ public:
   /// @return Result of the operation.
   BSplineCommon operator-(const BSplineCommon &other) const {
 
-    BSplineCommon result{*this};
+    BSplineCommon result(*this, true);
 
     for (short_t i = 0; i < BSplineCore::geoDim(); ++i)
       result.coeffs(i) -= other.coeffs(i);
@@ -7559,7 +7559,7 @@ public:
   /// @return Result of the operation.
   BSplineCommon operator*(BSplineCore::value_type s) const {
 
-    BSplineCommon result{*this};
+    BSplineCommon result(*this, true);
 
     for (short_t i = 0; i < BSplineCore::geoDim(); ++i)
       result.coeffs(i) *= s;
@@ -7575,7 +7575,7 @@ public:
       std::array<typename BSplineCore::value_type, BSplineCore::geoDim()> v)
       const {
 
-    BSplineCommon result{*this};
+    BSplineCommon result(*this, true);
 
     for (short_t i = 0; i < BSplineCore::geoDim(); ++i)
       result.coeffs(i) *= v[i];
@@ -7589,7 +7589,7 @@ public:
   /// @return Result of the operation.
   BSplineCommon operator/(BSplineCore::value_type s) const {
 
-    BSplineCommon result{*this};
+    BSplineCommon result(*this, true);
 
     for (short_t i = 0; i < BSplineCore::geoDim(); ++i)
       result.coeffs(i) /= s;
@@ -7605,7 +7605,7 @@ public:
       std::array<typename BSplineCore::value_type, BSplineCore::geoDim()> v)
       const {
 
-    BSplineCommon result{*this};
+    BSplineCommon result(*this, true);
 
     for (short_t i = 0; i < BSplineCore::geoDim(); ++i)
       result.coeffs(i) /= v[i];
