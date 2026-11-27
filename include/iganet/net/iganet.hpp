@@ -1255,7 +1255,7 @@ public:
   /// @brief Returns true if both IgANet objects are different.
   /// @param other Second input value.
   /// @return Result of the operation.
-  bool operator!=(const IgANet &other) const { return *this != other; }
+  bool operator!=(const IgANet &other) const { return !(*this == other); }
 
 #ifdef IGANET_WITH_MPI
 private:
