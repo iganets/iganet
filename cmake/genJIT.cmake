@@ -367,6 +367,21 @@ function(genJITCompiler SOURCE_FILES SOURCE_TARGET)
           set(JIT_LIBRARIES
             "${JIT_LIBRARIES} ${JIT_MATPLOT_LIBRARY} ${CMAKE_SHARED_LIBRARY_RUNTIME_CXX_FLAG}${JIT_MATPLOT_LIBRARY_DIR}")
 
+        elseif(lib STREQUAL "MPI::MPI_CXX")
+
+          # MPI::MPI_CXX is an imported target, not a library name; pass its
+          # include directories, definitions and libraries
+          foreach (dir ${MPI_CXX_INCLUDE_DIRS})
+            set(JIT_LIBRARIES
+              "${JIT_LIBRARIES} ${JIT_CXX_INCLUDE_FLAG}${dir}")
+          endforeach()
+
+          foreach (flag ${MPI_CXX_COMPILE_DEFINITIONS})
+            set(JIT_LIBRARIES "${JIT_LIBRARIES} -D${flag}")
+          endforeach()
+
+          list(APPEND LIBS ${MPI_CXX_LIBRARIES})
+
         elseif(lib STREQUAL "OpenMP::OpenMP_CXX")
 
           if (OpenMP_CXX_INCLUDE_DIR)

@@ -15,6 +15,8 @@
 #pragma once
 
 #include <iostream>
+#include <memory>
+#include <vector>
 
 #include <iganet/core/core.hpp>
 
@@ -55,6 +57,26 @@ template <> struct optimizer_options_type<torch::optim::RMSprop> {
   using type = torch::optim::RMSpropOptions;
 };
 /// @}
+
+/// @brief Constructs an optimizer for the given parameters.
+///
+/// Optimizers whose constructor takes no default options (e.g.
+/// torch::optim::SGD) receive a learning rate of 1e-3.
+///
+/// @tparam Optimizer Optimizer type.
+/// @param params Parameters to optimize.
+/// @return Owning pointer to the optimizer.
+template <typename Optimizer>
+  requires OptimizerType<Optimizer>
+inline std::unique_ptr<Optimizer>
+make_optimizer(std::vector<torch::Tensor> params) {
+  if constexpr (std::is_constructible_v<Optimizer, std::vector<torch::Tensor>>)
+    return std::make_unique<Optimizer>(std::move(params));
+  else
+    return std::make_unique<Optimizer>(
+        std::move(params),
+        typename optimizer_options_type<Optimizer>::type(1e-3));
+}
 
 } // namespace iganet
 

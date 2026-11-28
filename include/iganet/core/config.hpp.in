@@ -35,6 +35,9 @@
 /// @brief Compile with MPI enabled.
 #cmakedefine IGANET_WITH_MPI
 
+/// @brief The MPI implementation provides the mpi-ext.h extension header.
+#cmakedefine IGANET_MPI_HAVE_EXT
+
 /// @brief Compile with CUDA enabled.
 #cmakedefine IGANET_WITH_CUDA
 

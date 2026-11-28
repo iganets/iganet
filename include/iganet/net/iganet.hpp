@@ -15,6 +15,7 @@
 #pragma once
 
 #include <iganet/core/options.hpp>
+#include <iganet/net/dataparallel.hpp>
 #include <iganet/net/generator.hpp>
 #include <iganet/net/collocation.hpp>
 #include <iganet/net/optimizer.hpp>
@@ -42,6 +43,17 @@ struct IgANetOptions {
   TORCH_ARG(double, min_loss_change) = 0;
   /// @brief Provides the `TORCH_ARG` operation.
   TORCH_ARG(double, min_loss_rel_change) = 1e-3;
+  /// @brief Combine gradients and loss over all MPI processes.
+  TORCH_ARG(bool, mpi_data_parallel) = true;
+  /// @brief Number of steps between checks that the parameters agree on all
+  /// MPI processes, zero disables the check.
+  TORCH_ARG(int64_t, mpi_check_interval) = 0;
+  /// @brief Reduce the gradients in one packed buffer instead of tensor by
+  /// tensor.
+  TORCH_ARG(bool, mpi_pack_gradients) = true;
+  /// @brief Relative difference of the parameter checksums on different MPI
+  /// processes that is accepted by the consistency check.
+  TORCH_ARG(double, mpi_check_tolerance) = 0.0;
 };
 
 /// @brief IgA base class.
@@ -636,6 +648,9 @@ protected:
   /// @brief Options.
   IgANetOptions options_;
 
+  /// @brief Combination of loss and gradients over MPI processes.
+  mpi::DataParallel dp_;
+
 public:
   /// @brief Default constructor.
   /// @param defaults Value of `defaults`.
@@ -646,7 +661,7 @@ public:
       : // Construct the base class
         Base(),
         // Construct the optimizer
-        opt_(std::make_unique<optimizer_type>(net_->parameters())),
+        opt_(make_optimizer<optimizer_type>(net_->parameters())),
         // Set options
         options_(defaults) {}
 
@@ -697,7 +712,7 @@ public:
              activations, options),
 
         // Construct the optimizer
-        opt_(std::make_unique<optimizer_type>(net_->parameters())),
+        opt_(make_optimizer<optimizer_type>(net_->parameters())),
 
         // Set options
         options_(defaults) {}
@@ -726,13 +741,13 @@ public:
   /// should be resetted.
   inline void optimizerReset(bool resetOptions = true) {
     if (resetOptions)
-      opt_ = std::make_unique<optimizer_type>(net_->parameters());
+      opt_ = make_optimizer<optimizer_type>(net_->parameters());
     else {
       std::vector<optimizer_options_type> options;
       for (auto &group : opt_->param_groups())
         options.push_back(
             static_cast<optimizer_options_type &>(group.options()));
-      opt_ = std::make_unique<optimizer_type>(net_->parameters());
+      opt_ = make_optimizer<optimizer_type>(net_->parameters());
       for (auto [group, options] : utils::zip(opt_->param_groups(), options))
         static_cast<optimizer_options_type &>(group.options()) = options;
     }
@@ -873,12 +888,10 @@ public:
   virtual torch::Tensor loss(const torch::Tensor &, int64_t) = 0;
 
   /// @brief Trains the IgANet.
-  virtual void train(
-#ifdef IGANET_WITH_MPI
-      c10::intrusive_ptr<c10d::ProcessGroupMPI> pg =
-          c10d::ProcessGroupMPI::createProcessGroupMPI()
-#endif
-  ) {
+  virtual void train() {
+    dp_.attach(net_->parameters(), net_->buffers(), options_.mpi_data_parallel(),
+               options_.mpi_pack_gradients());
+
     torch::Tensor inputs, outputs, loss;
     typename Base::value_type previous_loss(-1.0);
 
@@ -889,44 +902,36 @@ public:
       if (this->epoch(epoch))
         inputs = this->inputs(epoch);
 
+      const double weight = this->mpi_loss_weight();
+
       auto closure = [&]() {
-        // Reset gradients
-        net_->zero_grad();
+        // The loss and gradients of all processes are combined inside the
+        // closure because optimizers call it repeatedly
+        loss = dp_.evaluate(
+            [&]() {
+              // Reset gradients
+              net_->zero_grad();
 
-        // Execute the model on the inputs
-        outputs = net_->forward(inputs);
+              // Execute the model on the inputs
+              outputs = net_->forward(inputs);
 
-        // Compute the loss value
-        loss = this->loss(outputs, epoch);
+              // Compute the loss value
+              torch::Tensor local = this->loss(outputs, epoch);
 
-        // Compute gradients of the loss w.r.t. the model parameters
-        loss.backward({}, true, false);
+              // Compute gradients of the loss w.r.t. the model parameters
+              local.backward({}, true, false);
+
+              return local;
+            },
+            weight);
 
         return loss;
       };
 
-#ifdef IGANET_WITH_MPI
-      // Averaging the gradients of the parameters in all the processors
-      // Note: This may lag behind DistributedDataParallel (DDP) in performance
-      // since this synchronizes parameters after backward pass while DDP
-      // overlaps synchronizing parameters and computing gradients in backward
-      // pass
-      std::vector<c10::intrusive_ptr<::c10d::Work>> works;
-      for (auto &param : net_->named_parameters()) {
-        std::vector<torch::Tensor> tmp = {param.value().grad()};
-        works.emplace_back(pg->allreduce(tmp));
-      }
-
-      waitWork(pg, works);
-
-      for (auto &param : net_->named_parameters()) {
-        param.value().grad().data() =
-            param.value().grad().data() / pg->getSize();
-      }
-#endif
-
       // Update the parameters based on the calculated gradients
-      opt_->step(closure);
+      dp_.step(*opt_, closure);
+      dp_.after_step(epoch + 1, options_.mpi_check_interval(),
+                     options_.mpi_check_tolerance());
 
       typename Base::value_type current_loss =
           loss.item<typename Base::value_type>();
@@ -951,17 +956,12 @@ public:
   /// @brief Trains the IgANet.
   /// @tparam DataLoader Template parameter `DataLoader`.
   /// @param loader Training data loader.
-#ifdef IGANET_WITH_MPI
-  /// @param pg MPI process group.
-#endif
-  template <typename DataLoader>
-  void train(DataLoader &loader
-#ifdef IGANET_WITH_MPI
-             ,
-             c10::intrusive_ptr<c10d::ProcessGroupMPI> pg =
-                 c10d::ProcessGroupMPI::createProcessGroupMPI()
-#endif
-  ) {
+  template <typename DataLoader> void train(DataLoader &loader) {
+    dp_.attach(net_->parameters(), net_->buffers(), options_.mpi_data_parallel(),
+               options_.mpi_pack_gradients());
+    const double weight = this->mpi_loss_weight();
+    int64_t step = 0;
+
     torch::Tensor inputs, outputs, loss;
     typename Base::value_type previous_loss(-1.0);
 
@@ -970,7 +970,13 @@ public:
 
       typename Base::value_type current_loss(0);
 
-      for (auto &batch : loader) {
+      // All processes must take the same number of steps since every step
+      // contains collective operations
+      for (auto it = loader.begin();; ++it) {
+        if (!dp_.agree(it != loader.end()))
+          break;
+
+        auto &batch = *it;
         inputs = batch.data;
 
         if (inputs.dim() > 0) {
@@ -1009,23 +1015,31 @@ public:
         this->epoch(epoch);
 
         auto closure = [&]() {
-          // Reset gradients
-          net_->zero_grad();
+          loss = dp_.evaluate(
+              [&]() {
+                // Reset gradients
+                net_->zero_grad();
 
-          // Execute the model on the inputs
-          outputs = net_->forward(inputs);
+                // Execute the model on the inputs
+                outputs = net_->forward(inputs);
 
-          // Compute the loss value
-          loss = this->loss(outputs, epoch);
+                // Compute the loss value
+                torch::Tensor local = this->loss(outputs, epoch);
 
-          // Compute gradients of the loss w.r.t. the model parameters
-          loss.backward({}, true, false);
+                // Compute gradients of the loss w.r.t. the model parameters
+                local.backward({}, true, false);
+
+                return local;
+              },
+              weight);
 
           return loss;
         };
 
         // Update the parameters based on the calculated gradients
-        opt_->step(closure);
+        dp_.step(*opt_, closure);
+        dp_.after_step(++step, options_.mpi_check_interval(),
+                       options_.mpi_check_tolerance());
 
         current_loss += loss.item<typename Base::value_type>();
       }
@@ -1045,6 +1059,35 @@ public:
     }
     Log(log::info) << "Max epochs reached: " << options_.max_epoch()
                    << ", loss: " << previous_loss << std::endl;
+  }
+
+  /// @brief Returns the weight of the loss of this MPI process.
+  ///
+  /// The loss of the union of all data shares is the sum of the weighted
+  /// losses of the processes. The default assumes equal shares and a loss
+  /// that is a mean over the items of the share. Applications with unequal
+  /// shares return the fraction of the items that this process owns.
+  virtual double mpi_loss_weight() const { return 1.0 / mpi::size(); }
+
+  /// @brief Returns the counters and timers of the training loops.
+  inline const TrainingStatistics &statistics() const {
+    return dp_.statistics();
+  }
+
+  /// @brief Resets the counters and timers of the training loops.
+  inline void resetStatistics() { dp_.reset(); }
+
+  /// @brief Evaluates the loss at the current parameters, combined over all
+  /// MPI processes if data parallelism is enabled.
+  /// @param epoch Epoch passed to the loss function.
+  /// @return Loss of the union of the data of all processes.
+  inline double evaluateLoss(int64_t epoch = 0) {
+    torch::NoGradGuard guard;
+    double local =
+        this->loss(net_->forward(this->inputs(epoch)), epoch)
+            .template item<double>();
+    return options_.mpi_data_parallel() ? mpi::sum(local * mpi_loss_weight())
+                                        : local;
   }
 
   /// @brief Evaluate IgANet.
@@ -1257,22 +1300,6 @@ public:
   /// @return Result of the operation.
   bool operator!=(const IgANet &other) const { return *this != other; }
 
-#ifdef IGANET_WITH_MPI
-private:
-  /// @brief Waits for all work processes.
-  static void waitWork(c10::intrusive_ptr<c10d::ProcessGroupMPI> pg,
-                       std::vector<c10::intrusive_ptr<c10d::Work>> works) {
-    for (auto &work : works) {
-      try {
-        work->wait();
-      } catch (const std::exception &ex) {
-        Log(log::error) << "Exception received during waitWork: " << ex.what()
-                        << std::endl;
-        pg->abort();
-      }
-    }
-  }
-#endif
 };
 
 /// @brief Prints an IgANet object.
