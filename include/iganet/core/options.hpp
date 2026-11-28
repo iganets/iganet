@@ -27,6 +27,14 @@ namespace iganet {
 /// device-count detection.
 inline int guess_device_index() {
 #ifdef IGANET_WITH_MPI
+  // Options are created before MPI_Init (and after MPI_Finalize) too, for
+  // example by every test of an MPI build that does not use MPI; MPI_Comm_rank
+  // aborts there. Without an active MPI environment this process is rank 0.
+  int initialized = 0, finalized = 0;
+  MPI_Initialized(&initialized);
+  MPI_Finalized(&finalized);
+  if (!initialized || finalized)
+    return 0;
   int rank;
   MPI_Comm_rank(MPI_COMM_WORLD, &rank);
   return rank %
